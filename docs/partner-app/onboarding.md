@@ -28,7 +28,13 @@ The partner registration page (`/register`) collects:
 - Last name
 - Email address
 - Password (with confirmation)
-- Phone number
+- The market, when more than one is offered (the default market otherwise)
+- Agreement to the terms
+
+The phone number is not asked here. The profile asks for it: on the apps, in its first step, Personal
+([Step 4](#step-4-profile-completion)). On the apps the sign-up button can be tapped at any time but
+while the request is in flight, and a tap names each missing or invalid field under it
+([What each step checks before it sends](#step-checks)).
 
 ::: info
 The registration route is protected by the `guestGuard` -- already authenticated partners are redirected to `/orders`.
@@ -37,17 +43,29 @@ The registration route is protected by the `guestGuard` -- already authenticated
 After submission, the backend:
 1. Creates the user account
 2. Creates an associated employee record with `ContractStatus.Pending`
-3. Sends an email confirmation link
+3. E-mails a 6-digit confirmation code
 
 ## Step 2: Email Confirmation
 
 After registration, partners are redirected to `/confirm-email`. The confirmation flow:
 
 1. Partner receives an email with a 6-digit confirmation code
-2. The confirm-email page presents a 6-digit code input component with individual digit fields that auto-advance to the next field on entry
-3. The form auto-submits when the 6th digit is entered; clipboard paste of a full code is also supported
+2. The confirm-email page presents a 6-digit code input component with individual digit fields that auto-advance to the next field on entry; the Android and iOS apps draw six boxes over one real text field
+3. The form auto-submits when the 6th digit is entered. A code can be pasted on all three (below)
 4. The code is sent to the backend for validation
 5. On success, the email is marked as confirmed
+
+**A long press on the boxes reaches a real field and its Paste, on partner web, Android and iOS**
+(since 2026-10-24). On partner web each box is an input of its own, and a pasted code fills all six.
+On the apps the boxes only draw one text field laid over them, so a tap anywhere on them brings the
+keyboard back and a long press opens the field's edit menu; until then the boxes sat over a field 1pt
+(1dp) wide, so a long press found no field, and on iOS a code could not be pasted at all. Under the
+boxes iOS shows the system's Paste button, an icon alone, and Android a *Paste* text button while the
+clipboard holds text, because the iPhone keyboard has no clipboard and not every Android keyboard offers
+one on a number pad. **A whole code pasted, or put in by AutoFill or a keyboard's clipboard suggestion,
+replaces a partial one** instead of being added to it, so `654321` pasted after a typed `12` is sent as
+`654321`, not run into `126543`. Only the digits `0`–`9` are kept.
+→ [Mobile app features](/mobile-app/features#shared-versus-app-owned)
 
 ::: warning
 Partners cannot log in until their email is confirmed. The login flow checks `isEmailConfirmed` and redirects back to the confirmation page if false.
@@ -66,23 +84,28 @@ After email confirmation, the partner logs in with email and password. The authe
 Once logged in, partners need to complete their profile via the `/profile` page.
 `Employee.IsProfileComplete()` is the authoritative list:
 
-- Personal details — first name, last name, email, phone, date of birth
+- Personal details — first name, last name, email, phone, date of birth. The phone is first asked
+  here, not at sign-up, and the apps' Personal step does not move on without it
 - Address — street, city, ZIP, country
 - **A payout destination** (see below), passport ID, nationality, registration number
 - Business identity:
   - Entity type (Natural Person or Legal Entity)
   - Registration number -- mandatory
-  - VAT number -- optional
-  - Legal Entity Name -- required only when Entity type is Legal Entity
+  - Legal Entity Name -- required only when Entity type is Legal Entity, which only an operator can
+    set: a cleaner's own save cannot make them a company (`employee.legal_entity_not_accepted`). Since
+    2026-10-24 an administrator's edit that would leave a company without its registered name is
+    refused, and a company row stored without one shows the cleaner the locked field and the reason, to
+    contact support → [What a cleaner's profile accepts](/product/business-rules#cleaner-profile-fields)
 
-The **labels on those two fields come from the business country**, not from the app's language.
-`CountryConfiguration` has carried `RegistrationNumberLabel` and `VatNumberLabel` since it was seeded —
-CZ and SK both say "IČO" and "DIČ" — but nothing read them, so every client hardcoded the Czech word in
-its own translation files and a Polish or Ukrainian partner read "IČO" for a registry that has no such
-thing. The clients now ask the country and fall back to a neutral "Registration number" only where the
-platform holds no configuration: correct everywhere, precise nowhere, which is exactly what a fallback
-should be. Flattening every country to the neutral term would have cost CZ and SK the word their own
-registries use.
+The **label on the registration number comes from the business country**, not from the app's
+language. `CountryConfiguration` has carried `RegistrationNumberLabel` since it was seeded — CZ and SK
+say "IČO" — but nothing read it, so every client hardcoded the Czech word in its own translation files
+and a Polish or Ukrainian partner read "IČO" for a registry that has no such thing. The clients now ask
+the country and fall back to a neutral "Registration number" only where the platform holds no
+configuration: correct everywhere, precise nowhere, which is exactly what a fallback should be.
+Flattening every country to the neutral term would have cost CZ and SK the word their own registries
+use. The configuration also carries a `VatNumberLabel`, which `GetCountryFieldLabels` still returns;
+no cleaner form has a VAT number, and the employee record has none.
 
 **A Czech IČO is looked up in ARES** (since 2026-10-04). After the format check, the cleaner's save —
 the partner web profile and the apps' identification section — is refused when ARES does not hold the
@@ -150,8 +173,10 @@ server's `IbanCalculator` does, in the order a cleaner can act on:
 3. **The shape and the check digits.** The ISO 7064 mod-97 check must hold. The message is the copy of
    `validation.payout.invalid_iban`.
 
-Save is enabled once an IBAN is typed. The first Save with a problem sends nothing and shows the
-message under the field, which then follows the edits. The server checks the IBAN again. One of its
+On partner web, Save is enabled once the bank country is picked and the IBAN typed; on the apps it can
+be tapped at any time but while a save is in flight ([What each step checks](#step-checks)). The first
+Save with a problem sends nothing and shows the message under the field, which then follows the edits.
+The server checks the IBAN again. One of its
 rules has no client twin: a card number typed into the field is refused on the device as not an IBAN,
 so the server's more specific `looks_like_card` never comes back.
 
@@ -167,39 +192,42 @@ bank code. The clients read three shapes:
 | `CZ65 0800 0000 1920 0014 5399`, or an SK IBAN | the same three parts, with the IBAN's zero padding dropped |
 
 Spaces of every kind are ignored (a non-breaking one included) and an en or em dash counts as a hyphen.
-**A bare number goes to the number field, whichever box it was pasted into**: up to ten digits pasted
-at once (spaces ignored) into an empty box become the number, and the prefix and bank code stay as they
-are, so `2000145399` pasted into an empty prefix box no longer turns into the prefix `200014`. Typing
-never jumps, because the number pad types one digit at a time, and eleven or more bare digits are not
-an account number, so the box keeps its own clamp. **On the apps, a paste into a box that already
-holds digits is read together with them**, because every shape is matched against the box's whole new
-text. Partner web does not do this; see the end of this section. Pasted at the caret, `2000145399`
-after a `19` in the prefix box is the twelve digits `192000145399`, which is no account, so the box
-clamps it to the prefix `192000`, and `2000145399/0800` pasted there falls back to the clamp the same
-way. A shorter paste can be routed with the box's digits in front: `2000` after `19` makes the number
-`192000`, and the prefix stays `19`. Pasted over all of the box's digits, the paste is read on its
-own, though a bare number still has to be at least two characters longer than what it replaces. The
-rule has one more cost: a real two-digit prefix such as `19` pasted into an empty prefix box goes to
-the number; typed, it stays. **After a routed paste the keyboard closes, on both apps**,
-because both rebuild the three boxes: iOS with `.id(pasteRevision)`, so each box draws its new value,
-and Android with `key(pasteRevision)`, so pasting the same text into the same box a second time is not
-dropped as a repeat. **Each box keeps the digits `0`–`9` only**, up to its length, on both apps
-(`clampSegment`, since 2026-10-02): a keyboard can type Arabic-Indic or full-width digits, which the
-server refuses, and the boxes used to keep them. The clients only split text. The server keeps every
-rule on the parts (the mod-11 check and the bank-code shape). Partner web reads the same three shapes
-since 2026-10-02: it splits a CZ or SK IBAN, ignores whitespace of every kind inside the digits too,
-and reads an en or em dash as a hyphen. Before, it split only the two separator shapes. It also sends
-a bare number to the number field from any box and leaves the prefix and bank code alone, as the apps
-do; until 2026-10-02 it cleared the prefix. A written-out account without a prefix still clears the
-old one there too. The web differs in two ways. First, it sends a one-digit paste to the number
-field, where the apps need at least two characters. On the web a paste event is never typing, and
-telling the two apart is the only reason the apps have that rule. Second, it reads the paste on its
-own and never adds the digits already in the box. A recognised shape fills its fields whatever the
-box held, so the apps' clamp fallback never applies to it. `2000145399` pasted after a `19` in the
-prefix box makes the number `2000145399` and leaves the prefix `19`, where the apps clamp it to the
-prefix `192000`. `2000145399/0800` pasted there sets the number and the bank code and clears the
-prefix, where the apps clamp it the same way. A paste that matches none of the shapes is left to the
-browser, which inserts it at the caret and cuts it to the box's length.
+**A bare run of digits is measured by what the paste put in, and the box it lands in decides where it
+goes** (since 2026-10-24), on partner web, Android and iOS alike:
+
+- **A run that fits the box it lands in** — at most 6 digits in the prefix box, 4 in the bank code's,
+  10 in the number's — is that part, copied on its own, and stays in that box, even beside digits
+  already there. `0800` pasted into the bank-code box and `19` into the prefix box stay where they were
+  pasted, and the number already entered is kept.
+- **A longer run, up to ten digits, is the account number.** `2000145399` pasted into the prefix box
+  becomes the number, and the prefix and bank code stay as they are.
+- **A whole written-out account or a CZ or SK IBAN is split** over the three boxes, as the table says.
+- **Typing never moves anything**: the number pad types one digit at a time. Eleven or more bare digits
+  are no account number and are cut to the box's length, like typing.
+
+Until 2026-10-24 a bare number pasted into any box became the account number, on the apps from two
+digits and on the web from one, so a bank code pasted into its own box replaced the number already
+entered, and a real prefix such as `19` pasted into the prefix box went to the number.
+
+**Beside digits a box already holds, the platforms still differ.** Partner web reads the clipboard
+alone: a run that fits replaces the box's digits (`5500` pasted after a bank code `0800` gives
+`5500`), a longer run becomes the number whatever the box held, and a paste that is none of the shapes
+is left to the browser, which inserts it at the caret and cuts it to the box's length. The apps read
+the box's whole new text, the paste together with the digits beside it, for the three shapes and for
+the number's ten digits, and they clamp a run that fits into the box with its old digits, keeping the
+first ones: `5500` pasted after `0800` leaves `0800` and pasted before it gives `5500`, and
+`2000145399` pasted after `0800` is fourteen digits, so the box keeps `0800` and the number is not
+filled. Pasted into an empty box, a paste is read on its own on all three.
+
+**After a routed paste the keyboard closes, on both apps**, because both rebuild the three boxes: iOS
+with `.id(pasteRevision)`, so each box draws its new value, and Android with `key(pasteRevision)`, so
+pasting the same text into the same box a second time is not dropped as a repeat. **Each box keeps the
+digits `0`–`9` only**, up to its length, on both apps (`clampSegment`, since 2026-10-02): a keyboard can
+type Arabic-Indic or full-width digits, which the server refuses, and the boxes used to keep them. The
+clients only split text. The server keeps every rule on the parts (the mod-11 check and the bank-code
+shape). Partner web reads the same three shapes since 2026-10-02: it splits a CZ or SK IBAN, ignores
+whitespace of every kind inside the digits too, and reads an en or em dash as a hyphen. Before, it split
+only the two separator shapes, and a bare number pasted there cleared the prefix.
 
 ::: tip Country Configuration
 Country-specific labels and validation rules (e.g., field names, format masks) are driven by the `CountryConfiguration` table managed in the admin app.
@@ -224,6 +252,46 @@ element: its place, its name and its state, such as *Step 2 of 4, Address, curre
 the current step was named, inside a capsule, and the other three were identical unlabelled discs. At
 320pt (320dp) each step's column is 64 wide, and every name fits on one line in all five languages. At
 a large text size iOS shrinks a name to fit its column, and Android wraps it onto a second line.
+
+### What each step checks before it sends {#step-checks}
+
+**On the Android and iOS partner apps a form's button can be tapped at any time but while its request
+is in flight** (since 2026-10-24): *Sign Up*, and each onboarding step's *Next* or *Save*. A tap checks
+every rule the device can check, in one pass, and names each missing or invalid field under it; nothing
+is sent until all of them pass, and an error clears as soon as its own field changes. A refusal only the
+server can make comes back under the field it is about, by its key, and any other refusal is a
+snackbar. Until then most of these buttons stayed disabled until their form looked complete, which
+said nothing about what was missing. On partner web, *Register* still waits for a valid form, and the
+bank form's *Save* for the bank country and the account or the IBAN.
+
+Every field named below is required; the rest is what else it must meet.
+
+| Step | Checked on the device | Named under its field, from the server |
+|---|---|---|
+| Sign up | first and last name; the e-mail, then its shape; a password that meets the policy; a matching confirmation; the terms ticked | — |
+| Personal | first and last name, at most 50 characters each; the birth date, 18 to 120 years before today, counted on today's UTC date; the phone, in international form with its country code, and a valid number | — |
+| Address | a pick with a street of 5–255 characters, a city of 2–100 and a postcode of 3–20, checked as soon as the picker returns; with nothing picked, the card asks for a pick | `common.required` and `address.invalid_length`, on the address card |
+| Identification | nationality; the passport or ID number, 5–20 characters once trimmed; the business country; the registration number | the number's format and the business register's answers (`validation.registration_number.invalid_format`, `validation.registration_number.not_registered`, `employee.business_ceased`, `employee.trade_licence_inactive`) under the registration number; `validation.passport_id.invalid_length` under the passport |
+| Bank | the bank country; for a CZ or SK bank the account number and a bank code of four digits, for any other the IBAN (above) | the payout refusals under the account, the IBAN, the SWIFT or the bank country |
+
+An incomplete pick is named on the address card itself, with a red border and *This spot has no full
+address. Move the pin onto the building, or search for the street and house number.* A company row an
+operator made without its registered name shows the legal-name field locked, with *Your company's
+registered name is missing. Contact support to add it — it can't be changed here.*, and the step stays
+incomplete until an administrator adds the name. The server holds every save to the same numbers, the
+partner web's and an administrator's edit too, with one exception: only the apps' Personal save
+requires the phone's country code (`validation.invalid_phone_number`), and partner web and an
+administrator's edit still accept a number without it.
+→ [The numbers the server holds these fields to](/product/business-rules#cleaner-profile-fields)
+
+**A phone pasted with its country code keeps it** (since 2026-10-24). On the apps the phone field keeps
+a `+` that comes before the first digit, wherever it sits, so ` +420 728 089 247`,
+`Tel: +420 728 089 247` and `(+420) 728 089 247` all read `+420728089247`; until then a `+` that was not
+the very first character was dropped, and the number lost its country code. `(420) 728 089 247` still
+reads `420728089247`, which Personal refuses for its missing `+`. On partner web, a number pasted or
+autofilled with its own country code, such as `+420 777 111 222`, selects that country and keeps the
+rest as the national number, where it used to save the code twice (`+420 420777111222`); the spaces
+and the invisible marks a contacts app puts in front of a copied number are ignored.
 
 ## Step 5: Document Upload
 

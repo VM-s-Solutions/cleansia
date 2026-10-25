@@ -37,6 +37,7 @@ Admins can filter orders by:
 - Assigned employee
 - Service type
 - Currency (`OrderFilter.CurrencyId` on the wire — one currency id, no existence check; an unknown id is an empty page)
+- Staffing — *Only orders with no cleaner* (`OrderFilter.IsUnassigned`, since 2026-10-24): orders with no assignment row, a seat whose cleaner asked for cover counting as assigned. Unless the administrator picks statuses or a from-date of their own, it also asks for work that is not over — `New`, `Confirmed`, `OnTheWay`, `InProgress` — from the start of today in the browser's time zone, because cancelled, finished and past orders have nobody on them either. Its chip reads *Staffing: No cleaner assigned*
 
 ### Money across currencies {#money-across-currencies}
 

@@ -598,7 +598,13 @@ reassign or a cover swap replaces. Three rules ride with it:
   and the notice says which (`admin.order.crew_lost`, with the cause — *the cleaner dropped it* / *the
   cleaner's account was rejected* — the order number, the slot, and *"the clean was already under way"*
   when it was). A two-seat job losing one of two cleaners keeps its status, re-advertises the seat, and
-  tells nobody. → [Administrators are told](#admin-notifications)
+  tells nobody. An order left with nobody on it that nobody takes again is reported once more inside
+  24 h of its start (`admin.order.no_cleaner_yet`, since 2026-10-24), an hour after the drop's or the
+  rejection's status row at the earliest and only before the start. Dropped at T−10 h, it raises
+  `crew_lost` at once and `no_cleaner_yet` at about T−9 h; dropped at T−30 min, `crew_lost` only, then
+  the cancel at T+30 min; taken again and dropped again after the alert, `crew_lost` again but no second
+  `no_cleaner_yet`, which is once per order. A two-seat job with one cleaner left never gets it, since
+  someone is on it. → [Administrators are told](#admin-notifications)
 - **An administrator cannot set `Confirmed` on an order with no crew.** The status override refuses it
   (`order.status.confirmed_needs_crew`); an administrator who wants a cleaner on the job reassigns,
   which writes `Confirmed` itself. The other forward moves — `OnTheWay`, `InProgress`, `Completed` on an
@@ -2043,6 +2049,48 @@ above, which are accepted in the app, never uploaded.
   The framework agreement recommends the insurance since `2026-10-05`; its `2026-09-29` version
   required the certificate ([The legal texts](#legal-texts)).
 
+## What a cleaner's profile accepts {#cleaner-profile-fields}
+
+The server's rules for what a cleaner enters about themselves, on each save that writes it: the
+partner web's profile (`UpdateEmployee`), the apps' onboarding steps (`UpdatePersonalInfo`,
+`UpdateAddressInfo`, `UpdateIdentificationInfo` and the bank details) and an administrator's edit
+(`AdminUpdateEmployee`, which judges the fields it carries). A length is counted in UTF-16 code
+units, as .NET counts a string. Since 2026-10-24 the Android and iOS partner apps check the same
+numbers before they send, and name each failing field under it
+→ [What each step checks before it sends](/partner-app/onboarding#step-checks).
+
+| Field | The rule | Refused with |
+|---|---|---|
+| First and last name | required, at most 50 | `common.required`, `common.max_length` (on an administrator's edit, `dispute.max_length_exceeded`) |
+| Birth date | a date in the past, 18 to 120 years before today, both days included | `validation.invalid_date`, `validation.date_must_be_in_past`, `validation.invalid_age` |
+| Phone | required; on the apps' Personal save also in international form, with its country code, and a number libphonenumber holds valid | `common.required`, `validation.invalid_phone_number` |
+| Street, city, postcode | required; 5–255, 2–100 and 3–20 | `common.required`, `address.invalid_length` |
+| Passport or ID number | required, 5–20 as sent (the apps trim it first) | `common.required`, `validation.passport_id.invalid_length` |
+| Registration number | at most 50, then the business country's format, which a blank number fails where the country requires one, and, for a Czech number, ARES; the apps' identification save requires it outright | `common.required` (the apps), `dispute.max_length_exceeded`, `validation.registration_number.invalid_format` and the register's keys → [below](#business-register) |
+| Bank code of a CZ or SK account | exactly four ASCII digits | `validation.payout.invalid_bank_code` |
+| Legal entity name | required while the cleaner is registered as a company, which only an operator can set; at most 200 | `common.required` on `LegalEntityName`, `dispute.max_length_exceeded` |
+
+**The phone rule is the mobile save's alone** (owner default 2026-10-24). `UpdatePersonalInfo`, the
+apps' Personal step on the mobile partner host, refuses a missing phone with `common.required`, where it
+used to answer with MVC's untranslated *The Phone field is required.*, and a number that is not valid in
+international form with `validation.invalid_phone_number`, the check `PhoneNumberAttribute` makes. The
+partner web's profile and an administrator's edit still accept a number without its country code, which
+the web's own phone field allows, so the rule is not in the shared phone validator.
+
+**A passport or ID number of the wrong length has its own key** (since 2026-10-24),
+`validation.passport_id.invalid_length`, on the identification save, the partner web's profile and an
+administrator's edit. Until then it was refused with the address wording, `address.invalid_length`,
+which stays for the street, the city, the postcode and an emergency contact's name.
+
+**A company needs its registered name, and only an operator can supply it** (since 2026-10-24). A
+cleaner's own save cannot make them a company (`employee.legal_entity_not_accepted`), and while they are
+one the profile is not complete without the name. An administrator's edit is judged on the edit merged
+over the stored row: an edit that would leave a company without its name is refused with
+`common.required` on `LegalEntityName`, and so is every edit of a company row already stored without
+one, until the name is added, because the cleaner's apps cannot supply it. The admin console marks the
+field required while *Legal entity* is chosen, and the apps show the cleaner of such a row the locked
+field and the reason.
+
 ## The cleaner's business is checked in its register {#business-register}
 
 **Owner ruling 2026-10-04.** A Czech cleaner's company ID (IČO) is looked up in ARES, the Czech
@@ -2196,12 +2244,13 @@ up is somebody else's morning. → [Push notifications](/architecture/push-notif
 
 ## Administrators are told {#admin-notifications}
 
-**Seventeen things the platform can prove happened reach the company's administrators through an in-app
+**Eighteen things the platform can prove happened reach the company's administrators through an in-app
 feed and an e-mail, both** (owner ruling 2026-09-19, [ADR-0065](/decisions/adr-0065): *"both in-app and
 email"*; the not-started alert, the two refund alerts and the lockout report were added by the rulings
 of 2026-09-28, the held referral by the ruling of 2026-10-05, the door non-payment by the ruling of
 2026-10-06, and the same day a guest's refund claimed for a cancellation that never went through got an
-alert of its own). Until then nothing told an administrator anything: a failed erasure was an Error log
+alert of its own; the advance alert for a job nobody has taken came with the owner defaults of
+2026-10-24). Until then nothing told an administrator anything: a failed erasure was an Error log
 line, a chargeback was a dispute row nobody opened, an order that lost its crew was re-advertised to cleaners
 only. One writer, `IAdminNotifier`, turns an event into one feed row per administrator of the **named**
 company and one e-mail per recipient address, inside the same unit of work as the event — so the rows
@@ -2214,6 +2263,7 @@ an administrator may also hold cannot render these keys.
 | `admin.order.new` | an order the company now has to serve becomes **offerable** — a cash one-off at creation, a card order on its payment, a recurring occurrence on the customer's confirm. Never an unpaid card checkout, which the stale sweep cancels within the hour, at most 500 a run; a backlog larger than 500 spreads over the following 15-minute runs | order number, amount with its currency, tender, market |
 | `admin.order.crew_lost` | a drop or an admin rejection leaves nobody on the order, at any status → [above](#crew-lost) | order number, the cause, the status at the loss, the slot |
 | `admin.order.cleaner_not_started` | a job with a cleaner on it is still not started 30 minutes after its start, or the customer reports that the cleaner did not arrive — **once per order**, whichever comes first → [the no-show](#when-the-cleaner-cancels-or-no-shows) | order number, the slot |
+| `admin.order.no_cleaner_yet` | a job nobody is on is inside **24 h** of its start — **once per order**, found by the five-minute reminder sweep. Nobody is on it means `New` or `Confirmed` with no assignment row: a cleaner who asked for cover still counts as on it, and a partly filled crew is not reported. It must be offerable, so never an unpaid card checkout or a recurring occurrence the customer has not confirmed; past any live preferred-cleaner hold; and quiet for **60 min**, with no status row and no customer confirmation in the last hour, so a drop's own status row starts that hour. Nothing is sent once the slot has started: from then the unfilled-order cancel at slot + 30 min owns it → [when the last cleaner leaves](#crew-lost) | order number, the slot |
 | `admin.order.lockout_reported` | the assigned cleaner reports that they cannot get in, 15 minutes or more past the start, with an entrance photo; nothing moves until an administrator confirms it → [the lockout](#lockout) | order number, the slot |
 | `admin.order.cash_not_paid` | the assigned cleaner reports that the customer did not pay the cash at the door; the order is already completed, the price owed and the customer barred from booking. The console's row opens the order; a wrong report is written off, a late payment to the cleaner is recorded as cash received → [When the customer does not pay at the door](#cash-not-paid) | order number, the amount owed |
 | `admin.dispute.filed` | a customer files a dispute | order number, the reason (an enum), the dispute |
@@ -2234,11 +2284,30 @@ role is in the event's audience** — read by the company **argument**, never by
 be ambient at a webhook or a job — gets their own feed row with their own read state, so the first
 administrator who glances at the bell does not silence it for everyone. The audience is one of the
 administrator sets ([ADR-0066](/decisions/adr-0066) D8): the order, dispute and payment events, a
-lost crew, a cleaner not started, a lockout report, a door non-payment and a held referral reach **Support and above**; a failed erasure retry reaches **Manager and above**; the three
+lost crew, a cleaner not started, a job nobody has taken, a lockout report, a door non-payment and a held referral reach **Support and above**; a failed erasure retry reaches **Manager and above**; the three
 company milestones reach **Administrators only**; a **chargeback and the three refund alerts reach every role**, a
 chargeback matched to an order or not — Support answers the customer or the bank, the Accountant
 reconciles the money. The e-mail fan-out below is over the same
 narrowed set. A company with no eligible administrator in the audience is a logged warning, not an error.
+
+**The advance alert's numbers, and the gaps it accepts** (owner defaults 2026-10-24).
+`admin.order.no_cleaner_yet` looks **24 h** ahead and waits out a **60 min** quiet period: the reminder
+command's defaults, `NoCleanerLeadHours` (validated to 1–168) and `NoCleanerQuietMinutes` (0–240), which
+no setting changes. It is one alert per order — no second, closer one, nothing for a partly filled crew,
+no lead time per company — and its once-per-order record is its feed row, read before it is raised, as
+for the not-started alert. Three gaps are accepted rather than built for (CLAUDE.md §4):
+
+- A company with nobody eligible in the audience gets no row, so each five-minute tick logs a warning
+  per such order and writes nothing.
+- When every feed row of a sent alert is gone while the order is still inside the window — every
+  recipient pushed past the per-user cap of 500 rows, or every recipient erased — the alert is raised
+  again, onto an e-mail outbox key the first send still holds (a dispatched row is kept 14 days).
+  Erasure collides only when the company mailbox is set and a new eligible administrator exists; with no
+  mailbox the new administrator simply gets the alert. On a collision no second e-mail goes out, but the
+  company's commit fails on the outbox key (`23505`): none of its no-cleaner alerts from that tick is
+  saved and the companies after it are skipped, every five minutes until the colliding order's start.
+- A booking made less than an hour before its slot never gets it: `admin.order.new` already told the
+  company, and the cancel at slot + 30 min follows.
 
 **The e-mail, and the one setting.** One template, one subject and one paragraph per event in five
 locales, and a line saying to sign in to the console to act on it — no link, no button, nothing that

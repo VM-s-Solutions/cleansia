@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Json;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Enums;
@@ -341,6 +342,49 @@ public sealed class EmployeeSelfUpdateSessionIdentityTests(HostTestPostgresFixtu
         HttpAssert.IsOk(response);
         await AssertUntouchedAsync(route, victim.EmployeeId);
         await AssertWrittenAsync(route, caller.EmployeeId);
+    }
+
+    /// <summary>
+    /// The phone is required, and the refusal must carry the key the apps translate. MVC's implicit-required
+    /// used to answer an absent or null phone first, with an English sentence no client can translate.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_personal_save_with_no_phone_is_refused_as_required_and_leaves_the_row_unchanged(bool sendsNull)
+    {
+        var caller = await SeedCleanerAsync($"esu-no-phone-{sendsNull}@hosttests.local");
+        var body = BodyFor(Route.PersonalInfo);
+        if (sendsNull)
+        {
+            body["phone"] = null;
+        }
+        else
+        {
+            body.Remove("phone");
+        }
+
+        var response = await MobileClient(TokenFor(caller, MobileAudience))
+            .PutAsync(Path(Route.PersonalInfo), JsonContent.Create(body));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await HttpAssert.AssertBusinessErrorAsync(response, BusinessErrorMessage.Required);
+        await AssertUntouchedAsync(Route.PersonalInfo, caller.EmployeeId);
+    }
+
+    [Fact]
+    public async Task A_personal_save_with_a_number_that_cannot_be_dialled_is_refused_and_leaves_the_row_unchanged()
+    {
+        var caller = await SeedCleanerAsync("esu-undiallable-phone@hosttests.local");
+        var body = BodyFor(Route.PersonalInfo);
+        body["phone"] = "+1";
+
+        var response = await MobileClient(TokenFor(caller, MobileAudience))
+            .PutAsync(Path(Route.PersonalInfo), JsonContent.Create(body));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await HttpAssert.AssertBusinessErrorAsync(response, BusinessErrorMessage.InvalidPhoneNumber);
+        await AssertUntouchedAsync(Route.PersonalInfo, caller.EmployeeId);
     }
 
     /// <summary>

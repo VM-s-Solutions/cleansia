@@ -110,7 +110,7 @@ extension Catalog {
             guard let package = packages.first(where: { $0.id == id }) else { return "" }
             let code = CatalogLocalization.languageCode(for: locale)
             let names = package.includedServices
-                .filter { $0.serviceId.map(serviceIds.contains) ?? false }
+                .filter { service in service.serviceId.map { serviceIds.contains($0) } ?? false }
                 .map { CatalogLocalization.name(translations: $0.translations, fallback: $0.name, languageCode: code) }
             return L10n.Booking.twicePackageMessage(
                 package: package.localizedName(for: locale),

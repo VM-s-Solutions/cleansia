@@ -210,6 +210,7 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
   }));
 
   ngOnInit(): void {
+    this.facade.connectLegalEntityName(this.editForm.controls.legalEntityName);
     const employeeId = this.route.snapshot.paramMap.get('employeeId');
     if (employeeId) {
       this.facade.loadEmployeeDetail(employeeId);
@@ -222,7 +223,15 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
     this.editForm.controls.entityType.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((value) => {
-        this.isLegalEntity.set(value === EmployeeEntityType.LegalEntity);
+        const isLegalEntity = value === EmployeeEntityType.LegalEntity;
+        this.isLegalEntity.set(isLegalEntity);
+        const legalEntityName = this.editForm.controls.legalEntityName;
+        if (isLegalEntity) {
+          legalEntityName.addValidators(Validators.required);
+        } else {
+          legalEntityName.removeValidators(Validators.required);
+        }
+        legalEntityName.updateValueAndValidity({ emitEvent: false });
       });
   }
 

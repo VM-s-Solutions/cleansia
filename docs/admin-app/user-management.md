@@ -141,6 +141,16 @@ register, with approval's four refusals for an approved cleaner and only *not re
 else. Until then the edit wrote any number unchecked.
 → [The business register](/product/business-rules#business-register)
 
+**A company row needs its registered name** (since 2026-10-24). While the employee's entity type is
+*Legal entity*, the Employment section marks *Legal entity name* required, and `AdminUpdateEmployee`
+judges every save on the edit merged over the stored row: a save from any section that would leave the
+company without its name is refused with `common.required` on `LegalEntityName`, and so is every save on
+a company row already stored without one, until the name is added. When the server refuses a save under
+`LegalEntityName`, the page opens the Employment section, where the field is, and marks the
+*Legal entity name* field, so an administrator who saved another section sees which field the refusal
+is about; the edit is kept, and the error notice of any refused save still shows.
+→ [What a cleaner's profile accepts](/product/business-rules#cleaner-profile-fields)
+
 ## Document Approval Workflow
 
 Each uploaded document goes through a review process:

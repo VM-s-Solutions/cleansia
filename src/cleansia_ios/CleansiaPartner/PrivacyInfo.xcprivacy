@@ -12,8 +12,6 @@
 	     both ended up declaring an empty NSPrivacyAccessedAPITypes despite using UserDefaults.
 
 	     Not declared, each for a reason rather than by omission:
-	       - Crash data. Neither iOS app has any crash reporting — no Sentry, no Crashlytics, and
-	         Firebase is Messaging only.
 	       - File timestamps, disk space, active keyboard, boot time. None of those required-reason
 	         APIs is called anywhere in the tree.
 	-->
@@ -103,6 +101,31 @@
 			<string>NSPrivacyCollectedDataTypeCoarseLocation</string>
 			<key>NSPrivacyCollectedDataTypeLinked</key>
 			<true/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
+		<!-- A crash report and the device and app state recorded with it, sent to Firebase Crashlytics by a later launch. Debug builds turn collection off, from their second launch on. PartnerAppDelegate. -->
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeCrashData</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeOtherDiagnosticData</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<false/>
 			<key>NSPrivacyCollectedDataTypeTracking</key>
 			<false/>
 			<key>NSPrivacyCollectedDataTypePurposes</key>

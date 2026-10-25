@@ -114,7 +114,7 @@ final class IdentificationSectionViewModelTests: XCTestCase {
             id: "emp-1",
             countryId: "cz",
             nationalityId: "cz",
-            passportId: "P123",
+            passportId: "P1234567",
             entityType: ._2,
             registrationNumber: "12345678",
             legalEntityName: "Acme s.r.o."
@@ -129,13 +129,19 @@ final class IdentificationSectionViewModelTests: XCTestCase {
         XCTAssertEqual(client.identificationCommand?.registrationNumber, "12345678")
     }
 
+    /// Every missing field is named under itself in one pass, not one snackbar at a time.
     func testSaveValidationFailureSkipsNetwork() async {
         client.employeeResult = .success(EmployeeItem(id: "emp-1"))
         let vm = makeVM()
         await vm.load()
         await vm.save()
         XCTAssertNil(client.identificationCommand)
-        XCTAssertNotNil(snackbar.current)
+        XCTAssertEqual(vm.form.nationalityError, L10n.Profile.errorNationalityRequired)
+        XCTAssertEqual(vm.form.passportError, L10n.Profile.errorPassportRequired)
+        XCTAssertEqual(vm.form.businessCountryError, L10n.Profile.errorBusinessCountryRequired)
+        XCTAssertEqual(vm.form.registrationNumberError, L10n.Profile.errorRegistrationNumberRequired)
+        XCTAssertNil(snackbar.current)
+        XCTAssertEqual(vm.action, .idle)
     }
 
     func testSaveSuccessEmitsSavedEffect() async {
@@ -143,7 +149,7 @@ final class IdentificationSectionViewModelTests: XCTestCase {
             id: "emp-1",
             countryId: "cz",
             nationalityId: "cz",
-            passportId: "P123",
+            passportId: "P1234567",
             entityType: ._1,
             registrationNumber: "12345678"
         ))
@@ -156,7 +162,7 @@ final class IdentificationSectionViewModelTests: XCTestCase {
 
         await vm.save()
         XCTAssertTrue(emitted)
-        XCTAssertEqual(client.identificationCommand?.passportId, "P123")
+        XCTAssertEqual(client.identificationCommand?.passportId, "P1234567")
     }
 
     func testSaveApiFailureSetsActionError() async {
@@ -164,7 +170,7 @@ final class IdentificationSectionViewModelTests: XCTestCase {
             id: "emp-1",
             countryId: "cz",
             nationalityId: "cz",
-            passportId: "P123",
+            passportId: "P1234567",
             entityType: ._1,
             registrationNumber: "12345678"
         ))
@@ -173,5 +179,157 @@ final class IdentificationSectionViewModelTests: XCTestCase {
         await vm.load()
         await vm.save()
         guard case .error = vm.action else { return XCTFail("expected action error") }
+        XCTAssertNotNil(snackbar.current)
+    }
+
+    // MARK: Field errors
+
+    private var passportLength: String {
+        ApiErrorLocalizer().message(for: ApiError(code: "validation.passport_id.invalid_length"))
+    }
+
+    private func loadValidForm() async -> IdentificationSectionViewModel {
+        client.employeeResult = .success(EmployeeItem(
+            id: "emp-1",
+            countryId: "cz",
+            nationalityId: "cz",
+            passportId: "P1234567",
+            entityType: ._1,
+            registrationNumber: "12345678"
+        ))
+        let vm = makeVM()
+        await vm.load()
+        return vm
+    }
+
+    /// The server's 5 to 20, counted on the trimmed value it is sent.
+    func testAPassportOfTheWrongLengthIsRefusedOnTheDevice() async {
+        let vm = await loadValidForm()
+        for passport in ["P12", "  P123  ", String(repeating: "9", count: 21)] {
+            vm.form.passportId = passport
+            await vm.save()
+            XCTAssertEqual(vm.form.passportError, passportLength, passport)
+        }
+        XCTAssertNil(client.identificationCommand)
+        XCTAssertNil(snackbar.current)
+    }
+
+    func testAPassportIsSentTrimmed() async {
+        let vm = await loadValidForm()
+        vm.form.passportId = "  P1234  "
+
+        await vm.save()
+
+        XCTAssertNil(vm.form.passportError)
+        XCTAssertEqual(client.identificationCommand?.passportId, "P1234")
+    }
+
+    func testARegisterRefusalIsNamedUnderTheRegistrationNumber() async {
+        let key = "validation.registration_number.not_registered"
+        client.identificationUpdateResult = .failure(ApiError(code: key, httpStatus: 400, keys: [key]))
+        let vm = await loadValidForm()
+
+        await vm.save()
+
+        XCTAssertEqual(vm.form.registrationNumberError, ApiErrorLocalizer().message(for: ApiError(code: key)))
+        XCTAssertNil(vm.form.passportError)
+        XCTAssertNil(snackbar.current)
+        XCTAssertEqual(vm.action, .idle)
+    }
+
+    /// Each refusal the response carries is named under its own field, in its own words.
+    func testEveryFieldRefusalTheResponseCarriesIsNamed() async {
+        let passport = "validation.passport_id.invalid_length"
+        let format = "validation.registration_number.invalid_format"
+        client.identificationUpdateResult = .failure(
+            ApiError(code: passport, httpStatus: 400, keys: [passport, format])
+        )
+        let vm = await loadValidForm()
+
+        await vm.save()
+
+        XCTAssertEqual(vm.form.passportError, passportLength)
+        XCTAssertEqual(vm.form.registrationNumberError, ApiErrorLocalizer().message(for: ApiError(code: format)))
+        XCTAssertNil(snackbar.current)
+    }
+
+    func testARefusalNoFieldOwnsStaysASnackbar() async {
+        let key = "employee.business_registry_unavailable"
+        client.identificationUpdateResult = .failure(ApiError(code: key, httpStatus: 400, keys: [key]))
+        let vm = await loadValidForm()
+
+        await vm.save()
+
+        XCTAssertNotNil(snackbar.current)
+        XCTAssertNil(vm.form.registrationNumberError)
+        guard case .error = vm.action else { return XCTFail("expected action error") }
+    }
+
+    func testEachErrorClearsWhenItsOwnFieldChanges() async {
+        client.employeeResult = .success(EmployeeItem(id: "emp-1"))
+        let vm = makeVM()
+        await vm.load()
+        await vm.save()
+
+        vm.form.passportId = "P1"
+        XCTAssertNil(vm.form.passportError)
+        XCTAssertNotNil(vm.form.nationalityError)
+
+        vm.form.nationalityId = "cz"
+        XCTAssertNil(vm.form.nationalityError)
+        XCTAssertNotNil(vm.form.registrationNumberError)
+
+        vm.form.registrationNumber = "1"
+        XCTAssertNil(vm.form.registrationNumberError)
+        XCTAssertNotNil(vm.form.businessCountryError)
+
+        vm.form.businessCountryId = "cz"
+        XCTAssertNil(vm.form.businessCountryError)
+    }
+
+    /// The server checks a registration number against the business country's format and register, so its
+    /// refusal no longer holds once that country changes.
+    func testARefusedRegistrationNumberClearsWhenTheBusinessCountryChanges() async {
+        let key = "validation.registration_number.invalid_format"
+        client.identificationUpdateResult = .failure(ApiError(code: key, httpStatus: 400, keys: [key]))
+        let vm = await loadValidForm()
+        await vm.save()
+        XCTAssertEqual(vm.form.registrationNumberError, ApiErrorLocalizer().message(for: ApiError(code: key)))
+
+        vm.form.businessCountryId = "cz"
+        XCTAssertNotNil(vm.form.registrationNumberError, "picking the same country again changes nothing")
+
+        vm.form.businessCountryId = "sk"
+        XCTAssertNil(vm.form.registrationNumberError)
+    }
+
+    // MARK: A company row without its legal name
+
+    func testACompanyRowWithoutALegalNameSaysWhyOnTheLockedField() async {
+        client.employeeResult = .success(EmployeeItem(id: "emp-1", entityType: ._2, legalEntityName: " "))
+        let vm = makeVM()
+        await vm.load()
+
+        XCTAssertTrue(vm.form.isLegalEntity)
+        XCTAssertEqual(vm.form.legalEntityNameError, L10n.Profile.errorLegalEntityNameMissing)
+
+        client.employeeResult = .success(EmployeeItem(id: "emp-1", entityType: ._2))
+        await vm.load()
+
+        XCTAssertTrue(vm.form.isLegalEntity)
+        XCTAssertEqual(vm.form.legalEntityNameError, L10n.Profile.errorLegalEntityNameMissing)
+    }
+
+    func testACompanyRowWithItsLegalNameAndANaturalPersonShowNoLegalNameError() async {
+        client.employeeResult = .success(EmployeeItem(id: "emp-1", entityType: ._2, legalEntityName: "Acme s.r.o."))
+        let vm = makeVM()
+        await vm.load()
+        XCTAssertTrue(vm.form.isLegalEntity)
+        XCTAssertNil(vm.form.legalEntityNameError)
+
+        client.employeeResult = .success(EmployeeItem(id: "emp-1", entityType: ._1))
+        await vm.load()
+        XCTAssertFalse(vm.form.isLegalEntity)
+        XCTAssertNil(vm.form.legalEntityNameError)
     }
 }

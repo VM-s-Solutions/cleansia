@@ -51,12 +51,13 @@ struct OrderPhotosScreen: View {
         }
     }
 
+    /// As many columns as the width holds: three on every iPhone, the 375pt ones included, as before, and more on a
+    /// wider screen. The minimum sits under the 112pt thumbnail because a 375pt phone's three cells are 109pt.
+    static let gridColumns = [GridItem(.adaptive(minimum: 108))]
+
     private func grid(_ photos: [GetOrderPhotosOrderPhotoDto]) -> some View {
         ScrollView {
-            LazyVGrid(
-                columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())],
-                spacing: Spacing.xs
-            ) {
+            LazyVGrid(columns: Self.gridColumns, spacing: Spacing.xs) {
                 ForEach(Array(photos.enumerated()), id: \.offset) { index, photo in
                     Button {
                         fullscreen = PhotoIndex(id: index)

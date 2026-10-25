@@ -180,6 +180,10 @@ final class OrderNotesViewModel: ViewModel {
             .success(())
         }
 
+        func dropOrder(orderId _: String) async -> ApiResult<Int> {
+            .success(0)
+        }
+
         func addNote(orderId _: String, content _: String) async -> ApiResult<Void> {
             .success(())
         }

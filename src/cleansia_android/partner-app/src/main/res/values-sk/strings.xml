@@ -575,11 +575,15 @@
     <string name="error_profile_not_loaded">Profil sa ešte nenačítal</string>
     <string name="error_name_required">Meno kontaktu je povinné</string>
     <string name="error_phone_required">Telefón kontaktu je povinný</string>
+    <string name="error_phone_number_required">Telefónne číslo je povinné</string>
+    <string name="error_phone_number_invalid">Zadajte číslo aj s predvoľbou krajiny, napr. +421 912 345 678</string>
     <string name="error_pick_nationality">Vyberte svoju národnosť</string>
     <string name="error_passport_required">Zadajte číslo pasu / OP</string>
     <string name="error_pick_business_country">Vyberte krajinu, kde je vaše podnikanie registrované</string>
     <string name="error_registration_number_required">Zadajte IČO</string>
+    <string name="error_legal_entity_name_missing">Chýba registrovaný názov vašej firmy. Požiadajte podporu o doplnenie — tu ho zmeniť nemožno.</string>
     <string name="error_pick_address_first">Najprv vyberte adresu na mape</string>
+    <string name="error_address_incomplete">Na tomto mieste nie je úplná adresa. Posuňte špendlík na budovu alebo vyhľadajte ulicu a číslo domu.</string>
 
     <!-- Profile Validation -->
     <string name="validation_required">Toto pole je povinné</string>
@@ -588,7 +592,6 @@
     <string name="validation_max_100">Maximálne 100 znakov</string>
     <string name="validation_date_past">Dátum musí byť v minulosti</string>
     <string name="validation_min_age_18">Musíte mať aspoň 18 rokov</string>
-    <string name="validation_max_age_120">Neplatný dátum narodenia</string>
     <string name="validation_invalid_date">Neplatný formát dátumu</string>
     <string name="validation_invalid_phone">Neplatný formát telefónneho čísla</string>
     <string name="validation_invalid_email">Neplatný formát e-mailu</string>
@@ -924,6 +927,13 @@
     <string name="order_cash_not_paid_confirm_message_no_amount">Použite to len vtedy, keď zákazník nezaplatil nič. Ak zaplatil len časť, dajte namiesto toho vedieť spoločnosti. Upratovanie sa dokončí a dostanete zaň zaplatené. Zákazník bude dlžiť cenu upratovania, dozvie sa to a kým nezaplatí, nemôže si nič ďalšie objednať; administrátor dostane upozornenie. Vrátiť to môže len administrátor.</string>
     <string name="order_cash_not_paid_confirm_action">Áno, nahlásiť</string>
     <string name="order_cash_not_paid_reported_toast">Nahlásené. Upratovanie je dokončené a zákazník bol informovaný.</string>
+    <string name="order_drop_action">Odstúpiť od zákazky</string>
+    <string name="order_drop_confirm_title">Odstúpiť od tejto zákazky?</string>
+    <string name="order_drop_confirm_message">Budete zo zákazky odobratí a vaše miesto sa vráti do ponuky ostatným upratovačom. Objednávka zákazníka sa neruší. Ak ste na zákazke jediný upratovač, nebude mať žiadneho upratovača, kým si ju niekto nevezme.</string>
+    <string name="order_drop_confirm_action">Áno, odstúpiť</string>
+    <string name="order_drop_keep">Ponechať si zákazku</string>
+    <string name="order_dropped_toast_no_crew">Od zákazky ste odstúpili. Teraz nemá žiadneho upratovača: je späť v ponuke.</string>
+    <string name="order_dropped_toast">Od zákazky ste odstúpili. Vaše miesto je späť v ponuke pre ostatných upratovačov.</string>
 
     <!-- Backend error-key translations -->
     <string name="error_key_order_after_photos_required">Pred dokončením zákazky urobte aspoň jednu fotografiu \"po\".</string>
@@ -1191,6 +1201,7 @@
     <string name="error_validation_invalid_age">Zadajte prosím platný vek.</string>
     <string name="error_validation_invalid_phone_number">Zadajte prosím platné telefónne číslo.</string>
     <string name="error_validation_invalid_national_id">Zadajte prosím platné rodné číslo.</string>
+    <string name="error_validation_passport_id_invalid_length">Číslo pasu / OP musí mať 5 až 20 znakov.</string>
     <string name="error_validation_invalid_tax_id">Zadajte prosím platné DIČ.</string>
     <string name="error_validation_invalid_iban">Zadajte prosím platný IBAN.</string>
     <string name="error_validation_invalid_zip_code">Zadajte prosím platné PSČ.</string>

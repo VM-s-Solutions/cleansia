@@ -1,7 +1,9 @@
-﻿using Cleansia.Core.AppServices.Abstractions;
+﻿using System.Globalization;
+using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Notifications;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Core.Domain.Specifications;
@@ -42,6 +44,10 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// filled crew included — has still not started half an hour after its start
 /// (<see cref="CleanerNoShow"/>). It never cancels or refunds: only an administrator confirms a no-show
 /// (owner ruling 2026-09-28). → /product/business-rules#when-the-cleaner-cancels-or-no-shows</para>
+///
+/// <para>It also tells them, once per order, when a job nobody has taken is inside a day of its start,
+/// while there is still time to staff it before <see cref="CancelUnfilledOrders"/> cancels it.
+/// → /product/business-rules#admin-notifications</para>
 /// </summary>
 public class SendCleanerJobReminders
 {
@@ -51,13 +57,17 @@ public class SendCleanerJobReminders
     /// <param name="NudgeLeadMinutesHigh">Upper edge of the not-set-off nudge window.</param>
     /// <param name="NotStartedAlertMinutes">How long past the start a job may go unstarted before the administrators are told.</param>
     /// <param name="NotStartedLookbackHours">How far past the start the alert still looks, which bounds the scan.</param>
+    /// <param name="NoCleanerLeadHours">How close to its start a job with nobody on it is reported to the administrators.</param>
+    /// <param name="NoCleanerQuietMinutes">How long after a status change or a customer confirmation that report waits.</param>
     public record Command(
         int SoonLeadMinutesLow = 110,
         int SoonLeadMinutesHigh = 130,
         int NudgeLeadMinutesLow = 25,
         int NudgeLeadMinutesHigh = 40,
         int NotStartedAlertMinutes = 30,
-        int NotStartedLookbackHours = 24) : ICommand<Response>;
+        int NotStartedLookbackHours = 24,
+        int NoCleanerLeadHours = 24,
+        int NoCleanerQuietMinutes = 60) : ICommand<Response>;
 
     public class Validator : AbstractValidator<Command>
     {
@@ -69,10 +79,12 @@ public class SendCleanerJobReminders
             RuleFor(x => x.SoonLeadMinutesHigh).GreaterThan(x => x.SoonLeadMinutesLow);
             RuleFor(x => x.NotStartedAlertMinutes).InclusiveBetween(0, 240);
             RuleFor(x => x.NotStartedLookbackHours).InclusiveBetween(1, 168);
+            RuleFor(x => x.NoCleanerLeadHours).InclusiveBetween(1, 168);
+            RuleFor(x => x.NoCleanerQuietMinutes).InclusiveBetween(0, 240);
         }
     }
 
-    public record Response(int SoonSent, int NudgesSent, int Considered, int NotStartedAlerts = 0);
+    public record Response(int SoonSent, int NudgesSent, int Considered, int NotStartedAlerts = 0, int NoCleanerAlerts = 0);
 
     public class Handler(
         IOrderRepository orderRepository,
@@ -202,15 +214,17 @@ public class SendCleanerJobReminders
             }
 
             var notStartedAlerts = await AlertNotStartedAsync(command, now, cancellationToken);
+            var noCleanerAlerts = await AlertNoCleanerYetAsync(command, now, cancellationToken);
 
-            if (soonSent > 0 || nudgesSent > 0 || notStartedAlerts > 0)
+            if (soonSent > 0 || nudgesSent > 0 || notStartedAlerts > 0 || noCleanerAlerts > 0)
             {
                 logger.LogInformation(
-                    "SendCleanerJobReminders sent {Soon} two-hour notices and {Nudges} nudges over {Considered} assignments, and {NotStarted} not-started alerts",
-                    soonSent, nudgesSent, considered, notStartedAlerts);
+                    "SendCleanerJobReminders sent {Soon} two-hour notices and {Nudges} nudges over {Considered} assignments, {NotStarted} not-started alerts and {NoCleaner} no-cleaner-yet alerts",
+                    soonSent, nudgesSent, considered, notStartedAlerts, noCleanerAlerts);
             }
 
-            return BusinessResult.Success(new Response(soonSent, nudgesSent, considered, notStartedAlerts));
+            return BusinessResult.Success(
+                new Response(soonSent, nudgesSent, considered, notStartedAlerts, noCleanerAlerts));
         }
 
         private async Task<int> AlertNotStartedAsync(Command command, DateTime now, CancellationToken cancellationToken)
@@ -240,6 +254,65 @@ public class SendCleanerJobReminders
                     {
                         alerts++;
                     }
+                }
+
+                await unitOfWork.CommitAsync(cancellationToken);
+            }
+
+            return alerts;
+        }
+
+        private async Task<int> AlertNoCleanerYetAsync(Command command, DateTime now, CancellationToken cancellationToken)
+        {
+            var horizon = now.AddHours(command.NoCleanerLeadHours);
+            var quietSince = now.AddMinutes(-command.NoCleanerQuietMinutes);
+            var unstaffed = await orderRepository.GetQueryableIgnoringTenant()
+                .AsNoTracking()
+                .Where(OrderAvailability.IsOfferableSql(now))
+                .Where(o => CancelUnfilledOrders.NeverStarted.Contains(o.CurrentStatus)
+                    && !o.AssignedEmployees.Any()
+                    && o.CleaningDateTime > now
+                    && o.CleaningDateTime <= horizon
+                    && (o.PreferredHoldUntilUtc == null || o.PreferredHoldUntilUtc <= now)
+                    && !o.OrderStatusHistory.Any(s => s.CreatedOn > quietSince)
+                    && (o.CustomerConfirmedAt == null || o.CustomerConfirmedAt <= quietSince))
+                .ToListAsync(cancellationToken);
+
+            var alerts = 0;
+            foreach (var tenantGroup in unstaffed.GroupBy(o => o.TenantId ?? string.Empty))
+            {
+                tenantProvider.ClearTenantOverride();
+                if (!string.IsNullOrEmpty(tenantGroup.Key))
+                {
+                    tenantProvider.SetTenantOverride(tenantGroup.Key);
+                }
+
+                foreach (var order in tenantGroup)
+                {
+                    // Read before raising: the e-mail keys its outbox row on the order, so a repeat on a later
+                    // tick would fail this company's commit instead of collapsing.
+                    if (string.IsNullOrEmpty(order.TenantId)
+                        || await userNotificationRepository.AnyForEventIgnoringTenantAsync(
+                            order.TenantId, AdminNotificationEventCatalog.OrderNoCleanerYet, "orderId", order.Id,
+                            cancellationToken))
+                    {
+                        continue;
+                    }
+
+                    await adminNotifier.NotifyAsync(
+                        new AdminEvent(
+                            AdminNotificationEventCatalog.OrderNoCleanerYet,
+                            order.TenantId,
+                            Subject: order.Id,
+                            Args: new Dictionary<string, string>
+                            {
+                                ["orderNumber"] = order.DisplayOrderNumber,
+                                ["cleaningDateTime"] = DateTime.SpecifyKind(order.CleaningDateTime, DateTimeKind.Utc)
+                                    .ToString("O", CultureInfo.InvariantCulture),
+                                ["orderId"] = order.Id,
+                            }),
+                        cancellationToken);
+                    alerts++;
                 }
 
                 await unitOfWork.CommitAsync(cancellationToken);

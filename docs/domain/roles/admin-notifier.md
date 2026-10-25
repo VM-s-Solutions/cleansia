@@ -7,10 +7,11 @@
 > tenth — a chargeback that matches no order — shipped 2026-09-28, the eleventh to fourteenth — a job
 > not started, a refund stuck, a refund to retry, a lockout reported — with the owner rulings of
 > 2026-09-28, the fifteenth — a referral held for review — with the ruling of 2026-10-05, the
-> sixteenth — a customer who did not pay the cash at the door — with the ruling of 2026-10-06, and the
+> sixteenth — a customer who did not pay the cash at the door — with the ruling of 2026-10-06, the
 > seventeenth — a guest's refund claimed for a cancellation that never went through, split from the refund
-> to retry — the same day. The
-> files that are the role: `Core.Domain/Notifications/AdminNotificationEventCatalog.cs` (the seventeen keys) ·
+> to retry — the same day, and the eighteenth — a job nobody has taken inside a day of its start — with
+> the owner defaults of 2026-10-24. The
+> files that are the role: `Core.Domain/Notifications/AdminNotificationEventCatalog.cs` (the eighteen keys) ·
 > `Core.AppServices/Features/AdminNotifications/AdminEventCatalog.cs` (per key: the audience and the exact
 > arg set, in e-mail order) · `Core.AppServices/Services/{IAdminNotifier,AdminNotifier}.cs` ·
 > `Core.AppServices/Services/EmailService.AdminNotification.cs` (the copy, five locales) ·
@@ -28,7 +29,7 @@ failing e-mail can never fail the command, and nothing the notifier reads depend
 
 ## Collaborators
 
-- **`AdminNotificationEventCatalog`** (Domain) — the seventeen `admin.*` keys and `All`; `NotificationFeedEventKeys.Admin`
+- **`AdminNotificationEventCatalog`** (Domain) — the eighteen `admin.*` keys and `All`; `NotificationFeedEventKeys.Admin`
   **is** `All`, so the feed audience `NotificationFeedAudience.Admin = 2` serves the catalogue by
   construction. Disjoint from the customer and partner keysets; `IsFeedEvent` does not know them, so the
   push seam cannot write an admin row. Every key maps to `null` in `GetCategoryFor`: no category, nothing
@@ -38,7 +39,7 @@ failing e-mail can never fail the command, and nothing the notifier reads depend
   throws on an undeclared or a missing arg, so the copy and the site cannot disagree on what `{1}` is and a
   site cannot smuggle a name in. `Audience` is the **name of an administrator set** (ADR-0066 D8) — never a
   policy, because the notifier filters rows, not principals: order events, disputes, payment failures,
-  crew lost, a cleaner not started, a lockout reported, a door non-payment and a referral held → `SupportOrAbove`; erasure failures → `ManagerOrAbove`; the three
+  crew lost, a cleaner not started, a job nobody has taken, a lockout reported, a door non-payment and a referral held → `SupportOrAbove`; erasure failures → `ManagerOrAbove`; the three
   company milestones → `AdministratorOnly`; **`admin.dispute.chargeback`, `admin.dispute.chargeback_unmatched`,
   `admin.payment.refund_stuck`, `admin.payment.refund_needs_retry` and `admin.payment.refund_without_cancel`
   → `AdminOnly`, every role** — Support
@@ -55,9 +56,12 @@ failing e-mail can never fail the command, and nothing the notifier reads depend
 - **`IUserNotificationRepository.Add`** — one `UserNotification.Create(admin.Id, key, argsJson, tenantId)`
   per recipient, exactly as `NotificationProducer` writes a client row; the args serialised once by the
   notifier's own serialiser. **`AnyForEventIgnoringTenantAsync(tenantId, key, argName, argValue)`** — tenant-ignoring,
-  explicit predicate, a **jsonb containment** (`@>`) on the one `{arg: value}` pair; the guard the two
-  sites that can repeat one logical event read before calling (a repeated card decline on one order; two
-  overlapping archive builds of one frozen company).
+  explicit predicate, a **jsonb containment** (`@>`) on the one `{arg: value}` pair; the guard these
+  sites read before calling: the card decline (a repeated decline on one order), the archive (two
+  overlapping archive builds of one frozen company), the not-started alert
+  (whichever of its three callers comes first), the no-cleaner-yet alert (a later five-minute tick) and
+  the three refund alerts (the hourly re-drive and the refund seam), each on `orderId` but the archive,
+  which reads the day — the sites invariant 5 lists.
 - **`IAppConfigurationProvider.GetTenantSettingAsync(tenantId, key)`** + `TenantSettingReader.GetAsync(provider,
   tenantId, definition)` — the mailbox read **by argument** (`IgnoreQueryFilters().Where(TenantId == tenantId
   && Key == key)`), beside the ambient overload every other reader uses. The notifier never calls the
@@ -78,7 +82,8 @@ failing e-mail can never fail the command, and nothing the notifier reads depend
   `SendEmailMessage` shape, act-then-claim on the deterministic key; a transport fault throws (retry, then
   poison), a malformed body acks. **`IEmailService.SendAdminNotificationEmailAsync(email, key, args, lang)`**
   renders `admin-notification.html` with the chrome keys plus `{key}.Subject` / `{key}.Body` (or
-  `.BodyUnderWay` for a crew lost `OnTheWay`/`InProgress`; `cause` through `{key}.Cause.{value}`; an ISO
+  `.BodyUnderWay` for a crew lost `OnTheWay`/`InProgress`, which neither release writer produces since
+  2026-10-25; `cause` through `{key}.Cause.{value}`; an ISO
   instant as `dd.MM.yyyy HH:mm UTC`, a `yyyy-MM-dd` day as `d. M. yyyy`) — in-code defaults per locale under
   admin `EmailTemplateTranslation` rows for `EmailType.AdminNotification = 10`.
 - **The sites** — each names the company from the subject it already holds, never from the override:
@@ -96,7 +101,14 @@ failing e-mail can never fail the command, and nothing the notifier reads depend
   · `CleanerNoShow.AlertAsync` (`admin.order.cleaner_not_started`, shared by `SendCleanerJobReminders`' third arm,
   `ReportGuestCleanerNoShow` and `CreateDispute`'s *service not provided* filing on a staffed job nobody
   started; subject the order id, guarded by `AnyForEventIgnoringTenantAsync` on `orderId`, so whichever comes first raises it
-  and the order's e-mail outbox key is written once) · `ReportCashNotPaid` (`admin.order.cash_not_paid`, the
+  and the order's e-mail outbox key is written once) · `SendCleanerJobReminders.AlertNoCleanerYetAsync`
+  (`admin.order.no_cleaner_yet`, since 2026-10-24, the sweep's fourth arm, after the not-started alert:
+  one cross-company read without tracking — status in `CancelUnfilledOrders.NeverStarted` (`New`,
+  `Confirmed`), no assignment row, `OrderAvailability.IsOfferableSql`, a start in `(now, now + 24 h]`, no
+  live preferred hold, and no status row or customer confirmation in the last 60 min; subject the order
+  id, args `orderNumber`, `cleaningDateTime` (ISO-8601 UTC) and `orderId`; guarded by
+  `AnyForEventIgnoringTenantAsync` on `orderId`, an order with no `TenantId` skipped; the override set per
+  company and one commit per company, with no catch) · `ReportCashNotPaid` (`admin.order.cash_not_paid`, the
   cleaner's door non-payment report; subject the order id, args `orderNumber`, `amount`, `orderId`; no guard
   is needed, because the report needs the order in progress and leaves it completed) ·
   `RedrivePendingRefunds` (`admin.payment.refund_stuck` /
@@ -163,8 +175,9 @@ failing e-mail can never fail the command, and nothing the notifier reads depend
    exactly `EmailArgOrder` and the notifier throws otherwise.
 5. **Each site calls once, inside the business write's unit of work, and a redelivery adds nothing**: the
    Stripe short-circuit for the webhook arms; the candidate predicate for the daily retry; the counts guard
-   for the wind-down run; `AnyForEventIgnoringTenantAsync` for the decline, the archive, the not-started alert and the
-   three refund alerts; the order's own status for the door non-payment, which a completed order refuses.
+   for the wind-down run; `AnyForEventIgnoringTenantAsync` for the decline, the archive, the not-started alert, the
+   no-cleaner-yet alert and the three refund alerts; the order's own status for the door non-payment, which a
+   completed order refuses.
 6. **The four admin routes answer 401 anonymous, 403 to an Employee token, 200 to an administrator**; a
    mark-read on another administrator's row is refused; a mark-read writes **no** `AdminActionAudits` row.
 7. **The settings page's `Email` branch** refuses a malformed address client-side with the server's

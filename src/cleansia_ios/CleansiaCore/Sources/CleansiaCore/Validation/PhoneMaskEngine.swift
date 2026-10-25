@@ -53,7 +53,7 @@ public struct PhoneMaskEngine {
 
         var wireValue = ""
         var significantBeforeCaret = 0
-        for (index, character) in candidate.enumerated() where PhoneNumberSanitizer.keeps(character, at: index) {
+        for (index, character) in candidate.enumerated() where PhoneNumberSanitizer.keeps(character, after: wireValue) {
             wireValue.append(character)
             if index < caretInCandidate { significantBeforeCaret += 1 }
         }

@@ -34,7 +34,13 @@ public struct SlideToConfirmThumb: Equatable {
     }
 
     public func progress(maxX: CGFloat) -> CGFloat {
-        maxX > 0 ? offset / maxX : 0
+        maxX > 0 ? min(offset / maxX, 1) : 0
+    }
+
+    /// Where the thumb is drawn on a track `maxX` long: held on it when a fold has shrunk the track under a thumb
+    /// parked at its old end.
+    public func drawnOffset(maxX: CGFloat) -> CGFloat {
+        min(offset, max(maxX, 0))
     }
 }
 
@@ -118,7 +124,7 @@ public struct SlideToConfirm: View {
             .fill(thumbColor)
             .frame(width: size, height: size)
             .overlay(thumbIcon(size: size))
-            .offset(x: thumb.offset)
+            .offset(x: thumb.drawnOffset(maxX: maxX))
             .gesture(dragGesture(maxX: maxX))
     }
 

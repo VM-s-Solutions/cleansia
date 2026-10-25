@@ -88,6 +88,34 @@ class OrderDetailCallSiteTest {
     }
 
     @Test
+    fun `cancelling the job is offered through its gate and sent only from its confirm`() {
+        assertTrue(
+            "the footer must offer Cancel job through droppable(now)",
+            detailScreen.contains("canDrop = order.droppable(now)"),
+        )
+        assertTrue(
+            "the clock behind the gate must be read again on every return to the screen",
+            detailScreen.contains("LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { now = Instant.now() }"),
+        )
+        assertTrue(
+            "the clock must be read again at the start, when the gate closes",
+            Regex("""LaunchedEffect\(start, now\)\s*\{\s*delay\(""").containsMatchIn(detailScreen),
+        )
+        assertTrue(
+            "the drop must be sent from the confirm dialog",
+            Regex("""confirmingDrop = false\s+viewModel\.dropOrder\(\)""").containsMatchIn(detailScreen),
+        )
+        assertTrue(
+            "the screen must leave the job once the drop lands",
+            Regex("""viewModel\.left\.collect\s*\{\s*onNavigateBack\(\)\s*\}""").containsMatchIn(detailScreen),
+        )
+        assertFalse(
+            "the gate stays out of OrderPrimaryAction.kt, whose first `when (status)` the parity checker reads",
+            primaryAction.contains("droppable"),
+        )
+    }
+
+    @Test
     fun `the scope card renders the seat facts`() {
         assertTrue(
             "ScopeCard must resolve the crew through orderCrew() — TakeOrder's free-seat " +

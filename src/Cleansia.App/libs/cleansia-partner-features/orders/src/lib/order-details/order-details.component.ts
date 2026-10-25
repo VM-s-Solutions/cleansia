@@ -36,6 +36,7 @@ import {
   canTakeOrder,
   canStartOrder,
   canCompleteOrder,
+  canDropOrder,
   canManagePhotos,
   canUploadBeforePhotos,
   canUploadAfterPhotos,
@@ -243,6 +244,13 @@ export class OrderDetailsComponent implements OnInit {
     return canReportCashNotPaid(order, eid);
   });
 
+  protected readonly canDropOrder = computed((): boolean => {
+    const order = this.orderDetails();
+    const eid = this.currentEmployeeId();
+    if (!order || !eid) return false;
+    return canDropOrder(order, eid, Date.now());
+  });
+
   constructor() {
     effect(() => {
       const orderDetails = this.orderDetails();
@@ -332,6 +340,10 @@ export class OrderDetailsComponent implements OnInit {
       return;
     }
     this.facade.openReportCashNotPaidDialog();
+  }
+
+  protected openDropOrder(): void {
+    this.facade.openDropOrderDialog(() => this.navigateToOrders());
   }
 
   protected onLockoutReported(): void {

@@ -3,7 +3,7 @@ import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { PartnerAuthService } from '@cleansia/partner-services';
 import { SnackbarService } from '@cleansia/services';
-import { takeUntil } from 'rxjs';
+import { catchError, finalize, of, takeUntil } from 'rxjs';
 
 @Injectable()
 export class ConfirmEmailFacade extends UnsubscribeControlDirective {
@@ -13,6 +13,7 @@ export class ConfirmEmailFacade extends UnsubscribeControlDirective {
   readonly isResendDisabled = signal(false);
   readonly resendCodeTimeout = signal(30);
   readonly emailKnown = signal(false);
+  readonly confirming = signal(false);
 
   formGroup: FormGroup = this.createConfirmEmailFormGroup();
 
@@ -28,7 +29,13 @@ export class ConfirmEmailFacade extends UnsubscribeControlDirective {
     this.emailKnown.set(emailControl.valid);
   }
 
+  // The boxes complete a code again when AutoFill delivers it twice; one confirm at a time keeps the
+  // second from spending an attempt.
   confirmEmail(): void {
+    if (this.confirming()) {
+      return;
+    }
+
     if (this.formGroup.invalid) {
       this.snackbarService.showErrorTranslated(
         'validation.common.not_all_fields_filled'
@@ -37,9 +44,14 @@ export class ConfirmEmailFacade extends UnsubscribeControlDirective {
     }
 
     const { code, email } = this.formGroup.value;
+    this.confirming.set(true);
     this.authService
       .confirmUserEmail(code, email)
-      .pipe(takeUntil(this.destroyed$))
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => of(null)),
+        finalize(() => this.confirming.set(false))
+      )
       .subscribe();
   }
 

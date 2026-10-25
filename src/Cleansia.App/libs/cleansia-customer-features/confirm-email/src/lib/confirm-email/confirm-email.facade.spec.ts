@@ -4,7 +4,7 @@ import { CustomerAuthService } from '@cleansia/customer-services';
 import { loadCustomerUser } from '@cleansia/customer-stores';
 import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { ConfirmEmailFacade } from './confirm-email.facade';
 
 describe('ConfirmEmailFacade (customer)', () => {
@@ -128,6 +128,40 @@ describe('ConfirmEmailFacade (customer)', () => {
       'auth.confirm_email.error'
     );
     expect(router.navigate).not.toHaveBeenCalled();
+  });
+
+  it('ignores a confirm while one is in flight, so a code completed twice is sent once', () => {
+    const pending = new Subject<unknown>();
+    authService.confirmUserEmail.mockReturnValue(pending);
+    facade.setEmail('jan@example.com');
+    facade.formGroup.get('code')?.setValue('123456');
+
+    facade.confirmEmail();
+    facade.confirmEmail();
+
+    expect(authService.confirmUserEmail).toHaveBeenCalledTimes(1);
+    expect(facade.confirming()).toBe(true);
+
+    pending.next({});
+    pending.complete();
+
+    expect(router.navigate).toHaveBeenCalledTimes(1);
+    expect(facade.confirming()).toBe(false);
+  });
+
+  it('sends the code again once the confirm in flight has been refused', () => {
+    const pending = new Subject<unknown>();
+    authService.confirmUserEmail.mockReturnValueOnce(pending).mockReturnValue(of({}));
+    facade.setEmail('jan@example.com');
+    facade.formGroup.get('code')?.setValue('123456');
+
+    facade.confirmEmail();
+    pending.error({ status: 400 });
+    facade.confirmEmail();
+
+    expect(snackbar.showApiError).toHaveBeenCalledTimes(1);
+    expect(authService.confirmUserEmail).toHaveBeenCalledTimes(2);
+    expect(facade.confirming()).toBe(false);
   });
 
   it('resends using the email from state and runs the cooldown', () => {

@@ -72,6 +72,7 @@ extension CreateRecurringViewModelTests {
 
         catalog.result = .success(CatalogFixtures.slovak)
         vm.setSavedAddressId("addr-sk")
+        await eventually { !events.isEmpty }
         await drain()
 
         XCTAssertEqual(vm.formState.selectedServiceIds, ["s-1"])
@@ -384,5 +385,14 @@ extension CreateRecurringViewModelTests {
 
         XCTAssertEqual(vm.formState.rooms, PropertySize.maxRooms)
         XCTAssertEqual(vm.formState.bathrooms, PropertySize.maxBathrooms)
+    }
+
+    /// The fake catalogue answers off the main actor, so a fixed number of yields can finish first, as
+    /// they usually do in an optimised build; this waits for the answer itself.
+    private func eventually(_ condition: () -> Bool) async {
+        for _ in 0 ..< 500 {
+            if condition() { return }
+            await Task.yield()
+        }
     }
 }

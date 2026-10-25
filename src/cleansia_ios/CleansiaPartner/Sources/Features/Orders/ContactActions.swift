@@ -59,7 +59,7 @@ enum ContactActions {
 
     private static func dialable(_ phone: String?) -> String? {
         guard let phone else { return nil }
-        let cleaned = String(String.UnicodeScalarView(phone.unicodeScalars.filter(dialableCharacters.contains)))
+        let cleaned = String(String.UnicodeScalarView(phone.unicodeScalars.filter { dialableCharacters.contains($0) }))
         // A number with no digit at all (an empty field, "n/a") is not dialable;
         // returning nil hides the chip instead of offering a dead tap target.
         return cleaned.contains(where: \.isNumber) ? cleaned : nil

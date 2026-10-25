@@ -234,30 +234,6 @@ final class CreateRecurringViewModelTests: XCTestCase {
         XCTAssertTrue(vm.isValid)
     }
 
-    /// While the load is in error there is nothing to re-read for a new market; the first catalogue
-    /// the retry lands is the selected market's, and from then on the address drives the market.
-    func testTheMarketFollowsTheAddressAgainOnceARetriedCatalogueLands() async {
-        let catalog = FakeCatalogClient(result: .failure(ApiError(code: "x")))
-        let (vm, _) = makeVM(catalog: catalog, addressClient: twoMarkets())
-        await vm.load()
-        XCTAssertEqual(catalog.requestedCountryIds, ["cze"])
-
-        vm.setSavedAddressId("addr-sk")
-        await drain()
-        XCTAssertEqual(catalog.requestedCountryIds, ["cze"])
-
-        catalog.result = .success(CatalogFixtures.slovak)
-        await vm.retryCatalog()
-        XCTAssertEqual(catalog.requestedCountryIds, ["cze", "svk"])
-        XCTAssertEqual(vm.catalogState.loadedValue, CatalogFixtures.slovak)
-
-        catalog.result = .success(CatalogFixtures.populated)
-        vm.setSavedAddressId("addr-cz")
-        await drain()
-        XCTAssertEqual(catalog.requestedCountryIds, ["cze", "svk", "cze"])
-        XCTAssertEqual(vm.catalogState.loadedValue, CatalogFixtures.populated)
-    }
-
     func testARetryThatFailsAgainStaysInError() async {
         let catalog = FakeCatalogClient(result: .failure(ApiError(code: "x")))
         let (vm, _) = makeVM(catalog: catalog)

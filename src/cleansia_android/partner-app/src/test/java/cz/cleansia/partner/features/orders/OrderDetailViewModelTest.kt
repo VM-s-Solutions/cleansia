@@ -1,6 +1,7 @@
 package cz.cleansia.partner.features.orders
 
 import androidx.lifecycle.SavedStateHandle
+import app.cash.turbine.test
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.partner.R
@@ -73,11 +74,17 @@ class OrderDetailViewModelTest {
         errorKey = key,
     )
 
-    private fun crewOrder(status: Int, mySeatId: String = "seat-me", acceptance: WorkContractAcceptanceDto? = null) = OrderItem(
+    private fun crewOrder(
+        status: Int,
+        mySeatId: String = "seat-me",
+        acceptance: WorkContractAcceptanceDto? = null,
+        cleaningDateTime: String? = null,
+    ) = OrderItem(
         orderStatus = Code(value = status),
         isAssignedToCurrentUser = true,
         assignedEmployees = listOf(AssignedEmployeeDto(id = mySeatId, employeeId = "employee-me", fullName = "Me")),
         workContractAcceptances = listOfNotNull(acceptance),
+        cleaningDateTime = cleaningDateTime,
     )
 
     @Test
@@ -455,6 +462,133 @@ class OrderDetailViewModelTest {
         verify(exactly = 0) { snackbar.showSuccessKey(R.string.lockout_reported_toast) }
         assertTrue(vm.actionState.value is ActionState.Error)
         assertNull(vm.inFlightAction.value)
+    }
+
+    /** After a drop the job is not the cleaner's to read any more, so the screen leaves instead of re-reading it. */
+    @Test
+    fun `a drop that empties the crew says the job has no cleaner and leaves without re-reading it`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(crewOrder(status = 2))
+        coEvery { ordersRepository.dropOrder(orderId) } returns ApiResult.Success(0)
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.left.test {
+            vm.dropOrder()
+            advanceUntilIdle()
+            awaitItem()
+        }
+        verify(exactly = 1) { snackbar.showSuccessKey(R.string.order_dropped_toast_no_crew) }
+        verify(exactly = 0) { snackbar.showSuccessKey(R.string.order_dropped_toast) }
+        io.mockk.coVerify(exactly = 1) { ordersRepository.getById(orderId) }
+        assertEquals(ActionState.Idle, vm.actionState.value)
+        assertNull(vm.inFlightAction.value)
+    }
+
+    @Test
+    fun `a drop that leaves others on the crew says the place is back on the board`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(crewOrder(status = 0))
+        coEvery { ordersRepository.dropOrder(orderId) } returns ApiResult.Success(1)
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.left.test {
+            vm.dropOrder()
+            advanceUntilIdle()
+            awaitItem()
+        }
+        verify(exactly = 1) { snackbar.showSuccessKey(R.string.order_dropped_toast) }
+        verify(exactly = 0) { snackbar.showSuccessKey(R.string.order_dropped_toast_no_crew) }
+    }
+
+    @Test
+    fun `a refused drop snackbars the reason, stays on the job and re-reads it`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(crewOrder(status = 2))
+        coEvery { ordersRepository.dropOrder(orderId) } returns ApiResult.Error(refusal("order.not_confirmed"))
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.left.test {
+            vm.dropOrder()
+            advanceUntilIdle()
+            expectNoEvents()
+        }
+        verify(exactly = 1) { snackbar.showError("translated error") }
+        verify(exactly = 0) { snackbar.showSuccessKey(any()) }
+        io.mockk.coVerify(exactly = 2) { ordersRepository.getById(orderId) }
+        assertTrue(vm.actionState.value is ActionState.Error)
+        assertNull(vm.inFlightAction.value)
+    }
+
+    @Test
+    fun `a drop runs as its own action and a second tap sends nothing`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(crewOrder(status = 2))
+        val gate = kotlinx.coroutines.CompletableDeferred<ApiResult<Int>>()
+        coEvery { ordersRepository.dropOrder(orderId) } coAnswers { gate.await() }
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.dropOrder()
+        advanceUntilIdle()
+        assertEquals(OrderAction.Drop, vm.inFlightAction.value)
+
+        vm.dropOrder()
+        vm.notifyOnTheWay()
+        advanceUntilIdle()
+        io.mockk.coVerify(exactly = 1) { ordersRepository.dropOrder(orderId) }
+        io.mockk.coVerify(exactly = 0) { ordersRepository.notifyOnTheWay(any()) }
+
+        gate.complete(ApiResult.Success(1))
+        advanceUntilIdle()
+        assertNull(vm.inFlightAction.value)
+    }
+
+    /** The confirm can outlive the job it was opened on: a resume may have re-read it as on the way. */
+    @Test
+    fun `nothing is dropped once the job is past the gate`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(crewOrder(status = 3))
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.dropOrder()
+        advanceUntilIdle()
+
+        io.mockk.coVerify(exactly = 0) { ordersRepository.dropOrder(any()) }
+        assertEquals(ActionState.Idle, vm.actionState.value)
+        assertNull(vm.inFlightAction.value)
+    }
+
+    /** A screen left open across the start can still be confirmed; the gate read at the tap refuses it. */
+    @Test
+    fun `a drop is sent before the job's start and not once it has passed`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.dropOrder(orderId) } returns ApiResult.Success(1)
+        coEvery { ordersRepository.getById(orderId) } returns
+            ApiResult.Success(crewOrder(status = 2, cleaningDateTime = "2020-01-01T09:00:00Z"))
+        val started = viewModel()
+        advanceUntilIdle()
+
+        started.dropOrder()
+        advanceUntilIdle()
+        io.mockk.coVerify(exactly = 0) { ordersRepository.dropOrder(any()) }
+
+        coEvery { ordersRepository.getById(orderId) } returns
+            ApiResult.Success(crewOrder(status = 2, cleaningDateTime = "2999-01-01T09:00:00Z"))
+        val ahead = viewModel()
+        advanceUntilIdle()
+
+        ahead.dropOrder()
+        advanceUntilIdle()
+        io.mockk.coVerify(exactly = 1) { ordersRepository.dropOrder(orderId) }
     }
 
     @Test

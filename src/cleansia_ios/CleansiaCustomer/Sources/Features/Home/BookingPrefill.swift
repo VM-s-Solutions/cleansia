@@ -76,10 +76,10 @@ enum BookingPrefill {
         let catalogReady = !activeServiceIds.isEmpty || !activePackageIds.isEmpty
 
         let keptServiceIds = catalogReady
-            ? originalServiceIds.filter(activeServiceIds.contains)
+            ? originalServiceIds.filter { activeServiceIds.contains($0) }
             : originalServiceIds
         let keptPackageIds = catalogReady
-            ? originalPackageIds.filter(activePackageIds.contains)
+            ? originalPackageIds.filter { activePackageIds.contains($0) }
             : originalPackageIds
         let droppedAny = catalogReady &&
             (keptServiceIds.count != originalServiceIds.count || keptPackageIds.count != originalPackageIds.count)

@@ -31,6 +31,7 @@ struct RecurringBookingsScreen: View {
 
     var body: some View {
         content
+            .readableWidth()
             .navigationTitle(L10n.Recurring.bookingsTitle)
             .navigationBarTitleDisplayMode(.inline)
             .background(CleansiaColors.background.ignoresSafeArea())
@@ -39,6 +40,7 @@ struct RecurringBookingsScreen: View {
                 if vm.affordances.showCreateAction {
                     CleansiaPrimaryButton(L10n.Recurring.createFab, leadingIcon: "plus", action: onCreateNew)
                         .padding(Spacing.ml)
+                        .readableWidth()
                 }
             }
             .alert(

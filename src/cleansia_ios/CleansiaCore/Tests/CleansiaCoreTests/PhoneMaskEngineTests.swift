@@ -137,6 +137,15 @@ final class PhoneMaskEngineTests: XCTestCase {
         XCTAssertEqual(edit.text, "+420 421")
     }
 
+    func testPasteKeepsAPlusThatSomethingOtherThanADigitPrecedes() {
+        for pasted in [" +420 728 089 247", "\u{202D}+420 728 089 247\u{202C}", "Tel: +420 728 089 247"] {
+            let edit = engine.edit(current: "", range: 0 ..< 0, replacement: pasted)
+            XCTAssertEqual(edit.wireValue, "+420728089247", pasted)
+            XCTAssertEqual(edit.text, "+420 728 089 247", pasted)
+            XCTAssertEqual(edit.caret, 16, pasted)
+        }
+    }
+
     func testPasteIntoTheMiddleLeavesTheCaretAfterThePastedDigits() {
         let edit = engine.edit(current: "+420 247", range: 5 ..< 5, replacement: "728089")
         XCTAssertEqual(edit.wireValue, "+420728089247")
@@ -208,11 +217,19 @@ final class PhoneMaskEngineTests: XCTestCase {
         XCTAssertEqual(edit.caret, 3)
     }
 
-    /// A non-leading `+` would be dropped the next time the visible text is
-    /// re-read, so such a formatter has to be refused outright.
-    func testFormatterThatMovesThePlusIsIgnored() {
-        let moved = PhoneMaskEngine(formatter: StubPhoneDisplayFormatter { "(\($0))" })
+    /// A `+` behind a digit would be dropped the next time the visible text is
+    /// re-read, so a formatter that moves it there has to be refused outright.
+    func testFormatterThatMovesThePlusBehindADigitIsIgnored() {
+        let moved = PhoneMaskEngine(formatter: StubPhoneDisplayFormatter { String($0.dropFirst()) + "+" })
         XCTAssertEqual(moved.reformat("+420728").text, "+420728")
+    }
+
+    /// Re-reading "(+420728)" keeps its `+`, so a bracket in front of it rewrites nothing we submit.
+    func testFormatterMayOpenABracketBeforeThePlus() {
+        let bracketed = PhoneMaskEngine(formatter: StubPhoneDisplayFormatter { "(\($0))" })
+        let edit = bracketed.reformat("+420728")
+        XCTAssertEqual(edit.text, "(+420728)")
+        XCTAssertEqual(edit.wireValue, "+420728")
     }
 
     private var bracketing: PhoneMaskEngine {

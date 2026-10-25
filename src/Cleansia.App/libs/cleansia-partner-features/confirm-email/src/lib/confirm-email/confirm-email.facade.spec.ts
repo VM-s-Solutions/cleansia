@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { PartnerAuthService } from '@cleansia/partner-services';
 import { SnackbarService } from '@cleansia/services';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { ConfirmEmailFacade } from './confirm-email.facade';
 
 describe('ConfirmEmailFacade (partner)', () => {
@@ -61,6 +61,37 @@ describe('ConfirmEmailFacade (partner)', () => {
       '654321',
       'typed@example.com'
     );
+  });
+
+  it('ignores a confirm while one is in flight, so a code completed twice is sent once', () => {
+    const pending = new Subject<unknown>();
+    authService.confirmUserEmail.mockReturnValue(pending);
+    facade.setEmail('jan@example.com');
+    facade.formGroup.get('code')?.setValue('123456');
+
+    facade.confirmEmail();
+    facade.confirmEmail();
+
+    expect(authService.confirmUserEmail).toHaveBeenCalledTimes(1);
+    expect(facade.confirming()).toBe(true);
+
+    pending.complete();
+
+    expect(facade.confirming()).toBe(false);
+  });
+
+  it('sends the code again once the confirm in flight has been refused', () => {
+    const pending = new Subject<unknown>();
+    authService.confirmUserEmail.mockReturnValueOnce(pending).mockReturnValue(of({}));
+    facade.setEmail('jan@example.com');
+    facade.formGroup.get('code')?.setValue('123456');
+
+    facade.confirmEmail();
+    pending.error({ status: 400 });
+    facade.confirmEmail();
+
+    expect(authService.confirmUserEmail).toHaveBeenCalledTimes(2);
+    expect(facade.confirming()).toBe(false);
   });
 
   it('marks the email as known once navigation provides it', () => {

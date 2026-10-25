@@ -17,6 +17,8 @@ struct OrderDetailContent: View {
     var onDismissRefusal: () -> Void = {}
     var onReportLockout: (String) -> Void = { _ in }
     var onReportCashNotPaid: () -> Void = {}
+    var canDropOrder = false
+    var onDropOrder: () -> Void = {}
     @ObservedObject var checklistVM: CleaningChecklistViewModel
     @ObservedObject var notesVM: OrderNotesViewModel
     @ObservedObject var photosVM: OrderPhotosViewModel
@@ -37,6 +39,7 @@ struct OrderDetailContent: View {
     @State private var confirmingCash = false
     @State private var confirmingCashNotPaid = false
     @State private var decliningOffer = false
+    @State private var confirmingDrop = false
 
     private var cashConfirmMessage: String {
         guard let cashAmount = order.cashDueLabel else {
@@ -67,6 +70,13 @@ struct OrderDetailContent: View {
                 Button(L10n.cancel, role: .cancel) {}
             } message: {
                 Text(cashNotPaidConfirmMessage)
+            }
+            // Its way out is "Keep the job", never "Cancel", inside a dialog asking whether to cancel the job.
+            .alert(L10n.Orders.dropConfirmTitle, isPresented: $confirmingDrop) {
+                Button(L10n.Orders.dropConfirmAction, role: .destructive, action: onDropOrder)
+                Button(L10n.Orders.dropKeep, role: .cancel) {}
+            } message: {
+                Text(L10n.Orders.dropConfirmMessage)
             }
             .offerDeclineAlert(
                 decliningOffer ? preferredOffer : nil,
@@ -146,7 +156,9 @@ struct OrderDetailContent: View {
                 offersCashNotPaid: offersCashNotPaid,
                 onCashNotPaidRequested: { confirmingCashNotPaid = true },
                 preferredOffer: preferredOffer,
-                onDeclineOffer: { decliningOffer = true }
+                onDeclineOffer: { decliningOffer = true },
+                canDropOrder: canDropOrder,
+                onDropRequested: { confirmingDrop = true }
             )
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)

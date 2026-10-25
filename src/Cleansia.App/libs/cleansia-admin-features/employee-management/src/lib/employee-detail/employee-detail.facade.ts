@@ -1,4 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
+import { AbstractControl } from '@angular/forms';
 import {
   AdminClient,
   AdminEmployeeDetail,
@@ -16,7 +17,13 @@ import {
 } from '@cleansia/admin-services';
 import { ICleansiaSelectOption } from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import { DialogService as ConfirmDialogService, PermissionService, Policy, SnackbarService } from '@cleansia/services';
+import {
+  ApiErrorResult,
+  DialogService as ConfirmDialogService,
+  PermissionService,
+  Policy,
+  SnackbarService,
+} from '@cleansia/services';
 import { formatDate, formatMoney, localeFor } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -31,6 +38,8 @@ import {
 } from '../components';
 import { EmployeeEditFormValue, EmployeePayConfigFormValue } from './employee-detail.models';
 import { EmployeeDocumentsFacade } from './employee-documents.facade';
+
+const LEGAL_ENTITY_NAME_ERROR_KEY = 'LegalEntityName';
 
 @Injectable()
 export class EmployeeDetailFacade extends UnsubscribeControlDirective {
@@ -63,6 +72,12 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
   readonly services = signal<ICleansiaSelectOption[]>([]);
   readonly packages = signal<ICleansiaSelectOption[]>([]);
   readonly currencies = signal<ICleansiaSelectOption[]>([]);
+
+  private legalEntityName: AbstractControl | null = null;
+
+  connectLegalEntityName(control: AbstractControl): void {
+    this.legalEntityName = control;
+  }
 
   loadEmployeeDetail(employeeId: string): void {
     this.loading.set(true);
@@ -313,7 +328,13 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
       .update(employeeId, command)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => {
+        catchError((error: unknown) => {
+          // The server judges the legal name on the merged row, so a save from any section can be
+          // refused for it, and only the employment section holds the field.
+          if (refusesLegalEntityName(error)) {
+            this.legalEntityName?.markAsTouched();
+            this.editingSection.set('employment');
+          }
           this.snackbarService.showErrorTranslated(
             'pages.employee_detail.messages.employee_update_error'
           );
@@ -597,4 +618,9 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
       fractionDigits: 2,
     });
   }
+}
+
+function refusesLegalEntityName(error: unknown): boolean {
+  const errors = (error as ApiErrorResult | null)?.errors;
+  return !!errors && LEGAL_ENTITY_NAME_ERROR_KEY in errors;
 }

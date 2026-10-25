@@ -220,6 +220,25 @@ class BackendKeyStringsTest {
         assertTrue("these refusals render raw: $raw", raw.isEmpty())
     }
 
+    /**
+     * `ValidatePassportId` refuses a passport or ID outside 5 to 20 characters under its own key, which
+     * used to be the address's `address.invalid_length` and read "Address is too short or too long".
+     */
+    @Test
+    fun `the passport length refusal resolves to a sentence in all five locales`() {
+        val resName = "error_validation_passport_id_invalid_length"
+        val raw = locales.filterNot { resName in declared(it) }
+        assertTrue("validation.passport_id.invalid_length renders raw in $raw", raw.isEmpty())
+    }
+
+    /** `UpdatePersonalInfo` refuses a phone that is not a valid number, which the device no longer checks itself. */
+    @Test
+    fun `the phone number refusal resolves to a sentence in all five locales`() {
+        val resName = "error_validation_invalid_phone_number"
+        val raw = locales.filterNot { resName in declared(it) }
+        assertTrue("validation.invalid_phone_number renders raw in $raw", raw.isEmpty())
+    }
+
     @Test
     fun `the too-early lockout refusal states the wait in all five locales`() {
         val silent = locales.filterNot { locale ->

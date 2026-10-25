@@ -7,8 +7,14 @@ import Foundation
 final class EmergencySectionViewModel: ViewModel {
     @Published private(set) var state: UiState<Void> = .loading
     @Published private(set) var action: ActionState = .idle
-    @Published var name = ""
-    @Published var phone = ""
+    @Published var name = "" {
+        didSet { if name != oldValue { nameError = nil } }
+    }
+
+    @Published var phone = "" {
+        didSet { if phone != oldValue { phoneError = nil } }
+    }
+
     @Published private(set) var nameError: String?
     @Published private(set) var phoneError: String?
 

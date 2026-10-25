@@ -49,6 +49,9 @@ protocol PartnerOrderClient: AnyObject {
     /// The customer paid nothing at the door: the job completes and the price becomes the customer's debt.
     func reportCashNotPaid(orderId: String) async -> ApiResult<Void>
     func completeOrder(orderId: String, actualMinutes: Int?, notes: String?) async -> ApiResult<Void>
+    /// Leaves the crew: the seat goes back on the board and the customer's booking stands. Answers how many
+    /// cleaners are still on the job.
+    func dropOrder(orderId: String) async -> ApiResult<Int>
 
     func addNote(orderId: String, content: String) async -> ApiResult<Void>
     func updateNote(orderId: String, noteId: String, content: String) async -> ApiResult<Void>
@@ -232,6 +235,13 @@ final class LivePartnerOrderClient: PartnerOrderClient {
         }
     }
 
+    func dropOrder(orderId: String) async -> ApiResult<Int> {
+        await dashboardMutation {
+            try await PartnerOrderAPI.orderDropOrder(dropOrderCommand: DropOrderCommand(orderId: orderId))
+                .crewRemaining.require("crewRemaining")
+        }
+    }
+
     func addNote(orderId: String, content: String) async -> ApiResult<Void> {
         await apiResult(mapError: ApiError.fromGenerated) {
             _ = try await PartnerOrderAPI.orderAddNote(
@@ -328,7 +338,7 @@ final class LivePartnerOrderClient: PartnerOrderClient {
         }
     }
 
-    private func dashboardMutation(_ operation: () async throws -> Void) async -> ApiResult<Void> {
+    private func dashboardMutation<T>(_ operation: () async throws -> T) async -> ApiResult<T> {
         let epoch = staleness.sessionEpoch
         let result = await apiResult(mapError: ApiError.fromGenerated) { try await operation() }
         if case .success = result, epoch == staleness.sessionEpoch { staleness.invalidateDashboard() }

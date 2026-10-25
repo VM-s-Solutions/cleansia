@@ -299,12 +299,14 @@ The in-app feed has **three** audiences, and the host controller sets which one 
 count or mark-read a row of their partner-app feed. The customer and partner keysets are lists that
 trail their clients' templates (a key belongs in a keyset only once the audience's clients render it,
 or the badge counts a row the app drops unrendered). **The admin keyset is the catalogue by
-construction** — `NotificationFeedEventKeys.Admin = AdminNotificationEventCatalog.All`, the seventeen
+construction** — `NotificationFeedEventKeys.Admin = AdminNotificationEventCatalog.All`, the eighteen
 `admin.*` keys ([ADR-0065](/decisions/adr-0065); the not-started alert, the two refund alerts and the
 lockout report joined on 2026-09-28, `admin.referral.held` — Support and above, args `[referralId]`,
-routed to *Referrals* in the console — on 2026-10-05, and on 2026-10-06 `admin.order.cash_not_paid` —
+routed to *Referrals* in the console — on 2026-10-05, on 2026-10-06 `admin.order.cash_not_paid` —
 Support and above, args `[orderNumber, amount, orderId]`, opening the order in the console — and
-`admin.payment.refund_without_cancel` — every role, the same args, opening the order) — because the console is built to render every key of its catalogue, and a spec walks the
+`admin.payment.refund_without_cancel` — every role, the same args, opening the order — and on
+2026-10-24 `admin.order.no_cleaner_yet` — Support and above, args `[orderNumber, cleaningDateTime,
+orderId]`, opening the order) — because the console is built to render every key of its catalogue, and a spec walks the
 C# file so a key added on the server fails the admin build without its five-locale sentence and its
 entry in the console's mirror (`ADMIN_NOTIFICATION_EVENT_KEYS`).
 
@@ -332,12 +334,27 @@ the same rule as the two client feeds: ids, numbers, enum names, dates and money
 entry declares the exact set a site may pass, so a site cannot smuggle a name in. Rows fall under
 `retention.notifications.days` like every other feed row.
 
-**The customer keyset is unchanged by the walk-back**, and one consequence is named rather than hidden:
-when a `Confirmed` order loses its last cleaner and goes back to `New` ([ADR-0067](/decisions/adr-0067)),
-no customer push, e-mail or feed row is written — but the next take is a `New → Confirmed` transition
-again, so the customer receives a **second** "your order is confirmed" e-mail on top of the assignment
-push. A new cleaner is a new confirmation; the e-mail is true when it is sent (default O-D2-1).
-→ [Business rules — administrators are told](/product/business-rules#admin-notifications),
+**The walk-back tells the customer** (owner ruling 2026-10-25 on O-D2-1: *"yup"*, option (b)). When a
+`Confirmed` order loses its last cleaner and goes back to `New` ([ADR-0067](/decisions/adr-0067)), both
+release writers call `OrderCleanerReleasedNotifier` exactly when `Order.ReturnToBoardIfUnstaffed()`
+walks it back; a crew that remains, or an order that was not `Confirmed`, sends the customer nothing. A
+booking with an account gets `order.cleaner_released` — `OrderUpdates`, args `orderId` (the deep link) and
+`orderNumber`, subject `{orderId}:{releasedAssignmentId}` so every walk-back is its own message — which is
+in `NotificationFeedEventKeys.Customer` and in the APNs display map with `[orderNumber]`; a mute silences
+the push, never the feed row. Every booking, a guest's included, gets an `order-cleaner-released` message
+on `send-email`, keyed `email:order-cleaner-released:{orderId}:{assignmentId}`, which the consumer sends
+only while the order is still `New`. Both ride the release's own commit, so a release its commit refuses
+tells nobody. The next take is a `New → Confirmed` transition again, so the customer still receives a
+**second** "your order is confirmed" e-mail on top of the assignment push: a new cleaner is a new
+confirmation, and suppressing that e-mail, option (a), was not taken. When the one-off booking was
+reserved for a cleaner the customer asked for and nothing has stamped that reservation's receipt
+(`PreferredOfferLapseNotifiedAt`: only a path that sends the closure message does, and the chosen
+cleaner's take of the reserved job does not), the five-minute lapse sweep pushes a signed-in customer
+`order.preferred_offer_closed`, with no feed row, on its first run that finds nobody on the order after
+the reservation ended, whoever left last, on top of the release's own messages; a drop by, or the
+rejection of, the chosen cleaner while the reservation runs ends it at once.
+→ [Business rules — when the last cleaner leaves](/product/business-rules#crew-lost),
+[administrators are told](/product/business-rules#admin-notifications),
 [Admin notifier](/domain/roles/admin-notifier)
 
 ### The no-show pushes say what happened to the money {#no-show-outcomes}

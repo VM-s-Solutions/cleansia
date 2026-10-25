@@ -104,6 +104,19 @@ public class AdminUpdateEmployee
                 .MaximumLength(200).WithMessage(BusinessErrorMessage.MaxLengthExceeded)
                 .When(c => !string.IsNullOrWhiteSpace(c.LegalEntityName));
 
+            // Unlike the number, an untouched missing name is refused too, judged on the merge the handler
+            // stores: the cleaner's apps cannot supply it, and without it the profile gate holds the cleaner.
+            RuleFor(c => c)
+                .MustAsync(async (command, cancellationToken) =>
+                {
+                    var employee = await employeeRepository.GetByIdAsync(command.EmployeeId, cancellationToken);
+                    return employee is null
+                        || (command.EntityType ?? employee.EntityType) != EmployeeEntityType.LegalEntity
+                        || !string.IsNullOrWhiteSpace(command.LegalEntityName ?? employee.LegalEntityName);
+                })
+                .WithMessage(BusinessErrorMessage.Required)
+                .WithErrorCode(nameof(Command.LegalEntityName));
+
             RuleFor(c => c.PassportId).ValidatePassportId().When(c => !string.IsNullOrWhiteSpace(c.PassportId));
         }
     }

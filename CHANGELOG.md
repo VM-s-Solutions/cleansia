@@ -70,6 +70,57 @@ need backfilling.
 
 ### Added
 
+- **Cleaner, partner web, Android and iOS — *Cancel job* on a job you took.** On a job you are on,
+  *Cancel job* takes you off it while the job is still *New* or *Confirmed*, you have not reported
+  that you cannot get in, and its start is still ahead. It is not offered once you are on the way or
+  the clean has started, nor from the job's start on, when a job nobody started is a no-show for the
+  administrators. Since 2026-10-25 the server itself refuses a job that is on the way or in progress
+  (under *Changed*). A confirmation says first what happens: you leave the job and your place goes back
+  on the board for other cleaners, the customer's booking is not cancelled, and a job you were alone
+  on has no cleaner until someone takes it; *Keep the job* changes nothing. After
+  *Yes, cancel the job* you are told whether anyone is still on it, and the app leaves the job. A
+  confirmed job with nobody left goes back to the board as a new job, and the company's administrators
+  are told; since 2026-10-25 so is the customer (below). Android takes *Cancel job* away at the job's
+  start; iOS and partner web take it away the next time they load the job, and a cancel confirmed after
+  the start sends nothing. (Owner defaults 2026-10-24; the limit at the job's start, since 2026-10-25;
+  ADR-0067.)
+
+- **Customer, Android, iOS and e-mail — you are told when your cleaner can no longer come.** When the
+  last cleaner on your confirmed booking leaves it — they cancel the job, or the company rejects them —
+  the booking waits for a cleaner again, and you are told that another one is being looked for. With an
+  account you get a notification and an inbox entry in the Android and iOS apps, *Your cleaner can no
+  longer come*, naming the booking; switching off booking updates silences the notification, not the
+  inbox entry. With an account or without, you get an e-mail in the booking's language, *We're finding
+  you a new cleaner*, with the link to your booking, if, when it goes out, the booking is waiting for
+  a cleaner rather than taken again or cancelled. Neither names the cleaner or says why, and both are
+  in five languages. The next cleaner to take the booking still sends the confirmation e-mail again.
+  Until 2026-10-25 the cleaner's leaving itself sent you nothing. **Operator:** deploy the Functions
+  consumer with or before the APIs that publish the new e-mail, and the updated apps before the
+  notification backend: an older build cannot render the new key. (Owner ruling 2026-10-25 on O-D2-1,
+  *"yup"*; ADR-0067.)
+
+- **Admin — told a day ahead when nobody is on a job, and a filter for such orders.** An eighteenth
+  notice, in the console and by e-mail, for Support and above: once per order, when a *New* or
+  *Confirmed* job that cleaners can take still has nobody on it inside 24 hours of its start, once any
+  hold for the cleaner the customer asked for has ended and an hour has passed since its last status
+  change or the customer's confirmation. Nothing is sent once the start has passed; a job nobody took
+  is still cancelled half an hour after its start, as before. A cleaner who asked for cover still
+  counts as on the job, and a job with part of its crew is not reported. The order list gains the
+  filter *Only orders with no cleaner*: orders nobody is on, and, unless you pick statuses or a
+  from-date yourself, only work that is not over, from the start of today; its chip reads
+  *Staffing: No cleaner assigned*. (Owner defaults 2026-10-24.)
+
+- **Cleaner and customer, Android and iOS — the e-mail code can be pasted.** The six boxes of the
+  e-mail code take a pasted code on the partner and customer apps. A long press on the boxes reaches
+  the field's own *Paste*, and a *Paste* button under them, an icon alone on iOS and a text button on
+  Android while the clipboard holds text, puts the clipboard's code in place of what you typed; a code
+  from AutoFill or the keyboard's clipboard suggestion replaces a partly typed one instead of being
+  added to it. VoiceOver and TalkBack read the code field as *Verification code, 6 digits*. On the
+  partner and customer web, which already took a pasted code, a code put in by AutoFill or the
+  keyboard's suggestion now fills the boxes too, and part of a code is written from the box it lands
+  in, where a paste used to refill the boxes from the first and clear the rest; the digits you type
+  next continue it.
+
 - **Customer web, Android and iOS — a service already in your package is marked, and adding it twice
   asks first.** Once you choose a package, every service it already includes stands out in the list
   of services: its row is tinted and outlined in the brand blue, with an *In your package* badge
@@ -118,16 +169,17 @@ need backfilling.
 
 - **Cleaner, Android and iOS — a bank account can be pasted whole into any one box.** A Czech or Slovak
   account pasted into the prefix, number or bank-code box lands in all three: `19-2000145399/0800`,
-  `2000145399/0800`, `19-2000145399` (the bank code already there stays) or a CZ or SK IBAN. A bare
-  number pasted into any empty box goes to the number field. Each box used to keep its own digits and
-  cut them to length, so `12321414/3545` pasted into the number became `1232141435` with no bank code.
-  On the apps, a paste after digits already in a box is read together with them, so clear the box
-  first. A two-digit prefix pasted on its own into an empty prefix box goes to the number; type it
-  instead. Each box keeps only the digits 0–9: digits from another script, which a keyboard can type
-  and the server refuses, are dropped. The server still checks every account. Partner web takes the
-  same pastes since 2026-10-02. Before that it split only a written-out account, and not an IBAN or
-  digits with spaces inside them. The web reads a paste on its own, whatever the box already holds, so
-  there is no box to clear first. (Owner ruling 2026-10-01.)
+  `2000145399/0800`, `19-2000145399` (the bank code already there stays) or a CZ or SK IBAN. Each box
+  used to keep its own digits and cut them to length, so `12321414/3545` pasted into the number became
+  `1232141435` with no bank code. Until the bank-account rule of 2026-10-24 and 2026-10-25 (under
+  *Changed*), a bare number pasted into any empty box went to the number field, a two-digit prefix
+  pasted on its own into an empty prefix box went to the number too, and on the apps a paste after
+  digits already in a box was read together with them, so the box had to be cleared first. Each box
+  keeps only the digits 0–9: digits from another script, which a keyboard can type and the server
+  refuses, are dropped. The server still checks every account. Partner web takes the same pastes since
+  2026-10-02. Before that it split only a written-out account, and not an IBAN or digits with spaces
+  inside them. The web reads a paste on its own, whatever the box already holds, so there is no box to
+  clear first. (Owner ruling 2026-10-01.)
 
 - **Cleaner, partner web, Android and iOS — a bank outside Czechia and Slovakia takes one IBAN,
   checked before it is sent.** The bank details form now follows the bank's country. A Czech or
@@ -266,7 +318,9 @@ need backfilling.
   the new **administrator notification mailbox** on Company settings (`notifications.admin_email`, the
   eleventh setting, an e-mail field that reads *every administrator* while unset) — to that one address,
   in English. The notices carry order numbers, amounts, dates and ids, never a person. Nothing is pushed
-  to a phone. (ADR-0065; owner ruling 2026-09-19, *"both in-app and email"*.)
+  to a phone. Since 2026-10-25 a cleaner cannot drop a job that is under way, so an order loses its last
+  cleaner only while it is new or confirmed, and the notice never says the clean was under way (under
+  *Changed*). (ADR-0065; owner ruling 2026-09-19, *"both in-app and email"*.)
 
 - **Plus — a recurring schedule pause is now explained.** After a confirmed paid membership
   lapses, the customer receives one notice explaining that scheduling is paused and renewing Plus
@@ -557,6 +611,58 @@ need backfilling.
 
 ### Changed
 
+- **Cleaner and API consumer — a job under way can no longer be dropped.** `POST api/Order/DropOrder`
+  on the partner web and partner mobile hosts takes a drop only while the job is *New* or *Confirmed*.
+  A job on the way, in progress or in any other status is refused with `order.not_confirmed`, the key
+  it already gave a completed or cancelled job, and nothing changes: the cleaner stays on it and nobody
+  is told. The apps already offered *Cancel job* only before then, so a cleaner meets the refusal only
+  when the job moved after the app last read it, as when a crew-mate sets off first, and the app then
+  reads the job again. Asking for cover is unchanged, and the server sets no limit at the job's start.
+  Until 2026-10-25 the server took a drop at any status up to *In progress*. (Owner ruling 2026-10-25,
+  *"No, impossible for other than Confirmed. So if partner didn't start yet then it's possible to Drop
+  Order"*; ADR-0067.)
+
+- **Cleaner, Android and iOS — the sign-up and profile forms say what is missing, on the first tap.**
+  *Sign Up* and each onboarding step's *Next* or *Save* can be tapped at any time but while they are
+  sending. A tap checks everything the app can check at once and names every missing or invalid
+  field under it, and an error goes as soon as you change its field; a SWIFT or registration-number
+  refusal also goes when you change the country it was checked against. What only the server can
+  refuse comes back under its field too. Until now the buttons stayed greyed out until the form looked
+  complete, which said nothing about what was missing. On *Personal* the app checks that your phone is
+  in international form, with its country code, and of a length that country's numbers have, and
+  leaves to the server whether it is a valid number; the server's refusal shows under the field.
+
+- **Cleaner, partner web, Android and iOS — a bank-account paste stays in the box it fits.** In the
+  bank-account boxes, a prefix or a bank code pasted on its own now stays in its own box, and the number
+  already entered stays: a paste the box has room for is kept as pasted, and one that would overflow it
+  replaces what the box held. Only a bare number too long for the box it lands in, up to ten digits,
+  goes to the account number. A written-out account with a four-digit bank code, as every Czech and
+  Slovak bank code has, or an IBAN is still spread over the three boxes from any box, even where its
+  digits would fit that box; one whose bank code is shorter, such as `19-2000145399/080`, is no longer
+  split. On the apps a `-` or `/` typed among a box's digits is dropped like any other character that is
+  not a digit, instead of splitting the box. Until 2026-10-24 a bare number pasted into a box went to
+  the account number, so a bank code pasted into its own box replaced the number already entered, and a
+  prefix such as `19` went to the number. On the apps a whole account pasted after the digits already in
+  a box, before them or over all of them is now read without them, so the box no longer has to be
+  cleared first; a paste among such digits, or one whose digits coincide with them, can still misplace
+  some of them. Partner web reads what you pasted, wherever it lands.
+
+- **Admin — a company row keeps its registered name.** An edit of a cleaner registered as a company
+  is judged together with what is stored: a save from any section that would leave the company
+  without its registered name is refused, and so is any save of a company row stored without one,
+  until the name is added. The employee page marks the *Legal entity name* field required while
+  *Legal entity* is chosen, and after such a refusal it opens the employment section and marks the
+  field, so a refusal of a save made in another section says which field it is about.
+
+- **Customer and cleaner iOS — content keeps a readable width on a screen wider than 640 points.**
+  On a canvas wider than 640 points, such as the iPhone Duo's inner display, the sign-in screens, the
+  scrolling pages, the footers of a job and an order, the lists (orders, invoices, disputes, rewards,
+  recurring bookings, saved addresses) and the Plus offer's subscribe bar hold their content to a
+  centred 640-point column, over a background that still fills the screen, and the order detail stands
+  beside its map when the canvas is wide and short. Every current iPhone, 440 points wide at most,
+  lays out as before. No device shows it yet: until the apps are built with the iOS 27.1 SDK, the
+  iPhone Duo runs them in a phone-shaped window.
+
 - **Operator — before the next DEV deploy, drop the DEV database, once the owner has approved the
   reset.** The `Initial` migration was regenerated as `20261012190449`: no table, column or index
   changed — an order's payment status became its second concurrency token, which lives in the model
@@ -830,10 +936,18 @@ need backfilling.
   work, and nobody is left on the booking, its status walks back from *Confirmed* to *New* (the one
   backward move the platform makes) and the seat is re-advertised; a rejection also ends a
   preferred-cleaner hold the rejected cleaner held. A booking already on the way or in progress is not
-  walked back — the administrators are told instead, at any status. The customer is not messaged on the
-  walk-back; the next cleaner to take it sends a second "your order is confirmed" e-mail. An admin's
-  status override can no longer set *Confirmed* on a booking with nobody assigned — reassign instead.
-  (ADR-0067; owner ruling 2026-09-19.)
+  walked back — the administrators are told instead, at any status. The walk-back sends the customer
+  nothing; the next cleaner to take it sends a second "your order is confirmed" e-mail. When the
+  one-off booking was held for a cleaner the customer asked for and the customer was never told that the
+  hold ended, as when that cleaner took the booking, the customer's app is told that the booking is open
+  to all cleaners, the message a hold that ends untaken sends, a few minutes after the booking is first
+  left with nobody on it once the hold has ended, whoever left last; the chosen cleaner cancelling, or
+  being rejected, while the hold runs ends it at once. An admin's status override can no longer set
+  *Confirmed* on a booking with nobody assigned — reassign instead. Since 2026-10-25 a cleaner can no
+  longer drop a booking that is on the way or in progress, so the administrators are told only of a new
+  or confirmed one (under *Changed*), and the walk-back tells the customer that another cleaner is being
+  looked for (under *Added*); the next take still sends the second confirmation e-mail. (ADR-0067; owner
+  ruling 2026-09-19.)
 
 - **Admin — the revenue report is net, by completion date.** The headline is completed and paid
   orders in the period **by completion date**, in one currency, **minus every refund on those orders** —
@@ -1102,6 +1216,45 @@ need backfilling.
   generic English sentence that is honest about being generic, until counsel supplies each one.
 
 ### Fixed
+
+- **Cleaner iOS, TestFlight — the partner app no longer closes on launch for a cleaner with an upcoming
+  job.** TestFlight build 14 of the partner app closed on every launch once the cleaner had a job
+  coming up (2026-10-22): the optimised release build mishandled the line that picks the dashboard's
+  next job, which a debug build runs correctly. That line is rewritten, so the app no longer closes
+  there. The app has never shipped to production, so only TestFlight testers met it.
+
+- **Cleaner, customer and admin — a phone number pasted with its country code keeps it.** On the apps
+  the phone field keeps a `+` that comes before the first digit, wherever it sits, so
+  `Tel: +420 728 089 247` and `(+420) 728 089 247` read `+420728089247`. Until now the other apps
+  dropped a `+` that was not the very first character, and the number lost its country code, while
+  the customer Android app's two profile phone fields saved a pasted number with the spaces inside it;
+  they now keep only the digits and that `+`, so `+420 777 111 222` is saved as `+420777111222`, as
+  the other apps send it. On the partner, customer and admin web the phone field reads the country from
+  that `+`, so `Tel: +420 …`, `(+420) …` and `+ 420 …` select +420 and keep the rest as the number; it
+  used to save the code twice, as `+420 420777111222`.
+
+- **Cleaner and admin — a passport or ID number of the wrong length is refused in its own words.** A
+  passport or ID number shorter than 5 or longer than 20 characters is refused with
+  *Your passport / ID number must be 5 to 20 characters long.* on Android, iOS and partner web, and
+  with *The passport / ID number must be 5 to 20 characters long.* in the admin console, in five
+  languages. It used to be refused with the message for an address of the wrong length. The apps check
+  the length before they send, with the number's outer spaces trimmed.
+
+- **Cleaner, Android and iOS — a company profile with no registered name says why it cannot be
+  finished.** When an operator has registered you as a company without its registered name, the
+  Identification step shows the company-name field locked, with
+  *Your company's registered name is missing. Contact support to add it — it can't be changed here.*,
+  and the step stays unfinished until an administrator adds the name. Until now nothing said why the
+  step could not be finished.
+
+- **Customer iOS — a pasted password-reset code is sent as its six digits.** The code fields on
+  *Forgot password* and on the *Security* page keep only the code's digits, typed or pasted, and the
+  reset sends only those digits, so a code pasted as `123 456` or `Code: 123456` no longer reaches the
+  server as written, to be refused and spend one of the code's attempts.
+
+- **Cleaner and customer, Android — the keyboard comes back on the e-mail code screen.** A tap on the
+  six code boxes brings back a keyboard you closed. Until now nothing on the screen opened it again, so
+  the code could no longer be typed.
 
 - **Customer website — a stalled catalogue request no longer holds the server-rendered page open
   indefinitely.** The server cancels a slow market, catalogue or plan read and uses its existing
@@ -1630,9 +1783,10 @@ need backfilling.
   this. (Owner remark 2026-10-01; the cleaner's header 2026-10-02.)
 
 - **Cleaner web — pasting just the account number keeps the prefix.** In the bank-account field, a
-  bare number pasted into any box goes to the number, as before, but it also emptied the prefix box.
-  The prefix and bank code now stay as they are, as in the apps; a whole account pasted without a
-  prefix still clears the old one.
+  bare number pasted into any box went to the number, as it did before, but it also emptied the prefix
+  box. The prefix and bank code now stay as they are, as in the apps; a whole account pasted without a
+  prefix still clears the old one. Since 2026-10-24 a bare number goes to the number only when it is
+  too long for the box it is pasted into (under *Changed*).
 
 - **Customer iOS — the confirm step and Profile get their words right.** The booking's confirm step
   said *1 rooms · 1 bath* (in Czech *1 pokojů*) whatever the counts; it now uses the same plural forms

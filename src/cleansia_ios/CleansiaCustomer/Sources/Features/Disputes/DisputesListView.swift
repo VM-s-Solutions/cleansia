@@ -20,6 +20,7 @@ struct DisputesListView: View {
 
     var body: some View {
         content
+            .readableWidth()
             .navigationTitle(L10n.Disputes.listTitle)
             .navigationBarTitleDisplayMode(.inline)
             .background(CleansiaColors.background.ignoresSafeArea())

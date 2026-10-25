@@ -3,7 +3,7 @@
 
 --swiftversion 5.9
 
---exclude **/Generated,**/.build,**/DerivedData,CleansiaPartnerApi,CleansiaCustomerApi
+--exclude **/Generated,**/.build,**/DerivedData,CleansiaPartnerApi,CleansiaCustomerApi,build
 
 # Rules
 --enable isEmpty

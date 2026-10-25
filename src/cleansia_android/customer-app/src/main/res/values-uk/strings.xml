@@ -1330,6 +1330,8 @@
     <string name="notification_order_payment_confirmed_body">Замовлення #%1$s підтверджено. Натисніть, щоб переглянути деталі.</string>
     <string name="notification_cleaner_assigned_title">Клінера знайдено! 🎉</string>
     <string name="notification_cleaner_assigned_body">До вашого замовлення #%1$s призначено клінера. Натисніть, щоб переглянути деталі.</string>
+    <string name="notification_order_cleaner_released_title">Ваш клінер більше не може прийти</string>
+    <string name="notification_order_cleaner_released_body">Ми шукаємо іншого клінера для замовлення #%1$s і повідомимо вас, щойно хтось його візьме.</string>
     <string name="notification_order_starting_soon_title">Прибирання скоро почнеться</string>
     <string name="notification_order_starting_soon_body">Ваше замовлення #%1$s почнеться приблизно за годину. Натисніть, щоб переглянути деталі.</string>
     <string name="notification_order_preferred_offer_closed_title">Замовлення відкрите для всіх клінерів</string>

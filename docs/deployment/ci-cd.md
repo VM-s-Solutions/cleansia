@@ -13,7 +13,7 @@ scan — and the rest deploy or run operational jobs. **The required statuses ar
 | `backend-ci.yml` | the .NET solution — unit, integration (Testcontainers) and host tests. Also runs on pushes to `master`, because direct-to-master commits used to bypass it entirely. Scoped to `src/**` **and `sql-scripts/**`** |
 | `frontend-ci.yml` | the Nx workspace — lint, test, build across the three apps |
 | `android-ci.yml` | the Gradle multi-module build |
-| `ios-ci.yml` | SwiftFormat, then SwiftLint, then three test schemes |
+| `ios-ci.yml` | SwiftFormat, then SwiftLint, then three test schemes in Debug; on `master` pushes and manual runs, both app suites again optimised; on manual runs, a non-blocking Xcode 27.1 readiness job beside it |
 | `docs-ci.yml` | both halves of the reference contract: two checkers with their own self-tests blocking first, then `vitepress build` with `ignoreDeadLinks: false` |
 | `ios-symbols-ci.yml` | the compiler-free half of the iOS gate — `check-ios-symbols.mjs` on Linux |
 | `booking-policy-parity.yml` | every client's stated booking figures against `BookingPolicy`, and the legal seed's currency placeholders |
@@ -115,7 +115,7 @@ failing, it does not make the secret safe.
 | `backend-ci` | PR to any branch that touches `src/**` outside the web, Android and iOS trees, `sql-scripts/**` or the workflow | Build + test .NET solution |
 | `frontend-ci` | PR to any branch | Build Angular apps |
 | `android-ci` | PR to any branch | Compile and unit-test `:core`, `:partner-app` and `:customer-app` |
-| `ios-ci` | PR to any branch that touches `src/cleansia_ios/**`, `src/cleansia_android/openapi/**`, its seven Android test inputs listed below, or the workflow | SwiftFormat, SwiftLint, then build and test the three schemes |
+| `ios-ci` | PR to any branch that touches `src/cleansia_ios/**`, `src/cleansia_android/openapi/**`, its seven Android test inputs listed below, or the workflow; manual (`workflow_dispatch`) | SwiftFormat, SwiftLint, then build and test the three schemes in Debug. Pushes to `master` and manual runs also test both apps again optimised; a manual run also starts a non-blocking Xcode 27.1 readiness job ([why](#runners)) |
 | `docs-ci` | PR to any branch | Docs pointers and written claims resolve; the docs site builds |
 | `ios-symbols-ci` | PR to any branch that touches `src/cleansia_ios/**`, the checker, its self-test or the workflow | `check-ios-symbols.mjs` on Linux |
 | `booking-policy-parity` | PR to any branch that touches a file the checker reads, the checker, its self-test or the workflow | `check-booking-policy-parity.mjs` |
@@ -141,21 +141,49 @@ request also run on pushes to `master`, path-scoped except for the secret scan.
 
 ## Runners and images {#runners}
 
-All 25 Linux `runs-on` declarations request `ubuntu-26.04`, and `ios-ci.yml` requests `macos-latest`.
-The Linux jobs pin their Ubuntu release and the macOS job does not pin its macOS one; none uses a
-self-hosted or larger runner. A new workflow either joins one of these two labels or says why not.
+All 28 Linux `runs-on` declarations request `ubuntu-26.04`. `ios-ci.yml` requests `macos-26` for its
+required `build` job and `xcode-27` for its `xcode-27-readiness` job. Every job names an exact image
+rather than a `-latest` label, and none uses a self-hosted or larger runner. A new workflow either joins
+one of these labels or says why not.
 
 - **Which image a label resolved to** is printed only in the job log's *Runner Image* group (`Image:`
   and `Version:`). The repository keeps logs for one day, so read it within 24 hours. The jobs API
   returns only the requested label.
-- **iOS CI picks its tools at run time.** The newest installed Xcode (`ls -d /Applications/Xcode*.app |
-  sort -V | tail -1`), and the first available iPhone simulator.
+- **iOS CI pins its Xcode.** `build` selects the Xcode whose `xcodebuild -version` reports the version in
+  `src/cleansia_ios/.xcode-version`, 26.3, the Xcode that archives the TestFlight builds, and fails with
+  an `::error::` naming the installed ones when the image has none. It matches the reported version, not
+  the app's name, because an image may name an app by its release stage. `macos-26` ships it as
+  `/Applications/Xcode_26.3.app` (17C529), beside 26.0.1 to 26.6, the image default; `macos-latest` moves
+  to a new macOS and its Xcode set on GitHub's schedule, which is why `build` no longer uses it. The
+  simulator is still the first available iPhone. The release lanes select the same Xcode, so moving the
+  pin moves both. → [Optimizer-only crashes](/mobile-app/overview#optimizer-only-crashes)
+- **The optimised passes take longer than the Debug ones they follow.** Measured on 2026-10-24 on the archiving
+  Mac (Apple M4), in the job's order and one DerivedData: the partner suite took 67 s in Debug and 137 s
+  optimised, the customer suite 118 s and 614 s, the latter with the machine shared by other builds
+  (246 s in a quieter run). GitHub's runners are slower; the first runs show the real cost against the
+  job's 120-minute ceiling.
+- **The optimised passes skip pull requests.** They run on pushes to `master` and on manual runs
+  (*Actions → iOS CI → Run workflow*). The repository is private, so macOS minutes are billed at about ten
+  times the Linux rate, and the two passes take longer than the three Debug suites together (383–751 s
+  against 218 s in the measurement above). Pull requests do not need them to stop a miscompiled build:
+  the release lanes run the same pass on the archiving Mac before every TestFlight build
+  ([Shipping to TestFlight](/mobile-app/overview#shipping-to-testflight)), and a red one stops the lane before
+  anything is uploaded. To run them on every pull request, delete the two `if:` lines on the optimised
+  steps of `ios-ci.yml`. Decided on 2026-10-24.
+- **`xcode-27` is a preview image** ([actions/runner-images#14404](https://github.com/actions/runner-images/issues/14404)):
+  macOS 27, Xcode 27.0, 27.1 and a 27.2 beta, one iOS 27.0 simulator runtime, and no iPhone Duo device.
+  `xcode-27-readiness` selects Xcode 27.1 the same way and generates, builds and runs the three Debug
+  suites, as an early signal of what Swift 6.4 and the iOS 27.1 SDK break. It runs only on a manual run,
+  for the same billing reason. It has `continue-on-error` and is not keyed `build`, so it never blocks a
+  merge. It goes when `.xcode-version` moves to 27.1, which needs
+  an archiving Mac on macOS Tahoe 26.6 or later, and `build` moves to an image that ships it.
 - **Observed on 2026-10-11**, in runs 38098170687 and 38098170722 at `64dfed7`:
   - `ubuntu-latest` resolved to ubuntu-24.04, version 20261004.327.1;
   - `macos-latest` resolved to macos-26-arm64, version 20260907.0351.1, with Xcode 26.6 (17F113) and an iPhone 17 Pro simulator.
 
-  A maintainer's Mac ran Xcode 26.3 that day, with the same SwiftFormat, SwiftLint, xcodegen,
-  xcbeautify and openapi-generator versions as CI. CI now pins XcodeGen **2.46.0** and xcbeautify
+  A maintainer's Mac ran Xcode 26.3 that day, the Xcode that archives the TestFlight builds, which is the
+  gap the pin closes; it had the same SwiftFormat, SwiftLint, xcodegen, xcbeautify and
+  openapi-generator versions as CI. CI now pins XcodeGen **2.46.0** and xcbeautify
   **3.2.1**, alongside SwiftFormat **0.60.1**, SwiftLint **0.65.0** and openapi-generator **7.10.0**.
   All five downloads are SHA-256 checked before extraction or installation; the four macOS tools
   resolve from `$RUNNER_TEMP/pinned-tools`, with XcodeGen's sibling setting presets preserved.

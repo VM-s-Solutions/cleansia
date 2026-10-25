@@ -32,6 +32,7 @@ struct OrdersTab: View {
 
             content
         }
+        .readableWidth()
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(CleansiaColors.background.ignoresSafeArea())
         .task { await vm.onAppear() }

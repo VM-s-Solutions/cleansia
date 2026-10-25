@@ -604,6 +604,9 @@
         "search": "Vyhledávání",
         "search_placeholder": "Hledat dle jména zákazníka nebo č. objednávky",
         "order_status": "Stav objednávky",
+        "staffing": "Obsazení",
+        "unassigned_only": "Jen objednávky bez uklízeče",
+        "no_cleaner": "Bez uklízeče",
         "payment_status": "Stav platby",
         "date_range": "Časové období",
         "date_from": "Datum od",
@@ -2871,6 +2874,10 @@
               "title": "Uklízeč nezačal objednávku",
               "body": "Objednávka {{orderNumber}} byla objednána na {{cleaningDateTime}} a nikdo ji nezačal. Pokud uklízeč nedorazil, zrušte ji jako nedostavení."
             },
+            "no_cleaner_yet": {
+              "title": "Objednávka stále nemá uklízeče",
+              "body": "Na objednávce {{orderNumber}} dne {{cleaningDateTime}} stále nikdo není. Přiřaďte uklízeče v objednávce; pokud ji nikdo nepřijme, po začátku se automaticky zruší."
+            },
             "lockout_reported": {
               "title": "Uklízeč se nemůže dostat dovnitř",
               "body": "Uklízeč u objednávky {{orderNumber}}, objednané na {{cleaningDateTime}}, hlásí, že se nemůže dostat dovnitř. Zkontrolujte fotografii vchodu a jeho pokusy o volání; pokud ho zákazník nepustil dovnitř, zrušte ji jako nezpřístupnění zákazníkem."
@@ -3581,6 +3588,9 @@
       "invalid_password": "Neplatné heslo",
       "must_be_positive": "Hodnota musí být kladná",
       "page_size_exceeded": "Velikost stránky nesmí překročit 100",
+      "passport_id": {
+        "invalid_length": "Číslo pasu / OP musí mít 5 až 20 znaků."
+      },
       "payout": {
         "account_number_required": "Zadejte číslo účtu",
         "country_not_supported": "Výplaty do banky v této zemi zatím nejsou podporovány",

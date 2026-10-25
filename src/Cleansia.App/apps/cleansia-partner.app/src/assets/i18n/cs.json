@@ -455,6 +455,13 @@
         "confirm_action": "Ano, zákazník nezaplatil",
         "gating_error": "Nahlásit to lze jen u probíhající objednávky placené v hotovosti, která ještě není zaplacená"
       },
+      "cancel_job": {
+        "action": "Odstoupit od zakázky",
+        "confirm_title": "Odstoupit od této zakázky?",
+        "confirm_message": "Budete ze zakázky odebráni a vaše místo se vrátí mezi Dostupné objednávky pro ostatní partnery. Objednávka zákazníka se neruší. Pokud jste na zakázce jediný partner, nebude mít žádného partnera, dokud si ji někdo nevezme.",
+        "confirm_action": "Ano, odstoupit",
+        "keep": "Ponechat si zakázku"
+      },
       "complete_missing_after_photos": "Objednávku nelze dokončit bez fotografií po úklidu",
       "work_contract": {
         "accepted_line": "Smlouvu o dílo jste přijal(a) {{date}}, verze {{version}}",
@@ -723,6 +730,8 @@
         "order_started": "Objednávka byla úspěšně zahájena.",
         "cash_collected": "Hotovost byla přijata. Objednávka je označena jako zaplacená.",
         "cash_not_paid_reported": "Nahlášeno. Objednávka je dokončená a zákazník dluží {{amount}}.",
+        "job_cancelled": "Od zakázky jste odstoupili. Vaše místo je zpět mezi Dostupnými objednávkami pro ostatní partnery.",
+        "job_cancelled_no_crew": "Od zakázky jste odstoupili. Teď nemá žádného partnera a je zpět mezi Dostupnými objednávkami.",
         "failed_to_start": "Nepodařilo se zahájit objednávku. Zkuste to prosím znovu.",
         "print_failed": "Nepodařilo se vytisknout objednávku. Zkuste to prosím znovu.",
         "receipt_not_available": "Účtenka není k dispozici pro tuto objednávku.",
@@ -915,6 +924,9 @@
       "invalid_date": "Neplatné datum",
       "date_must_be_in_past": "Datum musí být v minulosti",
       "invalid_age": "Neplatný věk",
+      "passport_id": {
+        "invalid_length": "Číslo pasu / OP musí mít 5 až 20 znaků."
+      },
       "registration_number": {
         "invalid_format": "Neplatný formát IČO pro vybranou zemi",
         "not_registered": "Toto IČO není v registru ekonomických subjektů (ARES). Zkontrolujte číslo."

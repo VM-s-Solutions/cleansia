@@ -12,6 +12,8 @@
 <resources>
     <string name="core_search">Search</string>
     <string name="core_snackbar_dismiss">Dismiss</string>
+    <string name="core_code_paste">Paste</string>
+    <string name="core_code_field_label">Verification code, 6 digits</string>
     <string name="core_consent_toggle">Accept terms and privacy policy</string>
     <string name="core_error_server">Server is temporarily unavailable. Try again later.</string>
     <string name="core_error_timeout">Connection timeout. Please try again.</string>

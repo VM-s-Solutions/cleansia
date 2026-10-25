@@ -13,6 +13,7 @@ struct RewardsActivityScreen: View {
 
     var body: some View {
         content
+            .readableWidth()
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .background(CleansiaColors.background.ignoresSafeArea())
             .navigationTitle(L10n.Rewards.activityTitle)

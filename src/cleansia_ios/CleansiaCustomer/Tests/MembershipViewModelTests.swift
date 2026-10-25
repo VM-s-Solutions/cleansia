@@ -86,6 +86,7 @@ final class MembershipViewModelTests: XCTestCase {
 
         client.plansResult = .success(MembershipFixtures.plansInEur)
         market.select(isoCode: "SVK")
+        await eventually { vm.plans.first?.currencyCode == "EUR" }
         await drain()
 
         XCTAssertEqual(client.plansCountryIds, ["cze", "svk"])
@@ -302,6 +303,15 @@ final class MembershipViewModelTests: XCTestCase {
 
     private func drain() async {
         for _ in 0 ..< 5 {
+            await Task.yield()
+        }
+    }
+
+    /// A market change reaches the plans through a hop off the main actor, so a fixed number of yields
+    /// can finish first, as they usually do in an optimised build; this waits for the plans themselves.
+    private func eventually(_ condition: () -> Bool) async {
+        for _ in 0 ..< 500 {
+            if condition() { return }
             await Task.yield()
         }
     }

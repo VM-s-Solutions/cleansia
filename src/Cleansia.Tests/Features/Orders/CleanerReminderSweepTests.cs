@@ -1,3 +1,4 @@
+using System.Globalization;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Enums;
@@ -301,6 +302,249 @@ public class CleanerReminderSweepTests
             order, ValidatorTestHelpers.BuildEmployee($"emp-{orderId}", ContractStatus.Approved)));
         order.TenantId = "tenant-a";
         return order;
+    }
+
+    /// <summary>
+    /// A job nobody has taken, under a day from its start: offerable (cash, so no payment is awaited, and a
+    /// three-hour slot, so one already past its start is still open and only the window can refuse it), no
+    /// reservation, and its status rows hours old, past the quiet period.
+    /// </summary>
+    private static Order UnstaffedJob(
+        string orderId,
+        double hoursOut = 20,
+        OrderStatus status = OrderStatus.New,
+        PaymentType paymentType = PaymentType.Cash,
+        PaymentStatus paymentStatus = PaymentStatus.Pending,
+        string? recurringTemplateId = null,
+        string? tenantId = "tenant-a")
+    {
+        var order = ValidatorTestHelpers.BuildEmptyOrder(
+            orderId, status, maxEmployees: 1, paymentType, paymentStatus, recurringTemplateId,
+            cleaningDateTime: DateTime.UtcNow.AddHours(hoursOut));
+        order.UpdateEstimatedTime(180);
+        foreach (var row in order.OrderStatusHistory)
+        {
+            row.Created("test", DateTimeOffset.UtcNow.AddHours(-3));
+        }
+
+        order.TenantId = tenantId;
+        return order;
+    }
+
+    private void OnTheBoard(params Order[] orders)
+    {
+        _orderRepository.Setup(r => r.GetQueryableIgnoringTenant())
+            .Returns(orders.AsQueryable().BuildMock());
+        OnAJobRightNow();
+    }
+
+    private void NoCleanerAlerted(Order order, Times times) =>
+        _adminNotifier.Verify(n => n.NotifyAsync(
+            It.Is<AdminEvent>(e => e.Key == AdminNotificationEventCatalog.OrderNoCleanerYet && e.Subject == order.Id),
+            It.IsAny<CancellationToken>()), times);
+
+    private async Task AssertNoCleanerAlertIsNotRaisedAsync(params Order[] orders)
+    {
+        OnTheBoard(orders);
+
+        var result = await Handler().Handle(new SendCleanerJobReminders.Command(), CancellationToken.None);
+
+        Assert.Equal(0, result.Value!.NoCleanerAlerts);
+        _adminNotifier.Verify(n => n.NotifyAsync(
+            It.Is<AdminEvent>(e => e.Key == AdminNotificationEventCatalog.OrderNoCleanerYet),
+            It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData(OrderStatus.New)]
+    [InlineData(OrderStatus.Confirmed)]
+    public async Task A_Job_Nobody_Has_Taken_Under_A_Day_From_Its_Start_Is_Reported_To_Its_Company(OrderStatus status)
+    {
+        var order = UnstaffedJob("order-unstaffed", status: status);
+        OnTheBoard(order);
+        AdminEvent? raised = null;
+        _adminNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<AdminEvent>(), It.IsAny<CancellationToken>()))
+            .Callback<AdminEvent, CancellationToken>((adminEvent, _) => raised = adminEvent)
+            .Returns(Task.CompletedTask);
+
+        var result = await Handler().Handle(new SendCleanerJobReminders.Command(), CancellationToken.None);
+
+        Assert.Equal(1, result.Value!.NoCleanerAlerts);
+        _adminNotifier.Verify(n => n.NotifyAsync(It.IsAny<AdminEvent>(), It.IsAny<CancellationToken>()), Times.Once);
+        Assert.NotNull(raised);
+        Assert.Equal(AdminNotificationEventCatalog.OrderNoCleanerYet, raised.Key);
+        Assert.Equal("tenant-a", raised.TenantId);
+        Assert.Equal(order.Id, raised.Subject);
+        Assert.Equal(3, raised.Args.Count);
+        Assert.Equal(order.DisplayOrderNumber, raised.Args["orderNumber"]);
+        Assert.Equal(
+            DateTime.SpecifyKind(order.CleaningDateTime, DateTimeKind.Utc).ToString("O", CultureInfo.InvariantCulture),
+            raised.Args["cleaningDateTime"]);
+        Assert.Equal(order.Id, raised.Args["orderId"]);
+        _unitOfWork.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Theory]
+    [InlineData(25)]
+    [InlineData(-0.5)]
+    public async Task A_Job_More_Than_A_Day_Out_Or_Past_Its_Start_Is_Not_Reported(double hoursOut)
+    {
+        await AssertNoCleanerAlertIsNotRaisedAsync(UnstaffedJob("order-unstaffed", hoursOut));
+    }
+
+    [Theory]
+    [InlineData(1, false)]
+    [InlineData(2, false)]
+    [InlineData(1, true)]
+    public async Task A_Job_With_Anybody_On_It_Is_Not_Reported_However_Full_Its_Crew_Or_Whoever_Asked_For_Cover(
+        int seats, bool coverRequested)
+    {
+        var order = UnstaffedJob("order-staffed", status: OrderStatus.Confirmed);
+        order.SetMaxEmployees(seats);
+        var seat = OrderEmployee.Create(order, ValidatorTestHelpers.BuildEmployee("emp-on-it", ContractStatus.Approved));
+        if (coverRequested)
+        {
+            seat.MarkCoverRequested(DateTime.UtcNow.AddHours(-2));
+        }
+
+        order.AddAssignedEmployee(seat);
+
+        await AssertNoCleanerAlertIsNotRaisedAsync(order);
+    }
+
+    [Fact]
+    public async Task An_Abandoned_Card_Checkout_And_An_Unconfirmed_Recurring_Cash_Occurrence_Are_Not_Reported()
+    {
+        await AssertNoCleanerAlertIsNotRaisedAsync(
+            UnstaffedJob("order-unpaid-card", paymentType: PaymentType.Card, paymentStatus: PaymentStatus.Pending),
+            UnstaffedJob("order-unconfirmed-occurrence", recurringTemplateId: "template-1"));
+    }
+
+    [Fact]
+    public async Task A_Paid_Card_Job_And_A_Confirmed_Recurring_Cash_Occurrence_Are_Reported()
+    {
+        var paid = UnstaffedJob("order-paid-card", paymentType: PaymentType.Card, paymentStatus: PaymentStatus.Paid);
+        var confirmed = UnstaffedJob("order-confirmed-occurrence", recurringTemplateId: "template-1");
+        confirmed.ConfirmByCustomer(DateTime.UtcNow.AddHours(-2));
+        OnTheBoard(paid, confirmed);
+
+        var result = await Handler().Handle(new SendCleanerJobReminders.Command(), CancellationToken.None);
+
+        Assert.Equal(2, result.Value!.NoCleanerAlerts);
+        NoCleanerAlerted(paid, Times.Once());
+        NoCleanerAlerted(confirmed, Times.Once());
+    }
+
+    [Theory]
+    [InlineData(OrderStatus.OnTheWay)]
+    [InlineData(OrderStatus.InProgress)]
+    [InlineData(OrderStatus.Completed)]
+    [InlineData(OrderStatus.Cancelled)]
+    public async Task Only_A_Job_That_Never_Started_Is_Reported(OrderStatus status)
+    {
+        await AssertNoCleanerAlertIsNotRaisedAsync(UnstaffedJob("order-moved-on", status: status));
+    }
+
+    [Fact]
+    public async Task A_Job_Still_Reserved_For_The_Customers_Chosen_Cleaner_Waits_For_The_Reservation_To_Lapse()
+    {
+        var now = DateTime.UtcNow;
+        var reserved = UnstaffedJob("order-reserved");
+        reserved.GrantPreferredHold("emp-chosen", untilUtc: now.AddHours(1), nowUtc: now, maxRounds: 2);
+        var lapsed = UnstaffedJob("order-lapsed");
+        lapsed.GrantPreferredHold("emp-chosen", untilUtc: now.AddHours(-1), nowUtc: now.AddHours(-3), maxRounds: 2);
+        OnTheBoard(reserved, lapsed);
+
+        var result = await Handler().Handle(new SendCleanerJobReminders.Command(), CancellationToken.None);
+
+        Assert.Equal(1, result.Value!.NoCleanerAlerts);
+        NoCleanerAlerted(lapsed, Times.Once());
+        NoCleanerAlerted(reserved, Times.Never());
+    }
+
+    /// <summary>
+    /// A booking, a drop's walk-back or re-advertisement and a rejection each write a fresh status row, and a
+    /// customer's confirmation makes an occurrence takeable: the board and the seat-open push get an hour
+    /// before the administrators hear about the job again.
+    /// </summary>
+    [Fact]
+    public async Task A_Job_Whose_Status_Changed_Or_Which_The_Customer_Confirmed_Within_The_Hour_Is_Not_Reported_Yet()
+    {
+        var walkedBack = UnstaffedJob("order-walked-back");
+        var row = OrderStatusTrack.Create(OrderStatus.New, walkedBack);
+        row.Created("test", DateTimeOffset.UtcNow.AddMinutes(-30));
+        walkedBack.AddOrderStatus(row);
+        var justConfirmed = UnstaffedJob("order-just-confirmed", recurringTemplateId: "template-1");
+        justConfirmed.ConfirmByCustomer(DateTime.UtcNow.AddMinutes(-30));
+
+        await AssertNoCleanerAlertIsNotRaisedAsync(walkedBack, justConfirmed);
+    }
+
+    [Fact]
+    public async Task A_Job_Already_Reported_Is_Not_Reported_Again()
+    {
+        var order = UnstaffedJob("order-reported");
+        _userNotifications
+            .Setup(r => r.AnyForEventIgnoringTenantAsync(
+                "tenant-a", AdminNotificationEventCatalog.OrderNoCleanerYet, "orderId", order.Id,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        await AssertNoCleanerAlertIsNotRaisedAsync(order);
+    }
+
+    [Fact]
+    public async Task Each_Company_Is_Told_Under_Its_Own_Tenant_And_Committed_Before_The_Next()
+    {
+        OnTheBoard(
+            UnstaffedJob("order-company-a", tenantId: "tenant-a"),
+            UnstaffedJob("order-company-b", tenantId: "tenant-b"));
+        var steps = new List<string>();
+        _tenantProvider
+            .Setup(t => t.SetTenantOverride(It.IsAny<string>()))
+            .Callback<string>(tenant => steps.Add($"override {tenant}"));
+        _adminNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<AdminEvent>(), It.IsAny<CancellationToken>()))
+            .Callback<AdminEvent, CancellationToken>((adminEvent, _) => steps.Add($"raise {adminEvent.TenantId} {adminEvent.Subject}"))
+            .Returns(Task.CompletedTask);
+        _unitOfWork
+            .Setup(u => u.CommitAsync(It.IsAny<CancellationToken>()))
+            .Callback(() => steps.Add("commit"))
+            .Returns(Task.CompletedTask);
+
+        var result = await Handler().Handle(new SendCleanerJobReminders.Command(), CancellationToken.None);
+
+        Assert.Equal(2, result.Value!.NoCleanerAlerts);
+        Assert.Equal(
+            ["override tenant-a", "raise tenant-a order-company-a", "commit",
+                "override tenant-b", "raise tenant-b order-company-b", "commit"],
+            steps);
+    }
+
+    [Fact]
+    public async Task A_Job_With_No_Company_Is_Skipped_Without_Reading_The_Feed()
+    {
+        await AssertNoCleanerAlertIsNotRaisedAsync(UnstaffedJob("order-no-company", tenantId: null));
+
+        _userNotifications.Verify(r => r.AnyForEventIgnoringTenantAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+            It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData(1, 0, true)]
+    [InlineData(168, 240, true)]
+    [InlineData(0, 60, false)]
+    [InlineData(169, 60, false)]
+    [InlineData(24, -1, false)]
+    [InlineData(24, 241, false)]
+    public void The_No_Cleaner_Lead_And_Quiet_Period_Are_Bounded(int leadHours, int quietMinutes, bool valid)
+    {
+        var result = new SendCleanerJobReminders.Validator().Validate(
+            new SendCleanerJobReminders.Command(NoCleanerLeadHours: leadHours, NoCleanerQuietMinutes: quietMinutes));
+
+        Assert.Equal(valid, result.IsValid);
     }
 }
 

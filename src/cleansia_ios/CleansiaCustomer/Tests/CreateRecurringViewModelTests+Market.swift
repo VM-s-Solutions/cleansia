@@ -42,6 +42,7 @@ extension CreateRecurringViewModelTests {
 
         catalog.result = .success(CatalogFixtures.slovak)
         vm.setSavedAddressId("addr-sk")
+        await eventually { vm.catalogState.loadedValue == CatalogFixtures.slovak }
         await drain()
 
         XCTAssertEqual(catalog.requestedCountryIds, ["cze", "svk"])
@@ -79,6 +80,7 @@ extension CreateRecurringViewModelTests {
 
         catalog.result = .success(CatalogFixtures.slovak)
         vm.setSavedAddressId("addr-sk")
+        await eventually { !events.isEmpty }
         await drain()
 
         XCTAssertEqual(vm.formState.selectedServiceIds, ["s-1"])
@@ -111,6 +113,7 @@ extension CreateRecurringViewModelTests {
 
         catalog.result = .failure(ApiError(code: "x"))
         vm.setSavedAddressId("addr-sk")
+        await eventually { catalog.requestedCountryIds.count == 2 }
         await drain()
 
         XCTAssertEqual(catalog.requestedCountryIds, ["cze", "svk"])
@@ -137,10 +140,36 @@ extension CreateRecurringViewModelTests {
             RecurringFixtures.address(id: "addr-new", countryId: "svk")
         ])
         await vm.reloadAddresses()
+        await eventually { vm.catalogState.loadedValue == CatalogFixtures.slovak }
         await drain()
 
         XCTAssertEqual(catalog.requestedCountryIds, ["cze", "svk"])
         XCTAssertEqual(vm.catalogState.loadedValue, CatalogFixtures.slovak)
+    }
+
+    /// While the load is in error there is nothing to re-read for a new market; the first catalogue
+    /// the retry lands is the selected market's, and from then on the address drives the market.
+    func testTheMarketFollowsTheAddressAgainOnceARetriedCatalogueLands() async {
+        let catalog = FakeCatalogClient(result: .failure(ApiError(code: "x")))
+        let (vm, _) = makeVM(catalog: catalog, addressClient: twoMarkets())
+        await vm.load()
+        XCTAssertEqual(catalog.requestedCountryIds, ["cze"])
+
+        vm.setSavedAddressId("addr-sk")
+        await drain()
+        XCTAssertEqual(catalog.requestedCountryIds, ["cze"])
+
+        catalog.result = .success(CatalogFixtures.slovak)
+        await vm.retryCatalog()
+        XCTAssertEqual(catalog.requestedCountryIds, ["cze", "svk"])
+        XCTAssertEqual(vm.catalogState.loadedValue, CatalogFixtures.slovak)
+
+        catalog.result = .success(CatalogFixtures.populated)
+        vm.setSavedAddressId("addr-cz")
+        await eventually { vm.catalogState.loadedValue == CatalogFixtures.populated }
+        await drain()
+        XCTAssertEqual(catalog.requestedCountryIds, ["cze", "svk", "cze"])
+        XCTAssertEqual(vm.catalogState.loadedValue, CatalogFixtures.populated)
     }
 
     // MARK: - The start is one the server books: a quarter-hour from 08:00 to 19:45
@@ -226,6 +255,15 @@ extension CreateRecurringViewModelTests {
 
     func drain() async {
         for _ in 0 ..< 5 {
+            await Task.yield()
+        }
+    }
+
+    /// The fake catalogue answers off the main actor, so a fixed number of yields can finish first, as
+    /// they usually do in an optimised build; this waits for the answer itself.
+    private func eventually(_ condition: () -> Bool) async {
+        for _ in 0 ..< 500 {
+            if condition() { return }
             await Task.yield()
         }
     }

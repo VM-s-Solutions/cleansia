@@ -575,11 +575,15 @@
     <string name="error_profile_not_loaded">Профиль ещё не загружен</string>
     <string name="error_name_required">Имя контакта обязательно</string>
     <string name="error_phone_required">Телефон контакта обязателен</string>
+    <string name="error_phone_number_required">Номер телефона обязателен</string>
+    <string name="error_phone_number_invalid">Введите номер с кодом страны, напр. +420 777 123 456</string>
     <string name="error_pick_nationality">Выберите гражданство</string>
     <string name="error_passport_required">Введите номер паспорта / ID</string>
     <string name="error_pick_business_country">Выберите страну регистрации вашего бизнеса</string>
     <string name="error_registration_number_required">Введите регистрационный номер</string>
+    <string name="error_legal_entity_name_missing">Отсутствует зарегистрированное название вашей компании. Обратитесь в поддержку — здесь его изменить нельзя.</string>
     <string name="error_pick_address_first">Сначала выберите адрес на карте</string>
+    <string name="error_address_incomplete">Здесь нет полного адреса. Переместите метку на здание или найдите улицу и номер дома.</string>
 
     <!-- Profile Validation -->
     <string name="validation_required">Это поле обязательно</string>
@@ -588,7 +592,6 @@
     <string name="validation_max_100">Максимум 100 символов</string>
     <string name="validation_date_past">Дата должна быть в прошлом</string>
     <string name="validation_min_age_18">Вам должно быть не менее 18 лет</string>
-    <string name="validation_max_age_120">Недействительная дата рождения</string>
     <string name="validation_invalid_date">Недействительный формат даты</string>
     <string name="validation_invalid_phone">Недействительный формат номера телефона</string>
     <string name="validation_invalid_email">Недействительный формат электронной почты</string>
@@ -929,6 +932,13 @@
     <string name="order_cash_not_paid_confirm_message_no_amount">Используйте это, только если клиент ничего не заплатил. Если он заплатил только часть, вместо этого сообщите компании. Уборка будет завершена, и вам за неё заплатят. Клиент будет должен стоимость уборки, получит об этом уведомление и не сможет ничего заказать, пока не заплатит; администратор получит уведомление. Отменить это может только администратор.</string>
     <string name="order_cash_not_paid_confirm_action">Да, сообщить</string>
     <string name="order_cash_not_paid_reported_toast">Сообщение отправлено. Уборка завершена, клиент уведомлён.</string>
+    <string name="order_drop_action">Отказаться от заказа</string>
+    <string name="order_drop_confirm_title">Отказаться от этого заказа?</string>
+    <string name="order_drop_confirm_message">Вас снимут с этого заказа, а ваше место вернётся в список для других уборщиков. Заказ клиента не отменяется. Если вы единственный уборщик на нём, у заказа не будет уборщика, пока его кто-нибудь не возьмёт.</string>
+    <string name="order_drop_confirm_action">Да, отказаться</string>
+    <string name="order_drop_keep">Оставить заказ за собой</string>
+    <string name="order_dropped_toast_no_crew">Вы отказались от заказа. Сейчас на нём нет уборщика: он снова в списке.</string>
+    <string name="order_dropped_toast">Вы отказались от заказа. Ваше место снова в списке для других уборщиков.</string>
 
     <!-- Backend error-key translations -->
     <string name="error_key_order_after_photos_required">Перед завершением заказа сделайте хотя бы одну фотографию \"после\".</string>
@@ -1196,6 +1206,7 @@
     <string name="error_validation_invalid_age">Введите, пожалуйста, корректный возраст.</string>
     <string name="error_validation_invalid_phone_number">Введите, пожалуйста, корректный номер телефона.</string>
     <string name="error_validation_invalid_national_id">Введите, пожалуйста, корректный национальный ID.</string>
+    <string name="error_validation_passport_id_invalid_length">Номер паспорта / ID должен содержать от 5 до 20 символов.</string>
     <string name="error_validation_invalid_tax_id">Введите, пожалуйста, корректный налоговый ID.</string>
     <string name="error_validation_invalid_iban">Введите, пожалуйста, корректный IBAN.</string>
     <string name="error_validation_invalid_zip_code">Введите, пожалуйста, корректный почтовый индекс.</string>

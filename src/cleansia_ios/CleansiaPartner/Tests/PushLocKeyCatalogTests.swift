@@ -19,6 +19,7 @@ final class PushLocKeyCatalogTests: XCTestCase {
     private let events = [
         "order.payment_confirmed",
         "order.cleaner_assigned",
+        "order.cleaner_released",
         "order.on_the_way",
         "order.in_progress",
         "order.completed",
@@ -59,6 +60,7 @@ final class PushLocKeyCatalogTests: XCTestCase {
     private let orderNumberArgEvents: Set<String> = [
         "order.payment_confirmed",
         "order.cleaner_assigned",
+        "order.cleaner_released",
         "order.on_the_way",
         "order.in_progress",
         "order.completed",

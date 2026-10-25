@@ -633,8 +633,8 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   // token), a base-class validator (`class Validator : BaseAuthValidator<Command>`),
   // and a shared service called from a handler (`GdprDeletionService`). Every trace is
   // concrete: EmployeeController -> UpdateEmployee -> ValidationExtensions for the
-  // address rules, UserController -> ChangePassword -> ValidatePassword, GdprController
-  // -> DeleteUserAccount -> GdprDeletionService for the six deletion blockers.
+  // address and passport rules, UserController -> ChangePassword -> ValidatePassword,
+  // GdprController -> DeleteUserAccount -> GdprDeletionService for the six deletion blockers.
   'address.invalid_length',
   'auth.invalid_password_format',
   'email.invalid_format',
@@ -645,6 +645,7 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   'gdpr.deletion_blocked_by_invoice',
   'gdpr.deletion_blocked_by_order',
   'gdpr.deletion_blocked_by_unsettled_pay',
+  'validation.passport_id.invalid_length',
 ];
 
 // Reachable from a Cleansia.Web.Partner controller and deliberately left out of

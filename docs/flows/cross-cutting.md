@@ -176,10 +176,12 @@ business commit — for a webhook that also un-stamps the Stripe event — so a 
 per logical event across requests (an order id for "became offerable", a released assignment id for
 "lost its crew", a Stripe dispute id for a chargeback — plus the company id when a chargeback that matches
 no order is announced to every company in turn — the request id plus the day for a failed
-erasure retry, the run instant to the tick for a wind-down run). The two sites that can raise one
-logical event twice — a repeated card decline on one order, two overlapping archive builds of one
-frozen company — read the feed first (`AnyForEventIgnoringTenantAsync`, a jsonb containment on the row's args by
-company and key) and stay silent when a row already says so. A job with no ambient tenant (the daily
+erasure retry, the run instant to the tick for a wind-down run). The card decline, the archive, the
+not-started alert, the no-cleaner-yet alert and the three refund alerts can each be raised by more
+than one request — a repeated decline on one order, two overlapping archive builds of one frozen
+company, any of the not-started alert's three callers, a later five-minute tick, the hourly re-drive
+and the refund seam — so each of those sites reads the feed first (`AnyForEventIgnoringTenantAsync`, a
+jsonb containment on the row's args by company and key) and stays silent when a row already says so. A job with no ambient tenant (the daily
 erasure retry) opens a scope of its own, sets the override, calls the notifier and commits there, so a
 discarded failing walk cannot take the notice with it. → [Admin notifier](/domain/roles/admin-notifier)
 

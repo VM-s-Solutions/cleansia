@@ -2,10 +2,11 @@
 
 # Cleansia iOS — local TestFlight lanes.
 #
-# Run from src/cleansia_ios:
+# Run from src/cleansia_ios, in a clone outside ~/Desktop, ~/Documents and ~/Downloads:
 #   bundle exec fastlane customer   # build + upload the Customer app
 #   bundle exec fastlane partner    # build + upload the Partner app
 #   bundle exec fastlane all        # both, in sequence
+#   bundle exec fastlane preflight app:partner   # only the checks and tests that precede an upload
 #
 # Release calls the production API. To point one TestFlight build at another
 # host — the Azure DEV one, while production has no DNS — pass it per app:
@@ -17,6 +18,7 @@
 # Auth + the signing team come entirely from the environment — see
 # fastlane/.env.example. Copy it to fastlane/.env (gitignored) and fill it in.
 
+require "fileutils"
 require "shellwords"
 
 default_platform(:ios)
@@ -28,6 +30,16 @@ IOS_ROOT = File.expand_path("..", __dir__)
 # which floated transitive Firebase dependencies past those pins and rewrote the committed
 # CleansiaCore/Package.resolved on every run.
 WORKSPACE = File.join(IOS_ROOT, "Cleansia.xcworkspace")
+
+# The one Xcode that archives TestFlight builds; ios-ci.yml tests with the same one, optimised.
+XCODE_PIN = File.join(IOS_ROOT, ".xcode-version")
+
+# The simulator may not read these folders, and the tests read repo files at run time.
+SIMULATOR_UNREADABLE = %w[Desktop Documents Downloads].map { |dir| File.join(Dir.home, dir) }.freeze
+
+# One package checkout for the pre-archive tests and the archive, so a run fetches once. Crashlytics'
+# upload-symbols comes from it too.
+SOURCE_PACKAGES = File.join(IOS_ROOT, "build", "SourcePackages")
 
 APPS = {
   customer: {
@@ -43,12 +55,12 @@ APPS = {
 }.freeze
 
 platform :ios do
-  desc "Build + upload the Customer app to TestFlight (optional api_base_url:)"
+  desc "Build + upload the Customer app to TestFlight (optional api_base_url:, allow_dirty:)"
   lane :customer do |options|
     ship(:customer, options)
   end
 
-  desc "Build + upload the Partner app to TestFlight (optional api_base_url:)"
+  desc "Build + upload the Partner app to TestFlight (optional api_base_url:, allow_dirty:)"
   lane :partner do |options|
     ship(:partner, options)
   end
@@ -59,26 +71,44 @@ platform :ios do
     if options[:api_base_url]
       UI.user_error!("api_base_url is per app: run the customer and partner lanes one at a time")
     end
-    ship(:customer)
-    ship(:partner)
+    ship(:customer, options)
+    ship(:partner, options)
+  end
+
+  desc "What an upload checks before App Store Connect, alone: app:customer|partner (optional allow_dirty:)"
+  lane :preflight do |options|
+    key = options[:app].to_s.to_sym
+    UI.user_error!("Pass app:customer or app:partner") unless APPS.key?(key)
+    preflight(key, options)
   end
 end
 
-# Regenerate → bump → archive → upload for one app.
-def ship(key, options = {})
-  app = APPS.fetch(key)
-  team_id = ENV.fetch("ASC_TEAM_ID")
-  api_base_url = options[:api_base_url]
-  # `api_base_url: https://…` with a space reaches here as "" — refuse it before it becomes an upload.
-  if api_base_url && !api_base_url.start_with?("https://")
-    UI.user_error!("api_base_url must be an https:// URL written with no space after the colon, got #{api_base_url.inspect}")
-  end
+# Matched by the version xcodebuild reports, because the app's name need not carry it. Sets
+# DEVELOPER_DIR for the rest of the run; fastlane's ensure_xcode_version needs the sunset xcode-install gem.
+def select_pinned_xcode!
+  pinned = File.read(XCODE_PIN).strip
+  xcode = Dir["/Applications/Xcode*.app"].sort.find do |app|
+    xcodebuild = File.join(app, "Contents", "Developer", "usr", "bin", "xcodebuild")
+    next false unless File.executable?(xcodebuild)
 
-  api_key = app_store_connect_api_key(
-    key_id: ENV.fetch("ASC_KEY_ID"),
-    issuer_id: ENV.fetch("ASC_ISSUER_ID"),
-    key_filepath: ENV.fetch("ASC_KEY_PATH"),
-  )
+    reported = IO.popen({ "DEVELOPER_DIR" => nil }, [xcodebuild, "-version"], err: File::NULL, &:read)
+    reported.lines.first.to_s.strip == "Xcode #{pinned}"
+  end
+  UI.user_error!("No Xcode #{pinned} in /Applications: install it, or move #{XCODE_PIN} and ios-ci.yml together") unless xcode
+  xcode_select(xcode)
+end
+
+def git(*args)
+  sh("git", "-C", IOS_ROOT, *args, log: false).strip
+end
+
+# Everything an upload checks before it talks to App Store Connect, so the preflight lane can run it alone.
+def preflight(key, options)
+  app = APPS.fetch(key)
+  if SIMULATOR_UNREADABLE.any? { |dir| File.realpath(IOS_ROOT).start_with?("#{dir}/") }
+    UI.user_error!("Run the lanes from a clone outside ~/Desktop, ~/Documents and ~/Downloads: the tests read repo files the simulator cannot open there")
+  end
+  select_pinned_xcode!
 
   # 1. Regenerate the two gitignored, build-required inputs from their source of
   #    truth: the OpenAPI Swift client packages and the .xcodeproj files. Safe to
@@ -91,7 +121,67 @@ def ship(key, options = {})
     sh("cd #{File.join(IOS_ROOT, project[:dir]).shellescape} && xcodegen generate")
   end
 
-  # 2. Next build number = one past the highest already on TestFlight (0 → 1 for
+  # 2. Checked after the regeneration, so a stale committed Info.plist counts as a change.
+  dirty = git("status", "--porcelain", "--", ".", "../cleansia_android/openapi")
+  unless dirty.empty? || options[:allow_dirty]
+    UI.user_error!("Uncommitted changes would ship in a build no commit describes:\n#{dirty}\nCommit them, or pass allow_dirty:true")
+  end
+  commit = git("rev-parse", "HEAD")
+  source = {
+    commit: commit,
+    stamp: dirty.empty? ? commit : "#{commit}-dirty",
+    branch: git("rev-parse", "--abbrev-ref", "HEAD"),
+    clean: dirty.empty?,
+  }
+
+  # 3. This app's suite built the way the archive is (-O, whole module) by the pinned Xcode, and Debug
+  #    otherwise for the DEBUG test hooks and @testable. MallocScribble makes a use-after-free fault.
+  #    The result bundle keeps a crashed host's frame. → /mobile-app/overview#optimizer-only-crashes
+  ENV["TEST_RUNNER_MallocScribble"] = "1"
+  begin
+    run_tests(
+      workspace: WORKSPACE,
+      scheme: app[:scheme],
+      destination: "platform=iOS Simulator,name=iPhone 17",
+      # scan otherwise picks a simulator of its own, the first listed once it rules the iPhone 17 out for
+      # a runtime newer than the SDK, and runs its device setup there.
+      skip_detect_devices: true,
+      xcargs: "SWIFT_OPTIMIZATION_LEVEL=-O SWIFT_COMPILATION_MODE=wholemodule",
+      derived_data_path: File.join(IOS_ROOT, "build", "DerivedData-tests"),
+      cloned_source_packages_path: SOURCE_PACKAGES,
+      output_directory: File.join(IOS_ROOT, "build", "tests-#{key}"),
+      buildlog_path: File.join(IOS_ROOT, "build", "tests-#{key}"),
+      result_bundle: true,
+    )
+  ensure
+    ENV.delete("TEST_RUNNER_MallocScribble")
+  end
+  source
+end
+
+# Gate → bump → archive → symbols → upload → tag for one app.
+def ship(key, options = {})
+  app = APPS.fetch(key)
+  team_id = ENV.fetch("ASC_TEAM_ID")
+  api_base_url = options[:api_base_url]
+  # `api_base_url: https://…` with a space reaches here as "" — refuse it before it becomes an upload.
+  if api_base_url && !api_base_url.start_with?("https://")
+    UI.user_error!("api_base_url must be an https:// URL written with no space after the colon, got #{api_base_url.inspect}")
+  end
+
+  # Without it the app skips FirebaseApp.configure(), so the build would ship without push and crash reports.
+  gsp = File.join(IOS_ROOT, app[:dir], "Firebase", "GoogleService-Info.plist")
+  UI.user_error!("#{gsp} is missing: this build would ship without push and without crash reporting") unless File.file?(gsp)
+
+  api_key = app_store_connect_api_key(
+    key_id: ENV.fetch("ASC_KEY_ID"),
+    issuer_id: ENV.fetch("ASC_ISSUER_ID"),
+    key_filepath: ENV.fetch("ASC_KEY_PATH"),
+  )
+
+  source = preflight(key, options)
+
+  # 4. Next build number = one past the highest already on TestFlight (0 → 1 for
   #    the very first upload). TestFlight rejects a duplicate build number.
   build_number = latest_testflight_build_number(
     api_key: api_key,
@@ -100,17 +190,23 @@ def ship(key, options = {})
   ) + 1
   UI.message("📦 #{app[:bundle_id]} → build ##{build_number}")
 
-  # 3. Archive (Release, device) with Xcode-managed automatic signing. The build
+  # 5. Archive (Release, device) with Xcode-managed automatic signing. The build
   #    number is injected as an xcarg — never edited into project.yml — so it
   #    survives the xcodegen regen above and applies to the app + its Live
   #    Activity extension together (they must share a version). An api_base_url
   #    is injected the same way: a command-line build setting outranks the
   #    Release value in project.yml, which is otherwise the production host.
+  #    So are the commit and branch, which land in Info.plist as
+  #    CleansiaGitCommit and CleansiaGitBranch, checked in the archive below.
   xcargs = "CURRENT_PROJECT_VERSION=#{build_number} DEVELOPMENT_TEAM=#{team_id} -allowProvisioningUpdates"
+  xcargs += " CLEANSIA_GIT_COMMIT=#{source[:stamp].shellescape} CLEANSIA_GIT_BRANCH=#{source[:branch].shellescape}"
   if api_base_url
     UI.important("🌐 #{app[:bundle_id]} build ##{build_number} calls #{api_base_url}, not the Release host")
     xcargs += " API_BASE_URL=#{api_base_url.shellescape}"
   end
+  # build_app zips the archive's dSYMs here, into whatever zip an earlier run left, and only when it has some.
+  symbols = File.join(IOS_ROOT, "build", "#{app[:scheme]}.app.dSYM.zip")
+  FileUtils.rm_f(symbols)
   build_app(
     workspace: WORKSPACE,
     scheme: app[:scheme],
@@ -120,6 +216,7 @@ def ship(key, options = {})
     output_name: "#{app[:scheme]}.ipa",
     clean: true,
     xcargs: xcargs,
+    cloned_source_packages_path: SOURCE_PACKAGES,
     # Let Xcode create/download the App Store profile at export time too (not
     # just archive), so a first non-interactive run can provision the app + the
     # Live Activity extension.
@@ -130,15 +227,59 @@ def ship(key, options = {})
       teamID: team_id,
     },
   )
+  shipped = FastlaneCore::IpaFileAnalyser.fetch_info_plist_file(lane_context[SharedValues::IPA_OUTPUT_PATH])
+  unless shipped["CleansiaGitCommit"] == source[:stamp]
+    UI.user_error!("The archive's Info.plist names commit #{shipped["CleansiaGitCommit"].inspect}, not #{source[:stamp]}")
+  end
+  UI.user_error!("The archive left no #{symbols}, so no crash report of build ##{build_number} could be symbolicated") unless File.file?(symbols)
 
-  # 4. Ship. Internal testers get it within minutes of processing (no Beta App
+  # 6. Symbols for Crashlytics, authenticated by the app's own plist. upload_symbols_to_crashlytics reports success
+  #    whatever upload-symbols returns, so the binary runs directly. A failed upload does not stop the lane, since the
+  #    dSYMs can be uploaded later; the lane prints the command that does it, now and in the line reporting the upload.
+  upload_symbols = [
+    File.join(SOURCE_PACKAGES, "checkouts", "firebase-ios-sdk", "Crashlytics", "upload-symbols"),
+    "-gsp", gsp, "-p", "ios", symbols,
+  ]
+  symbols_uploaded = sh(*upload_symbols, log: false) { |status| status.success? }
+  symbols_note = if symbols_uploaded
+                   "its dSYMs are on Crashlytics"
+                 else
+                   "its dSYMs are NOT on Crashlytics; upload them with: #{upload_symbols.shelljoin}"
+                 end
+  UI.important("Build ##{build_number} ships, but #{symbols_note}") unless symbols_uploaded
+
+  # 7. Ship. Internal testers get it within minutes of processing (no Beta App
   #    Review); external testers need a one-time review, enabled per-app in ASC.
+  #    With a changelog, pilot waits until the build appears to set What to Test, then returns.
+  notes = <<~NOTES
+    #{app[:bundle_id]} #{shipped["CFBundleShortVersionString"]} (#{build_number})
+    Commit #{source[:stamp]} on #{source[:branch]}
+    API #{shipped["API_BASE_URL"]}
+    #{sh("xcodebuild", "-version", log: false).split.join(" ")}
+  NOTES
   upload_to_testflight(
     api_key: api_key,
     app_identifier: app[:bundle_id],
     skip_waiting_for_build_processing: true,
     distribute_external: false,
+    changelog: notes,
   )
+  UI.success("✅ #{app[:bundle_id]} build ##{build_number} uploaded to TestFlight; #{symbols_note}")
 
-  UI.success("✅ #{app[:bundle_id]} build ##{build_number} uploaded to TestFlight")
+  # 8. Tag the commit, and push the tag only when the commit is already on a branch of origin, the remote it goes
+  #    to: a pushed tag uploads the commits it points at, and keeps them there even if no branch ever carries
+  #    them. An allow_dirty build gets none, since no commit describes it.
+  return UI.important("No tag: build ##{build_number} has uncommitted changes") unless source[:clean]
+
+  tag = "ios/#{key}/#{shipped["CFBundleShortVersionString"]}-#{build_number}"
+  add_git_tag(tag: tag, commit: source[:commit], message: notes)
+  if git("branch", "-r", "--list", "origin/*", "--contains", source[:commit]).empty?
+    UI.important("Tag #{tag} stays local: #{source[:commit]} is on no branch of origin. Once it is: git push origin #{tag}")
+    return
+  end
+  begin
+    push_git_tags(remote: "origin", tag: tag)
+  rescue StandardError => e
+    UI.important("Tag #{tag} was not pushed (#{e.message}); the build is up. Retry with: git push origin #{tag}")
+  end
 end

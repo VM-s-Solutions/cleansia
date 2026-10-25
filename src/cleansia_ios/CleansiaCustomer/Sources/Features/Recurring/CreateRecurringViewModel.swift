@@ -38,7 +38,7 @@ struct CreateRecurringFormState: Equatable {
     }
 
     var isValid: Bool {
-        (1 ... Self.totalSteps).allSatisfy(canAdvance) && paymentType != nil
+        (1 ... Self.totalSteps).allSatisfy { canAdvance(step: $0) } && paymentType != nil
     }
 
     init() {}

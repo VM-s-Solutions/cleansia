@@ -76,7 +76,7 @@ public class CancelUnfilledOrders
     /// <c>InProgress</c>: an order somebody started is not an order nobody turned up to, and refunding
     /// it in full on a crew count of zero would pay back a clean that was partly done.
     /// </summary>
-    private static readonly OrderStatus[] NeverStarted = [OrderStatus.New, OrderStatus.Confirmed];
+    internal static readonly OrderStatus[] NeverStarted = [OrderStatus.New, OrderStatus.Confirmed];
 
     public class Handler(
         IOrderRepository orderRepository,

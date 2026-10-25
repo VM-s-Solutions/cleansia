@@ -4,11 +4,12 @@ import Combine
 import Foundation
 
 /// The payout destination. A Czech or Slovak cleaner enters the parts they read off their statement —
-/// prefix, account number, bank code — and the server derives the IBAN, so everything about those parts
-/// (the account checksum, the bank code, a card number typed in) is left to it, and its answers are
-/// wired to `error.validation.payout.*`. Any other bank country takes one IBAN (owner ruling
-/// 2026-10-02), checked here as the server's IbanCalculator checks it (`ibanProblem`) so a typo is named
-/// before the round trip; the server still checks it again. Android's `BankForm`, case for case.
+/// prefix, account number, bank code — and the server derives the IBAN, so the account checksum, the
+/// prefix and a card number typed in are left to it, and its answers are wired to
+/// `error.validation.payout.*`; only a missing number and a bank code that is not four digits are named
+/// before the round trip. Any other bank country takes one IBAN (owner ruling 2026-10-02), checked here
+/// as the server's IbanCalculator checks it (`ibanProblem`) so a typo is named before the round trip;
+/// the server still checks it again. Android's `BankForm`, case for case.
 struct BankForm: Equatable {
     /// Why the server's IbanCalculator would refuse an IBAN for the bank country picked (ADR-0034 D4).
     enum IbanProblem: Equatable {
@@ -21,29 +22,60 @@ struct BankForm: Equatable {
     }
 
     var employeeId = ""
-    var bankCountryId: String?
+    var bankCountryId: String? {
+        didSet {
+            if bankCountryId != oldValue {
+                bankCountryError = nil
+                swiftError = nil
+            }
+        }
+    }
+
     var accountPrefix = "" {
-        didSet { accountPrefix = accountPrefix.payoutDigits }
+        didSet {
+            accountPrefix = accountPrefix.payoutDigits
+            if accountPrefix != oldValue { accountError = nil }
+        }
     }
 
     var accountNumber = "" {
-        didSet { accountNumber = accountNumber.payoutDigits }
+        didSet {
+            accountNumber = accountNumber.payoutDigits
+            if accountNumber != oldValue { accountError = nil }
+        }
     }
 
     var bankCode = "" {
-        didSet { bankCode = bankCode.payoutDigits }
+        didSet {
+            bankCode = bankCode.payoutDigits
+            if bankCode != oldValue { accountError = nil }
+        }
     }
 
     var iban = "" {
-        didSet { iban = String(iban.bankReference.prefix(Self.ibanMaxLength)) }
+        didSet {
+            iban = String(iban.bankReference.prefix(Self.ibanMaxLength))
+            if iban != oldValue { ibanServerError = nil }
+        }
     }
 
     var swift = "" {
-        didSet { swift = swift.bankReference }
+        didSet {
+            swift = swift.bankReference
+            if swift != oldValue { swiftError = nil }
+        }
     }
 
     var bankName = ""
     var holderName = ""
+
+    /// Named under their field until that field changes: what a save found, on the device or from the
+    /// server. A write of the value already there fixes nothing, so it keeps the error. The SWIFT's also goes
+    /// when the bank country changes, since the server judges the SWIFT by it.
+    var bankCountryError: String?
+    var accountError: String?
+    var ibanServerError: String?
+    var swiftError: String?
 
     /// The bank country's ISO code, which its IBANs start with. Set by the view model from the country
     /// list, so it follows `bankCountryId`.
@@ -60,19 +92,13 @@ struct BankForm: Equatable {
     /// Whether the account is entered as the three domestic parts rather than an IBAN: a CZ or SK bank,
     /// and a country the list cannot name (no country picked yet, or the list failed to load).
     var usesDomesticAccount: Bool {
-        bankCountryAlpha2.map(Self.domesticAccountCountries.contains) ?? true
+        bankCountryAlpha2.map { Self.domesticAccountCountries.contains($0) } ?? true
     }
 
     /// What the server would refuse about the IBAN; nil when it would take it, or for a domestic account.
     var ibanProblem: IbanProblem? {
         guard !usesDomesticAccount, let bankCountryAlpha2 else { return nil }
         return Self.ibanProblem(iban, bankCountryAlpha2: bankCountryAlpha2)
-    }
-
-    /// The bank's country plus the account in the form that country takes.
-    var canSubmit: Bool {
-        guard let bankCountryId, !bankCountryId.isBlank else { return false }
-        return usesDomesticAccount ? !accountNumber.isBlank : !iban.isBlank
     }
 
     /// ISO 13616 registry lengths, the server's `IbanCalculator.RegistryLengths` entry for entry
@@ -140,6 +166,7 @@ final class BankSectionViewModel: ViewModel {
 
     private let client: PartnerProfileClient
     private let snackbar: SnackbarController
+    private let localizer = ApiErrorLocalizer()
 
     init(client: PartnerProfileClient, snackbar: SnackbarController) {
         self.client = client
@@ -201,16 +228,14 @@ final class BankSectionViewModel: ViewModel {
     }
 
     func save() async {
-        guard case let .loaded(form) = state, !action.isSubmitting else { return }
+        guard case var .loaded(form) = state, !action.isSubmitting else { return }
         guard !form.employeeId.isBlank else {
             snackbar.showError(L10n.Profile.errorProfileNotLoaded)
             return
         }
-        guard form.canSubmit else { return }
-        guard form.ibanProblem == nil else {
-            update(\.ibanChecked, to: true)
-            return
-        }
+        checkFields(&form)
+        state = .loaded(withBankCountryCode(form))
+        guard form.bankCountryError == nil, form.accountError == nil, form.ibanProblem == nil else { return }
 
         action = .submitting
         // Each scheme sends only its own identifier. A domestic IBAN is the server's to derive, and the
@@ -233,9 +258,75 @@ final class BankSectionViewModel: ViewModel {
             saved.send()
         case let .failure(error):
             action = .idle
-            snackbar.showApiError(error)
+            if let refusal = Self.fieldRefusal(error, domestic: domestic) {
+                update(refusal.field, to: message(refusal.key))
+            } else {
+                snackbar.showApiError(error)
+            }
         }
     }
+
+    /// Every rule this device can check, in one pass. The account's checksum and its prefix are the
+    /// server's to judge, and its answer lands under the account too.
+    private func checkFields(_ form: inout BankForm) {
+        form.bankCountryError = (form.bankCountryId ?? "").isBlank ? message("common.required") : nil
+        form.accountError = form.usesDomesticAccount ? domesticAccountProblem(form) : nil
+        form.ibanServerError = nil
+        form.swiftError = nil
+        if form.ibanProblem != nil { form.ibanChecked = true }
+    }
+
+    /// The server's own order: a number first, then a bank code of exactly four ASCII digits.
+    private func domesticAccountProblem(_ form: BankForm) -> String? {
+        if form.accountNumber.isBlank { return message("validation.payout.account_number_required") }
+        let bankCode = form.bankCode.trimmed
+        let isBankCode = bankCode.count == 4 && bankCode.allSatisfy { $0.isASCII && $0.isNumber }
+        return isBankCode ? nil : message("validation.payout.invalid_bank_code")
+    }
+
+    private func message(_ key: String) -> String {
+        localizer.message(for: ApiError(code: key))
+    }
+
+    /// Where a payout refusal belongs. The server files every payout key under the account number, so the
+    /// key alone says which field it is about.
+    private static func fieldRefusal(
+        _ error: ApiError,
+        domestic: Bool
+    ) -> (key: String, field: WritableKeyPath<BankForm, String?>)? {
+        let accountField: WritableKeyPath<BankForm, String?> = domestic ? \.accountError : \.ibanServerError
+        let routes: [(WritableKeyPath<BankForm, String?>, [String])] = [
+            (accountField, domestic ? domesticAccountRefusals : ibanRefusals),
+            (\BankForm.swiftError, swiftRefusals),
+            (\BankForm.bankCountryError, bankCountryRefusals)
+        ]
+        for (field, keys) in routes {
+            if let key = keys.first(where: { error.carries($0) }) { return (key, field) }
+        }
+        return nil
+    }
+
+    private static let domesticAccountRefusals = [
+        "validation.payout.account_number_required",
+        "validation.payout.invalid_account_number",
+        "validation.payout.invalid_account_prefix",
+        "validation.payout.invalid_bank_code",
+        "validation.payout.looks_like_card",
+        "validation.payout.iban_mismatch"
+    ]
+
+    private static let ibanRefusals = [
+        "validation.payout.invalid_iban",
+        "validation.payout.iban_country_mismatch",
+        "validation.payout.looks_like_card"
+    ]
+
+    private static let swiftRefusals = ["validation.payout.swift_required", "validation.payout.invalid_swift"]
+
+    private static let bankCountryRefusals = [
+        "validation.payout.country_not_supported",
+        "validation.payout.scheme_not_supported"
+    ]
 
     private func failLoad(_ error: ApiError) {
         snackbar.showApiError(error)

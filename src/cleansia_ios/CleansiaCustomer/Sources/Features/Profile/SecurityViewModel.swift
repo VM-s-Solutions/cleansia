@@ -51,7 +51,7 @@ final class SecurityViewModel: ViewModel {
         changeState = .submitting
         switch await client.changePassword(
             email: email,
-            code: code.trimmingCharacters(in: .whitespacesAndNewlines),
+            code: OneTimeCode.accept(code, replacing: "", length: resetCodeLength),
             newPassword: newPassword
         ) {
         case .success:

@@ -510,6 +510,20 @@ extension ContentSafeAreaBindingTests {
         )
     }
 
+    /// A top inset shallower than a home-button phone's status bar means none runs across the top (hidden, or beside
+    /// the content on the iPhone Duo): the band draws nothing and asks for no clock, the style bridge included, so
+    /// the system keeps the clock. A hidden status bar's 0 still makes no fade at all.
+    func testWithNoStatusBarAcrossTheTopTheFadeDrawsNothingAndAsksForNoClock() throws {
+        let band = try compactBody(
+            of: "privatestructStatusBarFadeBand:View",
+            in: "CleansiaCore/Sources/CleansiaCore/Components/StatusBarFadeScrollView.swift"
+        )
+        let guarded = try XCTUnwrap(band.range(of: "iftop>=StatusBarFade.classicStatusBar{letpage="))
+        let bridge = try XCTUnwrap(band.range(of: "StatusBarStyleBridge("))
+        XCTAssertLessThan(guarded.upperBound, bridge.lowerBound, "the bridge is mounted outside the guard")
+        XCTAssertEqual(StatusBarFade.height(safeTop: 0), 0)
+    }
+
     /// The braced body of the function whose compacted declaration starts with `declaration`, comments removed.
     private func compactBody(of declaration: String, in path: String) throws -> String {
         let code = try source(path)

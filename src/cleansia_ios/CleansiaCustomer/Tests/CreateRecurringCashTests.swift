@@ -64,10 +64,12 @@ final class CreateRecurringCashTests: XCTestCase {
         }
     }
 
-    /// Past the quote debounce, and the quote it asked for landed.
-    private func settle() async {
+    /// Past the quote debounce, and the quote it asked for landed. A selection that is not priced asks
+    /// for none, and an answer that does not land leaves this waiting out its yields.
+    private func settle(_ vm: CreateRecurringViewModel) async {
         scheduler.advance(by: .milliseconds(400))
         await drain()
+        await eventually { vm.formCrew?.selection == vm.pricedSelection }
     }
 
     // MARK: - What the form offers
@@ -87,7 +89,7 @@ final class CreateRecurringCashTests: XCTestCase {
         vm.setPaymentType(RecurringPaymentType.cash)
         XCTAssertEqual(vm.formState.paymentType, RecurringPaymentType.card)
 
-        await settle()
+        await settle(vm)
 
         XCTAssertEqual(vm.cashEligibility, .available)
         vm.setPaymentType(RecurringPaymentType.cash)
@@ -98,7 +100,7 @@ final class CreateRecurringCashTests: XCTestCase {
         let (vm, _) = makeVM(requiredEmployees: 2)
         await vm.load()
         fillValid(vm)
-        await settle()
+        await settle(vm)
 
         XCTAssertEqual(vm.cashEligibility, .needsCard(requiredCleaners: 2))
         vm.setPaymentType(RecurringPaymentType.cash)
@@ -111,7 +113,7 @@ final class CreateRecurringCashTests: XCTestCase {
         let (vm, quote) = makeVM(requiredEmployees: 1)
         await vm.load()
         fillValid(vm)
-        await settle()
+        await settle(vm)
         let quoted = quote.callCount
 
         vm.setRooms(3)
@@ -120,7 +122,7 @@ final class CreateRecurringCashTests: XCTestCase {
         await drain()
         XCTAssertEqual(quote.callCount, quoted, "the form quoted before the edits settled")
 
-        await settle()
+        await settle(vm)
         XCTAssertEqual(quote.callCount, quoted + 1)
         XCTAssertEqual(quote.requests.last?.rooms, 5)
         XCTAssertEqual(quote.requests.last?.bathrooms, 2)
@@ -131,7 +133,7 @@ final class CreateRecurringCashTests: XCTestCase {
         let (vm, _) = makeVM(requiredEmployees: 1)
         await vm.load()
         fillValid(vm)
-        await settle()
+        await settle(vm)
         XCTAssertEqual(vm.cashEligibility, .available)
 
         vm.setRooms(6)
@@ -147,13 +149,13 @@ final class CreateRecurringCashTests: XCTestCase {
         let (vm, quote) = makeVM(requiredEmployees: 1)
         await vm.load()
         fillValid(vm)
-        await settle()
+        await settle(vm)
         XCTAssertEqual(vm.cashEligibility, .available)
 
         vm.setDirtiness(.heavy)
 
         XCTAssertEqual(vm.cashEligibility, .pending, "a crew quoted for another level decided the payment step")
-        await settle()
+        await settle(vm)
         XCTAssertEqual(quote.requests.last?.dirtiness, .heavy)
         XCTAssertEqual(vm.cashEligibility, .available)
     }
@@ -163,17 +165,17 @@ final class CreateRecurringCashTests: XCTestCase {
         let (vm, quote) = makeVM(requiredEmployees: 1)
         await vm.load()
         fillValid(vm)
-        await settle()
+        await settle(vm)
         let quoted = quote.callCount
 
         vm.setDayOfWeek(1)
         vm.setTimeOfDay("08:30")
         vm.setPaymentType(RecurringPaymentType.cash)
-        await settle()
+        await settle(vm)
         XCTAssertEqual(quote.callCount, quoted)
 
         vm.setRooms(5)
-        await settle()
+        await settle(vm)
         XCTAssertEqual(quote.callCount, quoted + 1)
         XCTAssertEqual(quote.requests.last?.rooms, 5)
         XCTAssertEqual(quote.requests.last?.extraSlugs, [])
@@ -193,7 +195,7 @@ final class CreateRecurringCashTests: XCTestCase {
         )
 
         await vm.load()
-        await settle()
+        await settle(vm)
 
         XCTAssertNil(vm.formState.paymentType, "cash survived a quote that refuses it, or was switched to card")
         XCTAssertTrue(vm.cashCleared)
@@ -208,7 +210,7 @@ final class CreateRecurringCashTests: XCTestCase {
         let client = FakeRecurringBookingClient()
         let (vm, _) = makeVM(requiredEmployees: 2, editing: Self.cashSchedule, recurringClient: client)
         await vm.load()
-        await settle()
+        await settle(vm)
 
         vm.setPaymentType(RecurringPaymentType.card)
         let saved = await vm.submit()
@@ -224,7 +226,7 @@ final class CreateRecurringCashTests: XCTestCase {
         let client = FakeRecurringBookingClient()
         let (vm, quote) = makeVM(requiredEmployees: 1, editing: Self.cashSchedule, recurringClient: client)
         await vm.load()
-        await settle()
+        await settle(vm)
         let quoted = quote.callCount
 
         let saved = await vm.submit()
@@ -268,7 +270,7 @@ final class CreateRecurringCashTests: XCTestCase {
         let client = FakeRecurringBookingClient()
         let (vm, quote) = makeVM(requiredEmployees: 1, editing: Self.cashSchedule, recurringClient: client)
         await vm.load()
-        await settle()
+        await settle(vm)
         XCTAssertEqual(vm.cashEligibility, .available)
 
         quote.result = .success(Self.quote(requiredEmployees: 2))
@@ -292,7 +294,7 @@ final class CreateRecurringCashTests: XCTestCase {
             snackbar: snackbar
         )
         await vm.load()
-        await settle()
+        await settle(vm)
 
         quote.result = .failure(ApiError(code: "network.unreachable"))
         let saved = await vm.submit()
@@ -308,7 +310,7 @@ final class CreateRecurringCashTests: XCTestCase {
         let (vm, quote) = makeVM(requiredEmployees: 3, recurringClient: client)
         await vm.load()
         fillValid(vm)
-        await settle()
+        await settle(vm)
         let quoted = quote.callCount
 
         let saved = await vm.submit()
@@ -325,7 +327,7 @@ final class CreateRecurringCashTests: XCTestCase {
         client.updateResult = .failure(ApiError(code: CashEligibility.refusalCode, httpStatus: 400))
         let (vm, _) = makeVM(requiredEmployees: 1, editing: Self.cashSchedule, recurringClient: client)
         await vm.load()
-        await settle()
+        await settle(vm)
 
         let saved = await vm.submit()
 

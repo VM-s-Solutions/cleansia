@@ -58,13 +58,6 @@ fun RegisterScreen(
     val hasPasswordInput = uiState.password.isNotEmpty()
     val hasConfirmInput = uiState.confirmPassword.isNotEmpty()
 
-    val formValid = uiState.firstName.isNotBlank() &&
-        uiState.lastName.isNotBlank() &&
-        uiState.email.isNotBlank() &&
-        uiState.passwordHasMinLength && uiState.passwordHasLetter && uiState.passwordHasNumber &&
-        uiState.passwordsMatch &&
-        uiState.acceptTerms
-
     LaunchedEffect(uiState.isRegistrationSuccessful) {
         if (uiState.isRegistrationSuccessful) onRegisterSuccess(uiState.email)
     }
@@ -206,7 +199,7 @@ fun RegisterScreen(
                 text = stringResource(R.string.register),
                 onClick = { viewModel.register() },
                 loading = uiState.isLoading,
-                enabled = formValid && !uiState.isLoading,
+                enabled = !uiState.isLoading,
             )
 
             Spacer(Modifier.height(24.dp))

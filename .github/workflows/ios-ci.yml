@@ -1,8 +1,7 @@
 name: iOS CI
 
-# macOS minutes bill at about 10x Linux if the repo goes private (free while it is public),
-# so only run this when the iOS sources (or this workflow) actually change — backend/frontend
-# PRs skip it.
+# macOS minutes bill at about 10x Linux on this private repository, so only run this when the
+# iOS sources (or this workflow) actually change — backend/frontend PRs skip it.
 # Also runs on pushes to master: direct-to-master commits used to bypass this
 # gate entirely (pull_request-only), which let lint-red code land unnoticed.
 on:
@@ -42,12 +41,15 @@ on:
       - 'src/cleansia_android/customer-app/src/main/res/values-uk/strings.xml'
       - 'src/cleansia_android/customer-app/src/main/res/values-ru/strings.xml'
       - '.github/workflows/ios-ci.yml'
+  # A manual run (Actions → iOS CI → Run workflow) adds what pull requests skip: the optimised
+  # passes and the Xcode 27.1 readiness job. → /deployment/ci-cd#runners
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 # The other CI workflows carry this; this one did not, and it is the expensive one (about 10x
-# Linux billing if the repo goes private; free while public): every superseded push to a PR
+# Linux billing on this private repository): every superseded push to a PR
 # branch ran a full 20-to-80-minute build of a SHA nobody would ever look at.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -55,11 +57,15 @@ concurrency:
 
 jobs:
   build:
-    runs-on: macos-latest
+    # Not macos-latest: the image must ship the Xcode pinned in .xcode-version.
+    runs-on: macos-26
 
-    # Generous on purpose. This job legitimately runs 20-30 minutes, and has been observed at
-    # 1h22m on a degraded macOS runner while still passing — so the ceiling is here to stop a
-    # HUNG run billing to GitHub's 6-hour default, not to police a slow one.
+    # The ceiling is here to stop a HUNG run billing to GitHub's 6-hour default, not to police a slow
+    # one. Before the optimised passes this job ran 20-30 minutes, and once 1h22m on a degraded macOS
+    # runner while still passing. The passes, which run on pushes to master and manual runs only,
+    # rebuild both apps at -O: on an M4 they took 137 s (partner) and 246-614 s (customer), beside
+    # 33-118 s for each Debug suite. The first macos-26 runs show the real cost here, and whether 120
+    # still leaves that headroom. → /deployment/ci-cd#runners
     timeout-minutes: 120
 
     defaults:
@@ -72,17 +78,24 @@ jobs:
         with:
           persist-credentials: false
 
-      # The runner's DEFAULT Xcode lags the newest SDK on the image, while local dev
-      # builds against the newest installed Xcode. Any #available-gated API newer than
-      # the default SDK then compiles locally but fails CI (bit us with the since-retired
-      # Liquid Glass bar). Select the newest Xcode the image ships so CI's SDK tracks
-      # what local dev builds against.
-      - name: Select the newest Xcode on the runner
+      # The Xcode that archives TestFlight builds, which the release lanes select too: an optimiser
+      # bug of one compiler is invisible on another. Matched by the version xcodebuild reports,
+      # because an image may name the app by release stage. → /mobile-app/overview#optimizer-only-crashes
+      - name: Select the pinned Xcode
         run: |
           set -euo pipefail
-          NEWEST="$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"
-          echo "Selecting: $NEWEST"
-          sudo xcode-select -s "$NEWEST"
+          PINNED="$(tr -d '[:space:]' < .xcode-version)"
+          for APP in /Applications/Xcode*.app; do
+            if [ "$(env -u DEVELOPER_DIR "$APP/Contents/Developer/usr/bin/xcodebuild" -version 2>/dev/null | sed -n 1p)" = "Xcode $PINNED" ]; then
+              sudo xcode-select -s "$APP"
+              break
+            fi
+          done
+          if [ "$(xcodebuild -version | sed -n 1p)" != "Xcode $PINNED" ]; then
+            echo "::error::Xcode $PINNED (src/cleansia_ios/.xcode-version) is not on this runner image. Installed:"
+            ls -d /Applications/Xcode*.app
+            exit 1
+          fi
           xcodebuild -version
 
       - name: Install XcodeGen and xcbeautify (pinned)
@@ -266,6 +279,176 @@ jobs:
 
       # CleansiaCustomer now has a hosted test target (T-0312) — run it so the
       # customer VM + router suite gates in CI from the first customer slice.
+      - name: Build & test CleansiaCustomer
+        run: |
+          set -o pipefail
+          LOG="$RUNNER_TEMP/customer.log"
+          xcodebuild -workspace Cleansia.xcworkspace -scheme CleansiaCustomer \
+            -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.name }}" \
+            build test 2>&1 | tee "$LOG" | xcbeautify || {
+              echo "::group::Compiler diagnostics (raw, unbeautified)"
+              grep -nE "error:|Failing tests|\*\* (BUILD|TEST) FAILED" "$LOG" | head -80 || true
+              echo "::endgroup::"
+              exit 1
+            }
+
+      # The suites again, built the way the archive is: -O and whole-module, the two Swift settings the
+      # guard takes from Release. Debug otherwise, for the DEBUG test hooks and @testable. MallocScribble
+      # makes a use-after-free fault instead of reading stale bytes. → /mobile-app/overview#optimizer-only-crashes
+      # Not on pull requests: the two passes take longer than the three Debug suites together (on an M4,
+      # 383-751 s against 218 s), in macOS minutes this private repository pays for, and the release lanes
+      # run the same pass on the archiving Mac before every TestFlight build, so a miscompile still cannot
+      # reach a phone. Delete both `if:` lines to run them on every pull request. → /deployment/ci-cd#runners
+      - name: Test CleansiaPartner optimised
+        if: github.event_name != 'pull_request'
+        env:
+          TEST_RUNNER_MallocScribble: '1'
+        run: |
+          set -o pipefail
+          LOG="$RUNNER_TEMP/partner-optimised.log"
+          xcodebuild -workspace Cleansia.xcworkspace -scheme CleansiaPartner \
+            -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.name }}" \
+            SWIFT_OPTIMIZATION_LEVEL=-O SWIFT_COMPILATION_MODE=wholemodule \
+            test 2>&1 | tee "$LOG" | xcbeautify || {
+              echo "::group::Compiler diagnostics (raw, unbeautified)"
+              grep -nE "error:|Failing tests|unexpected exit|\*\* (BUILD|TEST) FAILED" "$LOG" | head -80 || true
+              echo "::endgroup::"
+              exit 1
+            }
+
+      - name: Test CleansiaCustomer optimised
+        if: github.event_name != 'pull_request'
+        env:
+          TEST_RUNNER_MallocScribble: '1'
+        run: |
+          set -o pipefail
+          LOG="$RUNNER_TEMP/customer-optimised.log"
+          xcodebuild -workspace Cleansia.xcworkspace -scheme CleansiaCustomer \
+            -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.name }}" \
+            SWIFT_OPTIMIZATION_LEVEL=-O SWIFT_COMPILATION_MODE=wholemodule \
+            test 2>&1 | tee "$LOG" | xcbeautify || {
+              echo "::group::Compiler diagnostics (raw, unbeautified)"
+              grep -nE "error:|Failing tests|unexpected exit|\*\* (BUILD|TEST) FAILED" "$LOG" | head -80 || true
+              echo "::endgroup::"
+              exit 1
+            }
+
+  # A readiness signal for Xcode 27.1 (Swift 6.4, the iOS 27.1 SDK that iPhone Duo builds need), never a
+  # gate: not keyed `build`, so not a required check, and allowed to fail. Only GitHub's `xcode-27`
+  # preview image has Xcode 27. It runs only when started by hand, which keeps its macOS minutes off
+  # every push. Delete this job when .xcode-version moves to 27.1. → /deployment/ci-cd#runners
+  xcode-27-readiness:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: xcode-27
+    continue-on-error: true
+    timeout-minutes: 120
+
+    defaults:
+      run:
+        working-directory: ./src/cleansia_ios
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+
+      - name: Select Xcode 27.1
+        run: |
+          set -euo pipefail
+          for APP in /Applications/Xcode*.app; do
+            if [ "$(env -u DEVELOPER_DIR "$APP/Contents/Developer/usr/bin/xcodebuild" -version 2>/dev/null | sed -n 1p)" = "Xcode 27.1" ]; then
+              sudo xcode-select -s "$APP"
+              break
+            fi
+          done
+          if [ "$(xcodebuild -version | sed -n 1p)" != "Xcode 27.1" ]; then
+            echo "::error::Xcode 27.1 is not on this runner image. Installed:"
+            ls -d /Applications/Xcode*.app
+            exit 1
+          fi
+          xcodebuild -version
+
+      - name: Install XcodeGen and xcbeautify (pinned)
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/pinned-tools"
+          curl -fsSL -o "$RUNNER_TEMP/xcodegen.zip" \
+            https://github.com/yonaskolb/XcodeGen/releases/download/2.46.0/xcodegen.zip
+          echo "4d9e34b62172d645eed6457cac13fc222569974098ef4ee9c3368bedf0196806  $RUNNER_TEMP/xcodegen.zip" \
+            | shasum -a 256 -c -
+          unzip -o "$RUNNER_TEMP/xcodegen.zip" -d "$RUNNER_TEMP/pinned-tools"
+          curl -fsSL -o "$RUNNER_TEMP/xcbeautify.zip" \
+            https://github.com/cpisciotta/xcbeautify/releases/download/3.2.1/xcbeautify-3.2.1-arm64-apple-macosx.zip
+          echo "ed32972e41bc3aa19588f8b0f4a0209ef70c663ad60bbf4ad84a2de73355d637  $RUNNER_TEMP/xcbeautify.zip" \
+            | shasum -a 256 -c -
+          unzip -o "$RUNNER_TEMP/xcbeautify.zip" -d "$RUNNER_TEMP/xcbeautify-bin"
+          install "$RUNNER_TEMP/xcbeautify-bin/xcbeautify" "$RUNNER_TEMP/pinned-tools/xcbeautify"
+          echo "$RUNNER_TEMP/pinned-tools/xcodegen/bin" >> "$GITHUB_PATH"
+          echo "$RUNNER_TEMP/pinned-tools" >> "$GITHUB_PATH"
+          export PATH="$RUNNER_TEMP/pinned-tools:$RUNNER_TEMP/pinned-tools/xcodegen/bin:$PATH"
+          test "$(command -v xcodegen)" = "$RUNNER_TEMP/pinned-tools/xcodegen/bin/xcodegen"
+          test "$(command -v xcbeautify)" = "$RUNNER_TEMP/pinned-tools/xcbeautify"
+          test "$(xcodegen --version)" = "Version: 2.46.0"
+          test "$(xcbeautify --version)" = "3.2.1"
+
+      - name: Install openapi-generator (pinned 7.10.0)
+        run: |
+          set -euo pipefail
+          curl -fsSL -o /tmp/openapi-generator-cli.jar \
+            https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/7.10.0/openapi-generator-cli-7.10.0.jar
+          echo "615e014705af34861e789e0b2a11075d3c80db134f881e937265479a4a83996e  /tmp/openapi-generator-cli.jar" \
+            | shasum -a 256 -c -
+          sudo mkdir -p /usr/local/bin /usr/local/lib
+          sudo mv /tmp/openapi-generator-cli.jar /usr/local/lib/openapi-generator-cli.jar
+          printf '#!/usr/bin/env bash\nexec java -jar /usr/local/lib/openapi-generator-cli.jar "$@"\n' \
+            | sudo tee /usr/local/bin/openapi-generator >/dev/null
+          sudo chmod +x /usr/local/bin/openapi-generator
+          openapi-generator version
+
+      - name: Generate API clients
+        run: ./scripts/generate-api-clients.sh
+
+      - name: Generate Xcode projects
+        run: |
+          (cd CleansiaPartner  && xcodegen generate)
+          (cd CleansiaCustomer && xcodegen generate)
+
+      - name: Select a simulator
+        id: sim
+        run: |
+          NAME=$(xcrun simctl list devices available \
+            | grep -Eo 'iPhone [0-9]+( Pro( Max)?| Plus)?' | head -1)
+          echo "Using simulator: $NAME"
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Build & test CleansiaCore
+        working-directory: ./src/cleansia_ios/CleansiaCore
+        run: |
+          set -o pipefail
+          LOG="$RUNNER_TEMP/core.log"
+          xcodebuild -scheme CleansiaCore \
+            -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.name }}" \
+            build test 2>&1 | tee "$LOG" | xcbeautify || {
+              echo "::group::Compiler diagnostics (raw, unbeautified)"
+              grep -nE "error:|Failing tests|\*\* (BUILD|TEST) FAILED" "$LOG" | head -80 || true
+              echo "::endgroup::"
+              exit 1
+            }
+
+      - name: Build & test CleansiaPartner
+        run: |
+          set -o pipefail
+          LOG="$RUNNER_TEMP/partner.log"
+          xcodebuild -workspace Cleansia.xcworkspace -scheme CleansiaPartner \
+            -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.name }}" \
+            build test 2>&1 | tee "$LOG" | xcbeautify || {
+              echo "::group::Compiler diagnostics (raw, unbeautified)"
+              grep -nE "error:|Failing tests|\*\* (BUILD|TEST) FAILED" "$LOG" | head -80 || true
+              echo "::endgroup::"
+              exit 1
+            }
+
       - name: Build & test CleansiaCustomer
         run: |
           set -o pipefail

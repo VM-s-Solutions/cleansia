@@ -762,8 +762,8 @@ reaches is governed by the matrix above and its re-pin, not by its name. The fir
 `src/Cleansia.Infra.Database/Repositories/OrderRepository.cs:13-30`): the account is the authorized order's
 own account, and the phone and guest e-mail are booking-carried contact values. Its Boolean only selects
 the oops window. Request paths reach it through `CancellationPolicyResolver.cs:43`; the Function reaches
-that same resolver (`src/Cleansia.Functions.Core/Handlers/SendEmailHandler.cs:332`) after adopting the envelope
-operator and loading the scoped order (`src/Cleansia.Functions.Core/Handlers/SendEmailHandler.cs:319-324`).
+that same resolver (`src/Cleansia.Functions.Core/Handlers/SendEmailHandler.cs:390`) after adopting the envelope
+operator and loading the scoped order (`src/Cleansia.Functions.Core/Handlers/SendEmailHandler.cs:377-382`).
 **Enforced by:** S8's closing test below
 (*for every repository method, list its callers*), walked in the security review of every
 `security_touching` ticket (`.claude/agents/security.md`, item 8) — `T3-HUMAN`. *(Not mechanizable:

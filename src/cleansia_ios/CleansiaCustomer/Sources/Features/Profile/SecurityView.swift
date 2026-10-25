@@ -68,7 +68,7 @@ struct SecurityView: View {
                 .font(CleansiaTypography.labelSmall)
                 .foregroundColor(CleansiaColors.onSurfaceVariant)
             CleansiaTextField(
-                value: $code,
+                value: $code.oneTimeCode(length: resetCodeLength),
                 label: L10n.Security.codeLabel,
                 keyboardType: .numberPad,
                 textContentType: .oneTimeCode

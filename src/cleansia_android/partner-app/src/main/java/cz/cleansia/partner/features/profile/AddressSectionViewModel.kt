@@ -15,6 +15,7 @@ import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.safeApiCall
 import cz.cleansia.partner.data.profile.ProfileRepository
+import cz.cleansia.partner.features.orders.hasKey
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -27,6 +28,19 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
+
+/** `UpdateAddressInfo`'s bounds, on the trimmed parts the save sends. */
+private val StreetLength = 5..255
+private val CityLength = 2..100
+private val ZipCodeLength = 3..20
+
+/** What `UpdateAddressInfo` answers about a street, city or postcode; neither key names the part. */
+private val IncompleteAddressRefusals = listOf("common.required", "address.invalid_length")
+
+private val GeocodedAddress.isComplete: Boolean
+    get() = street.trim().length in StreetLength &&
+        city.trim().length in CityLength &&
+        zipCode.trim().length in ZipCodeLength
 
 /**
  * Three-state indicator for "how serviced is this address?".
@@ -66,6 +80,7 @@ data class AddressForm(
     val pickedAddress: GeocodedAddress? = null,
     val countries: List<CountryListItem> = emptyList(),
     val serviceAreaStatus: ServiceAreaStatus = ServiceAreaStatus.Unknown,
+    val addressError: String? = null,
 ) {
     /** Single-line summary for the section's tappable picker card. */
     val summaryLine1: String?
@@ -179,6 +194,7 @@ class AddressSectionViewModel @Inject constructor(
                 // Reset to Unknown immediately so the row shows the
                 // loading skeleton while the lookup re-runs.
                 serviceAreaStatus = ServiceAreaStatus.Unknown,
+                addressError = if (address.isComplete) null else appContext.getString(R.string.error_address_incomplete),
             )
         }
         refreshServiceArea(address)
@@ -232,7 +248,11 @@ class AddressSectionViewModel @Inject constructor(
         if (_saveState.value is ActionState.Submitting) return
         val picked = form.pickedAddress
         if (picked == null) {
-            snackbar.showError(appContext.getString(R.string.error_pick_address_first))
+            updateForm { it.copy(addressError = appContext.getString(R.string.error_pick_address_first)) }
+            return
+        }
+        if (!picked.isComplete) {
+            updateForm { it.copy(addressError = appContext.getString(R.string.error_address_incomplete)) }
             return
         }
         if (form.employeeId.isBlank()) {
@@ -284,7 +304,12 @@ class AddressSectionViewModel @Inject constructor(
                 }
                 is ApiResult.Error -> {
                     _saveState.value = ActionState.Idle
-                    snackbar.showError(errorTranslator.translate(result.error))
+                    val error = result.error
+                    if (IncompleteAddressRefusals.any { error.hasKey(it) }) {
+                        updateForm { it.copy(addressError = appContext.getString(R.string.error_address_incomplete)) }
+                    } else {
+                        snackbar.showError(errorTranslator.translate(error))
+                    }
                 }
             }
         }

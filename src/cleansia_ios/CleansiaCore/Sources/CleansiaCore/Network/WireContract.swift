@@ -40,11 +40,11 @@ public extension ApiError {
     /// `network.*` would tell the cleaner to check their connection and send an investigator to the
     /// one subsystem that did not fail.
     ///
-    /// The field name and the endpoint ride in `message`. iOS has **no error-reporting sink** today —
-    /// no Sentry, no Crashlytics, and Firebase is Messaging only — so the name reaches nobody yet; it
-    /// is carried for the day a sink exists, because a name preserved can be routed later and a name
-    /// lost cannot. The user sees the generic line: `error.wire.contract_violation` resolves in the
-    /// catalog, so ``ApiErrorLocalizer`` never falls through to the raw key.
+    /// The field name and the endpoint ride in `message`. Crashlytics receives crashes only and nothing
+    /// records a non-fatal, so the name reaches nobody yet; it is carried for the day something records
+    /// it, because a name preserved can be routed later and a name lost cannot. The user sees the
+    /// generic line: `error.wire.contract_violation` resolves in the catalog, so ``ApiErrorLocalizer``
+    /// never falls through to the raw key.
     init(_ violation: WireContractViolation, endpoint: String) {
         self.init(
             code: Self.wireContractCode,

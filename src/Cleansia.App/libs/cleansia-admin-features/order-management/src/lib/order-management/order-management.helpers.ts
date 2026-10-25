@@ -55,6 +55,7 @@ export function buildFilterChips(
     cleaningDateFrom?: Date | null;
     cleaningDateTo?: Date | null;
     currencyId?: string | null;
+    unassignedOnly?: boolean | null;
   },
   orderStatusOptions: { label: string; value: OrderStatus }[],
   paymentStatusOptions: { label: string; value: PaymentStatus }[],
@@ -119,6 +120,14 @@ export function buildFilterChips(
     });
   }
 
+  if (formValues.unassignedOnly) {
+    chips.push({
+      key: 'unassignedOnly',
+      label: translate.instant('pages.order_management.filters.staffing'),
+      value: translate.instant('pages.order_management.filters.no_cleaner'),
+    });
+  }
+
   return chips;
 }
 
@@ -145,33 +154,54 @@ export function toggleStatusInArray<T>(
 
 // --- Filter payload builder ---
 
-export function buildFilterPayload(formValues: {
-  orderStatus?: OrderStatus[] | null;
-  paymentStatus?: PaymentStatus[] | null;
-  searchTerm?: string | null;
-  cleaningDateFrom?: Date | null;
-  cleaningDateTo?: Date | null;
-  currencyId?: string | null;
-}): {
+// Cancelled, finished and past orders have nobody on them too, so the box narrows to work that is
+// not over, from today, unless the administrator picked statuses or a from-date.
+const UNSTAFFED_DEFAULT_STATUSES: OrderStatus[] = [
+  OrderStatus.New,
+  OrderStatus.Confirmed,
+  OrderStatus.OnTheWay,
+  OrderStatus.InProgress,
+];
+
+export function buildFilterPayload(
+  formValues: {
+    orderStatus?: OrderStatus[] | null;
+    paymentStatus?: PaymentStatus[] | null;
+    searchTerm?: string | null;
+    cleaningDateFrom?: Date | null;
+    cleaningDateTo?: Date | null;
+    currencyId?: string | null;
+    unassignedOnly?: boolean | null;
+  },
+  now: Date = new Date()
+): {
   orderStatuses?: OrderStatus[];
   paymentStatuses?: PaymentStatus[];
   searchTerm?: string;
   cleaningDateFrom?: Date;
   cleaningDateTo?: Date;
   currencyId?: string;
+  isUnassigned?: boolean;
 } {
+  const orderStatuses =
+    formValues.orderStatus && formValues.orderStatus.length > 0
+      ? formValues.orderStatus
+      : undefined;
+  const cleaningDateFrom = formValues.cleaningDateFrom ?? undefined;
+  const unassignedOnly = formValues.unassignedOnly === true;
+
   return {
-    orderStatuses:
-      formValues.orderStatus && formValues.orderStatus.length > 0
-        ? formValues.orderStatus
-        : undefined,
+    orderStatuses: unassignedOnly ? orderStatuses ?? UNSTAFFED_DEFAULT_STATUSES : orderStatuses,
     paymentStatuses:
       formValues.paymentStatus && formValues.paymentStatus.length > 0
         ? formValues.paymentStatus
         : undefined,
     searchTerm: formValues.searchTerm?.trim() || undefined,
-    cleaningDateFrom: formValues.cleaningDateFrom ?? undefined,
+    cleaningDateFrom: unassignedOnly
+      ? cleaningDateFrom ?? new Date(now.getFullYear(), now.getMonth(), now.getDate())
+      : cleaningDateFrom,
     cleaningDateTo: formValues.cleaningDateTo ?? undefined,
     currencyId: formValues.currencyId || undefined,
+    isUnassigned: unassignedOnly || undefined,
   };
 }

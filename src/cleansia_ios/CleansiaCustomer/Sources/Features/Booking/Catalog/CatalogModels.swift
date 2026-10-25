@@ -116,7 +116,7 @@ extension Catalog {
             .filter { $0.id != packageId && selectedPackageIds.contains($0.id) }
             .flatMap { $0.includedServices.compactMap(\.serviceId) }
         let inBooking = selectedServiceIds.union(throughPackages)
-        let serviceIds = package.includedServices.compactMap(\.serviceId).filter(inBooking.contains)
+        let serviceIds = package.includedServices.compactMap(\.serviceId).filter { inBooking.contains($0) }
         return serviceIds.isEmpty ? nil : .package(id: packageId, serviceIds: serviceIds)
     }
 }

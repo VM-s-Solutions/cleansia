@@ -101,9 +101,15 @@ export class CleansiaTelephoneComponent
     this.emitValue();
   }
 
+  // A pasted or autofilled number often carries its own country code: read it as the country, not as
+  // the first digits of the national number.
   onPhoneInput(event: Event): void {
     const input = event.target as HTMLInputElement;
-    const digits = input.value.replace(/[^\d]/g, '');
+    const international = this.readCountryCode(input.value);
+    if (international) {
+      this.selectedCountry = international.country;
+    }
+    const digits = (international?.national ?? input.value).replace(/[^\d]/g, '');
     this.phoneNumber = digits;
     input.value = digits;
     this.emitValue();
@@ -138,6 +144,14 @@ export class CleansiaTelephoneComponent
     );
   }
 
+  private readCountryCode(raw: string): { country: CountryPhoneCode; national: string } | null {
+    const value = plusAndDigits(raw);
+    const matched = this.phoneService.findByPhoneValue(value);
+    if (!matched) return null;
+    const country = matched.code === this.selectedCountry.code ? this.selectedCountry : matched;
+    return { country, national: value.slice(matched.code.length) };
+  }
+
   private emitValue(): void {
     const fullValue = this.phoneNumber
       ? `${this.selectedCountry.code} ${this.phoneNumber}`
@@ -145,4 +159,14 @@ export class CleansiaTelephoneComponent
     this.onChange(fullValue);
     this.valueChanges.emit(fullValue);
   }
+}
+
+/**
+ * A `+` counts until the first digit, wherever it sits: a copied number often has a label, a bracket, a
+ * space or an invisible direction mark in front of it. The apps' `PhoneNumberSanitizer` and
+ * `sanitizePhoneInput` read the `+` the same way.
+ */
+function plusAndDigits(raw: string): string {
+  const kept = raw.replace(/[^\d+]/g, '');
+  return kept.slice(0, 1) + kept.slice(1).replace(/\+/g, '');
 }

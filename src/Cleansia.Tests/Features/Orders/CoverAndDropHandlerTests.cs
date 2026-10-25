@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Authentication;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Auditing;
@@ -29,9 +30,8 @@ namespace Cleansia.Tests.Features.Orders;
 ///
 /// <para><b>A drop that empties the crew is two facts, not one.</b> <c>Confirmed</c> says a cleaner
 /// took the job, so a <c>Confirmed</c> order with nobody left on it goes back to <c>New</c>; and the
-/// company's administrators are told whenever the crew empties, at ANY status — an order dropped
-/// <c>OnTheWay</c> is not walked back (a cleaner may be in the home) and no sweep catches it, so the
-/// alarm is the only thing that does.</para>
+/// company's administrators are told whenever the crew empties. A job under way cannot be dropped at all
+/// (owner ruling 2026-10-25), so the crew empties only at <c>New</c> or <c>Confirmed</c>.</para>
 /// </summary>
 public class CoverAndDropHandlerTests
 {
@@ -335,14 +335,14 @@ public class CoverAndDropHandlerTests
     }
 
     /// <summary>
-    /// Past Confirmed the platform never walks the status back — a cleaner may be standing in the home —
-    /// and no sweep selects an unstaffed OnTheWay order. The alarm is the only thing that fires, and it
-    /// says which status the crew was lost at so the sentence can say the clean was under way.
+    /// Once a cleaner has set off or started, the job keeps its crew (owner ruling 2026-10-25). The drop
+    /// is refused with the key the status check has always answered, and nothing moves: the seat stays,
+    /// no status row and no drop record are written, and nobody is told anything.
     /// </summary>
     [Theory]
     [InlineData(OrderStatus.OnTheWay)]
     [InlineData(OrderStatus.InProgress)]
-    public async Task DroppingTheLastSeatOfAnOrderUnderWayKeepsTheStatusAndTellsTheAdministrators(OrderStatus status)
+    public async Task DroppingAJobUnderWayIsRefusedAndChangesNothing(OrderStatus status)
     {
         var order = OrderAt(status, EmployeeId);
         Arrange(order);
@@ -350,13 +350,35 @@ public class CoverAndDropHandlerTests
 
         var result = await DropHandler().Handle(new DropOrder.Command(OrderId), default);
 
-        Assert.True(result.IsSuccess);
+        Assert.False(result.IsSuccess);
+        Assert.Equal(BusinessErrorMessage.OrderNotConfirmed, result.Error!.Message);
+        Assert.Equal(EmployeeId, Assert.Single(order.AssignedEmployees).EmployeeId);
         Assert.Equal(status, order.CurrentStatus);
-        Assert.Equal(before + 1, order.OrderStatusHistory.Count);
-        Assert.Equal(status, order.OrderStatusHistory.OrderByDescending(s => s.Sequence).First().Status);
-        var raised = Assert.Single(_raised);
-        Assert.Equal("dropped", raised.Args["cause"]);
-        Assert.Equal(status.ToString(), raised.Args["statusAtLoss"]);
+        Assert.Equal(before, order.OrderStatusHistory.Count);
+        Assert.Null(order.UpdatedOn);
+        _audit.Verify(r => r.Add(It.IsAny<EmployeeActionAudit>()), Times.Never);
+        _notifications.VerifyNoOtherCalls();
+        Assert.Empty(_raised);
+    }
+
+    /// <summary>
+    /// Before anyone sets off the drop is the cleaner's to make. <c>New</c> stays on the gate with
+    /// <c>Confirmed</c> although no writer leaves a cleaner on a <c>New</c> order: it admits nothing more,
+    /// and it is the gate the three partner apps apply before they send.
+    /// </summary>
+    [Theory]
+    [InlineData(OrderStatus.New)]
+    [InlineData(OrderStatus.Confirmed)]
+    public async Task DroppingBeforeTheJobIsUnderWayReleasesTheSeat(OrderStatus status)
+    {
+        var order = OrderAt(status, EmployeeId, OtherEmployeeId);
+        Arrange(order);
+
+        var result = await DropHandler().Handle(new DropOrder.Command(OrderId), default);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(OtherEmployeeId, Assert.Single(order.AssignedEmployees).EmployeeId);
+        Assert.Equal(1, result.Value.CrewRemaining);
     }
 
     /// <summary>

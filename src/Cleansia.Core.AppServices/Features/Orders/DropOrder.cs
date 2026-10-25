@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Auditing;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -31,11 +32,14 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// cover request keeps the cleaner on the hook until somebody actually takes it. The partner app
 /// should offer cover first and this as the way out when nobody answers.</para>
 ///
+/// <para><b>Only before the job is under way.</b> A drop is refused at <c>OnTheWay</c> and
+/// <c>InProgress</c> (owner ruling 2026-10-25: "if partner didn't start yet then it's possible to Drop
+/// Order"), so the crew can empty only at <c>New</c> or <c>Confirmed</c>.</para>
+///
 /// <para><b>The last cleaner leaving is two facts.</b> A <c>Confirmed</c> order with nobody left on it
 /// goes back to <c>New</c> (owner ruling 2026-09-19: Confirmed means cleaners are assigned), through
 /// <see cref="Order.ReturnToBoardIfUnstaffed"/>; an order past Confirmed is never walked back. And the
-/// company's administrators are told whenever the crew empties, at any status — an unstaffed
-/// <c>OnTheWay</c> order is caught by no sweep. The customer is told nothing here.</para>
+/// company's administrators are told whenever the crew empties. The customer is told nothing here.</para>
 /// </summary>
 public class DropOrder
 {
@@ -103,7 +107,9 @@ public class DropOrder
                     new Response(order.Id, order.AssignedEmployees.Count));
             }
 
-            if (!OrderAvailability.OfferableStatuses.Contains(order.CurrentStatus))
+            // Not OrderAvailability.OfferableStatuses, which admits a job under way: a drop is refused once
+            // a cleaner has set off or started (owner ruling 2026-10-25).
+            if (order.CurrentStatus is not (OrderStatus.New or OrderStatus.Confirmed))
             {
                 return BusinessResult.Failure<Response>(
                     new Error(nameof(command.OrderId), BusinessErrorMessage.OrderNotConfirmed));
@@ -138,8 +144,8 @@ public class DropOrder
                 order.EndPreferredHold(nowUtc);
             }
 
-            // Two facts, read before the walk-back can change either: whether the crew emptied decides
-            // the alarm below at ANY status; the status it emptied at is what the administrator is told.
+            // Two facts, read before the walk-back can change either: whether the crew emptied decides the
+            // alarm below, walked back or not; the status it emptied at is what the administrator is told.
             var crewEmptied = order.AssignedEmployees.Count == 0;
             var statusAtLoss = order.CurrentStatus;
 

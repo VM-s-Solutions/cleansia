@@ -113,6 +113,7 @@ private struct RegisterContent: View {
                     label: L10n.email,
                     errorText: form.emailError,
                     keyboardType: .emailAddress,
+                    textContentType: .username,
                     enabled: !isLoading
                 )
 
@@ -133,6 +134,7 @@ private struct RegisterContent: View {
                     value: binding(form.password, onPasswordChange),
                     label: L10n.password,
                     errorText: form.passwordError,
+                    textContentType: .newPassword,
                     isPassword: true,
                     enabled: !isLoading
                 )
@@ -152,6 +154,7 @@ private struct RegisterContent: View {
                     value: binding(form.confirmPassword, onConfirmPasswordChange),
                     label: L10n.Register.confirmPassword,
                     errorText: form.confirmPasswordError,
+                    textContentType: .newPassword,
                     isPassword: true,
                     enabled: !isLoading
                 )

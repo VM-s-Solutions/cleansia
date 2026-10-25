@@ -77,6 +77,7 @@ private struct LoginContent: View {
                     label: L10n.email,
                     errorText: form.emailError,
                     keyboardType: .emailAddress,
+                    textContentType: .username,
                     enabled: !isLoading
                 )
 
@@ -86,6 +87,7 @@ private struct LoginContent: View {
                     value: passwordBinding,
                     label: L10n.password,
                     errorText: form.passwordError,
+                    textContentType: .password,
                     isPassword: true,
                     enabled: !isLoading
                 )

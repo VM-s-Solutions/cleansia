@@ -270,17 +270,20 @@ public struct CleansiaBankAccountField: View {
     /// `splitPastedAccount` follows the same rule, and so does the web control's paste handler, which reads what was
     /// put in from the pasted text itself.
     ///
-    /// An account is looked for first, in four readings of the edit tried in this order:
+    /// The run is the new text less the start and the end it shares with `current`. When the run is longer than one
+    /// character, an account is looked for first, in four readings of the edit tried in this order:
     /// 1. When the new text starts with `current`, the text after it, for a paste at the end or into an empty box.
     /// 2. When the new text ends with `current`, the text before it, for a paste at the start.
     /// 3. The whole new text, for a paste over the whole box, as after Select All.
-    /// 4. The run, the new text less the start and the end it shares with `current`, for a paste in the middle.
+    /// 4. The run, for a paste in the middle.
     ///
     /// The first reading that, with every kind of whitespace dropped and an en or em dash read as a hyphen, is a
-    /// written-out account (`prefix-number/code`, `number/code`, `prefix-number`) or a CZ or SK IBAN is split across
-    /// the three boxes, whichever box it landed in and whether or not it fits there; one without a prefix clears the
-    /// old one, and one without a bank code keeps it. Otherwise new text that fits the box is ordinary editing, kept as
-    /// typed or pasted, and new text too long for the box is read by its run alone:
+    /// written-out account (`prefix-number/code`, `number/code`, `prefix-number`, the code exactly four digits as every
+    /// CZ and SK bank code is) or a CZ or SK IBAN is split across the three boxes, whichever box it landed in and
+    /// whether or not it fits there; one without a prefix clears the old one, and one without a bank code keeps it. A
+    /// `-` or `/` typed among a box's digits is a run of one character, so the digit clamp drops it like any other
+    /// non-digit. Otherwise new text that fits the box is ordinary editing, kept as typed or pasted, and new text too
+    /// long for the box is read by its run alone:
     /// - one character is typing, which the box's digit clamp takes: at the end of a full box it changes nothing, and
     ///   a digit typed before or inside one pushes out its last digit;
     /// - a run of digits that fits the box becomes its content;
@@ -288,19 +291,26 @@ public struct CleansiaBankAccountField: View {
     ///   text;
     /// - anything else leaves the box as it was.
     ///
+    /// Seeing only the box's old and new text, unlike the web, the control can still misread an account pasted inside
+    /// a box's digits or over part of them, which can take in the digits beside it or lose those it shares with them,
+    /// one pasted over all of digits it begins with, and bare digits pasted before digits that start the same way:
+    /// `2000145399/0800` pasted over a selected number `2000` gives the number `145399`.
+    ///
     /// Nothing is validated beyond shape: the server owns mod-11, the bank code and the IBAN cross-check.
     /// -> /partner-app/onboarding
     static func splitPastedAccount(_ raw: String, replacing current: String = "", into box: Segment) -> Edit {
         let run = insertedRun(raw, replacing: current)
-        let readings = [
-            raw.hasPrefix(current) ? String(raw.dropFirst(current.count)) : nil,
-            raw.hasSuffix(current) ? String(raw.dropLast(current.count)) : nil,
-            raw,
-            run
-        ]
-        for case let reading? in readings {
-            let text = normalised(reading)
-            if let account = account(in: domesticForm(ofIban: text) ?? text) { return account }
+        if run.count > 1 {
+            let readings = [
+                raw.hasPrefix(current) ? String(raw.dropFirst(current.count)) : nil,
+                raw.hasSuffix(current) ? String(raw.dropLast(current.count)) : nil,
+                raw,
+                run
+            ]
+            for case let reading? in readings {
+                let text = normalised(reading)
+                if let account = account(in: domesticForm(ofIban: text) ?? text) { return account }
+            }
         }
         let pasted = normalised(run)
         let boxLength = maxLength(of: box)
@@ -321,7 +331,9 @@ public struct CleansiaBankAccountField: View {
         let slash = text.split(separator: "/", omittingEmptySubsequences: false)
         guard slash.count <= 2 else { return nil }
         let bankCode = slash.count == 2 ? String(slash[1]) : nil
-        if let bankCode, !isDigits(bankCode, upTo: bankCodeMaxLength) { return nil }
+        if let bankCode, bankCode.count != bankCodeMaxLength || !isDigits(bankCode, upTo: bankCodeMaxLength) {
+            return nil
+        }
 
         let dash = slash[0].split(separator: "-", omittingEmptySubsequences: false)
         guard dash.count <= 2 else { return nil }

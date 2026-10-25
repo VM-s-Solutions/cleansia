@@ -201,18 +201,21 @@ internal sealed interface SegmentEdit {
 
 /**
  * What an edit of one segment does; [raw] is the segment's new text and [current] the text it replaces,
- * [segmentMaxLength] says which segment it is. Only the new text arrives here, not what was pasted, so the edit
- * is read four ways, in this order, and the first reading that is a written-out account (`prefix-number/code`,
- * `number/code`, `prefix-number`) or a CZ or SK IBAN, whose BBAN is `bankcode(4) prefix(6) number(10)` with the
- * zero padding dropped, is spread over the three, even when the new text fits the segment:
+ * [segmentMaxLength] says which segment it is. Only the new text arrives here, not what was pasted, so an edit that
+ * put in more than one character is read four ways, in this order, and the first reading that is a written-out
+ * account (`prefix-number/code`, `number/code`, `prefix-number`) or a CZ or SK IBAN, whose BBAN is
+ * `bankcode(4) prefix(6) number(10)` with the zero padding dropped, is spread over the three, even when the new text
+ * fits the segment:
  * 1. When the new text starts with [current], the text after it: exact for a paste at the end, or into an
  *    empty segment.
  * 2. When the new text ends with [current], the text before it: exact for a paste at the start.
  * 3. The whole new text: exact for a paste over all of the segment's text.
  * 4. The run, the new text less what it shares with [current] at either end: for a paste in the middle of
  *    the segment's text.
- * An account without a prefix clears the old one, and one without a bank code keeps it. Otherwise new text that
- * fits the segment is kept, as typed or pasted, digits only, and new text that overflows it goes by the run:
+ * A run of one character is typing and is never read as an account, so a "-" or "/" typed among a segment's digits
+ * is dropped like any other non-digit. An account without a prefix clears the old one, and one without a bank code
+ * keeps it. Otherwise new text that fits the segment is kept, as typed or pasted, digits only, and new text that
+ * overflows it goes by the run:
  * - one character is typing, which the digit clamp takes like any other: a "5" typed at the end of a full
  *   "0800" is dropped, and one typed before it makes "5080";
  * - bare digits that fit the segment become its text, so a bank code pasted beside the old one replaces it;
@@ -225,18 +228,22 @@ internal sealed interface SegmentEdit {
  *
  * The iOS twin is `CleansiaBankAccountField.splitPastedAccount` and the web's is `cleansia-bank-account`'s
  * paste handler; the three pin one case list. The web reads the pasted text itself, while here an account
- * pasted over part of a segment's text can still be split wrongly: "19-2000145399/0800" pasted over the
- * "12345" of "1234567890" gives the prefix "9". -> /partner-app/onboarding
+ * pasted over part of a segment's text can still be split wrongly, as "19-2000145399/0800" pasted over the
+ * "12345" of "1234567890" gives the prefix "9", and a paste that shares its first or last digits with the
+ * segment's text can lose them: "0100" pasted before "0800" gives "1000", and "19-2000145399/0800" pasted over
+ * all of a bank code "0" gives the bank code "080". -> /partner-app/onboarding
  */
 internal fun splitPastedAccount(raw: String, current: String, segmentMaxLength: Int): SegmentEdit {
     val run = insertedRun(raw, current)
-    val readings = listOfNotNull(
-        raw.takeIf { it.startsWith(current) }?.removePrefix(current),
-        raw.takeIf { it.endsWith(current) }?.removeSuffix(current),
-        raw,
-        run,
-    )
-    readings.firstNotNullOfOrNull(::accountIn)?.let { return it }
+    if (run.length > 1) {
+        val readings = listOfNotNull(
+            raw.takeIf { it.startsWith(current) }?.removePrefix(current),
+            raw.takeIf { it.endsWith(current) }?.removeSuffix(current),
+            raw,
+            run,
+        )
+        readings.firstNotNullOfOrNull(::accountIn)?.let { return it }
+    }
     if (raw.length <= segmentMaxLength || run.length == 1) return SegmentEdit.Changed(clampSegment(raw, segmentMaxLength))
     val pasted = normalised(run)
     if (pasted.isEmpty() || pasted.any { it !in '0'..'9' }) return SegmentEdit.Kept

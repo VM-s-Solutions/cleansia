@@ -106,6 +106,20 @@ class CleansiaBankAccountInputPasteTest {
         )
     }
 
+    /**
+     * Wrong the same way: a digit the paste shares with the box's text at the same end reads as text the box kept.
+     * "0100" should replace "0800", and the bank code should be "0800".
+     */
+    @Test
+    fun `a known residual too, a paste that shares its first or last digits with the box's text can lose them`() {
+        assertEquals("0100 pasted before 0800", Changed("1000"), edit("0100" + "0800", bankCodeBox, current = "0800"))
+        assertEquals(
+            "19-2000145399/0800 pasted over all of a bank code 0",
+            Spread("19", "2000145399", "080"),
+            edit("19-2000145399/0800", bankCodeBox, current = "0"),
+        )
+    }
+
     @Test
     fun `a number and bank code split and clear the prefix`() {
         assertSpreadFromEveryBox(Spread("", "12321414", "3545"), "12321414/3545")
@@ -168,7 +182,10 @@ class CleansiaBankAccountInputPasteTest {
         assertEquals(Changed("19"), edit("19", numberBox))
     }
 
-    /** The number pad types one digit at a time, and a typed prefix or bank code must stay where it is. */
+    /**
+     * Typing puts in one character at a time, and a typed prefix or bank code must stay where it is; a "-" or "/"
+     * typed among a box's digits is dropped like any other non-digit.
+     */
     @Test
     fun `typing never jumps to the number`() {
         everyBox.forEach { box ->
@@ -181,6 +198,12 @@ class CleansiaBankAccountInputPasteTest {
         assertEquals(Changed("0800"), edit("08001", bankCodeBox, current = "0800"))
         assertEquals(Changed("2000145399"), edit("20001453991", numberBox, current = "2000145399"))
         assertEquals("inside a full box", Changed("0850"), edit("08" + "5" + "00", bankCodeBox, current = "0800"))
+        assertEquals("a hyphen inside a prefix", Changed("12345"), edit("1" + "-" + "2345", prefixBox, current = "12345"))
+        assertEquals(
+            "a slash inside a number",
+            Changed("2000145399"),
+            edit("200014" + "/" + "5399", numberBox, current = "2000145399"),
+        )
     }
 
     /**

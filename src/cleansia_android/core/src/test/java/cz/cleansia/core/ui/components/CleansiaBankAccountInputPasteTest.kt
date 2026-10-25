@@ -28,8 +28,8 @@ class CleansiaBankAccountInputPasteTest {
         everyBox.forEach { box -> assertEquals("$raw into the $box-digit box", expected, edit(raw, box)) }
 
     /**
-     * The case list the three platforms share. Each edit is the box's new text as the field reports it, the paste
-     * after, before or over the text the box held. A null part of a [Spread] keeps what that box holds.
+     * The case list the three platforms share. Each edit is the box's new text as the field reports it, the paste or
+     * the typed digit after, before or over the text the box held. A null part of a [Spread] keeps what that box holds.
      */
     @Test
     fun `the case list the three platforms share`() {
@@ -57,12 +57,15 @@ class CleansiaBankAccountInputPasteTest {
             Spread("19", "2000145399", "0800"),
             edit("CZ65 0800 0000 1920 0014 5399", numberBox),
         )
-        assertEquals("a digit typed into a full bank code", Kept, edit("0800" + "5", bankCodeBox, current = "0800"))
+        assertEquals("a digit typed after a full bank code", Changed("0800"), edit("0800" + "5", bankCodeBox, current = "0800"))
         assertEquals(
             "a number after a number",
             Changed("1234567890"),
             edit("2000145399" + "1234567890", numberBox, current = "2000145399"),
         )
+        assertEquals("a short number and bank code", Spread("", "12345", "0800"), edit("12345/0800", numberBox))
+        assertEquals("a short prefix and number", Spread("19", "1234567", null), edit("19-1234567", numberBox))
+        assertEquals("a digit typed before a full bank code", Changed("5080"), edit("5" + "0800", bankCodeBox, current = "0800"))
     }
 
     @Test
@@ -136,23 +139,24 @@ class CleansiaBankAccountInputPasteTest {
             assertEquals(Changed(""), edit("", box, current = "19"))
         }
         assertEquals(Changed("12"), edit("12", prefixBox, current = "1"))
-        assertEquals(Kept, edit("1234567", prefixBox, current = "123456"))
-        assertEquals(Kept, edit("08001", bankCodeBox, current = "0800"))
-        assertEquals(Kept, edit("20001453991", numberBox, current = "2000145399"))
+        assertEquals(Changed("123456"), edit("1234567", prefixBox, current = "123456"))
+        assertEquals(Changed("0800"), edit("08001", bankCodeBox, current = "0800"))
+        assertEquals(Changed("2000145399"), edit("20001453991", numberBox, current = "2000145399"))
+        assertEquals("inside a full box", Changed("0850"), edit("08" + "5" + "00", bankCodeBox, current = "0800"))
     }
 
     /**
      * BasicTextField can report two edits before the screen recomposes, so the bank-code box is still
      * composed with "080" when "08001" arrives. Read against that, "08001" put in "01", which fits the box
      * and would replace its text. The second edit replaces "0800", the text the segment last reported, so
-     * it is one digit typed into a full box, which keeps it.
+     * it is one digit typed at the end of a full box, which the box's clamp drops.
      */
     @Test
     fun `two digits typed before a recomposition stay in their box`() {
         // As AccountSegment passes them on, with no recomposition between the two.
         val replaced = lastReported("080")
         assertEquals(Changed("0800"), edit("0800", bankCodeBox, current = replaced("0800")))
-        assertEquals(Kept, edit("08001", bankCodeBox, current = replaced("08001")))
+        assertEquals(Changed("0800"), edit("08001", bankCodeBox, current = replaced("08001")))
     }
 
     /** Read against the empty box it was composed with, "08001" would be five digits pasted, which go to the number. */
@@ -160,7 +164,7 @@ class CleansiaBankAccountInputPasteTest {
     fun `a digit typed right after a bank code is pasted, before a recomposition, stays out of the number`() {
         val replaced = lastReported("")
         assertEquals(Changed("0800"), edit("0800", bankCodeBox, current = replaced("0800")))
-        assertEquals(Kept, edit("08001", bankCodeBox, current = replaced("08001")))
+        assertEquals(Changed("0800"), edit("08001", bankCodeBox, current = replaced("08001")))
     }
 
     /**
@@ -171,7 +175,7 @@ class CleansiaBankAccountInputPasteTest {
     @Test
     fun `a paste after a digit the full box kept out replaces the box's text`() {
         val typing = lastReported("0800")
-        assertEquals(Kept, edit("08005", bankCodeBox, current = typing("08005")))
+        assertEquals(Changed("0800"), edit("08005", bankCodeBox, current = typing("08005")))
 
         val atTheNextComposition = lastReported("0800")
         assertEquals(Changed("5500"), edit("08005500", bankCodeBox, current = atTheNextComposition("08005500")))

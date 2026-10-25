@@ -8,6 +8,7 @@ using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.TestUtilities;
@@ -139,7 +140,7 @@ public sealed class EmployeeUserAuditCoverageTests
         var handler = new RejectEmployee.Handler(
             employeeRepository.Object, AdminUserRepository().Object, orderRepository.Object,
             new Mock<INotificationProducer>().Object, AdminSession(), auditContext,
-            new Mock<IAdminNotifier>().Object);
+            new Mock<IAdminNotifier>().Object, new Mock<IPendingDispatch>().Object);
         var result = await handler.Handle(
             new RejectEmployee.Command(SubjectEmployeeId, "documents look forged"), CancellationToken.None);
 

@@ -52,6 +52,17 @@ public class MessageKeyTests
     }
 
     [Fact]
+    public void OrderCleanerReleasedEmail_Key_Names_The_Release_Not_Only_The_Order()
+    {
+        Assert.Equal(
+            "email:order-cleaner-released:ORDER-1:ASSIGNMENT-1",
+            MessageKeys.OrderCleanerReleasedEmail("ORDER-1", "ASSIGNMENT-1"));
+        Assert.NotEqual(
+            MessageKeys.OrderCleanerReleasedEmail("ORDER-1", "ASSIGNMENT-1"),
+            MessageKeys.OrderCleanerReleasedEmail("ORDER-1", "ASSIGNMENT-2"));
+    }
+
+    [Fact]
     public void OrderCashNotPaidEmail_Key_Follows_Frozen_Formula()
     {
         Assert.Equal("email:order-cash-not-paid:RECEIVABLE-1", MessageKeys.OrderCashNotPaidEmail("RECEIVABLE-1"));

@@ -3,11 +3,14 @@ using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.EmployeePayroll;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Outbox;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Database;
@@ -15,6 +18,7 @@ using Cleansia.Infra.Database.Repositories;
 using Cleansia.TestUtilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Npgsql;
 using Respawn;
@@ -27,6 +31,7 @@ namespace Cleansia.IntegrationTests.Features.Orders;
 /// the confirmation is refused its reward. A drop that leaves a crew changes no order column; only the
 /// order's own row carries the <c>CurrentStatus</c> concurrency token, so it is real Postgres, two
 /// connections and two commits that show whether the drop is checked against the status the lockout moved.
+/// A drop of the last seat also stages the customer's notices, and the refused commit takes them with it.
 /// </summary>
 [Collection("PostgresCollection")]
 public class DropOrderLockoutRaceTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
@@ -104,7 +109,56 @@ public class DropOrderLockoutRaceTests(PostgresContainerFixture fixture) : BaseI
         Assert.DoesNotContain(BusinessErrorMessage.EmployeeNotAssigned, await PayRefusalsAsync(verify, CleanerB));
     }
 
+    /// <summary>
+    /// The last seat: the drop walks the order back to New and stages the customer's push, feed row and
+    /// e-mail in its own unit of work. The lockout commits first, the stale drop is refused whole, and the
+    /// customer is told nothing about a drop that never happened.
+    /// </summary>
+    [Fact]
+    public async Task A_Refused_Drop_Of_The_Last_Seat_Leaves_Nothing_For_The_Customer()
+    {
+        await ResetAndSeedAsync(crew: [CleanerA]);
+
+        await using var dropContext = NewContext(UserOf(CleanerA));
+        var dropped = await DropHandler(dropContext, CleanerA, RealNotificationProducer(dropContext))
+            .Handle(new DropOrder.Command(OrderId), CancellationToken.None);
+        Assert.True(dropped.IsSuccess, dropped.Error?.Message);
+        Assert.Equal(0, dropped.Value!.CrewRemaining);
+        var stagedForCustomer = dropContext.ChangeTracker.Entries<OutboxMessage>()
+            .Select(entry => entry.Entity.MessageKey)
+            .Where(key => key.StartsWith("email:order-cleaner-released:", StringComparison.Ordinal)
+                || key.StartsWith($"push:{CustomerId}:{NotificationEventCatalog.OrderCleanerReleased}:", StringComparison.Ordinal))
+            .ToList();
+        Assert.Equal(2, stagedForCustomer.Count);
+        Assert.Contains(dropContext.ChangeTracker.Entries<UserNotification>(), entry => entry.Entity.UserId == CustomerId);
+
+        await using (var lockoutContext = NewContext(AdminId))
+        {
+            var lockout = await LockoutHandler(lockoutContext)
+                .Handle(new AdminCancelOrderAsLockout.Command(OrderId), CancellationToken.None);
+            Assert.True(lockout.IsSuccess, lockout.Error?.Message);
+            await lockoutContext.CommitAsync(CancellationToken.None);
+        }
+
+        await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() => dropContext.CommitAsync(CancellationToken.None));
+
+        await using var verify = NewContext(AdminId);
+        var order = await LoadAsync(verify);
+        Assert.Equal(OrderStatus.Cancelled, order.CurrentStatus);
+        Assert.Equal(CleanerA, Assert.Single(order.AssignedEmployees).EmployeeId);
+        Assert.False(await verify.OutboxMessages.IgnoreQueryFilters()
+            .AnyAsync(message => stagedForCustomer.Contains(message.MessageKey)));
+        Assert.False(await verify.Set<UserNotification>().IgnoreQueryFilters()
+            .AnyAsync(row => row.UserId == CustomerId && row.EventKey == NotificationEventCatalog.OrderCleanerReleased));
+    }
+
     private static string UserOf(string employeeId) => $"{employeeId}-user";
+
+    private static NotificationProducer RealNotificationProducer(CleansiaDbContext context) => new(
+        new UserNotificationRepository(context),
+        new OutboxPendingDispatch(context),
+        new UserRepository(context),
+        NullLogger<NotificationProducer>.Instance);
 
     private CleansiaDbContext NewContext(string userId) =>
         new(new DbContextOptionsBuilder<CleansiaDbContext>()
@@ -113,7 +167,8 @@ public class DropOrderLockoutRaceTests(PostgresContainerFixture fixture) : BaseI
             new TestUserSessionProvider(userId, $"{userId}@cleansia.test"),
             new FixedTenantProvider(TestTenants.Default));
 
-    private static DropOrder.Handler DropHandler(CleansiaDbContext context, string callerEmployeeId)
+    private static DropOrder.Handler DropHandler(
+        CleansiaDbContext context, string callerEmployeeId, INotificationProducer? notificationProducer = null)
     {
         var access = new Mock<IOrderAccessService>();
         access.Setup(a => a.GetCallerEmployeeIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(callerEmployeeId);
@@ -121,9 +176,10 @@ public class DropOrderLockoutRaceTests(PostgresContainerFixture fixture) : BaseI
             new OrderRepository(context),
             access.Object,
             new EmployeeRepository(context),
-            Mock.Of<INotificationProducer>(),
+            notificationProducer ?? Mock.Of<INotificationProducer>(),
             new EmployeeActionAuditRepository(context, Mock.Of<IServiceScopeFactory>()),
-            Mock.Of<IAdminNotifier>());
+            Mock.Of<IAdminNotifier>(),
+            new OutboxPendingDispatch(context));
     }
 
     private static AdminCancelOrderAsLockout.Handler LockoutHandler(CleansiaDbContext context) => new(
@@ -162,8 +218,9 @@ public class DropOrderLockoutRaceTests(PostgresContainerFixture fixture) : BaseI
         return validation.Errors.Select(e => e.ErrorMessage).ToList();
     }
 
-    private async Task ResetAndSeedAsync()
+    private async Task ResetAndSeedAsync(string[]? crew = null)
     {
+        var assigned = crew ?? new[] { CleanerA, CleanerB };
         await using (var conn = new NpgsqlConnection(Fixture.GetConnectionString()))
         {
             await conn.OpenAsync();
@@ -226,7 +283,10 @@ public class DropOrderLockoutRaceTests(PostgresContainerFixture fixture) : BaseI
             cleaner.UpdateContractStatus(ContractStatus.Approved);
             cleaner.AssignWorkCountry(CountryId);
             context.Employees.Add(cleaner);
-            order.AddAssignedEmployee(OrderEmployee.Create(order, cleaner));
+            if (assigned.Contains(employeeId))
+            {
+                order.AddAssignedEmployee(OrderEmployee.Create(order, cleaner));
+            }
         }
 
         order.ReportLockout(CleanerA, "2", DateTime.UtcNow.AddMinutes(-5));

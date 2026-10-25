@@ -8,6 +8,7 @@ using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.Infra.Database;
 using Cleansia.TestUtilities;
@@ -25,7 +26,8 @@ namespace Cleansia.IntegrationTests.Features.Employees;
 /// the NEXT sequence, on every emptied order, in one commit with the contract change. The company's
 /// administrators each get one <c>admin.order.crew_lost</c> row per emptied order; another company's
 /// administrator gets none; a live reservation held by the rejected cleaner ends and one held by
-/// somebody else does not; a crew that remains keeps the status.
+/// somebody else does not; a crew that remains keeps the status. The customer is told once per emptied
+/// order, a feed row and an e-mail of its own in the same commit, and nothing for the crewed one.
 /// </summary>
 [Collection("PostgresCollection")]
 public class RejectEmployeeReturnsOrdersToTheBoardTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
@@ -200,6 +202,44 @@ public class RejectEmployeeReturnsOrdersToTheBoardTests(PostgresContainerFixture
                         .OrderBy(id => id);
                     Assert.Equal([HeldOrderId, OtherHoldOrderId], orderIds);
                 }
+            },
+            transactional: false);
+    }
+
+    /// <summary>
+    /// Both emptied orders belong to one customer, so each notice must carry a key of its own: the outbox's
+    /// unique index would otherwise refuse the rejection's one commit.
+    /// </summary>
+    [Fact]
+    public async Task Every_Emptied_Order_Tells_Its_Customer_Once_In_The_Rejections_Commit()
+    {
+        await TestMethod(
+            setup: AdminSession,
+            arrange: Seed,
+            act: async provider => await provider.GetRequiredService<IMediator>()
+                .Send(new RejectEmployee.Command(CleanerId, "documents look forged")),
+            assert: async (CleansiaDbContext context, BusinessResult<RejectEmployee.Response> result) =>
+            {
+                Assert.True(result.IsSuccess, result.Error?.Message);
+
+                var feedOrderIds = await context.Set<UserNotification>().IgnoreQueryFilters()
+                    .Where(n => n.UserId == CustomerId && n.EventKey == NotificationEventCatalog.OrderCleanerReleased)
+                    .Select(n => n.ArgsJson)
+                    .ToListAsync();
+                Assert.Equal(
+                    [HeldOrderId, OtherHoldOrderId],
+                    feedOrderIds
+                        .Select(args => JsonSerializer.Deserialize<Dictionary<string, string>>(args)!["orderId"])
+                        .OrderBy(id => id));
+
+                var emailKeys = await context.OutboxMessages.IgnoreQueryFilters()
+                    .Where(m => m.QueueName == QueueNames.SendEmail
+                        && m.MessageKey.StartsWith("email:order-cleaner-released:"))
+                    .Select(m => m.MessageKey)
+                    .ToListAsync();
+                Assert.Equal(2, emailKeys.Count);
+                Assert.Single(emailKeys, key => key.StartsWith($"email:order-cleaner-released:{HeldOrderId}:"));
+                Assert.Single(emailKeys, key => key.StartsWith($"email:order-cleaner-released:{OtherHoldOrderId}:"));
             },
             transactional: false);
     }

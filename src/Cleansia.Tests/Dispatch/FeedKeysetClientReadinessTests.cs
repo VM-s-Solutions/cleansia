@@ -180,6 +180,22 @@ public class FeedKeysetClientReadinessTests
             NotificationEventCatalog.GetCategoryFor(NotificationEventCatalog.PreferredOfferClosed));
 
     /// <summary>
+    /// The walk-back notice enters the customer keyset in the round both customer apps list it in their
+    /// feeds and both iOS catalogs carry its copy: it is display-mapped with the order number its body
+    /// names, and it answers to the order-updates toggle the customer already has, like
+    /// <see cref="NotificationEventCatalog.OrderCleanerAssigned"/>.
+    /// </summary>
+    [Fact]
+    public void The_Cleaner_Released_Notice_Is_A_Display_Mapped_Customer_Feed_Event_Under_Order_Updates()
+    {
+        Assert.Contains(NotificationEventCatalog.OrderCleanerReleased, NotificationFeedEventKeys.Customer);
+        Assert.Equal(["orderNumber"], FcmMessageFactory.ApnsDisplayMap[NotificationEventCatalog.OrderCleanerReleased]);
+        Assert.Equal(
+            NotificationCategory.OrderUpdates,
+            NotificationEventCatalog.GetCategoryFor(NotificationEventCatalog.OrderCleanerReleased));
+    }
+
+    /// <summary>
     /// It is silenceable, and under the category the customer already has: a new
     /// <see cref="NotificationCategory"/> is a bool COLUMN on <c>UserNotificationPreferences</c> plus a
     /// toggle in every client, and someone who muted order updates has already answered this question.

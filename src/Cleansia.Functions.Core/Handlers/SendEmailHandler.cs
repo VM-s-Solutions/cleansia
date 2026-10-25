@@ -16,13 +16,14 @@ using Microsoft.Extensions.Logging;
 namespace Cleansia.Functions.Core.Handlers;
 
 /// <summary>
-/// Realizes every e-mail the send-email queue carries, off the request path. The queue holds nine
+/// Realizes every e-mail the send-email queue carries, off the request path. The queue holds ten
 /// payload shapes told apart by their <c>messageType</c> discriminator: the bare
 /// <see cref="SendEmailMessage"/> (no discriminator; confirmation, reset, promo and the two wind-down
 /// notices, resolved by <see cref="EmailType"/>), the guest order cancellation, the booking
 /// confirmation, the admin notification, the receivable pay link, the lockout cancellation, the cash a
-/// customer did not pay at the door, the cleaner's copy of a contract for work, and Started/Completed updates. Each is sent via the existing
-/// <see cref="IEmailService"/> in the language the producer chose.
+/// customer did not pay at the door, the cleaner's copy of a contract for work, Started/Completed updates,
+/// and the notice that a booking's last cleaner left and another is being looked for. Each is sent via the
+/// existing <see cref="IEmailService"/> in the language the producer chose.
 ///
 /// Idempotent via <see cref="IIdempotencyGuard"/> in ACT-THEN-CLAIM mode (at-least-once): non-claiming
 /// check on the deterministic key → send → claim. A FAILED send leaves the key unclaimed so the queue
@@ -63,6 +64,7 @@ public class SendEmailHandler(
         SendOrderCashNotPaidEmailMessage? cashNotPaidMessage;
         SendWorkContractEmailMessage? workContractMessage;
         SendOrderStatusEmailMessage? statusMessage;
+        SendOrderCleanerReleasedEmailMessage? releasedMessage;
         string? discriminatedTenantId;
         try
         {
@@ -88,6 +90,8 @@ public class SendEmailHandler(
                 ? payload.Deserialize<SendWorkContractEmailMessage>(JsonOptions) : null;
             statusMessage = messageType == SendOrderStatusEmailMessage.Discriminator
                 ? payload.Deserialize<SendOrderStatusEmailMessage>(JsonOptions) : null;
+            releasedMessage = messageType == SendOrderCleanerReleasedEmailMessage.Discriminator
+                ? payload.Deserialize<SendOrderCleanerReleasedEmailMessage>(JsonOptions) : null;
             discriminatedTenantId = root.TryGetProperty("tenantId", out var tenant) && tenant.ValueKind == JsonValueKind.String ? tenant.GetString() : null;
         }
         catch (JsonException ex)
@@ -98,6 +102,11 @@ public class SendEmailHandler(
         if (statusMessage is not null)
         {
             await SendOrderStatusAsync(statusMessage, discriminatedTenantId, ct);
+            return;
+        }
+        if (releasedMessage is not null)
+        {
+            await SendOrderCleanerReleasedAsync(releasedMessage, discriminatedTenantId, ct);
             return;
         }
         if (guestMessage is not null)
@@ -299,6 +308,55 @@ public class SendEmailHandler(
         catch (Exception ex)
         {
             logger.LogWarning(ex, "Status e-mail sent for order {OrderId}, but its delivery claim failed", order.Id);
+        }
+    }
+
+    // Act-then-claim like the shapes beside it. Sent only while the order is still back at New: a take since
+    // the release has sent the confirmed e-mail, and a cancelled booking has no cleaner to look for.
+    private async Task SendOrderCleanerReleasedAsync(
+        SendOrderCleanerReleasedEmailMessage message, string? envelopeTenantId, CancellationToken ct)
+    {
+        var tenantId = envelopeTenantId ?? message.TenantId;
+        if (string.IsNullOrWhiteSpace(message.OrderId) || string.IsNullOrWhiteSpace(message.AssignmentId)
+            || string.IsNullOrWhiteSpace(tenantId))
+        {
+            logger.LogWarning("Discarding cleaner-released e-mail with no order, assignment or operator");
+            return;
+        }
+        var key = MessageKeys.OrderCleanerReleasedEmail(message.OrderId, message.AssignmentId);
+        if (await idempotencyGuard.HasProcessedAsync(key, ct)) return;
+
+        tenantProvider.SetTenantOverride(tenantId);
+        var order = await orderRepository.GetQueryable()
+            .Include(o => o.Currency).Include(o => o.CustomerAddress).Include(o => o.User)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(o => o.Id == message.OrderId && o.CurrentStatus == OrderStatus.New, ct);
+        if (order is null || string.IsNullOrWhiteSpace(order.CustomerEmail)
+            || order.CustomerEmail == AnonymizationMarker.Value)
+        {
+            logger.LogWarning("Discarding cleaner-released e-mail: order {OrderId} has no eligible destination or is no longer at New", message.OrderId);
+            return;
+        }
+
+        var languageCode = EmailLocale.Resolve(
+            order.LanguageCode ?? order.User?.PreferredLanguageCode ?? message.LanguageCode);
+
+        // A guest's link to the booking, committed before the send so an e-mailed token always has its row.
+        var guestAccessToken = guestAccessTokenIssuer.IssueForGuest(order);
+        if (guestAccessToken is not null)
+        {
+            await unitOfWork.CommitAsync(ct);
+        }
+
+        await emailService.SendOrderStatusUpdateEmailAsync(order.CustomerEmail, order, "CleanerReleased", languageCode, ct,
+            guestAccessToken: guestAccessToken);
+        try
+        {
+            await idempotencyGuard.MarkProcessedAsync(key, ct);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Cleaner-released e-mail sent for order {OrderId}, but its delivery claim failed", order.Id);
         }
     }
 

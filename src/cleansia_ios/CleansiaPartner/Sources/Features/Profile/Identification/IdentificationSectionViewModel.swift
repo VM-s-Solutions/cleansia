@@ -6,7 +6,8 @@ import Foundation
 @MainActor
 final class IdentificationSectionViewModel: ViewModel {
     /// Each error clears when its own field changes, whichever binding wrote it. A write of the value
-    /// already there fixes nothing, so it keeps the error.
+    /// already there fixes nothing, so it keeps the error. The registration number's also goes when the
+    /// business country changes, since the server checks the number against that country.
     struct Loaded: Equatable {
         var employeeId: String
         var nationalityId: String? {
@@ -18,7 +19,12 @@ final class IdentificationSectionViewModel: ViewModel {
         }
 
         var businessCountryId: String? {
-            didSet { if businessCountryId != oldValue { businessCountryError = nil } }
+            didSet {
+                if businessCountryId != oldValue {
+                    businessCountryError = nil
+                    registrationNumberError = nil
+                }
+            }
         }
 
         var registrationNumber: String {

@@ -277,13 +277,29 @@ final class IdentificationSectionViewModelTests: XCTestCase {
 
         vm.form.nationalityId = "cz"
         XCTAssertNil(vm.form.nationalityError)
+        XCTAssertNotNil(vm.form.registrationNumberError)
+
+        vm.form.registrationNumber = "1"
+        XCTAssertNil(vm.form.registrationNumberError)
         XCTAssertNotNil(vm.form.businessCountryError)
 
         vm.form.businessCountryId = "cz"
         XCTAssertNil(vm.form.businessCountryError)
-        XCTAssertNotNil(vm.form.registrationNumberError)
+    }
 
-        vm.form.registrationNumber = "1"
+    /// The server checks a registration number against the business country's format and register, so its
+    /// refusal no longer holds once that country changes.
+    func testARefusedRegistrationNumberClearsWhenTheBusinessCountryChanges() async {
+        let key = "validation.registration_number.invalid_format"
+        client.identificationUpdateResult = .failure(ApiError(code: key, httpStatus: 400, keys: [key]))
+        let vm = await loadValidForm()
+        await vm.save()
+        XCTAssertEqual(vm.form.registrationNumberError, ApiErrorLocalizer().message(for: ApiError(code: key)))
+
+        vm.form.businessCountryId = "cz"
+        XCTAssertNotNil(vm.form.registrationNumberError, "picking the same country again changes nothing")
+
+        vm.form.businessCountryId = "sk"
         XCTAssertNil(vm.form.registrationNumberError)
     }
 

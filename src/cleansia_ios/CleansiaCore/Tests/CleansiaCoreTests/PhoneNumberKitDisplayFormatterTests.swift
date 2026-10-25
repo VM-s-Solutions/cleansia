@@ -48,13 +48,23 @@ final class PhoneNumberKitDisplayFormatterTests: XCTestCase {
         "728089247"
     ]
 
-    /// The server keeps a number only in its international form and only when libphonenumber takes it.
-    func testANumberIsValidOnlyInternationalAndWhole() {
-        for valid in ["+420777123456", "+421905123456", "+420 728 089 247"] {
-            XCTAssertTrue(PhoneNumberKitDisplayFormatter.isValidNumber(valid), valid)
+    /// Only what cannot drift from the server: the international form, and a length the number's country
+    /// allows. +420 609 … has a Czech number's nine digits in a range this library's metadata does not know,
+    /// which is how a range allocated since its release looks here; the server, on newer metadata, judges it.
+    func testANumberIsPossibleOnlyInternationalAndOfALengthItsCountryAllows() {
+        for possible in ["+420777123456", "+421905123456", "+420 728 089 247", "+420609123456"] {
+            XCTAssertTrue(PhoneNumberKitDisplayFormatter.isPossibleNumber(possible), possible)
         }
-        for invalid in ["777123456", "+", "+4201", "", "+1", "420777123456"] {
-            XCTAssertFalse(PhoneNumberKitDisplayFormatter.isValidNumber(invalid), invalid)
+        for impossible in ["777123456", "420777123456", "+", "", "+1", "+4201", "+4219051234567"] {
+            XCTAssertFalse(PhoneNumberKitDisplayFormatter.isPossibleNumber(impossible), impossible)
+        }
+    }
+
+    /// No country has these codes, so no length can make them a number, as libphonenumber, on the server and
+    /// on Android, says too. This library reads such a number as one of the handset's own region instead.
+    func testANumberWithACountryCodeNoCountryHasIsNotPossible() {
+        for unassigned in ["+0123456789", "+9991234567", "+999 123 456 789"] {
+            XCTAssertFalse(PhoneNumberKitDisplayFormatter.isPossibleNumber(unassigned), unassigned)
         }
     }
 

@@ -13,6 +13,7 @@ final class OrderDetailDropTests: XCTestCase {
     private var staleness: OrdersStaleness!
     private var snackbar: SnackbarController!
     private var cancellables: [AnyCancellable] = []
+    private var clock = Date(timeIntervalSince1970: 1_786_000_000)
 
     override func setUp() {
         super.setUp()
@@ -27,7 +28,8 @@ final class OrderDetailDropTests: XCTestCase {
             client: client,
             staleness: staleness,
             snackbar: snackbar,
-            pendingOffers: PendingOffersStore(client: client, ordersStaleness: staleness)
+            pendingOffers: PendingOffersStore(client: client, ordersStaleness: staleness),
+            now: { self.clock }
         )
     }
 
@@ -79,6 +81,34 @@ final class OrderDetailDropTests: XCTestCase {
             let vm = await loaded(testCase.item)
             XCTAssertEqual(vm.canDropOrder, testCase.offered, testCase.why)
         }
+    }
+
+    /// From its start on, a job nobody started is a no-show for the administrators, and leaving it would put
+    /// it back on the board for the sweep to cancel instead.
+    func testOfferedOnlyWhileTheJobsStartIsStillAhead() async {
+        let start = Date(timeIntervalSince1970: 1_786_200_000)
+        let moments: [(minutesFromStart: Double, offered: Bool)] = [(-1, true), (0, false), (1, false)]
+        for status in [0, 2] {
+            for moment in moments {
+                clock = start.addingTimeInterval(moment.minutesFromStart * 60)
+                var item = job(status: status)
+                item.cleaningDateTime = start
+                let vm = await loaded(item)
+                XCTAssertEqual(
+                    vm.canDropOrder,
+                    moment.offered,
+                    "status \(status), \(moment.minutesFromStart) minutes from the start"
+                )
+            }
+        }
+    }
+
+    func testAJobWithNoStartTimeIsJudgedByItsStatusAlone() async {
+        clock = .distantFuture
+        let vm = await loaded(job(status: 2))
+
+        XCTAssertNil(vm.state.loadedValue?.cleaningDateTime)
+        XCTAssertTrue(vm.canDropOrder)
     }
 
     func testNotOfferedBeforeTheOrderLoads() {
@@ -212,6 +242,33 @@ final class OrderDetailDropTests: XCTestCase {
 
         client.resumeCommand()
         await notifying.value
+    }
+
+    /// A screen drawn before the start still shows the link at it, and the confirm can outlive it too: the tap
+    /// reads the clock again, sends nothing and says nothing, and re-reads the job so the screen draws without it.
+    func testATapFromTheStartOnAScreenLoadedBeforeItSendsNothingAndReReadsTheJob() async {
+        let start = Date(timeIntervalSince1970: 1_786_200_000)
+        for minutesFromStart in [0.0, 1.0] {
+            clock = start.addingTimeInterval(-60)
+            var item = job(status: 2)
+            item.cleaningDateTime = start
+            let vm = await loaded(item)
+            XCTAssertTrue(vm.canDropOrder)
+            let fetchesBefore = client.getByIdCallCount
+            let leftCount = leaves(vm)
+
+            clock = start.addingTimeInterval(minutesFromStart * 60)
+            await vm.dropOrder()
+
+            let moment = "\(minutesFromStart) minutes from the start"
+            XCTAssertTrue(client.dropCalls.isEmpty, moment)
+            XCTAssertEqual(client.getByIdCallCount, fetchesBefore + 1, moment)
+            XCTAssertFalse(vm.canDropOrder, moment)
+            XCTAssertNil(snackbar.current, moment)
+            XCTAssertEqual(leftCount(), 0, moment)
+            XCTAssertEqual(vm.actionState, .idle, moment)
+            XCTAssertNil(vm.inFlightAction, moment)
+        }
     }
 
     func testTheDropSendsOnlyTheOrderItWasOpenedOn() async {

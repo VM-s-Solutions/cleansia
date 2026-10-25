@@ -95,6 +95,7 @@ final class OrderDetailViewModel: ViewModel {
     private let snackbar: SnackbarController
     private let pendingOffers: PendingOffersStore
     private let showRemovalReason: Bool
+    private let now: () -> Date
     private var removalReasonAsked = false
 
     init(
@@ -103,7 +104,8 @@ final class OrderDetailViewModel: ViewModel {
         staleness: OrdersStaleness,
         snackbar: SnackbarController,
         pendingOffers: PendingOffersStore,
-        showRemovalReason: Bool = false
+        showRemovalReason: Bool = false,
+        now: @escaping () -> Date = { Date() }
     ) {
         self.orderId = orderId
         self.client = client
@@ -111,6 +113,7 @@ final class OrderDetailViewModel: ViewModel {
         self.snackbar = snackbar
         self.pendingOffers = pendingOffers
         self.showRemovalReason = showRemovalReason
+        self.now = now
         super.init()
         pendingOffers.$offers
             .map { offers in offers.first { $0.id == orderId } }
@@ -146,12 +149,14 @@ final class OrderDetailViewModel: ViewModel {
         primaryAction == .collectCash && state.loadedValue?.payment.isPending == true
     }
 
-    /// Only before the cleaner sets off, and never after they reported they cannot get in: leaving deletes the
-    /// seat that report pays.
+    /// Only before the cleaner sets off and before the job's start, and never after they reported they cannot
+    /// get in: leaving deletes the seat that report pays, and from its start a job nobody started is a no-show
+    /// for the administrators, which leaving would put back on the board for the sweep to cancel.
     var canDropOrder: Bool {
         guard let order = state.loadedValue, order.isAssignedToCurrentUser, order.lockoutReportedAt == nil else {
             return false
         }
+        if let start = order.cleaningDateTime, now() >= start { return false }
         switch order.status {
         case ._0, ._2: return true
         case ._1, ._3, ._4, ._5, ._6, .none: return false
@@ -284,6 +289,12 @@ final class OrderDetailViewModel: ViewModel {
     /// crew left as an open one to take, or not at all.
     func dropOrder() async {
         guard !actionState.isSubmitting else { return }
+        // The screen draws the link from the clock only when something else redraws it, so a tap or a confirm
+        // can arrive from the start on; the re-read draws it without the link.
+        guard canDropOrder else {
+            await fetch()
+            return
+        }
         actionState = .submitting
         inFlightAction = .drop
 

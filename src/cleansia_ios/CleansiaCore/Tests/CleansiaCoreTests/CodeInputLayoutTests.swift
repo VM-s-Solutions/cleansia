@@ -15,6 +15,7 @@ final class CodeInputLayoutTests: XCTestCase {
         window?.endEditing(true)
         window?.isHidden = true
         window = nil
+        CoreL10n.bundle = .module
         super.tearDown()
     }
 
@@ -111,6 +112,15 @@ final class CodeInputLayoutTests: XCTestCase {
         XCTAssertEqual(field.textContentType, .oneTimeCode)
         XCTAssertEqual(field.tintColor.cgColor.alpha, 0)
         XCTAssertEqual(field.textColor?.cgColor.alpha, 0)
+    }
+
+    /// The boxes are hidden from VoiceOver, so the field is what it reads, and unlabelled it said only that
+    /// it was a text field.
+    func testTheFieldIsLabelledAsTheVerificationCode() async throws {
+        CoreL10n.bundle = CoreL10n.localizedBundle(for: "en")
+        let (_, field) = try await hostCodeInput()
+
+        XCTAssertEqual(field.accessibilityLabel, "Verification code, 6 digits")
     }
 
     /// Paste is the main way to the code, and the system control is drawn smaller than 44 points unless its

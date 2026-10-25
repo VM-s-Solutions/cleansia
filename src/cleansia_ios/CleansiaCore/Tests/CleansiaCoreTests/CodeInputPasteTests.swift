@@ -1,29 +1,52 @@
 import XCTest
 @testable import CleansiaCore
 
-/// The paste button below the boxes answers as the field's own Paste does at the end of the code.
+/// The Paste button under the boxes replaces what was typed with the clipboard's code, so a fragment shows as
+/// itself, incomplete, and is never completed from digits typed before it. The screens submit a code when it
+/// changes to a whole one, which is what `submitted` reads.
 final class CodeInputPasteTests: XCTestCase {
-    private func paste(_ text: String, onto code: String = "") -> String {
-        CodeInput.pasting(text, onto: code, length: 6)
+    private let length = 6
+
+    private func paste(_ clipboard: String, onto code: String) -> (code: String, submitted: Bool) {
+        let pasted = CodeInput.pasting(clipboard, onto: code, length: length)
+        return (pasted, pasted != code && pasted.count == length)
     }
 
-    func testAPastedSentenceFillsAllSixBoxes() {
-        XCTAssertEqual(paste("Your code is 123456"), "123456")
-        XCTAssertEqual(paste("Your code is 123 456", onto: "9"), "123456")
+    func testAWholeCodeFillsTheBoxesAndIsSubmitted() {
+        let result = paste("123456", onto: "")
+        XCTAssertEqual(result.code, "123456")
+        XCTAssertTrue(result.submitted)
     }
 
-    func testAWholeCodeReplacesAHalfTypedOrAWrongOne() {
-        XCTAssertEqual(paste("654321", onto: "12"), "654321")
-        XCTAssertEqual(paste("654321", onto: "123456"), "654321")
+    /// Run together with the digits typed before it, the fragment would make a whole code and spend one of
+    /// the five attempts on it.
+    func testAFragmentReplacesWhatWasTypedAndIsNotSubmitted() {
+        let result = paste("3456", onto: "12")
+        XCTAssertEqual(result.code, "3456")
+        XCTAssertFalse(result.submitted)
     }
 
-    func testTextWithoutDigitsChangesNothing() {
-        XCTAssertEqual(paste("hello", onto: "12"), "12")
-        XCTAssertEqual(paste("hello"), "")
+    func testTheCodeInASentenceReplacesWhatWasTypedAndIsSubmitted() {
+        let result = paste("Your code is 654321.", onto: "12")
+        XCTAssertEqual(result.code, "654321")
+        XCTAssertTrue(result.submitted)
     }
 
-    func testAFragmentIsAddedAfterTheCode() {
-        XCTAssertEqual(paste("34", onto: "12"), "1234")
-        XCTAssertEqual(paste("3456", onto: "123"), "123345")
+    func testAClipboardWithoutDigitsLeavesTheCodeUnchanged() {
+        let result = paste("abc", onto: "12")
+        XCTAssertEqual(result.code, "12")
+        XCTAssertFalse(result.submitted)
+    }
+
+    func testARunLongerThanACodeGivesItsFirstSixDigitsAndIsSubmitted() {
+        let result = paste("1234567", onto: "123")
+        XCTAssertEqual(result.code, "123456")
+        XCTAssertTrue(result.submitted)
+    }
+
+    func testAWholeCodeReplacesAWrongOne() {
+        let result = paste("654321", onto: "123456")
+        XCTAssertEqual(result.code, "654321")
+        XCTAssertTrue(result.submitted)
     }
 }

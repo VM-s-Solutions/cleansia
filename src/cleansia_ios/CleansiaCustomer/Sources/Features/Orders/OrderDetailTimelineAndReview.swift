@@ -5,8 +5,16 @@ import SwiftUI
 struct OrderTimelineCard: View {
     let history: [OrderStatusTrackDto]
 
-    private var sorted: [OrderStatusTrackDto] {
-        history.sorted { lhs, rhs in
+    struct Row {
+        let entry: OrderStatusTrackDto
+        let isOfferedAgain: Bool
+    }
+
+    /// Each status once, at the moment it was reached. A New after a Confirmed is read as the walk-back,
+    /// that edge's only writer; a second writer would make the label untrue.
+    /// → /domain/order-lifecycle#currentstatus-is-a-denormalisation-with-one-writer
+    static func rows(_ history: [OrderStatusTrackDto]) -> [Row] {
+        let sorted = history.sorted { lhs, rhs in
             switch (lhs.createdOn, rhs.createdOn) {
             case let (left?, right?): left < right
             case (nil, _?): false
@@ -14,13 +22,24 @@ struct OrderTimelineCard: View {
             case (nil, nil): false
             }
         }
+        var rows: [Row] = []
+        for entry in sorted {
+            let previous = rows.last?.entry.status
+            if let previous, previous.value == entry.status?.value {
+                continue
+            }
+            let isOfferedAgain = entry.status?.toOrderStatus() == ._0 && previous?.toOrderStatus() == ._2
+            rows.append(Row(entry: entry, isOfferedAgain: isOfferedAgain))
+        }
+        return rows
     }
 
     var body: some View {
+        let rows = Self.rows(history)
         OrderCardSurface {
             OrderSectionHeaderRow(title: L10n.OrderDetail.timeline)
-            ForEach(Array(sorted.enumerated()), id: \.offset) { index, entry in
-                TimelineRow(entry: entry, isLast: index == sorted.count - 1)
+            ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
+                TimelineRow(entry: row.entry, isOfferedAgain: row.isOfferedAgain, isLast: index == rows.count - 1)
             }
         }
     }
@@ -29,7 +48,12 @@ struct OrderTimelineCard: View {
 private struct TimelineRow: View {
     @Environment(\.locale) private var locale
     let entry: OrderStatusTrackDto
+    let isOfferedAgain: Bool
     let isLast: Bool
+
+    private var label: String {
+        isOfferedAgain ? L10n.OrderDetail.timelineOfferedAgain : OrderStatusPresentation.label(entry.status)
+    }
 
     var body: some View {
         HStack(alignment: .top, spacing: Spacing.s) {
@@ -48,7 +72,7 @@ private struct TimelineRow: View {
                 }
             }
             VStack(alignment: .leading, spacing: Spacing.hair) {
-                Text(OrderStatusPresentation.label(entry.status))
+                Text(label)
                     .font(CleansiaTypography.titleMedium)
                     .foregroundColor(CleansiaColors.onSurface)
                 Text(OrdersFormat.dateTime(entry.createdOn, locale: locale))

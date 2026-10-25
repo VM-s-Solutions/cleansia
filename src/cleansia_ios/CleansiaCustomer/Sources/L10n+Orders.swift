@@ -91,6 +91,10 @@ extension L10n {
             localized("order_detail_timeline")
         }
 
+        static var timelineOfferedAgain: String {
+            localized("order_detail_timeline_new_cleaner")
+        }
+
         static var yourReview: String {
             localized("order_detail_your_review")
         }

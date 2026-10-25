@@ -24939,6 +24939,41 @@
         }
       }
     },
+    "order_detail_timeline_new_cleaner": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Znovu nabídnuto uklízečům"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Offered to cleaners again"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Снова предложено клинерам"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Znova ponúknuté upratovačom"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Знову запропоновано клінерам"
+          }
+        }
+      }
+    },
     "order_detail_total": {
       "extractionState": "stale",
       "localizations": {

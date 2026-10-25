@@ -23,8 +23,8 @@ namespace Cleansia.Tests.Functions;
 /// <summary>
 /// The "we're finding you a new cleaner" arm of the send-email consumer. It is sent while the order is
 /// still back at New, once per release, in the booking's language, with a committed link for a guest; an
-/// order a cleaner has taken since, or that was cancelled since, has had its own e-mail, and an order with
-/// no live address has nobody to send to.
+/// order a cleaner has taken since has had the confirmed e-mail, one cancelled since has no cleaner to look
+/// for, and an order with no live address has nobody to send to.
 /// </summary>
 public sealed class SendEmailHandlerOrderCleanerReleasedTests : IDisposable
 {
@@ -101,8 +101,8 @@ public sealed class SendEmailHandlerOrderCleanerReleasedTests : IDisposable
     }
 
     /// <summary>
-    /// A take since the release has already sent the confirmed e-mail, and a sweep cancellation its own,
-    /// so the release's e-mail would now be wrong. Nothing is minted for a guest either.
+    /// A take since the release has already sent the confirmed e-mail, and a cancelled booking has no
+    /// cleaner to look for, so the release's e-mail would now be wrong. Nothing is minted for a guest either.
     /// </summary>
     [Theory]
     [InlineData(OrderStatus.Confirmed)]

@@ -312,7 +312,7 @@ public class SendEmailHandler(
     }
 
     // Act-then-claim like the shapes beside it. Sent only while the order is still back at New: a take since
-    // the release has sent the confirmed e-mail, and a sweep cancellation has sent its own.
+    // the release has sent the confirmed e-mail, and a cancelled booking has no cleaner to look for.
     private async Task SendOrderCleanerReleasedAsync(
         SendOrderCleanerReleasedEmailMessage message, string? envelopeTenantId, CancellationToken ct)
     {

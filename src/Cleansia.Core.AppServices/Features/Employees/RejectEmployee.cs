@@ -137,10 +137,10 @@ public class RejectEmployee
         /// the one who clicked included. A crew that remains keeps the status and gets the same-value
         /// re-advertisement a drop writes, so the digest sees the freed seat either way.</para>
         ///
-        /// <para>The cleaner is told per assignment, through the same seam the admin reassign uses, and so
-        /// is the customer, so the subject is <c>AssignmentNotificationSubject.For(orderId, assignmentId)</c>
-        /// and N released orders mint N distinct outbox keys rather than colliding on the cleaner or the
-        /// customer.</para>
+        /// <para>The cleaner is told per assignment, through the same seam the admin reassign uses; the
+        /// customer is told per assignment too, through <c>OrderCleanerReleasedNotifier</c>. So the subject
+        /// is <c>AssignmentNotificationSubject.For(orderId, assignmentId)</c> and N released orders mint N
+        /// distinct outbox keys rather than colliding on the cleaner or the customer.</para>
         /// </summary>
         private async Task ReleaseFutureSeatsAsync(string employeeId, CancellationToken cancellationToken)
         {

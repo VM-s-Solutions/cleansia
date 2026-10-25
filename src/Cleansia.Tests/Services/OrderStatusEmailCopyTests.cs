@@ -17,7 +17,8 @@ namespace Cleansia.Tests.Services;
 /// The status e-mails a take, a start and a completion send arrive in the booking's language, labels
 /// included: the in-code copy covers every arm, so nothing falls back to English for a Czech customer, and
 /// the Confirmed arm says what it has meant since ADR-0057 — a cleaner took the booking — instead of
-/// repeating the booking e-mail's title. An admin-entered translation row still wins.
+/// repeating the booking e-mail's title, and a re-take after a walk-back says a new cleaner took it. An
+/// admin-entered translation row still wins.
 /// </summary>
 public class OrderStatusEmailCopyTests
 {
@@ -30,6 +31,11 @@ public class OrderStatusEmailCopyTests
         { "Confirmed", "sk", "Upratovač nájdený", "Vašu rezerváciu prevzal upratovač." },
         { "Confirmed", "uk", "Прибиральника знайдено", "Ваше бронювання взяв прибиральник." },
         { "Confirmed", "ru", "Уборщик найден", "Ваше бронирование взял уборщик." },
+        { "NewCleaner", "en", "We've found you a new cleaner", "A new cleaner has taken your booking." },
+        { "NewCleaner", "cs", "Našli jsme vám nového uklízeče", "Vaši rezervaci převzal nový uklízeč." },
+        { "NewCleaner", "sk", "Našli sme vám nového upratovača", "Vašu rezerváciu prevzal nový upratovač." },
+        { "NewCleaner", "uk", "Ми знайшли для вас нового прибиральника", "Ваше бронювання взяв новий прибиральник." },
+        { "NewCleaner", "ru", "Мы нашли для вас нового уборщика", "Ваше бронирование взял новый уборщик." },
         { "Started", "en", "Cleaning started", "Your cleaning session has started." },
         { "Started", "cs", "Úklid začal", "Váš úklid právě začal." },
         { "Started", "sk", "Upratovanie začalo", "Vaše upratovanie práve začalo." },

@@ -398,6 +398,8 @@ public sealed partial class EmailService : IEmailService
             {
                 ["StatusTitle_Confirmed"] = "Cleaner found",
                 ["StatusMessage_Confirmed"] = "A cleaner has taken your booking.",
+                ["StatusTitle_NewCleaner"] = "We've found you a new cleaner",
+                ["StatusMessage_NewCleaner"] = "A new cleaner has taken your booking.",
                 ["StatusTitle_Started"] = "Cleaning started",
                 ["StatusMessage_Started"] = "Your cleaning session has started.",
                 ["StatusTitle_Completed"] = "Cleaning complete",
@@ -433,6 +435,8 @@ public sealed partial class EmailService : IEmailService
             {
                 ["StatusTitle_Confirmed"] = "Uklízeč nalezen",
                 ["StatusMessage_Confirmed"] = "Vaši rezervaci převzal uklízeč.",
+                ["StatusTitle_NewCleaner"] = "Našli jsme vám nového uklízeče",
+                ["StatusMessage_NewCleaner"] = "Vaši rezervaci převzal nový uklízeč.",
                 ["StatusTitle_Started"] = "Úklid začal",
                 ["StatusMessage_Started"] = "Váš úklid právě začal.",
                 ["StatusTitle_Completed"] = "Úklid dokončen",
@@ -468,6 +472,8 @@ public sealed partial class EmailService : IEmailService
             {
                 ["StatusTitle_Confirmed"] = "Upratovač nájdený",
                 ["StatusMessage_Confirmed"] = "Vašu rezerváciu prevzal upratovač.",
+                ["StatusTitle_NewCleaner"] = "Našli sme vám nového upratovača",
+                ["StatusMessage_NewCleaner"] = "Vašu rezerváciu prevzal nový upratovač.",
                 ["StatusTitle_Started"] = "Upratovanie začalo",
                 ["StatusMessage_Started"] = "Vaše upratovanie práve začalo.",
                 ["StatusTitle_Completed"] = "Upratovanie dokončené",
@@ -503,6 +509,8 @@ public sealed partial class EmailService : IEmailService
             {
                 ["StatusTitle_Confirmed"] = "Прибиральника знайдено",
                 ["StatusMessage_Confirmed"] = "Ваше бронювання взяв прибиральник.",
+                ["StatusTitle_NewCleaner"] = "Ми знайшли для вас нового прибиральника",
+                ["StatusMessage_NewCleaner"] = "Ваше бронювання взяв новий прибиральник.",
                 ["StatusTitle_Started"] = "Прибирання розпочалося",
                 ["StatusMessage_Started"] = "Ваше прибирання розпочалося.",
                 ["StatusTitle_Completed"] = "Прибирання завершено",
@@ -538,6 +546,8 @@ public sealed partial class EmailService : IEmailService
             {
                 ["StatusTitle_Confirmed"] = "Уборщик найден",
                 ["StatusMessage_Confirmed"] = "Ваше бронирование взял уборщик.",
+                ["StatusTitle_NewCleaner"] = "Мы нашли для вас нового уборщика",
+                ["StatusMessage_NewCleaner"] = "Ваше бронирование взял новый уборщик.",
                 ["StatusTitle_Started"] = "Уборка началась",
                 ["StatusMessage_Started"] = "Ваша уборка началась.",
                 ["StatusTitle_Completed"] = "Уборка завершена",
@@ -1015,6 +1025,10 @@ public sealed partial class EmailService : IEmailService
             "confirmed" => (
                 translations.GetValueOrDefault("StatusTitle_Confirmed", "Cleaner found"),
                 translations.GetValueOrDefault("StatusMessage_Confirmed", "A cleaner has taken your booking."),
+                "confirmed"),
+            "newcleaner" => (
+                translations.GetValueOrDefault("StatusTitle_NewCleaner", "We've found you a new cleaner"),
+                translations.GetValueOrDefault("StatusMessage_NewCleaner", "A new cleaner has taken your booking."),
                 "confirmed"),
             "assigned" => (
                 translations.GetValueOrDefault("StatusTitle_Assigned", "Cleaner Assigned"),

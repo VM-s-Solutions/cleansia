@@ -409,9 +409,13 @@ public class TakeOrder
             await workContractAcceptor.StageAsync(order, orderEmployee, command.AcceptedWorkContractTextId!, cancellationToken);
 
             var statusChanged = false;
+            var newCleaner = false;
             var currentStatus = order.GetCurrentOrderStatus();
             if (currentStatus is OrderStatus.New)
             {
+                // Read before the add: the walk-back is the only Confirmed → New writer, so an earlier
+                // Confirmed row makes this a re-take. → /product/business-rules#crew-lost
+                newCleaner = order.OrderStatusHistory.Any(s => s.Status == OrderStatus.Confirmed);
                 order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Confirmed, order));
                 statusChanged = true;
             }
@@ -487,8 +491,8 @@ public class TakeOrder
                     // confirmation e-mail carried, and superseding that one to reuse the row would kill
                     // the link in the message the guest most likely still has.
                     await emailService.SendOrderStatusUpdateEmailAsync(
-                        order.CustomerEmail, order, "Confirmed", languageCode, cancellationToken,
-                        guestAccessToken: guestAccessTokenIssuer.IssueForGuest(order));
+                        order.CustomerEmail, order, newCleaner ? "NewCleaner" : "Confirmed", languageCode,
+                        cancellationToken, guestAccessToken: guestAccessTokenIssuer.IssueForGuest(order));
                 }
                 catch (Exception ex)
                 {

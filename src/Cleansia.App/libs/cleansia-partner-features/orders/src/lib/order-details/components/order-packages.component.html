@@ -4,7 +4,9 @@
   <div class="cleansia-order-details__package-item">
     <div class="cleansia-order-details__package-header">
       <h5>{{ pkg.name }}</h5>
+      @if (showsPrice()) {
       <span class="package-price">{{ pkg.price }}</span>
+      }
     </div>
 
     @if (pkg.description) {

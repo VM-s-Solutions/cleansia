@@ -259,6 +259,7 @@
       <cleansia-partner-order-packages
         [packages]="orderDetails()!.selectedPackages!"
         [currencyCode]="orderDetails()!.currency?.code ?? ''"
+        [showsPrice]="showsCustomerPrice()"
       />
       }
 
@@ -280,6 +281,7 @@
         [formGroup]="formGroup"
         [paymentTypeOptions]="paymentTypeOptions()"
         [currencyOptions]="currencyOptions()"
+        [showsPrice]="showsCustomerPrice()"
       />
 
       <!-- Employee Assignment Section -->

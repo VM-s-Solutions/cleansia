@@ -9,6 +9,7 @@
         [disabled]="true"
       />
     </div>
+    @if (showsPrice()) {
     <div class="cleansia-order-details__field">
       <cleansia-text-input
         [label]="'pages.order_details.total_price' | translate"
@@ -18,6 +19,7 @@
         [disabled]="true"
       />
     </div>
+    }
     <div class="cleansia-order-details__field">
       <cleansia-select
         [options]="currencyOptions()"

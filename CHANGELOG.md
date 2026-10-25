@@ -91,12 +91,13 @@ need backfilling.
   account you get a notification and an inbox entry in the Android and iOS apps, *Your cleaner can no
   longer come*, naming the booking; switching off booking updates silences the notification, not the
   inbox entry. With an account or without, you get an e-mail in the booking's language, *We're finding
-  you a new cleaner*, with the link to your booking, unless the booking was taken again or cancelled by
-  the time it goes out. Neither names the cleaner or says why, and both are in five languages. The next
-  cleaner to take the booking still sends the confirmation e-mail again. Until 2026-10-25 nothing was
-  sent when the cleaner left. **Operator:** deploy the Functions consumer with or before the APIs that
-  publish the new e-mail, and the updated apps before the notification backend: an older build cannot
-  render the new key. (Owner ruling 2026-10-25 on O-D2-1, *"yup"*; ADR-0067.)
+  you a new cleaner*, with the link to your booking, if, when it goes out, the booking is waiting for
+  a cleaner rather than taken again or cancelled. Neither names the cleaner or says why, and both are
+  in five languages. The next cleaner to take the booking still sends the confirmation e-mail again.
+  Until 2026-10-25 the cleaner's leaving itself sent you nothing. **Operator:** deploy the Functions
+  consumer with or before the APIs that publish the new e-mail, and the updated apps before the
+  notification backend: an older build cannot render the new key. (Owner ruling 2026-10-25 on O-D2-1,
+  *"yup"*; ADR-0067.)
 
 - **Admin — told a day ahead when nobody is on a job, and a filter for such orders.** An eighteenth
   notice, in the console and by e-mail, for Support and above: once per order, when a *New* or

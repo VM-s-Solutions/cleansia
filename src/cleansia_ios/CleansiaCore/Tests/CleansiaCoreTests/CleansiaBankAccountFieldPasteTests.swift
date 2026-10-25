@@ -25,6 +25,27 @@ final class CleansiaBankAccountFieldPasteTests: XCTestCase {
         }
     }
 
+    /// Typing that turns `held` into `raw` leaves `kept` in the box and the other two empty, and goes through to the
+    /// digit clamp, so the keyboard stays.
+    private func assertTyping(
+        _ raw: String,
+        into box: Box,
+        holding held: String,
+        leaves kept: String,
+        _ message: String = "",
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        var start = CleansiaBankAccountField.Boxes(prefix: "", number: "", bankCode: "")
+        start[box] = held
+        var end = start
+        end[box] = kept
+        let typed = CleansiaBankAccountField.boxes(afterEditing: box, to: raw, from: start)
+        let typing = "\(raw) into the \(box) box \(message)"
+        XCTAssertEqual(typed.boxes, end, typing, file: file, line: line)
+        XCTAssertFalse(typed.rebuilds, "\(typing) rebuilds the boxes", file: file, line: line)
+    }
+
     private static func maxLength(of box: Box) -> Int {
         switch box {
         case .prefix: 6
@@ -51,9 +72,12 @@ final class CleansiaBankAccountFieldPasteTests: XCTestCase {
             PasteRow(11, into: .number, holding: "", paste: "19-2000145399/0800", leaves: account),
             PasteRow(12, into: .number, holding: "", paste: "CZ65 0800 0000 1920 0014 5399", leaves: account),
             PasteRow(13, into: .bankCode, holding: "0800", paste: "5", leaves: ["", "", "0800"]),
-            PasteRow(14, into: .number, holding: "2000145399", paste: "1234567890", leaves: ["", "1234567890", ""])
+            PasteRow(14, into: .number, holding: "2000145399", paste: "1234567890", leaves: ["", "1234567890", ""]),
+            PasteRow(15, into: .number, holding: "", paste: "12345/0800", leaves: ["", "12345", "0800"]),
+            PasteRow(16, into: .number, holding: "", paste: "19-1234567", leaves: ["19", "1234567", ""]),
+            PasteRow(17, into: .bankCode, holding: "0800", paste: "5", .before, leaves: ["", "", "5080"])
         ]
-        let typedThrough: Set = [1, 3, 4, 5, 10, 13]
+        let typedThrough: Set = [1, 3, 4, 5, 10, 13, 17]
         for row in rows {
             var held = CleansiaBankAccountField.Boxes(prefix: "", number: "", bankCode: "")
             held[row.box] = row.held
@@ -133,8 +157,9 @@ final class CleansiaBankAccountFieldPasteTests: XCTestCase {
         XCTAssertEqual(edit("19", into: .number), .box("19"))
     }
 
-    /// The number pad types one digit at a time: a digit that fits stays where it was typed, and one typed
-    /// into a full box changes nothing, wherever the caret was.
+    /// The number pad types one digit at a time, and typing never moves a digit to another box. A digit that fits
+    /// stays where it was typed; one typed into a full box goes to the box's digit clamp, and the keyboard stays: at
+    /// the end of the box nothing changes, and before or inside it the box's last digit falls out.
     func testTypingNeverJumpsToTheNumber() {
         for box in everyBox {
             XCTAssertEqual(edit("5", into: box), .box("5"), "\(box)")
@@ -142,10 +167,10 @@ final class CleansiaBankAccountFieldPasteTests: XCTestCase {
             XCTAssertEqual(edit("", into: box, replacing: "19"), .box(""), "\(box)")
         }
         XCTAssertEqual(edit("12", into: .prefix, replacing: "1"), .box("12"))
-        XCTAssertEqual(edit("1234567", into: .prefix, replacing: "123456"), .box("123456"))
-        XCTAssertEqual(edit("08001", into: .bankCode, replacing: "0800"), .box("0800"))
-        XCTAssertEqual(edit("50800", into: .bankCode, replacing: "0800"), .box("0800"), "typed before the code")
-        XCTAssertEqual(edit("08500", into: .bankCode, replacing: "0800"), .box("0800"), "typed inside the code")
+        assertTyping("1234567", into: .prefix, holding: "123456", leaves: "123456")
+        assertTyping("08001", into: .bankCode, holding: "0800", leaves: "0800")
+        assertTyping("50800", into: .bankCode, holding: "0800", leaves: "5080", "typed before the code")
+        assertTyping("08500", into: .bankCode, holding: "0800", leaves: "0850", "typed inside the code")
     }
 
     /// A run of digits too long even for the number goes nowhere: the box keeps what it held.

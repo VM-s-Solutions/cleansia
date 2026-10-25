@@ -267,14 +267,17 @@ public struct CleansiaBankAccountField: View {
     }
 
     /// What an edit of `box` does; `raw` is the box's new text and `current` the text it replaces. Android's
-    /// `splitPastedAccount` and the web control's paste handler follow the same rule, case for case.
+    /// `splitPastedAccount` follows the same rule, and so does the web control's paste handler, which reads what was
+    /// put in from the pasted text itself.
     ///
-    /// New text that fits the box is ordinary editing, kept as typed or pasted. New text too long for the box
-    /// is read by what the edit put in, the new text less the start and the end it shares with `current`:
-    /// - one character is typing into a full box, which keeps its text;
-    /// - a written-out account (`prefix-number/code`, `number/code`, `prefix-number`) or a CZ or SK IBAN, with
-    ///   every kind of whitespace dropped and an en or em dash read as a hyphen, is split across the three
-    ///   boxes; one without a prefix clears the old one, and one without a bank code keeps it;
+    /// Every edit is first read by what it put in, the new text less the start and the end it shares with `current`.
+    /// If that, with every kind of whitespace dropped and an en or em dash read as a hyphen, is a written-out account
+    /// (`prefix-number/code`, `number/code`, `prefix-number`) or a CZ or SK IBAN, it is split across the three boxes,
+    /// whichever box it landed in and whether or not it fits there; one without a prefix clears the old one, and one
+    /// without a bank code keeps it. Otherwise new text that fits the box is ordinary editing, kept as typed or
+    /// pasted, and new text too long for the box is read by what the edit put in:
+    /// - one character is typing, which the box's digit clamp takes: at the end of a full box it changes nothing,
+    ///   and before or inside one the box's last digit falls out;
     /// - a run of digits that fits the box becomes its content;
     /// - a run of digits too long for the box but not for the number becomes the number, the box keeping its
     ///   text;
@@ -283,12 +286,11 @@ public struct CleansiaBankAccountField: View {
     /// Nothing is validated beyond shape: the server owns mod-11, the bank code and the IBAN cross-check.
     /// -> /partner-app/onboarding
     static func splitPastedAccount(_ raw: String, replacing current: String = "", into box: Segment) -> Edit {
-        let boxLength = maxLength(of: box)
-        guard raw.count > boxLength else { return .box(raw) }
         let run = insertedRun(raw, replacing: current)
-        guard run.count > 1 else { return .box(current) }
         let pasted = String(run.filter { !$0.isWhitespace }.map { $0 == "\u{2013}" || $0 == "\u{2014}" ? "-" : $0 })
         if let account = account(in: domesticForm(ofIban: pasted) ?? pasted) { return account }
+        let boxLength = maxLength(of: box)
+        guard raw.count > boxLength, run.count != 1 else { return .box(raw) }
         guard isDigits(pasted, upTo: numberMaxLength) else { return .box(current) }
         return pasted.count <= boxLength ? .box(pasted) : .number(pasted)
     }

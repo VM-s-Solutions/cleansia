@@ -1348,7 +1348,7 @@
     <string name="notification_order_refunded_title">Повернення коштів</string>
     <string name="notification_order_refunded_body">Повернення коштів за замовлення #%1$s обробляється.</string>
     <string name="notification_order_no_cleaner_refunded_title">Вільних прибиральників не знайшлося</string>
-    <string name="notification_order_no_cleaner_refunded_body">Замовлення #%1$s ніхто не взяв, тому ми повернули всю суму та нарахували %2$s кредиту на наступне прибирання. Вибачте.</string>
+    <string name="notification_order_no_cleaner_refunded_body">На замовлення #%1$s не зміг приїхати жоден прибиральник, тому ми повернули всю суму та нарахували %2$s кредиту на наступне прибирання. Вибачте.</string>
     <string name="notification_order_no_cleaner_refund_pending_title">Вільних прибиральників не знайшлося</string>
     <string name="notification_order_no_cleaner_refund_pending_body">На замовлення #%1$s не зміг приїхати жоден прибиральник, тому ми його скасували. Повернення коштів обробляється, а ще ми нарахували %2$s кредиту на наступне прибирання. Вибачте.</string>
     <string name="notification_order_no_cleaner_nothing_charged_title">Вільних прибиральників не знайшлося</string>

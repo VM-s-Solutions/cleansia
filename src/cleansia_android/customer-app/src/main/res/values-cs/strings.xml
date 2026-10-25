@@ -1351,7 +1351,7 @@
     <string name="notification_order_refunded_title">Vrácení peněz na cestě</string>
     <string name="notification_order_refunded_body">Vaše vrácení peněz za rezervaci #%1$s se zpracovává.</string>
     <string name="notification_order_no_cleaner_refunded_title">Žádný uklízeč nebyl k dispozici</string>
-    <string name="notification_order_no_cleaner_refunded_body">Objednávku #%1$s nikdo nestihl převzít, proto vám vracíme celou částku a přidáváme kredit %2$s na příští úklid. Omlouváme se.</string>
+    <string name="notification_order_no_cleaner_refunded_body">Na objednávku #%1$s nemohl dorazit žádný uklízeč, proto vám vracíme celou částku a přidáváme kredit %2$s na příští úklid. Omlouváme se.</string>
     <string name="notification_order_no_cleaner_refund_pending_title">Žádný uklízeč nebyl k dispozici</string>
     <string name="notification_order_no_cleaner_refund_pending_body">Na objednávku #%1$s nemohl dorazit žádný uklízeč, proto jsme ji zrušili. Vrácení peněz je na cestě a přidali jsme vám kredit %2$s na příští úklid. Omlouváme se.</string>
     <string name="notification_order_no_cleaner_nothing_charged_title">Žádný uklízeč nebyl k dispozici</string>

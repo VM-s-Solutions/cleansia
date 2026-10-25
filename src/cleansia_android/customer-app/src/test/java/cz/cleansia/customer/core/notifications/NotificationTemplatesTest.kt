@@ -577,7 +577,7 @@ class NotificationTemplatesTest {
         val context = mockk<Context>()
         every {
             context.getString(R.string.notification_order_no_cleaner_refunded_body, "A-1042", "250 Kč")
-        } returns "Nobody was able to take booking #A-1042, so we have refunded it in full and added 250 Kč credit towards your next clean. Sorry."
+        } returns "No cleaner could make it to booking #A-1042, so we have refunded it in full and added 250 Kč credit towards your next clean. Sorry."
 
         val body = NotificationTemplates.formatBody(
             context,
@@ -587,7 +587,7 @@ class NotificationTemplatesTest {
         )
 
         assertEquals(
-            "Nobody was able to take booking #A-1042, so we have refunded it in full and added 250 Kč credit towards your next clean. Sorry.",
+            "No cleaner could make it to booking #A-1042, so we have refunded it in full and added 250 Kč credit towards your next clean. Sorry.",
             body,
         )
     }
@@ -598,7 +598,7 @@ class NotificationTemplatesTest {
         val context = mockk<Context>()
         every {
             context.getString(R.string.notification_order_no_cleaner_refunded_body, "A-1042", "")
-        } returns "Nobody was able to take booking #A-1042, so we have refunded it in full and added  credit towards your next clean. Sorry."
+        } returns "No cleaner could make it to booking #A-1042, so we have refunded it in full and added  credit towards your next clean. Sorry."
 
         val body = NotificationTemplates.formatBody(
             context,
@@ -660,6 +660,34 @@ class NotificationTemplatesTest {
                     emptyList<String>(),
                     formatSlots(valueOf(xml, "notification_order_no_cleaner_${outcome}_title")!!),
                 )
+            }
+        }
+    }
+
+    /**
+     * A cleaner may have taken the booking and dropped it before the sweep cancelled it, and an administrator's
+     * no-show confirmation cancels one a cleaner was on, so no no-cleaner string says nobody took it.
+     */
+    private val nobodyTookStems = mapOf(
+        "values" to listOf("nobody", "took", "take"),
+        "values-cs" to listOf("nikdo", "převz"),
+        "values-sk" to listOf("nikto", "prevz"),
+        "values-uk" to listOf("ніхто", "взяв"),
+        "values-ru" to listOf("никто", "взял"),
+    )
+
+    @Test
+    fun `no no-cleaner string says nobody took the booking in any locale`() {
+        locales.forEach { locale ->
+            val xml = stringsXml(locale)
+            noCleanerKeys.forEach { key ->
+                val value = valueOf(xml, key)!!
+                nobodyTookStems.getValue(locale).forEach { stem ->
+                    assertFalse(
+                        "$locale/$key says nobody took the booking (\"$stem\"): \"$value\"",
+                        value.contains(stem, ignoreCase = true),
+                    )
+                }
             }
         }
     }

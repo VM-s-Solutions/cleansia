@@ -1348,7 +1348,7 @@
     <string name="notification_order_refunded_title">Возврат средств</string>
     <string name="notification_order_refunded_body">Возврат за заказ #%1$s обрабатывается.</string>
     <string name="notification_order_no_cleaner_refunded_title">Свободных уборщиков не нашлось</string>
-    <string name="notification_order_no_cleaner_refunded_body">Заказ #%1$s никто не взял, поэтому мы вернули всю сумму и начислили %2$s кредита на следующую уборку. Простите.</string>
+    <string name="notification_order_no_cleaner_refunded_body">На заказ #%1$s не смог приехать ни один уборщик, поэтому мы вернули всю сумму и начислили %2$s кредита на следующую уборку. Простите.</string>
     <string name="notification_order_no_cleaner_refund_pending_title">Свободных уборщиков не нашлось</string>
     <string name="notification_order_no_cleaner_refund_pending_body">На заказ #%1$s не смог приехать ни один уборщик, поэтому мы его отменили. Возврат средств обрабатывается, а ещё мы начислили %2$s кредита на следующую уборку. Простите.</string>
     <string name="notification_order_no_cleaner_nothing_charged_title">Свободных уборщиков не нашлось</string>

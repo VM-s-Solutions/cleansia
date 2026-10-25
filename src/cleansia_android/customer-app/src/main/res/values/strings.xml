@@ -1370,7 +1370,7 @@
     <string name="notification_order_refunded_title">Refund on its way</string>
     <string name="notification_order_refunded_body">Your refund for booking #%1$s is being processed.</string>
     <string name="notification_order_no_cleaner_refunded_title">No cleaner was available</string>
-    <string name="notification_order_no_cleaner_refunded_body">Nobody was able to take booking #%1$s, so we have refunded it in full and added %2$s credit towards your next clean. Sorry.</string>
+    <string name="notification_order_no_cleaner_refunded_body">No cleaner could make it to booking #%1$s, so we have refunded it in full and added %2$s credit towards your next clean. Sorry.</string>
     <string name="notification_order_no_cleaner_refund_pending_title">No cleaner was available</string>
     <string name="notification_order_no_cleaner_refund_pending_body">No cleaner could make it to booking #%1$s, so we have cancelled it. Your refund is on its way, and we have added %2$s credit towards your next clean. Sorry.</string>
     <string name="notification_order_no_cleaner_nothing_charged_title">No cleaner was available</string>

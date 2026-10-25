@@ -6,6 +6,7 @@ using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -38,8 +39,10 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 ///
 /// <para><b>The last cleaner leaving is two facts.</b> A <c>Confirmed</c> order with nobody left on it
 /// goes back to <c>New</c> (owner ruling 2026-09-19: Confirmed means cleaners are assigned), through
-/// <see cref="Order.ReturnToBoardIfUnstaffed"/>; an order past Confirmed is never walked back. And the
-/// company's administrators are told whenever the crew empties. The customer is told nothing here.</para>
+/// <see cref="Order.ReturnToBoardIfUnstaffed"/>; an order past Confirmed is never walked back. Its
+/// customer is told then that another cleaner is being looked for, through
+/// <see cref="OrderCleanerReleasedNotifier"/>. And the company's administrators are told whenever the
+/// crew empties.</para>
 /// </summary>
 public class DropOrder
 {
@@ -71,7 +74,8 @@ public class DropOrder
         IEmployeeRepository employeeRepository,
         INotificationProducer notificationProducer,
         IEmployeeActionAuditRepository employeeActionAuditRepository,
-        IAdminNotifier adminNotifier) : ICommandHandler<Command, Response>
+        IAdminNotifier adminNotifier,
+        IPendingDispatch pendingDispatch) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(
             Command command, CancellationToken cancellationToken)
@@ -150,11 +154,16 @@ public class DropOrder
             var statusAtLoss = order.CurrentStatus;
 
             // A Confirmed order with nobody left on it goes back to New — and that fresh row is also its
-            // re-advertisement. Otherwise re-advertise with a same-value row: the digest's freshness
-            // test is OrderStatusHistory.Any(s => s.CreatedOn > since), so without a new row this seat
-            // is invisible to every cleaner forever, and same value means nothing else in the platform
-            // reads a change. → NewJobsDigestService
-            if (!order.ReturnToBoardIfUnstaffed())
+            // re-advertisement — and its customer is told. Otherwise re-advertise with a same-value row:
+            // the digest's freshness test is OrderStatusHistory.Any(s => s.CreatedOn > since), so without
+            // a new row this seat is invisible to every cleaner forever, and same value means nothing else
+            // in the platform reads a change. → NewJobsDigestService
+            if (order.ReturnToBoardIfUnstaffed())
+            {
+                await OrderCleanerReleasedNotifier.NotifyCustomerOfReleaseAsync(
+                    order, releasedAssignmentId, notificationProducer, pendingDispatch, cancellationToken);
+            }
+            else
             {
                 order.AddOrderStatus(OrderStatusTrack.Create(order.CurrentStatus, order));
             }

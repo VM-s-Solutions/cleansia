@@ -69,6 +69,7 @@ public class NotificationFeedEventKeysTests
             [
                 NotificationEventCatalog.OrderPaymentConfirmed,
                 NotificationEventCatalog.OrderCleanerAssigned,
+                NotificationEventCatalog.OrderCleanerReleased,
                 NotificationEventCatalog.OrderOnTheWay,
                 NotificationEventCatalog.OrderInProgress,
                 NotificationEventCatalog.OrderCompleted,

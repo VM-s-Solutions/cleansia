@@ -43,6 +43,15 @@ public static class NotificationEventCatalog
     public const string OrderCleanerAssigned = "order.cleaner_assigned";
 
     /// <summary>
+    /// Customer-targeted: nobody is on the order any more, so it went back from Confirmed to New and
+    /// another cleaner is being looked for. Produced by the two release writers, <c>DropOrder</c> and
+    /// <c>RejectEmployee</c>, through one notifier, exactly when the order walks back. Args:
+    /// <c>orderId</c> (deep link) + <c>orderNumber</c> (loc). A drop and a rejection read the same: the
+    /// copy names no cleaner and gives no reason, and it never says a cleaner is on the job.
+    /// </summary>
+    public const string OrderCleanerReleased = "order.cleaner_released";
+
+    /// <summary>
     /// Customer-targeted: the booked cleaning starts in about an hour — the promise the confirmation
     /// screen makes. <b>One-off orders only</b>; a recurring occurrence gets a different message at a
     /// different lead time, asking the customer to CONFIRM rather than telling them the day has come.
@@ -297,6 +306,7 @@ public static class NotificationEventCatalog
         DisputeReply => NotificationCategory.DisputeReply,
         RecurringScheduled or RecurringPaused => NotificationCategory.RecurringScheduled,
         OrderCleanerAssigned => NotificationCategory.OrderUpdates,
+        OrderCleanerReleased => NotificationCategory.OrderUpdates,
         OrderStartingSoon => NotificationCategory.OrderUpdates,
         PreferredOfferClosed => NotificationCategory.OrderUpdates,
         NewJobsAvailable => NotificationCategory.NewJobsAvailable,

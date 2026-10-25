@@ -8,6 +8,8 @@ using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Core.Queue.Abstractions;
+using Cleansia.Core.Queue.Abstractions.Messages;
 using MockQueryable;
 using Moq;
 
@@ -31,7 +33,8 @@ namespace Cleansia.Tests.Features.Orders;
 /// <para><b>A drop that empties the crew is two facts, not one.</b> <c>Confirmed</c> says a cleaner
 /// took the job, so a <c>Confirmed</c> order with nobody left on it goes back to <c>New</c>; and the
 /// company's administrators are told whenever the crew empties. A job under way cannot be dropped at all
-/// (owner ruling 2026-10-25), so the crew empties only at <c>New</c> or <c>Confirmed</c>.</para>
+/// (owner ruling 2026-10-25), so the crew empties only at <c>New</c> or <c>Confirmed</c>. The walk-back
+/// is also what tells the customer another cleaner is being looked for.</para>
 /// </summary>
 public class CoverAndDropHandlerTests
 {
@@ -39,6 +42,7 @@ public class CoverAndDropHandlerTests
     private const string EmployeeId = "emp-drop-1";
     private const string OtherEmployeeId = "emp-drop-2";
     private const string CompanyId = "company-drop";
+    private const string CustomerUserId = "user-drop-customer";
 
     private readonly Mock<IOrderRepository> _orderRepository = new();
     private readonly Mock<IOrderAccessService> _accessService = new();
@@ -47,6 +51,7 @@ public class CoverAndDropHandlerTests
     private readonly Mock<IEmployeeActionAuditRepository> _audit = new();
     private readonly Mock<IAdminNotifier> _adminNotifier = new();
     private readonly List<AdminEvent> _raised = [];
+    private readonly List<(string Queue, string Key, object Message)> _staged = [];
 
     public CoverAndDropHandlerTests()
     {
@@ -73,6 +78,22 @@ public class CoverAndDropHandlerTests
         return order;
     }
 
+    /// <summary>A Confirmed order booked from an account, so the customer has somebody to push to.</summary>
+    private static Order AccountOrderWith(params string[] assignedEmployeeIds)
+    {
+        var order = ValidatorTestHelpers.BuildOrder(
+            OrderId, OrderStatus.Confirmed, assignedEmployeeIds[0], maxEmployees: 2, userId: CustomerUserId);
+        order.TenantId = CompanyId;
+
+        foreach (var id in assignedEmployeeIds.Skip(1))
+        {
+            order.AddAssignedEmployee(OrderEmployee.Create(
+                order, ValidatorTestHelpers.BuildEmployee(id, ContractStatus.Approved)));
+        }
+
+        return order;
+    }
+
     private void Arrange(Order order, string? callerEmployeeId = EmployeeId)
     {
         _orderRepository.Setup(r => r.GetQueryable())
@@ -91,7 +112,7 @@ public class CoverAndDropHandlerTests
 
     private DropOrder.Handler DropHandler() =>
         new(_orderRepository.Object, _accessService.Object, _employees.Object,
-            _notifications.Object, _audit.Object, _adminNotifier.Object);
+            _notifications.Object, _audit.Object, _adminNotifier.Object, new RecordingDispatch(_staged));
 
     // ── RequestCover ──
 
@@ -359,6 +380,7 @@ public class CoverAndDropHandlerTests
         _audit.Verify(r => r.Add(It.IsAny<EmployeeActionAudit>()), Times.Never);
         _notifications.VerifyNoOtherCalls();
         Assert.Empty(_raised);
+        Assert.Empty(_staged);
     }
 
     /// <summary>
@@ -381,19 +403,99 @@ public class CoverAndDropHandlerTests
         Assert.Equal(1, result.Value.CrewRemaining);
     }
 
+    // ── DropOrder: the customer is told ──
+
     /// <summary>
-    /// The customer's keyset is untouched by a walk-back: a drop moves no money and cancels nothing, and
-    /// the slot-time sweep is the one place they learn nobody came. The only push here is the seat-open
-    /// wake to other cleaners, and this fixture's cohort is empty.
+    /// The walk-back is the moment the booking stops having a cleaner, so it is the moment the customer is
+    /// told another one is being looked for: one push and feed row about the assignment that ended, and one
+    /// e-mail staged in the same unit of work under a key of its own for this release.
     /// </summary>
     [Fact]
-    public async Task DroppingTheLastSeatSendsTheCustomerNothing()
+    public async Task DroppingTheLastSeatOfAConfirmedOrderTellsTheCustomerAnotherCleanerIsBeingLookedFor()
     {
-        var order = OrderWith(EmployeeId);
+        var order = AccountOrderWith(EmployeeId);
+        var releasedAssignmentId = order.AssignedEmployees.Single().Id;
+        Arrange(order);
+
+        var result = await DropHandler().Handle(new DropOrder.Command(OrderId), default);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(OrderStatus.New, order.CurrentStatus);
+        _notifications.Verify(n => n.NotifyAsync(
+                CustomerUserId,
+                NotificationEventCatalog.OrderCleanerReleased,
+                It.Is<Dictionary<string, string>>(args => args.Count == 2
+                    && args["orderId"] == OrderId
+                    && args["orderNumber"] == order.DisplayOrderNumber),
+                CompanyId,
+                AssignmentNotificationSubject.For(OrderId, releasedAssignmentId),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        var (queue, key, message) = Assert.Single(_staged);
+        Assert.Equal(QueueNames.SendEmail, queue);
+        Assert.Equal(MessageKeys.OrderCleanerReleasedEmail(OrderId, releasedAssignmentId), key);
+        var envelope = Assert.IsType<QueueEnvelope<SendOrderCleanerReleasedEmailMessage>>(message);
+        Assert.Equal(key, envelope.MessageKey);
+        Assert.Equal(CompanyId, envelope.TenantId);
+        Assert.Equal(
+            new SendOrderCleanerReleasedEmailMessage(OrderId, releasedAssignmentId, "en", CompanyId),
+            envelope.Payload);
+    }
+
+    /// <summary>A crew remains, so the booking still has its cleaner and the customer hears nothing.</summary>
+    [Fact]
+    public async Task DroppingOneSeatOfTwoTellsTheCustomerNothing()
+    {
+        var order = AccountOrderWith(EmployeeId, OtherEmployeeId);
         Arrange(order);
 
         await DropHandler().Handle(new DropOrder.Command(OrderId), default);
 
+        VerifyNoCustomerPush();
+        Assert.Empty(_staged);
+    }
+
+    /// <summary>
+    /// The notice follows the walk-back, not the empty crew: an order that was not Confirmed is not walked
+    /// back, so its customer is not told even when the last cleaner leaves. No writer leaves a cleaner on a
+    /// New order, so this pins the trigger rather than a path a customer can reach.
+    /// </summary>
+    [Fact]
+    public async Task DroppingTheLastCleanerOffAnOrderThatWasNotConfirmedTellsTheCustomerNothing()
+    {
+        var order = ValidatorTestHelpers.BuildOrder(OrderId, OrderStatus.New, EmployeeId, userId: CustomerUserId);
+        order.TenantId = CompanyId;
+        Arrange(order);
+
+        var result = await DropHandler().Handle(new DropOrder.Command(OrderId), default);
+
+        Assert.True(result.IsSuccess);
+        Assert.Empty(order.AssignedEmployees);
+        VerifyNoCustomerPush();
+        Assert.Empty(_staged);
+    }
+
+    /// <summary>
+    /// A guest has no account to push to, so the e-mail to the booking's own address is the whole notice.
+    /// The only push here is the seat-open wake to other cleaners, and this fixture's cohort is empty.
+    /// </summary>
+    [Fact]
+    public async Task DroppingTheLastSeatOfAGuestOrderEmailsTheGuestAndPushesNobody()
+    {
+        var order = OrderWith(EmployeeId);
+        var releasedAssignmentId = order.AssignedEmployees.Single().Id;
+        Arrange(order);
+
+        await DropHandler().Handle(new DropOrder.Command(OrderId), default);
+
+        VerifyNoCustomerPush();
+        var (queue, key, _) = Assert.Single(_staged);
+        Assert.Equal(QueueNames.SendEmail, queue);
+        Assert.Equal(MessageKeys.OrderCleanerReleasedEmail(OrderId, releasedAssignmentId), key);
+    }
+
+    private void VerifyNoCustomerPush() =>
         _notifications.Verify(n => n.NotifyAsync(
                 It.IsAny<string>(),
                 It.Is<string>(key => NotificationFeedEventKeys.Customer.Contains(key)),
@@ -402,5 +504,12 @@ public class CoverAndDropHandlerTests
                 It.IsAny<string?>(),
                 It.IsAny<CancellationToken>()),
             Times.Never);
+
+    private sealed class RecordingDispatch(List<(string Queue, string Key, object Message)> staged) : IPendingDispatch
+    {
+        public void Enqueue<T>(string queueName, T message, string messageKey) =>
+            staged.Add((queueName, messageKey, message!));
+
+        public IReadOnlyList<PendingMessage> Drain() => [];
     }
 }

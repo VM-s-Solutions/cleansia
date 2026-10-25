@@ -58,11 +58,15 @@ the order detail's *Read the contract*, and the customer wizards' confirm step l
   Paste. iOS adds the system's Paste button under the boxes, an icon alone, which reads the clipboard
   without the prompt a read from code raises; Android adds a *Paste* text button, shown while the
   clipboard holds text, checked whenever the window regains focus, because Android 10 and later let
-  only the focused app read the clipboard. Each edit goes through one rule per platform, held to one
-  case list (`OneTimeCode.accept`, `acceptOneTimeCode`): only ASCII digits are kept, up to the code's
-  length, and a run of at least that many digits arriving in one edit is a whole code and replaces the
-  code typed so far; anything shorter is typing. The iOS customer app's two reset-code fields, the
-  forgotten password's and the Security page's, keep and send their code by the same rule.
+  only the focused app read the clipboard. The Paste button replaces what was typed with the
+  clipboard's code (`CodeInput.pasting`, `pasteOneTimeCode`), so a fragment shows as itself and is
+  never completed from typed digits; a clipboard without digits changes nothing. Every edit of the
+  field itself — typing, its own long-press Paste, AutoFill or a keyboard's clipboard suggestion — goes
+  through one rule per platform, held to one case list (`OneTimeCode.accept`, `acceptOneTimeCode`):
+  only ASCII digits are kept, up to the code's length, and a run of at least that many digits arriving
+  in one edit is a whole code and replaces the code typed so far; anything shorter is typing. The iOS
+  customer app's two reset-code fields, the forgotten password's and the Security page's, keep and
+  send their code by the same rule.
 - **The phone field** keeps a `+` only while nothing has been kept before it
   (`PhoneNumberSanitizer.sanitize`, `sanitizePhoneInput`), so a number copied with a space, a label or
   a bracket in front of its country code keeps the code; until then only a `+` that was the very first

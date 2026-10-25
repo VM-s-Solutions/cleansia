@@ -271,13 +271,13 @@ chain.
 
 Started and Completed e-mails, and since 2026-10-25 *we're finding you a new cleaner*, are durable
 intents in the order's own commit — the release's, for the last. A refused commit sends nothing. The
-`send-email` consumer checks the committed current status — the last goes out only while the order is
-still `New`, so a take or a cancellation in between sends none — and sends to the booking's
-`CustomerEmail`; for a guest it commits a fresh independent access token before sending the link.
-Delivery uses the existing send-then-record guard: sequential redelivery sends once, while a crash
-between the external send and its delivery record can still duplicate an e-mail. Deploy the Functions
-consumer with or before API versions that publish the `order-status` or `order-cleaner-released`
-discriminator.
+`send-email` consumer checks the committed current status — the last goes out only if the order is
+`New` when it is read, so a take or a cancellation in between sends none unless the order is back at
+`New` by then — and sends to the booking's `CustomerEmail`; for a guest it commits a fresh independent
+access token before sending the link. Delivery uses the existing send-then-record guard: sequential
+redelivery sends once, while a crash between the external send and its delivery record can still
+duplicate an e-mail. Deploy the Functions consumer with or before API versions that publish the
+`order-status` or `order-cleaner-released` discriminator.
 
 ## Responsive quote previews
 

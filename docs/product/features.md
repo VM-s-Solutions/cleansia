@@ -301,29 +301,30 @@ between the preview and the take, the app re-fetches it and asks again. → [Bus
 **Leaving a job** — *Cancel job* on the job, on partner web, Android and iOS (since 2026-10-24), while
 the cleaner is on its crew, the job is *New* or *Confirmed* and no lockout has been reported, never once
 they are on the way or the clean has started (owner defaults 2026-10-24), and the server refuses it
-then too (owner ruling 2026-10-25). Since 2026-10-25 its start
-must also be still ahead: from the start on, a job nobody started is a no-show for the administrators;
-a job with no start time is judged without it. Android takes *Cancel job* away at the start and again
-when the app resumes; iOS and partner web take it away the next time they read the job, and until then
-a cancel confirmed from the start on sends nothing and reads the job again. A confirmation asks first: they
-will be taken off the job and their place goes back on the board for other cleaners, the customer's
-booking is not cancelled, and if they are its only cleaner the job has no cleaner until someone takes
-it; *Keep the job* changes nothing. After *Yes, cancel the job* the cleaner reads that they are off the
-job and their place is back on the board for others, or, when nobody is left on it, that it has no
-cleaner now and is back on the board, and the app leaves the job. It puts the seat back on the board and
-cancels nothing; a confirmed booking with nobody left goes back to *New* and is re-offered
+then too (owner ruling 2026-10-25). Since 2026-10-25 the apps also require its start to be still ahead
+(the server sets no such limit): from the start on, a job nobody started is a no-show for the
+administrators; a job with no start time is judged without it. Android takes *Cancel job* away at the
+start and again when the app resumes; iOS and partner web take it away the next time they read the job,
+and until then a cancel confirmed from the start on sends nothing and reads the job again. A confirmation
+asks first: they will be taken off the job and their place goes back on the board for other cleaners, the
+customer's booking is not cancelled, and if they are its only cleaner the job has no cleaner until
+someone takes it; *Keep the job* changes nothing. After *Yes, cancel the job* the cleaner reads that they
+are off the job and their place is back on the board for others, or, when nobody is left on it, that it
+has no cleaner now and is back on the board, and the app leaves the job. It puts the seat back on the
+board and cancels nothing; a confirmed booking with nobody left goes back to *New* and is re-offered
 ([ADR-0067](/decisions/adr-0067)). The company's administrators are told when the crew empties, and
 once more when the job is inside a day of its start with nobody on it. Since 2026-10-25 the customer is
 told too, when the booking goes back to *New*, that another cleaner is being looked for: *Your cleaner
 can no longer come* as a notification and in the inbox of the Android and iOS apps when they have an
 account, and the e-mail *We're finding you a new cleaner*, with an account or without, unless the
-booking was taken again or cancelled by then; neither names the cleaner or says why. When the
-one-off booking was reserved for a cleaner they asked for and the end of that reservation was never
-announced, as when the chosen cleaner took the job, the first five-minute run of the lapse sweep that
-finds nobody on it after the reservation ended also pushes a signed-in customer's Android and iOS apps
-that the booking is open to all cleaners (`order.preferred_offer_closed`), whoever left last; a drop by the
-chosen cleaner while the reservation runs ends it at once. Asking for cover, where the cleaner stays on
-the hook until somebody takes the seat, exists in the API (`RequestCover`) only; no app offers it.
+booking is no longer *New* when it goes out (taken again or cancelled); neither names the cleaner or
+says why. When the one-off booking was reserved for a cleaner they asked for and the end of that
+reservation was never announced, as when the chosen cleaner took the job, the first five-minute run of
+the lapse sweep that finds nobody on it after the reservation ended also pushes a signed-in customer's
+Android and iOS apps that the booking is open to all cleaners (`order.preferred_offer_closed`), whoever
+left last; a drop by the chosen cleaner while the reservation runs ends it at once. Asking for cover,
+where the cleaner stays on the hook until somebody takes the seat, exists in the API (`RequestCover`)
+only; no app offers it.
 → [Business rules — when the last cleaner leaves](/product/business-rules#crew-lost),
 [the partner web's Cancel job](/partner-app/order-management#cancel-job)
 

@@ -287,6 +287,7 @@
     <string name="order_detail_review_comment">Pridajte komentár (nepovinné)</string>
     <string name="order_detail_submit_review">Odoslať hodnotenie</string>
     <string name="order_detail_timeline">Časová os stavu</string>
+    <string name="order_detail_timeline_new_cleaner">Znova ponúknuté upratovačom</string>
     <string name="order_detail_rebook">Rezervovať toto upratovanie znova</string>
     <string name="order_detail_download_receipt">Stiahnuť účtenku</string>
     <string name="order_detail_report_issue">Nahlásiť problém</string>

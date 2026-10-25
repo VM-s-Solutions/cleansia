@@ -287,6 +287,7 @@
     <string name="order_detail_review_comment">Přidejte komentář (nepovinné)</string>
     <string name="order_detail_submit_review">Odeslat hodnocení</string>
     <string name="order_detail_timeline">Časová osa stavu</string>
+    <string name="order_detail_timeline_new_cleaner">Znovu nabídnuto uklízečům</string>
     <string name="order_detail_rebook">Rezervovat tento úklid znovu</string>
     <string name="order_detail_download_receipt">Stáhnout účtenku</string>
     <string name="order_detail_report_issue">Nahlásit problém</string>

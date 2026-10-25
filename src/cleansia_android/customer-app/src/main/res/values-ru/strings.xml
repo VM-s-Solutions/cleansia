@@ -287,6 +287,7 @@
     <string name="order_detail_review_comment">Добавьте комментарий (необязательно)</string>
     <string name="order_detail_submit_review">Отправить отзыв</string>
     <string name="order_detail_timeline">Хронология статуса</string>
+    <string name="order_detail_timeline_new_cleaner">Снова предложено клинерам</string>
     <string name="order_detail_rebook">Заказать эту уборку снова</string>
     <string name="order_detail_download_receipt">Скачать чек</string>
     <string name="order_detail_report_issue">Сообщить о проблеме</string>

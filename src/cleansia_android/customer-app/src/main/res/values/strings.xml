@@ -286,6 +286,7 @@
     <string name="order_detail_review_comment">Add a comment (optional)</string>
     <string name="order_detail_submit_review">Submit review</string>
     <string name="order_detail_timeline">Status timeline</string>
+    <string name="order_detail_timeline_new_cleaner">Offered to cleaners again</string>
     <string name="order_detail_rebook">Rebook this cleaning</string>
     <string name="order_detail_download_receipt">Download receipt</string>
     <string name="order_detail_report_issue">Report an issue</string>

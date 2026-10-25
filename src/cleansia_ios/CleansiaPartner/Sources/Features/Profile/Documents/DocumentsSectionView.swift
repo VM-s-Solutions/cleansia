@@ -1,6 +1,8 @@
+import AVFoundation
 import CleansiaCore
 import CleansiaPartnerApi
 import SwiftUI
+import UIKit
 import UniformTypeIdentifiers
 
 /// A file the cleaner has picked but not yet sent: it is held here while the system dialogs collect the rest.
@@ -14,14 +16,18 @@ private struct PendingUpload: Equatable {
     let base64: String
 
     /// Set when this file supersedes an existing document rather than adding one. The two flows share
-    /// the importer and the read and differ only in which endpoint the dialog calls, so the target
-    /// rides along with the file instead of in a second piece of state that could disagree with it.
+    /// the pickers and differ only in which endpoint the dialog calls, so the target rides along with
+    /// the file instead of in a second piece of state that could disagree with it.
     var replacesDocumentId: String?
 }
 
 struct DocumentsSectionView: View {
     @StateObject private var vm: DocumentsSectionViewModel
+    @State private var choosingSource = false
     @State private var importerOpen = false
+    @State private var pickerSource: UIImagePickerController.SourceType?
+    @State private var pickedPhoto: UIImage?
+    @State private var showCameraPermissionAlert = false
     @State private var pending: PendingUpload?
     @State private var pendingType: String?
     @State private var pendingDescription = ""
@@ -73,7 +79,7 @@ struct DocumentsSectionView: View {
                                 onReplace: {
                                     guard let id = document.documentId else { return }
                                     replacingDocumentId = id
-                                    importerOpen = true
+                                    choosingSource = true
                                 },
                                 onRequestDeletion: {
                                     guard let id = document.documentId else { return }
@@ -89,14 +95,13 @@ struct DocumentsSectionView: View {
                         leadingIcon: "arrow.up.doc",
                         loading: vm.action.isSubmitting,
                         enabled: !vm.action.isSubmitting,
-                        // Cleared HERE, where a fresh upload starts, and not only in handleImport:
+                        // Cleared HERE, where a fresh upload starts, and not only where a pick is staged:
                         // .fileImporter has no onCancellation before iOS 17 and does not reliably
                         // call back when the browser is dismissed, so a target set by Replace can
-                        // outlive the pick that was meant to consume it. Android needs no equivalent
-                        // — GetContent() always fires with a null Uri.
+                        // outlive the pick that was meant to consume it.
                         action: {
                             replacingDocumentId = nil
-                            importerOpen = true
+                            choosingSource = true
                         }
                     )
                     .padding(.top, Spacing.s)
@@ -121,6 +126,31 @@ struct DocumentsSectionView: View {
             }
         )
         .task { await vm.load() }
+        .confirmationDialog(L10n.Profile.uploadDocument, isPresented: $choosingSource, titleVisibility: .visible) {
+            if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                Button(L10n.Profile.photoTake) { requestCamera() }
+            }
+            Button(L10n.Profile.photoLibrary) { pickerSource = .photoLibrary }
+            Button(L10n.Profile.documentChooseFile) { importerOpen = true }
+            Button(L10n.cancel, role: .cancel) { replacingDocumentId = nil }
+        }
+        .sheet(item: $pickerSource, onDismiss: stagePickedPhoto) { source in
+            CameraOrLibraryPicker(
+                sourceType: source,
+                onImagePicked: { photo in
+                    pickedPhoto = photo
+                    pickerSource = nil
+                },
+                onCancel: { pickerSource = nil }
+            )
+            .ignoresSafeArea()
+        }
+        .alert(L10n.Profile.cameraPermissionTitle, isPresented: $showCameraPermissionAlert) {
+            Button(L10n.Profile.openSettings) { openSettings() }
+            Button(L10n.cancel, role: .cancel) {}
+        } message: {
+            Text(L10n.Profile.cameraPermissionMessage)
+        }
         .fileImporter(
             isPresented: $importerOpen,
             allowedContentTypes: DocumentPresentation.importableTypes,
@@ -191,14 +221,60 @@ struct DocumentsSectionView: View {
         }
         let contentType = UTType(filenameExtension: url.pathExtension)?.preferredMIMEType
             ?? "application/octet-stream"
-        let upload = PendingUpload(
+        stage(PendingUpload(
             fileName: url.lastPathComponent,
             contentType: contentType,
             base64: data.base64EncodedString(),
             replacesDocumentId: replaces
-        )
+        ))
+    }
+
+    /// The picker sheet's onDismiss, so the type dialog is not asked to appear while the sheet is still
+    /// animating out, which drops it. It takes the Replace target on every dismissal, cancelled or not.
+    private func stagePickedPhoto() {
+        let replaces = replacingDocumentId
+        replacingDocumentId = nil
+        guard let photo = pickedPhoto else { return }
+        pickedPhoto = nil
+        Task {
+            guard let encoded = await vm.encodePhoto(photo) else { return }
+            stage(PendingUpload(
+                fileName: "document-\(Int(Date().timeIntervalSince1970 * 1000)).jpg",
+                contentType: encoded.contentType,
+                base64: encoded.base64,
+                replacesDocumentId: replaces
+            ))
+        }
+    }
+
+    private func stage(_ upload: PendingUpload) {
         pending = upload
         if upload.replacesDocumentId == nil { choosingType = true } else { describingReplacement = true }
+    }
+
+    private func requestCamera() {
+        switch AVCaptureDevice.authorizationStatus(for: .video) {
+        case .authorized:
+            pickerSource = .camera
+        case .notDetermined:
+            AVCaptureDevice.requestAccess(for: .video) { granted in
+                Task { @MainActor in
+                    if granted { pickerSource = .camera } else { refuseCamera() }
+                }
+            }
+        default:
+            refuseCamera()
+        }
+    }
+
+    private func refuseCamera() {
+        replacingDocumentId = nil
+        showCameraPermissionAlert = true
+    }
+
+    private func openSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        UIApplication.shared.open(url)
     }
 
     private func confirmReplace(_ upload: PendingUpload, documentId: String) {

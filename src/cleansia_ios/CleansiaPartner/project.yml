@@ -96,8 +96,8 @@ targets:
         # The commit and branch a TestFlight build was archived from; the lanes pass both as build settings.
         CleansiaGitCommit: $(CLEANSIA_GIT_COMMIT)
         CleansiaGitBranch: $(CLEANSIA_GIT_BRANCH)
-        NSCameraUsageDescription: Cleansia uses the camera to capture before and after photos of your cleaning jobs.
-        NSPhotoLibraryUsageDescription: Cleansia needs access to your photos so you can attach before and after photos to your jobs.
+        NSCameraUsageDescription: Cleansia uses the camera to capture before and after photos of your cleaning jobs, your profile photo and photos of your documents.
+        NSPhotoLibraryUsageDescription: Cleansia needs access to your photos so you can choose your profile photo or a photo of a document.
         NSLocationWhenInUseUsageDescription: Cleansia uses your location to center the map when you set your address and to show on your job list how far each job is from you. The distance is calculated on your device only.
         UIAppFonts:
           - Poppins-Medium.ttf

@@ -49,6 +49,7 @@ public struct StatusBarFadeScrollView<Content: View>: View {
     private var scroll: some View {
         ScrollView {
             content
+                .readableWidth()
                 .environment(\.statusBarFadeHeroBottom, heroTint == nil ? nil : $heroBottom)
                 .background(alignment: .top) {
                     GeometryReader { proxy in
@@ -69,7 +70,8 @@ public struct StatusBarFadeScrollView<Content: View>: View {
 
 /// The fade itself: drawn from the screen's top edge (the safe-area line less its inset) down to the status
 /// bar's content. The reader keeps the safe area on purpose: one that ignores it reports a top inset of 0,
-/// which collapses the fade to nothing.
+/// which collapses the fade to nothing. A top inset shallower than a status bar means none runs across the top
+/// (hidden, or beside the content), so nothing is drawn and the clock is left to the system.
 private struct StatusBarFadeBand: View {
     let heroTint: Color?
     @Binding var heroBottom: CGFloat
@@ -80,37 +82,39 @@ private struct StatusBarFadeBand: View {
         GeometryReader { proxy in
             let top = proxy.safeAreaInsets.top
             let height = StatusBarFade.height(safeTop: top)
-            let page = StatusBarFade.rgb(CleansiaColors.background, colorScheme)
-            let hero = heroTint.map { StatusBarFade.rgb($0, colorScheme) }
-            let share = hero.map { StatusBarFade.legibleShare(
-                StatusBarFade.heroShare(heroBottom: heroBottom, safeTop: top, height: height),
-                hero: $0,
-                page: page
-            ) } ?? 0
-            ZStack {
-                CleansiaColors.background
-                if let heroTint {
-                    heroTint.opacity(share)
+            if top >= StatusBarFade.classicStatusBar {
+                let page = StatusBarFade.rgb(CleansiaColors.background, colorScheme)
+                let hero = heroTint.map { StatusBarFade.rgb($0, colorScheme) }
+                let share = hero.map { StatusBarFade.legibleShare(
+                    StatusBarFade.heroShare(heroBottom: heroBottom, safeTop: top, height: height),
+                    hero: $0,
+                    page: page
+                ) } ?? 0
+                ZStack {
+                    CleansiaColors.background
+                    if let heroTint {
+                        heroTint.opacity(share)
+                    }
                 }
-            }
-            .background {
-                if let hero {
-                    StatusBarStyleBridge(
-                        lightContent: StatusBarFade.asksForWhiteClock(share: share, hero: hero, page: page)
-                    )
+                .background {
+                    if let hero {
+                        StatusBarStyleBridge(
+                            lightContent: StatusBarFade.asksForWhiteClock(share: share, hero: hero, page: page)
+                        )
+                    }
                 }
+                .mask(LinearGradient(
+                    stops: StatusBarFade.stops(
+                        height: height,
+                        falloff: StatusBarFade.falloff(safeTop: top),
+                        reduceTransparency: reduceTransparency
+                    ),
+                    startPoint: .top,
+                    endPoint: .bottom
+                ))
+                .frame(height: height)
+                .offset(y: -top)
             }
-            .mask(LinearGradient(
-                stops: StatusBarFade.stops(
-                    height: height,
-                    falloff: StatusBarFade.falloff(safeTop: top),
-                    reduceTransparency: reduceTransparency
-                ),
-                startPoint: .top,
-                endPoint: .bottom
-            ))
-            .frame(height: height)
-            .offset(y: -top)
         }
         .allowsHitTesting(false)
         .accessibilityHidden(true)

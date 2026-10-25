@@ -281,13 +281,15 @@ private struct ProfileHero: View {
         // `ignoresSafeArea` here has nothing left to ignore, and the gradient stopped at the status-bar
         // line. So the background paints upward past the hero's own frame instead (the customer Profile
         // hero's form): the gradient keeps the hero's bounds and a block of its first stop fills the
-        // status-bar strip and the rubber-band overscroll above it.
+        // status-bar strip and the rubber-band overscroll above it. It paints sideways past them too, so on a
+        // wide canvas, where the scroll holds the hero to a readable width, the gradient still meets both edges.
         .background(alignment: .bottom) {
             VStack(spacing: 0) {
                 BrandGradient.blue.colors[0].frame(height: heroBleed)
                 LinearGradient(colors: BrandGradient.blue.colors, startPoint: .top, endPoint: .bottom)
             }
             .padding(.top, -heroBleed)
+            .padding(.horizontal, -heroBleed)
         }
     }
 

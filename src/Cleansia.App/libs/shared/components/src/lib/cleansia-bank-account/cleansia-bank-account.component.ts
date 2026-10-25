@@ -166,7 +166,7 @@ function asSingleLine(text: string): string {
 /** `prefix-number/code`, `number/code` or `prefix-number`; the separators are what mark an account. */
 function writtenOutAccount(text: string): { prefix?: string; number: string; bankCode?: string } | null {
   if (!/[-/]/.test(text)) return null;
-  const match = /^(?:(\d{1,6})-)?(\d{1,10})(?:\/(\d{1,4}))?$/.exec(text);
+  const match = /^(?:(\d{1,6})-)?(\d{1,10})(?:\/(\d{4}))?$/.exec(text);
   return match ? { prefix: match[1], number: match[2], bankCode: match[3] } : null;
 }
 

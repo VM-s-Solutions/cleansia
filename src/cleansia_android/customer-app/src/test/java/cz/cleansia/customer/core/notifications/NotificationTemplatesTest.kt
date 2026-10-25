@@ -739,6 +739,136 @@ class NotificationTemplatesTest {
         }
     }
 
+    private val releaseKeys = listOf(
+        "notification_order_cleaner_released_title",
+        "notification_order_cleaner_released_body",
+    )
+
+    @Test
+    fun `the cleaner release renders under order updates and enters the customer feed`() {
+        val template = NotificationTemplates.templateFor("order.cleaner_released")
+
+        assertEquals(R.string.notification_order_cleaner_released_title, template?.titleRes)
+        assertEquals(R.string.notification_order_cleaner_released_body, template?.bodyRes)
+        assertEquals(NotificationCategoryDto.OrderUpdates, template?.category)
+        assertTrue(CustomerFeedEventKeys.contains("order.cleaner_released"))
+    }
+
+    @Test
+    fun `formatBody substitutes the orderNumber into the cleaner-release body`() {
+        val context = mockk<Context>()
+        every {
+            context.getString(R.string.notification_order_cleaner_released_body, "A-1042")
+        } returns "We're looking for another cleaner for booking #A-1042."
+
+        val body = NotificationTemplates.formatBody(
+            context,
+            "order.cleaner_released",
+            R.string.notification_order_cleaner_released_body,
+            mapOf("orderId" to "ord-7", "orderNumber" to "A-1042"),
+        )
+
+        assertEquals("We're looking for another cleaner for booking #A-1042.", body)
+    }
+
+    @Test
+    fun `a cleaner-release tap opens the booking and needs its id`() {
+        assertEquals(
+            Routes.OrderDetail("ord-7"),
+            NotificationDeepLink.resolve("order.cleaner_released", mapOf("orderId" to "ord-7")),
+        )
+        assertNull(NotificationDeepLink.resolve("order.cleaner_released", emptyMap()))
+        assertNull(NotificationDeepLink.resolve("order.cleaner_released", mapOf("orderId" to "  ")))
+    }
+
+    @Test
+    fun `the cleaner-release body takes the order number and the title nothing, translated in every locale`() {
+        val english = releaseKeys.associateWith { valueOf(stringsXml("values"), it) }
+        locales.forEach { locale ->
+            val xml = stringsXml(locale)
+            releaseKeys.forEach { key ->
+                val value = valueOf(xml, key)
+                assertNotNull("$locale/strings.xml is missing $key", value)
+                assertTrue("$locale/strings.xml has a blank $key", value!!.isNotBlank())
+                if (locale != "values") assertTrue("$locale/strings.xml left $key in English", value != english[key])
+            }
+            val body = valueOf(xml, "notification_order_cleaner_released_body")!!
+            assertEquals("$locale body slots", listOf("%1\$s"), formatSlots(body))
+            assertTrue("$locale body dropped the # before the order number", body.contains("#%1\$s"))
+            assertEquals(
+                "$locale title slots",
+                emptyList<String>(),
+                formatSlots(valueOf(xml, "notification_order_cleaner_released_title")!!),
+            )
+        }
+    }
+
+    /**
+     * A cleaner's drop and an administrator's rejection send the same key and read the same, as a declined and a
+     * lapsed preferred offer do. The booking is not cancelled either: it is back on the board.
+     */
+    private val releaseReasonStems = mapOf(
+        "values" to listOf("drop", "cancel", "reject", "remov", "declin", "refus", "withdr", "admin"),
+        "values-cs" to listOf("zruš", "odmít", "zamít", "odstran", "odebr", "vzdal", "administr"),
+        "values-sk" to listOf("zruš", "odmiet", "zamiet", "odstrán", "odobr", "vzdal", "administr"),
+        "values-uk" to listOf("скасов", "скасув", "відмов", "відхил", "видал", "зняли", "знято", "адміністр"),
+        "values-ru" to listOf("отмен", "отказ", "отклон", "удал", "сняли", "снят", "администр"),
+    )
+
+    @Test
+    fun `no cleaner-release string says why the cleaner left in any locale`() {
+        locales.forEach { locale ->
+            val xml = stringsXml(locale)
+            releaseKeys.forEach { key ->
+                val value = valueOf(xml, key)!!
+                releaseReasonStems.getValue(locale).forEach { stem ->
+                    assertFalse(
+                        "$locale/strings.xml tells the customer why the cleaner left in $key: \"$value\"",
+                        value.contains(stem, ignoreCase = true),
+                    )
+                }
+            }
+        }
+    }
+
+    /** The words the assignment copy makes its claim with. Nobody is on the job when the release is sent. */
+    private val assignmentClaimStems = mapOf(
+        "values" to listOf("found", "assigned"),
+        "values-cs" to listOf("nalezen", "přiřazen"),
+        "values-sk" to listOf("nájden", "priraden"),
+        "values-uk" to listOf("знайден", "призначен"),
+        "values-ru" to listOf("найден", "назначен"),
+    )
+
+    @Test
+    fun `no cleaner-release string claims a cleaner is on the job or states a time or an amount in any locale`() {
+        locales.forEach { locale ->
+            val xml = stringsXml(locale)
+            val stems = assignmentClaimStems.getValue(locale)
+            val assignment = listOf("notification_cleaner_assigned_title", "notification_cleaner_assigned_body")
+                .joinToString(" ") { valueOf(xml, it)!! }
+            stems.forEach { stem ->
+                assertTrue(
+                    "$locale: the assignment copy no longer says \"$stem\"",
+                    assignment.contains(stem, ignoreCase = true),
+                )
+            }
+            releaseKeys.forEach { key ->
+                val value = valueOf(xml, key)!!
+                stems.forEach { stem ->
+                    assertFalse(
+                        "$locale/$key claims a cleaner is on the job: \"$value\"",
+                        value.contains(stem, ignoreCase = true),
+                    )
+                }
+                assertFalse(
+                    "$locale/$key states a time or an amount: \"$value\"",
+                    value.replace(Regex("%\\d+\\$[sd]"), "").contains(Regex("\\d")),
+                )
+            }
+        }
+    }
+
     private fun stringsXml(locale: String): String {
         val file = File(resDir, "$locale/strings.xml")
         assertTrue("missing $locale/strings.xml", file.isFile)

@@ -30,6 +30,13 @@ object NotificationTemplates {
             R.string.notification_cleaner_assigned_body,
             NotificationCategoryDto.OrderUpdates,
         )
+        // One template for a cleaner's drop and an administrator's rejection: the copy must not let the
+        // customer tell which it was.
+        "order.cleaner_released" -> Template(
+            R.string.notification_order_cleaner_released_title,
+            R.string.notification_order_cleaner_released_body,
+            NotificationCategoryDto.OrderUpdates,
+        )
         "order.starting_soon" -> Template(
             R.string.notification_order_starting_soon_title,
             R.string.notification_order_starting_soon_body,
@@ -146,6 +153,7 @@ object NotificationTemplates {
         when (eventKey) {
             "order.payment_confirmed",
             "order.cleaner_assigned",
+            "order.cleaner_released",
             "order.starting_soon",
             "order.preferred_offer_closed",
             "order.on_the_way",

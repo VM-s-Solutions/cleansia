@@ -29,7 +29,8 @@ class CleansiaBankAccountInputPasteTest {
 
     /**
      * The case list the three platforms share. Each edit is the box's new text as the field reports it, the paste or
-     * the typed digit after, before or over the text the box held. A null part of a [Spread] keeps what that box holds.
+     * the typed digit after, before, inside or over the text the box held. A null part of a [Spread] keeps what that
+     * box holds.
      */
     @Test
     fun `the case list the three platforms share`() {
@@ -91,6 +92,26 @@ class CleansiaBankAccountInputPasteTest {
             Spread("19", "2000145399", "0800"),
             edit("19-2000145399/0800" + "19", numberBox, current = "19"),
         )
+        assertEquals(
+            "an account inside a bank code",
+            Spread("19", "2000145399", "0800"),
+            edit("0" + "19-2000145399/0800" + "800", bankCodeBox, current = "0800"),
+        )
+        assertEquals(
+            "an account over all of a partial bank code",
+            Spread("19", "2000145399", "0800"),
+            edit("19-2000145399/0800", bankCodeBox, current = "0"),
+        )
+        assertEquals(
+            "an account after a prefix",
+            Spread("19", "2000145399", "0800"),
+            edit("0" + "19-2000145399/0800", prefixBox, current = "0"),
+        )
+        assertEquals(
+            "a number after a prefix",
+            Spread(null, "1234567890", null),
+            edit("0" + "1234567890", prefixBox, current = "0"),
+        )
     }
 
     /**
@@ -107,17 +128,17 @@ class CleansiaBankAccountInputPasteTest {
     }
 
     /**
-     * Wrong the same way: a digit the paste shares with the box's text at the same end reads as text the box kept.
-     * "0100" should replace "0800", and the bank code should be "0800".
+     * Wrong the same way: the first digits the paste shares with the box's text read as text the box kept. The number
+     * should be "2000145399", and "0100" should replace "0800".
      */
     @Test
-    fun `a known residual too, a paste that shares its first or last digits with the box's text can lose them`() {
-        assertEquals("0100 pasted before 0800", Changed("1000"), edit("0100" + "0800", bankCodeBox, current = "0800"))
+    fun `a known residual too, a paste over or before digits that share its first digits can lose them`() {
         assertEquals(
-            "19-2000145399/0800 pasted over all of a bank code 0",
-            Spread("19", "2000145399", "080"),
-            edit("19-2000145399/0800", bankCodeBox, current = "0"),
+            "2000145399/0800 pasted over all of a number 2000",
+            Spread("", "145399", "0800"),
+            edit("2000145399/0800", numberBox, current = "2000"),
         )
+        assertEquals("0100 pasted before 0800", Changed("1000"), edit("0100" + "0800", bankCodeBox, current = "0800"))
     }
 
     @Test

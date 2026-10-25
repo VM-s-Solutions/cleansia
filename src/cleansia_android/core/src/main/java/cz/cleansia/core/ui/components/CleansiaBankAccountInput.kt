@@ -184,7 +184,7 @@ fun CleansiaBankAccountInput(
     }
 }
 
-private val domesticAccount = Regex("""^(?:(\d{1,6})-)?(\d{1,10})(?:/(\d{1,4}))?$""")
+private val domesticAccount = Regex("""^(?:(\d{1,6})-)?(\d{1,10})(?:/(\d{4}))?$""")
 private val czSkIban = Regex("""^(?:CZ|SK)\d{2}(\d{20})$""")
 
 /** What one edit of a segment does to the account. */
@@ -212,6 +212,8 @@ internal sealed interface SegmentEdit {
  * 3. The whole new text: exact for a paste over all of the segment's text.
  * 4. The run, the new text less what it shares with [current] at either end: for a paste in the middle of
  *    the segment's text.
+ * In `prefix-number/code` and `number/code` the code is exactly four digits, as every CZ and SK bank code is, so a
+ * reading that cuts a pasted code short is no account.
  * A run of one character is typing and is never read as an account, so a "-" or "/" typed among a segment's digits
  * is dropped like any other non-digit. An account without a prefix clears the old one, and one without a bank code
  * keeps it. Otherwise new text that fits the segment is kept, as typed or pasted, digits only, and new text that
@@ -228,10 +230,9 @@ internal sealed interface SegmentEdit {
  *
  * The iOS twin is `CleansiaBankAccountField.splitPastedAccount` and the web's is `cleansia-bank-account`'s
  * paste handler; the three pin one case list. The web reads the pasted text itself, while here an account
- * pasted over part of a segment's text can still be split wrongly, as "19-2000145399/0800" pasted over the
- * "12345" of "1234567890" gives the prefix "9", and a paste that shares its first or last digits with the
- * segment's text can lose them: "0100" pasted before "0800" gives "1000", and "19-2000145399/0800" pasted over
- * all of a bank code "0" gives the bank code "080". -> /partner-app/onboarding
+ * pasted inside or over part of a segment's digits can take in the digits beside it, and a paste anywhere but at
+ * the end of the segment's text can lose digits it shares with that text, as "2000145399/0800" pasted over all of
+ * a number "2000" gives the number "145399". -> /partner-app/onboarding
  */
 internal fun splitPastedAccount(raw: String, current: String, segmentMaxLength: Int): SegmentEdit {
     val run = insertedRun(raw, current)

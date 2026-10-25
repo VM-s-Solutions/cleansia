@@ -123,7 +123,7 @@ final class PushLocKeyCatalogTests: XCTestCase {
     ]
 
     /// A cleaner's drop and an administrator's rejection send the same `order.cleaner_released` and read the
-    /// same, and the booking is not cancelled either: it is looking for another cleaner. Stems for every reason
+    /// same, and the booking is not cancelled either: it is offered to cleaners again. Stems for every reason
     /// and for "cancelled", per locale, the same as the Android customer app's `NotificationTemplatesTest`.
     private let releaseReasonStems = [
         "en": ["drop", "cancel", "reject", "remov", "declin", "refus", "withdr", "admin"],
@@ -131,6 +131,16 @@ final class PushLocKeyCatalogTests: XCTestCase {
         "sk": ["zruš", "odmiet", "zamiet", "odstrán", "odobr", "vzdal", "administr"],
         "uk": ["скасов", "скасув", "відмов", "відхил", "видал", "зняли", "знято", "адміністр"],
         "ru": ["отмен", "отказ", "отклон", "удал", "сняли", "снят", "администр"]
+    ]
+
+    /// One cleaner of two leaving sends the same release as the last one leaving, so the copy neither promises a
+    /// single replacement nor says the booking has no cleaner, per locale.
+    private let releaseCountClaims = [
+        "en": ["another", "a new cleaner", "your cleaner", "no cleaner"],
+        "cs": ["jiného", "nového", "váš uklízeč", "nemá uklízeče", "bez uklízeče"],
+        "sk": ["iného", "nového", "váš upratovač", "nemá upratovača", "bez upratovača"],
+        "uk": ["іншого", "нового", "ваш клінер", "без клінера"],
+        "ru": ["другого", "нового", "ваш клинер", "без клинера"]
     ]
 
     /// The words `order.cleaner_assigned` makes its claim with, per locale.
@@ -291,7 +301,7 @@ final class PushLocKeyCatalogTests: XCTestCase {
         }
     }
 
-    /// The customer is told their booking is looking for another cleaner, never why the last one left.
+    /// The customer is told their booking is offered to cleaners again, never why a cleaner left.
     func testTheCleanerReleaseNeverSaysWhyTheCleanerLeft() throws {
         for language in languages {
             let table = try localizableTable(for: language)
@@ -308,7 +318,23 @@ final class PushLocKeyCatalogTests: XCTestCase {
         }
     }
 
-    /// Nobody is on the job when the release is sent, so its copy never makes the assignment's claim, and it
+    func testTheCleanerReleaseIsTrueWhetherOneOrEveryCleanerLeft() throws {
+        for language in languages {
+            let table = try localizableTable(for: language)
+            let claims = try XCTUnwrap(releaseCountClaims[language])
+            for key in ["push.order.cleaner_released.title", "push.order.cleaner_released.body"] {
+                let value = try XCTUnwrap(table[key], "\(key) in \(language)")
+                for claim in claims {
+                    XCTAssertNil(
+                        value.range(of: claim, options: .caseInsensitive),
+                        "\(key) counts the cleaners (\(claim)) in \(language): \(value)"
+                    )
+                }
+            }
+        }
+    }
+
+    /// The release can leave nobody on the job, so its copy never makes the assignment's claim, and it
     /// promises no time and no amount, so no figure stands outside its one slot. The stems are checked against
     /// the assignment copy first, so a reworded assignment cannot leave this test passing on nothing.
     func testTheCleanerReleaseClaimsNoCleanerOnTheJobAndStatesNoFigure() throws {

@@ -605,13 +605,16 @@ need backfilling.
   bank-account boxes, a prefix or a bank code pasted on its own now stays in its own box, and the number
   already entered stays: a paste the box has room for is kept as pasted, and one that would overflow it
   replaces what the box held. Only a bare number too long for the box it lands in, up to ten digits,
-  goes to the account number. A written-out account or an IBAN is still spread over the three boxes
-  from any box, even where its digits would fit that box. Until 2026-10-24 a bare number pasted into a
-  box went to the account number, so a bank code pasted into its own box replaced the number already
-  entered, and a prefix such as `19` went to the number. On the apps a whole account pasted after the
-  digits already in a box, before them or over all of them is now read without them, so the box no
-  longer has to be cleared first; a paste among such digits, or one whose digits coincide with them,
-  can still misplace some of them. Partner web reads what you pasted, wherever it lands.
+  goes to the account number. A written-out account with a four-digit bank code, as every Czech and
+  Slovak bank code has, or an IBAN is still spread over the three boxes from any box, even where its
+  digits would fit that box; one whose bank code is shorter, such as `19-2000145399/080`, is no longer
+  split. On the apps a `-` or `/` typed among a box's digits is dropped like any other character that is
+  not a digit, instead of splitting the box. Until 2026-10-24 a bare number pasted into a box went to
+  the account number, so a bank code pasted into its own box replaced the number already entered, and a
+  prefix such as `19` went to the number. On the apps a whole account pasted after the digits already in
+  a box, before them or over all of them is now read without them, so the box no longer has to be
+  cleared first; a paste among such digits, or one whose digits coincide with them, can still misplace
+  some of them. Partner web reads what you pasted, wherever it lands.
 
 - **Admin — a company row keeps its registered name.** An edit of a cleaner registered as a company
   is judged together with what is stored: a save from any section that would leave the company

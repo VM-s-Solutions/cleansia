@@ -210,16 +210,23 @@ bank code. The clients read three shapes:
 | `CZ65 0800 0000 1920 0014 5399`, or an SK IBAN | the same three parts, with the IBAN's zero padding dropped |
 
 Spaces of every kind are ignored (a non-breaking one included) and an en or em dash counts as a hyphen.
+**The bank code of a written-out account is exactly four digits**, as every Czech and Slovak bank code
+is (since 2026-10-25): a slash followed by one to three digits, or by five or more, is no account, so
+`19-2000145399/080` is not split. An IBAN always gives a four-digit bank code.
 
 **One rule decides what an edit of a box does, on partner web, Android and iOS alike** (since
 2026-10-25). The prefix holds at most 6 digits, the number 10 and the bank code 4. Steps 1 and 3 read
 what the edit put in, which the clients work out differently (below):
 
-1. **An account first.** If what the edit put in is one of the three shapes, it is split over the three
+1. **An account first.** If the edit put in more than one character and what it put in is one of the
+   three shapes, with a bank code, where it has one, of exactly four digits, it is split over the three
    boxes, whichever box it landed in and even where its digits would fit that box, so `12345/0800`
-   pasted into the empty number gives the number `12345` and the bank code `0800`.
-2. **Otherwise new text that fits the box is kept**, as typed or pasted, so `19` pasted into the empty
-   prefix box stays the prefix. On the apps the box then keeps only its digits.
+   pasted into the empty number gives the number `12345` and the bank code `0800`. One character is
+   never an account.
+2. **Otherwise new text that fits the box is kept**, as typed or pasted, and the box then keeps only its
+   digits, on the apps by its digit clamp and on partner web by the profile page: `19` pasted into the
+   empty prefix box stays the prefix, and `12345/080`, which is no account, pasted into the empty number
+   is the number `12345080`.
 3. **Otherwise the new text is too long for the box**, and what the edit put in decides:
    - **one character is typing**: the box keeps the first digits of its new text that fit, so a digit at
      the end of a full box changes nothing, and one before or inside it pushes out the box's last digit;
@@ -228,7 +235,9 @@ what the edit put in, which the clients work out differently (below):
    - **digits too long for the box, up to the number's ten, are the account number**, and the box keeps
      what it held: `2000145399` pasted into the prefix box becomes the number, and the prefix and bank
      code stay as they are;
-   - **anything else leaves the box as it was**, eleven or more digits included.
+   - **anything else leaves the box as it was**, eleven or more digits included, and so does an account
+     whose bank code is cut short, which is too long for any box: `19-2000145399/080` or
+     `2000145399/080` pasted into an empty one, and on partner web into any box, whatever it holds.
 
 Until 2026-10-24 a bare number pasted into any box became the account number, on the apps from two
 digits and on the web from one, so a bank code pasted into its own box replaced the number already
@@ -242,8 +251,8 @@ entered, and a real prefix such as `19` pasted into the prefix box went to the n
   one-character paste goes through the typing step.
 - **The apps** see only the box's text before and after the edit, and typing goes through the box's
   digit clamp. Their *run* is the new text less the longest start and the longest end it shares with the
-  old text, the two never overlapping. For step 1 they try four readings, in this order, and split the
-  first one that is an account:
+  old text, the two never overlapping. When the run is longer than one character, step 1 tries four
+  readings, in this order, and splits the first one that is an account:
   1. when the new text starts with the old text, the text after it: a paste at the end, or into an
      empty box;
   2. when the new text ends with the old text, the text before it: a paste at the start;
@@ -252,19 +261,19 @@ entered, and a real prefix such as `19` pasted into the prefix box went to the n
 
   Step 3 reads the run alone.
 
-**Android tries the four readings only when the run is longer than one character**, so a `-` or `/`
-typed among a box's digits is dropped like any other non-digit. The price is a paste whose run is a
-single character: `123456/0800` pasted over the whole number `1234560800` differs from it by the `/`
-alone, so it is read as typing, and the number stays as it was. **iOS tries them on every edit.** Its
-number pad types neither character, but one put among a box's digits from a hardware keyboard, or pasted
-on its own, can split the box: a `-` after the `1` of the prefix `12345` gives the prefix `1` and the
-number `2345`.
+**A run of one character is never read as an account, on both apps**, so a `-` or `/` typed among a
+box's digits is dropped by the digit clamp like any other non-digit, and nothing moves between the
+boxes: a `-` typed after the `1` of the prefix `12345` leaves the prefix `12345` (rows 25 and 25b
+below). The price is a paste whose run is a single character: `123456/0800` pasted over the whole number
+`1234560800` differs from it by the `/` alone, so the apps read it as typing and the number stays as it
+was, where partner web splits it.
 
 **The three clients pin one case list, row for row**: iOS in `CleansiaBankAccountFieldPasteTests`,
 Android in `CleansiaBankAccountInputPasteTest` and partner web in
 `cleansia-bank-account.component.spec.ts`. Each row starts with the other two boxes empty. The one
 character of rows 13 and 17 is typed on the apps and pasted on the web, where a digit typed into a full
-box is refused.
+box is refused. Rows 25 and 25b are typing, which partner web leaves to the browser, so only the apps
+pin them.
 
 | # | Box | It holds | The edit | The boxes then hold | iOS keyboard |
 |---|---|---|---|---|---|
@@ -290,16 +299,29 @@ box is refused.
 | 20 | bank code | `0800` | `19-2000145399/0800` pasted after it | prefix `19`, number `2000145399`, bank code `0800` | closes |
 | 21 | number | `2000145399`, all of it selected | `2000145399/0800` pasted over it | number `2000145399`, bank code `0800` | closes |
 | 22 | number | `19` | `19-2000145399/0800` pasted before it | prefix `19`, number `2000145399`, bank code `0800` | closes |
+| 23 | bank code | `0800` | `19-2000145399/0800` pasted after its first `0` | prefix `19`, number `2000145399`, bank code `0800` | closes |
+| 24 | bank code | `0`, all of it selected | `19-2000145399/0800` pasted over it | prefix `19`, number `2000145399`, bank code `0800` | closes |
+| 25 | prefix | `12345` | `-` typed after its `1` | prefix `12345` | stays |
+| 25b | number | `2000145399` | `/` typed after its `200014` | number `2000145399` | stays |
+| 26 | prefix | `0` | `19-2000145399/0800` pasted after it | prefix `19`, number `2000145399`, bank code `0800` | closes |
+| 27 | prefix | `0` | `1234567890` pasted after it | prefix `0`, number `1234567890` | closes |
+
+**Partner web pins one row more, W3**, a paste the apps misread (below): `19-2000145399/0800` pasted
+over the first five digits of the number `1234567890` gives the prefix `19`, the number `2000145399` and
+the bank code `0800`. Reading the pasted text, partner web gets rows 23, 24, 26 and 27 right with or
+without the four-digit rule; on the apps rows 23 and 24 need it, because a reading that cuts the pasted
+bank code to `080` is no account.
 
 **On iOS an edit the box's digit clamp settles keeps the keyboard, and an edit the control writes
 itself closes it.** An edit whose result is what the clamp makes of the box's new text, its first digits
-up to the box's length, goes through as typed: a typed digit, and rows 1, 3, 4, 5, 10, 13 and 17. Any
+up to the box's length, goes through as typed: typing, and rows 1, 3, 4, 5, 10, 13, 17, 25 and 25b. Any
 other edit is written by the control, which rebuilds the three boxes with `.id(pasteRevision)`, so that
 each draws its new value, and the rebuild ends the edit and closes the keyboard: a split, a number
-routed from another box, or digits replacing the box's own (rows 2, 6–9, 11, 12, 14–16 and 18–22).
-**On Android only a spread closes the keyboard**: an account, or a number routed from another box (rows
-7, 8, 11, 12, 15, 16 and 18–22), rebuilds the boxes with `key(pasteRevision)`, so that the same paste
-into the same box a second time is not dropped as a repeat. Every other edit keeps the keyboard.
+routed from another box, or digits replacing the box's own (rows 2, 6–9, 11, 12, 14–16, 18–24, 26 and
+27). **On Android only a spread closes the keyboard**: an account, or a number routed from another box
+(rows 7, 8, 11, 12, 15, 16, 18–24, 26 and 27), rebuilds the boxes with `key(pasteRevision)`, so that the
+same paste into the same box a second time is not dropped as a repeat. Every other edit keeps the
+keyboard.
 
 **Each box keeps the digits `0`–`9` only**, up to its length, on both apps (`clampSegment`, since
 2026-10-02): a keyboard can type Arabic-Indic or full-width digits, which the server refuses, and the
@@ -309,22 +331,30 @@ splits a CZ or SK IBAN, ignores whitespace of every kind inside the digits too, 
 dash as a hyphen. Before, it split only the two separator shapes, and a bare number pasted there cleared
 the prefix.
 
-::: warning The apps can misread a paste among digits a box already holds
+::: warning The apps can misread a paste beside or over digits a box already holds
+On the apps, which see only a box's old and new text, these pastes can still be misread:
+
+- a whole account pasted with the caret inside a box's digits, or over part of them, which can take in
+  the digits beside it or lose digits it shares with them;
+- a Select All paste over digits that the pasted account begins with: number `2000` selected, then
+  `2000145399/0800`, gives number `145399`;
+- a bare number pasted before digits that share its first digits: `0100` pasted before `0800` gives
+  `1000`.
+
+The web reads all of these correctly, because the paste event carries the pasted text.
+
 The apps compare the box's text before and after the edit, so a digit the paste shares with what the box
 held can be read as one the box kept, and the box's own digits beside the caret or a selection can be
-read as part of the paste. A paste into an empty box is never misread. A written-out account pasted over part of a box's
-text, a selection that is neither the whole box nor empty, can lose a digit it shares with the box's
-text there: with `12345` of `1234567890` selected, `19-2000145399/0800` splits with the prefix `9`.
-Partner web reads such a paste correctly. The same comparison misreads these too, and partner web reads
-each of them correctly:
+read as part of the paste. A bare number pasted over a box's digits can lose the digits it shares with
+them the same way. A paste into an empty box is never misread. More examples, each read correctly on
+partner web:
 
 | The box holds | Pasted | The apps read | Partner web reads |
 |---|---|---|---|
+| the number `1234567890`, with `12345` selected (W3) | `19-2000145399/0800` | prefix `9` | prefix `19` |
 | the prefix `12345`, with `2345` selected | `19-2000145399/0800` | prefix `119` | prefix `19` |
-| the bank code `0800`, with the caret after its first `0` | `19-2000145399/0800` | prefix `019`, bank code `080` | prefix `19`, bank code `0800` |
-| the bank code `0`, all of it selected | `19-2000145399/0800` | bank code `080` | bank code `0800` |
 | the number `2`, all of it selected | `2000145399/0800` | number `000145399` | number `2000145399` |
-| the bank code `0800`, with the caret before it | `0100` | bank code `1000` | bank code `0100` |
+| the prefix `19`, all of it selected | `2000145399` | number `200014539`, prefix still `19` | number `2000145399`, prefix still `19` |
 :::
 
 ::: tip Country Configuration

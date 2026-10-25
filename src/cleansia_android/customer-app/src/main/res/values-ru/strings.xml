@@ -1331,8 +1331,8 @@
     <string name="notification_order_payment_confirmed_body">Заказ #%1$s подтверждён. Нажмите, чтобы посмотреть подробности.</string>
     <string name="notification_cleaner_assigned_title">Клинер найден! 🎉</string>
     <string name="notification_cleaner_assigned_body">К вашему заказу #%1$s назначен клинер. Нажмите, чтобы посмотреть подробности.</string>
-    <string name="notification_order_cleaner_released_title">Ваш клинер больше не может прийти</string>
-    <string name="notification_order_cleaner_released_body">Мы ищем другого клинера для заказа #%1$s и сообщим вам, как только кто-то его возьмёт.</string>
+    <string name="notification_order_cleaner_released_title">Клинер больше не может прийти</string>
+    <string name="notification_order_cleaner_released_body">Мы снова предлагаем заказ #%1$s нашим клинерам и сообщим вам, как только кто-то его возьмёт.</string>
     <string name="notification_order_starting_soon_title">Уборка скоро начнётся</string>
     <string name="notification_order_starting_soon_body">Ваше бронирование #%1$s начнётся примерно через час. Нажмите, чтобы посмотреть детали.</string>
     <string name="notification_order_preferred_offer_closed_title">Заказ открыт для всех клинеров</string>

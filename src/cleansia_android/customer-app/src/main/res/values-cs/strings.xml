@@ -1334,8 +1334,8 @@
     <string name="notification_order_payment_confirmed_body">Vaše rezervace #%1$s je potvrzena. Klepněte pro zobrazení detailů.</string>
     <string name="notification_cleaner_assigned_title">Uklízeč nalezen! 🎉</string>
     <string name="notification_cleaner_assigned_body">K vaší rezervaci #%1$s je přiřazen uklízeč. Klepněte pro zobrazení detailů.</string>
-    <string name="notification_order_cleaner_released_title">Váš uklízeč už nemůže přijít</string>
-    <string name="notification_order_cleaner_released_body">Hledáme jiného uklízeče pro rezervaci #%1$s a dáme vám vědět, jakmile ji někdo převezme.</string>
+    <string name="notification_order_cleaner_released_title">Uklízeč už nemůže přijít</string>
+    <string name="notification_order_cleaner_released_body">Rezervaci #%1$s znovu nabízíme našim uklízečům a dáme vám vědět, jakmile ji někdo převezme.</string>
     <string name="notification_order_starting_soon_title">Úklid brzy začíná</string>
     <string name="notification_order_starting_soon_body">Vaše rezervace #%1$s začíná přibližně za hodinu. Klepněte pro zobrazení detailů.</string>
     <string name="notification_order_preferred_offer_closed_title">Rezervace je otevřená všem uklízečům</string>

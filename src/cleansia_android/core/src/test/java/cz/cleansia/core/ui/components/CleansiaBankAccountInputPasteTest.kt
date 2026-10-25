@@ -66,6 +66,44 @@ class CleansiaBankAccountInputPasteTest {
         assertEquals("a short number and bank code", Spread("", "12345", "0800"), edit("12345/0800", numberBox))
         assertEquals("a short prefix and number", Spread("19", "1234567", null), edit("19-1234567", numberBox))
         assertEquals("a digit typed before a full bank code", Changed("5080"), edit("5" + "0800", bankCodeBox, current = "0800"))
+        assertEquals(
+            "an account over all of a bank code",
+            Spread("19", "2000145399", "0800"),
+            edit("19-2000145399/0800", bankCodeBox, current = "0800"),
+        )
+        assertEquals(
+            "an account over all of a number",
+            Spread("19", "2000145399", "0801"),
+            edit("19-2000145399/0801", numberBox, current = "1234567890"),
+        )
+        assertEquals(
+            "an account after a bank code",
+            Spread("19", "2000145399", "0800"),
+            edit("0800" + "19-2000145399/0800", bankCodeBox, current = "0800"),
+        )
+        assertEquals(
+            "a number and bank code over all of the same number",
+            Spread("", "2000145399", "0800"),
+            edit("2000145399/0800", numberBox, current = "2000145399"),
+        )
+        assertEquals(
+            "an account before the digits it starts with",
+            Spread("19", "2000145399", "0800"),
+            edit("19-2000145399/0800" + "19", numberBox, current = "19"),
+        )
+    }
+
+    /**
+     * Wrong, and accepted as rare: the paste starts with the "1" the selected "12345" starts with, and only the new
+     * text arrives here, so that "1" reads as text the paste left in place. The prefix should be "19".
+     */
+    @Test
+    fun `the known residual, an account pasted over part of a box's text, is split without a digit they share`() {
+        assertEquals(
+            "19-2000145399/0800 pasted over the 12345 of 1234567890",
+            Spread("9", "2000145399", "0800"),
+            edit("19-2000145399/0800" + "67890", numberBox, current = "1234567890"),
+        )
     }
 
     @Test

@@ -312,11 +312,13 @@ cleaner now and is back on the board, and the app leaves the job. It puts the se
 cancels nothing; a confirmed booking with nobody left goes back to *New* and is re-offered
 ([ADR-0067](/decisions/adr-0067)). The company's administrators are told when the crew empties, and
 once more when the job is inside a day of its start with nobody on it. The customer hears nothing until
-either a new cleaner takes it or the slot passes with nobody on it, unless the cleaner who left is the
-one they asked for, who took the one-off booking while it was held for them: then the next five-minute
-run of the lapse sweep pushes a signed-in customer's Android and iOS apps that the booking is open to
-all cleaners (`order.preferred_offer_closed`). Asking for cover, where the cleaner stays on the hook
-until somebody takes the seat, exists in the API (`RequestCover`) only; no app offers it.
+either a new cleaner takes it or the slot passes with nobody on it, with one exception: when the
+one-off booking was reserved for a cleaner they asked for and the end of that reservation was never
+announced, as when the chosen cleaner took the job, the first five-minute run of the lapse sweep that
+finds nobody on it after the reservation ended pushes a signed-in customer's Android and iOS apps that
+the booking is open to all cleaners (`order.preferred_offer_closed`), whoever left last; a drop by the
+chosen cleaner while the reservation runs ends it at once. Asking for cover, where the cleaner stays on
+the hook until somebody takes the seat, exists in the API (`RequestCover`) only; no app offers it.
 → [Business rules — when the last cleaner leaves](/product/business-rules#crew-lost),
 [the partner web's Cancel job](/partner-app/order-management#cancel-job)
 

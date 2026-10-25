@@ -339,10 +339,13 @@ when a `Confirmed` order loses its last cleaner and goes back to `New` ([ADR-006
 the release itself writes no customer push, e-mail or feed row — but the next take is a `New → Confirmed`
 transition again, so the customer receives a **second** "your order is confirmed" e-mail on top of the
 assignment push. A new cleaner is a new confirmation; the e-mail is true when it is sent (default
-O-D2-1). When the cleaner who left is the one the customer asked for, and took the one-off booking while
-it was held for them, the five-minute lapse sweep then pushes a signed-in customer
-`order.preferred_offer_closed`, with no feed row, because that take never stamped the reservation's
-receipt. → [Business rules — when the last cleaner leaves](/product/business-rules#crew-lost),
+O-D2-1). When the one-off booking was reserved for a cleaner the customer asked for and nothing has
+stamped that reservation's receipt (`PreferredOfferLapseNotifiedAt`: only a path that sends the closure
+message does, and the chosen cleaner's take of the reserved job does not), the five-minute lapse sweep
+pushes a signed-in customer `order.preferred_offer_closed`, with no feed row, on its first run that
+finds nobody on the order after the reservation ended, whoever left last; a drop by, or the rejection
+of, the chosen cleaner while the reservation runs ends it at once.
+→ [Business rules — when the last cleaner leaves](/product/business-rules#crew-lost),
 [administrators are told](/product/business-rules#admin-notifications),
 [Admin notifier](/domain/roles/admin-notifier)
 

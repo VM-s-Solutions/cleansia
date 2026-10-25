@@ -633,16 +633,21 @@ search step current again in between and no message saying why. Accepted as stat
 a new confirmation, and the e-mail is true when it is sent. No "your cleaner left, we are looking for
 another" message exists.
 
-**One message does follow, when the cleaner who leaves is the one the customer asked for and took the
-job while it was held for them.** Taking a job reserved for them by name does not stamp the
-reservation's receipt, so once nobody is left on the order, because the chosen cleaner cancelled it or
-an administrator rejected them, the five-minute lapse sweep (`NotifyLapsedPreferredOffers`) finds what
-it looks for: a one-off order whose reservation is past its deadline and was never announced, not
-completed or cancelled, with nobody on it. It pushes a signed-in customer `order.preferred_offer_closed`,
-*Your booking is open to all cleaners*, the one sentence a reservation that ended without a confirmation
-also sends ([why it is one sentence](/architecture/push-notifications#one-sentence)). It is a push only,
-with no inbox row, so the customer web shows nothing; a guest and a recurring occurrence get nothing.
-The release itself still sends the customer nothing.
+**One message can follow, when the booking was reserved for a cleaner the customer asked for.** The
+five-minute lapse sweep (`NotifyLapsedPreferredOffers`) looks for a one-off order, not completed or
+cancelled and with nobody on it, whose reservation is past its deadline and was never announced, and
+pushes a signed-in customer `order.preferred_offer_closed`, *Your booking is open to all cleaners*, the
+one sentence a reservation that ended without a confirmation sends
+([why it is one sentence](/architecture/push-notifications#one-sentence)). Only the three paths that
+send that sentence mark a reservation announced: the sweep, the chosen cleaner's decline, and their
+taking another job that clashes with it. Their taking the reserved job announces nothing. So when
+somebody is on the job as the reservation ends, or takes it in the minutes before the sweep's next run,
+the sentence waits until the order is next left with nobody on it, and the next run then sends it,
+whoever left last: the chosen cleaner, who took the job, another cleaner on its crew, or a cleaner an
+administrator rejected. A drop by the chosen cleaner, or their rejection, while the reservation is
+still running ends it then and there. It is sent once per reservation, as a push only, with no inbox
+row, so the customer web shows nothing; a guest and a recurring occurrence get nothing. The release
+itself still sends the customer nothing.
 
 **A drop is checked against the order's status at commit** (since 2026-10-05). The drop touches the
 order row, so the commit compares the order's two tokens, `CurrentStatus` and `PaymentStatus` (the second

@@ -907,10 +907,12 @@ need backfilling.
   preferred-cleaner hold the rejected cleaner held. A booking already on the way or in progress is not
   walked back — the administrators are told instead, at any status. The walk-back sends the customer
   nothing; the next cleaner to take it sends a second "your order is confirmed" e-mail. When the
-  cleaner who left is the one the customer asked for, and took the one-off booking while it was held
-  for them, the customer's app is told a few minutes later that the booking is open to all cleaners,
-  the message a hold that ends untaken sends. An admin's status override can no longer set *Confirmed*
-  on a booking with nobody assigned — reassign instead. (ADR-0067; owner ruling 2026-09-19.)
+  one-off booking was held for a cleaner the customer asked for and the customer was never told that the
+  hold ended, as when that cleaner took the booking, the customer's app is told that the booking is open
+  to all cleaners, the message a hold that ends untaken sends, a few minutes after the booking is first
+  left with nobody on it once the hold has ended, whoever left last; the chosen cleaner cancelling, or
+  being rejected, while the hold runs ends it at once. An admin's status override can no longer set
+  *Confirmed* on a booking with nobody assigned — reassign instead. (ADR-0067; owner ruling 2026-09-19.)
 
 - **Admin — the revenue report is net, by completion date.** The headline is completed and paid
   orders in the period **by completion date**, in one currency, **minus every refund on those orders** —

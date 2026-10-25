@@ -1352,6 +1352,8 @@
     <string name="notification_order_payment_confirmed_body">Your booking #%1$s is confirmed. Tap to see the details.</string>
     <string name="notification_cleaner_assigned_title">Cleaner found! 🎉</string>
     <string name="notification_cleaner_assigned_body">A cleaner is assigned to your booking #%1$s. Tap to see the details.</string>
+    <string name="notification_order_cleaner_released_title">Your cleaner can no longer come</string>
+    <string name="notification_order_cleaner_released_body">We\'re looking for another cleaner for booking #%1$s and will let you know as soon as one takes it.</string>
     <string name="notification_order_starting_soon_title">Cleaning starts soon</string>
     <string name="notification_order_starting_soon_body">Your booking #%1$s starts in about an hour. Tap to see the details.</string>
     <string name="notification_order_preferred_offer_closed_title">Your booking is open to all cleaners</string>

@@ -1015,10 +1015,9 @@ internal fun OrderItem.cashNotPaidOwed(): Double? {
 internal fun OrderItem.cleaningStart(): Instant? = cleaningDateTime?.let { runCatching { Instant.parse(it) }.getOrNull() }
 
 /**
- * Mirrors `DropOrder` more narrowly than the server does. The server lets the crew leave up to InProgress; the apps
- * offer it on a New or Confirmed job only, because once the cleaner is on the way the customer is expecting them,
- * before a lockout report only, because leaving afterwards gives up the reward a confirmed lockout pays, and before
- * the job's start only, because a job nobody has started by then is a no-show, which the administrators handle.
+ * Mirrors `DropOrder`, which lets the crew leave a New or Confirmed job only. The apps are narrower than the server in
+ * two ways: before a lockout report only, because leaving afterwards gives up the reward a confirmed lockout pays, and
+ * before the job's start only, because a job nobody has started by then is a no-show, which the administrators handle.
  * Without a start on the wire the status alone decides.
  */
 internal fun OrderItem.droppable(now: Instant): Boolean {

@@ -94,14 +94,16 @@ need backfilling.
   from-date yourself, only work that is not over, from the start of today; its chip reads
   *Staffing: No cleaner assigned*. (Owner defaults 2026-10-24.)
 
-- **Cleaner and customer — the e-mail code can be pasted.** The six boxes of the e-mail code take a
-  pasted code on the partner and customer web, Android and iOS. On the apps a long press on the boxes
-  reaches the field's own *Paste*, and a *Paste* button under them, an icon alone on iOS and a text
-  button on Android while the clipboard holds text, puts the clipboard's code in place of what you
-  typed; a code from AutoFill or the keyboard's clipboard suggestion replaces a partly typed one
-  instead of being added to it. VoiceOver and TalkBack read the code field as
-  *Verification code, 6 digits*. On the web a code pasted, or put in by AutoFill or the keyboard's
-  suggestion, fills the boxes from the first, and part of one is written from the box it lands in.
+- **Cleaner and customer, Android and iOS — the e-mail code can be pasted.** The six boxes of the
+  e-mail code take a pasted code on the partner and customer apps. A long press on the boxes reaches
+  the field's own *Paste*, and a *Paste* button under them, an icon alone on iOS and a text button on
+  Android while the clipboard holds text, puts the clipboard's code in place of what you typed; a code
+  from AutoFill or the keyboard's clipboard suggestion replaces a partly typed one instead of being
+  added to it. VoiceOver and TalkBack read the code field as *Verification code, 6 digits*. On the
+  partner and customer web, which already took a pasted code, a code put in by AutoFill or the
+  keyboard's suggestion now fills the boxes too, and part of a code is written from the box it lands
+  in, where a paste used to refill the boxes from the first and clear the rest; the digits you type
+  next continue it.
 
 - **Customer web, Android and iOS — a service already in your package is marked, and adding it twice
   asks first.** Once you choose a package, every service it already includes stands out in the list

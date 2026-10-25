@@ -75,7 +75,37 @@ final class CleansiaBankAccountFieldPasteTests: XCTestCase {
             PasteRow(14, into: .number, holding: "2000145399", paste: "1234567890", leaves: ["", "1234567890", ""]),
             PasteRow(15, into: .number, holding: "", paste: "12345/0800", leaves: ["", "12345", "0800"]),
             PasteRow(16, into: .number, holding: "", paste: "19-1234567", leaves: ["19", "1234567", ""]),
-            PasteRow(17, into: .bankCode, holding: "0800", paste: "5", .before, leaves: ["", "", "5080"])
+            PasteRow(17, into: .bankCode, holding: "0800", paste: "5", .before, leaves: ["", "", "5080"]),
+            PasteRow(18, into: .bankCode, holding: "0800", paste: "19-2000145399/0800", .over("0800"), leaves: account),
+            PasteRow(
+                19,
+                into: .number,
+                holding: "1234567890",
+                paste: "19-2000145399/0801",
+                .over("1234567890"),
+                leaves: ["19", "2000145399", "0801"]
+            ),
+            PasteRow(20, into: .bankCode, holding: "0800", paste: "19-2000145399/0800", leaves: account),
+            PasteRow(
+                21,
+                into: .number,
+                holding: "2000145399",
+                paste: "2000145399/0800",
+                .over("2000145399"),
+                leaves: ["", "2000145399", "0800"]
+            ),
+            PasteRow(22, into: .number, holding: "19", paste: "19-2000145399/0800", .before, leaves: account),
+            PasteRow(
+                23,
+                into: .bankCode,
+                holding: "0800",
+                paste: "19-2000145399/0800",
+                .caret(after: "0"),
+                leaves: account
+            ),
+            PasteRow(24, into: .bankCode, holding: "0", paste: "19-2000145399/0800", .over("0"), leaves: account),
+            PasteRow(26, into: .prefix, holding: "0", paste: "19-2000145399/0800", leaves: account),
+            PasteRow(27, into: .prefix, holding: "0", paste: "1234567890", leaves: ["0", "1234567890", ""])
         ]
         let typedThrough: Set = [1, 3, 4, 5, 10, 13, 17]
         for row in rows {
@@ -85,6 +115,27 @@ final class CleansiaBankAccountFieldPasteTests: XCTestCase {
             XCTAssertEqual([boxes.prefix, boxes.number, boxes.bankCode], row.leaves, "row \(row.number)")
             XCTAssertEqual(rebuilds, !typedThrough.contains(row.number), "row \(row.number) rebuilds the boxes")
         }
+    }
+
+    /// The known residual, pinned so that changing it is a choice: seeing only a box's old and new text, the control
+    /// can misread an account pasted inside a box's digits or over part of them, one pasted over all of digits it
+    /// begins with, and bare digits pasted before digits that start the same way, which the web, reading the pasted
+    /// text, gets right.
+    func testTheKnownResidualAPasteIsReadWithoutDigitsItSharesWithWhatTheBoxHeld() {
+        let held = CleansiaBankAccountField.Boxes(prefix: "", number: "1234567890", bankCode: "")
+        let newText = "1234567890".replacingOccurrences(of: "12345", with: "19-2000145399/0800")
+        let (boxes, rebuilds) = CleansiaBankAccountField.boxes(afterEditing: .number, to: newText, from: held)
+        XCTAssertEqual(boxes, CleansiaBankAccountField.Boxes(prefix: "9", number: "2000145399", bankCode: "0800"))
+        XCTAssertTrue(rebuilds)
+
+        let selectedAll = CleansiaBankAccountField.Boxes(prefix: "", number: "2000", bankCode: "")
+        let overAll = CleansiaBankAccountField.boxes(afterEditing: .number, to: "2000145399/0800", from: selectedAll)
+        XCTAssertEqual(
+            overAll.boxes,
+            CleansiaBankAccountField.Boxes(prefix: "", number: "145399", bankCode: "0800"),
+            "2000145399/0800 pasted over all of the number 2000"
+        )
+        XCTAssertTrue(overAll.rebuilds)
     }
 
     /// The server takes ASCII digits only; a keyboard can type Arabic-Indic or full-width ones.
@@ -159,7 +210,8 @@ final class CleansiaBankAccountFieldPasteTests: XCTestCase {
 
     /// The number pad types one digit at a time, and typing never moves a digit to another box. A digit that fits
     /// stays where it was typed; one typed into a full box goes to the box's digit clamp, and the keyboard stays: at
-    /// the end of the box nothing changes, and before or inside it the box's last digit falls out.
+    /// the end of the box nothing changes, and before or inside it the box's last digit falls out. A `-` or `/` typed
+    /// among a box's digits, which takes a hardware keyboard, is dropped by the clamp like any other non-digit.
     func testTypingNeverJumpsToTheNumber() {
         for box in everyBox {
             XCTAssertEqual(edit("5", into: box), .box("5"), "\(box)")
@@ -171,6 +223,8 @@ final class CleansiaBankAccountFieldPasteTests: XCTestCase {
         assertTyping("08001", into: .bankCode, holding: "0800", leaves: "0800")
         assertTyping("50800", into: .bankCode, holding: "0800", leaves: "5080", "typed before the code")
         assertTyping("08500", into: .bankCode, holding: "0800", leaves: "0850", "typed inside the code")
+        assertTyping("1-2345", into: .prefix, holding: "12345", leaves: "12345", "row 25, after the 1")
+        assertTyping("200014/5399", into: .number, holding: "2000145399", leaves: "2000145399", "row 25b, after 200014")
     }
 
     /// A run of digits too long even for the number goes nowhere: the box keeps what it held.
@@ -252,6 +306,7 @@ private struct PasteRow {
     enum Place {
         case after, before
         case over(String)
+        case caret(after: String)
     }
 
     let number: Int
@@ -275,6 +330,7 @@ private struct PasteRow {
         case .after: newText = held + paste
         case .before: newText = paste + held
         case let .over(selection): newText = held.replacingOccurrences(of: selection, with: paste)
+        case let .caret(after: start): newText = start + paste + held.dropFirst(start.count)
         }
         self.leaves = leaves
     }

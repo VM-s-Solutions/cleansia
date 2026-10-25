@@ -26,9 +26,9 @@ public struct PhoneNumberKitDisplayFormatter: PhoneDisplayFormatting {
         return region.isEmpty ? "US" : region.uppercased()
     }()
 
-    /// The international form and a length the number's country allows, all the device checks: whether the
-    /// range is in use is the server's call, on newer metadata than this library's, so a newly allocated one
-    /// is not refused here with no way past it.
+    /// The server is the authority on whether the number is valid. Its numbering data and this library's come from
+    /// different releases, so the device checks only what does not drift between them: the `+` form and a length the
+    /// number's country allows.
     public static func isPossibleNumber(_ wireValue: String) -> Bool {
         guard wireValue.hasPrefix("+"),
               let number = try? utility.parse(wireValue, ignorePrefixValidation: true) else { return false }

@@ -1,9 +1,13 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
+using Cleansia.Core.AppServices.Features.TenantSettings;
 using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Configuration;
+using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Extensions;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -55,7 +59,9 @@ public class GetMyPendingOffers
     public class Handler(
         IOrderRepository orderRepository,
         IOrderAccessService orderAccessService,
-        ICurrencyResolutionService currencyResolutionService) : IQueryHandler<Query, IReadOnlyList<PendingOfferItem>>
+        ICurrencyResolutionService currencyResolutionService,
+        IEmployeePayConfigRepository payConfigRepository,
+        IAppConfigurationProvider configurationProvider) : IQueryHandler<Query, IReadOnlyList<PendingOfferItem>>
     {
         public async Task<BusinessResult<IReadOnlyList<PendingOfferItem>>> Handle(
             Query query, CancellationToken cancellationToken)
@@ -98,11 +104,50 @@ public class GetMyPendingOffers
                     o.Rooms,
                     o.Bathrooms,
                     o.TotalPrice,
-                    o.Currency!.Code))
+                    o.Currency!.Code,
+                    o.CurrencyId,
+                    o.SelectedServices.Select(s => s.ServiceId).ToList(),
+                    o.SelectedPackages.Select(p => p.PackageId).ToList(),
+                    o.SelectedExtras.Sum(e => e.UnitPrice),
+                    o.RequiredEmployees,
+                    o.DirtinessRate))
                 .ToListAsync(cancellationToken);
 
+            // The query keeps out every order the caller is on, so no seat of theirs carries a booked or
+            // contracted pay: the estimate is the whole answer, as on the dashboard preview.
+            var serviceIds = rows.SelectMany(r => r.ServiceIds).Distinct().ToList();
+            var packageIds = rows.SelectMany(r => r.PackageIds).Distinct().ToList();
+            var currencyIds = rows.Select(r => r.CurrencyId).Distinct().ToList();
+
+            IReadOnlyList<EmployeePayConfig> serviceConfigs = [];
+            IReadOnlyList<EmployeePayConfig> packageConfigs = [];
+            if (serviceIds.Count > 0)
+            {
+                serviceConfigs = await payConfigRepository.GetServiceConfigsForOrderAsync(
+                    serviceIds, employeeId, currencyIds, cancellationToken);
+            }
+            if (packageIds.Count > 0)
+            {
+                packageConfigs = await payConfigRepository.GetPackageConfigsForOrderAsync(
+                    packageIds, employeeId, currencyIds, cancellationToken);
+            }
+
+            var extrasSharePercent = await configurationProvider.GetAsync(
+                TenantSettingCatalog.ExtrasSharePercent, cancellationToken);
+
             return BusinessResult.Success<IReadOnlyList<PendingOfferItem>>(
-                [.. rows.Select(r => r.MapToDto())]);
+                [.. rows.Select(r => r.MapToDto(OrderPayEstimator.Estimate(
+                    r.ServiceIds.ToHashSet(),
+                    r.PackageIds.ToHashSet(),
+                    r.Rooms,
+                    r.Bathrooms,
+                    PayCalculatorExtensions.BookedExtrasPay(r.ExtrasSubtotal, extrasSharePercent),
+                    r.RequiredEmployees,
+                    r.DirtinessRate,
+                    r.CurrencyId,
+                    employeeId,
+                    serviceConfigs,
+                    packageConfigs)))]);
         }
     }
 }

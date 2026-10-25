@@ -12736,6 +12736,7 @@ export class PendingOfferItem implements IPendingOfferItem {
     bathrooms!: number;
     totalPrice!: number;
     currencyCode!: string | undefined;
+    estimatedCleanerPay!: number | undefined;
 
     constructor(data?: IPendingOfferItem) {
         if (data) {
@@ -12758,6 +12759,7 @@ export class PendingOfferItem implements IPendingOfferItem {
             this.bathrooms = Data["bathrooms"];
             this.totalPrice = Data["totalPrice"];
             this.currencyCode = Data["currencyCode"];
+            this.estimatedCleanerPay = Data["estimatedCleanerPay"];
         }
     }
 
@@ -12780,6 +12782,7 @@ export class PendingOfferItem implements IPendingOfferItem {
         data["bathrooms"] = this.bathrooms;
         data["totalPrice"] = this.totalPrice;
         data["currencyCode"] = this.currencyCode;
+        data["estimatedCleanerPay"] = this.estimatedCleanerPay;
         return data;
     }
 }
@@ -12795,6 +12798,7 @@ export interface IPendingOfferItem {
     bathrooms: number;
     totalPrice: number;
     currencyCode: string | undefined;
+    estimatedCleanerPay: number | undefined;
 }
 
 export class PeriodCurrencyDto implements IPeriodCurrencyDto {

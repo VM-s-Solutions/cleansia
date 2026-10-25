@@ -148,7 +148,8 @@ public class CleanerCurrencyGateTests
         orderRepository.Setup(r => r.GetQueryable()).Returns(new[] { held }.AsQueryable().BuildMock());
 
         var handler = new GetMyPendingOffers.Handler(
-            orderRepository.Object, AccessService().Object, ValidatorTestHelpers.CurrencyResolver(paidIn));
+            orderRepository.Object, AccessService().Object, ValidatorTestHelpers.CurrencyResolver(paidIn),
+            Mock.Of<IEmployeePayConfigRepository>(), Mock.Of<Cleansia.Core.Domain.Configuration.IAppConfigurationProvider>());
 
         return handler.Handle(new GetMyPendingOffers.Query(), CancellationToken.None);
     }

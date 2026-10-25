@@ -330,7 +330,7 @@ public static class OrderMappers
         );
     }
 
-    public static PendingOfferItem MapToDto(this PendingOfferRow row) =>
+    public static PendingOfferItem MapToDto(this PendingOfferRow row, decimal? estimatedCleanerPay) =>
         new(
             Id: row.Id,
             DisplayOrderNumber: row.DisplayOrderNumber,
@@ -341,7 +341,8 @@ public static class OrderMappers
             Rooms: row.Rooms,
             Bathrooms: row.Bathrooms,
             TotalPrice: row.TotalPrice,
-            CurrencyCode: row.CurrencyCode);
+            CurrencyCode: row.CurrencyCode,
+            EstimatedCleanerPay: estimatedCleanerPay);
 
     public static OrderNoteDto MapToDto(this OrderNote note)
     {

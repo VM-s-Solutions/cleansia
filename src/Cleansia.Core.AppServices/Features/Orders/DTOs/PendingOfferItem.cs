@@ -25,4 +25,9 @@ public record PendingOfferItem(
     int Rooms,
     int Bathrooms,
     decimal TotalPrice,
-    string CurrencyCode);
+    string CurrencyCode,
+    /// <summary>
+    /// What this cleaner earns on one seat of the job, the figure the board quotes; null when none of
+    /// their rates covers it. <see cref="TotalPrice"/> stays for the builds that still read it.
+    /// </summary>
+    decimal? EstimatedCleanerPay);

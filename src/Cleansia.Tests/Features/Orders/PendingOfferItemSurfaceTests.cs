@@ -37,8 +37,8 @@ public class PendingOfferItemSurfaceTests
 
     /// <summary>
     /// The shape of the work — what a cleaner needs to answer yes or no. None of it describes the
-    /// household: room and bathroom counts size the job, the price and currency are the cleaner's own
-    /// commercial decision, and the timings are the calendar question.
+    /// household: room and bathroom counts size the job, the price, the cleaner's pay and the currency
+    /// are the cleaner's own commercial decision, and the timings are the calendar question.
     /// </summary>
     private static readonly string[] JobFacts =
     [
@@ -50,6 +50,7 @@ public class PendingOfferItemSurfaceTests
         nameof(PendingOfferItem.Bathrooms),
         nameof(PendingOfferItem.TotalPrice),
         nameof(PendingOfferItem.CurrencyCode),
+        nameof(PendingOfferItem.EstimatedCleanerPay),
     ];
 
     /// <summary>The reservation itself — the only thing this surface adds over the ordinary board.</summary>
@@ -138,7 +139,13 @@ public class PendingOfferItemSurfaceTests
         Rooms: 3,
         Bathrooms: 2,
         TotalPrice: 1500m,
-        CurrencyCode: "CZK").MapToDto();
+        CurrencyCode: "CZK",
+        CurrencyId: "currency-czk",
+        ServiceIds: ["service-1"],
+        PackageIds: [],
+        ExtrasSubtotal: 0m,
+        RequiredEmployees: 1,
+        DirtinessRate: 0m).MapToDto(estimatedCleanerPay: 650m);
 
     private static bool IsDefault(object? value) => value switch
     {

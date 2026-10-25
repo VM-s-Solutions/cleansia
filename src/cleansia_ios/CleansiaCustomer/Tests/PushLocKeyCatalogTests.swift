@@ -122,6 +122,26 @@ final class PushLocKeyCatalogTests: XCTestCase {
         "ru": ["отказ", "отклон", "ответ", "отклик", "отреагиров"]
     ]
 
+    /// A cleaner's drop and an administrator's rejection send the same `order.cleaner_released` and read the
+    /// same, and the booking is not cancelled either: it is looking for another cleaner. Stems for every reason
+    /// and for "cancelled", per locale, the same as the Android customer app's `NotificationTemplatesTest`.
+    private let releaseReasonStems = [
+        "en": ["drop", "cancel", "reject", "remov", "declin", "refus", "withdr", "admin"],
+        "cs": ["zruš", "odmít", "zamít", "odstran", "odebr", "vzdal", "administr"],
+        "sk": ["zruš", "odmiet", "zamiet", "odstrán", "odobr", "vzdal", "administr"],
+        "uk": ["скасов", "скасув", "відмов", "відхил", "видал", "зняли", "знято", "адміністр"],
+        "ru": ["отмен", "отказ", "отклон", "удал", "сняли", "снят", "администр"]
+    ]
+
+    /// The words `order.cleaner_assigned` makes its claim with, per locale.
+    private let assignmentClaimStems = [
+        "en": ["found", "assigned"],
+        "cs": ["nalezen", "přiřazen"],
+        "sk": ["nájden", "priraden"],
+        "uk": ["знайден", "призначен"],
+        "ru": ["найден", "назначен"]
+    ]
+
     func testEveryPushLocKeyShipsInEveryLanguageTable() throws {
         for language in languages {
             let table = try localizableTable(for: language)
@@ -267,6 +287,60 @@ final class PushLocKeyCatalogTests: XCTestCase {
                         "\(key) says \(word) in \(language): \(value)"
                     )
                 }
+            }
+        }
+    }
+
+    /// The customer is told their booking is looking for another cleaner, never why the last one left.
+    func testTheCleanerReleaseNeverSaysWhyTheCleanerLeft() throws {
+        for language in languages {
+            let table = try localizableTable(for: language)
+            let stems = try XCTUnwrap(releaseReasonStems[language])
+            for key in ["push.order.cleaner_released.title", "push.order.cleaner_released.body"] {
+                let value = try XCTUnwrap(table[key], "\(key) in \(language)")
+                for stem in stems {
+                    XCTAssertNil(
+                        value.range(of: stem, options: .caseInsensitive),
+                        "\(key) says why the cleaner left (\(stem)) in \(language): \(value)"
+                    )
+                }
+            }
+        }
+    }
+
+    /// Nobody is on the job when the release is sent, so its copy never makes the assignment's claim, and it
+    /// promises no time and no amount, so no figure stands outside its one slot. The stems are checked against
+    /// the assignment copy first, so a reworded assignment cannot leave this test passing on nothing.
+    func testTheCleanerReleaseClaimsNoCleanerOnTheJobAndStatesNoFigure() throws {
+        for language in languages {
+            let table = try localizableTable(for: language)
+            let stems = try XCTUnwrap(assignmentClaimStems[language])
+            let assignment = try ["push.order.cleaner_assigned.title", "push.order.cleaner_assigned.body"]
+                .map { try XCTUnwrap(table[$0], "\($0) in \(language)") }
+                .joined(separator: " ")
+            for stem in stems {
+                XCTAssertNotNil(
+                    assignment.range(of: stem, options: .caseInsensitive),
+                    "the assignment copy no longer says \(stem) in \(language): \(assignment)"
+                )
+            }
+            for key in ["push.order.cleaner_released.title", "push.order.cleaner_released.body"] {
+                let value = try XCTUnwrap(table[key], "\(key) in \(language)")
+                for stem in stems {
+                    XCTAssertNil(
+                        value.range(of: stem, options: .caseInsensitive),
+                        "\(key) claims a cleaner is on the job (\(stem)) in \(language): \(value)"
+                    )
+                }
+                let outsideTheSlot = value.replacingOccurrences(
+                    of: "%[0-9]+\\$@",
+                    with: "",
+                    options: .regularExpression
+                )
+                XCTAssertNil(
+                    outsideTheSlot.rangeOfCharacter(from: .decimalDigits),
+                    "\(key) states a time or an amount in \(language): \(value)"
+                )
             }
         }
     }

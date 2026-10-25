@@ -120,7 +120,7 @@ public class MigratedEmailRenderingTests
 
 
         Assert.Contains("Your cleaning has been completed.", wire.Html, StringComparison.Ordinal);
-        Assert.Contains("COMPLETED", wire.Html, StringComparison.Ordinal);
+        Assert.Contains("Cleaning complete", wire.Html, StringComparison.Ordinal);
         // StatusClass is substituted into a class attribute, not shown as text —
         // if it ever renders empty the badge silently loses its colour.
         Assert.Contains("completed", wire.Html, StringComparison.Ordinal);

@@ -388,15 +388,20 @@ public sealed partial class EmailService : IEmailService
     }
 
     /// <summary>
-    /// In-code copy for the status e-mail's cancelled, booked and cleaner-released arms, used only where no
-    /// translation row supplies a key. The table carries no status-update rows, and these arms go out in
-    /// the customer's own language.
+    /// In-code copy for every arm of the status e-mail, used only where no translation row supplies a key.
+    /// The table carries no status-update rows, and every arm goes out in the customer's own language.
     /// </summary>
     private static readonly IReadOnlyDictionary<string, Dictionary<string, string>> StatusEmailDefaults =
         new Dictionary<string, Dictionary<string, string>>
         {
             ["en"] = new()
             {
+                ["StatusTitle_Confirmed"] = "Cleaner found",
+                ["StatusMessage_Confirmed"] = "A cleaner has taken your booking.",
+                ["StatusTitle_Started"] = "Cleaning started",
+                ["StatusMessage_Started"] = "Your cleaning session has started.",
+                ["StatusTitle_Completed"] = "Cleaning complete",
+                ["StatusMessage_Completed"] = "Your cleaning has been completed successfully.",
                 ["StatusTitle_Cancelled"] = "Order cancelled",
                 ["StatusTitle_Booked"] = "Booking confirmed",
                 ["StatusMessage_Booked"] = "Your cleaning is booked.",
@@ -426,6 +431,12 @@ public sealed partial class EmailService : IEmailService
             },
             ["cs"] = new()
             {
+                ["StatusTitle_Confirmed"] = "Uklízeč nalezen",
+                ["StatusMessage_Confirmed"] = "Vaši rezervaci převzal uklízeč.",
+                ["StatusTitle_Started"] = "Úklid začal",
+                ["StatusMessage_Started"] = "Váš úklid právě začal.",
+                ["StatusTitle_Completed"] = "Úklid dokončen",
+                ["StatusMessage_Completed"] = "Váš úklid byl úspěšně dokončen.",
                 ["StatusTitle_Cancelled"] = "Rezervace zrušena",
                 ["StatusTitle_Booked"] = "Rezervace potvrzena",
                 ["StatusMessage_Booked"] = "Váš úklid je zarezervován.",
@@ -455,6 +466,12 @@ public sealed partial class EmailService : IEmailService
             },
             ["sk"] = new()
             {
+                ["StatusTitle_Confirmed"] = "Upratovač nájdený",
+                ["StatusMessage_Confirmed"] = "Vašu rezerváciu prevzal upratovač.",
+                ["StatusTitle_Started"] = "Upratovanie začalo",
+                ["StatusMessage_Started"] = "Vaše upratovanie práve začalo.",
+                ["StatusTitle_Completed"] = "Upratovanie dokončené",
+                ["StatusMessage_Completed"] = "Vaše upratovanie bolo úspešne dokončené.",
                 ["StatusTitle_Cancelled"] = "Rezervácia zrušená",
                 ["StatusTitle_Booked"] = "Rezervácia potvrdená",
                 ["StatusMessage_Booked"] = "Vaše upratovanie je zarezervované.",
@@ -484,6 +501,12 @@ public sealed partial class EmailService : IEmailService
             },
             ["uk"] = new()
             {
+                ["StatusTitle_Confirmed"] = "Прибиральника знайдено",
+                ["StatusMessage_Confirmed"] = "Ваше бронювання взяв прибиральник.",
+                ["StatusTitle_Started"] = "Прибирання розпочалося",
+                ["StatusMessage_Started"] = "Ваше прибирання розпочалося.",
+                ["StatusTitle_Completed"] = "Прибирання завершено",
+                ["StatusMessage_Completed"] = "Ваше прибирання успішно завершено.",
                 ["StatusTitle_Cancelled"] = "Бронювання скасовано",
                 ["StatusTitle_Booked"] = "Бронювання підтверджено",
                 ["StatusMessage_Booked"] = "Ваше прибирання заброньовано.",
@@ -513,6 +536,12 @@ public sealed partial class EmailService : IEmailService
             },
             ["ru"] = new()
             {
+                ["StatusTitle_Confirmed"] = "Уборщик найден",
+                ["StatusMessage_Confirmed"] = "Ваше бронирование взял уборщик.",
+                ["StatusTitle_Started"] = "Уборка началась",
+                ["StatusMessage_Started"] = "Ваша уборка началась.",
+                ["StatusTitle_Completed"] = "Уборка завершена",
+                ["StatusMessage_Completed"] = "Ваша уборка успешно завершена.",
                 ["StatusTitle_Cancelled"] = "Бронирование отменено",
                 ["StatusTitle_Booked"] = "Бронирование подтверждено",
                 ["StatusMessage_Booked"] = "Ваша уборка забронирована.",
@@ -966,17 +995,12 @@ public sealed partial class EmailService : IEmailService
         var translations = await emailTemplateTranslationRepository
             .GetTranslationsByTypeAndLanguageAsync(EmailType.OrderStatusUpdate, languageCode, ct);
 
-        var isCancelled = newStatus.Equals("cancelled", StringComparison.OrdinalIgnoreCase);
         var isBooked = newStatus.Equals(BookedStatus, StringComparison.OrdinalIgnoreCase);
-        var isCleanerReleased = newStatus.Equals("cleanerreleased", StringComparison.OrdinalIgnoreCase);
-        if (isCancelled || isBooked || isCleanerReleased)
+        var defaults = StatusEmailDefaults.GetValueOrDefault(languageCode)
+            ?? StatusEmailDefaults[Constants.Language.English];
+        foreach (var (key, value) in defaults)
         {
-            var defaults = StatusEmailDefaults.GetValueOrDefault(languageCode)
-                ?? StatusEmailDefaults[Constants.Language.English];
-            foreach (var (key, value) in defaults)
-            {
-                translations.TryAdd(key, value);
-            }
+            translations.TryAdd(key, value);
         }
 
         var orderStatusLink = BuildOrderStatusLink(order, email, guestAccessToken);
@@ -989,19 +1013,19 @@ public sealed partial class EmailService : IEmailService
         var (statusTitle, statusMessage, statusClass) = newStatus.ToLowerInvariant() switch
         {
             "confirmed" => (
-                translations.GetValueOrDefault("StatusTitle_Confirmed", "Order Confirmed"),
-                translations.GetValueOrDefault("StatusMessage_Confirmed", "Your cleaning order has been confirmed and is scheduled."),
+                translations.GetValueOrDefault("StatusTitle_Confirmed", "Cleaner found"),
+                translations.GetValueOrDefault("StatusMessage_Confirmed", "A cleaner has taken your booking."),
                 "confirmed"),
             "assigned" => (
                 translations.GetValueOrDefault("StatusTitle_Assigned", "Cleaner Assigned"),
                 translations.GetValueOrDefault("StatusMessage_Assigned", "A professional cleaner has been assigned to your order."),
                 "assigned"),
             "inprogress" or "started" => (
-                translations.GetValueOrDefault("StatusTitle_Started", "Cleaning Started"),
+                translations.GetValueOrDefault("StatusTitle_Started", "Cleaning started"),
                 translations.GetValueOrDefault("StatusMessage_Started", "Your cleaning session has started."),
                 "started"),
             "completed" => (
-                translations.GetValueOrDefault("StatusTitle_Completed", "Cleaning Complete"),
+                translations.GetValueOrDefault("StatusTitle_Completed", "Cleaning complete"),
                 translations.GetValueOrDefault("StatusMessage_Completed", "Your cleaning has been completed successfully."),
                 "completed"),
             "cancelled" => (
@@ -1022,8 +1046,7 @@ public sealed partial class EmailService : IEmailService
                 "confirmed")
         };
 
-        var isLocalised = isCancelled || isBooked || isCleanerReleased;
-        var orderLabel = isLocalised ? translations.GetValueOrDefault("OrderNumberLabel", "Order") : "Order";
+        var orderLabel = translations.GetValueOrDefault("OrderNumberLabel", "Order");
         var subject = translations.GetValueOrDefault("Subject", $"{orderLabel} {order.DisplayOrderNumber} — {statusTitle}");
 
         var refundLine = refundedAmount is > 0m
@@ -1085,7 +1108,7 @@ public sealed partial class EmailService : IEmailService
                     .Where(line => !string.IsNullOrWhiteSpace(line))),
             StatusSectionLabel = translations.GetValueOrDefault("StatusSectionLabel", "Current Status"),
             StatusClass = statusClass,
-            StatusLabel = isLocalised ? statusTitle : newStatus.ToUpperInvariant(),
+            StatusLabel = statusTitle,
             OrderNumberLabel = translations.GetValueOrDefault("OrderNumberLabel", "Order #"),
             OrderNumber = order.DisplayOrderNumber,
             CleaningDateLabel = translations.GetValueOrDefault("CleaningDateLabel", "Cleaning Date"),

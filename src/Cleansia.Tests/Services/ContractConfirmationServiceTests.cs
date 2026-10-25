@@ -35,7 +35,7 @@ public sealed class ContractConfirmationServiceTests
     private const string OperatorTenantId = "cleansia-cz";
     private const string ConsentVersion = "early-performance-draft-2026-09-29";
     private static readonly byte[] Rendered = [1, 2, 3];
-    private static readonly TimeSpan PragueSummer = TimeSpan.FromHours(2);
+    private static readonly TimeZoneInfo Prague = TimeZoneInfo.FindSystemTimeZoneById("Europe/Prague");
     private static readonly DateTimeOffset BookedOn = new(2026, 8, 3, 8, 0, 0, TimeSpan.Zero);
     private static readonly DateTimeOffset PaidOn = new(2026, 8, 3, 8, 3, 0, TimeSpan.Zero);
 
@@ -96,8 +96,13 @@ public sealed class ContractConfirmationServiceTests
         return order;
     }
 
-    private static string Instant(DateTimeOffset utc, string language) =>
-        $"{utc.ToOffset(PragueSummer).ToString("G", CultureInfo.GetCultureInfo(language))} (UTC+02:00)";
+    // At the market's offset on that day: an acceptance is stamped from the server clock, so its
+    // offset is winter's or summer's depending on when the test runs.
+    private static string Instant(DateTimeOffset utc, string language)
+    {
+        var local = TimeZoneInfo.ConvertTime(utc, Prague);
+        return $"{local.ToString("G", CultureInfo.GetCultureInfo(language))} (UTC{local.ToString("zzz", CultureInfo.InvariantCulture)})";
+    }
 
     private static string Plain(string value) => value.Replace('\u00A0', ' ').Replace('\u202F', ' ');
 

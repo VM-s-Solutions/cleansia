@@ -95,50 +95,79 @@ export class CleansiaBankAccountComponent {
   }
 
   /**
-   * Paste a whole account and it lands in the right segments. `19-2000145399/0800`,
-   * `2000145399/0800`, a Czech or Slovak IBAN and a bare number all work, because those are the shapes
-   * a Czech account is actually written in — and the alternative is the customer deleting the
-   * punctuation by hand, which is exactly the friction the single control is meant to remove.
-   *
-   * A bare run of digits that fits the segment it was pasted into is that segment's own entry, so a
-   * bank code or a prefix copied on its own stays where it was put; a longer one is the account
-   * number, and the prefix and bank code already in the control stay. An account written out with a
-   * separator but no prefix clears the old prefix. Whitespace of every kind (a no-break space
-   * included) is dropped and an en or em dash reads as a hyphen, because that is what banking apps put
-   * on the clipboard. All as in the apps' `splitPastedAccount` (owner decision D14, revised
-   * 2026-10-24).
+   * A paste into one box, by the rule the apps' `splitPastedAccount` follows too
+   * (→ /partner-app/onboarding). The run is the pasted text itself, which the paste event carries, with
+   * whitespace of every kind dropped and an en or em dash read as a hyphen, because that is what banking
+   * apps put on the clipboard. A run that is a written-out account (`19-2000145399/0800`,
+   * `2000145399/0800`, `19-2000145399`) or a Czech or Slovak IBAN fills the three boxes before anything
+   * else, however short it is, a missing prefix clearing the old one and a missing bank code keeping it.
+   * Otherwise the box's new text is what the browser would make of the paste at the selection, and text
+   * that fits the box is kept as pasted. Text that overflows it: a single character is typing, and the
+   * box keeps the digits of its new text that fit; digits that fit the box replace what it held; longer
+   * digits, up to the number's ten, are the account number and the box keeps what it held. Anything else
+   * leaves the box as it was. Typing itself is the browser's, held to each box's maxlength.
    */
   protected onPaste(
     event: ClipboardEvent,
+    box: HTMLInputElement,
     segment: FormControl<string>,
     segmentMaxLength: number
   ): void {
-    const pasted = (event.clipboardData?.getData('text') ?? '')
-      .replace(/\s/g, '')
-      .replace(/[\u2013\u2014]/g, '-');
-    const text = domesticFormOfIban(pasted) ?? pasted;
-
-    const match = /^(?:(\d{1,6})-)?(\d{1,10})(?:\/(\d{1,4}))?$/.exec(text);
-    if (!match) return;
-
+    const pasted = asSingleLine(event.clipboardData?.getData('text') ?? '');
+    if (!pasted) return;
     event.preventDefault();
-    const [, prefix, number, bankCode] = match;
 
-    if (!/[-/]/.test(text)) {
-      const target = number.length <= segmentMaxLength ? segment : this.number();
-      target.setValue(number);
-      target.markAsDirty();
+    const run = pasted.replace(/\s/g, '').replace(/[\u2013\u2014]/g, '-');
+    const account = writtenOutAccount(domesticFormOfIban(run) ?? run);
+    if (account) {
+      this.prefix().setValue(account.prefix ?? '');
+      this.number().setValue(account.number);
+      if (account.bankCode) this.bankCode().setValue(account.bankCode);
+      for (const control of [this.prefix(), this.number(), this.bankCode()]) {
+        control.markAsDirty();
+      }
       return;
     }
 
-    this.prefix().setValue(prefix ?? '');
-    this.number().setValue(number);
-    if (bankCode) this.bankCode().setValue(bankCode);
+    const held = box.value;
+    const start = box.selectionStart ?? held.length;
+    const text = held.slice(0, start) + pasted + held.slice(box.selectionEnd ?? start);
 
-    for (const control of [this.prefix(), this.number(), this.bankCode()]) {
-      control.markAsDirty();
+    if (text.length <= segmentMaxLength) {
+      this.write(segment, text);
+      box.setSelectionRange(start + pasted.length, start + pasted.length);
+      return;
+    }
+
+    if (run.length === 1) {
+      this.write(segment, text.replace(/\D/g, '').slice(0, segmentMaxLength));
+      return;
+    }
+
+    if (!/^\d+$/.test(run)) return;
+    if (run.length <= segmentMaxLength) {
+      this.write(segment, run);
+    } else if (run.length <= this.NumberMaxLength) {
+      this.write(this.number(), run);
     }
   }
+
+  private write(control: FormControl<string>, value: string): void {
+    control.setValue(value);
+    control.markAsDirty();
+  }
+}
+
+/** What a single-line field inserts of pasted text: trailing line breaks go, the others read as spaces. */
+function asSingleLine(text: string): string {
+  return text.replace(/[\r\n]+$/, '').replace(/\r\n|[\r\n]/g, ' ');
+}
+
+/** `prefix-number/code`, `number/code` or `prefix-number`; the separators are what mark an account. */
+function writtenOutAccount(text: string): { prefix?: string; number: string; bankCode?: string } | null {
+  if (!/[-/]/.test(text)) return null;
+  const match = /^(?:(\d{1,6})-)?(\d{1,10})(?:\/(\d{1,4}))?$/.exec(text);
+  return match ? { prefix: match[1], number: match[2], bankCode: match[3] } : null;
 }
 
 /**

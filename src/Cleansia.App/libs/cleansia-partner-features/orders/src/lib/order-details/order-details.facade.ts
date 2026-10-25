@@ -670,16 +670,22 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
   }
 
   // The page is left on success: the job is no longer the caller's, and re-reading it would show
-  // the open seat they just gave up.
+  // the open seat they just gave up. Nothing redraws the sheet at the job's start, so the link can
+  // outlive it; a tap or a confirmation the gate refuses sends nothing and re-reads the job instead.
   openDropOrderDialog(onLeft: () => void): void {
     const order = this.orderDetails();
     const orderId = order?.id;
     const employeeId = this.currentEmployeeId();
 
-    if (!order || !orderId || !employeeId || !canDropOrder(order, employeeId)) {
+    if (!order || !orderId || !employeeId) {
       this.snackbarService.showErrorTranslated(
         'global.messages.orders.invalid_request'
       );
+      return;
+    }
+
+    if (!canDropOrder(order, employeeId, Date.now())) {
+      this.loadOrderDetails(orderId);
       return;
     }
 
@@ -697,8 +703,12 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
       )
       .pipe(takeUntil(this.destroyed$))
       .subscribe((confirmed) => {
-        if (confirmed) {
+        if (!confirmed) return;
+        const current = this.orderDetails();
+        if (current && canDropOrder(current, employeeId, Date.now())) {
           this.dropOrder(orderId, onLeft);
+        } else {
+          this.loadOrderDetails(orderId);
         }
       });
   }

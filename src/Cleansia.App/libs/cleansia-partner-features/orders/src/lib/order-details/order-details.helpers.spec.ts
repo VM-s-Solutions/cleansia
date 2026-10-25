@@ -325,19 +325,43 @@ describe('a customer who did not pay at the door', () => {
 });
 
 describe('leaving a job', () => {
-  const jobSheet = (status: OrderStatus, employeeId = EMPLOYEE_ID, lockoutReportedAt?: string): OrderItem =>
+  const START = '2026-09-29T10:00:00Z';
+  const at = (iso: string) => new Date(iso).getTime();
+  const NOW = at('2026-09-29T08:00:00Z');
+  const jobSheet = (
+    status: OrderStatus,
+    employeeId = EMPLOYEE_ID,
+    lockoutReportedAt?: string,
+    cleaningDateTime: string | null = START
+  ): OrderItem =>
     OrderItem.fromJS({
       orderStatus: { value: status },
       assignedEmployees: [{ employeeId }],
       lockoutReportedAt,
+      cleaningDateTime,
     });
 
   it.each([OrderStatus.New, OrderStatus.Confirmed])(
     'is offered to a cleaner on the crew before the job is under way, status %s',
     (status) => {
-      expect(canDropOrder(jobSheet(status), EMPLOYEE_ID)).toBe(true);
+      expect(canDropOrder(jobSheet(status), EMPLOYEE_ID, NOW)).toBe(true);
     }
   );
+
+  // After the start a job nobody started is a no-show, which the administrator confirms.
+  it.each([
+    ['a minute before the start', '2026-09-29T09:59:00Z', true],
+    ['at the start', '2026-09-29T10:00:00Z', false],
+    ['a minute after the start', '2026-09-29T10:01:00Z', false],
+  ])('is offered only while the start is ahead: %s, %s', (_, now, offered) => {
+    expect(canDropOrder(jobSheet(OrderStatus.Confirmed), EMPLOYEE_ID, at(now))).toBe(offered);
+  });
+
+  it('leaves it to the status when the job carries no start', () => {
+    expect(
+      canDropOrder(jobSheet(OrderStatus.Confirmed, EMPLOYEE_ID, undefined, null), EMPLOYEE_ID, at('2026-09-29T10:01:00Z'))
+    ).toBe(true);
+  });
 
   it.each([
     OrderStatus.Pending,
@@ -346,16 +370,16 @@ describe('leaving a job', () => {
     OrderStatus.Completed,
     OrderStatus.Cancelled,
   ])('is not offered once the job is under way or over, status %s', (status) => {
-    expect(canDropOrder(jobSheet(status), EMPLOYEE_ID)).toBe(false);
+    expect(canDropOrder(jobSheet(status), EMPLOYEE_ID, NOW)).toBe(false);
   });
 
   it('is not offered to a cleaner who is not on the crew', () => {
-    expect(canDropOrder(jobSheet(OrderStatus.Confirmed, 'emp-2'), EMPLOYEE_ID)).toBe(false);
+    expect(canDropOrder(jobSheet(OrderStatus.Confirmed, 'emp-2'), EMPLOYEE_ID, NOW)).toBe(false);
   });
 
   it('is not offered once the cleaner has reported that they cannot get in', () => {
     expect(
-      canDropOrder(jobSheet(OrderStatus.Confirmed, EMPLOYEE_ID, '2026-09-29T10:20:00Z'), EMPLOYEE_ID)
+      canDropOrder(jobSheet(OrderStatus.Confirmed, EMPLOYEE_ID, '2026-09-29T10:20:00Z'), EMPLOYEE_ID, NOW)
     ).toBe(false);
   });
 

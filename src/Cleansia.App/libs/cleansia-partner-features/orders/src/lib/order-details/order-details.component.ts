@@ -248,7 +248,7 @@ export class OrderDetailsComponent implements OnInit {
     const order = this.orderDetails();
     const eid = this.currentEmployeeId();
     if (!order || !eid) return false;
-    return canDropOrder(order, eid);
+    return canDropOrder(order, eid, Date.now());
   });
 
   constructor() {

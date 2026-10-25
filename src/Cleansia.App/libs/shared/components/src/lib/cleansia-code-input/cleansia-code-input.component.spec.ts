@@ -16,7 +16,7 @@ class HostComponent {
 /**
  * A code reaches the boxes three ways: typed one digit at a time, pasted, or inserted whole without a
  * paste event — Safari's one-time-code AutoFill and the keyboard's suggestion strip both write into the
- * box that has focus.
+ * box that has focus, beside the digit it holds or in place of it.
  */
 describe('CleansiaCodeInputComponent', () => {
   let fixture: ComponentFixture<HostComponent>;
@@ -27,13 +27,34 @@ describe('CleansiaCodeInputComponent', () => {
 
   const values = (): string[] => boxes().map((box) => box.value);
 
+  /** The box's value after an edit, which a browser never lets past maxlength; jsdom does not apply it. */
   function enter(index: number, value: string, caret = value.length): void {
     const box = boxes()[index];
+    expect(value.length).toBeLessThanOrEqual(box.maxLength);
     box.value = value;
     box.setSelectionRange(caret, caret);
     box.dispatchEvent(new Event('input'));
     jest.runOnlyPendingTimers();
     fixture.detectChanges();
+  }
+
+  /** Text inserted at the caret without a paste event, cut as a browser cuts it to the room maxlength leaves. */
+  function insert(index: number, text: string, caret: 'before' | 'after' = 'after'): void {
+    const held = boxes()[index].value;
+    const fits = text.slice(0, boxes()[index].maxLength - held.length);
+    if (caret === 'before') {
+      enter(index, fits + held, fits.length);
+    } else {
+      enter(index, held + fits);
+    }
+  }
+
+  /** A key typed into the box that has focus, in place of what is selected there, as a browser types it. */
+  function press(key: string): void {
+    const box = document.activeElement as HTMLInputElement;
+    const start = box.selectionStart ?? box.value.length;
+    const end = box.selectionEnd ?? start;
+    enter(boxes().indexOf(box), box.value.slice(0, start) + key + box.value.slice(end), start + key.length);
   }
 
   function paste(index: number, text: string): Event {
@@ -55,8 +76,8 @@ describe('CleansiaCodeInputComponent', () => {
 
   afterEach(() => jest.useRealTimers());
 
-  it('lets a whole code into any one box', () => {
-    expect(boxes().map((box) => box.maxLength)).toEqual([6, 6, 6, 6, 6, 6]);
+  it('lets a whole code into any one box beside the digit it already holds, spaced or inserted twice', () => {
+    expect(boxes().map((box) => box.maxLength)).toEqual([13, 13, 13, 13, 13, 13]);
   });
 
   it('spreads a whole code inserted into the first box over all six and completes it', () => {
@@ -75,12 +96,72 @@ describe('CleansiaCodeInputComponent', () => {
     expect(host.completed).toEqual(['987654']);
   });
 
-  it('keeps the first six digits of a code inserted twice, and drops anything that is not a digit', () => {
-    enter(0, '123 456123456');
+  it('keeps the first six digits of a code inserted twice, as far as the box lets it in, and drops anything that is not a digit', () => {
+    insert(0, '123 456123456');
 
     expect(host.code.value).toBe('123456');
     expect(host.completed).toEqual(['123456']);
   });
+
+  /** A wrong code typed by hand leaves the caret after the last box's digit, and the screen keeps a refused code. */
+  it('takes a whole code inserted after the digit a box holds as that code, and submits it once', () => {
+    ['9', '8', '7', '6', '5', '6'].forEach((digit, index) => enter(index, digit));
+
+    enter(5, '6123456');
+
+    expect(values()).toEqual(['1', '2', '3', '4', '5', '6']);
+    expect(host.code.value).toBe('123456');
+    expect(host.completed).toEqual(['987656', '123456']);
+  });
+
+  it('takes a spaced code inserted after the digit a box holds as that code, and submits it once', () => {
+    ['9', '8', '7', '6', '5', '6'].forEach((digit, index) => enter(index, digit));
+
+    insert(5, '123 456');
+
+    expect(values()).toEqual(['1', '2', '3', '4', '5', '6']);
+    expect(host.code.value).toBe('123456');
+    expect(host.completed).toEqual(['987656', '123456']);
+  });
+
+  it('takes a whole code inserted before the digit a box holds as that code', () => {
+    enter(5, '6');
+
+    enter(5, '1234566', 6);
+
+    expect(values()).toEqual(['1', '2', '3', '4', '5', '6']);
+    expect(host.completed).toEqual(['123456']);
+  });
+
+  it('tells by the caret which side of the digit a code went in, when the code starts with that digit', () => {
+    enter(5, '6');
+
+    enter(5, '6123456', 6);
+
+    expect(host.code.value).toBe('612345');
+    expect(host.completed).toEqual(['612345']);
+  });
+
+  it('takes a whole code that replaced the digit a box held as that code, even when it starts with that digit', () => {
+    enter(5, '6');
+
+    enter(5, '612345');
+
+    expect(host.code.value).toBe('612345');
+    expect(host.completed).toEqual(['612345']);
+  });
+
+  it.each(['after', 'before'] as const)(
+    'takes a code inserted twice %s the digit a box holds as that code, once',
+    (caret) => {
+      enter(5, '9');
+
+      insert(5, '123456123456', caret);
+
+      expect(values()).toEqual(['1', '2', '3', '4', '5', '6']);
+      expect(host.completed).toEqual(['123456']);
+    },
+  );
 
   it('takes a typed digit and moves on to the next box', () => {
     enter(0, '1');
@@ -135,11 +216,63 @@ describe('CleansiaCodeInputComponent', () => {
     expect(host.completed).toEqual(['123456']);
   });
 
-  it('fills only as many boxes as a short paste has digits', () => {
+  it('fills only as many boxes as a short paste has digits, and moves on to the box after them', () => {
     paste(0, '12');
 
     expect(values()).toEqual(['1', '2', '', '', '', '']);
     expect(host.code.value).toBe('12');
-    expect(document.activeElement).toBe(boxes()[1]);
+    expect(document.activeElement).toBe(boxes()[2]);
+  });
+
+  it('puts the caret after a pasted fragment, so the digits typed next follow it', () => {
+    paste(0, '1234');
+
+    press('5');
+    press('6');
+
+    expect(values()).toEqual(['1', '2', '3', '4', '5', '6']);
+    expect(host.code.value).toBe('123456');
+    expect(host.completed).toEqual(['123456']);
+  });
+
+  it('writes a short paste from the box it lands in, keeping the boxes before it', () => {
+    enter(0, '1');
+    enter(1, '2');
+
+    paste(2, '34');
+
+    expect(values()).toEqual(['1', '2', '3', '4', '', '']);
+    expect(host.code.value).toBe('1234');
+    expect(host.completed).toEqual([]);
+    expect(document.activeElement).toBe(boxes()[4]);
+  });
+
+  it('writes a fragment the keyboard inserts into a box from that box onward', () => {
+    enter(0, '1');
+    enter(1, '2');
+
+    insert(2, '34');
+
+    expect(values()).toEqual(['1', '2', '3', '4', '', '']);
+    expect(host.code.value).toBe('1234');
+    expect(host.completed).toEqual([]);
+  });
+
+  it('cuts a short paste at the last box, and completes the code it fills', () => {
+    ['1', '2', '3', '4'].forEach((digit, index) => enter(index, digit));
+
+    paste(4, '567');
+
+    expect(values()).toEqual(['1', '2', '3', '4', '5', '6']);
+    expect(host.completed).toEqual(['123456']);
+  });
+
+  it('leaves the boxes after a short paste as they were', () => {
+    ['1', '2', '3', '4', '5'].forEach((digit, index) => enter(index, digit));
+
+    paste(1, '9');
+
+    expect(values()).toEqual(['1', '9', '3', '4', '5', '']);
+    expect(host.code.value).toBe('19345');
   });
 });

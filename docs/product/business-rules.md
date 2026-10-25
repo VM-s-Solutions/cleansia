@@ -613,10 +613,10 @@ reassign or a cover swap replaces. Three rules ride with it:
   rejected cleaner is ended with the release — an order back on the board must be *on* the board — while
   a hold naming another cleaner is left alone. → [Offerability](/domain/offerability#the-preferred-cleaner-hold)
 
-**The partner apps offer the drop more narrowly than the server takes it** (owner defaults 2026-10-24).
-Partner web, Android and iOS show *Cancel job* only while the cleaner is on the crew, the job is `New` or
-`Confirmed`, no lockout has been reported and the job's start is still ahead; a job with no start time
-is judged by the other three alone. From its start, a job nobody started is a no-show for the
+**The partner apps offer the drop more narrowly than the server takes it.** Partner web, Android and
+iOS show *Cancel job* only while the cleaner is on the crew, the job is `New` or `Confirmed` and no
+lockout has been reported (owner defaults 2026-10-24) and, since 2026-10-25, its start is still ahead;
+with no start time, the other three decide. From its start, a job nobody started is a no-show for the
 administrators to confirm, and a drop would walk it back to `New` for the unfilled-order sweep to cancel
 instead. Android hides *Cancel job* at the start and again when the app resumes. iOS and partner web
 hide it the next time they read the job; until then a cancel confirmed from the start on sends nothing

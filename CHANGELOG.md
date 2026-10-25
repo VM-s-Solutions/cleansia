@@ -81,7 +81,7 @@ need backfilling.
   confirmed job with nobody left goes back to the board as a new job, and the company's administrators
   are told. Android takes *Cancel job* away at the job's start; iOS and partner web take it away the
   next time they load the job, and a cancel confirmed after the start sends nothing. (Owner defaults
-  2026-10-24; ADR-0067.)
+  2026-10-24; the limit at the job's start, since 2026-10-25; ADR-0067.)
 
 - **Admin — told a day ahead when nobody is on a job, and a filter for such orders.** An eighteenth
   notice, in the console and by e-mail, for Support and above: once per order, when a *New* or

@@ -1,6 +1,7 @@
 package cz.cleansia.partner.features.orders
 
 import java.io.File
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -196,6 +197,28 @@ class OrderDetailCallSiteTest {
         assertTrue(
             "the footer must take its cash gate from needsCashCollection()",
             detailScreen.contains("needsCashCollection = order.needsCashCollection()"),
+        )
+    }
+
+    @Test
+    fun `the customer's price shows only through the tested gate`() {
+        val paymentCard = source("PaymentCard.kt")
+        assertTrue(
+            "the payment card must take its total from showsCustomerPrice() — the breakdown hangs off it",
+            paymentCard.contains("val total = order.totalPrice?.takeIf { order.showsCustomerPrice() }"),
+        )
+        assertEquals(
+            "the payment card reads the customer's total around the gate",
+            1,
+            Regex("""order\.totalPrice""").findAll(paymentCard).count(),
+        )
+        assertTrue(
+            "the subtotal and discount rows must hang off the gated total",
+            paymentCard.contains("val hasBreakdown = subtotal != null && total != null && subtotal != total"),
+        )
+        assertTrue(
+            "a package's price must show only through showsCustomerPrice()",
+            Regex("""pkg\.price\s*\?\.takeIf \{ order\.showsCustomerPrice\(\) \}""").containsMatchIn(scopeCard),
         )
     }
 

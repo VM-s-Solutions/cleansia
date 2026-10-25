@@ -198,7 +198,9 @@ The reassignment process:
 5. Both the original and new partners are notified; the removed partner's notice carries only the order
 
 A placement is an **offer** the partner may decline — drop — without consequence (owner ruling
-2026-09-28) → [Business rules — placement is an offer](/product/business-rules#placement-is-an-offer).
+2026-09-28), while the job is still *New* or *Confirmed*: since 2026-10-25 a job already on the way or in
+progress cannot be dropped
+→ [Business rules — placement is an offer](/product/business-rules#placement-is-an-offer).
 
 **The cleaner placed must be able to do the job.** `AdminReassignOrder` refuses, in this order:
 

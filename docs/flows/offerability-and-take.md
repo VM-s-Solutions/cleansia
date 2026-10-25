@@ -74,8 +74,9 @@ drop the job at no cost, with *Cancel job* (`DropOrder`), which partner web, And
 cleaner on the crew while the job is `New` or `Confirmed`, no lockout is reported and its start is still
 ahead (with no start time, the rest decides), never once it is `OnTheWay` or `InProgress` (owner
 defaults 2026-10-24); Android takes it away at the start, iOS and partner web at the next read of the
-job, and `DropOrder` itself still admits all four offerable statuses
-→ [Leaving a job](/product/features#cleaner-partner).
+job. Since 2026-10-25 `DropOrder` itself takes only `New` and `Confirmed` too (owner ruling
+2026-10-25), refusing the rest with `order.not_confirmed`, so a cleaner placed on a job already under
+way cannot drop it → [Leaving a job](/product/features#cleaner-partner).
 An administrator who takes a cleaner off a job must give a reason
 (`removalReason`, else `order.reassign.removal_reason_required`); the cleaner's notice carries only the
 order, and the job detail shows them the reason (`GetMyAssignmentRemoval`). A weekly job limit carries a
@@ -102,12 +103,14 @@ one-off at creation, a card order (one-off or recurring) on its payment, a recur
 the customer's confirm — are the three that raise `admin.order.new` to the company's administrators, beside the preferred
 cleaner's offer and under the same offerability read; an unpaid card checkout, which the stale sweep
 cancels an hour later, announces nothing. A seat that empties again is a second notice: a drop or an
-admin rejection that leaves nobody on the order raises `admin.order.crew_lost` at any status, and
-walks a `Confirmed` order back to `New` so the fresh row is also the digest's re-advertisement. An
-order still on the board with nobody on it inside 24 h of its start raises `admin.order.no_cleaner_yet`
-once, from the five-minute reminder sweep (since 2026-10-24): it must be offerable, past any
-preferred-cleaner hold, and an hour past its last status change or the customer's confirmation, so it
-comes before the unfilled-order cancel at slot + 30 min, while there is still time to staff it.
+admin rejection that leaves nobody on the order — since 2026-10-25 only ever a `New` or `Confirmed`
+one — raises `admin.order.crew_lost`, and walks a `Confirmed` order back to `New` so the fresh row is
+also the digest's re-advertisement; since 2026-10-25 the walk-back also tells its customer that
+another cleaner is being looked for. An order still on the board with nobody on it inside 24 h of its
+start raises `admin.order.no_cleaner_yet` once, from the five-minute reminder sweep (since
+2026-10-24): it must be offerable, past any preferred-cleaner hold, and an hour past its last status
+change or the customer's confirmation, so it comes before the unfilled-order cancel at slot + 30 min,
+while there is still time to staff it.
 → [Business rules — administrators are told](/product/business-rules#admin-notifications),
 [when the last cleaner leaves](/product/business-rules#crew-lost)
 

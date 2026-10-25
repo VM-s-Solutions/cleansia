@@ -95,7 +95,8 @@ unassigned sits at `New`, exactly like a cash one. It used to mean either thing,
 customer who cancelled twenty minutes after paying was billed an "acceptance" fee for a cleaner who
 did not exist; [ADR-0057](/decisions/adr-0057) separated them. And since [ADR-0067](/decisions/adr-0067)
 the word is walked back when it stops being true: a drop or an admin rejection that leaves nobody on a
-`Confirmed` order returns it to `New` and tells the company's administrators. Two releases racing can
+`Confirmed` order returns it to `New`, tells its customer that another cleaner is being looked for, and
+tells the company's administrators. Two releases racing can
 still leave `Confirmed` with nobody on it, so read the assigned crew when *"is anyone on it?"* is the
 question — the sweeps do. See [the order lifecycle](/domain/order-lifecycle).
 

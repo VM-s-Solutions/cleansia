@@ -8,10 +8,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * The server lets a cleaner drop out of a job at any status up to InProgress. The apps offer it more narrowly:
- * on the crew of a New or Confirmed job, before any lockout report and before the job's start, because once the
- * cleaner has set off the customer is already expecting them, dropping after "I cannot get in" gives up the
- * lockout reward, and a job nobody has started by its start is a no-show, which the administrators handle.
+ * The server lets the crew leave a New or Confirmed job only, and the apps offer it there too. They are narrower in
+ * two ways: before any lockout report, because dropping after "I cannot get in" gives up the lockout reward, and
+ * before the job's start, because a job nobody has started by then is a no-show, which the administrators handle.
  */
 class DropGateTest {
 

@@ -285,9 +285,13 @@ others; the customer's booking is not cancelled (owner defaults 2026-10-24)
   again. Only a page that does not know the job or the partner still answers a tap with
   `global.messages.orders.invalid_request`.
 
-`DropOrder` on the server admits a drop at any offerable status, `OnTheWay` and `InProgress` included
-([ADR-0067](/decisions/adr-0067)): the narrower gate is the apps'. Asking for cover (`RequestCover`) has
-no button. → [Business rules — when the last cleaner leaves](/product/business-rules#crew-lost)
+Since 2026-10-25 `DropOrder` on the server takes a drop only while the job is `New` or `Confirmed` (owner
+ruling 2026-10-25) and refuses the rest with `order.not_confirmed`, which a partner meets only when the
+job moved after the page last read it, as when a crew-mate sets off first: the interceptor's notice for
+that key then shows and the job is read again ([ADR-0067](/decisions/adr-0067)). The page's gate is
+narrower in two ways only, the lockout report and the start; the server sets no limit at the start.
+Asking for cover (`RequestCover`) has no button.
+→ [Business rules — when the last cleaner leaves](/product/business-rules#crew-lost)
 
 ### Elapsed Timer
 

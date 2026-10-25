@@ -72,13 +72,15 @@ more. Two producers stopped writing it:
 > 2026-09-19) the word is walked back when that stops being true.** When the last assigned cleaner
 > leaves a `Confirmed` order — a **drop**, or an admin **rejecting** the cleaner — the order returns to
 > `New` through one domain writer, `Order.ReturnToBoardIfUnstaffed()`, and the fresh `New` row is also
-> its re-advertisement to the board. Only two writers can empty a crew: **a cover request removes
-> nobody** (the cleaner stays assigned until somebody takes the seat), and a reassign or a cover swap
-> **replaces** — remove then add, never a release. An order past `Confirmed` is never walked back: a
-> drop at `OnTheWay` or `InProgress` leaves the status where it is (a cleaner may be in the home) and
-> the company's administrators are told instead. A drop is checked against the order's status at
-> commit (since 2026-10-05: it touches the order row, so the order's tokens are compared — `CurrentStatus`,
-> and since 2026-10-12 `PaymentStatus`, [ADR-0071](/decisions/adr-0071)), so a
+> its re-advertisement to the board; since 2026-10-25 its customer is told then that another cleaner is
+> being looked for. Only two writers can empty a crew: **a cover request removes nobody** (the cleaner
+> stays assigned until somebody takes the seat), and a reassign or a cover swap **replaces** — remove
+> then add, never a release. An order past `Confirmed` is never walked back, and since 2026-10-25 no
+> release can empty one: a drop is refused once the job is `OnTheWay` or `InProgress` (owner ruling
+> 2026-10-25), and a rejection releases future `Confirmed` seats only. An administrator's status override
+> can still leave an order under way with nobody on it, by hand. A drop is checked against the order's
+> status at commit (since 2026-10-05: it touches the order row, so the order's tokens are compared —
+> `CurrentStatus`, and since 2026-10-12 `PaymentStatus`, [ADR-0071](/decisions/adr-0071)), so a
 > drop racing a status change — a lockout confirmed in the same instant — is refused and the seat keeps
 > the lockout reward. Two releases racing on one order can still leave
 > `Confirmed` with nobody on it — the order's two tokens are `CurrentStatus` and `PaymentStatus`, and

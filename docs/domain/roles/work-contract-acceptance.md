@@ -144,7 +144,8 @@ order, so that a claim against a cleaner for a job is answered from a record and
   banner and the admin's *contract pending* line are the nudges; a second crew member who neither
   starts nor completes works under no acceptance (the stated residual). Q-WC-06 was ruled on
   2026-09-28 without changing this: a placement is an offer the cleaner may drop without consequence,
-  and a removal carries a written reason — the admin's power to place stays.
+  since 2026-10-25 only before the job is under way, and a removal carries a written reason — the admin's
+  power to place stays.
 - **Whether the sheet was really read.** The echo proves *which text*, not that this session fetched
   this order's preview; a per-preview HMAC is not built — the platform records the act, not the
   reading. No scroll-to-end gate.

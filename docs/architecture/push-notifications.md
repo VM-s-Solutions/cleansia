@@ -334,17 +334,26 @@ the same rule as the two client feeds: ids, numbers, enum names, dates and money
 entry declares the exact set a site may pass, so a site cannot smuggle a name in. Rows fall under
 `retention.notifications.days` like every other feed row.
 
-**The customer keyset is unchanged by the walk-back**, and one consequence is named rather than hidden:
-when a `Confirmed` order loses its last cleaner and goes back to `New` ([ADR-0067](/decisions/adr-0067)),
-the release itself writes no customer push, e-mail or feed row — but the next take is a `New → Confirmed`
-transition again, so the customer receives a **second** "your order is confirmed" e-mail on top of the
-assignment push. A new cleaner is a new confirmation; the e-mail is true when it is sent (default
-O-D2-1). When the one-off booking was reserved for a cleaner the customer asked for and nothing has
+**The walk-back tells the customer** (owner ruling 2026-10-25 on O-D2-1: *"yup"*, option (b)). When a
+`Confirmed` order loses its last cleaner and goes back to `New` ([ADR-0067](/decisions/adr-0067)), both
+release writers call `OrderCleanerReleasedNotifier` exactly when `Order.ReturnToBoardIfUnstaffed()`
+walks it back; a crew that remains, or an order that was not `Confirmed`, sends the customer nothing. A
+booking with an account
+gets `order.cleaner_released` — `OrderUpdates`, args `orderId` (the deep link) and `orderNumber`, subject
+`{orderId}:{releasedAssignmentId}` so every walk-back is its own message — which is in
+`NotificationFeedEventKeys.Customer` and in the APNs display map with `[orderNumber]`; a mute silences the
+push, never the feed row. Every booking, a guest's included, gets an `order-cleaner-released` message on
+`send-email`, keyed `email:order-cleaner-released:{orderId}:{assignmentId}`, which the consumer sends only
+while the order is still `New`. Both ride the release's own commit, so a release its commit refuses tells
+nobody. The next take is a `New → Confirmed` transition again, so the customer still receives a
+**second** "your order is confirmed" e-mail on top of the assignment push: a new cleaner is a new
+confirmation, and suppressing that e-mail, option (a), was not taken. When the one-off booking was
+reserved for a cleaner the customer asked for and nothing has
 stamped that reservation's receipt (`PreferredOfferLapseNotifiedAt`: only a path that sends the closure
 message does, and the chosen cleaner's take of the reserved job does not), the five-minute lapse sweep
 pushes a signed-in customer `order.preferred_offer_closed`, with no feed row, on its first run that
-finds nobody on the order after the reservation ended, whoever left last; a drop by, or the rejection
-of, the chosen cleaner while the reservation runs ends it at once.
+finds nobody on the order after the reservation ended, whoever left last, on top of the release's own
+messages; a drop by, or the rejection of, the chosen cleaner while the reservation runs ends it at once.
 → [Business rules — when the last cleaner leaves](/product/business-rules#crew-lost),
 [administrators are told](/product/business-rules#admin-notifications),
 [Admin notifier](/domain/roles/admin-notifier)

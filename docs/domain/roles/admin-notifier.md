@@ -82,7 +82,8 @@ failing e-mail can never fail the command, and nothing the notifier reads depend
   `SendEmailMessage` shape, act-then-claim on the deterministic key; a transport fault throws (retry, then
   poison), a malformed body acks. **`IEmailService.SendAdminNotificationEmailAsync(email, key, args, lang)`**
   renders `admin-notification.html` with the chrome keys plus `{key}.Subject` / `{key}.Body` (or
-  `.BodyUnderWay` for a crew lost `OnTheWay`/`InProgress`; `cause` through `{key}.Cause.{value}`; an ISO
+  `.BodyUnderWay` for a crew lost `OnTheWay`/`InProgress`, which neither release writer produces since
+  2026-10-25; `cause` through `{key}.Cause.{value}`; an ISO
   instant as `dd.MM.yyyy HH:mm UTC`, a `yyyy-MM-dd` day as `d. M. yyyy`) — in-code defaults per locale under
   admin `EmailTemplateTranslation` rows for `EmailType.AdminNotification = 10`.
 - **The sites** — each names the company from the subject it already holds, never from the override:

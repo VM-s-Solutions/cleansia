@@ -652,15 +652,20 @@ Two rules follow from it:
 - **Pass a closure literal, not a method reference that captures a value.** Write
   `status.map { active.contains($0) }`, not `status.map(active.contains)`, and the same for `filter`,
   `allSatisfy`, `contains(where:)` and every other higher-order argument. What was rewritten after the
-  incident is exactly that class in the apps' sources: a method reference that captures a value, such as
-  `active.contains` where `active` is a `Set`, passed as a non-escaping argument to a higher-order
-  function. Method references bound to a view's `@StateObject` view model and stored as a callback were
-  left on purpose, because the analysis found no early release for a class-reference or an escaping
-  context in the sweep of the build-14 binary. Among them are `onCodeChange: vm.onCodeChange` in
-  `ConfirmEmailView`, `onEmailChange: vm.onEmailChange` and `onPasswordChange: vm.onPasswordChange` in
-  `LoginView`, `onEmailChange` in `ForgotPasswordView` and the `RegisterView` callbacks, with the same
-  shape on the customer app's sign-in, sign-up, forgotten-password and e-mail verification screens. A
-  reference that captures no value, such as a static function, an initialiser
+  incident is every method reference the apps ship that captures a value and is passed to an operator
+  of a collection, an optional or a publisher: `active.contains` in `DashboardData.nextJob`, seven
+  look-alikes in `map`, `filter` and `allSatisfy`, and one whose argument escapes, the Combine `filter`
+  on `foregroundPushes` in `RegistrationLockView`. The sweep of both apps' build-14 binaries found no
+  other early release in the apps' own code, and two other kinds were left on purpose. Method
+  references bound to an object have the object itself as their context, so even an early release
+  could not free it while the object is held, as a view's `@StateObject` holds its view model. Among
+  them are `onCodeChange: vm.onCodeChange` in `ConfirmEmailView`, `onEmailChange: vm.onEmailChange` and
+  `onPasswordChange: vm.onPasswordChange` in `LoginView`, `onEmailChange` in `ForgotPasswordView` and
+  the `RegisterView` callbacks, with the same shape on the customer app's sign-in, sign-up,
+  forgotten-password and e-mail verification screens. A view's own method handed to SwiftUI, such as
+  `action: clearPending` in `DocumentsSectionView`, does capture the view by value, but only for a
+  parameter that escapes, and the sweep found each one stored before anything released it. A reference
+  that captures no value, such as a static function, an initialiser
   (`compactMap(UserNotification.init)`) or a key path, is outside the rule and was left as written.
 - **Prove an iOS crash fix in an optimised build made with the archiving Xcode.** A green Debug run says
   nothing about this class of bug.

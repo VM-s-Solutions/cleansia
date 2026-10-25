@@ -48,7 +48,12 @@ final class PartnerNotificationDeepLinkTests: XCTestCase {
 
     /// Customer-audience keys, which this app carries display copy for but is never sent.
     func testCustomerOnlyEventsResolveToNil() {
-        for key in ["order.starting_soon", "order.preferred_offer_closed", "order.cleaner_assigned"] {
+        for key in [
+            "order.starting_soon",
+            "order.preferred_offer_closed",
+            "order.cleaner_assigned",
+            "order.cleaner_released"
+        ] {
             XCTAssertNil(PartnerNotificationDeepLink.resolve(eventKey: key, orderId: "ord-1"), key)
         }
     }

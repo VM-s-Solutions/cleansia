@@ -77,6 +77,22 @@ final class NotificationFeedTemplatesTests: XCTestCase {
         XCTAssertFalse(rendered.body.contains("%"))
     }
 
+    func testCleanerReleasedRowRendersTheOrderNumberAndSurvivesTheCustomerFeedFilter() throws {
+        let args = ["orderId": "ord-7", "orderNumber": "A-1042"]
+        let rendered = try XCTUnwrap(NotificationFeedTemplates.render(eventKey: "order.cleaner_released", args: args))
+        XCTAssertEqual(rendered.title, L10n.localized("push.order.cleaner_released.title"))
+        XCTAssertEqual(
+            rendered.body,
+            String(format: L10n.localized("push.order.cleaner_released.body"), "A-1042")
+        )
+        XCTAssertTrue(rendered.body.contains("#A-1042"))
+        XCTAssertFalse(rendered.body.contains("%"))
+        let rows = NotificationFeedTemplates.rows(from: [
+            NotificationFixtures.item(id: "released", eventKey: "order.cleaner_released", args: args)
+        ])
+        XCTAssertEqual(rows.map(\.id), ["released"])
+    }
+
     func testNoCleanerRowRendersTheOrderNumberAndTheServerFormattedCredit() throws {
         let rendered = try XCTUnwrap(NotificationFeedTemplates.render(
             eventKey: "order.no_cleaner_refunded",

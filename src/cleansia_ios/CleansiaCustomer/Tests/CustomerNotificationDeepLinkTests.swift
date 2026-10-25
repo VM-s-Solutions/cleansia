@@ -38,6 +38,7 @@ final class CustomerNotificationDeepLinkTests: XCTestCase {
         let keys = [
             "order.payment_confirmed",
             "order.cleaner_assigned",
+            "order.cleaner_released",
             "order.on_the_way",
             "order.in_progress",
             "order.completed",
@@ -70,6 +71,14 @@ final class CustomerNotificationDeepLinkTests: XCTestCase {
     func testCleanerAssignedWithoutOrderIdResolvesToNil() {
         XCTAssertNil(CustomerNotificationDeepLink.resolve(
             eventKey: "order.cleaner_assigned",
+            orderId: nil,
+            disputeId: nil
+        ))
+    }
+
+    func testCleanerReleasedWithoutOrderIdResolvesToNil() {
+        XCTAssertNil(CustomerNotificationDeepLink.resolve(
+            eventKey: "order.cleaner_released",
             orderId: nil,
             disputeId: nil
         ))

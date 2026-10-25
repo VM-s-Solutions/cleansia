@@ -189,7 +189,7 @@ export class CleansiaCodeInputComponent implements ControlValueAccessor {
       this.digits[start + i] = written[i];
     }
     this.emitValue();
-    this.focusDigit(start + written.length - 1);
+    this.focusDigit(Math.min(start + written.length, this.length() - 1));
   }
 
   private focusDigit(index: number): void {

@@ -49,6 +49,14 @@ describe('CleansiaCodeInputComponent', () => {
     }
   }
 
+  /** A key typed into the box that has focus, in place of what is selected there, as a browser types it. */
+  function press(key: string): void {
+    const box = document.activeElement as HTMLInputElement;
+    const start = box.selectionStart ?? box.value.length;
+    const end = box.selectionEnd ?? start;
+    enter(boxes().indexOf(box), box.value.slice(0, start) + key + box.value.slice(end), start + key.length);
+  }
+
   function paste(index: number, text: string): Event {
     const event = new Event('paste', { cancelable: true });
     Object.defineProperty(event, 'clipboardData', { value: { getData: () => text } });
@@ -208,12 +216,23 @@ describe('CleansiaCodeInputComponent', () => {
     expect(host.completed).toEqual(['123456']);
   });
 
-  it('fills only as many boxes as a short paste has digits', () => {
+  it('fills only as many boxes as a short paste has digits, and moves on to the box after them', () => {
     paste(0, '12');
 
     expect(values()).toEqual(['1', '2', '', '', '', '']);
     expect(host.code.value).toBe('12');
-    expect(document.activeElement).toBe(boxes()[1]);
+    expect(document.activeElement).toBe(boxes()[2]);
+  });
+
+  it('puts the caret after a pasted fragment, so the digits typed next follow it', () => {
+    paste(0, '1234');
+
+    press('5');
+    press('6');
+
+    expect(values()).toEqual(['1', '2', '3', '4', '5', '6']);
+    expect(host.code.value).toBe('123456');
+    expect(host.completed).toEqual(['123456']);
   });
 
   it('writes a short paste from the box it lands in, keeping the boxes before it', () => {
@@ -225,7 +244,7 @@ describe('CleansiaCodeInputComponent', () => {
     expect(values()).toEqual(['1', '2', '3', '4', '', '']);
     expect(host.code.value).toBe('1234');
     expect(host.completed).toEqual([]);
-    expect(document.activeElement).toBe(boxes()[3]);
+    expect(document.activeElement).toBe(boxes()[4]);
   });
 
   it('writes a fragment the keyboard inserts into a box from that box onward', () => {

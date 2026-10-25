@@ -694,7 +694,7 @@
         },
         "no_show": {
           "action": "Zrušit jako nedostavení uklízeče",
-          "context": "Použijte, když přidělený uklízeč nedorazil – poté, co to zákazník nahlásil nebo přišlo upozornění „Uklízeč nezačal objednávku“. Nejprve to ověřte u uklízeče i zákazníka.",
+          "context": "Použijte, když přidělený uklízeč nedorazil – poté, co to zákazník nahlásil nebo přišlo upozornění „Uklízeč nezačal objednávku“. Nejprve to ověřte u uklízeče i zákazníka. U objednávky, kterou nikdo nepřevzal, můžete tuto akci použít i před začátkem, jakmile je jasné, že se uklízeč nenajde: zákazník dostane stejné vrácení platby a omluvný kredit jako při automatickém zrušení.",
           "confirm": "Objednávka se zruší bez poplatku, platba kartou se vrátí v plné výši, přihlášený zákazník dostane omluvný kredit za nedostavení a otevřený spor „služba nebyla poskytnuta“ se uzavře. Akci nelze vrátit zpět.",
           "submit": "Potvrdit nedostavení",
           "success": "Objednávka byla zrušena jako nedostavení uklízeče. {{refund}} {{credit}}",
@@ -2876,7 +2876,7 @@
             },
             "no_cleaner_yet": {
               "title": "Objednávka stále nemá uklízeče",
-              "body": "Na objednávce {{orderNumber}} dne {{cleaningDateTime}} stále nikdo není. Přiřaďte uklízeče v objednávce; pokud ji nikdo nepřijme, po začátku se automaticky zruší."
+              "body": "Na objednávce {{orderNumber}} dne {{cleaningDateTime}} stále nikdo není. Přiřaďte uklízeče v objednávce; pokud ji nikdo nepřijme, po začátku se automaticky zruší. Chcete-li ji zrušit dříve, zrušte ji v objednávce jako nedostavení: zákazník dostane stejné vrácení platby a omluvný kredit."
             },
             "lockout_reported": {
               "title": "Uklízeč se nemůže dostat dovnitř",

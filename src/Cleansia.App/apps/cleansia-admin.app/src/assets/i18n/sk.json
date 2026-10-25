@@ -694,7 +694,7 @@
         },
         "no_show": {
           "action": "Zrušiť ako nedostavenie sa upratovača",
-          "context": "Použite, keď pridelený upratovač neprišiel – potom, čo to zákazník nahlásil alebo prišlo upozornenie „Upratovač nezačal objednávku“. Najprv to overte u upratovača aj zákazníka.",
+          "context": "Použite, keď pridelený upratovač neprišiel – potom, čo to zákazník nahlásil alebo prišlo upozornenie „Upratovač nezačal objednávku“. Najprv to overte u upratovača aj zákazníka. Pri objednávke, ktorú nikto neprevzal, môžete túto akciu použiť aj pred začiatkom, keď je jasné, že sa upratovač nenájde: zákazník dostane rovnaké vrátenie platby a ospravedlňujúci kredit ako pri automatickom zrušení.",
           "confirm": "Objednávka sa zruší bez poplatku, platba kartou sa vráti v plnej výške, prihlásený zákazník dostane ospravedlňujúci kredit za nedostavenie sa a otvorený spor „služba nebola poskytnutá“ sa uzavrie. Akciu nie je možné vrátiť.",
           "submit": "Potvrdiť nedostavenie sa",
           "success": "Objednávka bola zrušená ako nedostavenie sa upratovača. {{refund}} {{credit}}",
@@ -2876,7 +2876,7 @@
             },
             "no_cleaner_yet": {
               "title": "Objednávka stále nemá upratovača",
-              "body": "Na objednávke {{orderNumber}} dňa {{cleaningDateTime}} stále nikto nie je. Priraďte upratovača v objednávke; ak ju nikto neprijme, po začiatku sa automaticky zruší."
+              "body": "Na objednávke {{orderNumber}} dňa {{cleaningDateTime}} stále nikto nie je. Priraďte upratovača v objednávke; ak ju nikto neprijme, po začiatku sa automaticky zruší. Ak ju chcete zrušiť skôr, zrušte ju v objednávke ako nedostavenie sa: zákazník dostane rovnaké vrátenie platby a ospravedlňujúci kredit."
             },
             "lockout_reported": {
               "title": "Upratovač sa nemôže dostať dnu",

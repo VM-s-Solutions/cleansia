@@ -694,7 +694,7 @@
         },
         "no_show": {
           "action": "Cancel as cleaner no-show",
-          "context": "Use this when the assigned cleaner did not arrive — after the customer reported it or the alert “The cleaner has not started an order” came in. Check with the cleaner and the customer first.",
+          "context": "Use this when the assigned cleaner did not arrive — after the customer reported it or the alert “The cleaner has not started an order” came in. Check with the cleaner and the customer first. On a job nobody has taken, you can also use it before the start, once no cleaner will be found: the customer gets the same refund and apology credit as the automatic cancellation.",
           "confirm": "This cancels the order with no fee, refunds a paid card order in full, gives a signed-in customer the no-show apology credit and closes an open “service not provided” dispute. It cannot be undone.",
           "submit": "Confirm no-show",
           "success": "Order cancelled as a cleaner no-show. {{refund}} {{credit}}",
@@ -2876,7 +2876,7 @@
             },
             "no_cleaner_yet": {
               "title": "An order still has no cleaner",
-              "body": "Order {{orderNumber}} on {{cleaningDateTime}} still has nobody on it. Assign a cleaner from the order; if nobody takes it, it is cancelled automatically after its start."
+              "body": "Order {{orderNumber}} on {{cleaningDateTime}} still has nobody on it. Assign a cleaner from the order; if nobody takes it, it is cancelled automatically after its start. To call it off before then, cancel it as a no-show from the order: the customer gets the same refund and apology credit."
             },
             "lockout_reported": {
               "title": "The cleaner cannot get in",

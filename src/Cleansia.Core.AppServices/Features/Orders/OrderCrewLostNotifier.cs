@@ -7,12 +7,11 @@ using Cleansia.Core.Domain.Orders;
 namespace Cleansia.Core.AppServices.Features.Orders;
 
 /// <summary>
-/// The company's administrators are told whenever a release leaves nobody on an order — at ANY
-/// non-terminal status, not only when the order is walked back to New. An order dropped OnTheWay or
-/// InProgress is never walked back (a cleaner may be in the home) and no sweep selects it, so this is
-/// the only thing that says a customer is waiting for nobody. Shared by the two release writers so the
-/// event they raise cannot drift apart; the swaps (reassign, cover take) replace rather than release
-/// and never call it.
+/// The company's administrators are told whenever a release leaves nobody on an order, whether or not
+/// the order is walked back to New. Both release writers release only at New or Confirmed: DropOrder
+/// refuses a job under way, and RejectEmployee takes back future Confirmed seats only. Shared by the
+/// two release writers so the event they raise cannot drift apart; the swaps (reassign, cover take)
+/// replace rather than release and never call it.
 /// </summary>
 public static class OrderCrewLostNotifier
 {

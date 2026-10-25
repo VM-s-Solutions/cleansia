@@ -5,15 +5,16 @@ import Foundation
 /// one place that decides which characters survive.
 public enum PhoneNumberSanitizer {
     public static func sanitize(_ input: String) -> String {
-        guard !input.isEmpty else { return "" }
         var result = ""
-        for (index, character) in input.enumerated() where keeps(character, at: index) {
+        for character in input where keeps(character, after: result) {
             result.append(character)
         }
         return result
     }
 
-    static func keeps(_ character: Character, at index: Int) -> Bool {
-        character.isNumber || (character == "+" && index == 0)
+    /// A `+` counts until the first digit, wherever it sits in the text: a copied number often has a
+    /// space, a label or an invisible direction mark in front of it.
+    static func keeps(_ character: Character, after kept: String) -> Bool {
+        character.isNumber || (character == "+" && kept.isEmpty)
     }
 }

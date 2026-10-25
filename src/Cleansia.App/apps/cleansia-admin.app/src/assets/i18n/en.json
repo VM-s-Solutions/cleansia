@@ -604,6 +604,9 @@
         "search": "Search",
         "search_placeholder": "Search by customer name or order #",
         "order_status": "Order Status",
+        "staffing": "Staffing",
+        "unassigned_only": "Only orders with no cleaner",
+        "no_cleaner": "No cleaner assigned",
         "payment_status": "Payment Status",
         "date_range": "Date Range",
         "date_from": "Date From",
@@ -2871,6 +2874,10 @@
               "title": "The cleaner has not started an order",
               "body": "Order {{orderNumber}} was booked for {{cleaningDateTime}} and nobody has started it. If the cleaner did not arrive, cancel it as a no-show."
             },
+            "no_cleaner_yet": {
+              "title": "An order still has no cleaner",
+              "body": "Order {{orderNumber}} on {{cleaningDateTime}} still has nobody on it. Assign a cleaner from the order; if nobody takes it, it is cancelled automatically after its start."
+            },
             "lockout_reported": {
               "title": "The cleaner cannot get in",
               "body": "The cleaner on order {{orderNumber}}, booked for {{cleaningDateTime}}, reports that they cannot get in. Check the entrance photo and the calls they made; if the customer did not let them in, cancel it as a customer lockout."
@@ -3581,6 +3588,9 @@
       "invalid_password": "Invalid password",
       "must_be_positive": "Value must be positive",
       "page_size_exceeded": "Page size cannot exceed 100",
+      "passport_id": {
+        "invalid_length": "The passport / ID number must be 5 to 20 characters long."
+      },
       "payout": {
         "account_number_required": "Enter the account number",
         "country_not_supported": "Payouts to a bank in this country are not supported yet",

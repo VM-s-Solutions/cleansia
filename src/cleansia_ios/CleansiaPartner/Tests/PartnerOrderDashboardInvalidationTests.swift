@@ -18,7 +18,7 @@ final class PartnerOrderDashboardInvalidationTests: XCTestCase {
                 shared.markDashboardFresh()
                 let revision = shared.dashboardRevision
                 let bodies = WireBodies()
-                GeneratedWireSpine.install(recording: bodies) { _ in (status, Data("{}".utf8)) }
+                GeneratedWireSpine.install(recording: bodies) { _ in (status, Data(writer.responseBody.utf8)) }
                 let result = await writer.run(LivePartnerOrderClient(staleness: shared))
                 XCTAssertEqual(bodies.paths, [writer.path], "\(writer), HTTP \(status)")
                 XCTAssertEqual(shared.isDashboardStale, status == 200, "\(writer), HTTP \(status)")
@@ -34,6 +34,25 @@ final class PartnerOrderDashboardInvalidationTests: XCTestCase {
                 }
             }
         }
+    }
+
+    /// The toast is chosen by the crew the server says is left, so an answer without that figure is refused
+    /// rather than read as an empty crew, and refreshes nothing.
+    func testADropSendsTheOrderAndReadsTheCrewLeftOrRefusesAnAnswerWithout() async throws {
+        let shared = OrdersStaleness()
+        let bodies = WireBodies()
+        let twoLeft = Data(#"{"orderId":"order-1","crewRemaining":2}"#.utf8)
+        GeneratedWireSpine.install(recording: bodies) { _ in (200, twoLeft) }
+        let crew = try await LivePartnerOrderClient(staleness: shared).dropOrder(orderId: "order-1").get()
+        XCTAssertEqual(crew, 2)
+        XCTAssertEqual(bodies.json(ofPath: "/api/Order/DropOrder")?["orderId"] as? String, "order-1")
+
+        shared.markDashboardFresh()
+        let noCount = Data(#"{"orderId":"order-1"}"#.utf8)
+        GeneratedWireSpine.install(recording: WireBodies()) { _ in (200, noCount) }
+        let result = await LivePartnerOrderClient(staleness: shared).dropOrder(orderId: "order-1")
+        XCTAssertEqual(result.apiErrorOrNil?.code, ApiError.wireContractCode)
+        XCTAssertFalse(shared.isDashboardStale)
     }
 
     func testALaterSameSessionSuccessStillInvalidatesAfterAnotherWriter() async throws {
@@ -79,7 +98,7 @@ final class PartnerOrderDashboardInvalidationTests: XCTestCase {
     }
 
     private enum Writer: CaseIterable {
-        case take, notify, start, complete, cashNotPaid, cashCollected, decline
+        case take, notify, start, complete, cashNotPaid, cashCollected, decline, drop
 
         var path: String {
             switch self {
@@ -90,6 +109,15 @@ final class PartnerOrderDashboardInvalidationTests: XCTestCase {
             case .cashNotPaid: "/api/Order/ReportCashNotPaid"
             case .cashCollected: "/api/Order/MarkCashCollected"
             case .decline: "/api/Order/DeclinePreferredOffer"
+            case .drop: "/api/Order/DropOrder"
+            }
+        }
+
+        /// The drop answers with the crew left, which the client refuses to do without.
+        var responseBody: String {
+            switch self {
+            case .drop: #"{"orderId":"order-1","crewRemaining":0}"#
+            case .take, .notify, .start, .complete, .cashNotPaid, .cashCollected, .decline: "{}"
             }
         }
 
@@ -102,6 +130,7 @@ final class PartnerOrderDashboardInvalidationTests: XCTestCase {
             case .cashNotPaid: await client.reportCashNotPaid(orderId: "order-1")
             case .cashCollected: await client.markCashCollected(orderId: "order-1")
             case .decline: await client.declinePreferredOffer(orderId: "order-1")
+            case .drop: await client.dropOrder(orderId: "order-1").map { _ in () }
             }
         }
     }

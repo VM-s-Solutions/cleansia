@@ -39,6 +39,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -81,7 +82,10 @@ import cz.cleansia.partner.api.model.OrderStatus
 import cz.cleansia.partner.api.model.PaymentStatus
 import cz.cleansia.partner.api.model.PaymentType
 import cz.cleansia.partner.api.model.PhotoType
+import java.time.Duration
+import java.time.Instant
 import java.util.Locale
+import kotlinx.coroutines.delay
 
 /**
  * v2 layout: Mapbox tile as full-bleed backdrop, BottomSheetScaffold
@@ -122,6 +126,8 @@ fun OrderDetailScreen(
         viewModel.onResume()
     }
 
+    LaunchedEffect(viewModel) { viewModel.left.collect { onNavigateBack() } }
+
     when (val s = uiState) {
         OrderDetailUiState.Loading -> {
             Box(
@@ -144,6 +150,7 @@ fun OrderDetailScreen(
             var confirmingCash by remember { mutableStateOf(false) }
             var confirmingCashNotPaid by remember { mutableStateOf(false) }
             var decliningOffer by remember { mutableStateOf(false) }
+            var confirmingDrop by remember { mutableStateOf(false) }
 
             Box(modifier = Modifier.fillMaxSize()) {
                 OrderDetailBottomSheetLayout(
@@ -165,6 +172,7 @@ fun OrderDetailScreen(
                     onCashConfirmRequested = { confirmingCash = true },
                     onCashNotPaidRequested = { confirmingCashNotPaid = true },
                     onDeclineOffer = { decliningOffer = true },
+                    onDropRequested = { confirmingDrop = true },
                     // onContentMutated routes through the staleness-gated
                     // refresh path, so photo upload / note add re-fetches
                     // silently (no full-page spinner flash). Repository
@@ -280,6 +288,28 @@ fun OrderDetailScreen(
                         },
                     )
                 }
+
+                if (confirmingDrop) {
+                    AlertDialog(
+                        onDismissRequest = { confirmingDrop = false },
+                        title = { Text(stringResource(R.string.order_drop_confirm_title)) },
+                        text = { Text(stringResource(R.string.order_drop_confirm_message)) },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    confirmingDrop = false
+                                    viewModel.dropOrder()
+                                },
+                                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                            ) { Text(stringResource(R.string.order_drop_confirm_action)) }
+                        },
+                        dismissButton = {
+                            CleansiaTextButton(onClick = { confirmingDrop = false }) {
+                                Text(stringResource(R.string.order_drop_keep))
+                            }
+                        },
+                    )
+                }
             }
         }
         // Retry is wired to `refresh()`, NOT to `onResume()`/
@@ -343,6 +373,7 @@ private fun OrderDetailBottomSheetLayout(
     onCashConfirmRequested: () -> Unit,
     onCashNotPaidRequested: () -> Unit,
     onDeclineOffer: () -> Unit,
+    onDropRequested: () -> Unit,
     onPhotosChanged: () -> Unit,
     onReportLockout: (String) -> Unit,
     onNavigateBack: () -> Unit,
@@ -411,6 +442,7 @@ private fun OrderDetailBottomSheetLayout(
                     onCashConfirmRequested = onCashConfirmRequested,
                     onCashNotPaidRequested = onCashNotPaidRequested,
                     onDeclineOffer = onDeclineOffer,
+                    onDropRequested = onDropRequested,
                     onPhotosChanged = onPhotosChanged,
                     onReportLockout = onReportLockout,
                 )
@@ -630,6 +662,7 @@ private fun OrderDetailSheetContent(
     onCashConfirmRequested: () -> Unit,
     onCashNotPaidRequested: () -> Unit,
     onDeclineOffer: () -> Unit,
+    onDropRequested: () -> Unit,
     onPhotosChanged: () -> Unit,
     onReportLockout: (String) -> Unit,
 ) {
@@ -639,6 +672,17 @@ private fun OrderDetailSheetContent(
     // instructions now — access has been promoted to its own card.
     val showFromCustomerCard =
         !order.notes.isNullOrBlank() || !order.specialInstructions.isNullOrBlank()
+
+    // Cancel job closes at the job's start, so the clock is read again then, and on every resume, since a delay
+    // stops while the device sleeps.
+    var now by remember { mutableStateOf(Instant.now()) }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { now = Instant.now() }
+    order.cleaningStart()?.takeIf { now.isBefore(it) }?.let { start ->
+        LaunchedEffect(start, now) {
+            delay(Duration.between(now, start).toMillis().coerceAtLeast(1))
+            now = Instant.now()
+        }
+    }
 
     // Resolved here for the in-sheet OrderTimerCard's live timer.
     val startedAtMillis = remember(order.statusHistory) {
@@ -819,6 +863,7 @@ private fun OrderDetailSheetContent(
             canComplete = order.hasAfterPhotos == true,
             needsCashCollection = order.needsCashCollection(),
             canReportCashNotPaid = order.cashNotPaidReportable(),
+            canDrop = order.droppable(now),
             preferredOffer = preferredOffer,
             onTake = onTake,
             onStart = onStart,
@@ -827,6 +872,7 @@ private fun OrderDetailSheetContent(
             onCashConfirmRequested = onCashConfirmRequested,
             onCashNotPaidRequested = onCashNotPaidRequested,
             onDeclineOffer = onDeclineOffer,
+            onDropRequested = onDropRequested,
         )
     }
 }
@@ -839,6 +885,7 @@ private fun StickyActionFooter(
     canComplete: Boolean,
     needsCashCollection: Boolean,
     canReportCashNotPaid: Boolean,
+    canDrop: Boolean,
     preferredOffer: PendingOffer?,
     onTake: () -> Unit,
     onStart: () -> Unit,
@@ -847,6 +894,7 @@ private fun StickyActionFooter(
     onCashConfirmRequested: () -> Unit,
     onCashNotPaidRequested: () -> Unit,
     onDeclineOffer: () -> Unit,
+    onDropRequested: () -> Unit,
 ) {
     // Completed / Cancelled / null — no action available. Don't even
     // render the footer so the cleaner doesn't see a hollow strip.
@@ -897,6 +945,20 @@ private fun StickyActionFooter(
                 canReportCashNotPaid = canReportCashNotPaid,
                 isPreferredOffer = preferredOffer != null,
             )
+            if (canDrop) {
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    if (inFlight == OrderAction.Drop) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.padding(vertical = 12.dp).size(20.dp),
+                            strokeWidth = 2.dp,
+                        )
+                    } else {
+                        CleansiaTextButton(onClick = onDropRequested, enabled = inFlight == null) {
+                            Text(stringResource(R.string.order_drop_action))
+                        }
+                    }
+                }
+            }
             if (preferredOffer != null && !isMine) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                     CleansiaTextButton(onClick = onDeclineOffer, enabled = inFlight == null) {
@@ -947,4 +1009,23 @@ internal fun OrderItem.cashNotPaidOwed(): Double? {
     val price = totalPrice ?: return null
     val credit = creditAppliedAmount ?: return null
     return price - credit
+}
+
+/** The booked start, or null when the wire carries none that reads as an instant. */
+internal fun OrderItem.cleaningStart(): Instant? = cleaningDateTime?.let { runCatching { Instant.parse(it) }.getOrNull() }
+
+/**
+ * Mirrors `DropOrder`, which lets the crew leave a New or Confirmed job only. The apps are narrower than the server in
+ * two ways: before a lockout report only, because leaving afterwards gives up the reward a confirmed lockout pays, and
+ * before the job's start only, because a job nobody has started by then is a no-show, which the administrators handle.
+ * Without a start on the wire the status alone decides.
+ */
+internal fun OrderItem.droppable(now: Instant): Boolean {
+    if (isAssignedToCurrentUser != true || !lockoutReportedAt.isNullOrBlank()) return false
+    val start = cleaningStart()
+    if (start != null && !now.isBefore(start)) return false
+    return when (orderStatus.toOrderStatus()) {
+        OrderStatus._0, OrderStatus._2 -> true
+        else -> false
+    }
 }

@@ -265,6 +265,18 @@ extension CustomerAuthViewModelTests {
         XCTAssertEqual(vm.resetState, .idle)
     }
 
+    /// A code pasted from the e-mail brings its spacing and the words around it, and the server charges one of
+    /// the code's attempts for anything it is sent, so only the digits go.
+    func testCompleteResetSendsOnlyTheDigitsOfAPastedCode() async {
+        for pasted in ["123 456", "Code: 123456"] {
+            let vm = makeViewModel()
+            vm.onForgotEmailChange("a@b.cz")
+            await vm.completePasswordReset(code: pasted, newPassword: "abcdefg1", confirmPassword: "abcdefg1")
+        }
+
+        XCTAssertEqual(changePassword.changeCalls.map(\.code), ["123456", "123456"])
+    }
+
     func testCompleteResetRejectsAMismatchedConfirmationWithoutCallingTheServer() async {
         let vm = makeViewModel()
         let received = collectOutcome(vm)

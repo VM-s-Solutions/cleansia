@@ -58,7 +58,20 @@ After successful registration, an email confirmation is sent and the user is red
 
 ## Email Confirmation
 
-The `/confirm-email` page accepts a token via query parameter. When the page loads, it sends the token to the backend for verification. On success, the user can proceed to login.
+The `/confirm-email` page asks for the 6-digit code the confirmation e-mail carries, in six boxes
+(`cleansia-code-input`, the control the partner page uses). The address comes from the `email` query
+parameter that login and registration add; an e-mail field shows only when the parameter is missing or
+is not a valid address. The page confirms as soon as the sixth digit is in, and *Verify* sends the same
+request. *Resend code* e-mails a new code and then waits 30 seconds before it can be used again, and a
+link leads back to registration to change the address. On success the customer is signed in and taken
+to their orders.
+
+A whole code pasted, or put in by AutoFill or the keyboard's suggestion, fills the six boxes from the
+first wherever it lands. Fewer digits are written from the box they land in, and the boxes before it
+keep theirs; the focus then moves to the box after them, or stays on the last box, so the digits typed
+next continue the code. The page sends one confirm at a time, so a code the boxes complete twice while
+the first confirm is in flight is sent once.
+→ [Partner onboarding — e-mail confirmation](/partner-app/onboarding#step-2-email-confirmation)
 
 ## Password Reset
 

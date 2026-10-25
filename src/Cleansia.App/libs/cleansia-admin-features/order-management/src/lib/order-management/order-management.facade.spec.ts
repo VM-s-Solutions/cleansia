@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import {
   AdminClient,
   AdminCurrencyListItem,
+  OrderStatus,
   PagedDataOfOrderListItem,
 } from '@cleansia/admin-services';
 import { SnackbarService } from '@cleansia/services';
@@ -70,6 +71,49 @@ describe('OrderManagementFacade', () => {
     facade.loadOrders();
 
     expect(getPagedMock.mock.lastCall?.[CURRENCY_SLOT]).toBeUndefined();
+  });
+
+  describe('the staffing filter', () => {
+    const DATE_FROM_SLOT = 7;
+    const ORDER_STATUSES_SLOT = 13;
+    const IS_UNASSIGNED_SLOT = 15;
+
+    beforeEach(() => jest.useFakeTimers().setSystemTime(new Date(2026, 9, 24, 15, 30)));
+    afterEach(() => jest.useRealTimers());
+
+    it('asks the list for orders with nobody on them once the box is ticked, and names it in a chip', () => {
+      facade.filterForm.patchValue({ unassignedOnly: true });
+      jest.advanceTimersByTime(500);
+
+      const args = getPagedMock.mock.lastCall;
+      expect(args?.[IS_UNASSIGNED_SLOT]).toBe(true);
+      expect(args?.[ORDER_STATUSES_SLOT]).toEqual([
+        OrderStatus.New,
+        OrderStatus.Confirmed,
+        OrderStatus.OnTheWay,
+        OrderStatus.InProgress,
+      ]);
+      expect(args?.[DATE_FROM_SLOT]).toEqual(new Date(2026, 9, 24));
+      expect(facade.filters.chips()).toEqual([
+        {
+          key: 'unassignedOnly',
+          label: 'pages.order_management.filters.staffing',
+          value: 'pages.order_management.filters.no_cleaner',
+        },
+      ]);
+    });
+
+    it('asks nothing about the crew again once the chip is removed', () => {
+      facade.filterForm.patchValue({ unassignedOnly: true });
+      jest.advanceTimersByTime(500);
+
+      facade.filters.removeChip('unassignedOnly');
+
+      expect(facade.filterForm.value.unassignedOnly).toBe(false);
+      expect(getPagedMock.mock.lastCall?.[IS_UNASSIGNED_SLOT]).toBeUndefined();
+      expect(getPagedMock.mock.lastCall?.[ORDER_STATUSES_SLOT]).toBeUndefined();
+      expect(facade.filters.chips()).toEqual([]);
+    });
   });
 
   it('keeps only currencies that carry an id and a code', () => {

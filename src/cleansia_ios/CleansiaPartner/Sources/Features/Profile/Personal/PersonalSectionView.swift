@@ -81,7 +81,8 @@ struct PersonalSectionView: View {
                 )
                 CleansiaPhoneInput(
                     value: $vm.form.phone,
-                    label: L10n.Profile.phone
+                    label: L10n.Profile.phone,
+                    errorText: vm.form.phoneError
                 )
                 CleansiaTextField(
                     value: $vm.form.email,

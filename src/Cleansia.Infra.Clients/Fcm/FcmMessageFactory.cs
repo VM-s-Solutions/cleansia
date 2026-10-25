@@ -38,6 +38,7 @@ public static class FcmMessageFactory
         {
             [NotificationEventCatalog.OrderPaymentConfirmed] = OrderNumberArg,
             [NotificationEventCatalog.OrderCleanerAssigned] = OrderNumberArg,
+            [NotificationEventCatalog.OrderCleanerReleased] = OrderNumberArg,
             [NotificationEventCatalog.OrderStartingSoon] = OrderNumberArg,
             [NotificationEventCatalog.OrderAssigned] = OrderNumberArg,
             [NotificationEventCatalog.OrderAssignmentRevoked] = OrderNumberArg,

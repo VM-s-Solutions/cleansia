@@ -164,6 +164,7 @@ fun PersonalSectionScreen(
                     value = form.phone,
                     onValueChange = viewModel::onPhoneChange,
                     label = stringResource(R.string.phone),
+                    errorText = form.phoneError,
                     enabled = !saving,
                     transparentContainer = true,
                 )
@@ -183,7 +184,7 @@ fun PersonalSectionScreen(
                 onBack = onboardingBackFor(cz.cleansia.partner.features.orders.ProfileSection.Personal, onboarding, onJumpToSection),
                 onSave = { viewModel.save() },
                 saving = saving,
-                enabled = form.firstName.isNotBlank() && form.lastName.isNotBlank() && !saving,
+                enabled = !saving,
             )
         },
     )

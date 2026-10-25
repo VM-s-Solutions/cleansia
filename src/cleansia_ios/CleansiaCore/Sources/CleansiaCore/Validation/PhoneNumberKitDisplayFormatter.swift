@@ -26,6 +26,17 @@ public struct PhoneNumberKitDisplayFormatter: PhoneDisplayFormatting {
         return region.isEmpty ? "US" : region.uppercased()
     }()
 
+    /// The server is the authority on whether the number is valid. Its numbering data and this library's come from
+    /// different releases, so the device checks only what does not drift between them: the `+` form and a length the
+    /// number's country allows.
+    public static func isPossibleNumber(_ wireValue: String) -> Bool {
+        guard wireValue.hasPrefix("+"),
+              let number = try? utility.parse(wireValue, ignorePrefixValidation: true) else { return false }
+        // A country code no country has is read as a number of the handset's region, under that region's code.
+        let digits = wireValue.compactMap(\.wholeNumberValue).map { String($0) }.joined()
+        return digits.hasPrefix(String(number.countryCode))
+    }
+
     /// Parsing the bundled metadata is expensive; one instance serves every field.
     private static let utility = PhoneNumberUtility()
 }

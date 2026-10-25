@@ -521,11 +521,15 @@
     <string name="error_profile_not_loaded">Profil se ještě nenačetl</string>
     <string name="error_name_required">Jméno kontaktu je povinné</string>
     <string name="error_phone_required">Telefon kontaktu je povinný</string>
+    <string name="error_phone_number_required">Telefonní číslo je povinné</string>
+    <string name="error_phone_number_invalid">Zadejte číslo i s předvolbou země, např. +420 777 123 456</string>
     <string name="error_pick_nationality">Vyberte svou národnost</string>
     <string name="error_passport_required">Zadejte číslo pasu / OP</string>
     <string name="error_pick_business_country">Vyberte zemi, kde je vaše podnikání registrováno</string>
     <string name="error_registration_number_required">Zadejte IČO</string>
+    <string name="error_legal_entity_name_missing">Chybí registrovaný název vaší firmy. Požádejte podporu o doplnění — zde ho změnit nelze.</string>
     <string name="error_pick_address_first">Nejprve vyberte adresu na mapě</string>
+    <string name="error_address_incomplete">Na tomto místě není úplná adresa. Posuňte špendlík na budovu nebo vyhledejte ulici a číslo domu.</string>
 
     <!-- Profile Validation -->
     <string name="validation_required">Toto pole je povinné</string>
@@ -534,7 +538,6 @@
     <string name="validation_max_100">Maximálně 100 znaků</string>
     <string name="validation_date_past">Datum musí být v minulosti</string>
     <string name="validation_min_age_18">Musíte mít alespoň 18 let</string>
-    <string name="validation_max_age_120">Neplatné datum narození</string>
     <string name="validation_invalid_date">Neplatný formát data</string>
     <string name="validation_invalid_phone">Neplatný formát telefonního čísla</string>
     <string name="validation_invalid_email">Neplatný formát emailu</string>
@@ -945,6 +948,13 @@
     <string name="order_cash_not_paid_confirm_message_no_amount">Použijte jen tehdy, když zákazník nezaplatil nic. Pokud zaplatil jen část, dejte místo toho vědět společnosti. Úklid se dokončí a dostanete za něj zaplaceno. Zákazník bude dlužit cenu úklidu, dozví se to a dokud nezaplatí, nemůže si nic dalšího objednat; administrátor dostane upozornění. Vrátit to může jen administrátor.</string>
     <string name="order_cash_not_paid_confirm_action">Ano, nahlásit</string>
     <string name="order_cash_not_paid_reported_toast">Nahlášeno. Úklid je dokončen a zákazník byl informován.</string>
+    <string name="order_drop_action">Odstoupit od zakázky</string>
+    <string name="order_drop_confirm_title">Odstoupit od této zakázky?</string>
+    <string name="order_drop_confirm_message">Budete ze zakázky odebráni a vaše místo se vrátí do nabídky ostatním uklízečům. Objednávka zákazníka se neruší. Pokud jste na zakázce jediný uklízeč, nebude mít žádného uklízeče, dokud si ji někdo nevezme.</string>
+    <string name="order_drop_confirm_action">Ano, odstoupit</string>
+    <string name="order_drop_keep">Ponechat si zakázku</string>
+    <string name="order_dropped_toast_no_crew">Od zakázky jste odstoupili. Teď nemá žádného uklízeče: je zpět v nabídce.</string>
+    <string name="order_dropped_toast">Od zakázky jste odstoupili. Vaše místo je zpět v nabídce pro ostatní uklízeče.</string>
 
     <!-- Backend error-key translations -->
     <string name="error_key_order_after_photos_required">Před dokončením zakázky pořiďte alespoň jednu fotografii \"po\".</string>
@@ -1212,6 +1222,7 @@
     <string name="error_validation_invalid_age">Zadejte prosím platný věk.</string>
     <string name="error_validation_invalid_phone_number">Zadejte prosím platné telefonní číslo.</string>
     <string name="error_validation_invalid_national_id">Zadejte prosím platné rodné číslo.</string>
+    <string name="error_validation_passport_id_invalid_length">Číslo pasu / OP musí mít 5 až 20 znaků.</string>
     <string name="error_validation_invalid_tax_id">Zadejte prosím platné DIČ.</string>
     <string name="error_validation_invalid_iban">Zadejte prosím platný IBAN.</string>
     <string name="error_validation_invalid_zip_code">Zadejte prosím platné PSČ.</string>

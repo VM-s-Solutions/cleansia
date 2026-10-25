@@ -309,7 +309,7 @@ private struct ConfirmRecurringFooter: View {
         }
         .padding(.horizontal, Spacing.m)
         .padding(.vertical, Spacing.s)
-        .frame(maxWidth: .infinity)
+        .readableWidth()
         .background(CleansiaColors.surface.ignoresSafeArea(edges: .bottom))
     }
 }
@@ -438,7 +438,7 @@ private struct OrderDetailActionsFooter: View {
         }
         .padding(.horizontal, Spacing.m)
         .padding(.vertical, Spacing.s)
-        .frame(maxWidth: .infinity)
+        .readableWidth()
         .background(CleansiaColors.surface.ignoresSafeArea(edges: .bottom))
     }
 }

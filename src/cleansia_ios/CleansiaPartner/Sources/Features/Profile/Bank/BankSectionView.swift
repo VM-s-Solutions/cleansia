@@ -86,7 +86,11 @@ struct BankSectionView: View {
                     bankName: field(\.bankName),
                     holderName: field(\.holderName),
                     usesDomesticAccount: form.usesDomesticAccount,
+                    bankCountryError: form.bankCountryError,
+                    accountError: form.accountError,
                     ibanError: form.ibanChecked ? form.ibanProblem.map(Self.message) : nil,
+                    ibanServerError: form.ibanServerError,
+                    swiftError: form.swiftError,
                     enabled: !vm.action.isSubmitting
                 )
                 // Bank is the last step of the onboarding chain, so "Save and continue"
@@ -94,7 +98,6 @@ struct BankSectionView: View {
                 SaveSectionButton(
                     onboarding: false,
                     isSubmitting: vm.action.isSubmitting,
-                    enabled: form.canSubmit,
                     onBack: onboardingBack,
                     action: { Task { await vm.save() } }
                 )
@@ -127,7 +130,11 @@ struct BankFormFields: View {
     @Binding var holderName: String
     /// A CZ or SK bank takes the three parts; any other takes one IBAN instead.
     var usesDomesticAccount = true
+    var bankCountryError: String?
+    var accountError: String?
     var ibanError: String?
+    var ibanServerError: String?
+    var swiftError: String?
     var enabled: Bool = true
 
     var body: some View {
@@ -136,6 +143,7 @@ struct BankFormFields: View {
                 selectedId: $bankCountryId,
                 options: countryOptions,
                 label: L10n.Profile.bankCountry,
+                errorText: bankCountryError,
                 placeholder: L10n.Profile.noData,
                 enabled: enabled,
                 searchable: true
@@ -151,6 +159,7 @@ struct BankFormFields: View {
                     numberPlaceholder: L10n.Profile.bankAccountNumberPlaceholder,
                     bankCodePlaceholder: L10n.Profile.bankCodePlaceholder,
                     helper: L10n.Profile.bankAccountHelper,
+                    errorText: accountError,
                     enabled: enabled
                 )
             } else {
@@ -161,7 +170,7 @@ struct BankFormFields: View {
                     value: $iban,
                     label: L10n.Profile.iban,
                     helper: L10n.Profile.ibanHelper,
-                    errorText: ibanError,
+                    errorText: ibanError ?? ibanServerError,
                     keyboardType: .asciiCapable,
                     enabled: enabled,
                     keepsCaretWhenRegrouped: true
@@ -171,6 +180,7 @@ struct BankFormFields: View {
                 value: $swift,
                 label: L10n.Profile.swiftCode,
                 helper: L10n.Profile.swiftCodeHelper,
+                errorText: swiftError,
                 enabled: enabled
             )
             CleansiaTextField(

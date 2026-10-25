@@ -144,6 +144,7 @@ private struct AddressListPane: View {
                 .padding(.bottom, Spacing.xxl)
             }
         }
+        .readableWidth()
         .background(CleansiaColors.background.ignoresSafeArea())
         .task(id: addresses.map(\.id)) {
             await resolveServiceability()
@@ -388,6 +389,7 @@ private struct AddressReviewPane: View {
             .padding(.horizontal, Spacing.l)
             .padding(.bottom, Spacing.m)
         }
+        .readableWidth()
         .background(CleansiaColors.background.ignoresSafeArea())
         .task(id: picked.city) { await resolveServiceability() }
     }

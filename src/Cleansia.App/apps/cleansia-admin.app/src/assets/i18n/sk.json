@@ -604,6 +604,9 @@
         "search": "Hľadať",
         "search_placeholder": "Hľadať podľa mena zákazníka alebo čísla objednávky",
         "order_status": "Stav objednávky",
+        "staffing": "Obsadenie",
+        "unassigned_only": "Len objednávky bez upratovača",
+        "no_cleaner": "Bez upratovača",
         "payment_status": "Stav platby",
         "date_range": "Časové obdobie",
         "date_from": "Dátum od",
@@ -2871,6 +2874,10 @@
               "title": "Upratovač nezačal objednávku",
               "body": "Objednávka {{orderNumber}} bola objednaná na {{cleaningDateTime}} a nikto ju nezačal. Ak upratovač neprišiel, zrušte ju ako nedostavenie sa."
             },
+            "no_cleaner_yet": {
+              "title": "Objednávka stále nemá upratovača",
+              "body": "Na objednávke {{orderNumber}} dňa {{cleaningDateTime}} stále nikto nie je. Priraďte upratovača v objednávke; ak ju nikto neprijme, po začiatku sa automaticky zruší."
+            },
             "lockout_reported": {
               "title": "Upratovač sa nemôže dostať dnu",
               "body": "Upratovač pri objednávke {{orderNumber}}, objednanej na {{cleaningDateTime}}, hlási, že sa nemôže dostať dnu. Skontrolujte fotografiu vchodu a jeho pokusy o volanie; ak ho zákazník nepustil dnu, zrušte ju ako nesprístupnenie zákazníkom."
@@ -3581,6 +3588,9 @@
       "invalid_password": "Neplatné heslo",
       "must_be_positive": "Hodnota musí byť kladná",
       "page_size_exceeded": "Veľkosť stránky nesmie prekročiť 100",
+      "passport_id": {
+        "invalid_length": "Číslo pasu / OP musí mať 5 až 20 znakov."
+      },
       "payout": {
         "account_number_required": "Zadajte číslo účtu",
         "country_not_supported": "Výplaty do banky v tejto krajine zatiaľ nie sú podporované",

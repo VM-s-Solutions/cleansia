@@ -32013,6 +32013,76 @@
         }
       }
     },
+    "push.order.cleaner_released.body": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hledáme jiného uklízeče pro rezervaci #%1$@ a dáme vám vědět, jakmile ji někdo převezme."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We're looking for another cleaner for booking #%1$@ and will let you know as soon as one takes it."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Мы ищем другого клинера для заказа #%1$@ и сообщим вам, как только кто-то его возьмёт."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hľadáme iného upratovača pre rezerváciu #%1$@ a dáme vám vedieť, hneď ako ju niekto prevezme."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ми шукаємо іншого клінера для замовлення #%1$@ і повідомимо вас, щойно хтось його візьме."
+          }
+        }
+      }
+    },
+    "push.order.cleaner_released.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Váš uklízeč už nemůže přijít"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your cleaner can no longer come"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваш клинер больше не может прийти"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Váš upratovač už nemôže prísť"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваш клінер більше не може прийти"
+          }
+        }
+      }
+    },
     "push.order.completed.body": {
       "extractionState": "manual",
       "localizations": {

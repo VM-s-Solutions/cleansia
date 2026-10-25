@@ -19,10 +19,11 @@ enum OrdersMutation {
     case completeOrder
     case declinePreferredOffer
     case reportLockout
+    case dropOrder
 
     var affectedPanes: [OrdersPane] {
         switch self {
-        case .takeOrder, .notifyOnTheWay: [.available, .active]
+        case .takeOrder, .notifyOnTheWay, .dropOrder: [.available, .active]
         case .acceptWorkContract, .startOrder, .markCashCollected: [.active]
         case .completeOrder: [.active, .history]
         // The order is back with the whole board the instant the hold ends, and the cleaner's own

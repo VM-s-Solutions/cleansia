@@ -30,6 +30,7 @@ public static class NotificationFeedEventKeys
     [
         NotificationEventCatalog.OrderPaymentConfirmed,
         NotificationEventCatalog.OrderCleanerAssigned,
+        NotificationEventCatalog.OrderCleanerReleased,
         NotificationEventCatalog.OrderOnTheWay,
         NotificationEventCatalog.OrderInProgress,
         NotificationEventCatalog.OrderCompleted,

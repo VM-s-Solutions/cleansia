@@ -28,7 +28,10 @@ import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -74,6 +77,12 @@ class IdentificationSectionViewModelTest {
         errorTranslator = mockk()
         appContext = mockk(relaxed = true)
         every { errorTranslator.translate(any()) } returns "translated error"
+        every { appContext.getString(R.string.error_pick_nationality) } returns "Pick your nationality"
+        every { appContext.getString(R.string.error_passport_required) } returns "Enter your passport / ID number"
+        every { appContext.getString(R.string.error_pick_business_country) } returns "Pick the business country"
+        every { appContext.getString(R.string.error_registration_number_required) } returns "Enter it"
+        every { appContext.getString(R.string.error_validation_passport_id_invalid_length) } returns "5 to 20 characters"
+        every { appContext.getString(R.string.error_legal_entity_name_missing) } returns "Contact support"
         coEvery { countryApi.countryGetOverview() } returns Response.success(emptyList())
         coEvery { countryApi.countryGetFieldLabels(any()) } returns Response.error(
             404,
@@ -111,7 +120,26 @@ class IdentificationSectionViewModelTest {
 
         val form = viewModel().awaitLoaded()
 
+        assertTrue(form.isLegalEntity)
         assertEquals("Uklid Praha s.r.o.", form.storedLegalEntityName)
+        assertNull(form.legalEntityNameError)
+    }
+
+    /**
+     * The registration lock needs a company's name, which only an operator can set, so a company row
+     * without one keeps the cleaner on this step: the locked field says why instead of staying hidden.
+     */
+    @Test
+    fun `an operator-onboarded company without a name says why the step cannot finish`() = runTest {
+        listOf(null, " ").forEach { name ->
+            coEvery { repository.getCurrentEmployee() } returns
+                ApiResult.Success(operatorOnboardedCompany.copy(legalEntityName = name))
+
+            val form = viewModel().awaitLoaded()
+
+            assertTrue(form.isLegalEntity)
+            assertEquals("Contact support", form.legalEntityNameError)
+        }
     }
 
     @Test
@@ -121,7 +149,9 @@ class IdentificationSectionViewModelTest {
 
         val form = viewModel().awaitLoaded()
 
+        assertFalse(form.isLegalEntity)
         assertNull(form.storedLegalEntityName)
+        assertNull(form.legalEntityNameError)
     }
 
     @Test
@@ -151,11 +181,17 @@ class IdentificationSectionViewModelTest {
         }
     }
 
+    private fun IdentificationSectionViewModel.form(): IdentificationForm =
+        (uiState.value as IdentificationSectionUiState.Loaded).form
+
+    /** Waits out the field-labels read a business-country pick starts, which hops to Dispatchers.IO. */
+    private suspend fun IdentificationSectionViewModel.settle() =
+        viewModelScope.coroutineContext.job.children.forEach { it.join() }
+
     @Test
-    fun `a missing registration number is refused locally and the repo is not called`() = runTest {
+    fun `a missing registration number is named under its field and the repo is not called`() = runTest {
         coEvery { repository.getCurrentEmployee() } returns
             ApiResult.Success(naturalPerson.copy(registrationNumber = null))
-        every { appContext.getString(R.string.error_registration_number_required) } returns "Enter it"
 
         val vm = viewModel()
         vm.awaitLoaded()
@@ -163,8 +199,183 @@ class IdentificationSectionViewModelTest {
         vm.save()
         advanceUntilIdle()
 
-        verify { snackbar.showError("Enter it") }
+        assertEquals("Enter it", vm.form().registrationNumberError)
+        verify(exactly = 0) { snackbar.showError(any<String>()) }
         coVerify(exactly = 0) { repository.updateIdentification(any(), any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `every missing field is named under it in one pass and nothing is sent`() = runTest {
+        coEvery { repository.getCurrentEmployee() } returns ApiResult.Success(
+            naturalPerson.copy(nationalityId = null, passportId = " ", countryId = null, registrationNumber = null),
+        )
+
+        val vm = viewModel()
+        vm.awaitLoaded()
+
+        vm.save()
+        advanceUntilIdle()
+
+        val form = vm.form()
+        assertEquals("Pick your nationality", form.nationalityError)
+        assertEquals("Enter your passport / ID number", form.passportError)
+        assertEquals("Pick the business country", form.businessCountryError)
+        assertEquals("Enter it", form.registrationNumberError)
+        assertEquals(ActionState.Idle, vm.saveState.value)
+        verify(exactly = 0) { snackbar.showError(any<String>()) }
+        coVerify(exactly = 0) { repository.updateIdentification(any(), any(), any(), any(), any()) }
+    }
+
+    /** `ValidatePassportId` counts 5 to 20 characters of what is sent, and the save sends it trimmed. */
+    @Test
+    fun `a passport outside 5 to 20 characters is named under it and not sent`() = runTest {
+        listOf(" AB12 ", "A".repeat(21)).forEach { passport ->
+            coEvery { repository.getCurrentEmployee() } returns
+                ApiResult.Success(naturalPerson.copy(passportId = passport))
+            val vm = viewModel()
+            vm.awaitLoaded()
+
+            vm.save()
+            advanceUntilIdle()
+
+            assertEquals(passport, "5 to 20 characters", vm.form().passportError)
+        }
+        coVerify(exactly = 0) { repository.updateIdentification(any(), any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `the passport and registration number are checked and sent trimmed`() = runTest {
+        coEvery { repository.getCurrentEmployee() } returns ApiResult.Success(
+            naturalPerson.copy(passportId = " AB123 ", registrationNumber = " 12345678\n"),
+        )
+        coEvery {
+            repository.updateIdentification(any(), any(), any(), any(), any())
+        } returns ApiResult.Success(Unit)
+
+        val vm = viewModel()
+        vm.awaitLoaded()
+        vm.save()
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) {
+            repository.updateIdentification(
+                employeeId = "emp-1",
+                nationalityId = "country-cz",
+                passportId = "AB123",
+                businessCountryId = "country-cz",
+                registrationNumber = "12345678",
+            )
+        }
+    }
+
+    @Test
+    fun `editing a field clears its own error and leaves the others`() = runTest {
+        coEvery { repository.getCurrentEmployee() } returns ApiResult.Success(
+            naturalPerson.copy(nationalityId = null, passportId = null, countryId = null, registrationNumber = null),
+        )
+        val vm = viewModel()
+        vm.awaitLoaded()
+        vm.save()
+        advanceUntilIdle()
+
+        vm.onNationalitySelected("country-sk")
+        assertNull(vm.form().nationalityError)
+        assertNotNull(vm.form().passportError)
+
+        vm.onPassportChange("AB1234567")
+        assertNull(vm.form().passportError)
+        assertNotNull(vm.form().registrationNumberError)
+
+        vm.onRegistrationNumberChange("12345678")
+        assertNull(vm.form().registrationNumberError)
+        assertNotNull(vm.form().businessCountryError)
+
+        vm.onBusinessCountrySelected("country-sk")
+        vm.settle()
+        assertNull(vm.form().businessCountryError)
+    }
+
+    /** Refusals only the business register can give are the registration number's, not a snackbar's. */
+    @Test
+    fun `a register refusal is named under the registration number`() = runTest {
+        listOf(
+            "validation.registration_number.invalid_format",
+            "validation.registration_number.not_registered",
+            "employee.business_ceased",
+            "employee.trade_licence_inactive",
+        ).forEach { key ->
+            coEvery { repository.getCurrentEmployee() } returns ApiResult.Success(naturalPerson)
+            coEvery { repository.updateIdentification(any(), any(), any(), any(), any()) } returns ApiResult.Error(
+                ApiError.BadRequest("Validation Error", validationErrors = mapOf("RegistrationNumber" to listOf(key))),
+            )
+            val vm = viewModel()
+            vm.awaitLoaded()
+
+            vm.save()
+            advanceUntilIdle()
+
+            assertEquals(key, "translated error", vm.form().registrationNumberError)
+            assertEquals(key, ActionState.Idle, vm.saveState.value)
+        }
+        verify(exactly = 0) { snackbar.showError(any<String>()) }
+    }
+
+    @Test
+    fun `a refused registration number clears when the business country it depends on changes`() = runTest {
+        coEvery { repository.getCurrentEmployee() } returns ApiResult.Success(naturalPerson)
+        coEvery { repository.updateIdentification(any(), any(), any(), any(), any()) } returns ApiResult.Error(
+            ApiError.BadRequest(
+                "Validation Error",
+                validationErrors = mapOf("RegistrationNumber" to listOf("validation.registration_number.invalid_format")),
+            ),
+        )
+        val vm = viewModel()
+        vm.awaitLoaded()
+        vm.save()
+        advanceUntilIdle()
+        assertEquals("translated error", vm.form().registrationNumberError)
+
+        vm.onBusinessCountrySelected("country-sk")
+        vm.settle()
+
+        assertNull(vm.form().registrationNumberError)
+    }
+
+    @Test
+    fun `a passport length refusal from the server is named under the passport`() = runTest {
+        coEvery { repository.getCurrentEmployee() } returns ApiResult.Success(naturalPerson)
+        coEvery { repository.updateIdentification(any(), any(), any(), any(), any()) } returns ApiResult.Error(
+            ApiError.BadRequest(
+                "Validation Error",
+                validationErrors = mapOf("PassportId" to listOf("validation.passport_id.invalid_length")),
+            ),
+        )
+        val vm = viewModel()
+        vm.awaitLoaded()
+
+        vm.save()
+        advanceUntilIdle()
+
+        assertEquals("translated error", vm.form().passportError)
+        assertNull(vm.form().registrationNumberError)
+        verify(exactly = 0) { snackbar.showError(any<String>()) }
+    }
+
+    /** A register that does not answer is not a fault in the number the cleaner typed. */
+    @Test
+    fun `a refusal that names no field stays a snackbar`() = runTest {
+        coEvery { repository.getCurrentEmployee() } returns ApiResult.Success(naturalPerson)
+        coEvery { repository.updateIdentification(any(), any(), any(), any(), any()) } returns ApiResult.Error(
+            ApiError.BadRequest("Bad Request", errorKey = "employee.business_registry_unavailable"),
+        )
+        val vm = viewModel()
+        vm.awaitLoaded()
+
+        vm.save()
+        advanceUntilIdle()
+
+        verify { snackbar.showError("translated error") }
+        assertNull(vm.form().registrationNumberError)
     }
 
     @Test

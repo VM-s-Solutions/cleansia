@@ -79,6 +79,7 @@ public sealed class AdminNotificationEventCatalogTests
     [InlineData(AdminNotificationEventCatalog.OrderNew, PhysicalPolicy.SupportOrAbove)]
     [InlineData(AdminNotificationEventCatalog.OrderCrewLost, PhysicalPolicy.SupportOrAbove)]
     [InlineData(AdminNotificationEventCatalog.OrderCleanerNotStarted, PhysicalPolicy.SupportOrAbove)]
+    [InlineData(AdminNotificationEventCatalog.OrderNoCleanerYet, PhysicalPolicy.SupportOrAbove)]
     [InlineData(AdminNotificationEventCatalog.OrderLockoutReported, PhysicalPolicy.SupportOrAbove)]
     [InlineData(AdminNotificationEventCatalog.OrderCashNotPaid, PhysicalPolicy.SupportOrAbove)]
     [InlineData(AdminNotificationEventCatalog.DisputeFiled, PhysicalPolicy.SupportOrAbove)]

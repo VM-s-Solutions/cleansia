@@ -22,6 +22,7 @@ struct InvoicesListView: View {
 
     var body: some View {
         content
+            .readableWidth()
             .navigationTitle(L10n.Invoices.title)
             .navigationBarTitleDisplayMode(.inline)
             .background(CleansiaColors.background.ignoresSafeArea())

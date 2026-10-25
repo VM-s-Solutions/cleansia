@@ -44,6 +44,7 @@ struct SectionScaffold<Header: View, Form: View>: View {
                     }
                     .padding(.horizontal, Spacing.m)
                     .padding(.bottom, Spacing.l)
+                    .readableWidth()
                 }
             }
         }

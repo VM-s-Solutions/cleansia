@@ -388,9 +388,9 @@ public sealed partial class EmailService : IEmailService
     }
 
     /// <summary>
-    /// In-code copy for the status e-mail's cancelled and booked arms, used only where no translation
-    /// row supplies a key. The table carries no status-update rows, and these two arms go to guests and
-    /// cash customers in their own language.
+    /// In-code copy for the status e-mail's cancelled, booked and cleaner-released arms, used only where no
+    /// translation row supplies a key. The table carries no status-update rows, and these arms go out in
+    /// the customer's own language.
     /// </summary>
     private static readonly IReadOnlyDictionary<string, Dictionary<string, string>> StatusEmailDefaults =
         new Dictionary<string, Dictionary<string, string>>
@@ -411,6 +411,8 @@ public sealed partial class EmailService : IEmailService
                 ["CancelledReason_Lockout"] = "The cleaner could not get into your home at the booked time and could not reach you, so the booking was cancelled and the full price is charged as a cancellation fee.",
                 ["RefundPendingMessage"] = "Your refund is being processed.",
                 ["NothingChargedMessage"] = "Nothing was charged.",
+                ["StatusTitle_CleanerReleased"] = "We're finding you a new cleaner",
+                ["StatusMessage_CleanerReleased"] = "The cleaner booked for your cleaning can no longer come. We're looking for another cleaner and will let you know as soon as one takes your booking.",
                 ["StatusSectionLabel"] = "Current status",
                 ["OrderNumberLabel"] = "Order #",
                 ["CleaningDateLabel"] = "Cleaning date",
@@ -438,6 +440,8 @@ public sealed partial class EmailService : IEmailService
                 ["CancelledReason_Lockout"] = "Uklízeč se v objednaný čas nedostal do vaší domácnosti a nepodařilo se mu vás zastihnout, proto byla rezervace zrušena a celá cena se účtuje jako storno poplatek.",
                 ["RefundPendingMessage"] = "Vrácení peněz zpracováváme.",
                 ["NothingChargedMessage"] = "Nic vám nebylo účtováno.",
+                ["StatusTitle_CleanerReleased"] = "Hledáme vám nového uklízeče",
+                ["StatusMessage_CleanerReleased"] = "Uklízeč objednaný na váš úklid už nemůže přijít. Hledáme jiného uklízeče a dáme vám vědět, jakmile vaši rezervaci někdo převezme.",
                 ["StatusSectionLabel"] = "Aktuální stav",
                 ["OrderNumberLabel"] = "Rezervace č.",
                 ["CleaningDateLabel"] = "Datum úklidu",
@@ -465,6 +469,8 @@ public sealed partial class EmailService : IEmailService
                 ["CancelledReason_Lockout"] = "Upratovač sa v objednanom čase nedostal do vašej domácnosti a nepodarilo sa mu vás zastihnúť, preto bola rezervácia zrušená a celá cena sa účtuje ako storno poplatok.",
                 ["RefundPendingMessage"] = "Vrátenie peňazí spracúvame.",
                 ["NothingChargedMessage"] = "Nič vám nebolo účtované.",
+                ["StatusTitle_CleanerReleased"] = "Hľadáme vám nového upratovača",
+                ["StatusMessage_CleanerReleased"] = "Upratovač objednaný na vaše upratovanie už nemôže prísť. Hľadáme iného upratovača a dáme vám vedieť, hneď ako vašu rezerváciu niekto prevezme.",
                 ["StatusSectionLabel"] = "Aktuálny stav",
                 ["OrderNumberLabel"] = "Rezervácia č.",
                 ["CleaningDateLabel"] = "Dátum upratovania",
@@ -492,6 +498,8 @@ public sealed partial class EmailService : IEmailService
                 ["CancelledReason_Lockout"] = "Прибиральник не зміг потрапити до вашого помешкання в заброньований час і не зміг з вами зв’язатися, тому бронювання скасовано, а повна вартість стягується як плата за скасування.",
                 ["RefundPendingMessage"] = "Повернення коштів обробляється.",
                 ["NothingChargedMessage"] = "З вас нічого не стягнуто.",
+                ["StatusTitle_CleanerReleased"] = "Шукаємо для вас нового прибиральника",
+                ["StatusMessage_CleanerReleased"] = "Прибиральник, призначений на ваше прибирання, більше не може прийти. Ми шукаємо іншого прибиральника й повідомимо вас, щойно хтось візьме ваше бронювання.",
                 ["StatusSectionLabel"] = "Поточний статус",
                 ["OrderNumberLabel"] = "Бронювання №",
                 ["CleaningDateLabel"] = "Дата прибирання",
@@ -519,6 +527,8 @@ public sealed partial class EmailService : IEmailService
                 ["CancelledReason_Lockout"] = "Уборщик не смог попасть в ваш дом в забронированное время и не смог с вами связаться, поэтому бронирование отменено, а полная стоимость взимается как плата за отмену.",
                 ["RefundPendingMessage"] = "Возврат средств обрабатывается.",
                 ["NothingChargedMessage"] = "С вас ничего не списано.",
+                ["StatusTitle_CleanerReleased"] = "Ищем для вас нового уборщика",
+                ["StatusMessage_CleanerReleased"] = "Уборщик, назначенный на вашу уборку, больше не может прийти. Мы ищем другого уборщика и сообщим вам, как только кто-нибудь возьмёт ваше бронирование.",
                 ["StatusSectionLabel"] = "Текущий статус",
                 ["OrderNumberLabel"] = "Бронирование №",
                 ["CleaningDateLabel"] = "Дата уборки",
@@ -958,7 +968,8 @@ public sealed partial class EmailService : IEmailService
 
         var isCancelled = newStatus.Equals("cancelled", StringComparison.OrdinalIgnoreCase);
         var isBooked = newStatus.Equals(BookedStatus, StringComparison.OrdinalIgnoreCase);
-        if (isCancelled || isBooked)
+        var isCleanerReleased = newStatus.Equals("cleanerreleased", StringComparison.OrdinalIgnoreCase);
+        if (isCancelled || isBooked || isCleanerReleased)
         {
             var defaults = StatusEmailDefaults.GetValueOrDefault(languageCode)
                 ?? StatusEmailDefaults[Constants.Language.English];
@@ -1001,13 +1012,17 @@ public sealed partial class EmailService : IEmailService
                 translations.GetValueOrDefault("StatusTitle_Booked", "Booking confirmed"),
                 translations.GetValueOrDefault("StatusMessage_Booked", "Your cleaning is booked."),
                 "confirmed"),
+            "cleanerreleased" => (
+                translations.GetValueOrDefault("StatusTitle_CleanerReleased", "We're finding you a new cleaner"),
+                translations.GetValueOrDefault("StatusMessage_CleanerReleased", "The cleaner booked for your cleaning can no longer come. We're looking for another cleaner and will let you know as soon as one takes your booking."),
+                "confirmed"),
             _ => (
                 translations.GetValueOrDefault("StatusTitle_Default", "Order Update"),
                 translations.GetValueOrDefault("StatusMessage_Default", "Your order status has been updated."),
                 "confirmed")
         };
 
-        var isLocalised = isCancelled || isBooked;
+        var isLocalised = isCancelled || isBooked || isCleanerReleased;
         var orderLabel = isLocalised ? translations.GetValueOrDefault("OrderNumberLabel", "Order") : "Order";
         var subject = translations.GetValueOrDefault("Subject", $"{orderLabel} {order.DisplayOrderNumber} — {statusTitle}");
 

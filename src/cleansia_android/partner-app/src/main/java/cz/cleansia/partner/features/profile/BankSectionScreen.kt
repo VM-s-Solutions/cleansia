@@ -68,6 +68,7 @@ fun BankSectionScreen(
                 options = countryOptions,
                 onSelected = viewModel::onBankCountrySelected,
                 label = stringResource(R.string.bank_country),
+                errorText = form.bankCountryError,
                 enabled = !saving,
                 searchable = true,
             )
@@ -86,6 +87,7 @@ fun BankSectionScreen(
                     numberPlaceholder = stringResource(R.string.bank_account_number_placeholder),
                     bankCodePlaceholder = stringResource(R.string.bank_code_placeholder),
                     helper = stringResource(R.string.bank_account_helper),
+                    errorText = form.accountError,
                     enabled = !saving,
                 )
             } else {
@@ -95,7 +97,8 @@ fun BankSectionScreen(
                     onValueChange = viewModel::onIbanChange,
                     label = stringResource(R.string.iban),
                     helper = stringResource(R.string.iban_helper),
-                    errorText = form.ibanProblem?.takeIf { form.ibanChecked }?.let { ibanProblemMessage(it) },
+                    errorText = form.ibanProblem?.takeIf { form.ibanChecked }?.let { ibanProblemMessage(it) }
+                        ?: form.ibanServerError,
                     keyboardType = KeyboardType.Ascii,
                     enabled = !saving,
                     transparentContainer = true,
@@ -108,6 +111,7 @@ fun BankSectionScreen(
                 onValueChange = viewModel::onSwiftChange,
                 label = stringResource(R.string.swift_code),
                 helper = stringResource(R.string.swift_code_helper),
+                errorText = form.swiftError,
                 enabled = !saving,
                 transparentContainer = true,
             )
@@ -137,7 +141,7 @@ fun BankSectionScreen(
             primaryText = stringResource(R.string.save),
             onSave = { viewModel.save() },
             saving = saving,
-            enabled = form.canSubmit && !saving,
+            enabled = !saving,
             onBack = onboardingBackFor(
                 cz.cleansia.partner.features.orders.ProfileSection.Bank,
                 onboarding,

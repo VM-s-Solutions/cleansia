@@ -8,6 +8,8 @@ using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Core.Queue.Abstractions;
+using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.TestUtilities;
 using Moq;
 
@@ -30,8 +32,9 @@ namespace Cleansia.Tests.Features.Employees;
 /// <para><b>And a released seat that empties the crew walks the order back.</b> <c>Confirmed</c> says a
 /// cleaner took the job; a rejection that leaves nobody on a Confirmed order returns it to <c>New</c>
 /// through the one domain writer, ends a live reservation held by the rejected cleaner (an order back
-/// on the board must be ON the board), re-advertises a seat a remaining crew keeps, and tells the
-/// company's administrators once per emptied order — including the administrator who clicked.</para>
+/// on the board must be ON the board), re-advertises a seat a remaining crew keeps, tells the customer of
+/// each emptied order that another cleaner is being looked for, and tells the company's administrators
+/// once per emptied order — including the administrator who clicked.</para>
 /// </summary>
 public class RejectEmployeeReleasesSeatsTests
 {
@@ -40,6 +43,7 @@ public class RejectEmployeeReleasesSeatsTests
     private const string AdminEmail = "admin@cleansia.test";
     private const string AdminUserId = "admin-user";
     private const string CompanyId = "company-reject";
+    private const string CustomerUserId = "customer-user";
 
     private readonly Mock<IEmployeeRepository> _employees = new();
     private readonly Mock<IUserRepository> _users = new();
@@ -47,6 +51,7 @@ public class RejectEmployeeReleasesSeatsTests
     private readonly Mock<INotificationProducer> _producer = new();
     private readonly Mock<IAdminNotifier> _adminNotifier = new();
     private readonly List<AdminEvent> _raised = [];
+    private readonly List<(string Queue, string Key, object Message)> _staged = [];
 
     public RejectEmployeeReleasesSeatsTests()
     {
@@ -66,7 +71,8 @@ public class RejectEmployeeReleasesSeatsTests
 
     private RejectEmployee.Handler CreateHandler() =>
         new(_employees.Object, _users.Object, _orders.Object, _producer.Object,
-            new TestUserSessionProvider(AdminUserId, AdminEmail), new AuditContext(), _adminNotifier.Object);
+            new TestUserSessionProvider(AdminUserId, AdminEmail), new AuditContext(), _adminNotifier.Object,
+            new RecordingDispatch(_staged));
 
     private static Employee BuildEmployee()
     {
@@ -97,7 +103,7 @@ public class RejectEmployeeReleasesSeatsTests
             totalPrice: 1000m,
             currencyId: "czk",
             paymentStatus: PaymentStatus.Paid,
-            userId: "customer-user",
+            userId: CustomerUserId,
             cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = orderId;
         order.TenantId = CompanyId;
@@ -397,6 +403,61 @@ public class RejectEmployeeReleasesSeatsTests
         Assert.Equal(before + 1, order.OrderStatusHistory.Count);
         Assert.Equal(OrderStatus.Confirmed, order.OrderStatusHistory.OrderByDescending(s => s.Sequence).First().Status);
         Assert.Empty(_raised);
+        _producer.Verify(p => p.NotifyAsync(
+                It.IsAny<string>(), NotificationEventCatalog.OrderCleanerReleased, It.IsAny<Dictionary<string, string>>(),
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        Assert.Empty(_staged);
+    }
+
+    // ── The customer is told ──
+
+    /// <summary>
+    /// Every order the rejection walks back tells its own customer once, under a subject and an e-mail key
+    /// of its own: one customer can hold several of the rejected cleaner's bookings, and two notices sharing
+    /// a key would roll the whole rejection back at the outbox's unique index. An order whose crew remains
+    /// is still staffed and tells its customer nothing.
+    /// </summary>
+    [Fact]
+    public async Task Every_Walked_Back_Order_Tells_Its_Customer_Under_Its_Own_Subject_And_Email_Key()
+    {
+        var sent = new List<(string UserId, Dictionary<string, string> Args, string? TenantId, string? Subject)>();
+        _producer
+            .Setup(p => p.NotifyAsync(
+                It.IsAny<string>(), NotificationEventCatalog.OrderCleanerReleased, It.IsAny<Dictionary<string, string>>(),
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .Callback<string, string, Dictionary<string, string>, string?, string?, CancellationToken>(
+                (userId, _, args, tenant, subject, _) => sent.Add((userId, args, tenant, subject)))
+            .Returns(Task.CompletedTask);
+
+        var first = OrderHeldBy("order-a", EmployeeId);
+        var second = OrderHeldBy("order-b", EmployeeId);
+        var crewed = WithColleague(OrderHeldBy("order-c", EmployeeId, maxEmployees: 2), "emp-keep");
+        var released = new[] { first, second }
+            .Select(o => (Order: o, AssignmentId: o.AssignedEmployees.Single().Id))
+            .ToList();
+        ArrangeHeldOrders(first, second, crewed);
+
+        Assert.True(await RejectAsync());
+
+        Assert.Equal(
+            released.Select(r => AssignmentNotificationSubject.For(r.Order.Id, r.AssignmentId)),
+            sent.Select(s => s.Subject));
+        Assert.Equal(released.Select(r => r.Order.Id), sent.Select(s => s.Args["orderId"]));
+        Assert.Equal(released.Select(r => r.Order.DisplayOrderNumber), sent.Select(s => s.Args["orderNumber"]));
+        Assert.All(sent, s =>
+        {
+            Assert.Equal(CustomerUserId, s.UserId);
+            Assert.Equal(CompanyId, s.TenantId);
+        });
+
+        Assert.Equal(
+            released.Select(r => MessageKeys.OrderCleanerReleasedEmail(r.Order.Id, r.AssignmentId)),
+            _staged.Select(s => s.Key));
+        Assert.All(_staged, s => Assert.Equal(QueueNames.SendEmail, s.Queue));
+        Assert.Equal(
+            released.Select(r => r.Order.Id),
+            _staged.Select(s => Assert.IsType<QueueEnvelope<SendOrderCleanerReleasedEmailMessage>>(s.Message).Payload.OrderId));
     }
 
     /// <summary>
@@ -429,5 +490,13 @@ public class RejectEmployeeReleasesSeatsTests
 
         Assert.Equal("emp-other", order.PreferredEmployeeId);
         Assert.Equal(holdUntil, order.PreferredHoldUntilUtc);
+    }
+
+    private sealed class RecordingDispatch(List<(string Queue, string Key, object Message)> staged) : IPendingDispatch
+    {
+        public void Enqueue<T>(string queueName, T message, string messageKey) =>
+            staged.Add((queueName, messageKey, message!));
+
+        public IReadOnlyList<PendingMessage> Drain() => [];
     }
 }

@@ -67,6 +67,7 @@ struct AddressSectionView: View {
                 AddressSummaryCard(
                     line1: vm.summaryLine1,
                     line2: vm.summaryLine2,
+                    errorText: vm.addressError,
                     enabled: !vm.action.isSubmitting,
                     onTap: { pickerOpen = true }
                 )
@@ -78,7 +79,6 @@ struct AddressSectionView: View {
                 SaveSectionButton(
                     onboarding: onboarding && chainVM.state.completedSteps < chainVM.state.totalSteps,
                     isSubmitting: vm.action.isSubmitting,
-                    enabled: vm.canSave,
                     onBack: onboardingBack,
                     action: { Task { await vm.save() } }
                 )
@@ -103,13 +103,26 @@ struct AddressSectionView: View {
     }
 }
 
-private struct AddressSummaryCard: View {
+struct AddressSummaryCard: View {
     let line1: String?
     let line2: String?
+    let errorText: String?
     let enabled: Bool
     let onTap: () -> Void
 
     var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.xxs) {
+            card
+            if let errorText {
+                Text(errorText)
+                    .font(CleansiaTypography.labelSmall)
+                    .foregroundColor(CleansiaColors.error)
+                    .padding(.horizontal, Spacing.m)
+            }
+        }
+    }
+
+    private var card: some View {
         Button(action: onTap) {
             HStack(spacing: Spacing.s) {
                 ZStack {
@@ -147,11 +160,11 @@ private struct AddressSummaryCard: View {
             .padding(Spacing.m)
             .frame(maxWidth: .infinity)
             .background(CleansiaColors.surface)
+            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
             .overlay(
                 RoundedRectangle(cornerRadius: CornerRadius.medium)
-                    .stroke(CleansiaColors.outline, lineWidth: 1)
+                    .stroke(errorText == nil ? CleansiaColors.outline : CleansiaColors.error, lineWidth: 1)
             )
-            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
         }
         .buttonStyle(.plain)
         .disabled(!enabled)

@@ -156,7 +156,7 @@ public static class ValidationExtensions
             .NotEmpty()
             .WithMessage(BusinessErrorMessage.Required)
             .Length(5, 20)
-            .WithMessage(BusinessErrorMessage.InvalidLength);
+            .WithMessage(BusinessErrorMessage.PassportIdInvalidLength);
     }
 
 

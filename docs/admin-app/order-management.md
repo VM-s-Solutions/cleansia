@@ -37,6 +37,7 @@ Admins can filter orders by:
 - Assigned employee
 - Service type
 - Currency (`OrderFilter.CurrencyId` on the wire — one currency id, no existence check; an unknown id is an empty page)
+- Staffing — *Only orders with no cleaner* (`OrderFilter.IsUnassigned`, since 2026-10-24): orders with no assignment row, a seat whose cleaner asked for cover counting as assigned. Unless the administrator picks statuses or a from-date of their own, it also asks for work that is not over — `New`, `Confirmed`, `OnTheWay`, `InProgress` — from the start of today in the browser's time zone, because cancelled, finished and past orders have nobody on them either. Its chip reads *Staffing: No cleaner assigned*
 
 ### Money across currencies {#money-across-currencies}
 
@@ -197,7 +198,9 @@ The reassignment process:
 5. Both the original and new partners are notified; the removed partner's notice carries only the order
 
 A placement is an **offer** the partner may decline — drop — without consequence (owner ruling
-2026-09-28) → [Business rules — placement is an offer](/product/business-rules#placement-is-an-offer).
+2026-09-28), while the job is still *New* or *Confirmed*: since 2026-10-25 a job already on the way or in
+progress cannot be dropped
+→ [Business rules — placement is an offer](/product/business-rules#placement-is-an-offer).
 
 **The cleaner placed must be able to do the job.** `AdminReassignOrder` refuses, in this order:
 

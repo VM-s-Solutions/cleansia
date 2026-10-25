@@ -11846,6 +11846,251 @@
         }
       }
     },
+    "order_drop_action": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odstoupit od zakázky"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel job"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отказаться от заказа"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odstúpiť od zákazky"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Відмовитися від замовлення"
+          }
+        }
+      }
+    },
+    "order_drop_confirm_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odstoupit od této zakázky?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel this job?"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отказаться от этого заказа?"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odstúpiť od tejto zákazky?"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Відмовитися від цього замовлення?"
+          }
+        }
+      }
+    },
+    "order_drop_confirm_message": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Budete ze zakázky odebráni a vaše místo se vrátí do nabídky ostatním uklízečům. Objednávka zákazníka se neruší. Pokud jste na zakázce jediný uklízeč, nebude mít žádného uklízeče, dokud si ji někdo nevezme."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You will be taken off this job and your place goes back on the board for other cleaners. The customer's booking is not cancelled. If you are the only cleaner on it, the job has no cleaner until someone takes it."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вас снимут с этого заказа, а ваше место вернётся в список для других уборщиков. Заказ клиента не отменяется. Если вы единственный уборщик на нём, у заказа не будет уборщика, пока его кто-нибудь не возьмёт."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Budete zo zákazky odobratí a vaše miesto sa vráti do ponuky ostatným upratovačom. Objednávka zákazníka sa neruší. Ak ste na zákazke jediný upratovač, nebude mať žiadneho upratovača, kým si ju niekto nevezme."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вас буде знято з цього замовлення, а ваше місце повернеться до списку для інших прибиральників. Замовлення клієнта не скасовується. Якщо ви єдиний прибиральник на ньому, замовлення не матиме прибиральника, доки його хтось не візьме."
+          }
+        }
+      }
+    },
+    "order_drop_confirm_action": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ano, odstoupit"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yes, cancel the job"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Да, отказаться"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Áno, odstúpiť"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Так, відмовитися"
+          }
+        }
+      }
+    },
+    "order_drop_keep": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ponechat si zakázku"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep the job"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оставить заказ за собой"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ponechať si zákazku"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Залишити замовлення"
+          }
+        }
+      }
+    },
+    "order_dropped_toast_no_crew": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Od zakázky jste odstoupili. Teď nemá žádného uklízeče: je zpět v nabídce."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You are off the job. It has no cleaner now: it is back on the board."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вы отказались от заказа. Сейчас на нём нет уборщика: он снова в списке."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Od zákazky ste odstúpili. Teraz nemá žiadneho upratovača: je späť v ponuke."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ви відмовилися від замовлення. Зараз на ньому немає прибиральника: воно знову в списку."
+          }
+        }
+      }
+    },
+    "order_dropped_toast": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Od zakázky jste odstoupili. Vaše místo je zpět v nabídce pro ostatní uklízeče."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You are off the job. Your place is back on the board for other cleaners."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вы отказались от заказа. Ваше место снова в списке для других уборщиков."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Od zákazky ste odstúpili. Vaše miesto je späť v ponuke pre ostatných upratovačov."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ви відмовилися від замовлення. Ваше місце знову в списку для інших прибиральників."
+          }
+        }
+      }
+    },
     "order_customer_details_closed_completed": {
       "extractionState": "manual",
       "localizations": {
@@ -16186,6 +16431,41 @@
         }
       }
     },
+    "profile_error_address_incomplete": {
+      "extractionState": "stale",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na tomto místě není úplná adresa. Posuňte špendlík na budovu nebo vyhledejte ulici a číslo domu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This spot has no full address. Move the pin onto the building, or search for the street and house number."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Здесь нет полного адреса. Переместите метку на здание или найдите улицу и номер дома."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na tomto mieste nie je úplná adresa. Posuňte špendlík na budovu alebo vyhľadajte ulicu a číslo domu."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Тут немає повної адреси. Перемістіть мітку на будівлю або знайдіть вулицю та номер будинку."
+          }
+        }
+      }
+    },
     "profile_error_address_not_picked": {
       "extractionState": "stale",
       "localizations": {
@@ -16466,6 +16746,111 @@
         }
       }
     },
+    "profile_error_legal_entity_name_missing": {
+      "extractionState": "stale",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chybí registrovaný název vaší firmy. Požádejte podporu o doplnění — zde ho změnit nelze."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your company's registered name is missing. Contact support to add it — it can't be changed here."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отсутствует зарегистрированное название вашей компании. Обратитесь в поддержку — здесь его изменить нельзя."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chýba registrovaný názov vašej firmy. Požiadajte podporu o doplnenie — tu ho zmeniť nemožno."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Бракує зареєстрованої назви вашої компанії. Зверніться до підтримки — тут її змінити не можна."
+          }
+        }
+      }
+    },
+    "profile_error_min_age": {
+      "extractionState": "stale",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Musíte mít alespoň 18 let"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You must be at least 18 years old"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вам должно быть не менее 18 лет"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Musíte mať aspoň 18 rokov"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вам повинно бути щонайменше 18 років"
+          }
+        }
+      }
+    },
+    "profile_error_name_too_long": {
+      "extractionState": "stale",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maximálně 50 znaků"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maximum 50 characters allowed"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Максимум 50 символов"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maximálne 50 znakov"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Максимум 50 символів"
+          }
+        }
+      }
+    },
     "profile_error_nationality_required": {
       "extractionState": "stale",
       "localizations": {
@@ -16567,6 +16952,76 @@
           "stringUnit": {
             "state": "translated",
             "value": "Введіть номер паспорта / ID"
+          }
+        }
+      }
+    },
+    "profile_error_phone_invalid": {
+      "extractionState": "stale",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadejte číslo i s předvolbou země, např. +420 777 123 456"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter the number with its country code, e.g. +420 777 123 456"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Введите номер с кодом страны, напр. +420 777 123 456"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadajte číslo aj s predvoľbou krajiny, napr. +421 912 345 678"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Введіть номер із кодом країни, напр. +420 777 123 456"
+          }
+        }
+      }
+    },
+    "profile_error_phone_required": {
+      "extractionState": "stale",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Telefonní číslo je povinné"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phone number is required"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Номер телефона обязателен"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Telefónne číslo je povinné"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Номер телефону обов'язковий"
           }
         }
       }
@@ -19087,6 +19542,76 @@
           "stringUnit": {
             "state": "translated",
             "value": "Клінера призначено"
+          }
+        }
+      }
+    },
+    "push.order.cleaner_released.body": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hledáme jiného uklízeče pro rezervaci #%1$@ a dáme vám vědět, jakmile ji někdo převezme."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We're looking for another cleaner for booking #%1$@ and will let you know as soon as one takes it."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Мы ищем другого клинера для заказа #%1$@ и сообщим вам, как только кто-то его возьмёт."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hľadáme iného upratovača pre rezerváciu #%1$@ a dáme vám vedieť, hneď ako ju niekto prevezme."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ми шукаємо іншого клінера для замовлення #%1$@ і повідомимо вас, щойно хтось його візьме."
+          }
+        }
+      }
+    },
+    "push.order.cleaner_released.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Váš uklízeč už nemůže přijít"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your cleaner can no longer come"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваш клинер больше не может прийти"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Váš upratovač už nemôže prísť"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваш клінер більше не може прийти"
           }
         }
       }

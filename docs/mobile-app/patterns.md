@@ -327,10 +327,11 @@ first point of scroll.
   (`StatusBarFade.clearance(safeTop:)`, since 2026-10-05): 12pt over 44pt, 13.5pt over 47 and 48pt,
   and 14.25pt over the minis' 50pt, midway between the 12 mini's notch and the 13 mini's, which share
   that safe area. An island's safe area starts at 59pt or deeper and keeps 12pt. A phone whose safe
-  area starts 20pt down or less is a home-button phone, and the fade covers its whole 20pt status bar
-  (`StatusBarFade.classicStatusBar`). Measured in the simulators with a red page scrolled under the
-  fade and the screenshot masked to show the housing, in points (the minis' screenshots are 2.88px to
-  the point):
+  area starts 20pt down is a home-button phone, and the fade covers its whole 20pt status bar
+  (`StatusBarFade.classicStatusBar`); under a shallower top inset it draws nothing
+  ([wide canvases](#wide-canvases-iphone-duo)). Measured in the simulators with a red page scrolled
+  under the fade and the screenshot masked to show the housing, in points (the minis' screenshots are
+  2.88px to the point):
 
   | Phone (iOS) | Safe area's top | Housing's bottom | Fade's end | Until 2026-10-05 |
   |---|---|---|---|---|
@@ -526,6 +527,78 @@ first point of scroll.
     Home's padding and refresh indicator, and both heroes' tint and height; the partner
     `DashboardScreenTest` and `ProfileScreenTest` pin the dashboard's and the Profile hub's
     `statusBarFade(listState)`.
+
+## Wide canvases (iPhone Duo) {#wide-canvases-iphone-duo}
+
+The iPhone Duo's inner display is about 669 × 951pt upright and 951 × 669pt held sideways, and its outer
+display about 466 × 678pt, close to a phone's (worked out from the screenshot sizes Apple asks for). A
+build linked against the iOS 26 SDK, which is every build today, runs there in Apple's phone-shaped
+compatibility window, so none of this shows on a Duo yet. It is step 1 of two, built and checked on
+Xcode 26.3 so that the build that links the iOS 27.1 SDK does not start from layouts that assume a phone
+(since 2026-10-24).
+
+**Every decision reads the size the view is given, never the device.** No idiom, orientation, `UIScreen`
+size or `horizontalSizeClass == .regular` read as an iPad; there is no Duo idiom to read. Each step-1
+change is a no-op at 640pt wide or less, which is every iPhone today (440pt at most) and the Duo's outer
+display. Hosted layout tests pin the no-op at 393 × 852, 440 × 956 and 466 × 678pt, and the change at
+669 × 951 and 951 × 669pt.
+
+- **A readable width of 640pt.** `readableWidth()` (CleansiaCore `Components/ReadableWidth.swift`) holds
+  content to `ReadableWidth.cap`, 640pt, centred in a frame that still fills its container —
+  `frame(maxWidth: 640)` inside `frame(maxWidth: .infinity)` — so a background or a map behind it stays
+  full-bleed. It sits inside the scroll view of `CenteredAuthScroll`, `StatusBarFadeScrollView` and the
+  partner `SectionScaffold`; on the padded control of the partner `StickyActionFooter` (its *Cancel job*
+  link included), of the customer order detail's two footers and of the Plus offer's subscribe bar, each
+  over a surface that stays full width; and around a list screen's whole column, before its full-bleed
+  page background: partner Orders and Invoices, customer Orders, Disputes, Rewards, Rewards activity,
+  Recurring bookings with its create button, and the saved-addresses list and review panes. A list
+  screen holds its whole column — header, tabs or chips, every loading, error and empty state, and the
+  list — rather than its rows, so a list's section headers and the titles drawn above it stay in the
+  column; a drag in the margins beside it does not scroll the list.
+- **Heroes still meet both edges.** Inside a capped `StatusBarFadeScrollView` the customer Profile and
+  Plus offer heroes and the partner Profile hub's paint their gradient sideways past their frame, as
+  they already paint it upward ([above](#full-bleed-hero)). Their gradients are vertical and the scroll
+  view clips at its bounds, so on a phone the sideways bleed shows nothing.
+- **Two panes only when wide and short.** `SnapSheet`, the order detail of both apps, stands beside its
+  backdrop as a 440pt column on the trailing side only when its container is wider than it is tall and
+  at least 700pt wide (`SnapSheetColumn.standsBeside(in:)`), as on the inner display held sideways; the
+  backdrop takes the rest of the width. The column has no drag handle, no anchors and no mascot
+  ornament, the sheet itself cannot be dragged while its content keeps its own gestures, and its surface
+  runs into the top, bottom and trailing safe areas. `snapSheetTop` is published at the safe area's foot,
+  not at 0, which would collapse a backdrop that lays out against it (the partner's approximate-area
+  legend); an internal `snapSheetBeside` flag tells the full-bleed map to centre its pin instead of
+  lifting it above the resting sheet, and the map re-centres when a fold moves the sheet beside it or
+  back over it. Upright on the inner display, on the outer one and on every iPhone, the three-anchor
+  sheet over the map is unchanged.
+- **The fade needs a status bar across the top.** `StatusBarFadeBand` draws nothing, and mounts no
+  `StatusBarStyleBridge`, under a top inset shallower than a home-button phone's 20pt status bar
+  (`StatusBarFade.classicStatusBar`), so a status bar that is hidden or beside the content leaves the
+  clock to the system ([above](#status-bar-fade)). Every iPhone today has a top inset of 20pt or more.
+- **A fold mid-action keeps the slide on its track.** `SlideToConfirm` draws its thumb and its label's
+  fade from values clamped to the track's current length (`SlideToConfirmThumb.drawnOffset(maxX:)`, and
+  `progress(maxX:)` held to 1), so a track that shrinks under a thumb parked at its end keeps the thumb
+  on it, and the label faded.
+- **The photo grid takes the columns its width holds.** The customer order's photos use
+  `GridItem(.adaptive(minimum: 108))`: three columns on every iPhone, the 375pt ones included, with each
+  thumbnail where it was, five at 669pt and seven at 951pt.
+
+**What step 2 still needs**, all of it on Xcode 27.1, which needs macOS Tahoe 26.6 or later on the Mac
+that archives:
+
+- **The iOS 27.1 SDK linked.** Until then the Duo keeps the compatibility window.
+- **The customer app's Book FAB decided** before any customer build links 27.1: there the system draws
+  tab bars vertically and moves no custom bar, so either the FAB shows only beside a bottom bar (an
+  iOS 27.1 API) or Book becomes an ordinary tab.
+- **Sheet toolbars checked**: an item with a title and no symbol is left out of a vertical toolbar.
+- **The Duo simulator in every pose** — closed, open upright, open sideways, partly folded — for the
+  vertical tab and toolbar rails; the side status bar and the Dynamic Island against the fade's guard and
+  the heroes' clock; centred sheets and their measured detents (a fitted presentation sizing was tried in
+  step 1 and withdrawn, because the closest emulation showed the plain sheet already keeping its
+  detent); the booking steps' width inside a centred sheet, which the cap leaves alone; `ReservedRegion`
+  and the hinge; the Live Activity's vertical island; and the real safe areas.
+- **The mascot's place in the two-pane column**, whose headers still keep its 80pt free.
+- **The Duo screenshots** App Store Connect requires from April 2027 of an app built with the iOS 27.1
+  SDK.
 
 ## A booking swiped away keeps its draft {#booking-draft}
 

@@ -60,6 +60,7 @@ export class OrderManagementFacade extends UnsubscribeControlDirective {
     cleaningDateFrom: [null as Date | null],
     cleaningDateTo: [null as Date | null],
     currencyId: [null as string | null],
+    unassignedOnly: [false],
   });
   readonly filters = new FilterDrawerState({
     form: this.filterForm,

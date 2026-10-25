@@ -16,6 +16,7 @@ object CustomerFeedEventKeys {
     val all: Set<String> = setOf(
         "order.payment_confirmed",
         "order.cleaner_assigned",
+        "order.cleaner_released",
         "order.on_the_way",
         "order.in_progress",
         "order.completed",

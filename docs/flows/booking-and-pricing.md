@@ -265,14 +265,19 @@ language alone, so a customer whose stored preference was stale — a Google or 
 language, then the account's preference, then English, the chain the booking confirmation already
 used: **one order, one language.** A booking language with no e-mail copy falls back to English, as
 the confirmation does. A customer who changes the app's language after booking keeps getting that
-order's e-mails in the language it was booked in.
+order's e-mails in the language it was booked in. *We're finding you a new cleaner*, sent since
+2026-10-25 when the last cleaner leaves a confirmed booking (both release writers), resolves the same
+chain.
 
-Started and Completed e-mails are durable intents in the order's own commit. A refused commit sends
-nothing. The `send-email` consumer checks the committed current status and sends to the booking's
-`CustomerEmail`; for a guest it commits a fresh independent access token before sending the link.
-Delivery uses the existing send-then-record guard: sequential redelivery sends once, while a crash
-between the external send and its delivery record can still duplicate an e-mail. Deploy the Functions
-consumer with or before API versions that publish the `order-status` discriminator.
+Started and Completed e-mails, and since 2026-10-25 *we're finding you a new cleaner*, are durable
+intents in the order's own commit — the release's, for the last. A refused commit sends nothing. The
+`send-email` consumer checks the committed current status — the last goes out only if the order is
+`New` when it is read, so a take or a cancellation in between sends none unless the order is back at
+`New` by then — and sends to the booking's `CustomerEmail`; for a guest it commits a fresh independent
+access token before sending the link. Delivery uses the existing send-then-record guard: sequential
+redelivery sends once, while a crash between the external send and its delivery record can still
+duplicate an e-mail. Deploy the Functions consumer with or before API versions that publish the
+`order-status` or `order-cleaner-released` discriminator.
 
 ## Responsive quote previews
 
@@ -643,7 +648,7 @@ single booking it was minted for.
 |---|---|
 | `CreateOrder` | `guestAccessToken` on the checkout response — guest bookings only, `null` when the booking names an account |
 | The receipt e-mail | the *view your booking* button |
-| "A cleaner has taken your job" · "we're on our way" · "all done" | the same button on each status e-mail |
+| "A cleaner has taken your job" · "we're on our way" · "all done" · "we're finding you a new cleaner" | the same button on each status e-mail |
 | The cancellation e-mail | the same button |
 
 The link is `{clientDomain}/track-order?orderNumber=…&email=…&token=…`; only the `token` opens

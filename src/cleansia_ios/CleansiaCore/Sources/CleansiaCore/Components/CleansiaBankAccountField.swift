@@ -40,12 +40,12 @@ public struct CleansiaBankAccountField: View {
     private let enabled: Bool
 
     @FocusState private var focusedSegment: Segment?
-    /// Bumped by every routed paste to rebuild the segments. On iOS 26 a TextField whose binding setter
-    /// rewrites the edit it is handling keeps drawing the raw text — the whole pasted account, over the
-    /// box's placeholder — until focus moves, whether or not that box's own value changed.
+    /// Bumped by every edit the control writes itself, to rebuild the segments. On iOS 26 a TextField whose
+    /// binding setter rewrites the edit it is handling keeps drawing the raw text — the whole pasted account,
+    /// over the box's placeholder — until focus moves, whether or not that box's own value changed.
     @State private var pasteRevision = 0
 
-    private enum Segment: Hashable {
+    enum Segment: Hashable {
         case prefix, number, bankCode
     }
 
@@ -153,20 +153,21 @@ public struct CleansiaBankAccountField: View {
         maxLength: Int,
         focus: Segment
     ) -> some View {
-        // A whole account pasted into any one segment is split across all three, and a bare number pasted
-        // into any of them is the account number. It has to be caught here, before the caller's binding
-        // sees it: callers sanitise to digits on write, so by the time onChange below runs the slash is
-        // gone and the bank code has been run into the number.
+        // An edit is read here, before the caller's binding sees it: callers sanitise to digits on write, so by
+        // the time onChange below runs a pasted account's slash is gone and its bank code has been run into the
+        // number.
         TextField("", text: Binding(
             get: { text.wrappedValue },
             set: { raw in
-                guard let pasted = Self.splitPastedAccount(raw, replacing: text.wrappedValue) else {
+                let held = Boxes(prefix: prefix, number: number, bankCode: bankCode)
+                let (edited, rebuilds) = Self.boxes(afterEditing: focus, to: raw, from: held)
+                guard rebuilds else {
                     text.wrappedValue = raw
                     return
                 }
-                if let newPrefix = pasted.prefix { prefix = newPrefix }
-                number = pasted.number
-                if let code = pasted.bankCode { bankCode = code }
+                if edited.prefix != prefix { prefix = edited.prefix }
+                if edited.number != number { number = edited.number }
+                if edited.bankCode != bankCode { bankCode = edited.bankCode }
                 // The rebuild ends the edit, so the keyboard goes with it: say so, rather than leave
                 // the focus state to catch up with a field that no longer exists.
                 pasteRevision += 1
@@ -208,38 +209,131 @@ public struct CleansiaBankAccountField: View {
         String(raw.filter { $0.isASCII && $0.isNumber }.prefix(maxLength))
     }
 
-    // swiftlint:disable large_tuple
-    /// A Czech or Slovak account pasted (or typed on a hardware keyboard) in one go, split into its
-    /// three fields; `raw` is the segment's new text and `current` the value it replaces. A nil part
-    /// leaves that field as it is, and a nil result means the text is an ordinary entry for the segment
-    /// it landed in, which the digit clamp takes.
-    ///
-    /// Recognised: `[prefix-]number/bankcode` and `prefix-number` — the number pad types neither
-    /// separator, so their presence is what marks a paste — a CZ or SK IBAN, whose BBAN is
-    /// `bankcode(4) prefix(6) number(10)`, and a bare number, which is the account number whichever box
-    /// it was pasted into. A bare number counts only when it lands two or more characters at once: the
-    /// number pad types one at a time, so typing a prefix or a bank code never jumps to the number.
-    /// Whitespace of every kind (NBSP included) is dropped and an en or em dash reads as a hyphen,
-    /// because that is what banking apps put on the clipboard. A written-out account without a prefix
-    /// clears the old one; a missing bank code keeps it. Nothing is validated beyond shape: the server
-    /// owns mod-11, the bank code and the IBAN cross-check. -> /partner-app/onboarding
-    static func splitPastedAccount(
-        _ raw: String,
-        replacing current: String = ""
-    ) -> (prefix: String?, number: String, bankCode: String?)? {
-        let pasted = String(
-            raw.filter { !$0.isWhitespace }.map { $0 == "\u{2013}" || $0 == "\u{2014}" ? "-" : $0 }
-        )
-        let text = domesticForm(ofIban: pasted) ?? pasted
-        guard text.contains("-") || text.contains("/") else {
-            guard raw.count - current.count >= 2, isDigits(text, upTo: numberMaxLength) else { return nil }
-            return (nil, text, nil)
-        }
+    /// What an edit of one box leaves in the control.
+    enum Edit: Equatable {
+        /// The box holds this text, which the digit clamp then takes.
+        case box(String)
+        /// The number holds this run, and the box keeps its text.
+        case number(String)
+        /// A written-out account or an IBAN across the three boxes; a nil part is left as it is.
+        case account(prefix: String?, number: String, bankCode: String?)
+    }
 
+    /// The text of the three boxes.
+    struct Boxes: Equatable {
+        var prefix: String
+        var number: String
+        var bankCode: String
+
+        subscript(box: Segment) -> String {
+            get {
+                switch box {
+                case .prefix: prefix
+                case .number: number
+                case .bankCode: bankCode
+                }
+            }
+            set {
+                switch box {
+                case .prefix: prefix = newValue
+                case .number: number = newValue
+                case .bankCode: bankCode = newValue
+                }
+            }
+        }
+    }
+
+    /// What the boxes hold once `box` is edited to `raw`, and whether the control writes them itself. An edit the
+    /// digit clamp alone turns into what the box keeps goes through as typed, and the keyboard stays; any other is
+    /// written by the control, which rebuilds the boxes and so ends the edit.
+    static func boxes(afterEditing box: Segment, to raw: String, from held: Boxes) -> (boxes: Boxes, rebuilds: Bool) {
+        let boxLength = maxLength(of: box)
+        let typed = clampSegment(raw, maxLength: boxLength)
+        var edited = held
+        switch splitPastedAccount(raw, replacing: held[box], into: box) {
+        case let .box(kept) where clampSegment(kept, maxLength: boxLength) == typed:
+            edited[box] = typed
+            return (edited, false)
+        case let .box(kept):
+            edited[box] = kept
+        case let .number(run):
+            edited.number = run
+        case let .account(prefix, number, bankCode):
+            edited.prefix = prefix ?? held.prefix
+            edited.number = number
+            edited.bankCode = bankCode ?? held.bankCode
+        }
+        return (edited, true)
+    }
+
+    /// What an edit of `box` does; `raw` is the box's new text and `current` the text it replaces. Android's
+    /// `splitPastedAccount` follows the same rule, and so does the web control's paste handler, which reads what was
+    /// put in from the pasted text itself.
+    ///
+    /// The run is the new text less the start and the end it shares with `current`. When the run is longer than one
+    /// character, an account is looked for first, in four readings of the edit tried in this order:
+    /// 1. When the new text starts with `current`, the text after it, for a paste at the end or into an empty box.
+    /// 2. When the new text ends with `current`, the text before it, for a paste at the start.
+    /// 3. The whole new text, for a paste over the whole box, as after Select All.
+    /// 4. The run, for a paste in the middle.
+    ///
+    /// The first reading that, with every kind of whitespace dropped and an en or em dash read as a hyphen, is a
+    /// written-out account (`prefix-number/code`, `number/code`, `prefix-number`, the code exactly four digits as every
+    /// CZ and SK bank code is) or a CZ or SK IBAN is split across the three boxes, whichever box it landed in and
+    /// whether or not it fits there; one without a prefix clears the old one, and one without a bank code keeps it. A
+    /// `-` or `/` typed among a box's digits is a run of one character, so the digit clamp drops it like any other
+    /// non-digit. Otherwise new text that fits the box is ordinary editing, kept as typed or pasted, and new text too
+    /// long for the box is read by its run alone:
+    /// - one character is typing, which the box's digit clamp takes: at the end of a full box it changes nothing, and
+    ///   a digit typed before or inside one pushes out its last digit;
+    /// - a run of digits that fits the box becomes its content;
+    /// - a run of digits too long for the box but not for the number becomes the number, the box keeping its
+    ///   text;
+    /// - anything else leaves the box as it was.
+    ///
+    /// Seeing only the box's old and new text, unlike the web, the control can still misread an account pasted inside
+    /// a box's digits or over part of them, which can take in the digits beside it or lose those it shares with them,
+    /// one pasted over all of digits it begins with, and bare digits pasted before digits that start the same way:
+    /// `2000145399/0800` pasted over a selected number `2000` gives the number `145399`.
+    ///
+    /// Nothing is validated beyond shape: the server owns mod-11, the bank code and the IBAN cross-check.
+    /// -> /partner-app/onboarding
+    static func splitPastedAccount(_ raw: String, replacing current: String = "", into box: Segment) -> Edit {
+        let run = insertedRun(raw, replacing: current)
+        if run.count > 1 {
+            let readings = [
+                raw.hasPrefix(current) ? String(raw.dropFirst(current.count)) : nil,
+                raw.hasSuffix(current) ? String(raw.dropLast(current.count)) : nil,
+                raw,
+                run
+            ]
+            for case let reading? in readings {
+                let text = normalised(reading)
+                if let account = account(in: domesticForm(ofIban: text) ?? text) { return account }
+            }
+        }
+        let pasted = normalised(run)
+        let boxLength = maxLength(of: box)
+        guard raw.count > boxLength, run.count != 1 else { return .box(raw) }
+        guard isDigits(pasted, upTo: numberMaxLength) else { return .box(current) }
+        return pasted.count <= boxLength ? .box(pasted) : .number(pasted)
+    }
+
+    /// `text` with every kind of whitespace dropped and an en or em dash read as a hyphen.
+    private static func normalised(_ text: String) -> String {
+        String(text.filter { !$0.isWhitespace }.map { $0 == "\u{2013}" || $0 == "\u{2014}" ? "-" : $0 })
+    }
+
+    /// `[prefix-]number/code` or `prefix-number`: the number pad types neither separator, so their presence is
+    /// what marks a written-out account. Nil for any other text.
+    private static func account(in text: String) -> Edit? {
+        guard text.contains("-") || text.contains("/") else { return nil }
         let slash = text.split(separator: "/", omittingEmptySubsequences: false)
         guard slash.count <= 2 else { return nil }
         let bankCode = slash.count == 2 ? String(slash[1]) : nil
-        if let bankCode, !isDigits(bankCode, upTo: bankCodeMaxLength) { return nil }
+        if let bankCode, bankCode.count != bankCodeMaxLength || !isDigits(bankCode, upTo: bankCodeMaxLength) {
+            return nil
+        }
 
         let dash = slash[0].split(separator: "-", omittingEmptySubsequences: false)
         guard dash.count <= 2 else { return nil }
@@ -247,10 +341,29 @@ public struct CleansiaBankAccountField: View {
         let number = String(dash[dash.count - 1])
         guard dash.count == 1 || isDigits(prefix, upTo: prefixMaxLength),
               isDigits(number, upTo: numberMaxLength) else { return nil }
-        return (prefix, number, bankCode)
+        return .account(prefix: prefix, number: number, bankCode: bankCode)
     }
 
-    // swiftlint:enable large_tuple
+    private static func maxLength(of box: Segment) -> Int {
+        switch box {
+        case .prefix: prefixMaxLength
+        case .number: numberMaxLength
+        case .bankCode: bankCodeMaxLength
+        }
+    }
+
+    /// `text` less the start and the end it shares with `current`, the two never overlapping: what the edit
+    /// put in.
+    private static func insertedRun(_ text: String, replacing current: String) -> String {
+        let new = Array(text)
+        let old = Array(current)
+        let start = zip(new, old).prefix { $0 == $1 }.count
+        let end = min(
+            zip(new.reversed(), old.reversed()).prefix { $0 == $1 }.count,
+            min(new.count, old.count) - start
+        )
+        return String(new[start ..< new.count - end])
+    }
 
     /// `CZ65 0800 0000 1920 0014 5399` reads as `19-2000145399/0800`: the BBAN's zero padding is not
     /// part of the written account. Nil for any other text, other countries' IBANs included.

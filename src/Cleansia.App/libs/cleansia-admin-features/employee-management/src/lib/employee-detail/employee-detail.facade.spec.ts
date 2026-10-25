@@ -1,9 +1,11 @@
 import { TestBed } from '@angular/core/testing';
+import { FormControl, Validators } from '@angular/forms';
 import {
   AdminClient,
   AdminEmployeeDetail,
   AdminUpdateEmployeeCommand,
   CreatePayConfigCommand,
+  ProblemDetails,
   UpdatePayConfigCommand,
 } from '@cleansia/admin-services';
 import { DialogService as ConfirmDialogService, SnackbarService } from '@cleansia/services';
@@ -286,5 +288,41 @@ describe('EmployeeDetailFacade — employee update', () => {
     expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
     expect(facade.editingSection()).toBe('employment');
     expect(facade.savingEmployee()).toBe(false);
+  });
+
+  describe('a company row refused for its registered name', () => {
+    const refusedFor = (field: string, key: string) =>
+      throwError(() =>
+        ProblemDetails.fromJS({ title: 'Validation Error', status: 400, errors: { [field]: key } })
+      );
+
+    let legalEntityName: FormControl<string | null>;
+
+    beforeEach(() => {
+      legalEntityName = new FormControl<string | null>(null, [Validators.required]);
+      facade.connectLegalEntityName(legalEntityName);
+      facade.startEditingSection('personal');
+    });
+
+    it('opens the employment section and marks the name there, whichever section was saved', () => {
+      updateMock.mockReturnValue(refusedFor('LegalEntityName', 'common.required'));
+
+      facade.updateEmployee({ firstName: 'Jitka' });
+
+      expect(facade.editingSection()).toBe('employment');
+      expect(legalEntityName.touched).toBe(true);
+      expect(legalEntityName.hasError('required')).toBe(true);
+      expect(snackbar.showErrorTranslated).toHaveBeenCalled();
+      expect(facade.savingEmployee()).toBe(false);
+    });
+
+    it('leaves the section and the name alone when the refusal is about another field', () => {
+      updateMock.mockReturnValue(refusedFor('PassportId', 'validation.passport_id.invalid_length'));
+
+      facade.updateEmployee({ firstName: 'Jitka' });
+
+      expect(facade.editingSection()).toBe('personal');
+      expect(legalEntityName.touched).toBe(false);
+    });
   });
 });

@@ -8,6 +8,7 @@ enum CustomerFeedEventKeys {
     static let all: Set<String> = [
         "order.payment_confirmed",
         "order.cleaner_assigned",
+        "order.cleaner_released",
         "order.on_the_way",
         "order.in_progress",
         "order.completed",
@@ -78,6 +79,7 @@ enum NotificationFeedTemplates {
     private static let orderNumberEvents: Set<String> = [
         "order.payment_confirmed",
         "order.cleaner_assigned",
+        "order.cleaner_released",
         "order.on_the_way",
         "order.in_progress",
         "order.completed",

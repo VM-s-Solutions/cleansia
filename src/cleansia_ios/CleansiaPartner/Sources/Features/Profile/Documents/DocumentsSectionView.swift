@@ -123,7 +123,7 @@ struct DocumentsSectionView: View {
         .task { await vm.load() }
         .fileImporter(
             isPresented: $importerOpen,
-            allowedContentTypes: [.pdf, .image],
+            allowedContentTypes: DocumentPresentation.importableTypes,
             allowsMultipleSelection: false
         ) { result in
             handleImport(result)

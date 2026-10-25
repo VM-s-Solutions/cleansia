@@ -11,6 +11,7 @@ using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Core.Queue.Abstractions;
+using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.Tests.Common;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -42,6 +43,7 @@ public class AdminCancelOrderAsNoShowTests
     private readonly Mock<ILiveActivityProducer> _liveActivity = new();
     private readonly Mock<IExpressWaiverConsumer> _waiver = ExpressWaiverMocks.NoConsumer();
     private readonly Mock<ILoyaltyService> _loyalty = new();
+    private readonly List<(string Queue, string Key, object Message)> _enqueued = [];
     private readonly Currency _czk;
     private CreditAccount? _account;
 
@@ -69,7 +71,7 @@ public class AdminCancelOrderAsNoShowTests
             _refundRows.Object,
             _notifications.Object,
             new GuestOrderAccessTokenIssuer(Mock.Of<IGuestOrderAccessTokenRepository>()),
-            Mock.Of<IPendingDispatch>(),
+            new RecordingDispatch(_enqueued),
             NullLogger<CleanerNoShowCancellation>.Instance),
         _notifications.Object,
         _liveActivity.Object,
@@ -158,6 +160,26 @@ public class AdminCancelOrderAsNoShowTests
         _waiver.Verify(w => w.ReleaseForOrderAsync(OrderId, It.IsAny<CancellationToken>()), Times.Once);
         _liveActivity.Verify(l => l.NotifyOrderTransitionAsync(
             order, LiveActivityEventKeys.End, It.IsAny<OrderStatusTrack>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// The account's customer is e-mailed as well as pushed, so one who uses only the web hears of the
+    /// cancellation, its refund and its apology credit.
+    /// </summary>
+    [Fact]
+    public async Task Confirming_A_No_Show_Emails_The_Accounts_Customer_The_Refund_And_The_Apology()
+    {
+        ArrangeOrder();
+
+        var result = await ConfirmAsync();
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        var (queue, key, message) = Assert.Single(_enqueued);
+        Assert.Equal(QueueNames.SendEmail, queue);
+        Assert.Equal(MessageKeys.GuestOrderCancelledEmail(OrderId), key);
+        var email = Assert.IsType<QueueEnvelope<SendGuestOrderCancellationEmailMessage>>(message).Payload;
+        Assert.Equal(1000m, email.SuccessfulRefundAmount);
+        Assert.Equal(250m, email.ApologyCreditAmount);
     }
 
     /// <summary>
@@ -427,5 +449,13 @@ public class AdminCancelOrderAsNoShowTests
             CustomerId, NotificationEventCatalog.OrderNoCleanerRefundPending,
             It.IsAny<Dictionary<string, string>>(), It.IsAny<string?>(), It.IsAny<string?>(),
             It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    private sealed class RecordingDispatch(List<(string Queue, string Key, object Message)> enqueued) : IPendingDispatch
+    {
+        public void Enqueue<T>(string queueName, T message, string messageKey) =>
+            enqueued.Add((queueName, messageKey, message!));
+
+        public IReadOnlyList<PendingMessage> Drain() => [];
     }
 }

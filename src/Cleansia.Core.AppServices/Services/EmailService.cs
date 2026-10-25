@@ -412,6 +412,7 @@ public sealed partial class EmailService : IEmailService
                 ["ConfirmationAttachedMessage"] = "Your booking confirmation is attached as a PDF.",
                 ["StatusMessage_Cancelled"] = "Your order has been cancelled.",
                 ["RefundMessage"] = "Refund issued:",
+                ["ApologyCreditMessage"] = "We have added {0} credit towards your next clean.",
                 ["CancelledReason_NoCleaner"] = "No cleaner was available for this booking, so it was cancelled.",
                 ["CancelledReason_PaymentNotCompleted"] = "The payment wasn't completed, so this booking was released.",
                 ["CancelledReason_ByUs"] = "We had to cancel this booking.",
@@ -449,6 +450,7 @@ public sealed partial class EmailService : IEmailService
                 ["ConfirmationAttachedMessage"] = "Potvrzení rezervace najdete v příloze jako PDF.",
                 ["StatusMessage_Cancelled"] = "Vaše rezervace byla zrušena.",
                 ["RefundMessage"] = "Vrácená částka:",
+                ["ApologyCreditMessage"] = "Přidali jsme vám kredit {0} na příští úklid.",
                 ["CancelledReason_NoCleaner"] = "Pro tuto rezervaci nebyl k dispozici žádný uklízeč, a proto byla zrušena.",
                 ["CancelledReason_PaymentNotCompleted"] = "Platba nebyla dokončena, a proto byla tato rezervace uvolněna.",
                 ["CancelledReason_ByUs"] = "Tuto rezervaci jsme museli zrušit.",
@@ -486,6 +488,7 @@ public sealed partial class EmailService : IEmailService
                 ["ConfirmationAttachedMessage"] = "Potvrdenie rezervácie nájdete v prílohe ako PDF.",
                 ["StatusMessage_Cancelled"] = "Vaša rezervácia bola zrušená.",
                 ["RefundMessage"] = "Vrátená suma:",
+                ["ApologyCreditMessage"] = "Pridali sme vám kredit {0} na ďalšie upratovanie.",
                 ["CancelledReason_NoCleaner"] = "Pre túto rezerváciu nebol k dispozícii žiadny upratovač, a preto bola zrušená.",
                 ["CancelledReason_PaymentNotCompleted"] = "Platba nebola dokončená, a preto bola táto rezervácia uvoľnená.",
                 ["CancelledReason_ByUs"] = "Túto rezerváciu sme museli zrušiť.",
@@ -523,6 +526,7 @@ public sealed partial class EmailService : IEmailService
                 ["ConfirmationAttachedMessage"] = "Підтвердження бронювання додано до листа у форматі PDF.",
                 ["StatusMessage_Cancelled"] = "Ваше бронювання скасовано.",
                 ["RefundMessage"] = "Сума повернення:",
+                ["ApologyCreditMessage"] = "Ми нарахували вам {0} кредиту на наступне прибирання.",
                 ["CancelledReason_NoCleaner"] = "Для цього бронювання не знайшлося вільного прибиральника, тому його скасовано.",
                 ["CancelledReason_PaymentNotCompleted"] = "Оплату не було завершено, тому це бронювання було скасовано.",
                 ["CancelledReason_ByUs"] = "Нам довелося скасувати це бронювання.",
@@ -560,6 +564,7 @@ public sealed partial class EmailService : IEmailService
                 ["ConfirmationAttachedMessage"] = "Подтверждение бронирования приложено к письму в формате PDF.",
                 ["StatusMessage_Cancelled"] = "Ваше бронирование отменено.",
                 ["RefundMessage"] = "Сумма возврата:",
+                ["ApologyCreditMessage"] = "Мы начислили вам {0} кредита на следующую уборку.",
                 ["CancelledReason_NoCleaner"] = "Для этого бронирования не нашлось свободного уборщика, поэтому оно отменено.",
                 ["CancelledReason_PaymentNotCompleted"] = "Оплата не была завершена, поэтому это бронирование было отменено.",
                 ["CancelledReason_ByUs"] = "Нам пришлось отменить это бронирование.",
@@ -588,9 +593,10 @@ public sealed partial class EmailService : IEmailService
         string languageCode = Constants.Language.English,
         CancellationToken ct = default,
         decimal? refundedAmount = null,
-        string? guestAccessToken = null) =>
+        string? guestAccessToken = null,
+        decimal? apologyCreditAmount = null) =>
         SendStatusEmailAsync(email, order, newStatus, languageCode, ct, refundedAmount, guestAccessToken, freeCancellationHours: null,
-            attachmentBytes: null, attachmentFileName: null);
+            attachmentBytes: null, attachmentFileName: null, apologyCreditAmount);
 
     /// <summary>
     /// The status e-mail's booked arm, sent when the contract is concluded with its confirmation attached:
@@ -607,7 +613,7 @@ public sealed partial class EmailService : IEmailService
         byte[]? confirmationPdf = null,
         string? confirmationFileName = null) =>
         SendStatusEmailAsync(email, order, BookedStatus, languageCode, ct, refundedAmount: null, guestAccessToken, freeCancellationHours,
-            confirmationPdf, confirmationFileName);
+            confirmationPdf, confirmationFileName, apologyCreditAmount: null);
 
     // In-code copy only: the status e-mail's translation rows are that e-mail's, and a Subject entered for
     // it would retitle this one.
@@ -1000,7 +1006,8 @@ public sealed partial class EmailService : IEmailService
         string? guestAccessToken,
         int? freeCancellationHours,
         byte[]? attachmentBytes,
-        string? attachmentFileName)
+        string? attachmentFileName,
+        decimal? apologyCreditAmount)
     {
         var translations = await emailTemplateTranslationRepository
             .GetTranslationsByTypeAndLanguageAsync(EmailType.OrderStatusUpdate, languageCode, ct);
@@ -1066,6 +1073,12 @@ public sealed partial class EmailService : IEmailService
         var refundLine = refundedAmount is > 0m
             ? $"{translations.GetValueOrDefault("RefundMessage", "Refund issued:")} {Money(refundedAmount.Value, currencySymbol, languageCode)}."
             : null;
+        var apologyLine = apologyCreditAmount is > 0m
+            ? string.Format(
+                CultureFor(languageCode),
+                translations.GetValueOrDefault("ApologyCreditMessage", "We have added {0} credit towards your next clean."),
+                Money(apologyCreditAmount.Value, currencySymbol, languageCode))
+            : null;
         string?[] bookedLines = isBooked
             ?
             [
@@ -1118,7 +1131,7 @@ public sealed partial class EmailService : IEmailService
         {
             Subject = subject,
             StatusMessage = string.Join(" ",
-                new[] { statusMessage, platformReason, refundLine }.Concat(bookedLines)
+                new[] { statusMessage, platformReason, refundLine, apologyLine }.Concat(bookedLines)
                     .Where(line => !string.IsNullOrWhiteSpace(line))),
             StatusSectionLabel = translations.GetValueOrDefault("StatusSectionLabel", "Current Status"),
             StatusClass = statusClass,

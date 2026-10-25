@@ -67,7 +67,7 @@ public sealed class SendEmailHandlerOrderCleanerReleasedTests : IDisposable
         await SeedAsync(OrderStatus.New, guest: true, bookedLanguage: "sk");
         _email.Setup(s => s.SendOrderStatusUpdateEmailAsync(BookingEmail, It.IsAny<Order>(), "CleanerReleased", "sk",
                 It.IsAny<CancellationToken>(), null, It.IsAny<string?>()))
-            .Returns(async (string _, Order _, string _, string _, CancellationToken _, decimal? _, string? rawToken) =>
+            .Returns(async (string _, Order _, string _, string _, CancellationToken _, decimal? _, string? rawToken, decimal? _) =>
             {
                 Assert.NotNull(rawToken);
                 await using var verify = Context();

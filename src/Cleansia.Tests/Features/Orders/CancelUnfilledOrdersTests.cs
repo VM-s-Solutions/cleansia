@@ -727,16 +727,48 @@ public class CancelUnfilledOrdersTests
         Assert.Equal(Constants.Language.English, email.LanguageCode);
     }
 
+    /// <summary>
+    /// A customer who uses only the web has no push and no inbox, so the cancellation e-mail is how they
+    /// hear of it, and it names the apology credit the push announces. An account has no guest links to
+    /// retire, so none is read.
+    /// </summary>
     [Fact]
-    public async Task AnAccountHolderIsToldByTheirOwnNotificationAndGetsNoGuestEmail()
+    public async Task An_Account_Holder_Is_Emailed_The_Refund_And_The_Apology()
     {
-        Arrange(UnfilledOrder());
+        var order = UnfilledOrder();
+        Arrange(order);
 
         await Sweep();
 
-        Assert.Empty(_enqueued);
+        var (queue, key, message) = Assert.Single(_enqueued);
+        Assert.Equal(QueueNames.SendEmail, queue);
+        Assert.Equal(MessageKeys.GuestOrderCancelledEmail(order.Id), key);
+        var email = Assert.IsType<QueueEnvelope<SendGuestOrderCancellationEmailMessage>>(message).Payload;
+        Assert.Equal(order.Id, email.OrderId);
+        Assert.Equal(1000m, email.SuccessfulRefundAmount);
+        Assert.Equal(CzkApology, email.ApologyCreditAmount);
         _guestTokens.Verify(r => r.GetLiveForOrderIgnoringTenantAsync(
             It.IsAny<string>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task An_Account_With_No_Apology_Is_Emailed_Without_One()
+    {
+        var noFigure = UnfilledOrder(orderId: "order-unfilled-eur", currency: _eur);
+        var frozen = UnfilledOrder(orderId: "order-unfilled-frozen");
+        _credit.Setup(c => c.IsOnFrozenCompanyBooksIgnoringTenantAsync(UserId, DefaultCurrencyId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        Arrange(noFigure, frozen);
+
+        await Sweep();
+
+        Assert.Equal(2, _enqueued.Count);
+        Assert.All(_enqueued, entry =>
+        {
+            var email = Assert.IsType<QueueEnvelope<SendGuestOrderCancellationEmailMessage>>(entry.Message).Payload;
+            Assert.Equal(1000m, email.SuccessfulRefundAmount);
+            Assert.Null(email.ApologyCreditAmount);
+        });
     }
 
     /// <summary>

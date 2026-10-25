@@ -41,6 +41,7 @@ public class GuestPlatformCancellationEmailTests(PostgresContainerFixture fixtur
         public string? DeliveredTo;
         public decimal? DeliveredAmount;
         public string? DeliveredToken;
+        public decimal? DeliveredApology;
         public int Deliveries;
 
         public Task Setup(IServiceCollection services)
@@ -49,12 +50,15 @@ public class GuestPlatformCancellationEmailTests(PostgresContainerFixture fixtur
             factory.Setup(x => x.CreateClient()).Returns(Stripe.Object);
             services.Replace(ServiceDescriptor.Singleton(factory.Object));
             EmailService.Setup(x => x.SendOrderStatusUpdateEmailAsync(It.IsAny<string>(), It.IsAny<Order>(),
-                    "Cancelled", It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<decimal?>(), It.IsAny<string?>()))
-                .Returns((string to, Order _, string _, string _, CancellationToken _, decimal? amount, string? token) =>
+                    "Cancelled", It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<decimal?>(), It.IsAny<string?>(),
+                    It.IsAny<decimal?>()))
+                .Returns((string to, Order _, string _, string _, CancellationToken _, decimal? amount, string? token,
+                    decimal? apology) =>
                 {
                     DeliveredTo = to;
                     DeliveredAmount = amount;
                     DeliveredToken = token;
+                    DeliveredApology = apology;
                     Deliveries++;
                     return Task.FromResult("sent");
                 });
@@ -84,6 +88,40 @@ public class GuestPlatformCancellationEmailTests(PostgresContainerFixture fixtur
             {
                 await AssertDeliveredWithFreshLinkAsync(db, run);
                 Assert.Equal(1000m, run.DeliveredAmount);
+            }, transactional: false);
+    }
+
+    /// <summary>
+    /// A customer with an account who uses only the web has no push and no inbox: the booking's own address
+    /// gets the cancellation e-mail too, with the refund and the apology credit, and no guest credential is
+    /// minted for it — the button opens the order page they sign in to.
+    /// </summary>
+    [Fact]
+    public async Task An_Account_Booking_Nobody_Took_Is_Emailed_With_The_Refund_And_The_Apology()
+    {
+        var run = new Run();
+        await TestMethod<bool>(setup: run.Setup,
+            arrange: db => Seed(db, PaymentStatus.Paid, cleaningDateTime: DateTime.UtcNow.AddHours(-2), withAccount: true),
+            act: async provider =>
+            {
+                using (var sweep = provider.CreateScope())
+                {
+                    var result = await ActivatorUtilities.CreateInstance<CancelUnfilledOrders.Handler>(sweep.ServiceProvider)
+                        .Handle(new CancelUnfilledOrders.Command(), CancellationToken.None);
+                    Assert.Equal(1, result.Value!.CancelledCount);
+                    Assert.Equal(1, result.Value.CreditedCount);
+                }
+                await DeliverAsync(provider);
+                return true;
+            },
+            assert: async (CleansiaDbContext db, bool _) =>
+            {
+                Assert.Equal(1, run.Deliveries);
+                Assert.Equal(Email, run.DeliveredTo);
+                Assert.Null(run.DeliveredToken);
+                Assert.Equal(1000m, run.DeliveredAmount);
+                Assert.Equal(250m, run.DeliveredApology);
+                Assert.Empty(await db.GuestOrderAccessTokens.IgnoreQueryFilters().Where(t => t.OrderId == OrderId).ToListAsync());
             }, transactional: false);
     }
 
@@ -176,21 +214,30 @@ public class GuestPlatformCancellationEmailTests(PostgresContainerFixture fixtur
         Assert.Single(tokens, t => t.RevokedOn is null);
     }
 
-    private async Task Seed(CleansiaDbContext db, PaymentStatus paymentStatus, DateTime cleaningDateTime)
+    private async Task Seed(
+        CleansiaDbContext db, PaymentStatus paymentStatus, DateTime cleaningDateTime, bool withAccount = false)
     {
         db.Languages.Add(Language.Create("en", "English"));
         var currency = Currency.Create("CZK", "Kč", "Czech koruna");
         currency.Id = CurrencyId;
         currency.IsActive = true;
         currency.SetAsDefault(true);
+        currency.SetNoShowCredit(250m);
         db.Currencies.Add(currency);
         var country = Country.Create("Czechia", "CZE", "CZ", isServiced: true);
         country.Id = CountryId;
         db.Countries.Add(country);
 
+        User? account = null;
+        if (withAccount)
+        {
+            account = User.CreateWithPassword("account-platform@example.test", "Seed-Password-123", "Jana", "Nováková");
+            db.Users.Add(account);
+        }
+
         var order = Order.Create("Guest", Email, "+420777000111",
             Address.Create("Guest Street", "Praha", "11000", CountryId), 2, 1,
-            cleaningDateTime, PaymentType.Card, 1000m, CurrencyId, paymentStatus,
+            cleaningDateTime, PaymentType.Card, 1000m, CurrencyId, paymentStatus, userId: account?.Id,
             cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.SetMaxEmployees(1);
@@ -203,9 +250,12 @@ public class GuestPlatformCancellationEmailTests(PostgresContainerFixture fixtur
         }
         db.Orders.Add(order);
 
-        var token = GuestOrderAccessToken.Issue(order.Id, GuestOrderAccessToken.ExpiryFor(order.CleaningDateTime));
-        _oldToken = token.RawToken!;
-        db.GuestOrderAccessTokens.Add(token);
+        if (account is null)
+        {
+            var token = GuestOrderAccessToken.Issue(order.Id, GuestOrderAccessToken.ExpiryFor(order.CleaningDateTime));
+            _oldToken = token.RawToken!;
+            db.GuestOrderAccessTokens.Add(token);
+        }
 
         await db.CommitAsync(CancellationToken.None);
     }

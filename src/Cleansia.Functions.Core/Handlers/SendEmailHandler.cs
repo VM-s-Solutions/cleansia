@@ -241,9 +241,9 @@ public class SendEmailHandler(
 
         tenantProvider.SetTenantOverride(tenantId);
         var order = await orderRepository.GetQueryable()
-            .Include(o => o.Currency).Include(o => o.CustomerAddress)
+            .Include(o => o.Currency).Include(o => o.CustomerAddress).Include(o => o.User)
             .AsNoTracking()
-            .FirstOrDefaultAsync(o => o.Id == message.OrderId && o.UserId == null
+            .FirstOrDefaultAsync(o => o.Id == message.OrderId
                 && o.CurrentStatus == OrderStatus.Cancelled
                 && (o.CancelledBy == CancelledBy.Customer || o.CancelledBy == CancelledBy.Admin
                     || o.CancelledBy == CancelledBy.System), ct);
@@ -258,15 +258,20 @@ public class SendEmailHandler(
         // decision rather than opposite ones: cancelling withdraws every key that was outstanding, and
         // this — the last message the booking will ever send — carries the only one that still opens
         // it, so the customer can read what they were refunded. Committed before the send, so a crash
-        // after it cannot leave an e-mailed token with no row behind it.
+        // after it cannot leave an e-mailed token with no row behind it. An account's booking gets none:
+        // its link opens the order page the customer signs in to.
         var guestAccessToken = guestAccessTokenIssuer.IssueForGuest(order);
         if (guestAccessToken is not null)
         {
             await unitOfWork.CommitAsync(ct);
         }
 
+        var languageCode = order.UserId is null
+            ? message.LanguageCode
+            : EmailLocale.Resolve(order.LanguageCode ?? order.User?.PreferredLanguageCode ?? message.LanguageCode);
         await emailService.SendOrderStatusUpdateEmailAsync(order.CustomerEmail, order, "Cancelled",
-            message.LanguageCode, ct, message.SuccessfulRefundAmount, guestAccessToken);
+            languageCode, ct, message.SuccessfulRefundAmount, guestAccessToken,
+            apologyCreditAmount: message.ApologyCreditAmount);
         try
         {
             await idempotencyGuard.MarkProcessedAsync(key, ct);

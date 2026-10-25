@@ -155,6 +155,30 @@ public sealed class GuestPlatformCancellationEmailCopyTests
         }
     }
 
+    /// <summary>
+    /// The apology credit is announced explicitly (owner ruling 2026-09-06), so an e-mailed customer reads it
+    /// after the refund, at the amount issued and in the e-mail's own money format; the copy states no figure
+    /// of its own. No credit issued, no line.
+    /// </summary>
+    [Theory]
+    [InlineData("en", "We have added €250.00 credit towards your next clean.")]
+    [InlineData("cs", "Přidali jsme vám kredit 250,00 € na příští úklid.")]
+    [InlineData("sk", "Pridali sme vám kredit 250,00 € na ďalšie upratovanie.")]
+    [InlineData("uk", "Ми нарахували вам 250,00 € кредиту на наступне прибирання.")]
+    [InlineData("ru", "Мы начислили вам 250,00 € кредита на следующую уборку.")]
+    public async Task An_Apology_Credit_Is_Named_After_The_Refund_At_The_Amount_Issued(string language, string credit)
+    {
+        var order = PaidCardOrder();
+        order.Cancel(DateTime.UtcNow, CancelledBy.System, 0m, order.TotalPrice, OrderCancellationReasons.NoCleanerAvailable);
+
+        var withCredit = await StatusMessageAsync(order, language, refundedAmount: 1000m, apologyCreditAmount: 250m);
+        var withoutCredit = await StatusMessageAsync(order, language, refundedAmount: 1000m);
+        var zeroCredit = await StatusMessageAsync(order, language, refundedAmount: 1000m, apologyCreditAmount: 0m);
+
+        Assert.Equal($"{withoutCredit} {credit}", withCredit);
+        Assert.Equal(withoutCredit, zeroCredit);
+    }
+
     [Fact]
     public async Task A_Booking_The_Guest_Cancelled_Keeps_Its_Own_Wording()
     {
@@ -194,11 +218,12 @@ public sealed class GuestPlatformCancellationEmailCopyTests
         return order;
     }
 
-    private static async Task<string> StatusMessageAsync(Order order, string language, decimal? refundedAmount)
+    private static async Task<string> StatusMessageAsync(
+        Order order, string language, decimal? refundedAmount, decimal? apologyCreditAmount = null)
     {
         var (service, values) = BuildService();
         await service.SendOrderStatusUpdateEmailAsync(Recipient, order, "Cancelled", language,
-            CancellationToken.None, refundedAmount, guestAccessToken: "token");
+            CancellationToken.None, refundedAmount, guestAccessToken: "token", apologyCreditAmount: apologyCreditAmount);
         return values["StatusMessage"]!;
     }
 

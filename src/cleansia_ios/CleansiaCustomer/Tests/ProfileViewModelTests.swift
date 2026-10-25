@@ -126,26 +126,21 @@ final class ProfileViewModelTests: XCTestCase {
         guard case .error = vm.saveState else { return XCTFail("expected action error") }
     }
 
+    /// The second save is issued from inside the first, while it is suspended in the client with `.submitting`
+    /// published, so the guard decides the count. Two `async let` saves overlapped only when the scheduler let
+    /// the second reach the main actor before the first returned.
     func testSaveReentryGuard() async {
         client.updateResult = .success(())
         let vm = makeVM()
         await vm.refresh()
-        async let first: Void = vm.save(
-            firstName: "A",
-            lastName: "B",
-            phoneNumber: nil,
-            birthDate: nil,
-            languageCode: nil
-        )
-        async let second: Void = vm.save(
-            firstName: "C",
-            lastName: "D",
-            phoneNumber: nil,
-            birthDate: nil,
-            languageCode: nil
-        )
-        _ = await (first, second)
+        client.whileUpdating = { @Sendable [weak vm] in
+            await vm?.save(firstName: "C", lastName: "D", phoneNumber: nil, birthDate: nil, languageCode: nil)
+        }
+
+        await vm.save(firstName: "A", lastName: "B", phoneNumber: nil, birthDate: nil, languageCode: nil)
+
         XCTAssertEqual(client.updateCallCount, 1)
+        XCTAssertEqual(client.lastUpdate?.firstName, "A")
     }
 
     func testCompleteOnboardingSavesAndMarksSeenForTheUser() async {

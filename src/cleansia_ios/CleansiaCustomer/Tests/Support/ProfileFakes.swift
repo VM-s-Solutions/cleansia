@@ -45,6 +45,9 @@ final class FakeUserProfileClient: UserProfileClient, @unchecked Sendable {
     private(set) var updateCallCount = 0
     private(set) var lastUpdate: ProfileUpdate?
 
+    /// Run once, from inside the first in-flight update, the `FakeGdprDeleteClient.whileInFlight` hook.
+    var whileUpdating: (@Sendable () async -> Void)?
+
     var holdCurrentUser = false
     var currentUserStarted: ((Int) -> Void)?
     private var heldCurrentUser: [Int: CheckedContinuation<ApiResult<CurrentUserProfile>, Never>] = [:]
@@ -71,6 +74,10 @@ final class FakeUserProfileClient: UserProfileClient, @unchecked Sendable {
     func updateCurrentUser(_ update: ProfileUpdate) async -> ApiResult<Void> {
         updateCallCount += 1
         lastUpdate = update
+        if let whileUpdating {
+            self.whileUpdating = nil
+            await whileUpdating()
+        }
         return updateResult
     }
 }

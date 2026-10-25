@@ -184,7 +184,7 @@ fun CleansiaBankAccountInput(
     }
 }
 
-private val domesticAccount = Regex("""^(?:(\d{1,6})-)?(\d{1,10})(?:/(\d{1,4}))?$""")
+private val domesticAccount = Regex("""^(?:(\d{1,6})-)?(\d{1,10})(?:/(\d{4}))?$""")
 private val czSkIban = Regex("""^(?:CZ|SK)\d{2}(\d{20})$""")
 
 /** What one edit of a segment does to the account. */
@@ -201,36 +201,52 @@ internal sealed interface SegmentEdit {
 
 /**
  * What an edit of one segment does; [raw] is the segment's new text and [current] the text it replaces,
- * [segmentMaxLength] says which segment it is. Every edit is read first by the run it put in, the new text
- * less what it shares with [current] at either end: a run that is a written-out account (`prefix-number/code`,
- * `number/code`, `prefix-number`) or a CZ or SK IBAN, whose BBAN is `bankcode(4) prefix(6) number(10)` with
- * the zero padding dropped, is spread over the three, even when the new text fits the segment; one without a
- * prefix clears the old one, and a missing bank code keeps it. Otherwise new text that fits the segment is
- * kept, as typed or pasted, digits only, and new text that overflows it goes by the run:
+ * [segmentMaxLength] says which segment it is. Only the new text arrives here, not what was pasted, so an edit that
+ * put in more than one character is read four ways, in this order, and the first reading that is a written-out
+ * account (`prefix-number/code`, `number/code`, `prefix-number`) or a CZ or SK IBAN, whose BBAN is
+ * `bankcode(4) prefix(6) number(10)` with the zero padding dropped, is spread over the three, even when the new text
+ * fits the segment:
+ * 1. When the new text starts with [current], the text after it: exact for a paste at the end, or into an
+ *    empty segment.
+ * 2. When the new text ends with [current], the text before it: exact for a paste at the start.
+ * 3. The whole new text: exact for a paste over all of the segment's text.
+ * 4. The run, the new text less what it shares with [current] at either end: for a paste in the middle of
+ *    the segment's text.
+ * In `prefix-number/code` and `number/code` the code is exactly four digits, as every CZ and SK bank code is, so a
+ * reading that cuts a pasted code short is no account.
+ * A run of one character is typing and is never read as an account, so a "-" or "/" typed among a segment's digits
+ * is dropped like any other non-digit. An account without a prefix clears the old one, and one without a bank code
+ * keeps it. Otherwise new text that fits the segment is kept, as typed or pasted, digits only, and new text that
+ * overflows it goes by the run:
  * - one character is typing, which the digit clamp takes like any other: a "5" typed at the end of a full
  *   "0800" is dropped, and one typed before it makes "5080";
  * - bare digits that fit the segment become its text, so a bank code pasted beside the old one replaces it;
  * - bare digits too long for it, up to [NumberMaxLength], are the account number, and the segment keeps its
  *   own text;
  * - anything else keeps the segment's text.
- * Whitespace of every kind is dropped from the run and an en or em dash reads as a hyphen, because that is
+ * Whitespace of every kind is dropped from every reading and an en or em dash reads as a hyphen, because that is
  * what banking apps put on the clipboard. Nothing is validated beyond shape: the server owns mod-11, the bank
  * code and the IBAN cross-check.
  *
  * The iOS twin is `CleansiaBankAccountField.splitPastedAccount` and the web's is `cleansia-bank-account`'s
- * paste handler; the three pin one case list. The web reads the pasted text itself, while here only the new
- * text arrives, so a paste that shares its first or last digits with the text where it lands can be read
- * without them. -> /partner-app/onboarding
+ * paste handler; the three pin one case list. The web reads the pasted text itself, while here an account
+ * pasted inside or over part of a segment's digits can take in the digits beside it, and a paste anywhere but at
+ * the end of the segment's text can lose digits it shares with that text, as "2000145399/0800" pasted over all of
+ * a number "2000" gives the number "145399". -> /partner-app/onboarding
  */
 internal fun splitPastedAccount(raw: String, current: String, segmentMaxLength: Int): SegmentEdit {
     val run = insertedRun(raw, current)
-    val pasted = run.filterNot(Char::isWhitespace).replace('\u2013', '-').replace('\u2014', '-')
-    val text = domesticFormOfIban(pasted) ?: pasted
-    val account = domesticAccount.matchEntire(text)
-    if (account != null && ('-' in text || '/' in text)) {
-        return SegmentEdit.Spread(account.groups[1]?.value.orEmpty(), account.groupValues[2], account.groups[3]?.value)
+    if (run.length > 1) {
+        val readings = listOfNotNull(
+            raw.takeIf { it.startsWith(current) }?.removePrefix(current),
+            raw.takeIf { it.endsWith(current) }?.removeSuffix(current),
+            raw,
+            run,
+        )
+        readings.firstNotNullOfOrNull(::accountIn)?.let { return it }
     }
     if (raw.length <= segmentMaxLength || run.length == 1) return SegmentEdit.Changed(clampSegment(raw, segmentMaxLength))
+    val pasted = normalised(run)
     if (pasted.isEmpty() || pasted.any { it !in '0'..'9' }) return SegmentEdit.Kept
     return when {
         pasted.length <= segmentMaxLength -> SegmentEdit.Changed(pasted)
@@ -245,6 +261,18 @@ private fun insertedRun(text: String, current: String): String {
     val end = minOf(text.commonSuffixWith(current).length, minOf(text.length, current.length) - start)
     return text.substring(start, text.length - end)
 }
+
+/** [reading] spread over the three segments, if it is a written-out account or a CZ or SK IBAN once normalised. */
+private fun accountIn(reading: String): SegmentEdit.Spread? {
+    val pasted = normalised(reading)
+    val text = domesticFormOfIban(pasted) ?: pasted
+    val account = domesticAccount.matchEntire(text)
+    if (account == null || ('-' !in text && '/' !in text)) return null
+    return SegmentEdit.Spread(account.groups[1]?.value.orEmpty(), account.groupValues[2], account.groups[3]?.value)
+}
+
+private fun normalised(text: String): String =
+    text.filterNot(Char::isWhitespace).replace('\u2013', '-').replace('\u2014', '-')
 
 /** `CZ65 0800 0000 1920 0014 5399` reads as `19-2000145399/0800`; null for any other text. */
 private fun domesticFormOfIban(text: String): String? {

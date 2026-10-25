@@ -75,7 +75,12 @@ describe('CleansiaBankAccountComponent paste', () => {
     [20, 'bank-code', '0800', '19-2000145399/0800', 'after', ['19', '2000145399', '0800']],
     [21, 'number', '2000145399', '2000145399/0800', 'over all of', ['', '2000145399', '0800']],
     [22, 'number', '19', '19-2000145399/0800', 'before', ['19', '2000145399', '0800']],
-  ] as [number, Segment, string, string, string, [string, string, string]][])(
+    [23, 'bank-code', '0800', '19-2000145399/0800', 'after the first digit of', ['19', '2000145399', '0800']],
+    [24, 'bank-code', '0', '19-2000145399/0800', 'over all of', ['19', '2000145399', '0800']],
+    [26, 'prefix', '0', '19-2000145399/0800', 'after', ['19', '2000145399', '0800']],
+    [27, 'prefix', '0', '1234567890', 'after', ['0', '1234567890', '']],
+    ['W3', 'number', '1234567890', '19-2000145399/0800', 'over the first five digits of', ['19', '2000145399', '0800']],
+  ] as [number | string, Segment, string, string, string, [string, string, string]][])(
     'case %s: the %s segment holding "%s", "%s" pasted %s it',
     (_, segment, held, text, where, expected) => {
       const box = { prefix: host.prefix, number: host.number, 'bank-code': host.bankCode }[segment];
@@ -84,6 +89,8 @@ describe('CleansiaBankAccountComponent paste', () => {
         before: [0, 0],
         'over the selection 08': [0, 2],
         'over all of': [0, held.length],
+        'after the first digit of': [1, 1],
+        'over the first five digits of': [0, 5],
       };
       const [caret, selectionEnd] = selections[where] ?? [held.length, held.length];
 
@@ -316,6 +323,9 @@ describe('CleansiaBankAccountComponent paste', () => {
     '1234567-1/0800',
     '12345678901/0800',
     '2000145399/08000',
+    '19-2000145399/080',
+    '2000145399/08',
+    '2000145399/0',
     '20001/45/399',
     '19-20-2000145399/0800',
     '-2000145399/0800',

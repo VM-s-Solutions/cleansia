@@ -51,7 +51,7 @@ function candidates(city: string): string[] {
   if (dash > 0) {
     const head = city.slice(0, dash).trim();
     const part = city.slice(dash + 1).trim();
-    if (head.length > 0 && !OKRES_RINGS.has(`${head}-${part.split(' ')[0]}`)) {
+    if (head.length > 0 && part.length > 0 && !OKRES_RINGS.has(`${head}-${part.split(' ')[0]}`)) {
       names.push(head);
     }
   }
@@ -93,7 +93,7 @@ export function isCityServiced(
   const compact = (customerPostcode ?? '').replace(WHITESPACE, '');
   const postcode = POSTCODE.test(compact) ? compact : null;
   return servicedCities.some((row) => {
-    const prefix = (row.zipPrefix ?? '').replace(WHITESPACE, '');
+    const prefix = (row.zipPrefix ?? '').trim();
     return prefix.length > 0 && postcode !== null
       ? postcode.startsWith(prefix)
       : cityNameMatches(row.name, customerCity);

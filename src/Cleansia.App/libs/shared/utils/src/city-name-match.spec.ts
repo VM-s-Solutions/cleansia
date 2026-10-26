@@ -48,6 +48,11 @@ describe('cityNameMatches', () => {
     expect(cityNameMatches('Praha 8', 'Praha 8 - Libeň')).toBe(true);
   });
 
+  it('keeps a dash with no city part after it as part of the name', () => {
+    expect(cityNameMatches('Praha', 'Praha-')).toBe(false);
+    expect(cityNameMatches('Brno', 'Brno -')).toBe(false);
+  });
+
   it('does not treat case or spacing as a difference', () => {
     expect(cityNameMatches('Praha', '  PRAHA  ')).toBe(true);
     expect(cityNameMatches('Hradec Králové', 'Hradec  Kralove')).toBe(true);
@@ -162,6 +167,11 @@ describe('isCityServiced', () => {
   it('reads a postcode written with a no-break space', () => {
     expect(isCityServiced(SERVICED, 'Прага', '110\u00a000')).toBe(true);
     expect(isCityServiced(SERVICED, 'Praha', '602\u00a000')).toBe(false);
+  });
+
+  it('reads the ZIP prefix trimmed, as the server stores it, so a space inside it matches no postcode', () => {
+    expect(isCityServiced([{ name: 'Praha', zipPrefix: ' 1 ' }], 'Kladno', '110 00')).toBe(true);
+    expect(isCityServiced([{ name: 'Praha', zipPrefix: '1 1' }], 'Praha', '110 00')).toBe(false);
   });
 
   it('reads a postcode of any length but five digits as no postcode', () => {

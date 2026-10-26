@@ -249,9 +249,8 @@ private fun ListPane(
         unservicedIds = if (cities == null) {
             emptySet()
         } else {
-            val names = cities.map { it.name }
             addresses
-                .filter { it.city.isNotBlank() && !CityNameMatch.isServiced(names, it.city) }
+                .filter { it.city.isNotBlank() && !CityNameMatch.isServiced(cities, it.city, it.zipCode) }
                 .map { it.id }
                 .toSet()
         }
@@ -888,9 +887,9 @@ private fun ReviewPane(
     //    the answer is unknown, which is NOT "not serviced". Fail OPEN: Confirm
     //    enabled, no warning. This is a soft UX check; order creation re-validates
     //    the city server-side, so an unserved address still gets rejected there.
-    var cityServiced by remember(picked.countryIsoCode, picked.city) { mutableStateOf<Boolean?>(null) }
-    var lookupFailed by remember(picked.countryIsoCode, picked.city) { mutableStateOf(false) }
-    LaunchedEffect(picked.countryIsoCode, picked.city) {
+    var cityServiced by remember(picked.countryIsoCode, picked.city, picked.zipCode) { mutableStateOf<Boolean?>(null) }
+    var lookupFailed by remember(picked.countryIsoCode, picked.city, picked.zipCode) { mutableStateOf(false) }
+    LaunchedEffect(picked.countryIsoCode, picked.city, picked.zipCode) {
         if (picked.countryIsoCode.isBlank() || picked.city.isBlank()) {
             cityServiced = null
             return@LaunchedEffect
@@ -907,7 +906,7 @@ private fun ReviewPane(
             cityServiced = false
             return@LaunchedEffect
         }
-        when (val serviced = serviceArea.isCityServiced(match.id, picked.city)) {
+        when (val serviced = serviceArea.isCityServiced(match.id, picked.city, picked.zipCode)) {
             null -> lookupFailed = true
             else -> cityServiced = serviced
         }

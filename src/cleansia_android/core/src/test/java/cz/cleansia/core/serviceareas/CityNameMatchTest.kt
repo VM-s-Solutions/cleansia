@@ -1,5 +1,7 @@
 package cz.cleansia.core.serviceareas
 
+import cz.cleansia.core.servicearea.ServicedCity
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -12,7 +14,8 @@ import org.junit.Test
  * do not serve a city we do serve. Two suites asserting one table means a divergence reddens something.
  *
  * If you change a case here, change it in
- * `src/Cleansia.Tests/Domain/ServiceAreas/CityNameMatchTests.cs` and in the iOS twin.
+ * `src/Cleansia.Tests/Domain/ServiceAreas/CityNameMatchTests.cs`, in the iOS twin and in the customer
+ * web's `city-name-match.spec.ts`.
  */
 class CityNameMatchTest {
 
@@ -33,6 +36,27 @@ class CityNameMatchTest {
         assertTrue(CityNameMatch.matches("Praha", "Praha 4 - Chodov"))
         assertTrue(CityNameMatch.matches("Praha", "Praha 5 – Smíchov"))
         assertTrue(CityNameMatch.matches("Praha", "Praha 4-Chodov"))
+        assertTrue(CityNameMatch.matches("Praha", "Praha\u00A08"))
+        assertTrue(CityNameMatch.matches("Praha", "Praha 4\u2011Chodov"))
+        assertTrue(CityNameMatch.matches("Ostrava", "Ostrava 3 - Ostrava-Jih"))
+    }
+
+    @Test
+    fun `a city part written after a dash is the city`() {
+        assertTrue(CityNameMatch.matches("Brno", "Brno-střed"))
+        assertTrue(CityNameMatch.matches("Brno", "Brno-sever"))
+        assertTrue(CityNameMatch.matches("Brno", "Brno - Královo Pole"))
+        assertTrue(CityNameMatch.matches("Praha", "Praha-Kunratice"))
+        assertTrue(CityNameMatch.matches("Praha", "Praha - Smíchov"))
+        assertTrue(CityNameMatch.matches("Ostrava", "Ostrava-Poruba"))
+        assertTrue(CityNameMatch.matches("Ostrava", "Ostrava-Jih"))
+        assertTrue(CityNameMatch.matches("Ústí nad Labem", "Ústí nad Labem-Střekov"))
+    }
+
+    @Test
+    fun `a district in Roman numerals is served by its city`() {
+        assertTrue(CityNameMatch.matches("Pardubice", "Pardubice II"))
+        assertTrue(CityNameMatch.matches("Liberec", "Liberec XIV-Ruprechtice"))
     }
 
     @Test
@@ -47,6 +71,9 @@ class CityNameMatchTest {
         assertFalse(CityNameMatch.matches("Praha", "Praha-západ"))
         assertFalse(CityNameMatch.matches("Praha", "Praha-východ"))
         assertFalse(CityNameMatch.matches("Brno", "Brno-venkov"))
+        assertFalse(CityNameMatch.matches("Brno", "Brno - venkov"))
+        assertFalse(CityNameMatch.matches("Plzeň", "Plzeň-sever"))
+        assertFalse(CityNameMatch.matches("Plzeň", "Plzeň-jih"))
     }
 
     @Test
@@ -54,7 +81,6 @@ class CityNameMatchTest {
         assertFalse(CityNameMatch.matches("Praha", "Nová Praha"))
         assertFalse(CityNameMatch.matches("Ústí nad Labem", "Ústí nad Orlicí"))
         assertFalse(CityNameMatch.matches("Praha", "Kladno"))
-        assertFalse(CityNameMatch.matches("Brno", "Brno-střed"))
     }
 
     /** Exonyms are DATA — a row, never an algorithm. */
@@ -71,6 +97,7 @@ class CityNameMatchTest {
     fun `a row naming one district does not claim the city`() {
         assertFalse(CityNameMatch.matches("Praha 8", "Praha 22"))
         assertFalse(CityNameMatch.matches("Praha 8", "Praha"))
+        assertTrue(CityNameMatch.matches("Praha 8", "Praha 8 - Libeň"))
     }
 
     @Test
@@ -84,13 +111,85 @@ class CityNameMatchTest {
     }
 
     @Test
-    fun `isServiced answers over the whole list`() {
-        val serviced = listOf("Praha", "Brno", "Plzeň")
-        assertTrue(CityNameMatch.isServiced(serviced, "Praha 4 - Chodov"))
-        assertTrue(CityNameMatch.isServiced(serviced, "Plzen"))
-        assertFalse(CityNameMatch.isServiced(serviced, "Kladno"))
-
-        // An empty list is "we know of nowhere", which must not read as "everywhere".
-        assertFalse(CityNameMatch.isServiced(emptyList(), "Praha"))
+    fun `everything the exact compare accepted still matches`() {
+        listOf("Praha", "Brno", "Plzeň", "České Budějovice").forEach { name ->
+            assertTrue(name, CityNameMatch.matches(name, name))
+            assertTrue(name, CityNameMatch.matches(name, name.uppercase()))
+            assertTrue(name, CityNameMatch.matches(name, "  $name "))
+        }
     }
+
+    /**
+     * The shared case table, against the seeded rows: every Prague row carries ZIP prefix 1, and a valid
+     * postcode decides a prefixed row by itself — a Prague postcode is Prague whatever the city is
+     * called, and a valid postcode outside Prague is not Prague even when the name says so. Only an
+     * address with no valid postcode falls back to the name, so nothing that booked before is refused for
+     * a missing one.
+     */
+    @Test
+    fun `the shared case table`() {
+        val wrong = sharedCases.filter { (_, city, postcode, serviced) ->
+            postcodesOf(postcode).any { CityNameMatch.isServiced(seededRows, city, it) != serviced }
+        }
+
+        assertEquals("cases answered differently from the server", emptyList<SharedCase>(), wrong)
+    }
+
+    /** Shared case 6 cannot see this: its name answers yes whether or not the postcode survives the space. */
+    @Test
+    fun `a postcode with a no-break space in it is still a postcode`() {
+        assertFalse(CityNameMatch.isServiced(seededRows, "Praha", "252\u00A042"))
+        assertTrue(CityNameMatch.isServiced(seededRows, "Прага", "110\u00A000"))
+    }
+
+    @Test
+    fun `an empty list serves nowhere`() {
+        assertFalse(CityNameMatch.isServiced(emptyList(), "Praha", "110 00"))
+    }
+
+    private data class SharedCase(val number: Int, val city: String?, val postcode: String?, val serviced: Boolean)
+
+    /** A missing postcode reaches the matcher as null or blank, and either is "none". */
+    private fun postcodesOf(postcode: String?) = if (postcode == null) listOf(null, "") else listOf(postcode)
+
+    private val seededRows: List<ServicedCity> =
+        (listOf("Praha", "Prague") + (1..22).flatMap { listOf("Praha $it", "Prague $it") }).map { row(it, "1") } +
+            listOf(
+                "Brno", "Ostrava", "Plzeň", "Liberec", "Olomouc", "České Budějovice", "Hradec Králové",
+                "Ústí nad Labem", "Pardubice",
+            ).map { row(it, null) }
+
+    private fun row(name: String, zipPrefix: String?) =
+        ServicedCity(id = "city-$name", countryId = "country-cz", name = name, zipPrefix = zipPrefix)
+
+    private val sharedCases = listOf(
+        SharedCase(1, "Praha", "110 00", serviced = true),
+        SharedCase(2, "Прага", "110 00", serviced = true),
+        SharedCase(3, "Prague", "15000", serviced = true),
+        SharedCase(4, "Praha 4 - Chodov", "149 00", serviced = true),
+        SharedCase(5, "PRAHA", "110 00", serviced = true),
+        SharedCase(6, "Praha 8", "180\u00A000", serviced = true),
+        SharedCase(7, "", "120 00", serviced = true),
+        SharedCase(8, "Praha", "252 42", serviced = false),
+        SharedCase(9, "Praha", "602 00", serviced = false),
+        SharedCase(10, "Praha", null, serviced = true),
+        SharedCase(11, "Praha", "1100", serviced = true),
+        SharedCase(12, "Praha-západ", "252 00", serviced = false),
+        SharedCase(13, "Praha-západ", null, serviced = false),
+        SharedCase(14, "Nová Praha", null, serviced = false),
+        SharedCase(15, "Jesenice", "252 42", serviced = false),
+        SharedCase(16, "Brno-střed", "602 00", serviced = true),
+        SharedCase(17, "Brno - Královo Pole", "612 00", serviced = true),
+        SharedCase(18, "Brno-venkov", "664 00", serviced = false),
+        SharedCase(19, "Ostrava-Poruba", "708 00", serviced = true),
+        SharedCase(20, "Pardubice II", "530 02", serviced = true),
+        SharedCase(21, "Liberec XIV-Ruprechtice", "460 14", serviced = true),
+        SharedCase(22, "Plzeň-jih", null, serviced = false),
+        SharedCase(23, "Plzen", "301 00", serviced = true),
+        SharedCase(24, "Pilsen", "301 00", serviced = false),
+        SharedCase(25, "Ústí nad Labem-Střekov", "400 03", serviced = true),
+        SharedCase(26, "Kladno", "272 01", serviced = false),
+        SharedCase(27, "Brno", "110 00", serviced = true),
+        SharedCase(28, "Praha 8 - Libeň", "180 00", serviced = true),
+    )
 }

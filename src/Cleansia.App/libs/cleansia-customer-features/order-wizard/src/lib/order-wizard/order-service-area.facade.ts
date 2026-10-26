@@ -51,12 +51,13 @@ export class OrderServiceAreaFacade extends UnsubscribeControlDirective {
     const addr = this.deps.currentAddress();
     const countryId = addr.countryId ?? '';
     const city = (addr.city ?? '').trim();
+    const postcode = addr.zipCode ?? '';
     if (!countryId || !city) {
       this.cityServiced.set('idle');
       this.lastCityCheckKey = '';
       return;
     }
-    const key = `${countryId}|${city.toLowerCase()}`;
+    const key = `${countryId}|${city.toLowerCase()}|${postcode.replace(/\s/g, '')}`;
     if (key === this.lastCityCheckKey) return;
     this.lastCityCheckKey = key;
     this.cityServiced.set('pending');
@@ -79,10 +80,7 @@ export class OrderServiceAreaFacade extends UnsubscribeControlDirective {
         // customer we do not serve them while OrderAddressResolver would have accepted the
         // booking, and blocking Next on the way. Being stricter than the server is the one
         // way this check can do harm.
-        const match = isCityServiced(
-          cities.map((c) => c.name),
-          city,
-        );
+        const match = isCityServiced(cities, city, postcode);
         this.cityServiced.set(match ? 'ok' : 'rejected');
       });
   }

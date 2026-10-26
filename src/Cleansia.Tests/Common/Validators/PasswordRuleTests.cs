@@ -73,6 +73,20 @@ public class PasswordRuleTests
         Assert.True(result.IsValid);
     }
 
+    /// <summary>
+    /// A digit is a decimal digit in any script (.NET's <c>\d</c> is Unicode), as a letter is a letter in
+    /// any script, so a password whose only digits are Arabic-Indic or full-width is not refused.
+    /// </summary>
+    [Theory]
+    [InlineData("Пароль٢٠٢٤")]
+    [InlineData("Heslo１２３")]
+    public void A_Digit_From_Any_Script_Counts(string password)
+    {
+        var result = _validator.Validate(new Subject(password));
+
+        Assert.True(result.IsValid);
+    }
+
     [Theory]
     [InlineData("Пароль")]      // letters only, no digit
     [InlineData("1234567٣")]    // digits only, one of them Arabic-Indic

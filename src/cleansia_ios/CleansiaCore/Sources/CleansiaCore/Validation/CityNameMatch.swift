@@ -20,7 +20,7 @@ public enum CityNameMatch {
     /// trailing district, `Praha 8`, `Pardubice II`, `Brno-střed`, `Praha 4 - Chodov`. The five okres rings around a
     /// city share the dashed shape and are not the city. The rule runs on the customer's string only, so a row named
     /// for one district never claims the whole city.
-    public static func matches(_ servicedCityName: String?, _ customerCity: String?) -> Bool {
+    static func matches(_ servicedCityName: String?, _ customerCity: String?) -> Bool {
         let row = fold(servicedCityName)
         guard !row.isEmpty else { return false }
         return candidates(fold(customerCity)).contains(row)

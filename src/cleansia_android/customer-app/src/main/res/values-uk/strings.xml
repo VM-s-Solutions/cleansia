@@ -1434,6 +1434,7 @@
     <string name="error_country_not_existing_id">Країну не знайдено</string>
     <string name="error_currency_invalid">Недійсна валюта</string>
     <string name="error_country_not_serviced">У цій країні ми поки що не працюємо.</string>
+    <string name="error_city_not_serviced">Ми наразі не обслуговуємо це місто.</string>
     <string name="error_tenant_not_found">Цей ринок поки що не обслуговує жодна компанія Cleansia.</string>
     <string name="error_tenant_archived">Записи цієї компанії опечатано для архівування; змінити в них уже нічого не можна.</string>
     <string name="error_order_country_operator_mismatch">Цю адресу обслуговує інша компанія Cleansia, і з цього облікового запису її не можна забронювати.</string>

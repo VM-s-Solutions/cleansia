@@ -17,7 +17,7 @@ namespace Cleansia.Tests.Features.Orders;
 /// <summary>
 /// An order walked back to New is taken again as a second <c>New → Confirmed</c>. Its customer was told the
 /// booking is being offered to cleaners again, so the re-take's e-mail answers that notice — "We've found you
-/// a new cleaner" — instead of repeating the first take's "Cleaner found" (owner decision 3, 2026-10-25). The
+/// a new cleaner" — instead of repeating the first take's "Cleaner found" (owner decision 2026-10-25). The
 /// push is the usual "Cleaner found!", once per assignment.
 /// </summary>
 public class TakeOrderAfterWalkBackTests

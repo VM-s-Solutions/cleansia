@@ -18,7 +18,7 @@ namespace Cleansia.Tests.Services;
 /// cleaner-released arm says so in the customer's language, in the copy the code carries: it counts no
 /// cleaners, so it stays true whether the last cleaner left or one of two did, names no cleaner, gives no
 /// reason, promises no time and no money and no follow-up message, and links the booking the way every
-/// status e-mail does (owner decision 2, 2026-10-25).
+/// status e-mail does (owner decision 2026-10-25).
 /// </summary>
 public class OrderCleanerReleasedEmailCopyTests
 {

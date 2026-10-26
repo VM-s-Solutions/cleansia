@@ -80,11 +80,42 @@ twin of iOS's `CleansiaCore/Location` → [Every map is quiet](/mobile-app/patte
 | `minSdk` | 26 (Android 8.0) | every module |
 | Java source/target | 21, with core-library desugaring | every module |
 | DI | Hilt 2.54 via KSP | — |
-| Compose | BOM `2025.02.00`, Material 3 | — |
+| Compose | BOM `2025.07.00` (Compose 1.8.3), Material 3 | `libs.versions.toml` → `composeBom` |
+| Card payments | Stripe `21.2.0`, PaymentSheet pinned to the vertical layout ([below](#compose-1-8)) | `libs.versions.toml` → `stripe` |
 | Networking | Retrofit 2.11 + OkHttp 4.12 + kotlinx.serialization | — |
 
 > `ksp.useKSP2=false` is set globally in `gradle.properties`: partner-app's KSP run hits
 > *"unexpected jvm signature V"* under KSP2 with Hilt 2.54 + Java 21. Do not flip it per-module.
+
+#### Compose 1.8, and why PaymentSheet is pinned to the vertical layout {#compose-1-8}
+
+**Compose moved from 1.7.8 to 1.8.3** (BOM `2025.02.00` → `2025.07.00`) under both apps and `:core`
+(owner decision 2026-10-25, *"Confirm"*, its own commit, last in the Android work of the fix plan), because
+1.8 is the first release whose text fields hand a field's autofill hint to the platform: 1.7.8 ships
+the content-type classes but wires none of them. With it the sign-up, sign-in and new-password fields of
+both apps declare what they hold, through `Modifier.semantics { contentType = … }` on the shared
+`CleansiaTextField`'s modifier — `NewUsername` on the partner Register and customer Sign up e-mail,
+`NewPassword` on the password fields of Register, Sign up, the reset step and Security, `Username` and
+`Password` on both sign-in screens — so Google Password Manager can offer a strong password and fill
+the saved one back. Nothing else is declared: no Credential Manager save, no `assetlinks.json`. The one
+source change the upgrade needed is `DraggableAnchors.minAnchor()` → `minPosition()`; the 1.8
+deprecations (`AnchoredDraggableState`'s threshold factory, `settle(velocity)`, `LocalClipboardManager`)
+compile and behave as before and are left in place.
+
+::: warning Never let PaymentSheet draw the horizontal layout on Stripe 21.2.0
+Stripe 21.2.0's horizontal saved-card tab layout (`SavedPaymentMethodTabLayoutUI`) calls
+`LazyItemScope.animateItemPlacement`, which Compose foundation 1.8 removed, so on 1.8.3 it throws
+`NoSuchMethodError` as it draws a customer's saved cards. The app never draws it: 21.2.0's default,
+`Automatic`, takes the vertical branch, and every configuration now says so explicitly —
+`paymentMethodLayout(PaymentSheet.PaymentMethodLayout.Vertical)` in
+`PaymentSheetParams.toConfiguration()` (a booking's and a recurring occurrence's payment) and in the
+Plus sign-up's configuration (`SubscribePlusScreen.kt`), pinned by `PaymentSheetLayoutTest`. Setting
+`Horizontal`, or adopting `FlowController` or `CustomerSheet`, which draw that layout too, would make it
+a crash until the app moves to a Stripe release without that call — and a later Stripe also lifts the
+Dagger runtime it brings above the app's Hilt 2.54 (21.11.1 declares Dagger 2.55), which that move has
+to check. Sentry's session replay (`sentry-android-replay` 7.22.3) calls a Compose internal 1.8.3 no
+longer has as well; neither app turns replay on.
+:::
 
 ### Build types and where the base URL comes from
 

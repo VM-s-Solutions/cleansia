@@ -528,8 +528,8 @@ class OrdersRepositoryImpl @Inject constructor(
 /**
  * A job the platform reserved for this cleaner by name until a deadline the server owns (ADR-0045).
  *
- * `respondByUtc` and `cleaningDateTime` are non-null here even though only the money and scope fields
- * read as obviously load-bearing: there is no state in which a live reservation has no expiry, and a
+ * `respondByUtc` and `cleaningDateTime` are non-null here even though only the scope fields read as
+ * obviously load-bearing: there is no state in which a live reservation has no expiry, and a
  * nullable one kept a silent drop in [cz.cleansia.partner.features.orders.soonestOffer] where an offer
  * with no deadline quietly stopped being the one the dashboard names.
  */
@@ -542,8 +542,8 @@ data class PendingOffer(
     val customerAddressApproximate: String?,
     val rooms: Int,
     val bathrooms: Int,
-    val totalPrice: Double,
     val currencyCode: String?,
+    val estimatedCleanerPay: Double?,
 )
 
 /**
@@ -564,7 +564,7 @@ internal fun PendingOfferItem.toDomainOrNull(): PendingOffer? {
         customerAddressApproximate = customerAddressApproximate,
         rooms = rooms.required("rooms"),
         bathrooms = bathrooms.required("bathrooms"),
-        totalPrice = totalPrice.required("totalPrice"),
         currencyCode = currencyCode,
+        estimatedCleanerPay = estimatedCleanerPay,
     )
 }

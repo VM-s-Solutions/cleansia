@@ -30,19 +30,18 @@ public class ServiceCityRepository(CleansiaDbContext context)
     /// <para>It has to: the fold strips diacritics, and <c>unaccent</c> is not a registered extension on
     /// this context (<c>CleansiaDbContext</c> registers <c>citext</c> and <c>pg_trgm</c> only), so
     /// Postgres cannot express the predicate. The cost is bounded by the row count for a single
-    /// country — ten for Czechia today, and this is one lookup per order creation, not per row of a
-    /// list.</para>
+    /// country, and this is one lookup per booking, not per row of a list.</para>
     ///
-    /// <para>Only the NAMES are materialised, so the projection stays one column.</para>
+    /// <para>Only the names and ZIP prefixes are materialised.</para>
     /// </summary>
-    public async Task<bool> CityIsServicedAsync(string countryId, string cityName, CancellationToken cancellationToken)
+    public async Task<bool> CityIsServicedAsync(string countryId, string cityName, string? zipCode, CancellationToken cancellationToken)
     {
-        var servicedNames = await GetDbSet()
+        var servicedCities = await GetDbSet()
             .Where(c => c.CountryId == countryId && c.IsActive)
-            .Select(c => c.Name)
+            .Select(c => new { c.Name, c.ZipPrefix })
             .ToListAsync(cancellationToken);
 
-        return servicedNames.Any(name => CityNameMatch.Matches(name, cityName));
+        return servicedCities.Any(city => CityNameMatch.Serves(city.Name, city.ZipPrefix, cityName, zipCode));
     }
 
     public Task<bool> ExistsWithNameInCountryAsync(string countryId, string name, string? excludeId, CancellationToken cancellationToken)

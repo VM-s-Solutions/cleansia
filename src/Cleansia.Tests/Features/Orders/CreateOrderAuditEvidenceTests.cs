@@ -71,7 +71,7 @@ public sealed class CreateOrderAuditEvidenceTests
             .Setup(r => r.IsServicedAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _serviceCityRepository
-            .Setup(r => r.CityIsServicedAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.CityIsServicedAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _pricingCalculator
             .Setup(c => c.CalculateAsync(
@@ -445,7 +445,7 @@ public sealed class CreateOrderAuditEvidenceTests
     {
         _session.Setup(s => s.GetUserId()).Returns((string?)null);
         _serviceCityRepository
-            .Setup(r => r.CityIsServicedAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.CityIsServicedAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         var result = await CreateHandler().Handle(CreateOrderTestData.ValidCommand(), CancellationToken.None);

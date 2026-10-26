@@ -139,7 +139,7 @@ public class CreateOrderHandlerCharacterizationTests
             .Setup(r => r.IsServicedAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _serviceCityRepository
-            .Setup(r => r.CityIsServicedAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.CityIsServicedAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         _pricingCalculator
@@ -285,7 +285,7 @@ public class CreateOrderHandlerCharacterizationTests
     public async Task AC8_CityNotServiced_ReturnsCityNotServiced()
     {
         _serviceCityRepository
-            .Setup(r => r.CityIsServicedAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.CityIsServicedAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         var command = CreateOrderTestData.ValidCommand();

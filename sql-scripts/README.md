@@ -63,6 +63,14 @@ database seeded before the seed changed. Run these through **Execute SQL Script*
   password is published in the root README: the account is deactivated, so sign-in and refresh refuse
   it. It refuses to run while that account is the only active Administrator, so create a named one
   first with `set-admin-role.sql`. One transaction, idempotent.
+- **`fix-service-city-zip-prefixes.sql`** — the seeded Czech service cities' ZIP prefixes, which the
+  booking gate now enforces (owner ruling 2026-10-25): every Prague row (`Praha`, `Prague`, `Praha 1`–`22`,
+  `Prague 1`–`22`) gets `1`, and the nine other seeded cities lose the postal-region prefix they were
+  seeded with. It touches only those 55 rows, by name, and sets each to the seed's value whatever it
+  holds, because a prefix typed while the admin console called it unenforced was never a choice to
+  enforce it; no row is deleted or switched on or off. A row an administrator added keeps its prefix,
+  and the last query lists every Czech row that still carries one. One transaction, idempotent.
+  Written for DEV: `prod-bootstrap.sql` seeds these values, and `execute-sql.yml` refuses it against PRO.
 
 ## `seed/` — dev fixture data
 

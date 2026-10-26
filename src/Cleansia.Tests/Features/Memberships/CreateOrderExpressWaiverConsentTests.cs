@@ -66,7 +66,7 @@ public class CreateOrderExpressWaiverConsentTests
             .ReturnsAsync(true);
         _serviceCityRepository
             .Setup(r => r.CityIsServicedAsync(
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         _pricingCalculator

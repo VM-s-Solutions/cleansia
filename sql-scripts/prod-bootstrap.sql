@@ -366,14 +366,16 @@ WHERE NOT EXISTS (SELECT 1 FROM public."Countries" c WHERE c."IsoCode" = v.iso_c
 
 -- 3b. SERVICE CITIES
 -- Cities the company actually serves within a serviced country. Customer
--- order creation must pick an address whose city matches one of these
--- (city-name match, case-insensitive). Employee addresses don't have to
--- match — cleaners can live anywhere and commute. See
--- planning/active/service-areas.md.
+-- order creation must pick an address one of these serves (CityNameMatch.Serves).
+-- Employee addresses don't have to match — cleaners can live anywhere and
+-- commute.
 --
--- ZipPrefix is stored from v1 but NOT enforced by the v1 validator (city
--- name alone). Pre-populating it now means we don't need a backfill the
--- day enforcement turns on.
+-- ZipPrefix is enforced: a row with one serves an address whose postcode is
+-- five digits starting with it and refuses any other valid postcode, whatever
+-- the city text says; a row without one serves by name. Only Prague carries a
+-- prefix (owner ruling 2026-10-25): every Prague postcode starts with 1 and no
+-- other Czech one does, while the other cities' postal regions also cover
+-- their neighbours (6 is Brno and Znojmo), so they serve by name alone.
 --
 -- Seed list covers the 10 largest Czech cities (the only serviced country
 -- today). Admins extend this via the admin Service Area page.
@@ -387,15 +389,15 @@ SELECT generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NUL
        city.name, city.zip_prefix
 FROM (VALUES
   ('Praha',             '1'),
-  ('Brno',              '6'),
-  ('Ostrava',           '7'),
-  ('Plzeň',             '3'),
-  ('Liberec',           '46'),
-  ('Olomouc',           '77'),
-  ('České Budějovice',  '37'),
-  ('Hradec Králové',    '50'),
-  ('Ústí nad Labem',    '40'),
-  ('Pardubice',         '53')
+  ('Brno',              NULL),
+  ('Ostrava',           NULL),
+  ('Plzeň',             NULL),
+  ('Liberec',           NULL),
+  ('Olomouc',           NULL),
+  ('České Budějovice',  NULL),
+  ('Hradec Králové',    NULL),
+  ('Ústí nad Labem',    NULL),
+  ('Pardubice',         NULL)
 ) AS city(name, zip_prefix)
 WHERE NOT EXISTS (
   SELECT 1
@@ -405,20 +407,16 @@ WHERE NOT EXISTS (
 );
 
 -- 3c. SERVICE CITIES — Prague-region name variants.
--- The serviced check is an EXACT (case-insensitive) name match
--- (ServiceCityRepository.CityIsServicedAsync: Name.ToLower() == input), so
--- the single 'Praha' row above does NOT cover what real addresses carry:
---   • 'Prague' — the English exonym Mapbox geocoding returns in the en locale
---     (the seeded customer addresses use it too);
---   • 'Praha N' / 'Prague N' — the administrative-district forms geocoders and
---     users commonly produce ('Praha 5', 'Prague 2', …).
--- Without these variants a booking in Prague fails city.not_serviced purely
--- on the spelling of the city the address picker happened to emit.
+-- 'Prague' is the English exonym Mapbox geocoding returns in the en locale (the
+-- seeded customer addresses use it too), and the name match does not translate,
+-- so it is a row of its own. The 'Praha N' / 'Prague N' district rows were
+-- seeded while the check was an exact name compare; the match now strips a
+-- district number from the customer's city, so 'Praha' and 'Prague' already
+-- cover them.
 --
--- ZipPrefix: districts 1-10 carry their natural postal prefix (Praha 1 = 110xx
--- … Praha 9 = 190xx, Praha 10 = 10xxx); districts 11-22 span mixed ranges of
--- the old postal districts, so they get the generic Prague '1' (unenforced in
--- v1 either way — see the note above).
+-- ZipPrefix: every Prague row carries '1', the first digit of every Prague
+-- postcode (owner ruling 2026-10-25). The district postcodes do not follow the
+-- district numbers, so no row narrows it further.
 --
 -- Idempotent (NOT EXISTS per name), so this block can be re-run standalone
 -- against a database that already holds the base list above.
@@ -434,16 +432,16 @@ FROM (VALUES
   -- English exonym
   ('Prague',     '1'),
   -- Czech district forms
-  ('Praha 1',    '11'),
-  ('Praha 2',    '12'),
-  ('Praha 3',    '13'),
-  ('Praha 4',    '14'),
-  ('Praha 5',    '15'),
-  ('Praha 6',    '16'),
-  ('Praha 7',    '17'),
-  ('Praha 8',    '18'),
-  ('Praha 9',    '19'),
-  ('Praha 10',   '10'),
+  ('Praha 1',    '1'),
+  ('Praha 2',    '1'),
+  ('Praha 3',    '1'),
+  ('Praha 4',    '1'),
+  ('Praha 5',    '1'),
+  ('Praha 6',    '1'),
+  ('Praha 7',    '1'),
+  ('Praha 8',    '1'),
+  ('Praha 9',    '1'),
+  ('Praha 10',   '1'),
   ('Praha 11',   '1'),
   ('Praha 12',   '1'),
   ('Praha 13',   '1'),
@@ -457,16 +455,16 @@ FROM (VALUES
   ('Praha 21',   '1'),
   ('Praha 22',   '1'),
   -- English district forms (mixed-locale geocoder output)
-  ('Prague 1',   '11'),
-  ('Prague 2',   '12'),
-  ('Prague 3',   '13'),
-  ('Prague 4',   '14'),
-  ('Prague 5',   '15'),
-  ('Prague 6',   '16'),
-  ('Prague 7',   '17'),
-  ('Prague 8',   '18'),
-  ('Prague 9',   '19'),
-  ('Prague 10',  '10'),
+  ('Prague 1',   '1'),
+  ('Prague 2',   '1'),
+  ('Prague 3',   '1'),
+  ('Prague 4',   '1'),
+  ('Prague 5',   '1'),
+  ('Prague 6',   '1'),
+  ('Prague 7',   '1'),
+  ('Prague 8',   '1'),
+  ('Prague 9',   '1'),
+  ('Prague 10',  '1'),
   ('Prague 11',  '1'),
   ('Prague 12',  '1'),
   ('Prague 13',  '1'),

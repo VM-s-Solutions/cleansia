@@ -32,7 +32,7 @@ public class OrderAddressResolverTests
             .Setup(r => r.IsServicedAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _serviceCityRepository
-            .Setup(r => r.CityIsServicedAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.CityIsServicedAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
     }
 
@@ -185,7 +185,7 @@ public class OrderAddressResolverTests
     public async Task CityNotServiced_ReturnsCityNotServiced()
     {
         _serviceCityRepository
-            .Setup(r => r.CityIsServicedAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.CityIsServicedAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         var command = CreateOrderTestData.ValidCommand();
 
@@ -194,6 +194,24 @@ public class OrderAddressResolverTests
         Assert.Null(result.Address);
         Assert.Equal(BusinessErrorMessage.CityNotServiced, result.Failure!.Message);
         Assert.Equal(nameof(Address.City), result.Failure.Code);
+    }
+
+    /// <summary>A Prague row answers by the postcode (owner ruling 2026-10-25), so the gate is asked with it.</summary>
+    [Fact]
+    public async Task The_City_Gate_Is_Asked_About_The_Address_City_And_Postcode()
+    {
+        ArrangeSavedAddress("saved-1", ownerUserId: UserId,
+            resolved: AddressMockFactory.Generate(new AddressMockFactory.AddressPartial
+            {
+                City = "Praha", ZipCode = "602 00", CountryId = "country-cz", Latitude = 50.08, Longitude = 14.43,
+            }));
+        var command = CreateOrderTestData.ValidCommand(savedAddressId: "saved-1");
+
+        await CreateResolver().ResolveAsync(command, UserId, CancellationToken.None);
+
+        _serviceCityRepository.Verify(
+            r => r.CityIsServicedAsync("country-cz", "Praha", "602 00", It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]

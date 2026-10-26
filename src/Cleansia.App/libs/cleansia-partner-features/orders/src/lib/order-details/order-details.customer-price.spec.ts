@@ -1,16 +1,19 @@
 /* Test doubles below mirror the real shared-component selectors so the override-imports swap is
    binding-compatible under the strict template test env. */
 /* eslint-disable @angular-eslint/component-selector */
-import { Component, forwardRef, input } from '@angular/core';
+import { Component, forwardRef, input, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormControl, FormGroup, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { CleansiaSectionComponent, CleansiaSelectComponent, CleansiaTextInputComponent } from '@cleansia/components';
-import { PackageDetails, PaymentType } from '@cleansia/partner-services';
+import { OrderItem, OrderStatus, PackageDetails, PaymentStatus, PaymentType } from '@cleansia/partner-services';
 import { TranslateModule } from '@ngx-translate/core';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { OrderPackagesComponent } from './components/order-packages.component';
 import { OrderPaymentInfoComponent } from './components/order-payment-info.component';
+import { OrderDetailsComponent } from './order-details.component';
+import { OrderDetailsFacade } from './order-details.facade';
 import { showsCustomerPrice } from './order-details.helpers';
 
 const TEMPLATE = join(__dirname, 'order-details.component.html');
@@ -142,6 +145,49 @@ describe('the job sheet shows the customer price on a cash job only', () => {
 
       expect(section.querySelector('h5')?.textContent).toContain('Deep clean');
       expect(section.querySelector('.package-price')).toBeNull();
+    });
+  });
+
+  describe('the sheet', () => {
+    function sheetShowing(order: OrderItem): OrderDetailsComponent {
+      TestBed.configureTestingModule({
+        imports: [TranslateModule.forRoot()],
+        providers: [
+          OrderDetailsComponent,
+          {
+            provide: OrderDetailsFacade,
+            useValue: {
+              orderDetails: signal(order),
+              loading: signal(false),
+              error: signal(null),
+              removal: signal(null),
+              currentEmployeeId: signal(null),
+            },
+          },
+          { provide: Router, useValue: { navigate: jest.fn() } },
+          { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => null } } } },
+        ],
+      });
+      return TestBed.inject(OrderDetailsComponent);
+    }
+
+    /** The payment status is chosen so that reading it instead of the payment type gives the other answer. */
+    it.each([
+      ['a cash job whose cash was collected', true, PaymentType.Cash, PaymentStatus.Paid],
+      ['a card job whose payment has not settled', false, PaymentType.Card, PaymentStatus.Pending],
+    ])('decides by its order: %s shows the customer price: %s', (_label, shown, paymentType, paymentStatus) => {
+      const sheet = sheetShowing(
+        OrderItem.fromJS({
+          id: 'ord-1',
+          paymentType: { value: paymentType },
+          paymentStatus: { value: paymentStatus },
+          orderStatus: { value: OrderStatus.Confirmed },
+          currency: { code: 'CZK' },
+          totalPrice: 2000,
+        }),
+      );
+
+      expect(sheet['showsCustomerPrice']()).toBe(shown);
     });
   });
 

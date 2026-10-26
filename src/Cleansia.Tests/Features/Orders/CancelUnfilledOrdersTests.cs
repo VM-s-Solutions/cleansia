@@ -434,6 +434,65 @@ public class CancelUnfilledOrdersTests
         Assert.Equal(OrderStatus.New, unconfirmed.CurrentStatus);
     }
 
+    /// <summary>
+    /// <see cref="CancelUnfilledOrders.IsUnfilled"/> is the sweep's selection read off one loaded order, so an
+    /// administrator's early no-show accepts exactly the bookings the sweep would cancel at their start: at a
+    /// grace of zero the two agree on every status, crew and money case.
+    /// </summary>
+    [Fact]
+    public async Task IsUnfilled_Agrees_With_The_Sweeps_Selection_On_Every_Status_Crew_And_Money_Case()
+    {
+        var money = new (string Name, PaymentType Type, PaymentStatus Status, bool Recurring, bool Confirmed)[]
+        {
+            ("card-paid", PaymentType.Card, PaymentStatus.Paid, false, false),
+            ("card-unpaid", PaymentType.Card, PaymentStatus.Pending, false, false),
+            ("card-part-refunded", PaymentType.Card, PaymentStatus.PartiallyRefunded, false, false),
+            ("cash-one-off", PaymentType.Cash, PaymentStatus.Pending, false, false),
+            ("cash-recurring-unconfirmed", PaymentType.Cash, PaymentStatus.Pending, true, false),
+            ("cash-recurring-confirmed", PaymentType.Cash, PaymentStatus.Pending, true, true),
+        };
+        var orders = new List<Order>();
+        foreach (var status in Enum.GetValues<OrderStatus>().Where(s => s != OrderStatus.Pending))
+        {
+            foreach (var crewed in new[] { false, true })
+            {
+                foreach (var (name, type, paymentStatus, recurring, confirmed) in money)
+                {
+                    var orderId = $"order-{status}-{(crewed ? "crew" : "empty")}-{name}";
+                    var order = recurring
+                        ? RecurringCashOccurrence(orderId, $"tmpl-{orderId}")
+                        : UnfilledOrder(orderId, status, type, paymentStatus);
+                    if (recurring && status != OrderStatus.New)
+                    {
+                        order.AddOrderStatus(OrderStatusTrack.Create(status, order));
+                    }
+                    if (confirmed)
+                    {
+                        order.ConfirmByCustomer(DateTime.UtcNow.AddDays(-1));
+                    }
+                    if (crewed)
+                    {
+                        order.AddAssignedEmployee(OrderEmployee.Create(
+                            order, ValidatorTestHelpers.BuildEmployee($"emp-{orderId}", ContractStatus.Approved)));
+                    }
+
+                    orders.Add(order);
+                }
+            }
+        }
+
+        var unfilled = orders.Where(CancelUnfilledOrders.IsUnfilled).Select(o => o.Id).ToHashSet();
+        Arrange([.. orders]);
+
+        await Handler().Handle(new CancelUnfilledOrders.Command(GraceMinutes: 0), default);
+
+        Assert.NotEmpty(unfilled);
+        Assert.Equal(
+            unfilled.Order(),
+            orders.Where(o => o.CurrentStatus == OrderStatus.Cancelled && o.CancelledBy == CancelledBy.System)
+                .Select(o => o.Id).Order());
+    }
+
     private Order RecurringCashOccurrence(string orderId, string recurringTemplateId)
     {
         var order = Order.Create(

@@ -71,6 +71,10 @@ public class PushSubjectNamesTheEventTests
         // completed, so the customer's order.cancelled push goes out once per order, under the key every
         // other cancel path mints for the same news.
         "AdminCancelOrderAsLockout.cs",
+        // Same claim: an administrator's cancel refuses an order already cancelled, so the account's
+        // order.cancelled push goes out once per order, under the key every other cancel path mints for
+        // the same news; the refund notice beside it names the refund.
+        "PlatformOrderCancellation.cs",
 
         // Swept reminders, each suppressed by its own stamp on the row it reminds about, so the sweep
         // cannot re-send for the same order however many times it ticks.

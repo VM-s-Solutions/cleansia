@@ -145,6 +145,28 @@ public sealed class AdminNotificationEmailRenderingTests
     }
 
     /// <summary>
+    /// The advance alert sends an administrator who calls a booking off early to the no-show action, which
+    /// pays the customer the unfilled sweep's refund and apology credit; a plain cancel pays no apology.
+    /// </summary>
+    [Theory]
+    [InlineData("en", "To call it off before then, cancel it as a no-show in the console: the customer gets the same refund and apology credit.")]
+    [InlineData("cs", "Chcete-li ji zrušit dříve, zrušte ji v konzoli jako nedostavení uklízeče: zákazník dostane stejné vrácení peněz i omluvný kredit.")]
+    [InlineData("sk", "Ak ju chcete zrušiť skôr, zrušte ju v konzole ako nedostavenie sa upratovača: zákazník dostane rovnaké vrátenie peňazí aj ospravedlňujúci kredit.")]
+    [InlineData("uk", "Щоб скасувати його раніше, скасуйте його в консолі як неявку прибиральника: клієнт отримає таке саме повернення коштів і компенсаційний кредит.")]
+    [InlineData("ru", "Чтобы отменить его раньше, отмените его в консоли как неявку уборщика: клиент получит такой же возврат средств и компенсационный кредит.")]
+    public async Task The_No_Cleaner_Yet_Email_Sends_An_Early_Cancel_To_The_No_Show_Action(string locale, string sentence)
+    {
+        var (service, capture) = BuildService([]);
+
+        await service.SendAdminNotificationEmailAsync(Recipient, AdminNotificationEventCatalog.OrderNoCleanerYet,
+            SampleArgs(AdminNotificationEventCatalog.OrderNoCleanerYet), locale, CancellationToken.None);
+
+        Assert.Contains(sentence, capture.HtmlContent, StringComparison.Ordinal);
+        Assert.Contains("ORD-1A2B3C4D", capture.HtmlContent, StringComparison.Ordinal);
+        Assert.Contains("01.10.2026 09:30 UTC", capture.HtmlContent, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// Only a cancellation's own refund is re-driven every hour; any other is the administrators' to
     /// retry. An administrator told a dispute's refund is being retried waits for a retry that never comes.
     /// </summary>

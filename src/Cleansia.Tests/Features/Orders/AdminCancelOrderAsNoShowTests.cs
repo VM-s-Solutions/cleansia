@@ -83,7 +83,8 @@ public class AdminCancelOrderAsNoShowTests
         OrderStatus status = OrderStatus.Confirmed,
         double startedMinutesAgo = 40,
         PaymentType paymentType = PaymentType.Card,
-        PaymentStatus paymentStatus = PaymentStatus.Paid)
+        PaymentStatus paymentStatus = PaymentStatus.Paid,
+        bool withCrew = true)
     {
         var order = Order.Create(
             customerName: "No Show",
@@ -115,8 +116,12 @@ public class AdminCancelOrderAsNoShowTests
             stamp = stamp.AddMinutes(1);
         }
 
-        order.AddAssignedEmployee(OrderEmployee.Create(
-            order, ValidatorTestHelpers.BuildEmployee("emp-no-show", ContractStatus.Approved)));
+        if (withCrew)
+        {
+            order.AddAssignedEmployee(OrderEmployee.Create(
+                order, ValidatorTestHelpers.BuildEmployee("emp-no-show", ContractStatus.Approved)));
+        }
+
         _orders.Setup(r => r.GetQueryable()).Returns(new[] { order }.AsQueryable().BuildMock());
         return order;
     }
@@ -280,6 +285,59 @@ public class AdminCancelOrderAsNoShowTests
         var result = await ConfirmAsync();
 
         Assert.Equal(BusinessErrorMessage.OrderStartTimeNotReached, result.Error!.Message);
+    }
+
+    /// <summary>
+    /// An administrator who calls off a booking nobody has taken, three hours before its start, pays the
+    /// customer what the unfilled sweep would pay at the start: the whole refund on the sweep's key, the
+    /// apology credit, the no-cleaner outcome push and the account e-mail — instead of 250 Kč less through
+    /// a plain cancel.
+    /// </summary>
+    [Fact]
+    public async Task Before_The_Start_A_Booking_Nobody_Is_On_Is_Cancelled_With_The_Sweeps_Remedy()
+    {
+        var order = ArrangeOrder(startedMinutesAgo: -180, withCrew: false);
+
+        var result = await ConfirmAsync();
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(1000m, result.Value!.RefundedAmount);
+        Assert.Equal(250m, result.Value.ApologyCredit);
+        Assert.Equal(OrderStatus.Cancelled, order.CurrentStatus);
+        Assert.Equal(CancelledBy.Admin, order.CancelledBy);
+        Assert.Equal(OrderCancellationReasons.NoCleanerAvailable, order.CancellationReason);
+        _refunds.Verify(r => r.IssueRefundAsync(
+            It.Is<RefundRequest>(q => q.Amount == 1000m && q.Reason == RefundReason.ServiceNotRendered),
+            It.IsAny<CancellationToken>()), Times.Once);
+
+        var apology = Assert.Single(_account!.Transactions);
+        Assert.Equal($"cleaner-noshow:{OrderId}", apology.IdempotencyKey);
+        Assert.Equal("No cleaner was on the booking.", apology.Note);
+
+        _notifications.Verify(n => n.NotifyAsync(
+            CustomerId, NotificationEventCatalog.OrderNoCleanerRefunded,
+            It.Is<Dictionary<string, string>>(args => args["amount"] == "250 Kč"),
+            It.IsAny<string?>(), OrderId, It.IsAny<CancellationToken>()), Times.Once);
+        var email = Assert.IsType<QueueEnvelope<SendGuestOrderCancellationEmailMessage>>(Assert.Single(_enqueued).Message).Payload;
+        Assert.Equal(1000m, email.SuccessfulRefundAmount);
+        Assert.Equal(250m, email.ApologyCreditAmount);
+    }
+
+    /// <summary>
+    /// An unpaid card checkout was never offered to a cleaner, so the sweep does not cancel it and nobody
+    /// failed to come: before its start there is still nothing to confirm.
+    /// </summary>
+    [Fact]
+    public async Task Before_The_Start_An_Unpaid_Card_Checkout_Nobody_Is_On_Is_Still_Refused()
+    {
+        var order = ArrangeOrder(
+            status: OrderStatus.New, startedMinutesAgo: -180, paymentStatus: PaymentStatus.Pending, withCrew: false);
+
+        var result = await ConfirmAsync();
+
+        Assert.Equal(BusinessErrorMessage.OrderStartTimeNotReached, result.Error!.Message);
+        Assert.Equal(OrderStatus.New, order.CurrentStatus);
+        _refunds.Verify(r => r.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Theory]

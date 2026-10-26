@@ -176,7 +176,7 @@ public sealed class CleanerNoShowCancellation(
             orderId: order.Id,
             note: order.AssignedEmployees.Count > 0
                 ? "The assigned cleaner did not arrive."
-                : "No cleaner was assigned when the booking's time arrived.");
+                : "No cleaner was on the booking.");
 
         return amount.Value;
     }

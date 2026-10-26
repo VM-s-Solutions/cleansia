@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Infra.Common.Validations;
@@ -77,6 +78,17 @@ public class CancelUnfilledOrders
     /// it in full on a crew count of zero would pay back a clean that was partly done.
     /// </summary>
     internal static readonly OrderStatus[] NeverStarted = [OrderStatus.New, OrderStatus.Confirmed];
+
+    /// <summary>
+    /// The sweep's selection read off one loaded order, without its clock: the work never began, nobody is
+    /// on it, and the board offered it. Mirrors the query in <see cref="Handler"/> term for term.
+    /// </summary>
+    public static bool IsUnfilled(Order order) =>
+        NeverStarted.Contains(order.CurrentStatus)
+        && order.AssignedEmployees.Count == 0
+        && (order.PaymentStatus == PaymentStatus.Paid
+            || (order.PaymentType == PaymentType.Cash
+                && (order.RecurringTemplateId == null || order.CustomerConfirmedAt != null)));
 
     public class Handler(
         IOrderRepository orderRepository,

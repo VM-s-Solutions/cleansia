@@ -76,7 +76,10 @@ ahead (with no start time, the rest decides), never once it is `OnTheWay` or `In
 defaults 2026-10-24); Android takes it away at the start, iOS and partner web at the next read of the
 job. Since 2026-10-25 `DropOrder` itself takes only `New` and `Confirmed` too (owner ruling
 2026-10-25), refusing the rest with `order.not_confirmed`, so a cleaner placed on a job already under
-way cannot drop it → [Leaving a job](/product/features#cleaner-partner).
+way cannot drop it → [Leaving a job](/product/features#cleaner-partner). From 2026-10-27 the framework
+agreement (§6) names a second way to decline: not accepting the job's contract for work and telling the
+company. No app records it: the cleaner stays on the crew until an administrator takes them off, and
+Start and Complete refuse them until they accept.
 An administrator who takes a cleaner off a job must give a reason
 (`removalReason`, else `order.reassign.removal_reason_required`); the cleaner's notice carries only the
 order, and the job detail shows them the reason (`GetMyAssignmentRemoval`). A weekly job limit carries a
@@ -89,7 +92,8 @@ self-billing agreement and the data-processing agreement (owner ruling 2026-09-2
 for their market and they have not accepted its current version, `TakeOrder`, `ApproveEmployee` and an
 administrator's placement refuse with `employee.legal_documents_not_accepted`, and the apps lead the
 cleaner to the documents to read and accept (`GetMyLegalDocuments`, `AcceptLegalDocument`, echoing the
-text id they were shown). No text is seeded yet, so nothing is refused today.
+text id they were shown). All three are in force since 2026-09-29, so the gate is live, and each new
+version is accepted again before the next take: since `2026-10-27`, the framework agreement's.
 → [Business rules — a cleaner's own documents](/product/business-rules#cleaner-documents)
 
 ## Two synchronised broadcasts

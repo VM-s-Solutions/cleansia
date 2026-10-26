@@ -538,7 +538,8 @@ After the partner completes their profile and uploads required documents, an adm
   → [The business register](/product/business-rules#business-register)
 - Every partner document in force for that market — the framework contract, the self-billing
   agreement, the data-processing agreement — is accepted at its current version
-  (`employee.legal_documents_not_accepted`; none is seeded yet, so nothing is refused today)
+  (`employee.legal_documents_not_accepted`). All three are in force since 2026-09-29, so the gate is
+  live, and a new version — the framework agreement `2026-10-27` — is accepted again before approval
   → [A cleaner's own documents](/product/business-rules#cleaner-documents)
 
 That last line is enforced, not advisory. Approval used to consult `isProfileComplete()` alone, which

@@ -197,9 +197,12 @@ The reassignment process:
 4. The order status and assignment are updated
 5. Both the original and new partners are notified; the removed partner's notice carries only the order
 
-A placement is an **offer** the partner may decline — drop — without consequence (owner ruling
-2026-09-28), while the job is still *New* or *Confirmed*: since 2026-10-25 a job already on the way or in
-progress cannot be dropped
+A placement is an **offer** the partner may decline without consequence (owner ruling 2026-09-28): by
+dropping the job while it is still *New* or *Confirmed* and its start is ahead — since 2026-10-25 a job
+already on the way or in progress cannot be dropped — and, from 2026-10-27 (the framework agreement's
+§6), otherwise by not accepting its contract for work and telling the company. Nothing here records that
+second decline: the partner stays on the crew, *contract pending*, until an administrator takes them
+off with a reason
 → [Business rules — placement is an offer](/product/business-rules#placement-is-an-offer).
 
 **The cleaner placed must be able to do the job.** `AdminReassignOrder` refuses, in this order:
@@ -210,7 +213,7 @@ progress cannot be dropped
 | The cleaner is not active and `Approved` — pending, rejected, terminated, or deactivated | `order.reassign.employee_not_approved` |
 | The cleaner's work country is not the order's market, or they have none | `order.reassign.employee_other_market` |
 | The cleaner has a live job that overlaps this one | `order.reassign.employee_busy` |
-| The cleaner has not accepted a cleaner document in force (none is seeded yet) | `employee.legal_documents_not_accepted` |
+| The cleaner has not accepted a cleaner document in force at its current version (all three are in force since 2026-09-29; from 2026-10-27 the framework agreement is accepted again) | `employee.legal_documents_not_accepted` |
 
 A cleaner already on this order is not refused as busy; the handler answers that they are already
 assigned. The weekly cap, the preferred-cleaner hold and profile completeness, which a cleaner's own

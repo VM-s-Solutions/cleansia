@@ -1649,15 +1649,16 @@ one of them is our own draft until the lawyer delivers** ([below](#legal-drafts)
 | Terms of service | customer | `2026-10-07` (`2026-10-06` until that day) | the customer's contract with the operating company of the market the home is in, concluded at booking — a card booking once its payment completes. Accepted by the tick at registration and at booking, and again before the next booking when a newer version applies ([What is recorded about a customer](#customer-record)); shown at `/terms` |
 | Privacy policy | customer | `2026-10-06` | the operating company is the controller; accepted with the terms, and again before the next booking when a newer version applies; shown at `/privacy` |
 | Complaints procedure | customer | `2026-09-29` | read, never accepted; shown at `/complaints` on the customer web and linked from its footer |
-| Framework cooperation agreement, self-billing agreement | employee | `2026-10-05` | the cleaner's agreements with the operating company of the market they work in, each accepted in the partner apps → [A cleaner's own documents](#cleaner-documents) |
+| Framework cooperation agreement | employee | `2026-10-27` (`2026-10-05` until that day) | the cleaner's agreement with the operating company of the market they work in, accepted in the partner apps → [A cleaner's own documents](#cleaner-documents) |
+| Self-billing agreement | employee | `2026-10-05` | the cleaner's second agreement with the same company, accepted the same way |
 | Data-processing agreement | employee | `2026-09-29` | the cleaner's third agreement with the same company, accepted the same way |
-| Contract for work | employee | `2026-10-05` | one per seat of a job, between the operating company and the cleaner, stamped on the order at booking and accepted at the take → [The contract for work](#work-contract) |
+| Contract for work | employee | `2026-10-27` (`2026-10-05` until that day) | one per seat of a job, between the operating company and the cleaner, stamped on the order at booking and accepted at the take → [The contract for work](#work-contract) |
 
 Earlier versions stay in the database as the texts earlier customers and orders were bound by: the
 terms `2026-09-14`, `2026-09-27`, `2026-09-29`, `2026-09-30`, `2026-10-03`, `2026-10-05` and `2026-10-06`, the
-privacy policy `2026-09-14`, `2026-09-29` and `2026-10-03`, the framework and self-billing agreements `2026-09-29`, and the contract
-for work `2026-09-29` and `2026-09-20`, the latter naming the customer and the cleaner as its
-parties. The terms `2026-09-30` differ from `2026-09-29` only where Plus is concerned: they offer the
+privacy policy `2026-09-14`, `2026-09-29` and `2026-10-03`, the framework agreement `2026-09-29` and
+`2026-10-05`, the self-billing agreement `2026-09-29`, and the contract for work `2026-10-05`,
+`2026-09-29` and `2026-09-20`, the last naming the customer and the cleaner as its parties. The terms `2026-09-30` differ from `2026-09-29` only where Plus is concerned: they offer the
 free trial, and the Plus cancellation terms follow having the Plus benefits rather than a paid
 membership ([The free trial](#plus-trial)). The terms `2026-10-03` differ from `2026-09-30` only in the
 dirtiness rates, +15 % and +30 % ([The dirtiness level](#dirtiness)).
@@ -1776,6 +1777,39 @@ day. The privacy policy is unchanged at `2026-10-06`. **This branch's code must 
 before 2026-10-07**: the booking ban and the door report act on rules only the `2026-10-07` terms state,
 and the `2026-10-06` terms promise that card bookings stay open. Like every text here it is our draft
 ([below](#legal-drafts)), with five more draft banners for the lawyer to clear before launch.
+
+**The `2026-10-27` versions carry the owner's ruling of 2026-10-25 on a cleaner's way out of a job**
+(*"Fix the wording"*, on the agreement still saying a job could be released at any time before it was
+finished; the drafted wording approved the same day, *"Approve"*, effective the day it deploys to DEV).
+They copy `2026-10-05` and differ only in these paragraphs, in all five languages:
+
+- **Framework agreement**, §6, its third and fourth paragraphs. A cleaner may release a job they took, in
+  the app, *until it is on the way or in progress — until someone on it records in the app that they
+  have set off or started — and no later than its start time*, at no cost and with no change to the jobs
+  they are offered, as early as they can; after that they can no longer release it, and a cleaner who
+  then cannot do the job tells the company without delay. That is the window the apps give *Cancel job*
+  ([When a cleaner leaves](#crew-lost)). The `2026-10-05` text allowed a release, by asking for cover or
+  dropping it, *at any time before it is finished*, while since 2026-10-25 the server refuses a drop of a
+  job under way and no app offers cover. A placement is still an offer the cleaner may decline without any
+  consequence: by releasing the job while that window allows it, and otherwise by not accepting its
+  contract for work and telling the company. The old text named the release alone, which a cleaner placed
+  on a job already under way cannot make. A cleaner who keeps a placement accepts its contract for work
+  before they start or, on a job already under way, before they complete it.
+- **Contract for work**, its *Formation* paragraph. A placement is an offer the cleaner may decline
+  without any consequence *as the Framework Cooperation Agreement says*, named in words, instead of *by
+  releasing the job*; one they keep forms the contract when they accept it, before they start or, on a
+  job already under way, before they complete it. It applies to orders booked from 2026-10-27; an order
+  booked earlier keeps its text, which says itself that *a later version does not change a contract
+  already formed*.
+
+The self-billing and data-processing agreements are unchanged, so a cleaner accepts one document again:
+the framework agreement, before their next take, their approval or a placement, from 2026-10-27. Jobs
+they already hold carry on, and the contract for work is accepted at the take as before. Nothing
+announces the new version: a cleaner meets it at their next take, which points to the documents
+([A cleaner's own documents](#cleaner-documents)). Like every text here they are our draft
+([below](#legal-drafts)). **The date is the day the change first deploys to DEV, never earlier**: a
+later deploy renames the two folders in the last commit before the merge.
+→ [ADR-0068 §Amended 2026-10-25](/decisions/adr-0068#amended-2026-10-25)
 
 ### The seller is named from the company record {#company-identity}
 
@@ -1928,12 +1962,12 @@ deleted, and an admin's placement left the same row a cleaner's own act did.
 
 | Rule | Value |
 |---|---|
-| The text an order is booked under | the **employee-audience** `WorkContract` document in force for the **address's market** on the booking day — stamped on the order once (`Orders.WorkContractDocumentId`), never changed; a booking with no text in force is **refused** (the factory throws), never booked without one. The company ↔ cleaner text is `2026-10-05`; an order booked before it keeps the text in force on its booking day, `2026-09-29` or, before that, `2026-09-20` |
+| The text an order is booked under | the **employee-audience** `WorkContract` document in force for the **address's market** on the booking day — stamped on the order once (`Orders.WorkContractDocumentId`), never changed; a booking with no text in force is **refused** (the factory throws), never booked without one. The company ↔ cleaner text is `2026-10-27`; an order booked before it keeps the text in force on its booking day, `2026-10-05`, `2026-09-29` or, before that, `2026-09-20` |
 | Who it names | the client through the company placeholders, filled from the company record of the order's operator when the text is shown ([above](#company-identity)); the cleaner as *you* |
 | What the customer is told | the confirm step's sentence, on every client and whether or not the account already consented: the booking concludes a contract for the cleaning with the operating company of the market where the home is, under its terms of service, and the cleaner carries it out as the company's subcontractor and is no party to it — a sentence, **not a checkbox**. There is no contract-for-work page, no order-detail line and no read for the customer |
 | When the acceptance forms | at the **take**: the cleaner reads the text and the job facts in the app and takes the job in one act; the take **carries the id of the exact text row** they read (`acceptedWorkContractTextId`), and a take without it is refused |
 | One contract per **seat** | a take → drop → re-take is two seats and **two** contracts; a take → drop → admin re-add of the same cleaner is a new seat with **no** contract until they accept |
-| An administrator places a cleaner | **no** acceptance is written — an admin cannot accept on a cleaner's behalf. The placement is an offer the cleaner may decline while the job is `New` or `Confirmed` ([below](#placement-is-an-offer)); a cleaner who keeps it accepts from the job detail (a banner), or is refused at **Start** and at **Complete** with `contract.acceptance_required` and accepts then; a cleaner placed on an **in-progress** job can still accept before completing |
+| An administrator places a cleaner | **no** acceptance is written — an admin cannot accept on a cleaner's behalf. The placement is an offer the cleaner may decline without consequence: by releasing the job while it is `New` or `Confirmed` and its start is ahead, and, from 2026-10-27 (the framework agreement's §6), otherwise by not accepting its contract for work and telling the company ([below](#placement-is-an-offer)); a cleaner who keeps it accepts from the job detail (a banner), or is refused at **Start** and at **Complete** with `contract.acceptance_required` and accepts then; a cleaner placed on an **in-progress** job can still accept before completing |
 | What binds | the text row (document, version, language, hash by one join) **and a frozen snapshot of the job as shown at acceptance**: order number, date and time window, **the seat's reward** and currency — the accepting cleaner's own rates for one seat, as the board quotes them, never what the customer pays — the coarse location (*"Praha · 120"*), rooms, bathrooms, services, packages, extras. Never the street, never a name. Since 2026-10-03 the seat also keeps the job figures that reward was priced from, and is paid from them ([Cleaner pay](#cleaner-pay)) |
 | A new version of the text | applies to orders **booked from its date**; an order already booked keeps its text — no re-acceptance, no "stale version" case |
 | What survives | the row outlives the seat (a drop, cover, rejection or reassignment leaves it), the order's anonymisation and the cleaner's erasure — it is books, kept with the order, **never deleted** |
@@ -1986,7 +2020,12 @@ accepts the contract for work before Start or Complete — but the placement is 
 may decline without consequence**: a drop costs nothing and feeds no metric (`DropOrder` writes only its
 audit row, which only the action timeline reads). Since 2026-10-25 a drop is refused once the job is
 under way ([above](#crew-lost)), so a cleaner placed on a job already on the way or in progress cannot
-drop it. A placement is refused while the cleaner has not
+drop it. **From 2026-10-27 the framework agreement names a second way to decline** (§6,
+[above](#legal-texts)): by releasing the job while it is `New` or `Confirmed` and its start is ahead,
+and otherwise by not accepting its contract for work and telling the company; the earlier texts named
+the release alone. Nothing in the apps records that second decline: the cleaner stays on the crew
+until an administrator takes them off, and while their contract is not accepted Start and Complete
+refuse them (`contract.acceptance_required`). A placement is refused while the cleaner has not
 accepted the cleaner documents in force ([below](#cleaner-documents)), exactly as their own take would
 be.
 
@@ -2021,8 +2060,10 @@ no text in force would gate nothing.
   ([above](#work-contract)); the cleaner is free to take no job and to work for anyone; rewards are
   settled after each 14-day pay period on an invoice the company issues in the cleaner's name, with the
   cash they hold for the company set off ([below](#cash-held)); a confirmed lockout pays the seat's full
-  reward; an administrator's placement is an offer they may decline
-  without consequence ([above](#placement-is-an-offer)); the rules of *How jobs are offered*; approval
+  reward; a job they took may be released, in the app, until it is on the way or in progress and no
+  later than its start; an administrator's placement is an offer they may decline without consequence,
+  by releasing the job while they may and otherwise by not accepting its contract for work
+  ([above](#placement-is-an-offer)); the rules of *How jobs are offered*; approval
   after a business-register check, with liability insurance recommended, not required
   ([Insurance ceiling](#money-constants)); a promise not
   to work directly for customers met through the platform, for 12 months after the last job, and **no
@@ -2032,9 +2073,11 @@ no text in force would gate nothing.
   agreement:* the cleaner processes customer data and home photos for the company, keeps no copies —
   job photos only through the app's camera — and loses access 24 hours after completion
   ([Photos](#photos-and-access)), with one penalty for intentional or grossly negligent misuse.
-  That is the framework and self-billing agreements `2026-10-05`. Their `2026-09-29` versions settled
-  monthly, required the insurance certificate for approval and paid a lockout half of the fee collected
-  ([The legal texts](#legal-texts)).
+  That is the framework agreement `2026-10-27` and the self-billing agreement `2026-10-05`. The
+  framework's `2026-10-05` version let a job be released, by asking for cover or dropping it, at any time
+  before it was finished, and named the release as the only way to decline a placement; their
+  `2026-09-29` versions settled monthly, required the insurance certificate for approval and paid a
+  lockout half of the fee collected ([The legal texts](#legal-texts)).
 
 - **Reading and accepting.** `GET Employee/GetMyLegalDocuments` (both partner hosts) lists the documents
   in force for the cleaner's work market — their address's market until they are approved — with the

@@ -171,11 +171,15 @@ and `ContractStatus == Approved` (`employee.not_approved`). A rejected, still-pe
 cleaner is turned away. Document upload alone is not the gate. And while a partner document — the
 framework contract, the self-billing agreement, the data-processing agreement — is in force and its
 current version not accepted, the take is refused with `employee.legal_documents_not_accepted` and the
-page points to the profile, where the documents are read and accepted (none is seeded yet).
+page points to the profile, where the documents are read and accepted. All three are in force since
+2026-09-29, and a new version — the framework agreement `2026-10-27` — is accepted again before the
+next take → [Business rules — the legal texts](/product/business-rules#legal-texts).
 
 **Taken off a job by an administrator:** the job detail shows the reason the administrator gave, read
 from `GetMyAssignmentRemoval`; the notice itself carries only the order. A placement is an offer the
-partner may drop without consequence → [Business rules](/product/business-rules#placement-is-an-offer).
+partner may decline without consequence: by cancelling the job while it is `New` or `Confirmed` and its
+start is ahead, and otherwise by not accepting its contract for work and telling the company, as the
+framework agreement says since `2026-10-27` → [Business rules](/product/business-rules#placement-is-an-offer).
 
 **The contract for work** (ADR-0068) — a take without `acceptedWorkContractTextId` is
 `contract.not_accepted`, judged before existence; a text row that is not of this order's document is

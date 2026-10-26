@@ -16,8 +16,9 @@ namespace Cleansia.Core.Domain.ServiceAreas;
 /// every Prague postcode starts with 1 and no other Czech one does, while the other cities' postal
 /// regions cover their neighbours too.</para>
 ///
-/// <para><b>The name strip runs on the CUSTOMER's string only.</b> A row named <c>Praha 8</c> keeps
-/// serving only Praha 8 and its quarters and never becomes a claim over the whole city.</para>
+/// <para><b>The name strip runs on the CUSTOMER's string only.</b> By name, a row named <c>Praha 8</c>
+/// serves only Praha 8 and its quarters, never the whole city; a row with a ZIP prefix answers by the
+/// postcode first, as above.</para>
 ///
 /// <para><b>An okres is not a city part.</b> <c>Praha-západ</c>, <c>Praha-východ</c>, <c>Brno-venkov</c>,
 /// <c>Plzeň-sever</c> and <c>Plzeň-jih</c> have the shape of a dashed city part but are the rural

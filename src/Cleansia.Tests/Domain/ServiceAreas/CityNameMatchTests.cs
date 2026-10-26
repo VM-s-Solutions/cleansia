@@ -107,9 +107,9 @@ public class CityNameMatchTests
     }
 
     /// <summary>
-    /// The strip runs on the CUSTOMER's string only. An operator who seeded one district meant one
-    /// district, and must not end up serving the whole city — nor a sibling district — though that
-    /// district's own quarters are still it.
+    /// By name, the strip runs on the CUSTOMER's string only: a row naming one district matches neither the
+    /// whole city nor a sibling district, though that district's own quarters are still it. A row with a
+    /// ZIP prefix answers by the postcode before its name (the shared case table).
     /// </summary>
     [Theory]
     [InlineData("Praha 8", "Praha 22")]

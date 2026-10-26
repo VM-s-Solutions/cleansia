@@ -98,3 +98,41 @@ describe('ProfileComponent — the saved-address country picker', () => {
     expect((select?.nativeElement as HTMLElement).querySelector('.p-select-label')?.textContent?.trim()).toBe('Slovakia');
   });
 });
+
+describe('ProfileComponent — the new password', () => {
+  let fixture: ComponentFixture<ProfileComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [ProfileComponent, TranslateModule.forRoot()],
+      providers: [
+        provideHttpClient(),
+        provideNoopAnimations(),
+        provideRouter([]),
+        { provide: PLATFORM_ID, useValue: 'server' },
+      ],
+    })
+      .overrideComponent(ProfileComponent, {
+        remove: { imports: [NotificationPreferencesComponent] },
+        add: { imports: [NotificationPreferencesStub], providers: [{ provide: ProfileFacade, useValue: new FakeProfileFacade() }] },
+      })
+      .compileComponents();
+
+    fixture = TestBed.createComponent(ProfileComponent);
+    fixture.detectChanges();
+  });
+
+  it('takes a password whose letters are not Latin, and lists its letter rule as met, as the server does', () => {
+    fixture.componentInstance.passwordForm.controls.newPassword.setValue('Пароль2024');
+
+    expect(fixture.componentInstance.passwordForm.controls.newPassword.valid).toBe(true);
+    expect(fixture.componentInstance.passwordValidation().hasLetter).toBe(true);
+  });
+
+  it('takes a password that reaches eight through an emoji, and lists its length rule as met, as the server counts it', () => {
+    fixture.componentInstance.passwordForm.controls.newPassword.setValue('Heslo1😀');
+
+    expect(fixture.componentInstance.passwordForm.controls.newPassword.valid).toBe(true);
+    expect(fixture.componentInstance.passwordValidation().hasMinLength).toBe(true);
+  });
+});

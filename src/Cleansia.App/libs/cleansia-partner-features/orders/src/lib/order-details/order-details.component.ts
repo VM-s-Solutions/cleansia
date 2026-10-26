@@ -51,6 +51,7 @@ import {
   dirtinessLevelLabelKey,
   hasExtras,
   getExtrasEntries,
+  showsCustomerPrice,
 } from './order-details.helpers';
 
 @Component({
@@ -183,6 +184,8 @@ export class OrderDetailsComponent implements OnInit {
   protected readonly hasInvoice = computed(() => !!this.orderDetails()?.receiptNumber);
 
   protected readonly isInProgress = computed(() => this.orderDetails()?.orderStatus.value === OrderStatus.InProgress);
+
+  protected readonly showsCustomerPrice = computed(() => showsCustomerPrice(this.orderDetails()?.paymentType?.value));
 
   protected readonly elapsedTime = computed(() => {
     const order = this.orderDetails();

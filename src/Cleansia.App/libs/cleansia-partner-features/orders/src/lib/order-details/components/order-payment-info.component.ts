@@ -27,4 +27,5 @@ export class OrderPaymentInfoComponent {
   formGroup = input.required<FormGroup>();
   paymentTypeOptions = input.required<ICleansiaSelectOption[]>();
   currencyOptions = input.required<ICleansiaSelectOption[]>();
+  showsPrice = input.required<boolean>();
 }

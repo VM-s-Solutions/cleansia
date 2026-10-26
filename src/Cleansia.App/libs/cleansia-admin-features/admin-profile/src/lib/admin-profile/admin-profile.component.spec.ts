@@ -94,4 +94,18 @@ describe('AdminProfileComponent', () => {
     newPassword.setValue('Long4Enough1');
     expect(newPassword.valid).toBe(true);
   });
+
+  it('takes a password whose letters are not Latin, as the server does', () => {
+    const newPassword = render(true).componentInstance.form.controls.newPassword;
+
+    newPassword.setValue('Пароль202420');
+    expect(newPassword.valid).toBe(true);
+  });
+
+  it('counts the twelve as the server does, an emoji as two characters', () => {
+    const newPassword = render(true).componentInstance.form.controls.newPassword;
+
+    newPassword.setValue('Heslo12345😀');
+    expect(newPassword.valid).toBe(true);
+  });
 });

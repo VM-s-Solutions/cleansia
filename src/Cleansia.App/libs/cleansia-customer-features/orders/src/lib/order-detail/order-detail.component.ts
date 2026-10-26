@@ -32,6 +32,7 @@ import { AmountDueComponent } from '../amount-due/amount-due.component';
 import { OrderPreferredOfferComponent } from './components/order-preferred-offer.component';
 import { OrderDetailFacade } from './order-detail.facade';
 import { OrderMarketFacade } from '../order-market.facade';
+import { statusReachedAt } from '../order-status-history.models';
 import {
   buildReviewLineOptions,
   ReviewLineOption,
@@ -212,11 +213,6 @@ export class OrderDetailComponent implements OnInit {
   // have nobody on it. -> /domain/order-lifecycle
   // ---------------------------------------------------------------------------
 
-  /** When each status was reached, from the order's own history. */
-  private statusReachedAt(status: OrderStatus): Date | undefined {
-    return this.order()?.statusHistory?.find((t) => t.status?.value === status)?.createdOn;
-  }
-
   readonly cleaningSteps = computed<TimelineStep[]>(() => {
     const order = this.order();
     if (!order) return [];
@@ -232,7 +228,7 @@ export class OrderDetailComponent implements OnInit {
       key: string,
       meta?: string,
     ): TimelineStep => {
-      const at = this.statusReachedAt(status);
+      const at = statusReachedAt(order.statusHistory, status);
       const done = !!at || (current !== undefined && current > status && !cancelled);
       return {
         key,
@@ -271,7 +267,7 @@ export class OrderDetailComponent implements OnInit {
 
     if (cancelled) {
       steps.push({ key: 'cancelled', done: true, current: true, danger: true,
-        meta: this.formatDate(this.statusReachedAt(OrderStatus.Cancelled)) });
+        meta: this.formatDate(statusReachedAt(order.statusHistory, OrderStatus.Cancelled)) });
     }
 
     return steps;

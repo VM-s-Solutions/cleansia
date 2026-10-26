@@ -244,6 +244,24 @@ describe('RegisterFacade — the chosen market', () => {
     expect(authService.register).toHaveBeenCalledWith(EMAIL, 'Heslo1234', 'Jan', 'Novák', true, undefined, 'svk-id');
   });
 
+  it('registers a password whose letters are not Latin, as the server takes it', () => {
+    fillForm();
+    facade.formGroup.patchValue({ password: 'Пароль2024', confirmPassword: 'Пароль2024' });
+
+    facade.register();
+
+    expect(authService.register).toHaveBeenCalledWith(EMAIL, 'Пароль2024', 'Jan', 'Novák', true, undefined, 'svk-id');
+  });
+
+  it('registers a password that reaches eight through an emoji, which the server counts as two', () => {
+    fillForm();
+    facade.formGroup.patchValue({ password: 'Heslo1😀', confirmPassword: 'Heslo1😀' });
+
+    facade.register();
+
+    expect(authService.register).toHaveBeenCalledWith(EMAIL, 'Heslo1😀', 'Jan', 'Novák', true, undefined, 'svk-id');
+  });
+
   it('signs up with Google in the persisted market', () => {
     fillForm();
 

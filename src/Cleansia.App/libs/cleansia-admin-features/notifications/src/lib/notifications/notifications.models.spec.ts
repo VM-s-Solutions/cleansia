@@ -30,10 +30,11 @@ function dto(overrides: Partial<UserNotificationDto> = {}): UserNotificationDto 
 }
 
 describe('the admin event catalogue mirror', () => {
-  it('pins the eighteen keys the backend catalogue declares, in its order', () => {
+  it('pins the nineteen keys the backend catalogue declares, in its order', () => {
     expect(ADMIN_NOTIFICATION_EVENT_KEYS).toEqual([
       'admin.order.new',
       'admin.order.crew_lost',
+      'admin.order.crew_short',
       'admin.order.cleaner_not_started',
       'admin.order.no_cleaner_yet',
       'admin.order.lockout_reported',
@@ -67,6 +68,7 @@ describe('the admin event catalogue mirror', () => {
   it('sorts every key into a family the page has an icon for', () => {
     const families = ADMIN_NOTIFICATION_EVENT_KEYS.map(getNotificationFamily);
     expect(families).toEqual([
+      NotificationFamily.Order,
       NotificationFamily.Order,
       NotificationFamily.Order,
       NotificationFamily.Order,
@@ -118,6 +120,31 @@ describe('the copy keys', () => {
     expect(getNotificationBodyKey('admin.order.crew_lost', { statusAtLoss })).toBe(
       'pages.notifications.events.admin.order.crew_lost.body'
     );
+  });
+
+  it('words an order that lost one of its cleaners in its one sentence, naming the cause in crew-lost\'s words', () => {
+    const [row] = buildNotificationRows(
+      [
+        dto({
+          eventKey: 'admin.order.crew_short',
+          args: {
+            orderNumber: 'ORD-8',
+            cause: 'dropped',
+            statusAtLoss: 'Confirmed',
+            cleaningDateTime: '2026-10-26T08:00:00.0000000Z',
+            orderId: 'o-8',
+          },
+        }),
+      ],
+      'en',
+      translate
+    );
+
+    expect(row.family).toBe(NotificationFamily.Order);
+    expect(row.titleKey).toBe('pages.notifications.events.admin.order.crew_short.title');
+    expect(row.bodyKey).toBe('pages.notifications.events.admin.order.crew_short.body');
+    expect(row.params['cause']).toBe('t(pages.notifications.events.admin.order.crew_lost.causes.dropped)');
+    expect(row.route).toEqual(['order-management', 'o-8']);
   });
 
   it('words an order still without a cleaner ahead of its slot in one sentence, with the slot as a date and time', () => {
@@ -187,6 +214,7 @@ describe('getNotificationRoute', () => {
   it.each([
     'admin.order.new',
     'admin.order.crew_lost',
+    'admin.order.crew_short',
     'admin.order.cleaner_not_started',
     'admin.order.no_cleaner_yet',
     'admin.order.lockout_reported',

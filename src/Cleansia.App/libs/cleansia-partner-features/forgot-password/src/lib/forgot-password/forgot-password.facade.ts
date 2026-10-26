@@ -9,7 +9,7 @@ import {
 } from '@cleansia/partner-services';
 import {
   CleansiaPartnerRoute,
-  PASSWORD_PATTERN,
+  CustomValidators,
   RESEND_CODE_COOLDOWN_SECONDS,
   SnackbarService,
 } from '@cleansia/services';
@@ -149,8 +149,8 @@ export class ForgotPasswordFacade extends UnsubscribeControlDirective {
   private createPasswordFormGroup(): FormGroup {
     return this.fb.nonNullable.group({
       code: ['', [Validators.required, Validators.minLength(6), Validators.maxLength(6)]],
-      password: ['', [Validators.required, Validators.pattern(PASSWORD_PATTERN)]],
-      confirmPassword: ['', [Validators.required, Validators.pattern(PASSWORD_PATTERN)]],
+      password: ['', [Validators.required, CustomValidators.password()]],
+      confirmPassword: ['', [Validators.required, CustomValidators.password()]],
     });
   }
 }

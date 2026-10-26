@@ -1,4 +1,12 @@
 {
+  "routes": [
+    {
+      "route": "/.well-known/apple-app-site-association",
+      "headers": {
+        "content-type": "application/json"
+      }
+    }
+  ],
   "navigationFallback": {
     "rewrite": "/index.html",
     "exclude": ["/assets/*", "/*.ico", "/*.js", "/*.css", "/*.svg", "/*.png", "/*.jpg", "/*.woff2"]

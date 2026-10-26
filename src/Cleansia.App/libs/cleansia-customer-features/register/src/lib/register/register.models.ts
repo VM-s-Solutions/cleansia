@@ -11,7 +11,7 @@ export function checkIfPasswordsValid(
 ): PasswordCheck {
   return {
     hasLetter: /\p{L}/u.test(password),
-    hasNumber: /\d/.test(password),
+    hasNumber: /\p{Nd}/u.test(password),
     hasMinLength: password.length >= 8,
     arePasswordsEqual: confirmPassword ? password === confirmPassword : false,
   };

@@ -6,8 +6,9 @@ export const RESEND_CODE_COOLDOWN_SECONDS = 30;
 export class CustomValidators {
   /**
    * The server's password rule (ValidationExtensions.ValidatePassword): `minLength` characters, a letter
-   * of any alphabet and a digit. The length is `.length`, the UTF-16 count the server and every rule list
-   * use, because the `u` flag `\p{L}` needs counts an emoji once. Refuses as `pattern`, the error the fields read.
+   * of any alphabet and a digit of any script. The length is `.length`, the UTF-16 count the server and
+   * every rule list use, because the `u` flag `\p{L}` needs counts an emoji once. Refuses as `pattern`,
+   * the error the fields read.
    */
   static password(minLength = 8): ValidatorFn {
     return (control: AbstractControl): ValidationErrors | null => {
@@ -16,7 +17,7 @@ export class CustomValidators {
       }
 
       const password: string = control.value;
-      const valid = password.length >= minLength && /\p{L}/u.test(password) && /\d/.test(password);
+      const valid = password.length >= minLength && /\p{L}/u.test(password) && /\p{Nd}/u.test(password);
       return valid ? null : { pattern: true };
     };
   }

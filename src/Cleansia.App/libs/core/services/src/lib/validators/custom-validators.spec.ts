@@ -11,7 +11,7 @@ describe('CustomValidators.password', () => {
     new FormControl(password, minLength === undefined ? CustomValidators.password() : CustomValidators.password(minLength))
       .errors;
 
-  it.each(['Heslo123', 'Пароль2024', 'ěščřžýáí1', 'Heslo1😀'])('takes %p', (password) => {
+  it.each(['Heslo123', 'Пароль2024', 'ěščřžýáí1', 'Heslo1😀', 'Heslo\u0661\u0662\u0663'])('takes %p', (password) => {
     expect(errorsFor(password)).toBeNull();
   });
 
@@ -21,6 +21,7 @@ describe('CustomValidators.password', () => {
     ['no letter', '12345678'],
     ['no letter but emoji', '😀😀😀😀1'],
     ['no digit', 'Heslooooo'],
+    ['a number that is no digit', 'Heslooo\u00bd'],
   ])('refuses %s as the pattern error the field already reads', (_label, password) => {
     expect(errorsFor(password)).toEqual({ pattern: true });
   });

@@ -233,7 +233,7 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
     return {
       hasMinLength: pw.length >= 8,
       hasLetter: /\p{L}/u.test(pw),
-      hasNumber: /\d/.test(pw),
+      hasNumber: /\p{Nd}/u.test(pw),
     };
   });
 

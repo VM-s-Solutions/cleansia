@@ -4,6 +4,7 @@
  * This copy only tells the customer earlier. A copy STRICTER than the server tells a customer we do not
  * serve them when we do, so the same case table is pinned in `city-name-match.spec.ts`,
  * `CityNameMatchTests.cs`, `CityNameMatchTest.kt` and `CityNameMatchTests.swift`.
+ * → /product/business-rules#serviced-city
  */
 
 const COMBINING_MARKS = /\p{Mn}/gu;

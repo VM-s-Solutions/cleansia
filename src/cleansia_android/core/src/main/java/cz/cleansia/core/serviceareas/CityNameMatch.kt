@@ -14,10 +14,7 @@ import java.text.Normalizer
  * **The danger of a copy is being STRICTER than the server, not looser.** A client that refuses a city
  * the server would accept tells a paying customer we do not serve them when we do. So the rule is
  * mirrored exactly, and `CityNameMatchTest` pins the same table of cases the C# tests pin — if the two
- * ever disagree, one of those suites goes red.
- *
- * Being LOOSER is survivable: the customer proceeds and the server refuses, which is the behaviour
- * that shipped before this existed.
+ * ever disagree, one of those suites goes red. → /product/business-rules#serviced-city
  */
 object CityNameMatch {
 

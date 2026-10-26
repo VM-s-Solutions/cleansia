@@ -5,28 +5,11 @@ using System.Text.RegularExpressions;
 namespace Cleansia.Core.Domain.ServiceAreas;
 
 /// <summary>
-/// Whether a customer's address is in the serviced city a <c>ServiceCity</c> row names. The iOS, Android
-/// and customer web copies mirror this rule exactly and pin the same case table; a copy stricter than
-/// this one refuses a booking the server would take.
-///
-/// <para><b>A row with a ZIP prefix answers by the postcode.</b> When the address carries a valid
-/// postcode — five digits once every whitespace character is removed — the row serves it exactly when
-/// the postcode starts with the prefix, whatever the city text says; only an address without a valid
-/// postcode falls back to the name. The prefix is enforced for Prague alone (owner ruling 2026-10-25):
-/// every Prague postcode starts with 1 and no other Czech one does, while the other cities' postal
-/// regions cover their neighbours too.</para>
-///
-/// <para><b>The name strip runs on the CUSTOMER's string only.</b> By name, a row named <c>Praha 8</c>
-/// serves only Praha 8 and its quarters, never the whole city; a row with a ZIP prefix answers by the
-/// postcode first, as above.</para>
-///
-/// <para><b>An okres is not a city part.</b> <c>Praha-západ</c>, <c>Praha-východ</c>, <c>Brno-venkov</c>,
-/// <c>Plzeň-sever</c> and <c>Plzeň-jih</c> have the shape of a dashed city part but are the rural
-/// districts around the city; stripping them would serve the countryside on the strength of the city's
-/// row.</para>
-///
-/// <para><b>Exonyms are data, not algorithm.</b> <c>Prague</c> matches only a <c>Prague</c> row, and
-/// <c>Прага</c> matches by name nothing at all.</para>
+/// Whether a customer's address is in the serviced city a <c>ServiceCity</c> row names: a row with a ZIP
+/// prefix answers by a valid postcode, any other row and any address without one by the name, stripped on
+/// the customer's side only. The iOS, Android and customer web copies mirror this rule exactly and pin the
+/// same cases; a copy stricter than this one refuses a booking the server would take.
+/// → /product/business-rules#serviced-city
 /// </summary>
 public static class CityNameMatch
 {

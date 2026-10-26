@@ -148,7 +148,10 @@ market until one is picked here; it decides the currency the booking is priced i
 address lookup. A pick fills the street, city and postcode and the coordinates, and shows what was
 found so it can be checked; until then the step says to pick an address from the list. A city the
 service does not cover is said at once (`api.service_area.city_not_serviced`), and the step cannot be
-left; the server checks again on submit. *Cannot find the address? Enter it manually* opens street,
+left; the server checks again on submit. The check is the server's rule, mirrored: a Prague address by
+its postcode, any other by its city, a dashed or Roman-numeral city part counting as its city
+([Serviced cities](/product/business-rules#serviced-city)); the cached answer is keyed on the city and
+the postcode, so correcting the postcode asks again. *Cannot find the address? Enter it manually* opens street,
 city and postcode fields instead (`addressEnteredManually`), which the server geocodes on submit. A
 signed-in customer can tick *Save this address for next time* and name it. Beside the address, a map
 tile of the picked coordinates (`/api/AddressSearch/map`), and *In range* once the city is confirmed.

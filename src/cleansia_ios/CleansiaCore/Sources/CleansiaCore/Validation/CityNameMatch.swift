@@ -6,6 +6,7 @@ import Foundation
 /// refuses the booking; this copy only tells the customer earlier. A copy that is STRICTER than the server tells a
 /// paying customer we do not serve them when we do, so the rule is mirrored exactly and `CityNameMatchTests` pins
 /// the case table the C#, Kotlin and TypeScript suites pin. Change a case in all four.
+/// → /product/business-rules#serviced-city
 ///
 /// It reads Unicode scalars, as the server reads its UTF-16 characters, never `Character`s: a grapheme cluster
 /// would glue a mark to the space or dash before it and hide that space or dash from the rule.

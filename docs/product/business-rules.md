@@ -3644,6 +3644,92 @@ company's markets are not markets anywhere — not listed, not quoted, not booka
 cleaner as a work country — the moment the switch is thrown → [A company's lifecycle](#company-lifecycle),
 [Platform expandability — the expansion path](/architecture/platform-expandability#expansion-path)
 
+### Serviced cities {#serviced-city}
+
+**A booking is taken only at an address in a serviced city of its market** — an active `ServiceCity` row
+of the address's country, kept on the admin console's Service area page. The server decides, and
+refuses `city.not_serviced`: a one-off booking (`OrderAddressResolver`), and since the fix plan of
+2026-10-25 a recurring schedule's creation and every edit of one, asked of its saved address
+(`CreateRecurringBooking`, `UpdateRecurringBooking`), so a schedule no longer keeps putting orders on the
+board for a city nobody cleans. A running schedule is not re-checked when its occurrences are created,
+so delisting a city cancels nothing. The server never refuses a cleaner's own address for its city:
+cleaners may live anywhere in a serviced country (`UpdateAddressInfo`, `UpdateEmployee`), and the partner
+apps only show whether it is in a serviced city. The clients ask the same question earlier, against the
+rows they load: the customer web's booking step cannot be left on an address it refuses, while the
+customer apps show a notice and let the address be saved.
+
+**A city row with a ZIP prefix answers by the postcode** (owner decision 2026-10-25: *"Confirm. But we
+start with Praha first, also Prague post indexes are quite weird, some of them start with 1. Maybe it's
+better to match exactly the pattern"*). Every Prague postcode is five digits from 100 00 to 199 99, and
+no other Czech postcode starts with 1, so every Prague row — `Praha`, `Prague`, `Praha 1`–`22`,
+`Prague 1`–`22` — carries the prefix `1`, and no other seeded row carries one. The prefixes the other
+cities were seeded with are cleared: they were whole postal regions (Brno's `6` also covers Znojmo and
+Břeclav), so enforcing them would have served the neighbours. DEV, seeded before, is moved to the same
+values by `sql-scripts/fix-service-city-zip-prefixes.sql`.
+
+- **A valid postcode** is what is left once every whitespace character is removed, a no-break space
+  included, when that is exactly five ASCII digits: `110 00`, `11000` and `110` + no-break space + `00`
+  are `11000`; `1100`, `602 000`, `110-00` and `CZ-110 00` are none.
+- **A row with a prefix and an address with a valid postcode**: the row serves the address exactly when
+  the postcode starts with the prefix, which is trimmed and never compacted. The city text is not read,
+  either way: `Прага`, `Brno` and an empty city at `110 00` are served by the Prague rows, and `Praha` at
+  `602 00` by none of them.
+- **Otherwise** — a row without a prefix, or an address without a valid postcode — the row serves the
+  address by its name, below. So nothing that booked before is refused for want of a postcode.
+
+**By name, a row matches the customer's city, the part of it before its first dash, or either without a
+trailing district.** Both names are first folded: trimmed, written without diacritics, in lower case,
+with every dash (U+2010 to U+2015, and the minus sign U+2212) written as `-` and every run of
+whitespace as one space, so `PRAHA`, `Plzen`, `Ceske Budejovice` and `Praha` + no-break space + `8`
+read as the rows `Praha`, `Plzeň`, `České Budějovice` and `Praha 8`. The candidates are then taken from
+the customer's city alone, never from the row's name:
+
+1. the city itself;
+2. the part before its first dash, when there is something on both sides of it — `Brno-střed`,
+   `Brno - Královo Pole`, `Ostrava-Poruba`, `Ústí nad Labem-Střekov` and `Ostrava 3 - Ostrava-Jih` are
+   in their city. **The five okresy around a city share that shape and are not in it**: `Praha-západ`,
+   `Praha-východ`, `Brno-venkov`, `Plzeň-sever` and `Plzeň-jih` keep the part before the dash out, judged
+   on the first word after the dash. `Praha-` and `Brno -` gain nothing;
+3. each of those without a trailing district — one or two digits, or a Roman numeral of up to six of
+   `i`, `v` and `x`: `Praha 8`, `Pardubice II`, `Liberec XIV-Ruprechtice`, `Plzeň 2-Slovany`.
+
+Because the strip runs on the customer's city only, a row named `Praha 8` serves Praha 8 and its
+quarters (`Praha 8 - Libeň`) by name, never Praha or Praha 22; the 44 `Praha N` and `Prague N` rows
+stay, harmless beside the `Praha` and `Prague` rows. **Exonyms are rows, not rules**: `Prague` is its
+own row, and `Прага`, `Prag` and `Pilsen` match no row by name — a Prague address in any spelling is
+served by its postcode when it has a valid one. The apps ask their geocoder in Czech, so a picked address carries the Czech name
+on any phone ([Shared patterns — maps](/mobile-app/patterns#maps)); the customer web's lookup goes
+through the server's address search, which names no language.
+
+| City | Postcode | Served | Why |
+|---|---|---|---|
+| `Прага` | `110 00` | yes | a valid postcode starting with `1` |
+| `Praha` | `602 00` | no | a valid postcode no Prague row takes, and no other row is `Praha` |
+| `Praha` | none, or `1100` | yes | no valid postcode: the row `Praha` by name |
+| `Praha-západ` | `252 00` | no | a postcode outside Prague, and an okres |
+| `Brno-střed` | `602 00` | yes | the row `Brno`: the part before the dash |
+| `Brno-venkov` | `664 00` | no | an okres |
+| `Pardubice II` | `530 02` | yes | the row `Pardubice`: without its district |
+| `Pilsen` | `301 00` | no | an exonym with no row |
+
+**The rule has one authority and three mirrors.** The server's `CityNameMatch` decides; the customer
+web's `city-name-match.ts`, iOS's `CityNameMatch.swift` and Android's `CityNameMatch.kt` mirror it so a
+customer is told before paying, and the four suites pin the same 119 cases, the rows above among them.
+A mirror stricter than the server would tell a customer we do not serve a city we do, and
+the web would block the step. **For the letters, digits, spaces and dashes of the markets' alphabets the
+mirrors answer as the server does.** Outside them a client's runtime reads its own Unicode tables, which
+can differ from the server's in either direction — a mark the server keeps, a character above U+FFFF,
+the final sigma — on a character no address in these languages uses.
+
+**What the rule does not do** (reported, not built). A comma after the okres word defeats the okres
+check, so `Praha-západ, Jesenice` with no valid postcode is served by the `Praha` row. A row whose own
+name has a dash, such as an added `Frýdek-Místek`, takes its districts but not its quarters
+(`Frýdek-Místek 2 - Lískovec` is refused). The admin console's ZIP-prefix field accepts any text up to 20
+characters: a prefix with a letter or an inner space serves no valid postcode, so that row serves only
+addresses without one, by name, and a prefix of five digits serves that one postcode. Only Prague is
+matched by postcode; another city's prefix is an administrator's choice to enforce.
+→ [Service area page](/admin-app/overview#service-area)
+
 ## A company's lifecycle {#company-lifecycle}
 
 An operating company stops trading in three acts, run by **its own administrators** from the admin app's

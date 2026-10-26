@@ -85,10 +85,14 @@ lists what is still missing. If everything is ticked and it still shows, the mis
 admin approval.
 
 **Orders are refused outside serviced cities.** The platform only operates where a `ServiceCity` row
-exists. Prague is seeded, along with its district spellings in both Czech and English (`Praha 4`,
-`Prague 4`, and so on). An address in a city with no row is refused at booking. The mobile apps warn
-about this at address-selection time so it is not discovered at payment — but that warning is
-advisory, and the **address still saves**: people move, and coverage grows.
+exists. Prague is seeded as `Praha` and `Prague`, with its numbered districts in both spellings
+(`Praha 4`, `Prague 4`, and so on), every one of them with the ZIP prefix `1`. A Prague address with a
+valid postcode is served by that postcode, whatever its city text says, and one without is served by
+name: the `Praha` row serves `Praha 4` and `Praha 4 - Chodov`, because the district is stripped from the
+customer's city, never from the row's. An address in a city no row serves is refused at booking, a
+recurring schedule's included. The mobile apps warn about this at address-selection time so it is not
+discovered at payment — but that warning is advisory, and the **address still saves**: people move, and
+coverage grows. → [Serviced cities](/product/business-rules#serviced-city)
 
 **`Confirmed` means a cleaner took the job — and nothing about money.** A card order that is paid but
 unassigned sits at `New`, exactly like a cash one. It used to mean either thing, which is how a

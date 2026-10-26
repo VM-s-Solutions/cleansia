@@ -421,11 +421,17 @@ public class User : TenantAuditable
     /// brings a password other than the stored one leaves the account with none: the confirmation signs
     /// its confirmer in, and the reset gives them a password nobody else chose. Keeping the newest password
     /// instead would let a stranger who registers again after the owner arm one the owner then confirms.
-    /// The same password again is the same claim and is kept. Returns the RAW new confirmation code.
+    /// The same password again is the same claim and is kept. Every call costs one password-hash
+    /// derivation, so its timing does not tell whether the password was withdrawn. Returns the RAW new
+    /// confirmation code.
     /// </summary>
     public string RegisterAgain(string password)
     {
-        if (Password is null || !password.VerifyPassword(Password))
+        if (Password is null)
+        {
+            _ = password.HashAndSaltPassword();
+        }
+        else if (!password.VerifyPassword(Password))
         {
             Password = null;
         }

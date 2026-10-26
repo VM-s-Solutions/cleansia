@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Extensions;
 using Cleansia.Core.Domain.Users;
@@ -60,6 +61,40 @@ public class UserRegisterAgainTests
         Assert.Equal(raw, user.RawConfirmationToken);
         Assert.Equal(0, user.ConfirmationCodeAttempts);
         Assert.True(user.ConfirmationCodeExpiresAt > DateTimeOffset.UtcNow);
+    }
+
+    /// <summary>
+    /// A registration that skipped the derivation once the password is gone would tell the caller, by its
+    /// speed alone, that a contested registration withdrew it. Fastest of three, so a busy machine can only
+    /// make a sample slower, and the bar is a quarter of a registration that verifies a stored password.
+    /// </summary>
+    [Fact]
+    public void A_Registration_After_The_Withdrawal_Takes_As_Long_As_One_That_Verifies_A_Stored_Password()
+    {
+        var stored = UnconfirmedWith(FirstPassword);
+        var withdrawn = UnconfirmedWith(FirstPassword);
+        withdrawn.RegisterAgain(SecondPassword);
+
+        var verifying = Fastest(() => stored.RegisterAgain(FirstPassword));
+        var afterWithdrawal = Fastest(() => withdrawn.RegisterAgain(FirstPassword));
+
+        Assert.NotNull(stored.Password);
+        Assert.Null(withdrawn.Password);
+        Assert.True(afterWithdrawal >= verifying / 4, $"Registered again after the withdrawal in {afterWithdrawal.TotalMilliseconds} ms, with a stored password in {verifying.TotalMilliseconds} ms.");
+    }
+
+    private static TimeSpan Fastest(Action registration)
+    {
+        var fastest = TimeSpan.MaxValue;
+        for (var sample = 0; sample < 3; sample++)
+        {
+            var clock = Stopwatch.StartNew();
+            registration();
+            clock.Stop();
+            fastest = clock.Elapsed < fastest ? clock.Elapsed : fastest;
+        }
+
+        return fastest;
     }
 
     /// <summary>As the row is read back from the database, where the column holds the PBKDF2 hash.</summary>

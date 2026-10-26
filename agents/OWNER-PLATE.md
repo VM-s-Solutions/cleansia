@@ -57,7 +57,8 @@ D5, D8, D12, F1–F8, F10, Q-UI-01, Q-UI-02), naming the commits. The record of 
 >
 > **2026-10-26.** **PR #355, the partner wave, merged on 2026-10-25 as `407d8acd1`**, and DEV runs that
 > commit (*"Redeploy as mentioned"*). Your answers of 2026-10-25 shipped on
-> `feature/owner-fixes-2026-10-25` (not yet merged), but one. On the earlier list: the contract wording
+> `feature/owner-fixes-2026-10-25` (not yet merged), but one, and F1 only in part (its single-registration
+> half is open, D15). On the earlier list: the contract wording
 > against D-1, *"Fix the wording"* (the `2026-10-27` framework agreement and contract for work); whether
 > the apps keep closing *Cancel job* at the job's start time, *"Yup"* (recorded in ADR-0067 and the
 > business rules); the customer-message gaps, *"Fix"*; the flaky test, *"Fix"*; DEV, *"Redeploy as

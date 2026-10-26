@@ -185,4 +185,28 @@ final class CityNameMatchTests: XCTestCase {
             XCTAssertEqual(item.question.ask(), item.answer, "case \(index + 1): \(item.question)")
         }
     }
+
+    /// Not in the shared table, which cannot tell these apart: the characters the server reads, at each place this
+    /// port reads them. Every answer is the server's.
+    func testTheCharactersTheServerReads() {
+        XCTAssertTrue(
+            CityNameMatch.isServiced(Self.fixtureRows, city: "Praha", zipCode: "1\u{0301}1000"),
+            "a postcode is counted in scalars: 1, U+0301 and 1000 make six, so no postcode, and Praha is served by name"
+        )
+        XCTAssertTrue(CityNameMatch.matches("Brno", "Brno \u{0662}"), "a district digit of another script counts")
+        XCTAssertFalse(CityNameMatch.matches("Brno", "Brno ½"), "a fraction is no district digit")
+        XCTAssertFalse(
+            CityNameMatch.matches("Pardubice", "Pardubice \u{2161}"),
+            "a Roman numeral sign is no district digit"
+        )
+        XCTAssertFalse(
+            CityNameMatch.matches("Praha", "Praha\u{200B}-Libeň"),
+            "U+200B is not trimmed from the part before a dash"
+        )
+        XCTAssertFalse(CityNameMatch.matches("Praha", "Praha\u{20DD}"), "an enclosing mark is kept")
+        XCTAssertFalse(
+            CityNameMatch.matches("Praha", "Praha \u{0301}"),
+            "whitespace is trimmed before the marks are removed"
+        )
+    }
 }

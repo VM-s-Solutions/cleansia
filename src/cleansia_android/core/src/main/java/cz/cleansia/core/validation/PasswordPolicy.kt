@@ -4,7 +4,7 @@ package cz.cleansia.core.validation
  * The one password policy, and it is the server's.
  *
  * This mirrors `ValidationExtensions.PasswordPattern`
- * (`^(?=.*[a-zA-Z])(?=.*\d).{8,}$`) in Cleansia.Core.AppServices, which is the
+ * (`^(?=.*\p{L})(?=.*\d).{8,}$`) in Cleansia.Core.AppServices, which is the
  * single source of truth every auth endpoint composes, and the iOS twin
  * `CleansiaCore/Sources/CleansiaCore/Validation/PasswordPolicy.swift`.
  * It must not drift from either: a client that demands MORE than the server

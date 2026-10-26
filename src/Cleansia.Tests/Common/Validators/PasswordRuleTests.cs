@@ -57,4 +57,31 @@ public class PasswordRuleTests
 
         Assert.True(result.IsValid);
     }
+
+    /// <summary>
+    /// A letter is a letter in any script, as the apps' "Contains a letter" rule counts it, so a password
+    /// whose only letters are Cyrillic or accented is not refused after the app showed every rule met.
+    /// </summary>
+    [Theory]
+    [InlineData("Пароль2024")]
+    [InlineData("ěščřžýáí1")]
+    [InlineData("пароль12")]
+    public void A_Letter_From_Any_Script_Counts(string password)
+    {
+        var result = _validator.Validate(new Subject(password));
+
+        Assert.True(result.IsValid);
+    }
+
+    [Theory]
+    [InlineData("Пароль")]      // letters only, no digit
+    [InlineData("1234567٣")]    // digits only, one of them Arabic-Indic
+    [InlineData("Пар1")]        // a letter and a digit, too short
+    public void A_Password_Missing_A_Rule_Is_Still_Refused_Whatever_Its_Script(string password)
+    {
+        var result = _validator.Validate(new Subject(password));
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.InvalidPasswordFormat);
+    }
 }

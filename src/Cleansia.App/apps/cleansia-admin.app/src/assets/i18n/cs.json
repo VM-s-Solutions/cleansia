@@ -1586,7 +1586,7 @@
         "name_placeholder": "např. Praha, Brno, Plzeň",
         "zip_prefix_label": "PSČ prefix (volitelné)",
         "zip_prefix_placeholder": "např. 1, 11, 11000",
-        "zip_prefix_hint": "Zatím se nevynucuje — zachyceno pro budoucí přísnější validaci.",
+        "zip_prefix_hint": "Je-li vyplněn, adresa s pětimístným PSČ patří k tomuto městu, když její PSČ začíná tímto prefixem, a jinak ne, ať uvádí jakékoli město; adresa bez pětimístného PSČ se posuzuje podle názvu. Použijte jen prefix, který nepokrývá žádné jiné město.",
         "active_label": "Aktivní",
         "active": "Aktivní",
         "inactive": "Neaktivní"

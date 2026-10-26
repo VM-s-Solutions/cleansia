@@ -1482,7 +1482,7 @@
         "name_placeholder": "napr. Bratislava, Košice, Žilina",
         "zip_prefix_label": "PSČ prefix (voliteľné)",
         "zip_prefix_placeholder": "napr. 1, 11, 11000",
-        "zip_prefix_hint": "Zatiaľ sa nevynucuje — zachytené pre budúcu prísnejšiu validáciu.",
+        "zip_prefix_hint": "Ak je vyplnený, adresa s päťmiestnym PSČ patrí k tomuto mestu, keď jej PSČ začína týmto prefixom, a inak nie, nech uvádza akékoľvek mesto; adresa bez päťmiestneho PSČ sa posudzuje podľa názvu. Použite len prefix, ktorý nepokrýva žiadne iné mesto.",
         "active_label": "Aktívne",
         "active": "Aktívne",
         "inactive": "Neaktívne"

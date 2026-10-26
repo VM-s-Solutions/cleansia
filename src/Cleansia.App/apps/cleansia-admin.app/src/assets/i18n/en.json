@@ -1482,7 +1482,7 @@
         "name_placeholder": "e.g., Praha, Brno, Plzeň",
         "zip_prefix_label": "ZIP prefix (optional)",
         "zip_prefix_placeholder": "e.g., 1, 11, 11000",
-        "zip_prefix_hint": "Not enforced yet — captured for future stricter validation.",
+        "zip_prefix_hint": "If set, an address with a five-digit postcode counts as this city when the postcode starts with this prefix, and not otherwise, whatever city it names; an address without a five-digit postcode is matched by name. Use only a prefix that covers no other city.",
         "active_label": "Active",
         "active": "Active",
         "inactive": "Inactive"

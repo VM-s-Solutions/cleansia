@@ -234,7 +234,10 @@ request for a permission the manifest does not declare, so a leftover request fo
 would read as a denial on every device — and the merged manifest declares nothing finer.
 `LocationPermissionTest` pins both. The iOS partner app's location purpose string names the same two
 uses, and says the distance is calculated only on the device, in all five `InfoPlist.strings` and in
-`project.yml` (`LocationPurposeCopyTests`).
+`project.yml` (`LocationPurposeCopyTests`). Its camera purpose string names before-and-after job photos,
+the profile photo and photos of the cleaner's documents, and its photo-library string the profile photo
+and a photo of a document, which job photos never come from (since the fix plan of 2026-10-25, the same
+five files and `project.yml`; `PhotoPurposeCopyTests`).
 
 **`:customer-app`** — `INTERNET`, `POST_NOTIFICATIONS`, `ACCESS_FINE_LOCATION`,
 `ACCESS_COARSE_LOCATION`. It does not declare `ACCESS_NETWORK_STATE` or `CAMERA`, and it still
@@ -253,15 +256,19 @@ android.permission.POST_NOTIFICATIONS`) or read logcat's `Displayed …/MainActi
 `am start -W` reports `GrantPermissionsActivity`, whose time is not the app's first frame.
 
 **Neither app declares a storage permission, and neither needs one.** Every gallery picker in
-both apps goes through the system picker — `PickVisualMedia()` on partner (job photos, avatar),
-`GetContent()` for identity documents, `PickVisualMedia()` and `GetMultipleContents()` on customer
-(avatar, dispute evidence) — which returns a URI that already carries a read grant. Every consumer
-reads it with `contentResolver.openInputStream`, never a file path, so no permission applies at any
-API level.
+both apps goes through the system picker — `PickVisualMedia()` on partner (avatar, a document's
+photo), `GetContent()` for a document chosen as a file, `PickVisualMedia()` and
+`GetMultipleContents()` on customer (avatar, dispute evidence) — which returns a URI that already
+carries a read grant. Every consumer reads it with `contentResolver.openInputStream`, never a file path,
+so no permission applies at any API level.
 
 **`:partner-app` declares `CAMERA`; `:customer-app` does not.** That is not an oversight in either
 direction: a cleaner photographs a job and their own avatar, which both iOS apps have always been
-able to do, while a customer only ever attaches an existing image. Capture writes to
+able to do, and since the fix plan of 2026-10-25 their documents, on both platforms, while a customer
+only ever attaches an existing image. A document is taken with the camera, picked from the gallery or
+chosen as a file, on Upload and on Replace, through the shared photo-source sheet with a file row
+(`rememberPhotoSourcePicker` with `onChooseFile`); job and lockout photos stay camera-only. Capture
+writes to
 `cacheDir/camera/` and is handed to the system camera app through the FileProvider — the `Bitmap`
 in the legacy intent extra is a thumbnail and is not used.
 
@@ -506,6 +513,40 @@ the extension, and the widget uses it to draw the card in that language.
   Extension, so the simulator always shows the system-language banner.
 
 `src/cleansia_ios/README.md` has the same table with each target's entitlements file.
+
+### Strong passwords: the associated domain {#webcredentials}
+
+**Each app names its web host as a `webcredentials` associated domain** (since the fix plan of
+2026-10-25), so iOS offers *Use Strong Password* on a new-password field and saves the credential under
+that host. The entitlement reads `webcredentials:$(WEBCREDENTIALS_HOST)`, a build setting chosen like
+`API_BASE_URL`: the base settings name the DEV hosts, `partner.dev.cleansia.cz` and
+`customer.dev.cleansia.cz`, and the Release configuration the production ones, `partner.cleansia.cz` and
+`cleansia.cz`. The TestFlight lanes pass the DEV host whenever they are given `api_base_url:`, so a build
+that calls DEV saves passwords for DEV. The partner app's entitlement is generated from `project.yml`;
+the customer app's hand-maintained file carries the same line. The signed archive
+(`-allowProvisioningUpdates`) should register the Associated Domains capability on both App IDs; if it
+does not, enable the capability on each App ID in the Apple Developer portal.
+
+**The host has to vouch for the app.** It answers `/.well-known/apple-app-site-association` with HTTP 200,
+`Content-Type: application/json` and no redirect, naming the app under `webcredentials`:
+`ST9QYZHG63.cz.cleansia.customer` on the customer web, `ST9QYZHG63.cz.cleansia.partner` on the partner
+web (the team id is in every signed build, and public by design). The customer web serves the file from
+its server render (`apps/cleansia.app/src/root-assets/well-known/`, its content type set in `server.ts`,
+since an extensionless file would go out as `application/octet-stream`), the partner web from its Static
+Web App (`apps/cleansia-partner.app/src/well-known/`, copied to `/.well-known`, a route setting the
+content type), and both deploy artifacts keep the dot-folder (`include-hidden-files: true`). Apple's CDN
+must have fetched the file before a tester installs the build. The production hosts are parked, so a
+Release build offers nothing until the same two files answer on `cleansia.cz` and `partner.cleansia.cz`
+(`deploy/AZURE-DEV-RUNBOOK.md` §12).
+
+**The fields say what they hold.** Partner Register declares `.username` on the e-mail and
+`.newPassword` on both password fields, and partner Sign in `.username` and `.password`, so the saved
+password fills back; the customer app's sign-up, reset and Security fields already declared theirs, and
+its Sign up keeps `.emailAddress`. No `passwordRules` are declared: iOS's default strong password, twenty
+characters of letters and a digit in groups joined by hyphens, already meets the platform's password rule.
+An e-mail keyboard opens in lower case with autocorrection off, on every field that asks for the
+`.emailAddress` keyboard (`CleansiaTextField`). Android declares the same hints through Compose's content
+types, which need Compose 1.8 ([above](#compose-1-8)).
 
 ### The Xcode projects and `Info.plist` are generated — do not edit them
 
@@ -760,8 +801,10 @@ FASTLANE_SKIP_DOCS=1 bundle exec fastlane preflight app:partner   # the checks a
 ```
 
 **Pass `api_base_url:` with the DEV host for every build while production has no DNS.** Without it the
-build calls the production host and reaches no backend. `all` ships both apps but refuses the option,
-because the two apps call different hosts, so use the two lanes.
+build calls the production host and reaches no backend. With it the lane also passes the app's DEV web
+host as `WEBCREDENTIALS_HOST`, so the build offers and saves strong passwords for the DEV site rather than
+the parked production one ([Strong passwords](#webcredentials)). `all` ships both apps but refuses the
+option, because the two apps call different hosts, so use the two lanes.
 
 Each lane, in order:
 

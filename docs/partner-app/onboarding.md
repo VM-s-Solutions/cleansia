@@ -36,6 +36,16 @@ The phone number is not asked here. The profile asks for it: on the apps, in its
 while the request is in flight, and a tap names each missing or invalid field under it
 ([What each step checks before it sends](#step-checks)).
 
+**The password can be the phone's own suggestion** (since the fix plan of 2026-10-25). The apps'
+sign-up marks the e-mail as the account's user name and both password fields as a new password —
+`.username` and `.newPassword` on iOS, `NewUsername` and `NewPassword` on Android — so iCloud Keychain
+or Google Password Manager offers a strong password and saves it, and Sign in fills it back. No password
+rules are declared: the default suggestion already meets the rule the list under the field shows, at
+least 8 characters with a letter and a digit. A letter of any alphabet counts, on the server and the web
+as in the apps (since the same day; until then the server and the web wanted a letter from a to z, so a
+password such as *Пароль2024* showed every rule green and was refused). On iOS the suggestion needs the
+app's associated domain to be live → [Strong passwords](/mobile-app/overview#webcredentials).
+
 ::: info
 The registration route is protected by the `guestGuard` -- already authenticated partners are redirected to `/orders`.
 :::
@@ -442,6 +452,18 @@ Partners must upload identity and work-related documents through the profile pag
 5. Every file is its own document — several of one type are allowed — and a file byte-identical to one
    the cleaner already holds, active and not rejected, is refused (`employee_document.duplicate_file`)
    → [Business rules — the papers a cleaner uploads](/product/business-rules#employee-documents)
+
+**On the Android and iOS apps a document can be photographed on the spot** (since the fix plan of
+2026-10-25). *Upload* — on the Documents step and in Profile → My documents — and each document's
+*Replace* first ask where it comes from: *Take Photo* (only on a phone with a camera), *Choose from
+Library* (*Choose from Gallery* on Android) or *Choose File*. Then the upload asks for the type and the
+description, and a replacement for its description, as before. A photo from the camera or the library
+goes up as a JPEG of at most 1920 px, so a picture of an identity card no longer has to be saved to
+Files first. iOS's file picker offers exactly what the server accepts, PDF, JPEG, PNG, DOC and DOCX;
+until then it offered every image type, HEIC included, which the server refuses, and no Word document.
+Android's opens the system picker on any file, as before, and re-encodes an image it picks. A source
+chosen and then cancelled, at the dialog, the camera or the picker, never turns the next *Upload* into a
+replacement. The partner web's file input already let a phone offer the camera, the library and files.
 
 Supported document types:
 

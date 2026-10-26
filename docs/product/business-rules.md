@@ -2610,9 +2610,19 @@ Six things that surprise people:
   crew's rows sum to the job's figures exactly; a cleaner who works a two-seat job alone is paid one
   seat. Until 2026-09-28 every assigned cleaner was paid the whole figure, so a crew of three paid its
   rates three times against one customer price.
-- **What a cleaner is shown is the seat's share.** The board, the job detail, the dashboard estimate and
-  the available-jobs preview quote `OrderPayEstimator`'s figure — one seat, raised by the level, without
-  the first seat's residue cents — and the partner web labels it *per spot*. On a job the cleaner
+- **What a cleaner is shown is the seat's share.** The board, the job detail, the dashboard estimate,
+  the available-jobs preview and, since the fix plan of 2026-10-25, a job reserved for the cleaner on
+  *Pending offers* quote `OrderPayEstimator`'s figure — one seat, raised by the level, without the first
+  seat's residue cents — and the partner web labels it *per spot* (owner decision 2026-10-25, *"Yes"*: a
+  *Reserved for you* offer shows the cleaner's own pay). The offer carries it as
+  `PendingOfferItem.EstimatedCleanerPay`, and keeps `TotalPrice`, the customer's total it led with until
+  then, for the builds installed before it. **A cleaner sees the customer's price only on a cash job**,
+  where it is the amount to collect at the door: the payment card's total with its subtotal and discount
+  lines, and each package's price. On a job not paid in cash, a job with no payment type included, the
+  Android and iOS payment card shows only how it is paid and the payment status, and the partner web's
+  payment section only the payment type and the currency (since the fix plan of 2026-10-25). It is
+  display only: the API still sends every cleaner the price, and the dialog that records cash still
+  names the amount. On a job the cleaner
   holds, the job detail, *My jobs* and the dashboard (a completed job not yet paid included) quote
   their own seat's contract reward from its frozen figures; an open job is quoted at today's rates,
   because an offer is made at them. **An open job's quote includes the extras share** (since

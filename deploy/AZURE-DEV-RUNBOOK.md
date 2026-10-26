@@ -883,6 +883,15 @@ GSI fails with an "origin not allowed" 403. API hostnames are not needed there.
 - [ ] Log in there in a **stock** browser (no third-party-cookie exceptions): the response `Set-Cookie`
       lands, and subsequent API calls send it (DevTools → the API request → Cookies) — 200s, no 401.
 - [ ] A password-reset email links to the custom customer domain (proves `customerWebBaseUrl` flipped).
+- [ ] `curl -si https://<customer host>/.well-known/apple-app-site-association` and the same on the
+      partner host answer **200**, `content-type: application/json`, no redirect, and the JSON naming
+      `ST9QYZHG63.cz.cleansia.customer` / `ST9QYZHG63.cz.cleansia.partner` under `webcredentials`; then
+      `curl -s https://app-site-association.cdn-apple.com/a/v1/<host>` returns the same file. The iOS apps
+      name their web host as a `webcredentials` domain (`WEBCREDENTIALS_HOST`: the DEV hosts in Debug and
+      in a TestFlight build given `api_base_url`, `cleansia.cz` and `partner.cleansia.cz` in Release), so
+      **a Release build offers no strong password until both files answer on the production hosts**; the
+      partner Static Web App's answer for the dot-folder and its route header can only be seen after a
+      deploy. → docs `/mobile-app/overview#webcredentials`
 
 ### 12.6 — Customer SSR runtime configuration
 

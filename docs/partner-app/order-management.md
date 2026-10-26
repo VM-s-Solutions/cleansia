@@ -76,12 +76,18 @@ The order detail page (`/orders/:id`) shows comprehensive order information thro
 | `OrderHeaderComponent` | Order number, status badge, action buttons |
 | `OrderStatusComponent` | Current status with status history timeline |
 | `OrderServiceDetailsComponent` | Service type, rooms, bathrooms, extras |
-| `OrderPackagesComponent` | Selected packages |
+| `OrderPackagesComponent` | Selected packages, each priced on a cash job only |
 | `OrderAdditionalServicesComponent` | Add-on services |
 | `OrderExtrasComponent` | Extra options |
 | `OrderCustomerInfoComponent` | Customer name, email, phone, address — while the job is live and for 24 h after completion; on a past or cancelled job a note says the customer's details were removed ([Execution and completion](/flows/execution-and-completion#crew-access)) |
-| `OrderPaymentInfoComponent` | Payment method, status, amount |
+| `OrderPaymentInfoComponent` | Payment type and currency, and the total on a cash job only |
 | `OrderPhotosComponent` | Before/after photo gallery with upload |
+
+**A cleaner sees the customer's price only on a cash job**, where it is the amount to collect (since the
+fix plan of 2026-10-25). The sheet's `showsCustomerPrice`, true for `PaymentType.Cash` alone — so a job
+with no payment type hides it too — feeds `[showsPrice]` to the payment and packages sections, on the page
+and on its printed copy. The cash-collected dialog still names the amount. It is display only: the
+API still sends the price → [Business rules — cleaner pay](/product/business-rules#cleaner-pay).
 
 ## Order Lifecycle: Take / Start / Complete
 

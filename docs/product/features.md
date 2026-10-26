@@ -273,8 +273,9 @@ application. The decision is pushed to the cleaner either way, and a rejection s
 administrator's reason with a way to contact support.
 → [The registration lock](/partner-app/onboarding#registration-lock-screen)
 
-**Their own documents** — a checklist of what the country expects, replace a file with a newer one
-without waiting for anybody, and ask an admin to remove one. Removing is the only one that needs a
+**Their own documents** — a checklist of what the country expects, a document photographed on the spot
+or picked from the photos or the files (on the Android and iOS apps since the fix plan of 2026-10-25),
+replace a file with a newer one without waiting for anybody, and ask an admin to remove one. Removing is the only one that needs a
 person: some of these the employer has to hold, and self-delete used to cost a cleaner their access to
 work in a single tap. Every upload is its own document, several of one type are fine, and the same file
 twice is refused unless the earlier copy was rejected.
@@ -282,7 +283,10 @@ twice is refused unless the earlier copy was rejected.
 
 **Finding work** — a board of offerable jobs, new-job push notifications and a digest. What a browsing
 cleaner sees is the job, not the household — the customer's identity, address and free text are
-withheld until they take it.
+withheld until they take it. Every job, a job reserved for them on *Pending offers* included (since
+the fix plan of 2026-10-25), is quoted at their own pay for one seat, and a job's detail shows the
+customer's price only on a cash job, as the amount to collect (since the same day)
+→ [Business rules — cleaner pay](/product/business-rules#cleaner-pay).
 
 **Doing the job** — take a job, mark on-the-way, start, add photos and notes, complete. Entry
 instructions and the full address become visible on assignment. A job cannot be started more than an

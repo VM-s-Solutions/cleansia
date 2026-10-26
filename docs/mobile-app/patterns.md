@@ -877,7 +877,7 @@ borders, standalone icons and filled buttons keep the primary:
   each job's fee caption; the greeting's line for today (on iOS since 2026-10-11). On Android also the
   dashboard's next-job and available-work labels.
 - **Pay amounts**: the orders list's available, active and history rows and its summary figures, the
-  pending offer's total, the work contract's reward, and the payment card's discounts and total. On
+  pending offer's pay, the work contract's reward, and the payment card's discounts and total. On
   iOS also the compact order row and the order detail's pay.
 - **Badges and clocks**: *Starts soon* and the month's change on the dashboard, whose washes follow
   their ink, and an offer's *Yours until …* line with its clock (on Android both clocks, on the card
@@ -1144,6 +1144,15 @@ profile's address picker and the partner order detail. Street and place names st
 still find their street. Neither platform can recolour the other's map tiles, so parity means three
 things: no POIs, a muted base and the same pin.
 
+**Addresses are looked up in Czech on both platforms.** A picked address's city is matched against the
+serviced-city rows, which name it as the Czech post does ([Serviced cities](/product/business-rules#serviced-city)).
+Android's Mapbox lookups send `language=cs` (`:core` `location/ReverseGeocodingService.kt`), and since
+the fix plan of 2026-10-25 iOS passes `Locale(identifier: "cs_CZ")` as the preferred locale of both
+`CLGeocoder` lookups (`CleansiaCore/Location/CLGeocoderGeocodingService.swift`), so both apps get Czech
+names. Until then iOS asked in the phone's language, and a Russian or Ukrainian iPhone got `Прага`, a
+German one `Prag`, which matched no row and was saved that way. The picker's country and city text is
+Czech for every user (*Česko*), as it already was on Android.
+
 - **iOS** (`CleansiaCore/Location/MapKitMapProvider.swift`). Every map is an `MKMapView` with
   `MKStandardMapConfiguration(elevationStyle: .flat, emphasisStyle: .muted)`,
   `pointOfInterestFilter = .excludingAll` and no traffic (`CleansiaMapStyle`). The address picker moved
@@ -1311,9 +1320,13 @@ What changed on iOS:
   side the cash-collected confirm, deleting a note or an issue, declining or refusing an offer and
   the removal-reason notice. Deleting a saved address and choosing a photo's source stay the
   `.confirmationDialog` action sheet. The partner's document dialogs, which take input, are system
-  dialogs too. An upload asks for the type with a `.confirmationDialog` anchored to the Upload
-  button, then for the description with an `.alert` holding a text field. A replacement and a
-  deletion request are each one `.alert` with a text field.
+  dialogs too. An upload first asks where the document comes from, with a `.confirmationDialog`
+  anchored to the Upload button — *Take Photo* (only on a phone with a camera, with the avatar's
+  camera-permission alert), *Choose from Library*, *Choose File* (since the fix plan of 2026-10-25) —
+  then for the type with a second one on the same button, then for the description with an `.alert`
+  holding a text field. A replacement asks the same source first and is then one `.alert` with a text
+  field; a deletion request is one `.alert` with a text field. A photo is staged from the camera or
+  library sheet's dismissal, once it has been encoded off the main thread as a JPEG.
   - **No dialog stays up while its request runs.** A system dialog closes on the tap. The row or the
     button it came from shows a spinner while the request runs, the other rows' buttons wait, and a
     refusal goes to the snackbar. The retry hint the card showed after a failure had nowhere left to go and was
@@ -1336,9 +1349,11 @@ What changed on iOS:
     with no icon circle, read by TalkBack as the system reads any dialog. The rules above hold there
     too. The dialog closes on the tap. Removing a card or revoking a device shows a spinner on that
     row while the other rows' buttons wait, a refusal goes to the snackbar, and the two retry hints
-    are deleted in all five locales. A field sits in the dialog's text. A document upload asks for the
-    type in a dialog that lists them, then for the description in a second dialog that holds the field
-    and names the type and the file. A replacement and a deletion request are one dialog each. The
+    are deleted in all five locales. A field sits in the dialog's text. A document upload first asks
+    where it comes from in the photo-source bottom sheet, *Add document*: *Take Photo* (only with a
+    camera), *Choose from Gallery*, *Choose File*. It then asks for the type in a dialog that lists them,
+    then for the description in a second dialog that holds the field and names the type and the file. A
+    replacement asks the same source first and is then one dialog, as a deletion request is. The
     cleaner's unreachable-server splash, which held its sign-out dialog open over the wipe, now closes
     it on the tap and does not offer sign-out again while the wipe runs. The `:core` `CleansiaDialog`,
     which drew a window of its own with an icon halo and a spring, is deleted too.
@@ -1349,12 +1364,17 @@ What changed on iOS:
   - **No ADR changed.** [ADR-0018](/decisions/adr-0018) D3 maps Material's `AlertDialog` to `.alert`
     and `.confirmationDialog`. That row now holds on both sides with no exception left, and D1 holds
     the content identical, which did not change.
-- **The birth date is picked on wheels.** The date-of-birth field (customer profile edit and
-  completion, partner personal details) opens day, month and year wheels in a half-height sheet,
+- **The birth date is picked on wheels, and confirmed.** The date-of-birth field (customer profile edit
+  and completion, partner personal details) opens day, month and year wheels in a half-height sheet,
   instead of a month-by-month calendar that started at today. An empty field's wheels open thirty
-  years back, so an adult's year is a short spin. That date is only shown: closing the sheet untouched
-  leaves the field empty, as on Android, whose picker opens with no selection. Future dates stay
-  blocked, and the stored day keeps its time-zone handling.
+  years back, so an adult's year is a short spin. Since the fix plan of 2026-10-25 the sheet carries the
+  field's name as its title with **Cancel** and **Done**, as Android's dialog carries its cancel and
+  confirm: the wheels spin a draft, **Done** stores the day on them — on an empty field the day shown,
+  untouched — and **Cancel** or a swipe down leaves the field as it was. Until then every spin was stored
+  at once, the sheet had no buttons and a swipe down was the only way out, and the day shown on an empty
+  field could not be taken without moving a wheel. Future dates stay blocked, and the stored day keeps
+  its time-zone handling. The recurring schedule's *Starts on* is still the system's compact date
+  picker.
 - **A few symbols bounce, from iOS 17.** The notification bell (customer Home, partner dashboard)
   bounces once when the unread count rises, and stays still when it falls. The booking-success check,
   the Plus welcome screen's check and the *code applied* check of the promo and referral sheets bounce

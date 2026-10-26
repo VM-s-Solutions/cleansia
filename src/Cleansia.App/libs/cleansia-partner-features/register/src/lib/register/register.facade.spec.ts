@@ -120,6 +120,15 @@ describe('RegisterFacade — the consent ticked at signup', () => {
     expect(snackbar.showErrorTranslated).toHaveBeenCalledTimes(1);
   });
 
+  it('registers a password whose letters are not Latin, as the server takes it', () => {
+    fillForm(true);
+    facade.formGroup.patchValue({ password: 'Пароль2024', confirmPassword: 'Пароль2024' });
+
+    facade.register();
+
+    expect(authService.registerEmployee.mock.calls[0][1]).toBe('Пароль2024');
+  });
+
   // Unreachable in the shipped form, which the test above pins: `terms` is
   // `requiredTrue`, so an unticked submit never reaches the request. This pins
   // the assertion, not its reachability — an untick must never be sent as a tick

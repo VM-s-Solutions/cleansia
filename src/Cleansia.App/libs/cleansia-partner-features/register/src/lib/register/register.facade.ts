@@ -88,7 +88,7 @@ export class RegisterFacade extends UnsubscribeControlDirective {
   }
 
   private createFormGroup(): FormGroup {
-    const passwordPattern = /^(?=.*[a-zA-Z])(?=.*\d).{8,}$/;
+    const passwordPattern = /^(?=.*\p{L})(?=.*\d).{8,}$/u;
 
     const formGroup = new FormGroup({
       firstName: new FormControl('', [

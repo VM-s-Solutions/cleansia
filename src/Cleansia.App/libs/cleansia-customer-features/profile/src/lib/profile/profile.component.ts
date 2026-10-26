@@ -217,7 +217,7 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
     currentPassword: new FormControl('', [Validators.required]),
     newPassword: new FormControl('', [
       Validators.required,
-      Validators.pattern(/^(?=.*[a-zA-Z])(?=.*\d).{8,}$/),
+      Validators.pattern(/^(?=.*\p{L})(?=.*\d).{8,}$/u),
     ]),
     confirmPassword: new FormControl('', [Validators.required]),
   });
@@ -232,7 +232,7 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
     const pw = this.newPasswordValue();
     return {
       hasMinLength: pw.length >= 8,
-      hasLetter: /[a-zA-Z]/.test(pw),
+      hasLetter: /\p{L}/u.test(pw),
       hasNumber: /\d/.test(pw),
     };
   });

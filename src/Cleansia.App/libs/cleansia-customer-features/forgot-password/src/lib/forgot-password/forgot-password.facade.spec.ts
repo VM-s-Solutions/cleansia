@@ -114,6 +114,17 @@ describe('ForgotPasswordFacade (customer)', () => {
     expect(facade.passwordFormGroup.get('password')?.valid).toBe(true);
   });
 
+  it('accepts a password whose letters are not Latin, as the server does', () => {
+    facade.passwordFormGroup.setValue({
+      code: '123456',
+      password: 'Пароль2024',
+      confirmPassword: 'Пароль2024',
+    });
+
+    expect(facade.passwordFormGroup.get('password')?.valid).toBe(true);
+    expect(facade.passwordFormGroup.get('confirmPassword')?.valid).toBe(true);
+  });
+
   // Every member of a generated command is optional, so a dropped assignment type-checks.
   // These pin the serialized body instead (ADR-0031).
   describe('command bodies on the wire', () => {

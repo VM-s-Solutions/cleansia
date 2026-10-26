@@ -5,7 +5,7 @@ import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
  * at least one letter and one digit. Mirrors the backend rule (ValidationExtensions.ValidatePassword)
  * exactly — the partner app previously used a stricter regex that rejected backend-valid passwords.
  */
-export const PASSWORD_PATTERN = /^(?=.*[a-zA-Z])(?=.*\d).{8,}$/;
+export const PASSWORD_PATTERN = /^(?=.*\p{L})(?=.*\d).{8,}$/u;
 
 /** Seconds a user must wait before re-requesting a password-reset code (shared by both apps). */
 export const RESEND_CODE_COOLDOWN_SECONDS = 30;

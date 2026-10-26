@@ -94,4 +94,11 @@ describe('AdminProfileComponent', () => {
     newPassword.setValue('Long4Enough1');
     expect(newPassword.valid).toBe(true);
   });
+
+  it('takes a password whose letters are not Latin, as the server does', () => {
+    const newPassword = render(true).componentInstance.form.controls.newPassword;
+
+    newPassword.setValue('Пароль202420');
+    expect(newPassword.valid).toBe(true);
+  });
 });

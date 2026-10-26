@@ -51,6 +51,7 @@ describe('cityNameMatches', () => {
   it('does not treat case or spacing as a difference', () => {
     expect(cityNameMatches('Praha', '  PRAHA  ')).toBe(true);
     expect(cityNameMatches('Hradec Králové', 'Hradec  Kralove')).toBe(true);
+    expect(cityNameMatches('Ústí nad Labem', 'Ústí\u00a0nad\u00a0Labem')).toBe(true);
   });
 
   /** The rural ring AROUND a city is written like a city part, and is a different place. */
@@ -161,6 +162,12 @@ describe('isCityServiced', () => {
   it('reads a postcode written with a no-break space', () => {
     expect(isCityServiced(SERVICED, 'Прага', '110\u00a000')).toBe(true);
     expect(isCityServiced(SERVICED, 'Praha', '602\u00a000')).toBe(false);
+  });
+
+  it('reads a postcode of any length but five digits as no postcode', () => {
+    expect(isCityServiced(SERVICED, 'Praha', '6020')).toBe(true);
+    expect(isCityServiced(SERVICED, 'Praha', '602000')).toBe(true);
+    expect(isCityServiced(SERVICED, 'Praha', '602 000')).toBe(true);
   });
 
   /**

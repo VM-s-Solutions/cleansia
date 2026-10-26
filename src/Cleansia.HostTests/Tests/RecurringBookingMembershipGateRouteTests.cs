@@ -5,6 +5,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Bookings;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Memberships;
+using Cleansia.Core.Domain.ServiceAreas;
 using Cleansia.Core.Domain.Services;
 using Cleansia.HostTests.Infrastructure;
 using Microsoft.EntityFrameworkCore;
@@ -237,6 +238,9 @@ public sealed class RecurringBookingMembershipGateRouteTests(HostTestPostgresFix
             saved.Id = SavedAddressId;
             ctx.Addresses.Add(address);
             ctx.SavedAddresses.Add(saved);
+
+            // A schedule is refused at a saved address no service city serves, ahead of the membership gate.
+            ctx.Add(ServiceCity.Create(DomainSeed.CountryId, "Plzeň"));
 
             // CreateRecurringBooking refuses a selection whose ids are not active catalogue rows, in the
             // validator, before the membership gate, and UpdateRecurringBooking an edit that adds one.

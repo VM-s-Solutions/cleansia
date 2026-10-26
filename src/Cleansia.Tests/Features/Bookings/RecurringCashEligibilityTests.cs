@@ -219,6 +219,7 @@ public class RecurringCashEligibilityTests
             _savedAddressRepository.Object,
             OrderMarketDoubles.Trading(CreateOrderTestData.DefaultCurrency()),
             OrderMarketDoubles.Servicing("country-cz"),
+            OrderMarketDoubles.EveryCityServiced(),
             Services(),
             Packages(),
             Cleansia.Tests.Features.Legal.CustomerConsentDoubles.Consented(),
@@ -234,6 +235,7 @@ public class RecurringCashEligibilityTests
             _savedAddressRepository.Object,
             OrderMarketDoubles.Trading(CreateOrderTestData.DefaultCurrency()),
             OrderMarketDoubles.Servicing("country-cz"),
+            OrderMarketDoubles.EveryCityServiced(),
             Services(),
             Packages(),
             Mock.Of<IReceivableRepository>());

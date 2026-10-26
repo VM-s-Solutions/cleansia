@@ -87,7 +87,8 @@ final class PendingOffersViewModelTests: XCTestCase {
                 "rooms",
                 "bathrooms",
                 "totalPrice",
-                "currencyCode"
+                "currencyCode",
+                "estimatedCleanerPay"
             ]
         )
     }

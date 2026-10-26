@@ -105,6 +105,7 @@ public sealed class RecurringScheduleStartWindowTests
             _savedAddresses.Object,
             OrderMarketDoubles.Trading(CreateOrderTestData.DefaultCurrency()),
             OrderMarketDoubles.Servicing("country-cz"),
+            OrderMarketDoubles.EveryCityServiced(),
             CatalogueDoubles.Services(),
             CatalogueDoubles.Packages(),
             Cleansia.Tests.Features.Legal.CustomerConsentDoubles.Consented(),
@@ -115,6 +116,7 @@ public sealed class RecurringScheduleStartWindowTests
         new(_templates.Object, Mock.Of<IUserMembershipRepository>(), _session.Object,
             Mock.Of<IOrderRepository>(), _savedAddresses.Object,
             OrderMarketDoubles.Trading(CreateOrderTestData.DefaultCurrency()), OrderMarketDoubles.Servicing("country-cz"),
+            OrderMarketDoubles.EveryCityServiced(),
             CatalogueDoubles.Services(), CatalogueDoubles.Packages(),
             Mock.Of<IReceivableRepository>());
 

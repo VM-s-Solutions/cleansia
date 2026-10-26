@@ -286,6 +286,7 @@ public class PreferredCleanerCurrencyGateTests
 
     private CreateRecurringBooking.Validator CreateRecurringValidator() =>
         new(_orderRepository.Object, _session.Object, _savedAddressRepository.Object, _markets, OrderMarketDoubles.Servicing(Czechia),
+            OrderMarketDoubles.EveryCityServiced(),
             Bookings.CatalogueDoubles.Services(), Bookings.CatalogueDoubles.Packages(),
             Cleansia.Tests.Features.Legal.CustomerConsentDoubles.Consented(),
             Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.ILegalDocumentResolver>(),
@@ -299,6 +300,7 @@ public class PreferredCleanerCurrencyGateTests
             _orderRepository.Object,
             _savedAddressRepository.Object,
             _markets, OrderMarketDoubles.Servicing(Czechia),
+            OrderMarketDoubles.EveryCityServiced(),
             Bookings.CatalogueDoubles.Services(), Bookings.CatalogueDoubles.Packages(),
             Mock.Of<IReceivableRepository>());
 

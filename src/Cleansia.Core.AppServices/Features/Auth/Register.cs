@@ -139,8 +139,7 @@ public class Register
             }
             else
             {
-                // Re-registration: user exists but hasn't confirmed — refresh the code
-                rawConfirmationToken = userEntity.UpdateConfirmationCode();
+                rawConfirmationToken = userEntity.RegisterAgain(command.Password);
             }
 
             // The texts in force for the market the visitor registers with — recorded whether or not the

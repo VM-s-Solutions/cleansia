@@ -251,6 +251,7 @@ public sealed class CustomerCashStandingTests
                 _savedAddresses.Object,
                 OrderMarketDoubles.Trading(Czk),
                 OrderMarketDoubles.Servicing(CountryId),
+                OrderMarketDoubles.EveryCityServiced(),
                 CatalogueDoubles.Services(TwoHours),
                 CatalogueDoubles.Packages(),
                 Cleansia.Tests.Features.Legal.CustomerConsentDoubles.Consented(),
@@ -278,6 +279,7 @@ public sealed class CustomerCashStandingTests
                 _savedAddresses.Object,
                 OrderMarketDoubles.Trading(Czk),
                 OrderMarketDoubles.Servicing(CountryId),
+                OrderMarketDoubles.EveryCityServiced(),
                 CatalogueDoubles.Services(TwoHours),
                 CatalogueDoubles.Packages(),
                 _receivables.Object)

@@ -14,6 +14,7 @@ using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.ServiceAreas;
 using Cleansia.Core.Domain.Services;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
@@ -311,6 +312,7 @@ public class RecurringCashEligibilityTests(PostgresContainerFixture fixture) : B
         country.Id = Czechia;
         context.Countries.Add(country);
         context.CountryConfigurations.Add(CountryConfiguration.Create(Czechia, "CZK", "cs", 0.21m).AssignOperator(TestTenants.Default));
+        context.Add(ServiceCity.Create(Czechia, "Praha", "1"));
 
         var currency = Currency.Create("CZK", "Kč", "Czech koruna");
         currency.Id = Czk;

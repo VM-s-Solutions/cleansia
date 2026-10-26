@@ -128,4 +128,14 @@ internal static class OrderMarketDoubles
             .ReturnsAsync((string id, CancellationToken _) => countryIds.Contains(id));
         return mock.Object;
     }
+
+    /// <summary>Every city of every country is served.</summary>
+    public static IServiceCityRepository EveryCityServiced()
+    {
+        var mock = new Mock<IServiceCityRepository>();
+        mock.Setup(r => r.CityIsServicedAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        return mock.Object;
+    }
 }

@@ -186,6 +186,7 @@ public class CreateRecurringBookingPreferredCleanerTests
             _savedAddressRepository.Object,
             OrderMarketDoubles.Trading(CreateOrderTestData.DefaultCurrency()),
             OrderMarketDoubles.Servicing("country-cz"),
+            OrderMarketDoubles.EveryCityServiced(),
             CatalogueDoubles.Services(),
             CatalogueDoubles.Packages(),
             Cleansia.Tests.Features.Legal.CustomerConsentDoubles.Consented(),

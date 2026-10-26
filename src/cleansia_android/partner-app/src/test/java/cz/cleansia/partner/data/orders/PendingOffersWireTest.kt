@@ -269,6 +269,7 @@ class PendingOffersWireTest {
             "bathrooms",
             "totalPrice",
             "currencyCode",
+            "estimatedCleanerPay",
         )
 
         val OFFER_REQUIRED_NUMBERS = listOf("estimatedTime", "rooms", "bathrooms")

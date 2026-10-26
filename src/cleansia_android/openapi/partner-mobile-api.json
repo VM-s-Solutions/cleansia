@@ -11478,6 +11478,11 @@
           "currencyCode": {
             "type": "string",
             "nullable": true
+          },
+          "estimatedCleanerPay": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
           }
         },
         "additionalProperties": false

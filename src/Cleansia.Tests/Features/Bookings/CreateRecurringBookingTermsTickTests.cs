@@ -174,6 +174,7 @@ public sealed class CreateRecurringBookingTermsTickTests
             _savedAddresses.Object,
             OrderMarketDoubles.Trading(CreateOrderTestData.DefaultCurrency()),
             OrderMarketDoubles.Servicing(Czechia),
+            OrderMarketDoubles.EveryCityServiced(),
             CatalogueDoubles.Services(),
             CatalogueDoubles.Packages(),
             _consents.Object,

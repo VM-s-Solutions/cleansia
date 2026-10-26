@@ -69,7 +69,9 @@ public class CashFloatCapBoardTests
             .Setup(s => s.CashJobsHiddenFromAsync(Cleaner, ValidatorTestHelpers.CurrencyId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var offers = await new GetMyPendingOffers.Handler(orders.Object, access.Object, ValidatorTestHelpers.CurrencyResolver())
+        var offers = await new GetMyPendingOffers.Handler(
+                orders.Object, access.Object, ValidatorTestHelpers.CurrencyResolver(),
+                Mock.Of<IEmployeePayConfigRepository>(), Mock.Of<IAppConfigurationProvider>())
             .Handle(new GetMyPendingOffers.Query(), CancellationToken.None);
 
         Assert.Equal(["held-card"], offers.Value!.Select(o => o.Id));

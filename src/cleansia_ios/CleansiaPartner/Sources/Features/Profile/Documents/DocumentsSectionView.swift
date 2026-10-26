@@ -105,7 +105,19 @@ struct DocumentsSectionView: View {
                         }
                     )
                     .padding(.top, Spacing.s)
-                    // On the button, so iOS 26 points the choice at what opened it.
+                    // On the button, so iOS 26 points both choices at it rather than at the middle of the screen.
+                    .confirmationDialog(
+                        L10n.Profile.uploadDocument,
+                        isPresented: $choosingSource,
+                        titleVisibility: .visible
+                    ) {
+                        if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                            Button(L10n.Profile.photoTake) { requestCamera() }
+                        }
+                        Button(L10n.Profile.photoLibrary) { pickerSource = .photoLibrary }
+                        Button(L10n.Profile.documentChooseFile) { importerOpen = true }
+                        Button(L10n.cancel, role: .cancel) { replacingDocumentId = nil }
+                    }
                     .confirmationDialog(
                         L10n.Profile.documentType,
                         isPresented: $choosingType,
@@ -126,14 +138,6 @@ struct DocumentsSectionView: View {
             }
         )
         .task { await vm.load() }
-        .confirmationDialog(L10n.Profile.uploadDocument, isPresented: $choosingSource, titleVisibility: .visible) {
-            if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                Button(L10n.Profile.photoTake) { requestCamera() }
-            }
-            Button(L10n.Profile.photoLibrary) { pickerSource = .photoLibrary }
-            Button(L10n.Profile.documentChooseFile) { importerOpen = true }
-            Button(L10n.cancel, role: .cancel) { replacingDocumentId = nil }
-        }
         .sheet(item: $pickerSource, onDismiss: stagePickedPhoto) { source in
             CameraOrLibraryPicker(
                 sourceType: source,

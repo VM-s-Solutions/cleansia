@@ -24,6 +24,18 @@ final class DocumentSourceCallSiteTests: XCTestCase {
         XCTAssertTrue(source.contains("allowedContentTypes: DocumentPresentation.importableTypes"))
     }
 
+    /// iOS 26 points a dialog at the view it hangs on, so the source choice hangs on the Upload button, as the type
+    /// choice does, and not on the whole screen, where it floated over the list pointing at nothing.
+    func testTheSourceChoiceHangsOnTheUploadButton() throws {
+        let source = try read(Self.view)
+
+        let button = try XCTUnwrap(source.range(of: "CleansiaPrimaryButton("))
+        let choice = try XCTUnwrap(source.range(of: "isPresented: $choosingSource"))
+        let screenModifiers = try XCTUnwrap(source.range(of: ".task { await vm.load() }"))
+        XCTAssertLessThan(button.upperBound, choice.lowerBound)
+        XCTAssertLessThan(choice.upperBound, screenModifiers.lowerBound)
+    }
+
     /// A cancelled camera or library pick leaves no Replace target behind for the next plain upload.
     func testThePickerSheetConsumesTheReplaceTargetOnEveryDismissal() throws {
         let source = try read(Self.view)

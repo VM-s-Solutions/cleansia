@@ -292,11 +292,13 @@ private fun PendingOfferCard(
                     )
                 }
             }
-            Text(
-                text = formatOrderPrice(offer.totalPrice, offer.currencyCode),
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                color = primaryText(),
-            )
+            offer.estimatedCleanerPay?.takeIf { it > 0.0 }?.let { pay ->
+                Text(
+                    text = formatOrderPrice(pay, offer.currencyCode),
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                    color = primaryText(),
+                )
+            }
         }
 
         // City and a truncated postcode — the pre-acceptance ceiling for every cleaner-facing surface.
@@ -400,8 +402,8 @@ private fun PendingOffersScreenPreview() {
                         customerAddressApproximate = "Praha 4 · 14000",
                         rooms = 3,
                         bathrooms = 1,
-                        totalPrice = 1850.0,
                         currencyCode = "CZK",
+                        estimatedCleanerPay = 925.0,
                     ),
                 ),
             ),

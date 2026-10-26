@@ -34,12 +34,14 @@ object CityNameMatch {
     )
 
     /** A trailing district: 1–2 digits (`Praha 8`) or a Roman numeral (`Pardubice II`). */
-    private val trailingDistrict = Regex("""^(.+) (\d{1,2}|[ivx]{1,6})$""")
+    private val trailingDistrict = Regex("""^(.+) (\p{Nd}{1,2}|[ivx]{1,6})$""")
 
     private val dashes = Regex("[\u2010-\u2015\u2212]")
 
     /** The server's `\s`, spelled out: `\s` is ASCII on the JVM, and Android's ICU refuses the flag that widens it. */
-    private val whitespaceRun = Regex("""[\t\n\x0B\f\r\x85\p{Z}]+""")
+    private const val WHITESPACE = """[\t\n\x0B\f\r\x85\p{Z}]"""
+    private val whitespaceRun = Regex("$WHITESPACE+")
+    private val edgeWhitespace = Regex("^$WHITESPACE+|$WHITESPACE+\$")
     private val nonSpacingMarks = Regex("""\p{Mn}+""")
     private val postcodeDigits = Regex("[0-9]{5}")
 
@@ -48,8 +50,8 @@ object CityNameMatch {
      * the name, and by the name only when it is not; a row without one answers by the name.
      */
     fun matches(city: ServicedCity, customerCity: String?, customerPostcode: String?): Boolean {
-        val prefix = city.zipPrefix?.filterNot(Char::isWhitespace).orEmpty()
-        val postcode = customerPostcode?.filterNot(Char::isWhitespace)?.takeIf(postcodeDigits::matches)
+        val prefix = city.zipPrefix?.replace(edgeWhitespace, "").orEmpty()
+        val postcode = customerPostcode?.replace(whitespaceRun, "")?.takeIf(postcodeDigits::matches)
         if (prefix.isNotEmpty() && postcode != null) return postcode.startsWith(prefix)
         return matches(city.name, customerCity)
     }
@@ -70,8 +72,8 @@ object CityNameMatch {
     /** Split at the FIRST dash: `Ostrava 3 - Ostrava-Jih` is in Ostrava. */
     private fun withoutDashedPart(city: String): String? {
         if ('-' !in city) return null
-        val head = city.substringBefore('-').trim()
-        val part = city.substringAfter('-').trim()
+        val head = city.substringBefore('-').trim(' ')
+        val part = city.substringAfter('-').trim(' ')
         if (head.isEmpty() || part.isEmpty() || (head to part.substringBefore(' ')) in okresRings) return null
         return head
     }
@@ -80,9 +82,10 @@ object CityNameMatch {
         trailingDistrict.find(value)?.groupValues?.get(1) ?: value
 
     private fun fold(value: String?): String {
-        if (value.isNullOrBlank()) return ""
-        val decomposed = Normalizer.normalize(value, Normalizer.Form.NFD)
+        val trimmed = value?.replace(edgeWhitespace, "")
+        if (trimmed.isNullOrEmpty()) return ""
+        val decomposed = Normalizer.normalize(trimmed, Normalizer.Form.NFD)
         val stripped = Normalizer.normalize(nonSpacingMarks.replace(decomposed, ""), Normalizer.Form.NFC)
-        return whitespaceRun.replace(dashes.replace(stripped.lowercase(), "-"), " ").trim()
+        return whitespaceRun.replace(dashes.replace(stripped.lowercase(), "-"), " ")
     }
 }

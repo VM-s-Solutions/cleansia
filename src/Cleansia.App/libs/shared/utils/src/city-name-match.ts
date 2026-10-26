@@ -6,19 +6,24 @@
  * `CityNameMatchTests.cs`, `CityNameMatchTest.kt` and `CityNameMatchTests.swift`.
  */
 
-/** Combining marks left behind by NFD — exact for every diacritic these five markets use. */
-const COMBINING_MARKS = /[̀-ͯ]/g;
+const COMBINING_MARKS = /\p{Mn}/gu;
 
 const DASHES = /[\u2010-\u2015\u2212]/g;
 
-const WHITESPACE_RUN = /\s+/g;
+/**
+ * Unicode White_Space, the server's `char.IsWhiteSpace`. JavaScript's own `\s` and `trim()` are not it:
+ * they lack U+0085 and add U+FEFF.
+ */
+const WHITESPACE = /\p{White_Space}/gu;
 
-const WHITESPACE = /\s/g;
+const WHITESPACE_RUN = /\p{White_Space}+/gu;
 
-/** A trailing district: 1–2 digits (`Praha 8`) or a Roman numeral (`Pardubice II`). */
-const TRAILING_DISTRICT = /^(\S.*?)\s+(?:\d{1,2}|[ivx]{1,6})$/;
+const EDGE_WHITESPACE = /^\p{White_Space}+|\p{White_Space}+$/gu;
 
-const POSTCODE = /^\d{5}$/;
+/** A trailing district: 1–2 digits of any script (`Praha 8`) or a Roman numeral (`Pardubice II`). */
+const TRAILING_DISTRICT = /^(.+) (?:\p{Nd}{1,2}|[ivx]{1,6})$/u;
+
+const POSTCODE = /^[0-9]{5}$/;
 
 /** The okresy around these cities are written like a part of the city (`Praha-západ`) and are not in it. */
 const OKRES_RINGS: ReadonlySet<string> = new Set([
@@ -29,9 +34,13 @@ const OKRES_RINGS: ReadonlySet<string> = new Set([
   'plzen-jih',
 ]);
 
+function trimWhitespace(value: string): string {
+  return value.replace(EDGE_WHITESPACE, '');
+}
+
 /** Trim, strip diacritics, lowercase, one kind of dash, and collapse whitespace runs to one space. */
 function fold(value: string | null | undefined): string {
-  const trimmed = (value ?? '').trim();
+  const trimmed = trimWhitespace(value ?? '');
   if (trimmed.length === 0) {
     return '';
   }
@@ -49,8 +58,8 @@ function candidates(city: string): string[] {
   const names = [city];
   const dash = city.indexOf('-');
   if (dash > 0) {
-    const head = city.slice(0, dash).trim();
-    const part = city.slice(dash + 1).trim();
+    const head = trimWhitespace(city.slice(0, dash));
+    const part = trimWhitespace(city.slice(dash + 1));
     if (head.length > 0 && part.length > 0 && !OKRES_RINGS.has(`${head}-${part.split(' ')[0]}`)) {
       names.push(head);
     }
@@ -93,7 +102,7 @@ export function isCityServiced(
   const compact = (customerPostcode ?? '').replace(WHITESPACE, '');
   const postcode = POSTCODE.test(compact) ? compact : null;
   return servicedCities.some((row) => {
-    const prefix = (row.zipPrefix ?? '').trim();
+    const prefix = trimWhitespace(row.zipPrefix ?? '');
     return prefix.length > 0 && postcode !== null
       ? postcode.startsWith(prefix)
       : cityNameMatches(row.name, customerCity);

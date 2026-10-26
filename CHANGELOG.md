@@ -622,11 +622,14 @@ need backfilling.
 
 - **Customer, cleaner, admin and operator — the fixes of 2026-10-25.** What the owner's answers of
   2026-10-25 changed, on the gaps the partner wave left (*"Fix"*, *"Fix the wording"*) and on the fix plan
-  built from them; the release notice is under *Added*. One part of the plan is not built: a signed-in
+  built from them; the release notice is under *Added*. Two parts of the plan are not built. A signed-in
   customer cancelling a booking nobody is on from its start was to be paid as the unfilled-booking
   cancellation pays and keep the reason they typed (*"It's important to store"*), and keeping both needs a
   new database column, which comes in a later change; until then that cancel is still free and pays no
-  apology credit.
+  apology credit. And a stranger who registers an address once still keeps a working password if the
+  address's owner then confirms that registration by its code, until the owner resets it; closing it needs
+  the confirmation to carry the password the confirmer chooses, which comes in the same later change
+  (*"Close"*).
   - *Customer — a cancellation reaches you by e-mail, and names the credit.* When nobody was on your
     booking at its slot, or an administrator confirms that the cleaner did not come, the cancellation
     e-mail comes with an account as well as without, in the booking's language, and names the apology

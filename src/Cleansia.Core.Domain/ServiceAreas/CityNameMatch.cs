@@ -146,5 +146,5 @@ public static class CityNameMatch
         return WhitespaceRun.Replace(stripped, " ");
     }
 
-    private static bool IsDash(char character) => character is (>= '‐' and <= '―') or '−';
+    private static bool IsDash(char character) => character is (>= '\u2010' and <= '\u2015') or '\u2212';
 }

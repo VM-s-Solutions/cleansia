@@ -2872,7 +2872,7 @@
             },
             "crew_short": {
               "title": "Objednávka prišla o jedného z upratovačov",
-              "body": "Objednávka {{orderNumber}} dňa {{cleaningDateTime}} prišla o jedného z upratovačov — {{cause}}. Niekto na nej stále je a voľné miesto je späť na nástenke; ak ho nikto neprevezme, upratovanie prebehne v menšom počte, preto v objednávke priraďte upratovača."
+              "body": "Objednávka {{orderNumber}} dňa {{cleaningDateTime}} prišla o jedného z upratovačov — {{cause}}. Niekto na nej stále je a voľné miesto je späť na nástenke; ak ho nikto neprijme, upratovanie prebehne s menším počtom upratovačov, preto priraďte upratovača v objednávke."
             },
             "cleaner_not_started": {
               "title": "Upratovač nezačal objednávku",

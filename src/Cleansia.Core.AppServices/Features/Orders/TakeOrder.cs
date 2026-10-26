@@ -403,6 +403,11 @@ public class TakeOrder
             var orderEmployee = OrderEmployee.Create(order, employee!);
             order.AddAssignedEmployee(orderEmployee);
 
+            // A seat changes no order column, so without the touch the commit below would never compare the
+            // order's tokens, and a take decided on a status a drop, a cancel or a refund has since moved
+            // would land on it — a New order with a cleaner who can neither set off nor start.
+            order.Updated(employeeId!, DateTime.UtcNow);
+
             // Staged before the commit below so the seat, the status row, the acceptance and its audit
             // row are one transaction: a seat-race or cover-race loser rolls all four back, and no
             // acceptance ever exists for a seat that was never won.
@@ -433,13 +438,15 @@ public class TakeOrder
             }
             catch (DbUpdateConcurrencyException)
             {
-                // The COVER-race loser. Two cleaners answering the same cover request both staged the
-                // DELETE of the same assignment row; the second one affects zero rows, which EF raises
-                // as a concurrency exception and NOT as 23505 — so IsUniqueViolation below never sees
-                // it and it would otherwise reach the cleaner as a 500. Same refusal as every other
-                // lost race, so the two paths cannot disagree.
+                // A lost race. Either the order moved since this take read it — a drop walked it back, a
+                // cancel, a refund or the sweep changed its status or payment — and the touched row's
+                // tokens refused the take, or two cleaners answering the same cover request both staged
+                // the DELETE of the same assignment row and the second affected zero rows. EF raises both
+                // as a concurrency exception and NOT as 23505, so IsUniqueViolation below never sees them
+                // and they would otherwise reach the cleaner as a 500. Same refusal as every other lost
+                // race, so the paths cannot disagree.
                 logger.LogInformation(
-                    "Take lost the cover race for order {OrderId}; refusing as no-available-spots",
+                    "Take lost a race for order {OrderId}; refusing as no-available-spots",
                     order.Id);
                 return BusinessResult.Failure<Response>(
                     new Error(nameof(command.OrderId), BusinessErrorMessage.NoAvailableSpots));

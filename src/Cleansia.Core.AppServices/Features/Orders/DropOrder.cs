@@ -88,6 +88,10 @@ public class DropOrder
                     new Error(nameof(command.OrderId), BusinessErrorMessage.OrderNotFound));
             }
 
+            // Before the crew is read: a take of this order already writing lands first and is counted, and
+            // one that read before this drop waits on the row and then fails its token check.
+            await orderRepository.LockForCrewChangeAsync(command.OrderId, cancellationToken);
+
             // OrderStatusHistory is not optional — AddOrderStatus derives Sequence from it and
             // recomputes CurrentStatus, so a partial load restates the order's status.
             var order = await orderRepository
@@ -132,9 +136,9 @@ public class DropOrder
             order.UnassignEmployee(employeeId);
 
             // Removing a seat changes no order column, so without the touch the order's row stays out of
-            // the commit and its CurrentStatus concurrency token is never compared. A drop decided on a
-            // status another writer has since moved — a lockout confirmed in the same instant, which pays
-            // the crew it loaded — would then land anyway; touched, the stale drop rolls back whole.
+            // the commit and its concurrency tokens are never compared. The row lock above already orders
+            // this drop after any writer that reached the row first; the touch keeps the token check where
+            // that lock is not taken (any provider but Postgres).
             order.Updated(employeeId, nowUtc);
 
             // A live hold makes the order invisible to EVERYONE but its beneficiary, for up to 12

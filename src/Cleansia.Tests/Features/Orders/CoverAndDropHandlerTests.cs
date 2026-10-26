@@ -402,6 +402,28 @@ public class CoverAndDropHandlerTests
     }
 
     /// <summary>
+    /// The drop locks the order's row before it reads the crew, so a take in flight either lands first and
+    /// is counted, or waits and then fails its token check. → DropOrderTakeOrderRaceTests
+    /// </summary>
+    [Fact]
+    public async Task DroppingLocksTheOrderBeforeReadingItsCrew()
+    {
+        var order = OrderWith(EmployeeId, OtherEmployeeId);
+        Arrange(order);
+        var calls = new List<string>();
+        _orderRepository.Setup(r => r.LockForCrewChangeAsync(OrderId, It.IsAny<CancellationToken>()))
+            .Callback(() => calls.Add("lock"))
+            .Returns(Task.CompletedTask);
+        _orderRepository.Setup(r => r.GetQueryable())
+            .Callback(() => calls.Add("read"))
+            .Returns(new[] { order }.AsQueryable().BuildMock());
+
+        await DropHandler().Handle(new DropOrder.Command(OrderId), default);
+
+        Assert.Equal(["lock", "read"], calls);
+    }
+
+    /// <summary>
     /// Once a cleaner has set off or started, the job keeps its crew (owner ruling 2026-10-25). The drop
     /// is refused with the key the status check has always answered, and nothing moves: the seat stays,
     /// no status row and no drop record are written, and nobody is told anything.

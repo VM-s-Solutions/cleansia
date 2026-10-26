@@ -46,6 +46,13 @@ as in the apps (since the same day; until then the server and the web wanted a l
 password such as *Пароль2024* showed every rule green and was refused). On iOS the suggestion needs the
 app's associated domain to be live → [Strong passwords](/mobile-app/overview#webcredentials).
 
+**Registering again before confirming.** A registration of an address nobody has confirmed yet sends a
+fresh code. When it brings a password other than the one stored, the account is left with **no
+password** (since the same day): whoever confirms the address proves they hold the mailbox, not which
+of the two passwords is theirs, so neither signs in. The confirmation signs them in, and a password of
+their own comes from *Forgot password*. The same password again is kept.
+→ [Re-registration](/api/authentication#register)
+
 ::: info
 The registration route is protected by the `guestGuard` -- already authenticated partners are redirected to `/orders`.
 :::

@@ -95,6 +95,11 @@ text is accepted before the next booking (`UserConsent.Covers`)
 `AcceptLegalDocument` → [A cleaner's own documents](/product/business-rules#cleaner-documents).
 Employee registration is not gated. → [ADR-0062](/decisions/adr-0062) D4 as amended
 
+**Registering an unconfirmed address again with another password withdraws the stored one** (since the
+fix plan of 2026-10-25, `Register` and `RegisterEmployee`): the account is left with no password, so of
+two passwords typed for one address neither signs in once it is confirmed, and the confirmer sets their
+own through the reset. The same password again is kept. → [Re-registration](/api/authentication#register)
+
 **The registration and new-password fields offer the platform's strong password.** On the web, both
 registration forms, the customer's reset step and the admin profile declare
 `autocomplete="new-password"`; the customer profile's password change and the partner web's reset step

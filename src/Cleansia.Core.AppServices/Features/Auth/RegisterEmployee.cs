@@ -108,7 +108,7 @@ public class RegisterEmployee
             }
             else
             {
-                rawConfirmationToken = userEntity.UpdateConfirmationCode();
+                rawConfirmationToken = userEntity.RegisterAgain(command.Password);
                 userEntity.UpgradeToEmployee();
             }
 

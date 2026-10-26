@@ -4,6 +4,7 @@ using Cleansia.Core.Domain.Orders;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Extensions;
 using Cleansia.Infra.Common.Attributes;
 using Cleansia.Core.Domain.Internationalization;
 
@@ -412,6 +413,24 @@ public class User : TenantAuditable
         ConfirmationCodeAttempts = 0;
 
         return rawToken;
+    }
+
+    /// <summary>
+    /// A registration of this still unconfirmed address, made again. Whoever confirms the address proves
+    /// they hold the mailbox, not which of the passwords typed for it is theirs, so a registration that
+    /// brings a password other than the stored one leaves the account with none: the confirmation signs
+    /// its confirmer in, and the reset gives them a password nobody else chose. Keeping the newest password
+    /// instead would let a stranger who registers again after the owner arm one the owner then confirms.
+    /// The same password again is the same claim and is kept. Returns the RAW new confirmation code.
+    /// </summary>
+    public string RegisterAgain(string password)
+    {
+        if (Password is null || !password.VerifyPassword(Password))
+        {
+            Password = null;
+        }
+
+        return UpdateConfirmationCode();
     }
 
     public User UpdateLanguagePreference(string? languageCode)

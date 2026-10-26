@@ -18,6 +18,13 @@ final class MarketCopyTests: XCTestCase {
         "uk": ["ніхто", "взяв"],
         "ru": ["никто", "взял"]
     ]
+    private static let releaseCountClaims = [
+        "en": ["another", "a new cleaner", "your cleaner", "no cleaner"],
+        "cs": ["jiného", "nového", "váš uklízeč", "nemá uklízeče", "bez uklízeče"],
+        "sk": ["iného", "nového", "váš upratovač", "nemá upratovača", "bez upratovača"],
+        "uk": ["іншого", "нового", "ваш клінер", "без клінера"],
+        "ru": ["другого", "нового", "ваш клинер", "без клинера"]
+    ]
 
     // MARK: The renderers
 
@@ -105,6 +112,25 @@ final class MarketCopyTests: XCTestCase {
                         XCTAssertNil(
                             value.range(of: stem, options: .caseInsensitive),
                             "\(app)/\(locale)/\(key) says nobody took the booking (\(stem)): \(value)"
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    /// One cleaner of two leaving sends the same release as the last one leaving, so neither catalog's release
+    /// copy promises a single replacement or says the booking has no cleaner.
+    func testTheCleanerReleaseIsTrueWhetherOneOrEveryCleanerLeftInBothCatalogs() throws {
+        let keys = ["push.order.cleaner_released.title", "push.order.cleaner_released.body"]
+        for (app, strings) in try [("customer", customerStrings()), ("partner", partnerStrings())] {
+            for key in keys {
+                for locale in Self.locales {
+                    let value = try value(of: key, locale, in: strings)
+                    for claim in try XCTUnwrap(Self.releaseCountClaims[locale]) {
+                        XCTAssertNil(
+                            value.range(of: claim, options: .caseInsensitive),
+                            "\(app)/\(locale)/\(key) counts the cleaners (\(claim)): \(value)"
                         )
                     }
                 }

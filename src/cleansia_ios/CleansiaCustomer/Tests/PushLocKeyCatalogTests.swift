@@ -133,16 +133,6 @@ final class PushLocKeyCatalogTests: XCTestCase {
         "ru": ["отмен", "отказ", "отклон", "удал", "сняли", "снят", "администр"]
     ]
 
-    /// One cleaner of two leaving sends the same release as the last one leaving, so the copy neither promises a
-    /// single replacement nor says the booking has no cleaner, per locale.
-    private let releaseCountClaims = [
-        "en": ["another", "a new cleaner", "your cleaner", "no cleaner"],
-        "cs": ["jiného", "nového", "váš uklízeč", "nemá uklízeče", "bez uklízeče"],
-        "sk": ["iného", "nového", "váš upratovač", "nemá upratovača", "bez upratovača"],
-        "uk": ["іншого", "нового", "ваш клінер", "без клінера"],
-        "ru": ["другого", "нового", "ваш клинер", "без клинера"]
-    ]
-
     /// The words `order.cleaner_assigned` makes its claim with, per locale.
     private let assignmentClaimStems = [
         "en": ["found", "assigned"],
@@ -312,22 +302,6 @@ final class PushLocKeyCatalogTests: XCTestCase {
                     XCTAssertNil(
                         value.range(of: stem, options: .caseInsensitive),
                         "\(key) says why the cleaner left (\(stem)) in \(language): \(value)"
-                    )
-                }
-            }
-        }
-    }
-
-    func testTheCleanerReleaseIsTrueWhetherOneOrEveryCleanerLeft() throws {
-        for language in languages {
-            let table = try localizableTable(for: language)
-            let claims = try XCTUnwrap(releaseCountClaims[language])
-            for key in ["push.order.cleaner_released.title", "push.order.cleaner_released.body"] {
-                let value = try XCTUnwrap(table[key], "\(key) in \(language)")
-                for claim in claims {
-                    XCTAssertNil(
-                        value.range(of: claim, options: .caseInsensitive),
-                        "\(key) counts the cleaners (\(claim)) in \(language): \(value)"
                     )
                 }
             }

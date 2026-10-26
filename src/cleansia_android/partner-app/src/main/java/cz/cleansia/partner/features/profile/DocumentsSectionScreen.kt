@@ -66,6 +66,7 @@ import cz.cleansia.partner.api.model.DocumentStatus
 import cz.cleansia.partner.api.model.DocumentType
 import cz.cleansia.partner.api.model.GetMyDocumentsMyDocumentDto
 import cz.cleansia.partner.api.model.MyDocumentRequirementDto
+import cz.cleansia.partner.features.media.rememberPhotoSourcePicker
 import cz.cleansia.partner.ui.theme.pendingInk
 
 /**
@@ -117,6 +118,22 @@ fun DocumentsSectionScreen(
         viewModel.stageFile(uri, replacesDocumentId = target)
     }
 
+    val source = rememberPhotoSourcePicker(
+        title = R.string.add_document,
+        onChooseFile = { pickFile.launch("*/*") },
+    ) { uri ->
+        val target = replacingDocumentId
+        replacingDocumentId = null
+        viewModel.stageFile(uri, replacesDocumentId = target)
+    }
+
+    // The camera and the gallery call nothing back on a cancel, so the target is set on every open:
+    // one left by a cancelled Replace would turn the next Upload into a replace.
+    val openSourceFor: (String?) -> Unit = { documentId ->
+        replacingDocumentId = documentId
+        source.open()
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -146,7 +163,7 @@ fun DocumentsSectionScreen(
             // once it finishes — without a spinner here the file pick would
             // look like it did nothing.
             FloatingActionButton(
-                onClick = { if (!preparing) pickFile.launch("*/*") },
+                onClick = { if (!preparing) openSourceFor(null) },
                 containerColor = MaterialTheme.colorScheme.primary,
             ) {
                 if (preparing) {
@@ -211,12 +228,7 @@ fun DocumentsSectionScreen(
                             DocumentRow(
                                 doc = doc,
                                 isBusy = deletingId == doc.documentId,
-                                onReplace = {
-                                    doc.documentId?.let {
-                                        replacingDocumentId = it
-                                        pickFile.launch("*/*")
-                                    }
-                                },
+                                onReplace = { doc.documentId?.let(openSourceFor) },
                                 onRequestDeletion = { doc.documentId?.let { deletionTarget = it } },
                             )
                         }

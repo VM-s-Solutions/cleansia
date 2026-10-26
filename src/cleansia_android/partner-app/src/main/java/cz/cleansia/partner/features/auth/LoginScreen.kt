@@ -16,7 +16,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentType
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -79,6 +82,7 @@ fun LoginScreen(
                 value = uiState.email,
                 onValueChange = viewModel::onEmailChange,
                 label = stringResource(R.string.email),
+                modifier = Modifier.semantics { contentType = ContentType.Username },
                 keyboardType = KeyboardType.Email,
                 errorText = uiState.emailError,
                 enabled = !isLoading,
@@ -90,6 +94,7 @@ fun LoginScreen(
                 value = uiState.password,
                 onValueChange = viewModel::onPasswordChange,
                 label = stringResource(R.string.password),
+                modifier = Modifier.semantics { contentType = ContentType.Password },
                 isPassword = true,
                 errorText = uiState.passwordError,
                 enabled = !isLoading,

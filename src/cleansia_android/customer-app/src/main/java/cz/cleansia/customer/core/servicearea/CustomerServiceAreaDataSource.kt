@@ -68,6 +68,7 @@ class CustomerServiceAreaDataSource @Inject constructor(
                     id = id,
                     countryId = cityCountryId,
                     name = dto.name.orEmpty(),
+                    zipPrefix = dto.zipPrefix,
                 )
             }
         }.onFailure {

@@ -33,7 +33,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentType
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -221,6 +224,7 @@ private fun CodeStep(
         value = newPassword,
         onValueChange = { newPassword = it },
         label = stringResource(R.string.forgot_new_password),
+        modifier = Modifier.semantics { contentType = ContentType.NewPassword },
         isPassword = true,
     )
     RuleList(
@@ -238,6 +242,7 @@ private fun CodeStep(
         value = confirmPassword,
         onValueChange = { confirmPassword = it },
         label = stringResource(R.string.forgot_confirm_new_password),
+        modifier = Modifier.semantics { contentType = ContentType.NewPassword },
         isPassword = true,
     )
     RuleList(

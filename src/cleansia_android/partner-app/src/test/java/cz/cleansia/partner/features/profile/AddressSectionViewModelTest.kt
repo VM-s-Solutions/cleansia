@@ -261,7 +261,7 @@ class AddressSectionViewModelTest {
         coEvery { repository.getCurrentEmployee() } returns ApiResult.Success(employeeWithSavedCzAddress())
         val dataSource = FakeServiceAreaDataSource(
             countries = listOf(servicedCzechia),
-            cities = listOf(ServicedCity(id = "city-prg", countryId = "country-cz", name = "Prague")),
+            cities = listOf(ServicedCity(id = "city-prg", countryId = "country-cz", name = "Prague", zipPrefix = null)),
         )
 
         val vm = viewModel(dataSource)
@@ -273,6 +273,38 @@ class AddressSectionViewModelTest {
     }
 
     @Test
+    fun `a pick is asked about with its postcode, so a Prague postcode is Prague whatever the city is called`() = runTest {
+        stubServicedCountries(CountryListItem(id = "country-cz", isoCode = "CZE", name = "Czech Republic"))
+        coEvery { repository.getCurrentEmployee() } returns ApiResult.Success(employeeWithoutAddress())
+        val dataSource = FakeServiceAreaDataSource(
+            countries = listOf(servicedCzechia),
+            cities = listOf(ServicedCity(id = "city-prg", countryId = "country-cz", name = "Praha", zipPrefix = "1")),
+        )
+
+        val vm = viewModel(dataSource)
+        vm.uiState.test {
+            awaitLoaded()
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        vm.applyPick(
+            GeocodedAddress(
+                latitude = 50.08,
+                longitude = 14.43,
+                street = "Dlouhá 1",
+                city = "Прага",
+                zipCode = "110 00",
+                country = "Czech Republic",
+                countryIsoCode = "cz",
+                formatted = "Dlouhá 1, Прага",
+            ),
+        )
+        advanceUntilIdle()
+
+        assertEquals(ServiceAreaStatus.InServicedCity("Прага"), vm.form().serviceAreaStatus)
+    }
+
+    @Test
     fun `slovak pick saves with the backend country id resolved from alpha-3 SVK`() = runTest {
         stubServicedCountries(CountryListItem(id = "country-sk", isoCode = "SVK", name = "Slovakia"))
         coEvery { repository.getCurrentEmployee() } returns ApiResult.Success(employeeWithoutAddress())
@@ -281,7 +313,7 @@ class AddressSectionViewModelTest {
         } returns ApiResult.Success(Unit)
         val dataSource = FakeServiceAreaDataSource(
             countries = listOf(servicedSlovakia),
-            cities = listOf(ServicedCity(id = "city-ba", countryId = "country-sk", name = "Bratislava")),
+            cities = listOf(ServicedCity(id = "city-ba", countryId = "country-sk", name = "Bratislava", zipPrefix = null)),
         )
 
         val vm = viewModel(dataSource)

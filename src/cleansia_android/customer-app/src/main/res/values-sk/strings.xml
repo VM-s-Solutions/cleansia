@@ -287,6 +287,7 @@
     <string name="order_detail_review_comment">Pridajte komentár (nepovinné)</string>
     <string name="order_detail_submit_review">Odoslať hodnotenie</string>
     <string name="order_detail_timeline">Časová os stavu</string>
+    <string name="order_detail_timeline_new_cleaner">Znova ponúknuté upratovačom</string>
     <string name="order_detail_rebook">Rezervovať toto upratovanie znova</string>
     <string name="order_detail_download_receipt">Stiahnuť účtenku</string>
     <string name="order_detail_report_issue">Nahlásiť problém</string>
@@ -1330,8 +1331,8 @@
     <string name="notification_order_payment_confirmed_body">Vaša rezervácia #%1$s je potvrdená. Ťuknutím zobrazíte detaily.</string>
     <string name="notification_cleaner_assigned_title">Upratovač nájdený! 🎉</string>
     <string name="notification_cleaner_assigned_body">K vašej rezervácii #%1$s je priradený upratovač. Ťuknutím zobrazíte detaily.</string>
-    <string name="notification_order_cleaner_released_title">Váš upratovač už nemôže prísť</string>
-    <string name="notification_order_cleaner_released_body">Hľadáme iného upratovača pre rezerváciu #%1$s a dáme vám vedieť, hneď ako ju niekto prevezme.</string>
+    <string name="notification_order_cleaner_released_title">Upratovač už nemôže prísť</string>
+    <string name="notification_order_cleaner_released_body">Rezerváciu #%1$s opäť ponúkame našim upratovačom a dáme vám vedieť, hneď ako ju niekto prevezme.</string>
     <string name="notification_order_starting_soon_title">Upratovanie čoskoro začína</string>
     <string name="notification_order_starting_soon_body">Vaša rezervácia #%1$s začína približne o hodinu. Ťuknite pre zobrazenie podrobností.</string>
     <string name="notification_order_preferred_offer_closed_title">Rezervácia je otvorená všetkým upratovačom</string>
@@ -1347,7 +1348,7 @@
     <string name="notification_order_refunded_title">Vrátenie peňazí</string>
     <string name="notification_order_refunded_body">Vaše vrátenie peňazí za rezerváciu #%1$s sa spracováva.</string>
     <string name="notification_order_no_cleaner_refunded_title">Žiadny upratovač nebol k dispozícii</string>
-    <string name="notification_order_no_cleaner_refunded_body">Objednávku #%1$s nikto nestihol prevziať, preto vám vraciame celú sumu a pridávame kredit %2$s na ďalšie upratovanie. Ospravedlňujeme sa.</string>
+    <string name="notification_order_no_cleaner_refunded_body">Na objednávku #%1$s nemohol prísť žiadny upratovač, preto vám vraciame celú sumu a pridávame kredit %2$s na ďalšie upratovanie. Ospravedlňujeme sa.</string>
     <string name="notification_order_no_cleaner_refund_pending_title">Žiadny upratovač nebol k dispozícii</string>
     <string name="notification_order_no_cleaner_refund_pending_body">Na objednávku #%1$s nemohol prísť žiadny upratovač, preto sme ju zrušili. Vrátenie peňazí je na ceste a pridali sme vám kredit %2$s na ďalšie upratovanie. Ospravedlňujeme sa.</string>
     <string name="notification_order_no_cleaner_nothing_charged_title">Žiadny upratovač nebol k dispozícii</string>
@@ -1433,6 +1434,7 @@
     <string name="error_country_not_existing_id">Krajina nebola nájdená</string>
     <string name="error_currency_invalid">Neplatná mena</string>
     <string name="error_country_not_serviced">V tejto krajine zatiaľ nepôsobíme.</string>
+    <string name="error_city_not_serviced">V tomto meste zatiaľ nepôsobíme.</string>
     <string name="error_tenant_not_found">Tento trh zatiaľ neprevádzkuje žiadna spoločnosť Cleansia.</string>
     <string name="error_tenant_archived">Záznamy tejto spoločnosti sú zapečatené na archiváciu; nič na nich už nemožno meniť.</string>
     <string name="error_order_country_operator_mismatch">Túto adresu obsluhuje iná spoločnosť Cleansia a z tohto účtu ju nie je možné objednať.</string>

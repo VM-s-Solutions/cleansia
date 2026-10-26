@@ -19,7 +19,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentType
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -131,6 +134,7 @@ fun RegisterScreen(
                 value = uiState.email,
                 onValueChange = viewModel::onEmailChange,
                 label = stringResource(R.string.email),
+                modifier = Modifier.semantics { contentType = ContentType.NewUsername },
                 keyboardType = KeyboardType.Email,
                 errorText = uiState.emailError,
                 enabled = !uiState.isLoading,
@@ -142,6 +146,7 @@ fun RegisterScreen(
                 value = uiState.password,
                 onValueChange = viewModel::onPasswordChange,
                 label = stringResource(R.string.password),
+                modifier = Modifier.semantics { contentType = ContentType.NewPassword },
                 isPassword = true,
                 errorText = uiState.passwordError,
                 enabled = !uiState.isLoading,
@@ -162,6 +167,7 @@ fun RegisterScreen(
                 value = uiState.confirmPassword,
                 onValueChange = viewModel::onConfirmPasswordChange,
                 label = stringResource(R.string.confirm_password),
+                modifier = Modifier.semantics { contentType = ContentType.NewPassword },
                 isPassword = true,
                 errorText = uiState.confirmPasswordError,
                 enabled = !uiState.isLoading,

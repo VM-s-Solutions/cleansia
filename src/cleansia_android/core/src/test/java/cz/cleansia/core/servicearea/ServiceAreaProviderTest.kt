@@ -30,7 +30,7 @@ class ServiceAreaProviderTest {
     }
 
     private val czechia = ServicedCountry(id = "country-cz", isoCode = "cz", name = "Czech Republic")
-    private val prague = ServicedCity(id = "city-prg", countryId = "country-cz", name = "Prague")
+    private val prague = ServicedCity(id = "city-prg", countryId = "country-cz", name = "Prague", zipPrefix = null)
 
     @Test
     fun `failed country fetch returns null, is not cached, and the next access retries`() = runTest {
@@ -62,8 +62,8 @@ class ServiceAreaProviderTest {
         dataSource.cityResults.addLast(listOf(prague))
         val provider = ServiceAreaProvider(dataSource)
 
-        assertNull(provider.isCityServiced("country-cz", "Prague"))
-        assertEquals(true, provider.isCityServiced("country-cz", "Prague"))
+        assertNull(provider.isCityServiced("country-cz", "Prague", "110 00"))
+        assertEquals(true, provider.isCityServiced("country-cz", "Prague", "110 00"))
         assertEquals(2, dataSource.cityFetches)
     }
 
@@ -79,13 +79,25 @@ class ServiceAreaProviderTest {
         dataSource.cityResults.addLast(listOf(prague.copy(name = "Praha"), prague.copy(name = "Plzeň")))
         val provider = ServiceAreaProvider(dataSource)
 
-        assertEquals(true, provider.isCityServiced("country-cz", "Praha 8"))
-        assertEquals(true, provider.isCityServiced("country-cz", "Praha 4 - Chodov"))
-        assertEquals(true, provider.isCityServiced("country-cz", "Plzen"))
+        assertEquals(true, provider.isCityServiced("country-cz", "Praha 8", ""))
+        assertEquals(true, provider.isCityServiced("country-cz", "Praha 4 - Chodov", ""))
+        assertEquals(true, provider.isCityServiced("country-cz", "Plzen", ""))
 
         // Still refuses what the server refuses — an okres is the ring AROUND a city, not the city.
-        assertEquals(false, provider.isCityServiced("country-cz", "Praha-západ"))
-        assertEquals(false, provider.isCityServiced("country-cz", "Kladno"))
+        assertEquals(false, provider.isCityServiced("country-cz", "Praha-západ", ""))
+        assertEquals(false, provider.isCityServiced("country-cz", "Kladno", ""))
+    }
+
+    /** A row with a ZIP prefix is answered by the address's postcode, the way `CreateOrder` answers it. */
+    @Test
+    fun `isCityServiced asks a prefixed row about the postcode`() = runTest {
+        val dataSource = FakeDataSource()
+        dataSource.cityResults.addLast(listOf(prague.copy(name = "Praha", zipPrefix = "1")))
+        val provider = ServiceAreaProvider(dataSource)
+
+        assertEquals(true, provider.isCityServiced("country-cz", "Прага", "110 00"))
+        assertEquals(false, provider.isCityServiced("country-cz", "Praha", "252 42"))
+        assertEquals(true, provider.isCityServiced("country-cz", "Praha", ""))
     }
 
     @Test
@@ -94,9 +106,9 @@ class ServiceAreaProviderTest {
         dataSource.cityResults.addLast(listOf(prague))
         val provider = ServiceAreaProvider(dataSource)
 
-        assertEquals(true, provider.isCityServiced("country-cz", "  prague "))
-        assertEquals(false, provider.isCityServiced("country-cz", "Brno"))
-        assertEquals(false, provider.isCityServiced("country-sk", "Prague"))
+        assertEquals(true, provider.isCityServiced("country-cz", "  prague ", ""))
+        assertEquals(false, provider.isCityServiced("country-cz", "Brno", ""))
+        assertEquals(false, provider.isCityServiced("country-sk", "Prague", ""))
         assertEquals(1, dataSource.cityFetches)
     }
 

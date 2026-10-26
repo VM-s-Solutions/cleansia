@@ -279,6 +279,7 @@
     <string name="no_photos">Фото не завантажено</string>
     <string name="take_photo">Зробити фото</string>
     <string name="choose_from_gallery">Вибрати з галереї</string>
+    <string name="document_choose_file">Вибрати файл</string>
     <string name="delete_photo">Видалити фото</string>
     <string name="delete_photo_confirm">Ви впевнені, що хочете видалити це фото?</string>
     <string name="photos_none_recorded">Фотографій не записано</string>

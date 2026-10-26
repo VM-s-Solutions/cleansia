@@ -28,12 +28,12 @@ import cz.cleansia.partner.api.model.OrderItem
  * the cleaner's "what am I doing here?" reference: rooms / baths and the
  * dirtiness level on top for a one-glance scope read, then the crew the job needs and whether a
  * seat is still open, then the named services they're paid to deliver,
- * package adds with their listed prices, and finally the emoji-tagged
- * extras the customer ticked.
+ * package adds, and finally the emoji-tagged extras the customer ticked.
  *
  * Services from the partner DTO don't currently carry a per-service
  * price (only estimated time + currency code), so we render just the
- * name. Packages do carry `price`, so we surface it. Extras come back
+ * name. A package's `price` is a piece of the customer's price, shown on
+ * a cash job only, like the payment card's total. Extras come back
  * as a slug→bool map; we filter to active slugs and map them to the
  * same emoji + name pair the customer wizard uses.
  *
@@ -111,7 +111,9 @@ fun ScopeCard(
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 services.forEach { name -> ScopeLineItem(label = name, value = null) }
                 packages.forEach { pkg ->
-                    val priceLabel = pkg.price?.let { formatOrderPrice(it, currencyCode) }
+                    val priceLabel = pkg.price
+                        ?.takeIf { order.showsCustomerPrice() }
+                        ?.let { formatOrderPrice(it, currencyCode) }
                     ScopeLineItem(
                         label = localizedScopeName(pkg.translations, pkg.name)
                             ?.takeIf { it.isNotBlank() } ?: "—",

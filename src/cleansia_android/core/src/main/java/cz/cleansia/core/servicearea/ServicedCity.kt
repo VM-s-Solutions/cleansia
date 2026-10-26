@@ -9,4 +9,5 @@ data class ServicedCity(
     val id: String,
     val countryId: String,
     val name: String,
+    val zipPrefix: String?,
 )

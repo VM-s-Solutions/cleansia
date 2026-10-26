@@ -287,6 +287,7 @@
     <string name="order_detail_review_comment">Додайте коментар (необов’язково)</string>
     <string name="order_detail_submit_review">Надіслати відгук</string>
     <string name="order_detail_timeline">Хронологія статусу</string>
+    <string name="order_detail_timeline_new_cleaner">Знову запропоновано клінерам</string>
     <string name="order_detail_rebook">Замовити це прибирання знову</string>
     <string name="order_detail_download_receipt">Завантажити чек</string>
     <string name="order_detail_report_issue">Повідомити про проблему</string>
@@ -1330,8 +1331,8 @@
     <string name="notification_order_payment_confirmed_body">Замовлення #%1$s підтверджено. Натисніть, щоб переглянути деталі.</string>
     <string name="notification_cleaner_assigned_title">Клінера знайдено! 🎉</string>
     <string name="notification_cleaner_assigned_body">До вашого замовлення #%1$s призначено клінера. Натисніть, щоб переглянути деталі.</string>
-    <string name="notification_order_cleaner_released_title">Ваш клінер більше не може прийти</string>
-    <string name="notification_order_cleaner_released_body">Ми шукаємо іншого клінера для замовлення #%1$s і повідомимо вас, щойно хтось його візьме.</string>
+    <string name="notification_order_cleaner_released_title">Клінер більше не може прийти</string>
+    <string name="notification_order_cleaner_released_body">Ми знову пропонуємо замовлення #%1$s нашим клінерам і повідомимо вас, щойно хтось його візьме.</string>
     <string name="notification_order_starting_soon_title">Прибирання скоро почнеться</string>
     <string name="notification_order_starting_soon_body">Ваше замовлення #%1$s почнеться приблизно за годину. Натисніть, щоб переглянути деталі.</string>
     <string name="notification_order_preferred_offer_closed_title">Замовлення відкрите для всіх клінерів</string>
@@ -1347,7 +1348,7 @@
     <string name="notification_order_refunded_title">Повернення коштів</string>
     <string name="notification_order_refunded_body">Повернення коштів за замовлення #%1$s обробляється.</string>
     <string name="notification_order_no_cleaner_refunded_title">Вільних прибиральників не знайшлося</string>
-    <string name="notification_order_no_cleaner_refunded_body">Замовлення #%1$s ніхто не взяв, тому ми повернули всю суму та нарахували %2$s кредиту на наступне прибирання. Вибачте.</string>
+    <string name="notification_order_no_cleaner_refunded_body">На замовлення #%1$s не зміг приїхати жоден прибиральник, тому ми повернули всю суму та нарахували %2$s кредиту на наступне прибирання. Вибачте.</string>
     <string name="notification_order_no_cleaner_refund_pending_title">Вільних прибиральників не знайшлося</string>
     <string name="notification_order_no_cleaner_refund_pending_body">На замовлення #%1$s не зміг приїхати жоден прибиральник, тому ми його скасували. Повернення коштів обробляється, а ще ми нарахували %2$s кредиту на наступне прибирання. Вибачте.</string>
     <string name="notification_order_no_cleaner_nothing_charged_title">Вільних прибиральників не знайшлося</string>
@@ -1433,6 +1434,7 @@
     <string name="error_country_not_existing_id">Країну не знайдено</string>
     <string name="error_currency_invalid">Недійсна валюта</string>
     <string name="error_country_not_serviced">У цій країні ми поки що не працюємо.</string>
+    <string name="error_city_not_serviced">Ми наразі не обслуговуємо це місто.</string>
     <string name="error_tenant_not_found">Цей ринок поки що не обслуговує жодна компанія Cleansia.</string>
     <string name="error_tenant_archived">Записи цієї компанії опечатано для архівування; змінити в них уже нічого не можна.</string>
     <string name="error_order_country_operator_mismatch">Цю адресу обслуговує інша компанія Cleansia, і з цього облікового запису її не можна забронювати.</string>

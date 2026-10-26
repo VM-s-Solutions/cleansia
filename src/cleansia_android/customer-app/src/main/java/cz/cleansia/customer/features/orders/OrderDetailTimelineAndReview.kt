@@ -37,24 +37,39 @@ import cz.cleansia.customer.ui.theme.WarningStar
 
 /* ── Timeline ── */
 
+internal data class TimelineEntry(val track: OrderStatusTrackDto, val returnedToBoard: Boolean)
+
+/**
+ * The history oldest first, a row with no time last, each status listed once per pass: a seat
+ * advertised again writes a row repeating the status the booking is already in.
+ */
+internal fun timelineRows(history: List<OrderStatusTrackDto>): List<TimelineEntry> {
+    val rows = mutableListOf<TimelineEntry>()
+    history.sortedWith(compareBy(nullsLast()) { it.createdOn }).forEach { track ->
+        val previous = rows.lastOrNull()?.track?.status?.value
+        if (rows.isNotEmpty() && track.status?.value == previous) return@forEach
+        // A New after a Confirmed is the walk-back, the one Confirmed → New writer. → /domain/order-lifecycle
+        val returnedToBoard = orderStatusFromValue(track.status?.value) == OrderStatus.New &&
+            orderStatusFromValue(previous) == OrderStatus.Confirmed
+        rows += TimelineEntry(track, returnedToBoard)
+    }
+    return rows
+}
+
 @Composable
 internal fun TimelineCard(history: List<OrderStatusTrackDto>) {
-    // Sort ascending (oldest first). Null createdOn sorts to the bottom so it
-    // stays visible; the formatter will render "—" for such rows.
-    val sorted = history.sortedWith(
-        compareBy(nullsLast()) { it.createdOn },
-    )
+    val rows = timelineRows(history)
     Card {
         SectionHeader(title = stringResource(R.string.order_detail_timeline))
         Spacer(Modifier.height(10.dp))
-        sorted.forEachIndexed { idx, entry ->
-            TimelineRow(entry, isLast = idx == sorted.lastIndex)
+        rows.forEachIndexed { idx, row ->
+            TimelineRow(row.track, returnedToBoard = row.returnedToBoard, isLast = idx == rows.lastIndex)
         }
     }
 }
 
 @Composable
-private fun TimelineRow(entry: OrderStatusTrackDto, isLast: Boolean) {
+private fun TimelineRow(entry: OrderStatusTrackDto, returnedToBoard: Boolean, isLast: Boolean) {
     val dotColor = orderStatusColor(entry.status?.value)
     Row(Modifier.padding(vertical = 4.dp)) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -77,7 +92,11 @@ private fun TimelineRow(entry: OrderStatusTrackDto, isLast: Boolean) {
             // Resolve a localized label per status value, falling back to the
             // raw `name` from the CodeDto (English) when the value is unknown
             // (e.g. backend adds a new status before mobile updates).
-            val labelRes = orderStatusLabelRes(entry.status?.value)
+            val labelRes = if (returnedToBoard) {
+                R.string.order_detail_timeline_new_cleaner
+            } else {
+                orderStatusLabelRes(entry.status?.value)
+            }
             val label = labelRes?.let { stringResource(it) } ?: entry.status?.name ?: "—"
             Text(
                 text = label,

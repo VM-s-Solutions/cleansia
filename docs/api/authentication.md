@@ -110,6 +110,12 @@ of one password-hash derivation, and a registration again costs one too, so neit
 tells whether a password was withdrawn. No session exists before the confirmation: an unconfirmed
 account's sign-in opens none. A genuine user who registers twice with two passwords also has to use
 *Forgot password* once.
+
+**Still open:** a stranger who registers an address once, and its owner then confirming that
+registration by its code (the first e-mail or a resend), leave the stranger's password working until the
+owner resets it. The owner ruled on 2026-10-26 to close it (*"Close"*): the confirmation will carry the
+password the confirmer chooses, and the stored one is kept only on a match. That is a contract change in
+every app and both webs.
 :::
 
 ---

@@ -15,7 +15,7 @@ import {
   selectMarketCurrencyCode,
   selectMarketReferralCredit,
 } from '@cleansia/customer-stores';
-import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
+import { CleansiaCustomerRoute, CustomValidators, SnackbarService } from '@cleansia/services';
 import { currentLanguage, formatMarketCredit } from '@cleansia/utils';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
@@ -261,8 +261,6 @@ export class RegisterFacade extends UnsubscribeControlDirective {
   }
 
   private createFormGroup(): FormGroup {
-    const passwordPattern = /^(?=.*\p{L})(?=.*\d).{8,}$/u;
-
     return new FormGroup({
       firstName: new FormControl('', [
         Validators.required,
@@ -275,11 +273,11 @@ export class RegisterFacade extends UnsubscribeControlDirective {
       email: new FormControl('', [Validators.required, Validators.email]),
       password: new FormControl('', [
         Validators.required,
-        Validators.pattern(passwordPattern),
+        CustomValidators.password(),
       ]),
       confirmPassword: new FormControl('', [
         Validators.required,
-        Validators.pattern(passwordPattern),
+        CustomValidators.password(),
       ]),
       // Optional — never required. Bad codes don't block submit.
       referralCode: new FormControl(''),

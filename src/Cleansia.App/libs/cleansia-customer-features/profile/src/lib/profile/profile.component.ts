@@ -21,7 +21,7 @@ import {
 } from '@cleansia/components';
 import type { MapboxAddressSuggestion } from '@cleansia/services';
 import { LoyaltyTier, SavedAddressDto } from '@cleansia/customer-services';
-import { persistPreferredLanguage, ThemeService } from '@cleansia/services';
+import { CustomValidators, persistPreferredLanguage, ThemeService } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { InputTextModule } from 'primeng/inputtext';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -217,7 +217,7 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
     currentPassword: new FormControl('', [Validators.required]),
     newPassword: new FormControl('', [
       Validators.required,
-      Validators.pattern(/^(?=.*\p{L})(?=.*\d).{8,}$/u),
+      CustomValidators.password(),
     ]),
     confirmPassword: new FormControl('', [Validators.required]),
   });

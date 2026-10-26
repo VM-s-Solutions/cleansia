@@ -17,7 +17,7 @@ import { CustomValidators } from '@cleansia/services';
 import { TranslatePipe } from '@ngx-translate/core';
 import { Subject, takeUntil } from 'rxjs';
 import { AdminProfileFacade } from './admin-profile.facade';
-import { PASSWORD_PATTERN } from './admin-profile.models';
+import { ADMIN_PASSWORD_MIN_LENGTH } from './admin-profile.models';
 
 @Component({
   selector: 'cleansia-admin-profile',
@@ -45,7 +45,7 @@ export class AdminProfileComponent implements OnDestroy {
     currentPassword: ['', [Validators.required]],
     newPassword: [
       '',
-      [Validators.required, Validators.pattern(PASSWORD_PATTERN)],
+      [Validators.required, CustomValidators.password(ADMIN_PASSWORD_MIN_LENGTH)],
     ],
     confirmPassword: [
       '',

@@ -101,4 +101,11 @@ describe('AdminProfileComponent', () => {
     newPassword.setValue('Пароль202420');
     expect(newPassword.valid).toBe(true);
   });
+
+  it('counts the twelve as the server does, an emoji as two characters', () => {
+    const newPassword = render(true).componentInstance.form.controls.newPassword;
+
+    newPassword.setValue('Heslo12345😀');
+    expect(newPassword.valid).toBe(true);
+  });
 });

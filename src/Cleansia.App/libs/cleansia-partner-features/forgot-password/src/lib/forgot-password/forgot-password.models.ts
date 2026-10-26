@@ -1,6 +1,6 @@
 /**
  * Mirrors the only password rule the backend actually enforces
- * (ValidationExtensions.ValidatePassword, and PASSWORD_PATTERN in
+ * (ValidationExtensions.ValidatePassword, and CustomValidators.password in
  * @cleansia/services): at least 8 characters, one letter and one digit.
  * Kept identical to the partner register checklist so the two screens cannot
  * advertise different policies.

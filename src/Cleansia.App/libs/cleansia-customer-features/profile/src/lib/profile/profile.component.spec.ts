@@ -128,4 +128,11 @@ describe('ProfileComponent — the new password', () => {
     expect(fixture.componentInstance.passwordForm.controls.newPassword.valid).toBe(true);
     expect(fixture.componentInstance.passwordValidation().hasLetter).toBe(true);
   });
+
+  it('takes a password that reaches eight through an emoji, and lists its length rule as met, as the server counts it', () => {
+    fixture.componentInstance.passwordForm.controls.newPassword.setValue('Heslo1😀');
+
+    expect(fixture.componentInstance.passwordForm.controls.newPassword.valid).toBe(true);
+    expect(fixture.componentInstance.passwordValidation().hasMinLength).toBe(true);
+  });
 });

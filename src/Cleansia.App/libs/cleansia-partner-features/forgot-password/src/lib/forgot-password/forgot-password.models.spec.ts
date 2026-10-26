@@ -49,6 +49,10 @@ describe('checkIfPasswordsValid (partner forgot-password)', () => {
     expect(checkIfPasswordsValid('ěščřžýáí1').hasLetter).toBe(true);
   });
 
+  it('counts the length as the server and the form do, an emoji as two characters', () => {
+    expect(checkIfPasswordsValid('Heslo1😀').hasMinLength).toBe(true);
+  });
+
   it('does not demand case mixing or a special character', () => {
     const result = checkIfPasswordsValid('passw0rd');
 

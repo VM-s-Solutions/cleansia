@@ -58,4 +58,8 @@ describe('checkIfPasswordsValid', () => {
     expect(checkIfPasswordsValid('ěščřžýáí1').hasLetter).toBe(true);
     expect(checkIfPasswordsValid('12345678').hasLetter).toBe(false);
   });
+
+  it('counts the length as the server and the form do, an emoji as two characters', () => {
+    expect(checkIfPasswordsValid('Heslo1😀').hasMinLength).toBe(true);
+  });
 });

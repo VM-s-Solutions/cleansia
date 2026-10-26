@@ -8,7 +8,7 @@ import {
   PartnerAuthService,
   PartnerClient,
 } from '@cleansia/partner-services';
-import { CleansiaPartnerRoute, SnackbarService } from '@cleansia/services';
+import { CleansiaPartnerRoute, CustomValidators, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, of, takeUntil } from 'rxjs';
 import { defaultMarket, marketOptionLabel } from './register.models';
@@ -88,8 +88,6 @@ export class RegisterFacade extends UnsubscribeControlDirective {
   }
 
   private createFormGroup(): FormGroup {
-    const passwordPattern = /^(?=.*\p{L})(?=.*\d).{8,}$/u;
-
     const formGroup = new FormGroup({
       firstName: new FormControl('', [
         Validators.required,
@@ -102,11 +100,11 @@ export class RegisterFacade extends UnsubscribeControlDirective {
       email: new FormControl('', [Validators.required, Validators.email]),
       password: new FormControl('', [
         Validators.required,
-        Validators.pattern(passwordPattern),
+        CustomValidators.password(),
       ]),
       confirmPassword: new FormControl('', [
         Validators.required,
-        Validators.pattern(passwordPattern),
+        CustomValidators.password(),
       ]),
       // phone: new FormControl('', [Validators.required]),
       // street: new FormControl('', [Validators.required]),

@@ -12,8 +12,8 @@ Cancel one order **on the platform's behalf** — no fee, and whatever the custo
 everything a platform cancellation owes in one call: the status transition, the Live Activity end, the
 card refund under the caller's refund reason (or the credit returned when the card was never charged),
 the express-waiver release, the cleaners told, the loyalty revoked, a guest told by e-mail with their old
-links retired; and offer the **refund leg alone** so a refund Stripe refused can be driven again under
-the same key.
+links retired and, on an administrator's cancellation, a signed-in customer told too; and offer the
+**refund leg alone** so a refund Stripe refused can be driven again under the same key.
 
 ## Collaborators
 
@@ -41,10 +41,16 @@ the same key.
   → [Business rules — the credit return](/product/business-rules#when-the-cleaner-cancels-or-no-shows);
   `IExpressWaiverConsumer.ReleaseForOrderAsync` unconditionally;
   `OrderAssignmentCancellationNotifier` for every assigned cleaner;
-  `ILoyaltyService.RevokeForCancelledOrderAsync`; last, `GuestCancellationEmail.EnqueueAsync` — on a
-  guest order only (no `UserId`), `GuestOrderAccessTokenIssuer.RevokeAsync` retires every token the
-  booking had, then `IPendingDispatch` stages `email:guest-order-cancelled:{orderId}` carrying the
+  `ILoyaltyService.RevokeForCancelledOrderAsync`; then, on `CancelledBy.Admin` for a booking with an
+  account and only when `RefundAsync` sent no `order.refunded` (`!refund.Initiated`), the customer's
+  `OrderCancelled` push and feed row, subject the order id (since the fix plan of 2026-10-25); last,
+  `GuestCancellationEmail.EnqueueAsync`, with `alsoToAccount` on an administrator's cancellation — on a
+  guest order (no `UserId`) `GuestOrderAccessTokenIssuer.RevokeAsync` first retires every token the
+  booking had — then `IPendingDispatch` stages `email:guest-order-cancelled:{orderId}` carrying the
   refund's `RefundedAmount` and nothing else, so the e-mail names money only when a refund went through.
+  An account's e-mail carries the order page's link and no guest token. The wind-down passes
+  `CancelledBy.System`, so its cancellation still e-mails a guest only: it told every live customer
+  before it ran.
   The result's `RefundAmount` is the row's `CancellationRefundAmount`. **No commit** — the caller owns
   it: the admin handler through the UnitOfWork pipeline, the sweep per order.
 - **`RefundAsync(order, actorId, refundReason, ct)`** → `PlatformRefundOutcome` (`NotAttempted`, `Issued`,
@@ -80,9 +86,12 @@ the same key.
 - **Whether the order may be cancelled.** The status gate is the caller's; the sweep re-reads
   `CurrentStatus` untracked right before calling.
 - **The apology credit.** `CleanerNoShowCancellation` — the one body behind the unfilled sweep and an
-  administrator's no-show confirmation (`AdminCancelOrderAsNoShow`, 2026-09-28) — grants the no-show
-  credit and raises its own outcome push; it is **not** a caller — a third arm to serve one caller is what
-  CLAUDE.md §4 forbids.
+  administrator's no-show confirmation (`AdminCancelOrderAsNoShow`, 2026-09-28; since the fix plan of
+  2026-10-25 also before the start on a booking nobody is on) — grants the no-show credit, raises its own
+  outcome push and stages the same cancellation e-mail for every booking, naming the credit; it is
+  **not** a caller — a third arm to serve one caller is what CLAUDE.md §4 forbids. The plain
+  administrator's cancel pays no apology, on purpose: it also serves a phoned-in cancellation, a
+  duplicate and a test booking.
 - **The customer's own cancellation.** `CancelOrder` (fee tiers, the oops window) is its own path.
 - **When to commit.** Never inside; the admin path commits once through the pipeline, the sweep once per
   order so a refund that succeeded is recorded before the next Stripe call.

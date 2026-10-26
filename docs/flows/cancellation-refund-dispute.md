@@ -66,9 +66,20 @@ apology, the no-cleaner reason, and a push that says what happened to the money 
 each **naming the credit with its currency** as an `amount` formatted on the server from the credit's own
 currency row ("250 Kč", "10 €": the number with no trailing zeros, a space, the symbol, the code when
 there is none; owner ruling 2026-09-13). A currency with no figure pays no credit and sends the plain
-cancellation push. The administrator's confirmation also closes an open *service not provided*
-dispute on the order, unless that dispute's own card refund is still pending (since 2026-10-06): then the
-dispute stays open, because resolving it again is that refund's only retry ([Dispute](#dispute)).
+cancellation push. Since the fix plan of 2026-10-25 the body also e-mails every booking it cancels, a
+signed-in customer's as well as a guest's, and the e-mail names the credit with its amount, so a
+customer who uses only the web hears of it. The administrator's confirmation also closes an open
+*service not provided* dispute on the order, unless that dispute's own card refund is still pending
+(since 2026-10-06): then the dispute stays open, because resolving it again is that refund's only retry
+([Dispute](#dispute)).
+
+**An administrator may call off early a booking nobody is on** (since the fix plan of 2026-10-25).
+*Cancel as a no-show* is accepted before the start on a booking the unfilled sweep would cancel at its
+start — never started, nobody on it, offered on the board — and runs the same body, so the customer gets
+what the sweep would have paid; `admin.order.no_cleaner_yet` and the console's no-show panel point to it.
+A booking with a crew is still refused before its start. The plain *Cancel order* pays no apology, and
+since the same day it tells a signed-in customer by e-mail and, unless the refund notice went, by push
+(`order.cancelled`).
 → [Business rules — when the cleaner no-shows](/product/business-rules#when-the-cleaner-cancels-or-no-shows),
 [Money constants](/product/business-rules#money-constants)
 

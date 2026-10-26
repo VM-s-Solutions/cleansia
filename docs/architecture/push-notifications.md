@@ -334,38 +334,45 @@ the same rule as the two client feeds: ids, numbers, enum names, dates and money
 entry declares the exact set a site may pass, so a site cannot smuggle a name in. Rows fall under
 `retention.notifications.days` like every other feed row.
 
-**The walk-back tells the customer** (owner ruling 2026-10-25 on O-D2-1: *"yup"*, option (b)). When a
-`Confirmed` order loses its last cleaner and goes back to `New` ([ADR-0067](/decisions/adr-0067)), both
-release writers call `OrderCleanerReleasedNotifier` exactly when `Order.ReturnToBoardIfUnstaffed()`
-walks it back; a crew that remains, or an order that was not `Confirmed`, sends the customer nothing. A
-booking with an account gets `order.cleaner_released` — `OrderUpdates`, args `orderId` (the deep link) and
-`orderNumber`, subject `{orderId}:{releasedAssignmentId}` so every walk-back is its own message — which is
-in `NotificationFeedEventKeys.Customer` and in the APNs display map with `[orderNumber]`; a mute silences
-the push, never the feed row. Every booking, a guest's included, gets an `order-cleaner-released` message
-on `send-email`, keyed `email:order-cleaner-released:{orderId}:{assignmentId}`, which the consumer sends
-only while the order is still `New`. Both ride the release's own commit, so a release its commit refuses
-tells nobody. The next take is a `New → Confirmed` transition again, so the customer still receives a
-**second** "your order is confirmed" e-mail on top of the assignment push: a new cleaner is a new
-confirmation, and suppressing that e-mail, option (a), was not taken. When the one-off booking was
-reserved for a cleaner the customer asked for and nothing has stamped that reservation's receipt
-(`PreferredOfferLapseNotifiedAt`: only a path that sends the closure message does, and the chosen
-cleaner's take of the reserved job does not), the five-minute lapse sweep pushes a signed-in customer
-`order.preferred_offer_closed`, with no feed row, on its first run that finds nobody on the order after
-the reservation ended, whoever left last, on top of the release's own messages; a drop by, or the
-rejection of, the chosen cleaner while the reservation runs ends it at once.
-→ [Business rules — when the last cleaner leaves](/product/business-rules#crew-lost),
+**Every release tells the customer** (owner ruling 2026-10-25 on O-D2-1: *"yup"*, option (b); since the
+fix plan of the same day the last cleaner's and one of two alike). Both release writers call
+`OrderCleanerReleasedNotifier` after every release, whether `Order.ReturnToBoardIfUnstaffed()` walks the
+order back ([ADR-0067](/decisions/adr-0067)) or a crew remains: an order has no spare seat, so every
+release leaves it short. A booking with an account gets `order.cleaner_released` — `OrderUpdates`, args
+`orderId` (the deep link) and `orderNumber`, subject `{orderId}:{releasedAssignmentId}` so every release
+is its own message — which is in `NotificationFeedEventKeys.Customer` and in the APNs display map with
+`[orderNumber]`; a mute silences the push, never the feed row. Its words count no cleaners (*A cleaner can
+no longer come* — *We're offering booking #… to our cleaners again and will let you know as soon as one
+takes it*), the same in the Android customer app and both iOS catalogs — the iOS partner app renders the
+push for a cleaner who also books. Every booking, a guest's included, gets an `order-cleaner-released` message on
+`send-email`, keyed `email:order-cleaner-released:{orderId}:{assignmentId}`, which the consumer sends
+only while the order has not started (`New` or `Confirmed`) and is still short of `RequiredEmployees`;
+the e-mail makes no promise to write again. Both ride the release's own commit, so a release its commit
+refuses tells nobody. The next take of a walked-back order is a `New → Confirmed` transition again: it
+pushes the assignment's `order.cleaner_assigned` (*Cleaner found!*), and its e-mail says *We've found you
+a new cleaner* where the first take's says *Cleaner found* (owner decision of 2026-10-25 on the fix
+plan). When the one-off booking was reserved for a cleaner the customer asked for, the notifier stamps
+that reservation's receipt (`PreferredOfferLapseNotifiedAt`) when the reservation has ended by the
+release, so the five-minute lapse sweep sends no `order.preferred_offer_closed` after it; the sweep
+announces only a reservation that ends with nobody on the order and no release after it. The chosen
+cleaner's take of the reserved job stamps nothing.
+→ [Business rules — when a cleaner leaves](/product/business-rules#crew-lost),
 [administrators are told](/product/business-rules#admin-notifications),
 [Admin notifier](/domain/roles/admin-notifier)
 
 ### The no-show pushes say what happened to the money {#no-show-outcomes}
 
 A booking the platform cancels because no cleaner came — the unfilled sweep, or an administrator's
-no-show confirmation — sends **one** of four keys, chosen by what actually moved:
+no-show confirmation, which since the fix plan of 2026-10-25 may come before the start on a booking
+nobody is on — sends **one** of four keys, chosen by what actually moved:
 `order.no_cleaner_refunded` (the card refund went through), `order.no_cleaner_refund_pending` (a card
 refund is owed and has not gone through; the hourly re-drive owns it), `order.no_cleaner_nothing_charged`
 (the order took no payment) — each announcing the apology credit with its `amount` — or the plain
-`order.cancelled` when no apology was issued (a currency with no figure; a guest gets no push at all,
-only the cancellation e-mail). All four sit in the
+`order.cancelled` when no apology was issued (a currency with no figure; a guest gets no push at all).
+Every booking, a signed-in customer's included since the fix plan, also gets the cancellation e-mail,
+which names the credit with its amount when one was issued. The refunded body opens *No cleaner could make it to booking
+#…*, as its two siblings do, since the same day; it said that nobody was able to take the booking, which
+is false after a cleaner took it and left, or on an administrator's confirmation. All four sit in the
 `OrderCancelled` category, show `orderNumber` on the lock screen (`amount` too on the three that promise
 credit; `orderId` is the deep link only), render on Android and iOS and land in the customer feed. A refund
 re-driven later sends `order.refunded`, keyed on the refund.

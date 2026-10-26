@@ -101,6 +101,18 @@ that this action made no card refund when none went through. It is refused befor
 (`order.start_time_not_reached`), once a cleaner has started (`order.cleaner_already_started` — the
 cleaner did arrive; the report stays a dispute), and on a completed or cancelled order. One of two
 cleaners missing is not a no-show here; settle it through the dispute.
+
+**On a booking nobody is on, it also calls the booking off before its start** (since the fix plan of
+2026-10-25, owner decision *"Yup"*). The start refusal is waived for a booking the unfilled sweep would
+cancel at its start — never started, nobody on it, offered on the board — so an administrator acting on
+`admin.order.no_cleaner_yet` pays the customer the sweep's refund and apology credit instead of less.
+The panel's context and the alert say so: *On a job nobody has taken, you can also use it before the
+start, once no cleaner will be found: the customer gets the same refund and apology credit as the
+automatic cancellation.* A booking with a crew is still refused before its start, and an unpaid card
+checkout too. The plain cancel still pays no apology, because it also serves a cancellation the customer
+asked for by phone, a duplicate and a test booking; since the same day it tells a signed-in customer by
+e-mail and, when no refund notice went, by push. The credit's ledger note, which only administrators
+read, says *No cleaner was on the booking.*
 → [Business rules — when the cleaner no-shows](/product/business-rules#when-the-cleaner-cancels-or-no-shows)
 
 ### Record cash received {#record-cash-received}

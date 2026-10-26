@@ -69,8 +69,9 @@ There is no longer any form asking for an order number, an e-mail and a code. **
 the Android and iOS apps are for customers with an account and have no guest screen at all (owner
 ruling 2026-10-01; until then the apps offered *Find a guest booking*, where the guest pasted the link).
 
-Every message about the booking — the receipt, *a cleaner has taken your job*, *we're on our way*,
-*all done*, *we're finding you a new cleaner*, the cancellation — carries a fresh working link, and a
+Every message about the booking — the receipt, *cleaner found*, *we've found you a new cleaner*,
+*we're on our way*, *all done*, *a cleaner can no longer come*, the cancellation — carries a fresh
+working link, and a
 browser remembers the bookings it holds tokens for. A link stops working 30 days after the cleaning, and
 every link the guest already held stops at once if the booking is cancelled — the cancellation e-mail
 then carries a new one, so they can still read what they were refunded.
@@ -311,20 +312,20 @@ someone takes it; *Keep the job* changes nothing. After *Yes, cancel the job* th
 are off the job and their place is back on the board for others, or, when nobody is left on it, that it
 has no cleaner now and is back on the board, and the app leaves the job. It puts the seat back on the
 board and cancels nothing; a confirmed booking with nobody left goes back to *New* and is re-offered
-([ADR-0067](/decisions/adr-0067)). The company's administrators are told when the crew empties, and
-once more when the job is inside a day of its start with nobody on it. Since 2026-10-25 the customer is
-told too, when the booking goes back to *New*, that another cleaner is being looked for: *Your cleaner
-can no longer come* as a notification and in the inbox of the Android and iOS apps when they have an
-account, and the e-mail *We're finding you a new cleaner*, with an account or without, unless the
-booking is no longer *New* when it goes out (taken again or cancelled); neither names the cleaner or
-says why. When the one-off booking was reserved for a cleaner they asked for and the end of that
-reservation was never announced, as when the chosen cleaner took the job, the first five-minute run of
-the lapse sweep that finds nobody on it after the reservation ended also pushes a signed-in customer's
-Android and iOS apps that the booking is open to all cleaners (`order.preferred_offer_closed`), whoever
-left last; a drop by the chosen cleaner while the reservation runs ends it at once. Asking for cover,
-where the cleaner stays on the hook until somebody takes the seat, exists in the API (`RequestCover`)
-only; no app offers it.
-→ [Business rules — when the last cleaner leaves](/product/business-rules#crew-lost),
+([ADR-0067](/decisions/adr-0067)). The company's administrators are told when the crew empties, when a
+release leaves somebody on the job but the crew short (since the fix plan of 2026-10-25), and once more
+when the job is inside a day of its start with nobody on it. The customer is told of every release, the
+last cleaner's since 2026-10-25 and one of two since the fix plan: *A cleaner can no longer come* — the booking is offered to
+the cleaners again — as a notification and in the inbox of the Android and iOS apps when they have an
+account, and the e-mail *A cleaner can no longer come* — *Your booking still stands*, with an account or
+without, unless by the time it goes out the booking is no longer short of cleaners, or has started or
+been cancelled; none of them names the cleaner, says why or counts the cleaners. When the booking is
+taken again after going back to *New*, the e-mail says *We've found you a new cleaner*. When the one-off
+booking was reserved for a cleaner they asked for, the release notice also announces the end of a
+reservation that has ended by then, as the chosen cleaner's own drop ends it, so no *open to all
+cleaners* push follows it (since the fix plan). Asking for cover, where the cleaner stays on the hook
+until somebody takes the seat, exists in the API (`RequestCover`) only; no app offers it.
+→ [Business rules — when a cleaner leaves](/product/business-rules#crew-lost),
 [the partner web's Cancel job](/partner-app/order-management#cancel-job)
 
 **Not forgetting the job** — a count of tomorrow's jobs each evening at 18:00 in the cleaner's own local

@@ -439,9 +439,22 @@ and gets the refund only.
   booking's loyalty points and **closes an open *service not provided* dispute** on the order, unless
   that dispute's own card refund is still pending (since 2026-10-06): resolving the dispute again is that
   refund's only retry, so the dispute stays open ([A dispute whose card refund is pending stays
-  open](#dispute-settlement)). It refuses before the start, on a job in progress
-  (`order.cleaner_already_started` — a cleaner who tapped Start after the report did arrive, and the
-  report stands as a dispute), and on a completed or cancelled one.
+  open](#dispute-settlement)). It refuses before the start (`order.start_time_not_reached`), on a job in
+  progress (`order.cleaner_already_started` — a cleaner who tapped Start after the report did arrive,
+  and the report stands as a dispute), and on a completed or cancelled one.
+- **An administrator may call off early a booking nobody is on** (since the fix plan of 2026-10-25,
+  owner decision *"Yup"*: the refund and the apology credit come only through *Cancel as a no-show*, now
+  allowed before the start on an unstaffed booking). Before the start the confirmation goes ahead on a
+  booking the unfilled sweep would cancel at its start (`CancelUnfilledOrders.IsUnfilled`: never
+  started, nobody on it, and offered on the board — paid, or cash and confirmed when recurring), and
+  pays its customer what the sweep would: the same body, refund and credit. Every other refusal stands,
+  and a booking with a crew is still refused before its start. The advance alert
+  (`admin.order.no_cleaner_yet`) and the console's no-show panel say so. The plain *Cancel order* still
+  pays no apology: it also serves a cancellation the customer asked for by phone, a duplicate and a test
+  booking ([When the platform cancels](#platform-cancellation)). The admin-only ledger note on the credit
+  reads *No cleaner was on the booking.* when nobody was, and *The assigned cleaner did not arrive.*
+  otherwise. Until then an administrator who called off a never-staffed booking early paid its customer
+  less than doing nothing would have: left alone, the sweep pays the apology after the start.
 - **One of two cleaners missing stays a dispute** the administrator settles at their discretion;
   crews are rare and never pay cash.
 
@@ -452,8 +465,19 @@ payment; all three carry the credit as `amount`. With no apology the plain `orde
 promises nothing: for a currency with no figure, and since 2026-10-05 for a customer whose credit sits on
 the books of a company frozen for archive, where the apology is skipped and logged rather than failing the
 cancellation's commit — the card refund is unaffected, and the applied credit is not returned onto those books either ([A company's lifecycle](#company-lifecycle)). All four render on Android and iOS and land in the
-customer's inbox. A guest gets no push; the cancellation e-mail tells them what happened to the money
-([When the platform cancels](#platform-cancellation)).
+customer's inbox. A guest gets no push.
+
+**The no-cleaner cancellation e-mails every booking** (since the fix plan of 2026-10-25, owner ruling
+*"Fix"* on the customer-message gaps), a signed-in customer's as well as a guest's, whatever their
+devices or notification settings, so a customer who uses only the web, which has no push or inbox,
+hears of the cancellation, its refund and its credit. It is the e-mail a guest already got
+([When the platform cancels](#platform-cancellation)), with its reason and its money line, and when the
+apology was issued it names it with its amount, as the push does (owner ruling 2026-09-06: the credit
+is announced explicitly): *We have added {amount} credit towards your next clean.*, in five languages, the
+figure from the credit row, never from the copy, written as the e-mail writes money — `Kč250.00` in
+English and `250,00 Kč` in Czech, where the push writes `250 Kč`. An account's e-mail is in the
+booking's language, else the account's, and carries the link to its order page; only a guest's mints a
+guest link. Until then only a guest was e-mailed.
 
 > The figure is `Currency.NoShowCredit`, authored per currency; a currency with none pays no credit
 > and the push is the plain cancellation. The home page states the figure from the market, never from
@@ -582,7 +606,7 @@ would have paid it, and paid always. That includes a cash customer who never pay
 then the crew was paid half of the fee once the company had collected it.
 → [A confirmed lockout pays the seat's reward](#lockout-pay).
 
-### When the last cleaner leaves {#crew-lost}
+### When a cleaner leaves {#crew-lost}
 
 **A confirmed booking whose last cleaner leaves goes back to `New` and is re-offered; the company's
 administrators are told** (owner ruling 2026-09-19, [ADR-0067](/decisions/adr-0067):
@@ -633,40 +657,69 @@ lockout report and the start. A cleaner meets the refusal only when the job move
 read it, as when a crew-mate sets off first, and the app then reads the job again
 ([ADR-0067](/decisions/adr-0067)). → [Leaving a job](/product/features#cleaner-partner)
 
-**The customer is told when the booking goes back to `New`** (owner ruling 2026-10-25 on O-D2-1,
-*"should the customer be told when their job silently goes back to New?"* — *"yup"*). A customer with an
-account gets a push and an inbox entry in the Android and iOS apps, *Your cleaner can no longer come* —
-*We're looking for another cleaner for booking #… and will let you know as soon as one takes it*. It
-sits under booking updates: switching those off silences the push, never the inbox entry. Every
+**The customer is told of every release** (owner ruling 2026-10-25 on O-D2-1, *"should the customer be
+told when their job silently goes back to New?"* — *"yup"*; and the fix plan of the same day: the notice
+also goes when one of two cleaners leaves, so its words must stay true whether every cleaner or one of
+two has left — the owner's answer on that wording, *"Adapt to the current needs if needed"*). Both release
+writers call `OrderCleanerReleasedNotifier` after every release, the last cleaner's, which walks a
+`Confirmed` booking back to `New`, and one of several, which leaves it `Confirmed` and short. A customer
+with an account gets a push and an inbox entry in the Android and iOS apps, *A cleaner can no longer
+come* — *We're offering booking #… to our cleaners again and will let you know as soon as one takes it*.
+It sits under booking updates: switching those off silences the push, never the inbox entry. Every
 booking's address, a guest's included, gets an e-mail whatever the notification settings, in the
-booking's language, *We're finding you a new cleaner*, with the link to the booking; it goes out only
-if the booking is `New` when it is sent, so a take or a cancellation in between sends none unless the
-booking is back at `New` by then. Nothing names the cleaner, gives a reason, says a cleaner is on the job
-or promises a time or money, so a drop and a rejection read the same. A crew that remains, or an order
-that was not `Confirmed`, tells the customer nothing. A drop still moves no money and cancels nothing —
-*the customer has lost a cleaner, not their clean* — and the slot-time sweep is still the one place the
-customer learns nobody came. The next take is a `New → Confirmed` transition again, so it still sends a
-**second "your order is confirmed" e-mail** on top of the assignment push: a new cleaner is a new
-confirmation. Suppressing that e-mail, the question's other option, was not taken. Until 2026-10-25 the
-release sent the customer nothing.
+booking's language, *A cleaner can no longer come* — *Your booking still stands. We're offering it to
+our cleaners again.* — with the link to the booking. The e-mail drops the promise to write again,
+which it could not keep for a guest: a take of a booking that is still `Confirmed`, and an
+administrator's placement, send no e-mail. It goes out only if, when it is sent, the booking has not
+started (`New` or `Confirmed`) and is still short of the cleaners it needs, so a refilled seat or a
+cancellation in between sends none. Nothing names the cleaner, gives a reason, counts the cleaners,
+says a cleaner is on the job or promises a time or money, so a drop and a rejection, of the last
+cleaner or of one of two, read the same. A drop still moves no money and cancels nothing — *the customer
+has lost a cleaner, not their clean* — and the slot-time sweep is still the one place the customer
+learns nobody came. Until the fix plan of 2026-10-25 the notice went only when the last cleaner left a
+`Confirmed` booking, as *Your cleaner can no longer come* — *We're looking for another cleaner for
+booking #… and will let you know as soon as one takes it*, with the e-mail *We're finding you a new
+cleaner*, sent only while the booking was `New`; until 2026-10-25 a release sent the customer nothing.
 
-**One more message can follow, when the booking was reserved for a cleaner the customer asked for.** The
-five-minute lapse sweep (`NotifyLapsedPreferredOffers`) looks for a one-off order, not completed or
-cancelled and with nobody on it, whose reservation is past its deadline and was never announced, and
-pushes a signed-in customer `order.preferred_offer_closed`, *Your booking is open to all cleaners*, the
-one sentence a reservation that ended without a confirmation sends
-([why it is one sentence](/architecture/push-notifications#one-sentence)). Only the three paths that
-send that sentence mark a reservation announced: the sweep, the chosen cleaner's decline, and their
-taking another job that clashes with it. Their taking the reserved job announces nothing. So when
-somebody is on the job as the reservation ends, or takes it in the minutes before the sweep's next run,
-the sentence waits until the order is next left with nobody on it, and the next run then sends it,
-whoever left last: the chosen cleaner, who took the job, another cleaner on its crew, or a cleaner an
-administrator rejected. A drop by the chosen cleaner, or their rejection, while the reservation is
-still running ends it then and there. It is sent once per reservation, as a push only, with no inbox
-row, so the customer web shows nothing; a guest and a recurring occurrence get nothing from the sweep.
-It comes on top of what the release itself sends (the paragraph above): the release's push, inbox entry
-and e-mail first, then this push on a later run of the sweep. The pushes and the e-mail go through the
-outbox, so this push can still arrive beside or before the e-mail.
+**A take after a walk-back says that a new cleaner took the booking** (owner decision 2026-10-25,
+*"Confirm"*: keep the second *Cleaner found!* push, e-mail *We've found you a new cleaner*, and retitle the
+first take's e-mail *Cleaner found*). Every take and every placement pushes `order.cleaner_assigned`,
+*Cleaner found!*, once per assignment, which keeps the notice's promise to a customer with an account.
+A take that moves the booking from `New` to `Confirmed` also e-mails it: *Cleaner found* — *A cleaner has
+taken your booking.* on its first take, *We've found you a new cleaner* — *A new cleaner has taken your
+booking.* on a take after a walk-back. `TakeOrder` tells the two apart by the history, read before it
+adds the `Confirmed` row: the walk-back is the only `Confirmed → New` writer, so an earlier `Confirmed`
+row means a re-take. It says *new* even when the cleaner who dropped the job takes it back. Delivery
+order is not guaranteed: the release e-mail goes through the outbox and the take's is sent after the
+take commits, so one the consumer read at `New` just before a re-take committed can still arrive after
+the re-take's. Until then a re-take sent the first take's e-mail again, titled *Order Confirmed* in
+English.
+
+**The apps list a status once per pass.** The Android and iOS customer apps draw the order's history
+without a row that repeats the status before it — the same-value row a seat re-advertised after one of
+two cleaners left writes, or a cover request's — and name a `New` that follows a `Confirmed`, the
+walk-back, *Offered to cleaners again* (owner decision 2026-10-25, the release notice's wording), where
+it read *New*. The customer web's order page and the guest track page read each step off the booking's
+latest pass, the rows from its last `New` on, so after a walk-back *Confirmed* is no longer ticked under
+a current *Received*, and a re-take dates it by the new take
+([Order tracking](/customer-app/order-tracking#what-the-page-draws)). The server sends every row, and
+the partner, admin and incident-file readers show them all.
+
+**After a reserved booking's release, no closure push follows** (since the fix plan of 2026-10-25).
+When the booking was reserved for a cleaner the customer asked for and that reservation has ended by the
+release — the chosen cleaner's own drop or rejection ends it then and there — the release notice marks
+the reservation announced (`PreferredOfferLapseNotifiedAt`, stamped in the release's own unit of work),
+so the five-minute lapse sweep (`NotifyLapsedPreferredOffers`) sends no `order.preferred_offer_closed`
+after it, and the customer gets one message, the release notice. The sweep still announces a reservation
+that ends with nobody on a one-off order and no release after its end, once, as a push only with no
+inbox row and to a signed-in customer: one nobody took, one another cleaner still held at the release
+(only an administrator's placement during it can make that), and one the customer asks for afterwards.
+Its one sentence is *Your booking is open to all cleaners*, the sentence a reservation that ended
+without a confirmation sends ([why it is one sentence](/architecture/push-notifications#one-sentence)).
+Four paths mark a reservation announced: the sweep, the chosen cleaner's decline, their taking another
+job that clashes with it, and a release after the reservation has ended. Their taking the reserved job
+announces nothing. A guest and a recurring occurrence get nothing from the sweep. Until then the sweep
+pushed *Your booking is open to all cleaners* a few minutes after the release notice, whoever left last.
 
 **A drop is checked against the order's status at commit** (since 2026-10-05). The drop touches the
 order row, so the commit compares the order's two tokens, `CurrentStatus` and `PaymentStatus` (the second
@@ -691,8 +744,9 @@ Four reasons exist for a cancellation nobody asked for, each a stable key the cu
 a sentence (`OrderCancellationReasons`): the card payment never completed
 (`order.cancelled.payment_not_completed` — the checkout was abandoned and the slot released), a recurring
 occurrence went unconfirmed (`order.cancelled.recurring_not_confirmed`, fee-free at the lead-time
-cut-off), nobody took the job by its slot or an administrator confirmed that the assigned cleaner did
-not come (`order.cancelled.no_cleaner_available` — the no-show above; an admin's no-show confirmation
+cut-off), nobody was on the job at its slot, an administrator confirmed that the assigned cleaner did
+not come or, since the fix plan of 2026-10-25, called off before its start a booking nobody is on
+(`order.cancelled.no_cleaner_available` — the no-show above; an admin's no-show confirmation
 exposes this key, never the administrator's own words, as the reason the customer sees), and **the operating company is
 closing** (`order.cancelled.company_wind_down`): the booking fell on or after the company's last day of
 service, so the platform cancelled it and — on a card booking — refunded it in full, absorbing the Stripe
@@ -721,6 +775,15 @@ key, never an administrator's own words) and a money line that claims only what 
 refund actually returned, *nothing was charged*, or *your refund is being processed*. Every link the
 guest held stops working; the e-mail carries the one that still opens the booking.
 → [Guest cancellation](/flows/booking-and-pricing#guest-cancellation)
+
+**An administrator's cancellation tells a signed-in customer too** (since the fix plan of 2026-10-25). On
+a booking with an account, *Cancel order* sends the same e-mail, with the order page's link, and a push
+and inbox entry, `order.cancelled` (*Booking cancelled*), unless the card refund went through and its
+own `order.refunded` notice already went. Until then such a customer was told only by that refund
+notice, so a cash booking, a refund Stripe refused and a customer who uses only the web heard nothing.
+The no-cleaner body e-mails an account as well ([above](#when-the-cleaner-cancels-or-no-shows)). The
+wind-down is unchanged: it e-mails every live customer before it runs, and its cancellation e-mails a
+guest only.
 
 ## Disputes {#disputes}
 
@@ -2368,7 +2431,7 @@ an administrator may also hold cannot render these keys.
 | `admin.order.new` | an order the company now has to serve becomes **offerable** — a cash one-off at creation, a card order on its payment, a recurring occurrence on the customer's confirm. Never an unpaid card checkout, which the stale sweep cancels within the hour, at most 500 a run; a backlog larger than 500 spreads over the following 15-minute runs | order number, amount with its currency, tender, market |
 | `admin.order.crew_lost` | a drop or an admin rejection leaves nobody on the order — since 2026-10-25 only ever a `New` or `Confirmed` one, as a drop is refused once the job is under way → [above](#crew-lost) | order number, the cause, the status at the loss, the slot |
 | `admin.order.cleaner_not_started` | a job with a cleaner on it is still not started 30 minutes after its start, or the customer reports that the cleaner did not arrive — **once per order**, whichever comes first → [the no-show](#when-the-cleaner-cancels-or-no-shows) | order number, the slot |
-| `admin.order.no_cleaner_yet` | a job nobody is on is inside **24 h** of its start — **once per order**, found by the five-minute reminder sweep. Nobody is on it means `New` or `Confirmed` with no assignment row: a cleaner who asked for cover still counts as on it, and a partly filled crew is not reported. It must be offerable, so never an unpaid card checkout or a recurring occurrence the customer has not confirmed; past any live preferred-cleaner hold; and quiet for **60 min**, with no status row and no customer confirmation in the last hour, so a drop's own status row starts that hour. Nothing is sent once the slot has started: from then the unfilled-order cancel at slot + 30 min owns it → [when the last cleaner leaves](#crew-lost) | order number, the slot |
+| `admin.order.no_cleaner_yet` | a job nobody is on is inside **24 h** of its start — **once per order**, found by the five-minute reminder sweep. Nobody is on it means `New` or `Confirmed` with no assignment row: a cleaner who asked for cover still counts as on it, and a partly filled crew is not reported. It must be offerable, so never an unpaid card checkout or a recurring occurrence the customer has not confirmed; past any live preferred-cleaner hold; and quiet for **60 min**, with no status row and no customer confirmation in the last hour, so a drop's own status row starts that hour. Nothing is sent once the slot has started: from then the unfilled-order cancel at slot + 30 min owns it. Since the fix plan of 2026-10-25 the notice and its feed row also say how to call the booking off before then: cancel it as a no-show from the order, and the customer gets the same refund and apology credit as the automatic cancellation → [when a cleaner leaves](#crew-lost), [the no-show](#when-the-cleaner-cancels-or-no-shows) | order number, the slot |
 | `admin.order.lockout_reported` | the assigned cleaner reports that they cannot get in, 15 minutes or more past the start, with an entrance photo; nothing moves until an administrator confirms it → [the lockout](#lockout) | order number, the slot |
 | `admin.order.cash_not_paid` | the assigned cleaner reports that the customer did not pay the cash at the door; the order is already completed, the price owed and the customer barred from booking. The console's row opens the order; a wrong report is written off, a late payment to the cleaner is recorded as cash received → [When the customer does not pay at the door](#cash-not-paid) | order number, the amount owed |
 | `admin.dispute.filed` | a customer files a dispute | order number, the reason (an enum), the dispute |

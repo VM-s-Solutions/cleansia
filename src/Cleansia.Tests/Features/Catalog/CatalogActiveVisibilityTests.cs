@@ -505,6 +505,7 @@ public sealed class CatalogActiveVisibilityTests : IDisposable
             Mock.Of<ISavedAddressRepository>(),
             Mock.Of<ICurrencyResolutionService>(),
             Mock.Of<ICountryRepository>(),
+            OrderMarketDoubles.EveryCityServiced(),
             new ServiceRepository(ctx),
             new PackageRepository(ctx),
             Mock.Of<IUserConsentRepository>(),
@@ -587,6 +588,7 @@ public sealed class CatalogActiveVisibilityTests : IDisposable
             savedAddresses.Object,
             Mock.Of<ICurrencyResolutionService>(),
             Mock.Of<ICountryRepository>(),
+            OrderMarketDoubles.EveryCityServiced(),
             new ServiceRepository(ctx),
             new PackageRepository(ctx),
             Mock.Of<IReceivableRepository>());

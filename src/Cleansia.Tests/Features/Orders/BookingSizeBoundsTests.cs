@@ -46,6 +46,7 @@ public class BookingSizeBoundsTests
             "recurring-create" => await ValidateSize(new CreateRecurringBooking.Validator(
                     Mock.Of<IOrderRepository>(), Mock.Of<IUserSessionProvider>(), Mock.Of<ISavedAddressRepository>(),
                     Mock.Of<ICurrencyResolutionService>(), Mock.Of<ICountryRepository>(),
+                    OrderMarketDoubles.EveryCityServiced(),
                     Bookings.CatalogueDoubles.Services(), Bookings.CatalogueDoubles.Packages(),
                     Cleansia.Tests.Features.Legal.CustomerConsentDoubles.Consented(),
                     Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.ILegalDocumentResolver>(),
@@ -55,6 +56,7 @@ public class BookingSizeBoundsTests
                     Mock.Of<IRecurringBookingTemplateRepository>(), Mock.Of<IUserMembershipRepository>(),
                     Mock.Of<IUserSessionProvider>(), Mock.Of<IOrderRepository>(), Mock.Of<ISavedAddressRepository>(),
                     Mock.Of<ICurrencyResolutionService>(), Mock.Of<ICountryRepository>(),
+                    OrderMarketDoubles.EveryCityServiced(),
                     Bookings.CatalogueDoubles.Services(), Bookings.CatalogueDoubles.Packages(),
                     Mock.Of<IReceivableRepository>()),
                 new UpdateRecurringBooking.Command("template", 1, 1, "10:00", rooms, bathrooms,

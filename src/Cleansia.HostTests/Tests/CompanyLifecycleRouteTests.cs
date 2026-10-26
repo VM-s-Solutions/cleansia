@@ -372,9 +372,10 @@ public sealed class CompanyLifecycleRouteTests(HostTestPostgresFixture db) : Aut
 
     /// <summary>
     /// TC-LC-DEACT-3 and its half of TC-LC-DEACT-5: B's customer quotes in EUR, buys Plus through the
-    /// recording Stripe client, schedules a recurring booking at the saved Bratislava address, saves a
-    /// second Slovak address and browses a non-empty catalogue while B operates; once B is deactivated
-    /// every one of those is refused <c>country.not_serviced</c> with no row written, the booking is
+    /// recording Stripe client, saves a second Slovak address and browses a non-empty catalogue while B
+    /// operates, and a recurring booking at the saved Bratislava address is refused on the city as the
+    /// one-off order is (no test seeds one); once B is deactivated every one of those is refused
+    /// <c>country.not_serviced</c> with no row written, the booking is
     /// refused by <c>CreateOrder</c>'s own validator before the country is ever named (its price chain
     /// runs ahead of the address resolver — pre-existing, and <c>CreateOrder</c> is diff-empty by the
     /// ADR), and the catalogue answers empty; reactivation restores the quote and the catalogue.
@@ -390,8 +391,8 @@ public sealed class CompanyLifecycleRouteTests(HostTestPostgresFixture db) : Aut
         Assert.Contains(ServiceId, await ServiceOverviewAsync(customer));
         HttpAssert.IsOk(await customer.PostAsJsonAsync("/api/Membership/Subscribe", subscribe));
         Assert.Equal(1, await QueryAsync(ctx => ctx.UserMemberships.IgnoreQueryFilters().CountAsync(m => m.UserId == CustomerBId)));
-        HttpAssert.IsOk(await customer.PostAsJsonAsync("/api/RecurringBooking/Create", RecurringBookingAt(SavedAddressBId)));
-        Assert.Equal(1, await QueryAsync(ctx => ctx.RecurringBookingTemplates.IgnoreQueryFilters().CountAsync(t => t.UserId == CustomerBId)));
+        await HttpAssert.AssertBusinessErrorAsync(await customer.PostAsJsonAsync("/api/RecurringBooking/Create", RecurringBookingAt(SavedAddressBId)), BusinessErrorMessage.CityNotServiced);
+        Assert.Equal(0, await QueryAsync(ctx => ctx.RecurringBookingTemplates.IgnoreQueryFilters().CountAsync(t => t.UserId == CustomerBId)));
         HttpAssert.IsOk(await customer.PostAsJsonAsync("/api/SavedAddress/Add", SavedAddressAt(SvkId, "Office")));
         Assert.Equal(2, await QueryAsync(ctx => ctx.SavedAddresses.IgnoreQueryFilters().CountAsync(a => a.UserId == CustomerBId)));
         var openOrder = await customer.PostAsJsonAsync("/api/Order/CreateOrder", OrderAt(SvkId, CustomerBEmail, quotedTotal));
@@ -412,7 +413,7 @@ public sealed class CompanyLifecycleRouteTests(HostTestPostgresFixture db) : Aut
         await HttpAssert.AssertBusinessErrorAsync(await customer.PostAsJsonAsync("/api/Membership/Subscribe", subscribe with { IdempotencyToken = "lifecycle-sub-2" }), BusinessErrorMessage.CountryNotServiced);
         Assert.Equal(1, await QueryAsync(ctx => ctx.UserMemberships.IgnoreQueryFilters().CountAsync(m => m.UserId == CustomerBId)));
         await HttpAssert.AssertBusinessErrorAsync(await customer.PostAsJsonAsync("/api/RecurringBooking/Create", RecurringBookingAt(SavedAddressBId)), BusinessErrorMessage.CountryNotServiced);
-        Assert.Equal(1, await QueryAsync(ctx => ctx.RecurringBookingTemplates.IgnoreQueryFilters().CountAsync(t => t.UserId == CustomerBId)));
+        Assert.Equal(0, await QueryAsync(ctx => ctx.RecurringBookingTemplates.IgnoreQueryFilters().CountAsync(t => t.UserId == CustomerBId)));
         await HttpAssert.AssertBusinessErrorAsync(await customer.PostAsJsonAsync("/api/SavedAddress/Add", SavedAddressAt(SvkId, "Parents")), BusinessErrorMessage.CountryNotServiced);
         Assert.Equal(2, await QueryAsync(ctx => ctx.SavedAddresses.IgnoreQueryFilters().CountAsync(a => a.UserId == CustomerBId)));
         Assert.Empty(await ServiceOverviewAsync(customer));

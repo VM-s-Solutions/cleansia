@@ -47,6 +47,7 @@ public class CreateRecurringBooking
         private readonly ISavedAddressRepository _savedAddressRepository;
         private readonly ICurrencyResolutionService _currencyResolutionService;
         private readonly ICountryRepository _countryRepository;
+        private readonly IServiceCityRepository _serviceCityRepository;
         private readonly IServiceRepository _serviceRepository;
         private readonly IPackageRepository _packageRepository;
         private readonly IUserConsentRepository _userConsentRepository;
@@ -59,6 +60,7 @@ public class CreateRecurringBooking
             ISavedAddressRepository savedAddressRepository,
             ICurrencyResolutionService currencyResolutionService,
             ICountryRepository countryRepository,
+            IServiceCityRepository serviceCityRepository,
             IServiceRepository serviceRepository,
             IPackageRepository packageRepository,
             IUserConsentRepository userConsentRepository,
@@ -70,6 +72,7 @@ public class CreateRecurringBooking
             _savedAddressRepository = savedAddressRepository;
             _currencyResolutionService = currencyResolutionService;
             _countryRepository = countryRepository;
+            _serviceCityRepository = serviceCityRepository;
             _serviceRepository = serviceRepository;
             _packageRepository = packageRepository;
             _userConsentRepository = userConsentRepository;
@@ -118,7 +121,9 @@ public class CreateRecurringBooking
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
                 .MustAsync(SavedAddressCountryIsServicedAsync)
-                .WithMessage(BusinessErrorMessage.CountryNotServiced);
+                .WithMessage(BusinessErrorMessage.CountryNotServiced)
+                .MustAsync(SavedAddressCityIsServicedAsync)
+                .WithMessage(BusinessErrorMessage.CityNotServiced);
 
             RuleFor(x => x.PaymentType)
                 .Cascade(CascadeMode.Stop)
@@ -229,6 +234,19 @@ public class CreateRecurringBooking
             var address = await FindSavedAddressAsync(userId, savedAddressId, cancellationToken);
             return address is null
                 || await _countryRepository.IsServicedAsync(address.CountryId, cancellationToken);
+        }
+
+        private async Task<bool> SavedAddressCityIsServicedAsync(string savedAddressId, CancellationToken cancellationToken)
+        {
+            var userId = _userSessionProvider.GetUserId();
+            if (string.IsNullOrEmpty(userId))
+            {
+                return true;
+            }
+
+            var address = await FindSavedAddressAsync(userId, savedAddressId, cancellationToken);
+            return address is null
+                || await _serviceCityRepository.CityIsServicedAsync(address.CountryId, address.City, address.ZipCode, cancellationToken);
         }
 
         /// <summary>

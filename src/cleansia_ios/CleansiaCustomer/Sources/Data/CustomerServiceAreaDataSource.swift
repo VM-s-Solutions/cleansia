@@ -32,7 +32,7 @@ struct CustomerServiceAreaDataSource: ServiceAreaDataSource {
                 guard let id = city.id, let name = city.name, !name.isBlank,
                       let country = city.countryId
                 else { return nil }
-                return ServicedCity(id: id, countryId: country, name: name)
+                return ServicedCity(id: id, countryId: country, name: name, zipPrefix: city.zipPrefix)
             }
         }
     }

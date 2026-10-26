@@ -269,6 +269,28 @@ final class AddressSectionViewModelTests: XCTestCase {
         XCTAssertEqual(vm.serviceAreaStatus, .outsideServicedCity)
     }
 
+    /// The Prague rows are decided by the postcode, so a Prague address the geocoder named in another language is in
+    /// a serviced city, as the server would book it.
+    func testAPragueAddressIsInAServicedCityByItsPostcodeWhateverItsCityIsCalled() async {
+        client.servicedCountriesResult = .success([
+            CountryListItem(id: "cz-id", isoCode: "CZE", name: "Czechia")
+        ])
+        client.serviceCitiesResult = .success([
+            ServiceCityDto(id: "praha", countryId: "cz-id", name: "Praha", zipPrefix: "1")
+        ])
+        client.employeeResult = .success(EmployeeItem(
+            id: "emp-1",
+            street: "Vinohradská 12",
+            city: "Прага",
+            zipCode: "120 00",
+            countryId: "cz-id"
+        ))
+        let vm = makeVM()
+        await vm.load()
+
+        XCTAssertEqual(vm.serviceAreaStatus, .inServicedCity("Прага"))
+    }
+
     func testStatusIsUnknownNotBlockedWhenCountriesFetchFails() async {
         client.servicedCountriesResult = .failure(ApiError(code: "network.unreachable"))
         client.employeeResult = .success(EmployeeItem(id: "emp-1"))

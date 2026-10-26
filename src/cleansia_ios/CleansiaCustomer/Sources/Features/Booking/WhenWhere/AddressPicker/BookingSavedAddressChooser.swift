@@ -248,7 +248,8 @@ private struct SavedAddressListPane: View {
         for address in addresses {
             let serviced = await AddressServiceability.cityServicedAnywhere(
                 provider: serviceArea,
-                city: address.city
+                city: address.city,
+                zipCode: address.zipCode
             )
             if serviced == false {
                 unserviced.insert(address.id)

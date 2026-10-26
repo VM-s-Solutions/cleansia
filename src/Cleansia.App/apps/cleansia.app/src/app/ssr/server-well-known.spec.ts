@@ -1,5 +1,14 @@
+/**
+ * @jest-environment node
+ * @jest-environment-options {"__Zone_disable_EventTarget": true}
+ */
+// The option is needed under a node environment; server-request-path.spec.ts says why.
+
+import * as express from 'express';
 import { existsSync, readFileSync } from 'fs';
-import { dirname, join } from 'path';
+import { createServer, type Server } from 'http';
+import type { AddressInfo } from 'net';
+import { basename, dirname, join } from 'path';
 
 function findSolutionDir(): string {
   let dir = process.cwd();
@@ -52,6 +61,38 @@ describe('the customer host vouches for the customer iOS app', () => {
     expect(mount).toContain("basename(path) === 'apple-app-site-association'");
     expect(mount).toContain("res.setHeader('Content-Type', 'application/json')");
     expect(mount).toContain('redirect: false');
+  });
+
+  it('is answered with a 200 as JSON by express.static under that mount, the file served from its source folder', async () => {
+    const app = express();
+    app.use(
+      '/.well-known',
+      express.static(join(APP, 'src/root-assets/well-known'), {
+        dotfiles: 'allow',
+        index: false,
+        redirect: false,
+        setHeaders: (res, path) => {
+          if (basename(path) === 'apple-app-site-association') {
+            res.setHeader('Content-Type', 'application/json');
+          }
+        },
+      }),
+    );
+    const server: Server = createServer(app);
+    await new Promise<void>((resolve) => server.listen(0, resolve));
+
+    try {
+      const { port } = server.address() as AddressInfo;
+      const response = await fetch(`http://127.0.0.1:${port}/.well-known/apple-app-site-association`, {
+        redirect: 'manual',
+      });
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get('content-type')).toMatch(/^application\/json(;|$)/);
+      expect(await response.json()).toEqual({ webcredentials: { apps: ['ST9QYZHG63.cz.cleansia.customer'] } });
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
   });
 
   it('reaches the deployed host, since the artifact upload drops dot-folders unless told to keep them', () => {

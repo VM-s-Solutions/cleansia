@@ -9,9 +9,10 @@
 > 2026-09-28, the fifteenth — a referral held for review — with the ruling of 2026-10-05, the
 > sixteenth — a customer who did not pay the cash at the door — with the ruling of 2026-10-06, the
 > seventeenth — a guest's refund claimed for a cancellation that never went through, split from the refund
-> to retry — the same day, and the eighteenth — a job nobody has taken inside a day of its start — with
-> the owner defaults of 2026-10-24. The
-> files that are the role: `Core.Domain/Notifications/AdminNotificationEventCatalog.cs` (the eighteen keys) ·
+> to retry — the same day, the eighteenth — a job nobody has taken inside a day of its start — with
+> the owner defaults of 2026-10-24, and the nineteenth — an order that lost one of its cleaners while
+> somebody is still on it — with the owner's decision of 2026-10-25 on the fix plan. The
+> files that are the role: `Core.Domain/Notifications/AdminNotificationEventCatalog.cs` (the nineteen keys) ·
 > `Core.AppServices/Features/AdminNotifications/AdminEventCatalog.cs` (per key: the audience and the exact
 > arg set, in e-mail order) · `Core.AppServices/Services/{IAdminNotifier,AdminNotifier}.cs` ·
 > `Core.AppServices/Services/EmailService.AdminNotification.cs` (the copy, five locales) ·
@@ -29,7 +30,7 @@ failing e-mail can never fail the command, and nothing the notifier reads depend
 
 ## Collaborators
 
-- **`AdminNotificationEventCatalog`** (Domain) — the eighteen `admin.*` keys and `All`; `NotificationFeedEventKeys.Admin`
+- **`AdminNotificationEventCatalog`** (Domain) — the nineteen `admin.*` keys and `All`; `NotificationFeedEventKeys.Admin`
   **is** `All`, so the feed audience `NotificationFeedAudience.Admin = 2` serves the catalogue by
   construction. Disjoint from the customer and partner keysets; `IsFeedEvent` does not know them, so the
   push seam cannot write an admin row. Every key maps to `null` in `GetCategoryFor`: no category, nothing
@@ -39,7 +40,7 @@ failing e-mail can never fail the command, and nothing the notifier reads depend
   throws on an undeclared or a missing arg, so the copy and the site cannot disagree on what `{1}` is and a
   site cannot smuggle a name in. `Audience` is the **name of an administrator set** (ADR-0066 D8) — never a
   policy, because the notifier filters rows, not principals: order events, disputes, payment failures,
-  crew lost, a cleaner not started, a job nobody has taken, a lockout reported, a door non-payment and a referral held → `SupportOrAbove`; erasure failures → `ManagerOrAbove`; the three
+  crew lost or short, a cleaner not started, a job nobody has taken, a lockout reported, a door non-payment and a referral held → `SupportOrAbove`; erasure failures → `ManagerOrAbove`; the three
   company milestones → `AdministratorOnly`; **`admin.dispute.chargeback`, `admin.dispute.chargeback_unmatched`,
   `admin.payment.refund_stuck`, `admin.payment.refund_needs_retry` and `admin.payment.refund_without_cancel`
   → `AdminOnly`, every role** — Support
@@ -90,7 +91,10 @@ failing e-mail can never fail the command, and nothing the notifier reads depend
   `NewOrderAdminNotifier.NotifyIfOfferableAsync` (shared by `OrderFactory`, `HandlePaymentNotification`'s
   paid arm and `ConfirmRecurringOrder`; the same `OrderAvailability.IsOfferable` read as the preferred
   cleaner's offer; a null `TenantId` is a warning and nothing written) · `OrderCrewLostNotifier.NotifyAsync`
-  (shared by `DropOrder` and `RejectEmployee`, whenever the crew emptied, subject `{orderId}:{releasedAssignmentId}`)
+  (shared by `DropOrder` and `RejectEmployee`, called after every release since the fix plan of
+  2026-10-25: `admin.order.crew_lost` when nobody is left, `admin.order.crew_short` when somebody still
+  is, both with `crew_lost`'s args and subject `{orderId}:{releasedAssignmentId}`, so a partial loss and a
+  later full one are two events)
   · `CreateDispute` (subject the dispute id) · `HandlePaymentNotification`'s chargeback arms (subject the Stripe
   dispute id; the open customer dispute's id in the args when one exists), its unmatched-chargeback arm
   (a `charge.dispute.created` no order carries, found neither by stored intent nor through its Checkout

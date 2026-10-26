@@ -109,14 +109,16 @@ cleaner's offer and under the same offerability read; an unpaid card checkout, w
 cancels an hour later, announces nothing. A seat that empties again is a second notice: a drop or an
 admin rejection that leaves nobody on the order — since 2026-10-25 only ever a `New` or `Confirmed`
 one — raises `admin.order.crew_lost`, and walks a `Confirmed` order back to `New` so the fresh row is
-also the digest's re-advertisement; since 2026-10-25 the walk-back also tells its customer that
-another cleaner is being looked for. An order still on the board with nobody on it inside 24 h of its
+also the digest's re-advertisement; one that leaves somebody on it raises `admin.order.crew_short` and
+re-advertises the seat with a same-value row (since the fix plan of 2026-10-25). Every release tells
+the customer that a cleaner can no longer come and that the booking is offered to cleaners again.
+An order still on the board with nobody on it inside 24 h of its
 start raises `admin.order.no_cleaner_yet` once, from the five-minute reminder sweep (since
 2026-10-24): it must be offerable, past any preferred-cleaner hold, and an hour past its last status
 change or the customer's confirmation, so it comes before the unfilled-order cancel at slot + 30 min,
 while there is still time to staff it.
 → [Business rules — administrators are told](/product/business-rules#admin-notifications),
-[when the last cleaner leaves](/product/business-rules#crew-lost)
+[when a cleaner leaves](/product/business-rules#crew-lost)
 
 ## The seat is decided by the database
 
@@ -131,12 +133,25 @@ so the two paths cannot disagree.
 The ordinal is the **smallest free** one rather than a count: releasing seat 0 of {0,1} and counting
 would derive 1, which is taken — the seat would be permanently unusable while the order read as full.
 
+**The take also answers to the order's status** (since the fix plan of 2026-10-25). Adding a seat changes
+no order column, so the take stamps the order, and its commit compares the order's two tokens,
+`CurrentStatus` and `PaymentStatus`, against what the take read. A take decided on a status a drop, a
+cancellation, a refund or the unfilled sweep has since moved is refused with the same
+`no_available_spots`, and seats nobody on a moved order. **A drop locks the order's row before it reads
+the crew** (`IOrderRepository.LockForCrewChangeAsync`, `FOR NO KEY UPDATE`, Postgres only), so a take
+already writing is counted by it, and two drops of one job run one after the other. Until then a drop
+and a take of a two-seat job could both commit and leave it `New` with a cleaner on it who could
+neither set off nor start. → [Business rules — when a cleaner leaves](/product/business-rules#crew-lost)
+
 ## Edge cases
 
 | Case | What happens |
 |---|---|
 | Two cleaners, one seat, same instant | Exactly one assignment survives. The loser sees "no available spots". |
 | Two cleaners, **multi-seat** order, same instant | Both derive the same ordinal from the same stale read, so the loser is refused *while a seat is free*. Their next tap succeeds. Known and accepted — a retry loop is real complexity for a self-healing window. |
+| A take races the drop of the last cleaner on a two-seat job | One of two outcomes, never both commits. A take already writing is counted, and the drop leaves the job `Confirmed` and short; a take that read before the drop committed is refused `no_available_spots` — the shared copy, *Another cleaner has already taken this job.*, although the job is back on the board — and the next tap takes it. |
+| A take races a cancellation, a refund or the unfilled sweep | Refused `no_available_spots` when the move commits first: its commit's token check sees the moved order. The take-first case against the sweep is not covered: a take that commits after the sweep has read the crew afresh and before the sweep commits is not refused, and on an order already `Confirmed` with nobody on it, which the take leaves `Confirmed`, the sweep still cancels the order with the cleaner on it. On a `New` order the take's move to `Confirmed` fails the sweep's own token check instead, and the order is not cancelled. |
+| An administrator places a cleaner while the last one drops | Still unguarded: `AdminReassignOrder` neither locks nor stamps the order, so it can leave the order `New` with a cleaner on it. |
 | Order held for someone else | Indistinguishable from a missing order. The refusal must not reveal that someone else was named. |
 | Cleaner already on a conflicting job | Refused by the time-conflict check, last in the cascade. |
 | Cleaner over the weekly cap | Refused. The cap, when an administrator sets one, carries a reason the cleaner sees on their profile. |

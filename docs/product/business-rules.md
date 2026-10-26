@@ -612,28 +612,34 @@ then the crew was paid half of the fee once the company had collected it.
 administrators are told** (owner ruling 2026-09-19, [ADR-0067](/decisions/adr-0067):
 *"it could go back to New since 'Confirmed' means that cleaner(s) are assigned. Also I want admin know
 about it as well."*), **and since 2026-10-25 so is its customer** (the customer paragraph below).
-Two acts can empty a crew — a cleaner **dropping** the job, and an admin
-**rejecting** a cleaner who holds future confirmed work — and both walk a `Confirmed` order back
-through one domain writer, `Order.ReturnToBoardIfUnstaffed()`. A cover request removes nobody; a
-reassign or a cover swap replaces. Three rules ride with it:
+**Since the owner's decisions of 2026-10-25 on the fix plan, both are told when one of two cleaners
+leaves too** — of every release, because an order has no spare seat (`BookingPolicy.SpareSeatsPerOrder`
+is 0), so every release leaves the job short of the cleaners it needs. Two acts release a seat — a cleaner
+**dropping** the job, and an admin **rejecting** a cleaner who holds future confirmed work — and both
+walk a `Confirmed` order whose crew they empty back through one domain writer,
+`Order.ReturnToBoardIfUnstaffed()`. A cover request removes nobody; a reassign or a cover swap replaces.
+Three rules ride with it:
 
-- **The walk-back is `Confirmed`-only; the alarm is not.** The administrators are told **whenever the
-  crew empties**, walked back or not (`admin.order.crew_lost`, with the cause — *the cleaner dropped it*
-  / *the cleaner's account was rejected* — the order number and the slot). Since 2026-10-25 a crew can
-  empty only at `New` or `Confirmed`: a drop is refused once the job is `OnTheWay` or `InProgress`
+- **The walk-back is `Confirmed`-only; the alarm is not.** The administrators are told **of every
+  release**: `admin.order.crew_lost` when nobody is left on the order, walked back or not, and
+  `admin.order.crew_short` when somebody still is (owner decision 2026-10-25, *"Confirm"*, on a new alert
+  at the moment one of two cleaners leaves), each with the cause — *the cleaner dropped it* / *the
+  cleaner's account was rejected* — the order number and the slot. Since 2026-10-25 a seat is released
+  only at `New` or `Confirmed`: a drop is refused once the job is `OnTheWay` or `InProgress`
   (owner ruling 2026-10-25: *"No, impossible for other than Confirmed. So if partner didn't start yet
   then it's possible to Drop Order"*), and a rejection releases future `Confirmed` seats only. In practice
   the crew empties on a confirmed order, which is walked back: a take or a placement moves a `New` order
   to `Confirmed` with its first cleaner. Until then an order dropped on the way or in progress kept its
   status, which no sweep selects, and the notice added *"the clean was already under way"*; that sentence
   is still in its copy, and neither writer reaches it. A two-seat job losing one of two cleaners keeps its
-  status, re-advertises the seat, and tells nobody. An order left with nobody on it that nobody takes
-  again is reported once more inside 24 h of its start (`admin.order.no_cleaner_yet`, since 2026-10-24),
-  an hour after the drop's or the rejection's status row at the earliest and only before the start.
-  Dropped at T−10 h, it raises `crew_lost` at once and `no_cleaner_yet` at about T−9 h; dropped at
-  T−30 min, `crew_lost` only, then the cancel at T+30 min; taken again and dropped again after the alert,
-  `crew_lost` again but no second `no_cleaner_yet`, which is once per order. A two-seat job with one
-  cleaner left never gets it, since someone is on it. → [Administrators are told](#admin-notifications)
+  status and re-advertises the seat; until the fix plan of 2026-10-25 it told nobody. An order left with
+  nobody on it that nobody takes again is reported once more inside 24 h of its start
+  (`admin.order.no_cleaner_yet`, since 2026-10-24), an hour after the drop's or the rejection's status row
+  at the earliest and only before the start. Dropped at T−10 h, it raises `crew_lost` at once and
+  `no_cleaner_yet` at about T−9 h; dropped at T−30 min, `crew_lost` only, then the cancel at T+30 min;
+  taken again and dropped again after the alert, `crew_lost` again but no second `no_cleaner_yet`, which
+  is once per order. A two-seat job with one cleaner left never gets it, since someone is on it.
+  → [Administrators are told](#admin-notifications)
 - **An administrator cannot set `Confirmed` on an order with no crew.** The status override refuses it
   (`order.status.confirmed_needs_crew`); an administrator who wants a cleaner on the job reassigns,
   which writes `Confirmed` itself. The other forward moves — `OnTheWay`, `InProgress`, `Completed` on an
@@ -644,8 +650,9 @@ reassign or a cover swap replaces. Three rules ride with it:
 
 **The partner apps offer the drop more narrowly than the server takes it.** Partner web, Android and
 iOS show *Cancel job* only while the cleaner is on the crew, the job is `New` or `Confirmed` and no
-lockout has been reported (owner defaults 2026-10-24) and, since 2026-10-25, its start is still ahead;
-with no start time, the other three decide. From its start, a job nobody started is a no-show for the
+lockout has been reported (owner defaults 2026-10-24) and, since 2026-10-25, its start is still ahead
+(owner ruling 2026-10-25: asked whether the apps keep closing *Cancel job* at the job's start time,
+*"Yup"*); with no start time, the other three decide. From its start, a job nobody started is a no-show for the
 administrators to confirm, and a drop would walk it back to `New` for the unfilled-order sweep to cancel
 instead. Android hides *Cancel job* at the start and again when the app resumes. iOS and partner web
 hide it the next time they read the job; until then a cancel confirmed from the start on sends nothing
@@ -721,22 +728,38 @@ job that clashes with it, and a release after the reservation has ended. Their t
 announces nothing. A guest and a recurring occurrence get nothing from the sweep. Until then the sweep
 pushed *Your booking is open to all cleaners* a few minutes after the release notice, whoever left last.
 
-**A drop is checked against the order's status at commit** (since 2026-10-05). The drop touches the
-order row, so the commit compares the order's two tokens, `CurrentStatus` and `PaymentStatus` (the second
-since 2026-10-12, [ADR-0071](/decisions/adr-0071)), and a drop racing a status change —
-an administrator confirming the customer's lockout in the same instant — is refused and rolls back whole:
-the seat stays on the crew and keeps the [lockout reward](#lockout-pay), so a confirmed lockout pays
-exactly the seats on the crew when it committed. The cleaner who loses gets an unmapped error once, and a
-retry reads the cancelled order and is refused `order.not_confirmed`.
+**A drop takes the order's row before it reads the crew, and a take touches the order** (since the fix
+plan of 2026-10-25). `DropOrder` locks the order's row (`SELECT … FOR NO KEY UPDATE`, held until its
+commit) before it loads the crew, and `TakeOrder` stamps the order when it adds a seat, so its commit
+compares the order's two tokens, `CurrentStatus` and `PaymentStatus`, against the
+values it read. A drop and a take of a two-seat job can no longer leave it `New` with a cleaner on it
+who can neither set off nor start. A take already writing is counted by the drop, which then leaves the
+job `Confirmed` and short; a take that read before the drop committed fails its token check and is
+refused `order.no_available_spots`, the shared lost-race copy (*Another cleaner has already taken this
+job.*) although the job is back on the board, and the next tap takes it. **Two drops of one job
+serialize**: the second reads the crew the first left, so the last cleaner's drop walks the job back to
+`New`, with `crew_short` from the first and `crew_lost` from the second. **A take racing a cancellation,
+a refund or the unfilled sweep is refused** instead of seating a cleaner on an order that moved. The lock
+is Postgres-only; the drop's own touch keeps the token check on any other provider.
 
-**No invariant is claimed.** Two releases racing on one order — two same-window drops on a two-seat
-job, a drop racing a rejection — can still leave `Confirmed` with nobody on it, because the order's two
-tokens are `CurrentStatus` and `PaymentStatus` and neither release commit changes either. Every sweep
-therefore keeps reading the
-crew: `CancelUnfilledOrders` still selects `{New, Confirmed}` with no assignee, the reminders still
-require one, the validators still authorise the caller by their assignment. The status is a summary;
-the crew is the fact. Legacy DEV rows holding `Confirmed` with no crew are harmless for the same
-reason and are not migrated. → [Order lifecycle](/domain/order-lifecycle)
+**A drop is checked against the order's status at the lock** (since the fix plan; at its commit since
+2026-10-05, the second token since 2026-10-12, [ADR-0071](/decisions/adr-0071)). A drop and an
+administrator's lockout confirmation are arbitrated when the drop reaches the order: a lockout that
+committed first refuses the drop with `order.not_confirmed`, and a drop that holds the row first commits
+first, after which the lockout commits on the seats still on the crew, or, when that drop emptied the
+crew, is refused. So a confirmed lockout still pays exactly the seats on the crew when it committed,
+each its [lockout reward](#lockout-pay). Until then a drop racing a lockout was refused at its commit
+with an unmapped error once, and only its retry read `order.not_confirmed`.
+
+**No invariant is claimed.** Two releases racing on one order can still leave `Confirmed` with nobody on
+it when one of them is an administrator's rejection, which takes no lock — a drop racing a rejection, or
+two rejections — because neither commit changes the order's two tokens. An administrator's placement
+racing a drop that empties the crew can still leave the order `New` with a cleaner on it:
+`AdminReassignOrder` neither locks nor stamps the order. Every sweep therefore keeps reading the crew:
+`CancelUnfilledOrders` still selects `{New, Confirmed}` with no assignee, the reminders still require
+one, the validators still authorise the caller by their assignment. The status is a summary; the crew is
+the fact. Legacy DEV rows holding `Confirmed` with no crew are harmless for the same reason and are not
+migrated. → [Order lifecycle](/domain/order-lifecycle)
 
 ### When the platform cancels {#platform-cancellation}
 
@@ -2412,13 +2435,14 @@ up is somebody else's morning. → [Push notifications](/architecture/push-notif
 
 ## Administrators are told {#admin-notifications}
 
-**Eighteen things the platform can prove happened reach the company's administrators through an in-app
+**Nineteen things the platform can prove happened reach the company's administrators through an in-app
 feed and an e-mail, both** (owner ruling 2026-09-19, [ADR-0065](/decisions/adr-0065): *"both in-app and
 email"*; the not-started alert, the two refund alerts and the lockout report were added by the rulings
 of 2026-09-28, the held referral by the ruling of 2026-10-05, the door non-payment by the ruling of
 2026-10-06, and the same day a guest's refund claimed for a cancellation that never went through got an
 alert of its own; the advance alert for a job nobody has taken came with the owner defaults of
-2026-10-24). Until then nothing told an administrator anything: a failed erasure was an Error log
+2026-10-24, and the alert that an order lost one of its cleaners with the owner's decision of
+2026-10-25 on the fix plan, *"Confirm"*). Until then nothing told an administrator anything: a failed erasure was an Error log
 line, a chargeback was a dispute row nobody opened, an order that lost its crew was re-advertised to cleaners
 only. One writer, `IAdminNotifier`, turns an event into one feed row per administrator of the **named**
 company and one e-mail per recipient address, inside the same unit of work as the event — so the rows
@@ -2430,6 +2454,7 @@ an administrator may also hold cannot render these keys.
 |---|---|---|
 | `admin.order.new` | an order the company now has to serve becomes **offerable** — a cash one-off at creation, a card order on its payment, a recurring occurrence on the customer's confirm. Never an unpaid card checkout, which the stale sweep cancels within the hour, at most 500 a run; a backlog larger than 500 spreads over the following 15-minute runs | order number, amount with its currency, tender, market |
 | `admin.order.crew_lost` | a drop or an admin rejection leaves nobody on the order — since 2026-10-25 only ever a `New` or `Confirmed` one, as a drop is refused once the job is under way → [above](#crew-lost) | order number, the cause, the status at the loss, the slot |
+| `admin.order.crew_short` | a drop or an admin rejection takes one cleaner off an order that still has somebody on it (since the fix plan of 2026-10-25). Every such release raises it, as each release is its own event: the order is short, its free place is back on the board, and if nobody takes it the clean goes ahead short-staffed, so the notice says to assign a cleaner from the order. Its cause reads as `crew_lost`'s → [above](#crew-lost) | order number, the cause, the status at the loss, the slot |
 | `admin.order.cleaner_not_started` | a job with a cleaner on it is still not started 30 minutes after its start, or the customer reports that the cleaner did not arrive — **once per order**, whichever comes first → [the no-show](#when-the-cleaner-cancels-or-no-shows) | order number, the slot |
 | `admin.order.no_cleaner_yet` | a job nobody is on is inside **24 h** of its start — **once per order**, found by the five-minute reminder sweep. Nobody is on it means `New` or `Confirmed` with no assignment row: a cleaner who asked for cover still counts as on it, and a partly filled crew is not reported. It must be offerable, so never an unpaid card checkout or a recurring occurrence the customer has not confirmed; past any live preferred-cleaner hold; and quiet for **60 min**, with no status row and no customer confirmation in the last hour, so a drop's own status row starts that hour. Nothing is sent once the slot has started: from then the unfilled-order cancel at slot + 30 min owns it. Since the fix plan of 2026-10-25 the notice and its feed row also say how to call the booking off before then: cancel it as a no-show from the order, and the customer gets the same refund and apology credit as the automatic cancellation → [when a cleaner leaves](#crew-lost), [the no-show](#when-the-cleaner-cancels-or-no-shows) | order number, the slot |
 | `admin.order.lockout_reported` | the assigned cleaner reports that they cannot get in, 15 minutes or more past the start, with an entrance photo; nothing moves until an administrator confirms it → [the lockout](#lockout) | order number, the slot |
@@ -2452,7 +2477,7 @@ role is in the event's audience** — read by the company **argument**, never by
 be ambient at a webhook or a job — gets their own feed row with their own read state, so the first
 administrator who glances at the bell does not silence it for everyone. The audience is one of the
 administrator sets ([ADR-0066](/decisions/adr-0066) D8): the order, dispute and payment events, a
-lost crew, a cleaner not started, a job nobody has taken, a lockout report, a door non-payment and a held referral reach **Support and above**; a failed erasure retry reaches **Manager and above**; the three
+lost or a short crew, a cleaner not started, a job nobody has taken, a lockout report, a door non-payment and a held referral reach **Support and above**; a failed erasure retry reaches **Manager and above**; the three
 company milestones reach **Administrators only**; a **chargeback and the three refund alerts reach every role**, a
 chargeback matched to an order or not — Support answers the customer or the bank, the Accountant
 reconciles the money. The e-mail fan-out below is over the same

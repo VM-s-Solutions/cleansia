@@ -266,7 +266,8 @@ others; the customer's booking is not cancelled (owner defaults 2026-10-24)
 - **Where it shows.** A *Cancel Job* button, outlined and marked as dangerous, in the actions row, while
   `canDropOrder(order, employeeId, Date.now())` in `order-details.helpers.ts` holds: the partner is on the
   crew, the job is `New` or `Confirmed`, no lockout has been reported, and its start (`cleaningDateTime`)
-  is still ahead; a job with no start, or one that does not read as a date, is judged without it. The
+  is still ahead (owner ruling 2026-10-25, *"Yup"*, on the apps closing *Cancel job* at the job's start);
+  a job with no start, or one that does not read as a date, is judged without it. The
   check reads the clock only when the page's copy of the job or of the partner changes, so nothing
   takes the button away at the start itself: it goes the next time the job is read, as on iOS, while
   Android hides it at the start.
@@ -295,7 +296,7 @@ job moved after the page last read it, as when a crew-mate sets off first: the i
 that key then shows and the job is read again ([ADR-0067](/decisions/adr-0067)). The page's gate is
 narrower in two ways only, the lockout report and the start; the server sets no limit at the start.
 Asking for cover (`RequestCover`) has no button.
-→ [Business rules — when the last cleaner leaves](/product/business-rules#crew-lost)
+→ [Business rules — when a cleaner leaves](/product/business-rules#crew-lost)
 
 ### Elapsed Timer
 

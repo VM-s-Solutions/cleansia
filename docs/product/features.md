@@ -302,10 +302,11 @@ between the preview and the take, the app re-fetches it and asks again. → [Bus
 the cleaner is on its crew, the job is *New* or *Confirmed* and no lockout has been reported, never once
 they are on the way or the clean has started (owner defaults 2026-10-24), and the server refuses it
 then too (owner ruling 2026-10-25). Since 2026-10-25 the apps also require its start to be still ahead
-(the server sets no such limit): from the start on, a job nobody started is a no-show for the
-administrators; a job with no start time is judged without it. Android takes *Cancel job* away at the
-start and again when the app resumes; iOS and partner web take it away the next time they read the job,
-and until then a cancel confirmed from the start on sends nothing and reads the job again. A confirmation
+(owner ruling 2026-10-25, *"Yup"*; the server sets no such limit): from the start on, a job nobody
+started is a no-show for the administrators; a job with no start time is judged without it. Android
+takes *Cancel job* away at the start and again when the app resumes; iOS and partner web take it away
+the next time they read the job, and until then a cancel confirmed from the start on sends nothing and
+reads the job again. A confirmation
 asks first: they will be taken off the job and their place goes back on the board for other cleaners, the
 customer's booking is not cancelled, and if they are its only cleaner the job has no cleaner until
 someone takes it; *Keep the job* changes nothing. After *Yes, cancel the job* the cleaner reads that they

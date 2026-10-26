@@ -72,22 +72,26 @@ more. Two producers stopped writing it:
 > 2026-09-19) the word is walked back when that stops being true.** When the last assigned cleaner
 > leaves a `Confirmed` order — a **drop**, or an admin **rejecting** the cleaner — the order returns to
 > `New` through one domain writer, `Order.ReturnToBoardIfUnstaffed()`, and the fresh `New` row is also
-> its re-advertisement to the board; since 2026-10-25 its customer is told then that another cleaner is
-> being looked for. Only two writers can empty a crew: **a cover request removes nobody** (the cleaner
-> stays assigned until somebody takes the seat), and a reassign or a cover swap **replaces** — remove
-> then add, never a release. An order past `Confirmed` is never walked back, and since 2026-10-25 no
-> release can empty one: a drop is refused once the job is `OnTheWay` or `InProgress` (owner ruling
-> 2026-10-25), and a rejection releases future `Confirmed` seats only. An administrator's status override
-> can still leave an order under way with nobody on it, by hand. A drop is checked against the order's
-> status at commit (since 2026-10-05: it touches the order row, so the order's tokens are compared —
-> `CurrentStatus`, and since 2026-10-12 `PaymentStatus`, [ADR-0071](/decisions/adr-0071)), so a
-> drop racing a status change — a lockout confirmed in the same instant — is refused and the seat keeps
-> the lockout reward. Two releases racing on one order can still leave
-> `Confirmed` with nobody on it — the order's two tokens are `CurrentStatus` and `PaymentStatus`, and
-> neither release commit changes either — which is why every sweep, reminder and validator keeps
-> reading `AssignedEmployees`:
+> its re-advertisement to the board. Only two writers can release a seat: **a cover request removes
+> nobody** (the cleaner stays assigned until somebody takes the seat), and a reassign or a cover swap
+> **replaces** — remove then add, never a release. Every release tells the customer that a cleaner can
+> no longer come and the booking is offered to cleaners again, the last cleaner's since 2026-10-25 and
+> one of two since the fix plan of the same day, which also tells the administrators of a short crew. An
+> order past `Confirmed` is never walked back, and since 2026-10-25 no release can empty one: a drop is
+> refused once the job is `OnTheWay` or `InProgress` (owner ruling 2026-10-25), and a rejection releases
+> future `Confirmed` seats only. An administrator's status override can still leave an order under way
+> with nobody on it, by hand. **A drop locks the order's row before it reads the crew, and a take stamps
+> the order** (since the fix plan of 2026-10-25), so a drop and a take, or two drops, are decided one
+> after the other: the last cleaner's drop walks the job back, and a take that read before it is refused
+> rather than seating a cleaner on a `New` order nobody can start. The drop also touches the order row
+> (since 2026-10-05), so the order's tokens are compared at its commit — `CurrentStatus`, and since
+> 2026-10-12 `PaymentStatus`, [ADR-0071](/decisions/adr-0071) — and a lockout confirmed first refuses the
+> drop, whose seat keeps the lockout reward. A release racing an administrator's rejection, which takes
+> no lock, can still leave `Confirmed` with nobody on it, and an administrator's placement racing a drop
+> can still leave `New` with a cleaner on it — neither commit changes a token the other compares — which
+> is why every sweep, reminder and validator keeps reading `AssignedEmployees`:
 > **the crew is the fact, the status its summary.** `CancellationAssessor` does exactly that, and did
-> so even before the split. → [Business rules — when the last cleaner leaves](/product/business-rules#crew-lost)
+> so even before the split. → [Business rules — when a cleaner leaves](/product/business-rules#crew-lost)
 
 > **And `Confirmed` still says nothing about the contract for work.** Since [ADR-0068](/decisions/adr-0068)
 > (2026-09-20) a cleaner who *took* the job accepted the contract in the same act, but an admin's

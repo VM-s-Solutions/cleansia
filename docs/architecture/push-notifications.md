@@ -299,14 +299,16 @@ The in-app feed has **three** audiences, and the host controller sets which one 
 count or mark-read a row of their partner-app feed. The customer and partner keysets are lists that
 trail their clients' templates (a key belongs in a keyset only once the audience's clients render it,
 or the badge counts a row the app drops unrendered). **The admin keyset is the catalogue by
-construction** — `NotificationFeedEventKeys.Admin = AdminNotificationEventCatalog.All`, the eighteen
+construction** — `NotificationFeedEventKeys.Admin = AdminNotificationEventCatalog.All`, the nineteen
 `admin.*` keys ([ADR-0065](/decisions/adr-0065); the not-started alert, the two refund alerts and the
 lockout report joined on 2026-09-28, `admin.referral.held` — Support and above, args `[referralId]`,
 routed to *Referrals* in the console — on 2026-10-05, on 2026-10-06 `admin.order.cash_not_paid` —
 Support and above, args `[orderNumber, amount, orderId]`, opening the order in the console — and
-`admin.payment.refund_without_cancel` — every role, the same args, opening the order — and on
+`admin.payment.refund_without_cancel` — every role, the same args, opening the order — on
 2026-10-24 `admin.order.no_cleaner_yet` — Support and above, args `[orderNumber, cleaningDateTime,
-orderId]`, opening the order) — because the console is built to render every key of its catalogue, and a spec walks the
+orderId]`, opening the order — and with the fix plan of 2026-10-25 `admin.order.crew_short` — Support
+and above, `crew_lost`'s args, declared right after it, opening the order and naming the cause in
+`crew_lost`'s words) — because the console is built to render every key of its catalogue, and a spec walks the
 C# file so a key added on the server fails the admin build without its five-locale sentence and its
 entry in the console's mirror (`ADMIN_NOTIFICATION_EVENT_KEYS`).
 

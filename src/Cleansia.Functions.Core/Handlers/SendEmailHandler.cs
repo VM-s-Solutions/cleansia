@@ -316,8 +316,9 @@ public class SendEmailHandler(
         }
     }
 
-    // Act-then-claim like the shapes beside it. Sent only while the order is still back at New: a take since
-    // the release has sent the confirmed e-mail, and a cancelled booking has no cleaner to look for.
+    // Act-then-claim like the shapes beside it. Sent only while the job has not started and is still short of
+    // the cleaners it needs: a seat refilled since needs no notice, and a cancelled or started booking has no
+    // seat on offer.
     private async Task SendOrderCleanerReleasedAsync(
         SendOrderCleanerReleasedEmailMessage message, string? envelopeTenantId, CancellationToken ct)
     {
@@ -335,11 +336,13 @@ public class SendEmailHandler(
         var order = await orderRepository.GetQueryable()
             .Include(o => o.Currency).Include(o => o.CustomerAddress).Include(o => o.User)
             .AsNoTracking()
-            .FirstOrDefaultAsync(o => o.Id == message.OrderId && o.CurrentStatus == OrderStatus.New, ct);
+            .FirstOrDefaultAsync(o => o.Id == message.OrderId
+                && (o.CurrentStatus == OrderStatus.New || o.CurrentStatus == OrderStatus.Confirmed)
+                && o.AssignedEmployees.Count() < o.RequiredEmployees, ct);
         if (order is null || string.IsNullOrWhiteSpace(order.CustomerEmail)
             || order.CustomerEmail == AnonymizationMarker.Value)
         {
-            logger.LogWarning("Discarding cleaner-released e-mail: order {OrderId} has no eligible destination or is no longer at New", message.OrderId);
+            logger.LogWarning("Discarding cleaner-released e-mail: order {OrderId} has no eligible destination or is no longer short of cleaners before its start", message.OrderId);
             return;
         }
 

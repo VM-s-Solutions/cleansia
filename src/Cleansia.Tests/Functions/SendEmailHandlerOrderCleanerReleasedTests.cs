@@ -21,10 +21,10 @@ using Moq;
 namespace Cleansia.Tests.Functions;
 
 /// <summary>
-/// The "we're finding you a new cleaner" arm of the send-email consumer. It is sent while the order is
-/// still back at New, once per release, in the booking's language, with a committed link for a guest; an
-/// order a cleaner has taken since has had the confirmed e-mail, one cancelled since has no cleaner to look
-/// for, and an order with no live address has nobody to send to.
+/// The "a cleaner can no longer come" arm of the send-email consumer. It is sent while the job has not
+/// started and is still short of the cleaners it needs, once per release, in the booking's language, with a
+/// committed link for a guest; a seat refilled since needs no notice, a booking cancelled or under way since
+/// has no seat on offer, and an order with no live address has nobody to send to.
 /// </summary>
 public sealed class SendEmailHandlerOrderCleanerReleasedTests : IDisposable
 {
@@ -101,15 +101,36 @@ public sealed class SendEmailHandlerOrderCleanerReleasedTests : IDisposable
     }
 
     /// <summary>
-    /// A take since the release has already sent the confirmed e-mail, and a cancelled booking has no
-    /// cleaner to look for, so the release's e-mail would now be wrong. Nothing is minted for a guest either.
+    /// One of two cleaners left and the other is still on the job: the booking is Confirmed and short, so
+    /// the customer is told.
+    /// </summary>
+    [Fact]
+    public async Task A_Confirmed_Order_Still_Short_Of_Cleaners_Is_Emailed()
+    {
+        await SeedAsync(OrderStatus.Confirmed, guest: false, bookedLanguage: "cs", requiredCleaners: 2, crew: 1);
+        await using var ctx = Context();
+
+        await Handler(ctx).HandleAsync(Body(), CancellationToken.None);
+
+        _email.Verify(s => s.SendOrderStatusUpdateEmailAsync(BookingEmail, It.Is<Order>(o => o.Id == OrderId),
+            "CleanerReleased", "cs", It.IsAny<CancellationToken>(), null, null), Times.Once);
+    }
+
+    /// <summary>
+    /// A seat refilled since the release leaves nothing to tell, a cancelled booking has no seat on offer, and
+    /// a job under way has a crew at work, so the release's e-mail would now be wrong. Nothing is minted for a
+    /// guest either.
     /// </summary>
     [Theory]
-    [InlineData(OrderStatus.Confirmed)]
-    [InlineData(OrderStatus.Cancelled)]
-    public async Task An_Order_No_Longer_At_New_Is_Not_Emailed(OrderStatus current)
+    [InlineData(OrderStatus.Confirmed, 1, 1)]
+    [InlineData(OrderStatus.Confirmed, 2, 2)]
+    [InlineData(OrderStatus.Cancelled, 1, 0)]
+    [InlineData(OrderStatus.OnTheWay, 2, 1)]
+    [InlineData(OrderStatus.InProgress, 2, 1)]
+    public async Task An_Order_Back_At_Strength_Or_No_Longer_Before_Its_Start_Is_Not_Emailed(
+        OrderStatus current, int requiredCleaners, int crew)
     {
-        await SeedAsync(current, guest: true, bookedLanguage: "cs");
+        await SeedAsync(current, guest: true, bookedLanguage: "cs", requiredCleaners: requiredCleaners, crew: crew);
         await using var ctx = Context();
 
         await Handler(ctx).HandleAsync(Body(), CancellationToken.None);
@@ -138,7 +159,7 @@ public sealed class SendEmailHandlerOrderCleanerReleasedTests : IDisposable
 
     private async Task SeedAsync(
         OrderStatus status, bool guest, string? bookedLanguage, string? accountLanguage = null,
-        string customerEmail = BookingEmail)
+        string customerEmail = BookingEmail, int requiredCleaners = 1, int crew = 0)
     {
         await using var ctx = Context();
         await ctx.Database.EnsureCreatedAsync();
@@ -161,7 +182,15 @@ public sealed class SendEmailHandlerOrderCleanerReleasedTests : IDisposable
             cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.SetLanguage(bookedLanguage);
+        order.UpdateEstimatedTime(requiredCleaners * 120).CalculateRequiredEmployees(spareSeats: 0);
         order.AddOrderStatus(OrderStatusTrack.Create(status, order));
+        for (var seat = 0; seat < crew; seat++)
+        {
+            var cleaner = Employee.CreateWithUser(
+                User.CreateWithPassword($"cleaner-{seat}@cleansia.test", "Password123!", "Clean", "Er"));
+            ctx.Employees.Add(cleaner);
+            order.AddAssignedEmployee(OrderEmployee.Create(order, cleaner));
+        }
         ctx.Orders.Add(order);
         await ctx.CommitAsync(CancellationToken.None);
     }

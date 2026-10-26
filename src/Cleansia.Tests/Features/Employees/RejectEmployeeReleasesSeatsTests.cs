@@ -32,9 +32,10 @@ namespace Cleansia.Tests.Features.Employees;
 /// <para><b>And a released seat that empties the crew walks the order back.</b> <c>Confirmed</c> says a
 /// cleaner took the job; a rejection that leaves nobody on a Confirmed order returns it to <c>New</c>
 /// through the one domain writer, ends a live reservation held by the rejected cleaner (an order back
-/// on the board must be ON the board), re-advertises a seat a remaining crew keeps, tells the customer of
-/// each emptied order that another cleaner is being looked for, and tells the company's administrators
-/// once per emptied order — including the administrator who clicked.</para>
+/// on the board must be ON the board), and re-advertises a seat a remaining crew keeps. Every released
+/// seat leaves its job short, so each one tells the order's customer that a cleaner can no longer come,
+/// and the company's administrators — the one who clicked included — that the crew is short or
+/// gone.</para>
 /// </summary>
 public class RejectEmployeeReleasesSeatsTests
 {
@@ -386,14 +387,16 @@ public class RejectEmployeeReleasesSeatsTests
     }
 
     /// <summary>
-    /// A crew remains: the job is still staffed, so the status holds — but the freed seat must reach
-    /// the board, and the digest only sees an order with a fresh history row. Same-value, exactly as a
-    /// drop re-advertises, so the two release writers cannot disagree.
+    /// A crew remains: the status holds, and the freed seat reaches the board through a same-value row,
+    /// exactly as a drop re-advertises, so the two release writers cannot disagree. The job is now short of
+    /// a cleaner, so its customer is told a cleaner can no longer come and the administrators that the crew
+    /// is short.
     /// </summary>
     [Fact]
-    public async Task A_Crew_That_Remains_Keeps_Confirmed_Re_Advertises_And_Tells_Nobody()
+    public async Task A_Crew_That_Remains_Keeps_Confirmed_Re_Advertises_And_Tells_The_Customer_And_The_Administrators()
     {
         var order = WithColleague(OrderHeldBy("order-2", EmployeeId, maxEmployees: 2), "emp-keep");
+        var releasedAssignmentId = order.AssignedEmployees.Single(a => a.EmployeeId == EmployeeId).Id;
         var before = order.OrderStatusHistory.Count;
         ArrangeHeldOrders(order);
 
@@ -402,24 +405,27 @@ public class RejectEmployeeReleasesSeatsTests
         Assert.Equal(OrderStatus.Confirmed, order.CurrentStatus);
         Assert.Equal(before + 1, order.OrderStatusHistory.Count);
         Assert.Equal(OrderStatus.Confirmed, order.OrderStatusHistory.OrderByDescending(s => s.Sequence).First().Status);
-        Assert.Empty(_raised);
+        var raised = Assert.Single(_raised);
+        Assert.Equal(AdminNotificationEventCatalog.OrderCrewShort, raised.Key);
+        Assert.Equal("rejected", raised.Args["cause"]);
+        Assert.Equal(AssignmentNotificationSubject.For(order.Id, releasedAssignmentId), raised.Subject);
         _producer.Verify(p => p.NotifyAsync(
-                It.IsAny<string>(), NotificationEventCatalog.OrderCleanerReleased, It.IsAny<Dictionary<string, string>>(),
-                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
-            Times.Never);
-        Assert.Empty(_staged);
+                CustomerUserId, NotificationEventCatalog.OrderCleanerReleased, It.IsAny<Dictionary<string, string>>(),
+                CompanyId, AssignmentNotificationSubject.For(order.Id, releasedAssignmentId), It.IsAny<CancellationToken>()),
+            Times.Once);
+        Assert.Equal(MessageKeys.OrderCleanerReleasedEmail(order.Id, releasedAssignmentId), Assert.Single(_staged).Key);
     }
 
     // ── The customer is told ──
 
     /// <summary>
-    /// Every order the rejection walks back tells its own customer once, under a subject and an e-mail key
+    /// Every seat the rejection releases tells its order's customer once, under a subject and an e-mail key
     /// of its own: one customer can hold several of the rejected cleaner's bookings, and two notices sharing
-    /// a key would roll the whole rejection back at the outbox's unique index. An order whose crew remains
-    /// is still staffed and tells its customer nothing.
+    /// a key would roll the whole rejection back at the outbox's unique index. An order whose crew remains is
+    /// short of a cleaner all the same, so it is told too.
     /// </summary>
     [Fact]
-    public async Task Every_Walked_Back_Order_Tells_Its_Customer_Under_Its_Own_Subject_And_Email_Key()
+    public async Task Every_Released_Seat_Tells_Its_Customer_Under_Its_Own_Subject_And_Email_Key()
     {
         var sent = new List<(string UserId, Dictionary<string, string> Args, string? TenantId, string? Subject)>();
         _producer
@@ -433,8 +439,8 @@ public class RejectEmployeeReleasesSeatsTests
         var first = OrderHeldBy("order-a", EmployeeId);
         var second = OrderHeldBy("order-b", EmployeeId);
         var crewed = WithColleague(OrderHeldBy("order-c", EmployeeId, maxEmployees: 2), "emp-keep");
-        var released = new[] { first, second }
-            .Select(o => (Order: o, AssignmentId: o.AssignedEmployees.Single().Id))
+        var released = new[] { first, second, crewed }
+            .Select(o => (Order: o, AssignmentId: o.AssignedEmployees.Single(a => a.EmployeeId == EmployeeId).Id))
             .ToList();
         ArrangeHeldOrders(first, second, crewed);
 

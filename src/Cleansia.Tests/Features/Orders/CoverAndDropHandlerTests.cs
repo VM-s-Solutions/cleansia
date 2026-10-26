@@ -31,10 +31,11 @@ namespace Cleansia.Tests.Features.Orders;
 /// against paying twice.</para>
 ///
 /// <para><b>A drop that empties the crew is two facts, not one.</b> <c>Confirmed</c> says a cleaner
-/// took the job, so a <c>Confirmed</c> order with nobody left on it goes back to <c>New</c>; and the
-/// company's administrators are told whenever the crew empties. A job under way cannot be dropped at all
-/// (owner ruling 2026-10-25), so the crew empties only at <c>New</c> or <c>Confirmed</c>. The walk-back
-/// is also what tells the customer another cleaner is being looked for.</para>
+/// took the job, so a <c>Confirmed</c> order with nobody left on it goes back to <c>New</c>. A job under
+/// way cannot be dropped at all (owner ruling 2026-10-25), so the crew empties only at <c>New</c> or
+/// <c>Confirmed</c>. Every drop leaves the job short of the cleaners it needs, so every drop tells the
+/// customer that a cleaner can no longer come, and the administrators that the crew is short or
+/// gone.</para>
 /// </summary>
 public class CoverAndDropHandlerTests
 {
@@ -322,11 +323,16 @@ public class CoverAndDropHandlerTests
         Assert.Single(_raised);
     }
 
-    /// <summary>A crew remains: the job is still staffed, so the status holds and nobody is alarmed.</summary>
+    /// <summary>
+    /// A crew remains, so the status holds and the freed seat is re-advertised; the job is now short of a
+    /// cleaner, so the administrators are told the crew is short — the same args as the empty crew's event,
+    /// under the released assignment.
+    /// </summary>
     [Fact]
-    public async Task DroppingOneSeatOfTwoKeepsConfirmedReAdvertisesAndTellsNobody()
+    public async Task DroppingOneSeatOfTwoKeepsConfirmedReAdvertisesAndTellsTheAdministratorsTheCrewIsShort()
     {
         var order = OrderWith(EmployeeId, OtherEmployeeId);
+        var releasedAssignmentId = order.AssignedEmployees.Single(a => a.EmployeeId == EmployeeId).Id;
         Arrange(order);
         var before = order.OrderStatusHistory.Count;
 
@@ -336,7 +342,14 @@ public class CoverAndDropHandlerTests
         Assert.Equal(OrderStatus.Confirmed, order.CurrentStatus);
         Assert.Equal(before + 1, order.OrderStatusHistory.Count);
         Assert.Equal(OrderStatus.Confirmed, order.OrderStatusHistory.OrderByDescending(s => s.Sequence).First().Status);
-        Assert.Empty(_raised);
+        var raised = Assert.Single(_raised);
+        Assert.Equal(AdminNotificationEventCatalog.OrderCrewShort, raised.Key);
+        Assert.Equal(CompanyId, raised.TenantId);
+        Assert.Equal(AssignmentNotificationSubject.For(OrderId, releasedAssignmentId), raised.Subject);
+        Assert.Equal("dropped", raised.Args["cause"]);
+        Assert.Equal(nameof(OrderStatus.Confirmed), raised.Args["statusAtLoss"]);
+        Assert.Equal(OrderId, raised.Args["orderId"]);
+        Assert.Equal(5, raised.Args.Count);
     }
 
     /// <summary>
@@ -406,12 +419,12 @@ public class CoverAndDropHandlerTests
     // ── DropOrder: the customer is told ──
 
     /// <summary>
-    /// The walk-back is the moment the booking stops having a cleaner, so it is the moment the customer is
-    /// told another one is being looked for: one push and feed row about the assignment that ended, and one
-    /// e-mail staged in the same unit of work under a key of its own for this release.
+    /// The last cleaner leaving tells the customer that a cleaner can no longer come and the booking is
+    /// offered to cleaners again: one push and feed row about the assignment that ended, and one e-mail
+    /// staged in the same unit of work under a key of its own for this release.
     /// </summary>
     [Fact]
-    public async Task DroppingTheLastSeatOfAConfirmedOrderTellsTheCustomerAnotherCleanerIsBeingLookedFor()
+    public async Task DroppingTheLastSeatOfAConfirmedOrderTellsTheCustomerTheBookingIsOfferedAgain()
     {
         var order = AccountOrderWith(EmployeeId);
         var releasedAssignmentId = order.AssignedEmployees.Single().Id;
@@ -443,37 +456,31 @@ public class CoverAndDropHandlerTests
             envelope.Payload);
     }
 
-    /// <summary>A crew remains, so the booking still has its cleaner and the customer hears nothing.</summary>
+    /// <summary>
+    /// One of two cleaners leaving still leaves the job short, so the customer is told the same thing as
+    /// when the last one leaves — the copy counts no cleaners — under the assignment that ended.
+    /// </summary>
     [Fact]
-    public async Task DroppingOneSeatOfTwoTellsTheCustomerNothing()
+    public async Task DroppingOneSeatOfTwoTellsTheCustomerACleanerCanNoLongerCome()
     {
         var order = AccountOrderWith(EmployeeId, OtherEmployeeId);
+        var releasedAssignmentId = order.AssignedEmployees.Single(a => a.EmployeeId == EmployeeId).Id;
         Arrange(order);
 
         await DropHandler().Handle(new DropOrder.Command(OrderId), default);
 
-        VerifyNoCustomerPush();
-        Assert.Empty(_staged);
-    }
-
-    /// <summary>
-    /// The notice follows the walk-back, not the empty crew: an order that was not Confirmed is not walked
-    /// back, so its customer is not told even when the last cleaner leaves. No writer leaves a cleaner on a
-    /// New order, so this pins the trigger rather than a path a customer can reach.
-    /// </summary>
-    [Fact]
-    public async Task DroppingTheLastCleanerOffAnOrderThatWasNotConfirmedTellsTheCustomerNothing()
-    {
-        var order = ValidatorTestHelpers.BuildOrder(OrderId, OrderStatus.New, EmployeeId, userId: CustomerUserId);
-        order.TenantId = CompanyId;
-        Arrange(order);
-
-        var result = await DropHandler().Handle(new DropOrder.Command(OrderId), default);
-
-        Assert.True(result.IsSuccess);
-        Assert.Empty(order.AssignedEmployees);
-        VerifyNoCustomerPush();
-        Assert.Empty(_staged);
+        Assert.Equal(OrderStatus.Confirmed, order.CurrentStatus);
+        _notifications.Verify(n => n.NotifyAsync(
+                CustomerUserId,
+                NotificationEventCatalog.OrderCleanerReleased,
+                It.Is<Dictionary<string, string>>(args => args.Count == 2 && args["orderId"] == OrderId),
+                CompanyId,
+                AssignmentNotificationSubject.For(OrderId, releasedAssignmentId),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+        var (queue, key, _) = Assert.Single(_staged);
+        Assert.Equal(QueueNames.SendEmail, queue);
+        Assert.Equal(MessageKeys.OrderCleanerReleasedEmail(OrderId, releasedAssignmentId), key);
     }
 
     /// <summary>

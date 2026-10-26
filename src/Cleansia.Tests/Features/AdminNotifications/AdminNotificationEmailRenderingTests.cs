@@ -145,6 +145,32 @@ public sealed class AdminNotificationEmailRenderingTests
     }
 
     /// <summary>
+    /// One cleaner of two leaving: the administrators read that the order lost one of its cleaners and why,
+    /// in the empty crew's own cause phrases, and that somebody is still on it — never that it is empty.
+    /// </summary>
+    [Theory]
+    [InlineData("en", "Order ORD-1A2B3C4D lost one of its cleaners", "the cleaner dropped it", "Somebody is still on it", "has nobody on it")]
+    [InlineData("cs", "Objednávka ORD-1A2B3C4D přišla o jednoho z uklízečů", "uklízeč ji opustil", "Někdo na ní stále je", "už nikdo není")]
+    [InlineData("sk", "Objednávka ORD-1A2B3C4D prišla o jedného z upratovačov", "upratovač ju opustil", "Niekto na nej stále je", "už nikto nie je")]
+    [InlineData("uk", "Замовлення ORD-1A2B3C4D втратило одного з прибиральників", "прибиральник відмовився від нього", "На ньому ще хтось є", "нікого немає")]
+    [InlineData("ru", "Заказ ORD-1A2B3C4D потерял одного из уборщиков", "уборщик отказался от него", "На нём ещё кто-то есть", "никого нет")]
+    public async Task The_Crew_Short_Email_Says_A_Cleaner_Left_And_Somebody_Is_Still_On_It(
+        string locale, string subject, string cause, string stillOnIt, string emptyCrew)
+    {
+        var (service, capture) = BuildService([]);
+
+        await service.SendAdminNotificationEmailAsync(Recipient, AdminNotificationEventCatalog.OrderCrewShort,
+            SampleArgs(AdminNotificationEventCatalog.OrderCrewShort), locale, CancellationToken.None);
+
+        Assert.Equal(subject, capture.Subject);
+        Assert.Contains(cause, capture.HtmlContent, StringComparison.Ordinal);
+        Assert.Contains(stillOnIt, capture.HtmlContent, StringComparison.Ordinal);
+        Assert.Contains("01.10.2026 09:30 UTC", capture.HtmlContent, StringComparison.Ordinal);
+        Assert.DoesNotContain(emptyCrew, capture.HtmlContent, StringComparison.Ordinal);
+        Assert.DoesNotContain("dropped", capture.HtmlContent.Replace("the cleaner dropped it", string.Empty), StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// The advance alert sends an administrator who calls a booking off early to the no-show action, which
     /// pays the customer the unfilled sweep's refund and apology credit; a plain cancel pays no apology.
     /// </summary>

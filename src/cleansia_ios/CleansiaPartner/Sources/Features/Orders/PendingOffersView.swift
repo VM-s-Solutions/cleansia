@@ -162,12 +162,11 @@ private struct PendingOfferCard: View {
                     }
                 }
                 Spacer()
-                Text(OrdersFormat.money(
-                    offer.totalPrice ?? 0,
-                    symbol: EarningsFormat.currencySymbol(offer.currencyCode)
-                ))
-                .font(CleansiaTypography.titleLarge)
-                .foregroundColor(CleansiaColors.primaryText)
+                if let pay = offer.estimatedCleanerPay, pay > 0 {
+                    Text(OrdersFormat.money(pay, symbol: EarningsFormat.currencySymbol(offer.currencyCode)))
+                        .font(CleansiaTypography.titleLarge)
+                        .foregroundColor(CleansiaColors.primaryText)
+                }
             }
 
             // City and a truncated postcode — the pre-acceptance ceiling for every cleaner-facing
@@ -224,7 +223,8 @@ private struct PendingOfferCard: View {
                 rooms: 3,
                 bathrooms: 1,
                 totalPrice: 1850,
-                currencyCode: "CZK"
+                currencyCode: "CZK",
+                estimatedCleanerPay: 925
             )
         }
     }

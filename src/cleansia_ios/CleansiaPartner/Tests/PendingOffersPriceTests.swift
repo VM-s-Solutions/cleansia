@@ -13,6 +13,20 @@ final class PendingOffersPriceTests: XCTestCase {
         XCTAssertFalse(source.contains("symbol: offer.currencyCode"), "the offer price prints the ISO code")
     }
 
+    /// The figure is the cleaner's own pay for one seat, the one the board and the job detail show, never the
+    /// customer's total; an offer without a positive pay shows no figure, as the job detail's header does.
+    func testTheOfferShowsTheCleanersOwnPayNeverTheCustomersTotal() throws {
+        let source = try read("CleansiaPartner/Sources/Features/Orders/PendingOffersView.swift")
+            .components(separatedBy: .whitespacesAndNewlines)
+            .joined()
+
+        XCTAssertTrue(
+            source.contains("ifletpay=offer.estimatedCleanerPay,pay>0{Text(OrdersFormat.money(pay,symbol:"),
+            "the offer's figure is not the cleaner's pay, or it shows a pay of 0"
+        )
+        XCTAssertFalse(source.contains("offer.totalPrice"), "the offer card shows the customer's total")
+    }
+
     private func read(_ relativePath: String) throws -> String {
         let root = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()

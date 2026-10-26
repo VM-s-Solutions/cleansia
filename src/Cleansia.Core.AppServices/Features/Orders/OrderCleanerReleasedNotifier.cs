@@ -24,9 +24,11 @@ public static class OrderCleanerReleasedNotifier
     /// The assignment that ended, captured before the unassign hard-deleted it — see
     /// <see cref="AssignmentNotificationSubject"/> for why the order id alone is not enough.
     /// </param>
+    /// <param name="releasedAtUtc">The instant the writer ended the cleaner's reservation with, if it did.</param>
     public static async Task NotifyCustomerOfReleaseAsync(
         Order order,
         string releasedAssignmentId,
+        DateTime releasedAtUtc,
         INotificationProducer notificationProducer,
         IPendingDispatch pendingDispatch,
         CancellationToken cancellationToken)
@@ -52,5 +54,12 @@ public static class OrderCleanerReleasedNotifier
                 new SendOrderCleanerReleasedEmailMessage(
                     order.Id, releasedAssignmentId, EmailLocale.Resolve(order.LanguageCode), order.TenantId)),
             emailKey);
+
+        // This notice announces a reservation that has ended by now, so the lapse sweep sends no closure
+        // after it. One another cleaner still holds is left to the sweep. → /product/business-rules#crew-lost
+        if (order.PreferredHoldUntilUtc <= releasedAtUtc)
+        {
+            order.MarkPreferredOfferLapseNotified(releasedAtUtc);
+        }
     }
 }

@@ -162,7 +162,7 @@ public class DropOrder
             }
 
             await OrderCleanerReleasedNotifier.NotifyCustomerOfReleaseAsync(
-                order, releasedAssignmentId, notificationProducer, pendingDispatch, cancellationToken);
+                order, releasedAssignmentId, nowUtc, notificationProducer, pendingDispatch, cancellationToken);
 
             employeeActionAuditRepository.Add(EmployeeActionAudit.Create(
                 employeeId, order.Id, EmployeeAuditAction.OrderDropped));

@@ -95,6 +95,39 @@ public class CoverAndDropHandlerTests
         return order;
     }
 
+    /// <summary>
+    /// A Confirmed account order reserved for <paramref name="beneficiaryId"/> until
+    /// <paramref name="holdUntilUtc"/>, granted before <paramref name="cleanerId"/> took the seat — the order
+    /// the aggregate enforces.
+    /// </summary>
+    private static Order ReservedAccountOrder(string beneficiaryId, DateTime holdUntilUtc, string cleanerId)
+    {
+        var order = Order.Create(
+            customerName: "Reserved Customer",
+            customerEmail: "reserved@example.com",
+            customerPhone: "+420000000000",
+            customerAddress: Address.Create("123 Main St", "Prague", "11000", "cz"),
+            rooms: 1,
+            bathrooms: 1,
+            cleaningDateTime: DateTime.UtcNow.AddDays(1),
+            paymentType: PaymentType.Card,
+            totalPrice: 1000m,
+            currencyId: "czk",
+            paymentStatus: PaymentStatus.Paid,
+            userId: CustomerUserId,
+            preferredEmployeeId: beneficiaryId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
+        order.Id = OrderId;
+        order.TenantId = CompanyId;
+        order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
+        order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Confirmed, order));
+        order.GrantPreferredHold(
+            beneficiaryId, holdUntilUtc, holdUntilUtc.AddHours(-12), BookingPolicy.MaxPreferredOfferRounds);
+        order.AddAssignedEmployee(OrderEmployee.Create(
+            order, ValidatorTestHelpers.BuildEmployee(cleanerId, ContractStatus.Approved)));
+        return order;
+    }
+
     private void Arrange(Order order, string? callerEmployeeId = EmployeeId)
     {
         _orderRepository.Setup(r => r.GetQueryable())
@@ -500,6 +533,74 @@ public class CoverAndDropHandlerTests
         var (queue, key, _) = Assert.Single(_staged);
         Assert.Equal(QueueNames.SendEmail, queue);
         Assert.Equal(MessageKeys.OrderCleanerReleasedEmail(OrderId, releasedAssignmentId), key);
+    }
+
+    // ── DropOrder: the reservation the release ends ──
+
+    /// <summary>
+    /// The cleaner the customer asked for takes the reserved job and drops it while the reservation runs.
+    /// The drop ends the reservation, and the release notice is its one announcement: the receipt is stamped
+    /// at the drop's instant, so the five-minute lapse sweep sends no "open to all cleaners" push after it.
+    /// </summary>
+    [Fact]
+    public async Task The_Chosen_Cleaner_Dropping_A_Reserved_Job_Marks_The_Reservation_Announced()
+    {
+        var order = ReservedAccountOrder(EmployeeId, DateTime.UtcNow.AddHours(6), EmployeeId);
+        Arrange(order);
+
+        await DropHandler().Handle(new DropOrder.Command(OrderId), default);
+
+        Assert.NotNull(order.PreferredOfferLapseNotifiedAt);
+        Assert.Equal(order.PreferredHoldUntilUtc, order.PreferredOfferLapseNotifiedAt);
+        _notifications.Verify(n => n.NotifyAsync(
+                CustomerUserId, NotificationEventCatalog.OrderCleanerReleased, It.IsAny<Dictionary<string, string>>(),
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+        _notifications.Verify(n => n.NotifyAsync(
+                It.IsAny<string>(), NotificationEventCatalog.PreferredOfferClosed, It.IsAny<Dictionary<string, string>>(),
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    /// <summary>A reservation that had already lapsed when the cleaner dropped is announced by the release too.</summary>
+    [Fact]
+    public async Task A_Drop_After_The_Reservation_Lapsed_Marks_It_Announced_At_The_Drop()
+    {
+        var before = DateTime.UtcNow;
+        var order = ReservedAccountOrder(EmployeeId, before.AddHours(-1), EmployeeId);
+        Arrange(order);
+
+        await DropHandler().Handle(new DropOrder.Command(OrderId), default);
+
+        Assert.InRange(order.PreferredOfferLapseNotifiedAt!.Value, before, DateTime.UtcNow);
+    }
+
+    /// <summary>
+    /// Another cleaner still holds the reservation when the crew empties — reachable only through an
+    /// administrator's placement during the hold. The release does not announce what it did not end: the
+    /// lapse sweep announces it when it lapses.
+    /// </summary>
+    [Fact]
+    public async Task A_Drop_While_Another_Cleaners_Reservation_Runs_Leaves_It_Unannounced()
+    {
+        var order = ReservedAccountOrder(OtherEmployeeId, DateTime.UtcNow.AddHours(6), EmployeeId);
+        Arrange(order);
+
+        await DropHandler().Handle(new DropOrder.Command(OrderId), default);
+
+        Assert.Equal(OrderStatus.New, order.CurrentStatus);
+        Assert.Null(order.PreferredOfferLapseNotifiedAt);
+    }
+
+    [Fact]
+    public async Task A_Drop_Of_An_Order_With_No_Reservation_Stamps_No_Receipt()
+    {
+        var order = AccountOrderWith(EmployeeId);
+        Arrange(order);
+
+        await DropHandler().Handle(new DropOrder.Command(OrderId), default);
+
+        Assert.Null(order.PreferredOfferLapseNotifiedAt);
     }
 
     private void VerifyNoCustomerPush() =>

@@ -178,7 +178,7 @@ public class RejectEmployee
                 }
 
                 await OrderCleanerReleasedNotifier.NotifyCustomerOfReleaseAsync(
-                    order, assignmentId, notificationProducer, pendingDispatch, cancellationToken);
+                    order, assignmentId, now, notificationProducer, pendingDispatch, cancellationToken);
 
                 if (cleaner is not null)
                 {

@@ -524,8 +524,9 @@ public class Order : TenantAuditable
     public int PreferredOfferRound { get; private set; }
 
     /// <summary>
-    /// ADR-0045 D6 — when the customer was told this reservation ended without a confirmation. The
-    /// receipt exists so the 5-minute lapse sweep does not prompt twice, and it is a separate column
+    /// ADR-0045 D6 — when the customer was told this reservation ended without a confirmation: by the
+    /// 5-minute lapse sweep, or by a cleaner's release notice sent once the reservation had ended. The
+    /// receipt exists so the customer is not prompted twice, and it is a separate column
     /// rather than a cleared hold pair because <c>NewJobsDigestService.ApplyFreshness</c> reads that
     /// pair to decide a lapsed order is NEW AGAIN to every other cleaner — nulling it would drop the
     /// order out of the notification channel permanently. Precedent:

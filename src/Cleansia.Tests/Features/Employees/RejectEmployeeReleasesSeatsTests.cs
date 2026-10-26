@@ -482,6 +482,7 @@ public class RejectEmployeeReleasesSeatsTests
 
         Assert.True(order.PreferredHoldUntilUtc <= DateTime.UtcNow);
         Assert.Equal(OrderStatus.New, order.CurrentStatus);
+        Assert.Equal(order.PreferredHoldUntilUtc, order.PreferredOfferLapseNotifiedAt);
     }
 
     /// <summary>Another cleaner's reservation is not this rejection's to cancel.</summary>
@@ -496,6 +497,7 @@ public class RejectEmployeeReleasesSeatsTests
 
         Assert.Equal("emp-other", order.PreferredEmployeeId);
         Assert.Equal(holdUntil, order.PreferredHoldUntilUtc);
+        Assert.Null(order.PreferredOfferLapseNotifiedAt);
     }
 
     private sealed class RecordingDispatch(List<(string Queue, string Key, object Message)> staged) : IPendingDispatch

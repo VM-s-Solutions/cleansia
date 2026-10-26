@@ -194,6 +194,22 @@ public class CityNameMatchTests
         Assert.Equal(serviced, ServicedRows.Any(row => CityNameMatch.Serves(row.Name, row.ZipPrefix, city, postcode)));
     }
 
+    /// <summary>
+    /// Shared cases 6 and 11 get the same answer from the name whether or not the postcode is read, so here
+    /// the name and the postcode answer opposite ways: a no-break space inside a valid postcode, four digits
+    /// and a letter each decide which of the two wins.
+    /// </summary>
+    [Theory]
+    [InlineData("Прага", "110\u00A000", true)]
+    [InlineData("Praha", "602\u00A000", false)]
+    [InlineData("Прага", "1100", false)]
+    [InlineData("Praha", "6020", true)]
+    [InlineData("Прага", "1abcd", false)]
+    public void Where_The_Name_And_The_Postcode_Disagree_Only_A_Valid_Postcode_Decides(string city, string postcode, bool serviced)
+    {
+        Assert.Equal(serviced, ServicedRows.Any(row => CityNameMatch.Serves(row.Name, row.ZipPrefix, city, postcode)));
+    }
+
     private static readonly (string Name, string? ZipPrefix)[] ServicedRows =
     [
         ("Praha", "1"),

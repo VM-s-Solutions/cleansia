@@ -1,6 +1,7 @@
 import CleansiaCore
 import CleansiaPartnerApi
 import Foundation
+import UIKit
 
 @MainActor
 final class DocumentsSectionViewModel: ViewModel {
@@ -49,6 +50,17 @@ final class DocumentsSectionViewModel: ViewModel {
     /// single dependency (the view model) and never touches the snackbar itself.
     func showTooLarge() {
         snackbar.showError(L10n.Profile.documentTooLarge)
+    }
+
+    /// A photo of a document goes up as the 1920 px JPEG the job photos do, encoded off the main actor.
+    func encodePhoto(_ photo: UIImage) async -> EncodedImage? {
+        let encoded = await Task.detached(priority: .userInitiated) {
+            ImageCompressor.encode(photo)
+        }.value
+        if encoded == nil {
+            snackbar.showError(L10n.Profile.photoUnreadable)
+        }
+        return encoded
     }
 
     func upload(

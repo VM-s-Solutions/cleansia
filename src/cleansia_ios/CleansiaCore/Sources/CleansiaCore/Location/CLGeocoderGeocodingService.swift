@@ -21,23 +21,31 @@ extension CLPlacemark: Placemark {
 protocol CLGeocoding: AnyObject {
     var isGeocoding: Bool { get }
     func cancelGeocode()
-    func reverseGeocodeLocation(_ location: CLLocation) async throws -> [Placemark]
-    func geocodeAddressString(_ addressString: String) async throws -> [Placemark]
+    func reverseGeocodeLocation(_ location: CLLocation, preferredLocale: Locale) async throws -> [Placemark]
+    func geocodeAddressString(_ addressString: String, preferredLocale: Locale) async throws -> [Placemark]
 }
 
 extension CLGeocoder: CLGeocoding {
-    func reverseGeocodeLocation(_ location: CLLocation) async throws -> [Placemark] {
-        let placemarks: [CLPlacemark] = try await reverseGeocodeLocation(location)
+    func reverseGeocodeLocation(_ location: CLLocation, preferredLocale: Locale) async throws -> [Placemark] {
+        let placemarks: [CLPlacemark] = try await reverseGeocodeLocation(location, preferredLocale: preferredLocale)
         return placemarks
     }
 
-    func geocodeAddressString(_ addressString: String) async throws -> [Placemark] {
-        let placemarks: [CLPlacemark] = try await geocodeAddressString(addressString)
+    func geocodeAddressString(_ addressString: String, preferredLocale: Locale) async throws -> [Placemark] {
+        let placemarks: [CLPlacemark] = try await geocodeAddressString(
+            addressString,
+            in: nil,
+            preferredLocale: preferredLocale
+        )
         return placemarks
     }
 }
 
 public final class CLGeocoderGeocodingService: GeocodingService {
+    /// The city is matched against the serviced-city rows, which name it as the Czech post does: asked in the phone's
+    /// language, a Prague address came back as "Прага" or "Prag" and matched none. → /mobile-app/patterns#maps
+    private static let placeNames = Locale(identifier: "cs_CZ")
+
     private let geocoder: CLGeocoding
 
     public convenience init() {
@@ -51,7 +59,8 @@ public final class CLGeocoderGeocodingService: GeocodingService {
     public func reverseGeocode(_ coordinate: Coordinate) async -> GeocodedAddress? {
         cancelInFlight()
         let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
-        guard let placemark = try? await geocoder.reverseGeocodeLocation(location).first else {
+        let placemarks = try? await geocoder.reverseGeocodeLocation(location, preferredLocale: Self.placeNames)
+        guard let placemark = placemarks?.first else {
             return nil
         }
         return Self.address(
@@ -65,7 +74,8 @@ public final class CLGeocoderGeocodingService: GeocodingService {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return [] }
         cancelInFlight()
-        guard let placemarks = try? await geocoder.geocodeAddressString(trimmed) else {
+        let found = try? await geocoder.geocodeAddressString(trimmed, preferredLocale: Self.placeNames)
+        guard let placemarks = found else {
             return []
         }
         let addresses = placemarks.compactMap { Self.address(from: $0) }

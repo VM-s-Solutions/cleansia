@@ -31,6 +31,10 @@ extension L10n.Profile {
         L10n.localized("document_type")
     }
 
+    static var documentChooseFile: String {
+        L10n.localized("document_choose_file")
+    }
+
     static var descriptionOptional: String {
         L10n.localized("description_optional")
     }

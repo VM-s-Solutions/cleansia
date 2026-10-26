@@ -39,9 +39,14 @@ public enum CalendarDay {
     }
 
     /// What an unset field's wheel shows: thirty years back, so an adult's year is a short spin away
-    /// rather than decades of it. Shown only — nothing is stored until the wheel moves.
+    /// rather than decades of it. Shown only — nothing is stored until Done.
     static func unsetSeed(now: Date = Date()) -> Date {
         calendar.date(byAdding: .year, value: -30, to: now) ?? now
+    }
+
+    /// What Done stores: the day on the wheels, which on an empty field never spun is the seed they show.
+    static func confirmed(_ draft: Date?, now: Date = Date()) -> Date {
+        draft ?? startOfDay(unsetSeed(now: now), in: calendar.timeZone)
     }
 
     public static func text(_ date: Date, locale: Locale) -> String {

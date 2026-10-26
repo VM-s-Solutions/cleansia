@@ -1,6 +1,7 @@
 import CleansiaCore
 import CleansiaPartnerApi
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// One document type + how it renders. `label` is a closure, not a stored
 /// `String`: the accessors read the string catalog, and the partner app can
@@ -41,6 +42,12 @@ enum DocumentPresentation {
     /// exists so a 40 MB scan fails instantly instead of after a base64 upload.
     /// Mirrors the customer app's evidence cap (`DisputeFormConstants`).
     static let maxDocumentBytes = 10 * 1024 * 1024
+
+    /// What the Files browser offers: the employee-document formats the server accepts, and nothing else.
+    static let importableTypes: [UTType] = [.pdf, .jpeg, .png] + [
+        UTType("com.microsoft.word.doc"),
+        UTType("org.openxmlformats.wordprocessingml.document")
+    ].compactMap { $0 }
 
     static let placeholder = "—"
 

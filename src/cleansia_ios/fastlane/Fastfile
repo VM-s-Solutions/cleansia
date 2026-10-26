@@ -46,11 +46,13 @@ APPS = {
     scheme: "CleansiaCustomer",
     dir: "CleansiaCustomer",
     bundle_id: "cz.cleansia.customer",
+    dev_web_host: "customer.dev.cleansia.cz",
   },
   partner: {
     scheme: "CleansiaPartner",
     dir: "CleansiaPartner",
     bundle_id: "cz.cleansia.partner",
+    dev_web_host: "partner.dev.cleansia.cz",
   },
 }.freeze
 
@@ -195,7 +197,8 @@ def ship(key, options = {})
   #    survives the xcodegen regen above and applies to the app + its Live
   #    Activity extension together (they must share a version). An api_base_url
   #    is injected the same way: a command-line build setting outranks the
-  #    Release value in project.yml, which is otherwise the production host.
+  #    Release value in project.yml, which is otherwise the production host,
+  #    and brings the DEV web host for the webcredentials domain with it.
   #    So are the commit and branch, which land in Info.plist as
   #    CleansiaGitCommit and CleansiaGitBranch, checked in the archive below.
   xcargs = "CURRENT_PROJECT_VERSION=#{build_number} DEVELOPMENT_TEAM=#{team_id} -allowProvisioningUpdates"
@@ -203,6 +206,7 @@ def ship(key, options = {})
   if api_base_url
     UI.important("🌐 #{app[:bundle_id]} build ##{build_number} calls #{api_base_url}, not the Release host")
     xcargs += " API_BASE_URL=#{api_base_url.shellescape}"
+    xcargs += " WEBCREDENTIALS_HOST=#{app[:dev_web_host].shellescape}"
   end
   # build_app zips the archive's dSYMs here, into whatever zip an earlier run left, and only when it has some.
   symbols = File.join(IOS_ROOT, "build", "#{app[:scheme]}.app.dSYM.zip")

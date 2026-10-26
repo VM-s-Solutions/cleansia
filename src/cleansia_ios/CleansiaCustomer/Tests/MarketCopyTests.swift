@@ -11,6 +11,20 @@ final class MarketCopyTests: XCTestCase {
     private static let currencyWord = "CZK|Kč|EUR|€"
     private static let vettingClaim = "background|vetted|prověřen|preveren|перевірен|проверен"
     private static let insuranceClaim = "insur|pojišt|poist|застрах"
+    private static let nobodyTookClaim = [
+        "en": ["nobody", "took", "take"],
+        "cs": ["nikdo", "převz"],
+        "sk": ["nikto", "prevz"],
+        "uk": ["ніхто", "взяв"],
+        "ru": ["никто", "взял"]
+    ]
+    private static let releaseCountClaims = [
+        "en": ["another", "a new cleaner", "your cleaner", "no cleaner"],
+        "cs": ["jiného", "nového", "váš uklízeč", "nemá uklízeče", "bez uklízeče"],
+        "sk": ["iného", "nového", "váš upratovač", "nemá upratovača", "bez upratovača"],
+        "uk": ["іншого", "нового", "ваш клінер", "без клінера"],
+        "ru": ["другого", "нового", "ваш клинер", "без клинера"]
+    ]
 
     // MARK: The renderers
 
@@ -79,6 +93,46 @@ final class MarketCopyTests: XCTestCase {
                         "\(site) states a figure: \(value)"
                     )
                     XCTAssertFalse(matches(Self.currencyWord, value), "\(site) names a currency: \(value)")
+                }
+            }
+        }
+    }
+
+    /// The no-cleaner push also follows a booking a cleaner took and then left, and an administrator's
+    /// no-show call, so neither its title nor its body says nobody took the booking.
+    func testTheNoCleanerPushNeverSaysNobodyTookTheBookingInBothCatalogs() throws {
+        let keys = ["refunded", "refund_pending", "nothing_charged"].flatMap { outcome in
+            ["push.order.no_cleaner_\(outcome).title", "push.order.no_cleaner_\(outcome).body"]
+        }
+        for (app, strings) in try [("customer", customerStrings()), ("partner", partnerStrings())] {
+            for key in keys {
+                for locale in Self.locales {
+                    let value = try value(of: key, locale, in: strings)
+                    for stem in try XCTUnwrap(Self.nobodyTookClaim[locale]) {
+                        XCTAssertNil(
+                            value.range(of: stem, options: .caseInsensitive),
+                            "\(app)/\(locale)/\(key) says nobody took the booking (\(stem)): \(value)"
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    /// One cleaner of two leaving sends the same release as the last one leaving, so neither catalog's release
+    /// copy promises a single replacement or says the booking has no cleaner.
+    func testTheCleanerReleaseIsTrueWhetherOneOrEveryCleanerLeftInBothCatalogs() throws {
+        let keys = ["push.order.cleaner_released.title", "push.order.cleaner_released.body"]
+        for (app, strings) in try [("customer", customerStrings()), ("partner", partnerStrings())] {
+            for key in keys {
+                for locale in Self.locales {
+                    let value = try value(of: key, locale, in: strings)
+                    for claim in try XCTUnwrap(Self.releaseCountClaims[locale]) {
+                        XCTAssertNil(
+                            value.range(of: claim, options: .caseInsensitive),
+                            "\(app)/\(locale)/\(key) counts the cleaners (\(claim)): \(value)"
+                        )
+                    }
                 }
             }
         }

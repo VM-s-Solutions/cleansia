@@ -69,11 +69,12 @@ public actor ServiceAreaProvider {
 
     /// `nil` means UNKNOWN — the list could not be fetched. **A caller must not render that as "we do
     /// not serve here"**: warning on a failed lookup is how a startup blip turns into every address
-    /// looking unserviceable.
-    public func isCityServiced(countryId: String, cityName: String) async -> Bool? {
+    /// looking unserviceable. The postcode is part of the question: without it a Prague address the
+    /// server books by its postcode can read as unserviced.
+    public func isCityServiced(countryId: String, cityName: String, zipCode: String) async -> Bool? {
         guard let cities = await loadCities() else { return nil }
-        let inCountry = cities.filter { $0.countryId == countryId }.map(\.name)
-        return CityNameMatch.isServiced(inCountry, cityName)
+        let inCountry = cities.filter { $0.countryId == countryId }
+        return CityNameMatch.isServiced(inCountry, city: cityName, zipCode: zipCode)
     }
 
     public func refresh() {

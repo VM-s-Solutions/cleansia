@@ -209,7 +209,7 @@ final class AddressSectionViewModel: ViewModel {
             serviceAreaStatus = .unknown
             return
         }
-        switch await serviceArea.isCityServiced(countryId: country.id, cityName: city) {
+        switch await serviceArea.isCityServiced(countryId: country.id, cityName: city, zipCode: picked.zipCode) {
         case .some(true): serviceAreaStatus = .inServicedCity(city)
         case .some(false): serviceAreaStatus = .outsideServicedCity
         case .none: serviceAreaStatus = .unknown

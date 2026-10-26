@@ -19,18 +19,22 @@ final class CLGeocoderGeocodingServiceTests: XCTestCase {
         var forwardResult: Result<[Placemark], Error> = .success([])
         var isGeocoding = false
         private(set) var cancelCount = 0
+        private(set) var reverseLocales: [String] = []
+        private(set) var forwardLocales: [String] = []
 
         func cancelGeocode() {
             cancelCount += 1
             isGeocoding = false
         }
 
-        func reverseGeocodeLocation(_: CLLocation) async throws -> [Placemark] {
-            try reverseResult.get()
+        func reverseGeocodeLocation(_: CLLocation, preferredLocale: Locale) async throws -> [Placemark] {
+            reverseLocales.append(preferredLocale.identifier)
+            return try reverseResult.get()
         }
 
-        func geocodeAddressString(_: String) async throws -> [Placemark] {
-            try forwardResult.get()
+        func geocodeAddressString(_: String, preferredLocale: Locale) async throws -> [Placemark] {
+            forwardLocales.append(preferredLocale.identifier)
+            return try forwardResult.get()
         }
     }
 
@@ -186,6 +190,22 @@ final class CLGeocoderGeocodingServiceTests: XCTestCase {
         _ = await service.reverseGeocode(Coordinate(latitude: 50, longitude: 14))
 
         XCTAssertEqual(geocoder.cancelCount, 1)
+    }
+
+    /// The city is compared with the serviced-city rows, which name it the way the Czech post does, so both lookups
+    /// ask in Czech whatever the phone's language: a Russian iPhone was told "Прага" and a German one "Prag", and
+    /// no row matched. Android asks Mapbox in Czech for the same reason.
+    func testBothLookupsAskForCzechNames() async {
+        let geocoder = FakeGeocoder()
+        geocoder.reverseResult = .success([placemark()])
+        geocoder.forwardResult = .success([placemark()])
+        let service = CLGeocoderGeocodingService(geocoder: geocoder)
+
+        _ = await service.reverseGeocode(Coordinate(latitude: 50.0755, longitude: 14.4378))
+        _ = await service.forwardGeocode(query: "Vinohradská 12", countryIsoCodes: ["cz"])
+
+        XCTAssertEqual(geocoder.reverseLocales, ["cs_CZ"])
+        XCTAssertEqual(geocoder.forwardLocales, ["cs_CZ"])
     }
 
     func testCancelledGeocodeReturnsNilNotCrash() async {

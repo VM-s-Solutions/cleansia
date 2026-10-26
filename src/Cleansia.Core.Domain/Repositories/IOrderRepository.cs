@@ -8,6 +8,13 @@ namespace Cleansia.Core.Domain.Repositories;
 public interface IOrderRepository : IRepository<Order, string>
 {
     /// <summary>
+    /// Locks the order's row until the unit of work commits or rolls back, so a writer that changes the crew
+    /// reads it after any take of the order in flight, and a take that read before this change fails its
+    /// token check. Postgres only; on any other provider it does nothing.
+    /// </summary>
+    Task LockForCrewChangeAsync(string orderId, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Whether <paramref name="order"/> is its customer's first booking ever: no order created before it
     /// on the same account, with the same e-mail or with the same phone, guest and account bookings
     /// counting against each other, in any operating company. A card checkout not paid for is not a

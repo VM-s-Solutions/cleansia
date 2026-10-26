@@ -83,6 +83,25 @@ public class TakeOrderSeatRaceTests
         Assert.Contains(order.AssignedEmployees, oe => oe.EmployeeId == EmployeeId);
     }
 
+    /// <summary>
+    /// A seat changes no order column, so without the stamp a take on a Confirmed order would leave the
+    /// order's row out of its commit and its tokens uncompared, and land on an order a drop has walked back
+    /// to New meanwhile. Stamped, the commit compares them. → DropOrderTakeOrderRaceTests
+    /// </summary>
+    [Fact]
+    public async Task A_Take_Of_A_Confirmed_Order_Stamps_It_So_Its_Status_Is_Checked_At_Commit()
+    {
+        var order = Arrange(ValidatorTestHelpers.BuildOrder(
+            OrderId, OrderStatus.Confirmed, OtherEmployeeId, maxEmployees: 2));
+
+        var result = await CreateHandler().Handle(new TakeOrder.Command(OrderId, WorkContractTestData.TextIdEn), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(OrderStatus.Confirmed, order.CurrentStatus);
+        Assert.Equal(EmployeeId, order.UpdatedBy);
+        Assert.NotNull(order.UpdatedOn);
+    }
+
     private Order Arrange(Order order)
     {
         var employee = ValidatorTestHelpers.BuildEmployee(EmployeeId, ContractStatus.Approved);

@@ -22,6 +22,8 @@ public static class AdminEventCatalog
             ["orderNumber", "amount", "paymentType", "countryId", "orderId"]),
         new(AdminNotificationEventCatalog.OrderCrewLost, PhysicalPolicy.SupportOrAbove,
             ["orderNumber", "cause", "statusAtLoss", "cleaningDateTime", "orderId"]),
+        new(AdminNotificationEventCatalog.OrderCrewShort, PhysicalPolicy.SupportOrAbove,
+            ["orderNumber", "cause", "statusAtLoss", "cleaningDateTime", "orderId"]),
         new(AdminNotificationEventCatalog.OrderCleanerNotStarted, PhysicalPolicy.SupportOrAbove,
             ["orderNumber", "cleaningDateTime", "orderId"]),
         new(AdminNotificationEventCatalog.OrderNoCleanerYet, PhysicalPolicy.SupportOrAbove,

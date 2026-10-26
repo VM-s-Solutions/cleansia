@@ -8,14 +8,14 @@ using Cleansia.Core.Queue.Abstractions.Messages;
 namespace Cleansia.Core.AppServices.Features.Orders;
 
 /// <summary>
-/// Tells the customer that the last cleaner left their order and another one is being looked for —
-/// shared by the two release writers, <c>DropOrder</c> and <c>RejectEmployee</c>, which call it exactly
-/// when <see cref="Order.ReturnToBoardIfUnstaffed"/> walks the order back, so a crew that remains or an
-/// order that was not Confirmed tells the customer nothing. The feed row, the push and the e-mail ride the
-/// caller's unit of work (no commit here), so a release its commit refuses tells nobody.
+/// Tells the customer that a cleaner can no longer come and the booking is offered to cleaners again —
+/// shared by the two release writers, <c>DropOrder</c> and <c>RejectEmployee</c>, which call it after every
+/// release, the last cleaner's or one of several: every release leaves the job short, because an order has
+/// no spare seat. The feed row, the push and the e-mail ride the caller's unit of work (no commit here), so
+/// a release its commit refuses tells nobody.
 ///
 /// <para>A guest has no account to push to and is e-mailed only; the e-mail goes to the booking's own
-/// address either way. Both are keyed on the assignment that ended, so every walk-back is its own
+/// address either way. Both are keyed on the assignment that ended, so every release is its own
 /// message.</para>
 /// </summary>
 public static class OrderCleanerReleasedNotifier
@@ -24,9 +24,11 @@ public static class OrderCleanerReleasedNotifier
     /// The assignment that ended, captured before the unassign hard-deleted it — see
     /// <see cref="AssignmentNotificationSubject"/> for why the order id alone is not enough.
     /// </param>
+    /// <param name="releasedAtUtc">The instant the writer ended the cleaner's reservation with, if it did.</param>
     public static async Task NotifyCustomerOfReleaseAsync(
         Order order,
         string releasedAssignmentId,
+        DateTime releasedAtUtc,
         INotificationProducer notificationProducer,
         IPendingDispatch pendingDispatch,
         CancellationToken cancellationToken)
@@ -52,5 +54,12 @@ public static class OrderCleanerReleasedNotifier
                 new SendOrderCleanerReleasedEmailMessage(
                     order.Id, releasedAssignmentId, EmailLocale.Resolve(order.LanguageCode), order.TenantId)),
             emailKey);
+
+        // This notice announces a reservation that has ended by now, so the lapse sweep sends no closure
+        // after it. One another cleaner still holds is left to the sweep. → /product/business-rules#crew-lost
+        if (order.PreferredHoldUntilUtc <= releasedAtUtc)
+        {
+            order.MarkPreferredOfferLapseNotified(releasedAtUtc);
+        }
     }
 }

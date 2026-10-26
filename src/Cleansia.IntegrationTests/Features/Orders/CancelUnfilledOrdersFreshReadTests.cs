@@ -166,7 +166,10 @@ public sealed class CancelUnfilledOrdersFreshReadTests(PostgresContainerFixture 
         Assert.Equal(paymentType == PaymentType.Card ? 1 : 0, await read.Refunds.CountAsync());
         Assert.Single(await read.CreditTransactions.ToListAsync());
         Assert.Single(await read.Set<UserNotification>().ToListAsync());
-        Assert.Single(await read.OutboxMessages.ToListAsync());
+        var outbox = await read.OutboxMessages.Select(m => m.MessageKey).ToListAsync();
+        Assert.Equal(2, outbox.Count);
+        Assert.Single(outbox, key => key.StartsWith("push:", StringComparison.Ordinal));
+        Assert.Single(outbox, key => key == MessageKeys.GuestOrderCancelledEmail(OrderId));
     }
 
     private async Task TakeWithMediatorAsync()

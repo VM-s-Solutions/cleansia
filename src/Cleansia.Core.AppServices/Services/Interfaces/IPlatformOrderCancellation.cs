@@ -6,8 +6,9 @@ namespace Cleansia.Core.AppServices.Services.Interfaces;
 /// <summary>
 /// A cancellation the PLATFORM decides — fee-free, refunded in full, every party told — as one seam
 /// for the two callers that make that decision: an admin cancelling one order and the company
-/// wind-down cancelling every open one (ADR-0064 D2). The refund key follows the reason the caller
-/// passes, so the admin path keeps <c>refund:{id}:cancel</c> and the sweep writes
+/// wind-down cancelling every open one (ADR-0064 D2). An admin's cancel tells the customer here, by
+/// push and e-mail; the wind-down told its customers before it ran. The refund key follows the reason
+/// the caller passes, so the admin path keeps <c>refund:{id}:cancel</c> and the sweep writes
 /// <c>refund:{id}:admin</c> through one body.
 /// </summary>
 public interface IPlatformOrderCancellation

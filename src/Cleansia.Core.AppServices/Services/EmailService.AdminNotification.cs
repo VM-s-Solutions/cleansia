@@ -44,7 +44,7 @@ public sealed partial class EmailService
         }
 
         var display = entry.EmailArgOrder
-            .Select(name => DisplayValue(eventKey, name, args.GetValueOrDefault(name) ?? string.Empty, values))
+            .Select(name => DisplayValue(name, args.GetValueOrDefault(name) ?? string.Empty, values))
             .ToArray<object?>();
 
         var bodyKey = eventKey + (IsUnderWay(eventKey, args) ? BodyUnderWaySuffix : BodySuffix);
@@ -72,11 +72,11 @@ public sealed partial class EmailService
         && Enum.TryParse<OrderStatus>(status, out var parsed)
         && parsed is OrderStatus.OnTheWay or OrderStatus.InProgress;
 
-    private static string DisplayValue(string eventKey, string name, string value, IReadOnlyDictionary<string, string?> values)
+    private static string DisplayValue(string name, string value, IReadOnlyDictionary<string, string?> values)
     {
         if (name == "cause")
         {
-            return values.GetValueOrDefault(eventKey + CausePrefix + value) ?? value;
+            return values.GetValueOrDefault(AdminNotificationEventCatalog.OrderCrewLost + CausePrefix + value) ?? value;
         }
 
         if (DateTime.TryParseExact(value, "O", CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var instant))
@@ -96,7 +96,7 @@ public sealed partial class EmailService
     /// Default admin-notification copy per locale. The chrome keys are shared; the per-event keys are
     /// <c>{eventKey}.Subject</c> and <c>{eventKey}.Body</c> with <c>{n}</c> the n-th arg of the
     /// event's <see cref="AdminEventCatalog.Entry.EmailArgOrder"/>; the crew-lost event adds
-    /// <c>.BodyUnderWay</c> and its two <c>.Cause.*</c> phrases.
+    /// <c>.BodyUnderWay</c> and the two <c>.Cause.*</c> phrases every <c>cause</c> arg reads.
     /// </summary>
     private static readonly Dictionary<string, IReadOnlyDictionary<string, string>> AdminNotificationDefaults =
         new(StringComparer.OrdinalIgnoreCase)
@@ -115,10 +115,12 @@ public sealed partial class EmailService
                 ["admin.order.crew_lost.BodyUnderWay"] = "Order {0} on {3} has nobody on it — {1}. The clean was already under way.",
                 ["admin.order.crew_lost.Cause.dropped"] = "the cleaner dropped it",
                 ["admin.order.crew_lost.Cause.rejected"] = "the cleaner's account was rejected",
+                ["admin.order.crew_short.Subject"] = "Order {0} lost one of its cleaners",
+                ["admin.order.crew_short.Body"] = "Order {0} on {3} lost one of its cleaners — {1}. Somebody is still on it and the free place is back on the board; if nobody takes it, the clean goes ahead short-staffed, so assign a cleaner from the order.",
                 ["admin.order.cleaner_not_started.Subject"] = "The cleaner has not started order {0}",
                 ["admin.order.cleaner_not_started.Body"] = "Order {0} was booked for {1} and nobody has started it. Check with the cleaner and the customer; if the cleaner did not arrive, cancel it as a no-show in the console.",
                 ["admin.order.no_cleaner_yet.Subject"] = "Order {0} still has no cleaner",
-                ["admin.order.no_cleaner_yet.Body"] = "Order {0} on {1} still has nobody on it. Assign a cleaner to it in the console; if nobody takes it, it is cancelled automatically after its start.",
+                ["admin.order.no_cleaner_yet.Body"] = "Order {0} on {1} still has nobody on it. Assign a cleaner to it in the console; if nobody takes it, it is cancelled automatically after its start. To call it off before then, cancel it as a no-show in the console: the customer gets the same refund and apology credit.",
                 ["admin.order.lockout_reported.Subject"] = "The cleaner cannot get in for order {0}",
                 ["admin.order.lockout_reported.Body"] = "The cleaner on order {0}, booked for {1}, reports that they cannot get in. Check the entrance photo and the calls they made; if the customer did not let them in, cancel it as a customer lockout in the console.",
                 ["admin.order.cash_not_paid.Subject"] = "The customer did not pay cash for order {0}",
@@ -162,10 +164,12 @@ public sealed partial class EmailService
                 ["admin.order.crew_lost.BodyUnderWay"] = "Na objednávce {0} dne {3} už nikdo není — {1}. Úklid už probíhal.",
                 ["admin.order.crew_lost.Cause.dropped"] = "uklízeč ji opustil",
                 ["admin.order.crew_lost.Cause.rejected"] = "účet uklízeče byl zamítnut",
+                ["admin.order.crew_short.Subject"] = "Objednávka {0} přišla o jednoho z uklízečů",
+                ["admin.order.crew_short.Body"] = "Objednávka {0} dne {3} přišla o jednoho z uklízečů — {1}. Někdo na ní stále je a volné místo je zpět na nástěnce; pokud ho nikdo nepřijme, úklid proběhne s menším počtem uklízečů, proto přiřaďte uklízeče v objednávce.",
                 ["admin.order.cleaner_not_started.Subject"] = "Uklízeč nezačal objednávku {0}",
                 ["admin.order.cleaner_not_started.Body"] = "Objednávka {0} byla objednána na {1} a nikdo ji nezačal. Ověřte to u uklízeče a zákazníka; pokud uklízeč nedorazil, zrušte ji v konzoli jako nedostavení.",
                 ["admin.order.no_cleaner_yet.Subject"] = "Objednávka {0} stále nemá uklízeče",
-                ["admin.order.no_cleaner_yet.Body"] = "Na objednávce {0} dne {1} stále nikdo není. Přiřaďte jí uklízeče v konzoli; pokud ji nikdo nepřijme, po začátku se automaticky zruší.",
+                ["admin.order.no_cleaner_yet.Body"] = "Na objednávce {0} dne {1} stále nikdo není. Přiřaďte jí uklízeče v konzoli; pokud ji nikdo nepřijme, po začátku se automaticky zruší. Chcete-li ji zrušit dříve, zrušte ji v konzoli jako nedostavení uklízeče: zákazník dostane stejné vrácení peněz i omluvný kredit.",
                 ["admin.order.lockout_reported.Subject"] = "Uklízeč se nemůže dostat dovnitř u objednávky {0}",
                 ["admin.order.lockout_reported.Body"] = "Uklízeč u objednávky {0}, objednané na {1}, hlásí, že se nemůže dostat dovnitř. Zkontrolujte fotografii vchodu a jeho pokusy o volání; pokud ho zákazník nepustil dovnitř, zrušte ji v konzoli jako nezpřístupnění zákazníkem.",
                 ["admin.order.cash_not_paid.Subject"] = "Zákazník nezaplatil v hotovosti objednávku {0}",
@@ -209,10 +213,12 @@ public sealed partial class EmailService
                 ["admin.order.crew_lost.BodyUnderWay"] = "Na objednávke {0} dňa {3} už nikto nie je — {1}. Upratovanie už prebiehalo.",
                 ["admin.order.crew_lost.Cause.dropped"] = "upratovač ju opustil",
                 ["admin.order.crew_lost.Cause.rejected"] = "účet upratovača bol zamietnutý",
+                ["admin.order.crew_short.Subject"] = "Objednávka {0} prišla o jedného z upratovačov",
+                ["admin.order.crew_short.Body"] = "Objednávka {0} dňa {3} prišla o jedného z upratovačov — {1}. Niekto na nej stále je a voľné miesto je späť na nástenke; ak ho nikto neprijme, upratovanie prebehne s menším počtom upratovačov, preto priraďte upratovača v objednávke.",
                 ["admin.order.cleaner_not_started.Subject"] = "Upratovač nezačal objednávku {0}",
                 ["admin.order.cleaner_not_started.Body"] = "Objednávka {0} bola objednaná na {1} a nikto ju nezačal. Overte to u upratovača a zákazníka; ak upratovač neprišiel, zrušte ju v konzole ako nedostavenie sa.",
                 ["admin.order.no_cleaner_yet.Subject"] = "Objednávka {0} stále nemá upratovača",
-                ["admin.order.no_cleaner_yet.Body"] = "Na objednávke {0} dňa {1} stále nikto nie je. Priraďte jej upratovača v konzole; ak ju nikto neprijme, po začiatku sa automaticky zruší.",
+                ["admin.order.no_cleaner_yet.Body"] = "Na objednávke {0} dňa {1} stále nikto nie je. Priraďte jej upratovača v konzole; ak ju nikto neprijme, po začiatku sa automaticky zruší. Ak ju chcete zrušiť skôr, zrušte ju v konzole ako nedostavenie sa upratovača: zákazník dostane rovnaké vrátenie peňazí aj ospravedlňujúci kredit.",
                 ["admin.order.lockout_reported.Subject"] = "Upratovač sa nemôže dostať dnu pri objednávke {0}",
                 ["admin.order.lockout_reported.Body"] = "Upratovač pri objednávke {0}, objednanej na {1}, hlási, že sa nemôže dostať dnu. Skontrolujte fotografiu vchodu a jeho pokusy o volanie; ak ho zákazník nepustil dnu, zrušte ju v konzole ako nesprístupnenie zákazníkom.",
                 ["admin.order.cash_not_paid.Subject"] = "Zákazník nezaplatil v hotovosti objednávku {0}",
@@ -256,10 +262,12 @@ public sealed partial class EmailService
                 ["admin.order.crew_lost.BodyUnderWay"] = "На замовленні {0} на {3} нікого немає — {1}. Прибирання вже тривало.",
                 ["admin.order.crew_lost.Cause.dropped"] = "прибиральник відмовився від нього",
                 ["admin.order.crew_lost.Cause.rejected"] = "обліковий запис прибиральника було відхилено",
+                ["admin.order.crew_short.Subject"] = "Замовлення {0} втратило одного з прибиральників",
+                ["admin.order.crew_short.Body"] = "Замовлення {0} на {3} втратило одного з прибиральників — {1}. На ньому ще хтось є, а вільне місце знову на дошці; якщо ніхто його не візьме, прибирання відбудеться в неповному складі, тож призначте прибиральника в замовленні.",
                 ["admin.order.cleaner_not_started.Subject"] = "Прибиральник не розпочав замовлення {0}",
                 ["admin.order.cleaner_not_started.Body"] = "Замовлення {0} було заплановано на {1}, і ніхто його не розпочав. Перевірте це з прибиральником і клієнтом; якщо прибиральник не прийшов, скасуйте його в консолі як неявку.",
                 ["admin.order.no_cleaner_yet.Subject"] = "Замовлення {0} досі без прибиральника",
-                ["admin.order.no_cleaner_yet.Body"] = "На замовленні {0} на {1} досі нікого немає. Призначте прибиральника в консолі; якщо ніхто його не візьме, після початку воно скасується автоматично.",
+                ["admin.order.no_cleaner_yet.Body"] = "На замовленні {0} на {1} досі нікого немає. Призначте прибиральника в консолі; якщо ніхто його не візьме, після початку воно скасується автоматично. Щоб скасувати його раніше, скасуйте його в консолі як неявку прибиральника: клієнт отримає таке саме повернення коштів і компенсаційний кредит.",
                 ["admin.order.lockout_reported.Subject"] = "Прибиральник не може потрапити всередину за замовленням {0}",
                 ["admin.order.lockout_reported.Body"] = "Прибиральник за замовленням {0}, запланованим на {1}, повідомляє, що не може потрапити всередину. Перевірте фото входу та його спроби дзвінків; якщо клієнт його не впустив, скасуйте замовлення в консолі як недопуск з вини клієнта.",
                 ["admin.order.cash_not_paid.Subject"] = "Клієнт не сплатив готівкою замовлення {0}",
@@ -303,10 +311,12 @@ public sealed partial class EmailService
                 ["admin.order.crew_lost.BodyUnderWay"] = "На заказе {0} на {3} никого нет — {1}. Уборка уже шла.",
                 ["admin.order.crew_lost.Cause.dropped"] = "уборщик отказался от него",
                 ["admin.order.crew_lost.Cause.rejected"] = "аккаунт уборщика был отклонён",
+                ["admin.order.crew_short.Subject"] = "Заказ {0} потерял одного из уборщиков",
+                ["admin.order.crew_short.Body"] = "Заказ {0} на {3} потерял одного из уборщиков — {1}. На нём ещё кто-то есть, а свободное место снова на доске; если никто его не возьмёт, уборка пройдёт в неполном составе, поэтому назначьте уборщика в заказе.",
                 ["admin.order.cleaner_not_started.Subject"] = "Уборщик не начал заказ {0}",
                 ["admin.order.cleaner_not_started.Body"] = "Заказ {0} был назначен на {1}, и никто его не начал. Уточните у уборщика и клиента; если уборщик не пришёл, отмените его в консоли как неявку.",
                 ["admin.order.no_cleaner_yet.Subject"] = "У заказа {0} всё ещё нет уборщика",
-                ["admin.order.no_cleaner_yet.Body"] = "На заказе {0} на {1} всё ещё никого нет. Назначьте уборщика в консоли; если никто его не возьмёт, после начала он будет отменён автоматически.",
+                ["admin.order.no_cleaner_yet.Body"] = "На заказе {0} на {1} всё ещё никого нет. Назначьте уборщика в консоли; если никто его не возьмёт, после начала он будет отменён автоматически. Чтобы отменить его раньше, отмените его в консоли как неявку уборщика: клиент получит такой же возврат средств и компенсационный кредит.",
                 ["admin.order.lockout_reported.Subject"] = "Уборщик не может попасть внутрь по заказу {0}",
                 ["admin.order.lockout_reported.Body"] = "Уборщик по заказу {0}, назначенному на {1}, сообщает, что не может попасть внутрь. Проверьте фото входа и его попытки дозвониться; если клиент его не впустил, отмените заказ в консоли как недопуск по вине клиента.",
                 ["admin.order.cash_not_paid.Subject"] = "Клиент не оплатил наличными заказ {0}",

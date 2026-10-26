@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
@@ -21,8 +22,11 @@ namespace Cleansia.Tests.Features.Orders;
 /// </summary>
 public sealed class PlatformCancellationGuestEmailTests
 {
+    private const string AccountUserId = "user-account";
+
     private readonly Mock<IRefundService> _refunds = new();
     private readonly Mock<IGuestOrderAccessTokenRepository> _guestTokens = new();
+    private readonly Mock<INotificationProducer> _notifications = new();
     private readonly List<(string Queue, string Key, object Message)> _enqueued = [];
 
     public PlatformCancellationGuestEmailTests()
@@ -82,10 +86,29 @@ public sealed class PlatformCancellationGuestEmailTests
         _refunds.Verify(r => r.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    /// <summary>
+    /// A cash booking moves no card money, so no refund notice goes out: an administrator's cancel tells the
+    /// account itself, by push and by the cancellation e-mail, which carries the order page's link.
+    /// </summary>
     [Fact]
-    public async Task An_Account_Booking_Gets_No_Guest_Email()
+    public async Task An_Admin_Cancelled_Account_Cash_Booking_Is_Pushed_And_Emailed()
     {
-        var order = CardOrder(userId: "user-account");
+        var order = NewOrder(PaymentType.Cash, PaymentStatus.Pending, AccountUserId);
+
+        await Cancellation().CancelAsync(order, "admin-1", CancelledBy.Admin, "Duplicate booking",
+            RefundReason.CustomerCancellation, CancellationToken.None);
+
+        VerifyCustomerPushed(order, NotificationEventCatalog.OrderCancelled, order.Id, Times.Once());
+        Assert.Null(SingleGuestEmail(order).SuccessfulRefundAmount);
+        _guestTokens.Verify(r => r.GetLiveForOrderIgnoringTenantAsync(
+            It.IsAny<string>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>The refund notice already told the account, so the cancel adds the e-mail and no second push.</summary>
+    [Fact]
+    public async Task An_Admin_Cancelled_Account_Card_Booking_Refunded_Gets_The_Refund_Notice_And_The_Email()
+    {
+        var order = CardOrder(AccountUserId);
         _refunds.Setup(r => r.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(BusinessResult.Success(
                 new RefundResult("refund-1", "refund:key", 1000m, RefundStatus.Succeeded, false)));
@@ -93,8 +116,60 @@ public sealed class PlatformCancellationGuestEmailTests
         await Cancellation().CancelAsync(order, "admin-1", CancelledBy.Admin, null,
             RefundReason.CustomerCancellation, CancellationToken.None);
 
+        VerifyCustomerPushed(order, NotificationEventCatalog.OrderRefunded, "refund-1", Times.Once());
+        VerifyCustomerNeverPushed(NotificationEventCatalog.OrderCancelled);
+        Assert.Equal(1000m, SingleGuestEmail(order).SuccessfulRefundAmount);
+    }
+
+    /// <summary>
+    /// Stripe refused the refund, so no refund notice went out: the account is pushed the cancellation, and
+    /// its e-mail claims no refund (the copy says the refund is being processed).
+    /// </summary>
+    [Fact]
+    public async Task An_Admin_Cancelled_Account_Booking_Whose_Refund_Stripe_Refused_Is_Pushed_And_Emailed()
+    {
+        var order = CardOrder(AccountUserId);
+        _refunds.Setup(r => r.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResult.Failure<RefundResult>(
+                new Error(nameof(RefundRequest.Amount), BusinessErrorMessage.RefundFailed)));
+
+        await Cancellation().CancelAsync(order, "admin-1", CancelledBy.Admin, null,
+            RefundReason.CustomerCancellation, CancellationToken.None);
+
+        VerifyCustomerPushed(order, NotificationEventCatalog.OrderCancelled, order.Id, Times.Once());
+        VerifyCustomerNeverPushed(NotificationEventCatalog.OrderRefunded);
+        Assert.Null(SingleGuestEmail(order).SuccessfulRefundAmount);
+    }
+
+    /// <summary>The wind-down e-mailed every live customer before it ran, so its cancels tell nobody again.</summary>
+    [Fact]
+    public async Task A_Wind_Down_Cancel_Of_An_Account_Booking_Neither_Pushes_Nor_Emails_The_Cancellation()
+    {
+        var order = NewOrder(PaymentType.Cash, PaymentStatus.Pending, AccountUserId);
+
+        await Cancellation().CancelAsync(order, "admin-1", CancelledBy.System, OrderCancellationReasons.CompanyWindDown,
+            RefundReason.ServiceNotRendered, CancellationToken.None);
+
+        VerifyCustomerNeverPushed(NotificationEventCatalog.OrderCancelled);
         Assert.Empty(_enqueued);
     }
+
+    private void VerifyCustomerPushed(Order order, string eventKey, string? subject, Times times) =>
+        _notifications.Verify(n => n.NotifyAsync(
+                AccountUserId,
+                eventKey,
+                It.Is<Dictionary<string, string>>(args => args["orderId"] == order.Id
+                    && args["orderNumber"] == order.DisplayOrderNumber),
+                order.TenantId,
+                subject,
+                It.IsAny<CancellationToken>()),
+            times);
+
+    private void VerifyCustomerNeverPushed(string eventKey) =>
+        _notifications.Verify(n => n.NotifyAsync(
+                AccountUserId, eventKey, It.IsAny<Dictionary<string, string>>(), It.IsAny<string?>(),
+                It.IsAny<string?>(), It.IsAny<CancellationToken>()),
+            Times.Never);
 
     private SendGuestOrderCancellationEmailMessage SingleGuestEmail(Order order)
     {
@@ -112,7 +187,7 @@ public sealed class PlatformCancellationGuestEmailTests
             Mock.Of<IRefundRepository>(),
             Mock.Of<ICreditAccountRepository>(),
             Mock.Of<ILoyaltyService>(),
-            Mock.Of<INotificationProducer>(),
+            _notifications.Object,
             Mock.Of<ILiveActivityProducer>(),
             Mock.Of<IExpressWaiverConsumer>(),
             new GuestOrderAccessTokenIssuer(_guestTokens.Object),

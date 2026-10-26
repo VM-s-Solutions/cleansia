@@ -33,8 +33,8 @@ public static class MessageKeys
     public static string OrderLockoutEmail(string orderId) => $"email:order-lockout:{orderId}";
 
     /// <summary>
-    /// One "we're finding you a new cleaner" e-mail per release, keyed on the assignment that ended, so an
-    /// order that walks back to New a second time sends a second e-mail.
+    /// One "a cleaner can no longer come" e-mail per release, keyed on the assignment that ended, so every
+    /// release sends its own.
     /// </summary>
     public static string OrderCleanerReleasedEmail(string orderId, string assignmentId) =>
         $"email:order-cleaner-released:{orderId}:{assignmentId}";

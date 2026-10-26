@@ -37,12 +37,11 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// <c>InProgress</c> (owner ruling 2026-10-25: "if partner didn't start yet then it's possible to Drop
 /// Order"), so the crew can empty only at <c>New</c> or <c>Confirmed</c>.</para>
 ///
-/// <para><b>The last cleaner leaving is two facts.</b> A <c>Confirmed</c> order with nobody left on it
-/// goes back to <c>New</c> (owner ruling 2026-09-19: Confirmed means cleaners are assigned), through
-/// <see cref="Order.ReturnToBoardIfUnstaffed"/>; an order past Confirmed is never walked back. Its
-/// customer is told then that another cleaner is being looked for, through
-/// <see cref="OrderCleanerReleasedNotifier"/>. And the company's administrators are told whenever the
-/// crew empties.</para>
+/// <para><b>Every drop leaves the job short</b>, because an order has no spare seat: its customer is told
+/// that a cleaner can no longer come, through <see cref="OrderCleanerReleasedNotifier"/>, and the company's
+/// administrators that the crew is short or gone. The last cleaner leaving a <c>Confirmed</c> order also
+/// walks it back to <c>New</c> (owner ruling 2026-09-19: Confirmed means cleaners are assigned), through
+/// <see cref="Order.ReturnToBoardIfUnstaffed"/>; an order past Confirmed is never walked back.</para>
 /// </summary>
 public class DropOrder
 {
@@ -89,6 +88,10 @@ public class DropOrder
                     new Error(nameof(command.OrderId), BusinessErrorMessage.OrderNotFound));
             }
 
+            // Before the crew is read: a take of this order already writing lands first and is counted, and
+            // one that read before this drop waits on the row and then fails its token check.
+            await orderRepository.LockForCrewChangeAsync(command.OrderId, cancellationToken);
+
             // OrderStatusHistory is not optional — AddOrderStatus derives Sequence from it and
             // recomputes CurrentStatus, so a partial load restates the order's status.
             var order = await orderRepository
@@ -133,9 +136,9 @@ public class DropOrder
             order.UnassignEmployee(employeeId);
 
             // Removing a seat changes no order column, so without the touch the order's row stays out of
-            // the commit and its CurrentStatus concurrency token is never compared. A drop decided on a
-            // status another writer has since moved — a lockout confirmed in the same instant, which pays
-            // the crew it loaded — would then land anyway; touched, the stale drop rolls back whole.
+            // the commit and its concurrency tokens are never compared. The row lock above already orders
+            // this drop after any writer that reached the row first; the touch keeps the token check where
+            // that lock is not taken (any provider but Postgres).
             order.Updated(employeeId, nowUtc);
 
             // A live hold makes the order invisible to EVERYONE but its beneficiary, for up to 12
@@ -148,25 +151,22 @@ public class DropOrder
                 order.EndPreferredHold(nowUtc);
             }
 
-            // Two facts, read before the walk-back can change either: whether the crew emptied decides the
-            // alarm below, walked back or not; the status it emptied at is what the administrator is told.
-            var crewEmptied = order.AssignedEmployees.Count == 0;
+            // Read before the walk-back can change it: the status the cleaner left at is what the
+            // administrator is told.
             var statusAtLoss = order.CurrentStatus;
 
             // A Confirmed order with nobody left on it goes back to New — and that fresh row is also its
-            // re-advertisement — and its customer is told. Otherwise re-advertise with a same-value row:
-            // the digest's freshness test is OrderStatusHistory.Any(s => s.CreatedOn > since), so without
-            // a new row this seat is invisible to every cleaner forever, and same value means nothing else
-            // in the platform reads a change. → NewJobsDigestService
-            if (order.ReturnToBoardIfUnstaffed())
-            {
-                await OrderCleanerReleasedNotifier.NotifyCustomerOfReleaseAsync(
-                    order, releasedAssignmentId, notificationProducer, pendingDispatch, cancellationToken);
-            }
-            else
+            // re-advertisement. Otherwise re-advertise with a same-value row: the digest's freshness test is
+            // OrderStatusHistory.Any(s => s.CreatedOn > since), so without a new row this seat is invisible
+            // to every cleaner forever, and same value means nothing else in the platform reads a change.
+            // → NewJobsDigestService
+            if (!order.ReturnToBoardIfUnstaffed())
             {
                 order.AddOrderStatus(OrderStatusTrack.Create(order.CurrentStatus, order));
             }
+
+            await OrderCleanerReleasedNotifier.NotifyCustomerOfReleaseAsync(
+                order, releasedAssignmentId, nowUtc, notificationProducer, pendingDispatch, cancellationToken);
 
             employeeActionAuditRepository.Add(EmployeeActionAudit.Create(
                 employeeId, order.Id, EmployeeAuditAction.OrderDropped));
@@ -182,16 +182,13 @@ public class DropOrder
                 nowUtc,
                 cancellationToken);
 
-            if (crewEmptied)
-            {
-                await OrderCrewLostNotifier.NotifyAsync(
-                    order,
-                    releasedAssignmentId,
-                    OrderCrewLostNotifier.Dropped,
-                    statusAtLoss,
-                    adminNotifier,
-                    cancellationToken);
-            }
+            await OrderCrewLostNotifier.NotifyAsync(
+                order,
+                releasedAssignmentId,
+                OrderCrewLostNotifier.Dropped,
+                statusAtLoss,
+                adminNotifier,
+                cancellationToken);
 
             return BusinessResult.Success(
                 new Response(order.Id, order.AssignedEmployees.Count));

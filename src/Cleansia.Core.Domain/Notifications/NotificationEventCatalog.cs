@@ -43,11 +43,12 @@ public static class NotificationEventCatalog
     public const string OrderCleanerAssigned = "order.cleaner_assigned";
 
     /// <summary>
-    /// Customer-targeted: nobody is on the order any more, so it went back from Confirmed to New and
-    /// another cleaner is being looked for. Produced by the two release writers, <c>DropOrder</c> and
-    /// <c>RejectEmployee</c>, through one notifier, exactly when the order walks back. Args:
-    /// <c>orderId</c> (deep link) + <c>orderNumber</c> (loc). A drop and a rejection read the same: the
-    /// copy names no cleaner and gives no reason, and it never says a cleaner is on the job.
+    /// Customer-targeted: a cleaner came off the order, so it is short of the cleaners it needs and is
+    /// offered to cleaners again (with nobody left, a Confirmed order also goes back to New). Produced by the
+    /// two release writers, <c>DropOrder</c> and <c>RejectEmployee</c>, through one notifier, after every
+    /// release. Args: <c>orderId</c> (deep link) + <c>orderNumber</c> (loc). A drop and a rejection read the
+    /// same: the copy counts no cleaners, names no cleaner and gives no reason, and it never says a cleaner
+    /// is on the job.
     /// </summary>
     public const string OrderCleanerReleased = "order.cleaner_released";
 
@@ -236,9 +237,10 @@ public static class NotificationEventCatalog
     public const string EmployeeRegistrationRejected = "employee.registration_rejected";
 
     /// <summary>
-    /// Customer-targeted: the booking's time arrived with no cleaner on it, so the platform cancelled
-    /// it, refunded in full and added the apology credit. Args: <c>orderNumber</c> (loc) +
-    /// <c>amount</c> (loc, the credit with its currency's symbol, "250 Kč") + <c>orderId</c> (deep
+    /// Customer-targeted: no cleaner was coming, so the platform cancelled the booking, refunded it in full
+    /// and added the apology credit — through the unfilled sweep at its slot, or an administrator's no-show
+    /// confirmation, which on a booking nobody is on can come before the start. Args: <c>orderNumber</c>
+    /// (loc) + <c>amount</c> (loc, the credit with its currency's symbol, "250 Kč") + <c>orderId</c> (deep
     /// link).
     ///
     /// <para><b>Why not the plain <see cref="OrderCancelled"/>.</b> Owner ruling 2026-09-06: the 250 is

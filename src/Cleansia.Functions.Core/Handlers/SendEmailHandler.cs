@@ -22,8 +22,8 @@ namespace Cleansia.Functions.Core.Handlers;
 /// notices, resolved by <see cref="EmailType"/>), the guest order cancellation, the booking
 /// confirmation, the admin notification, the receivable pay link, the lockout cancellation, the cash a
 /// customer did not pay at the door, the cleaner's copy of a contract for work, Started/Completed updates,
-/// and the notice that a booking's last cleaner left and another is being looked for. Each is sent via the
-/// existing <see cref="IEmailService"/> in the language the producer chose.
+/// and the notice that a cleaner left a booking, which is offered to cleaners again. Each is sent via the
+/// existing <see cref="IEmailService"/>.
 ///
 /// Idempotent via <see cref="IIdempotencyGuard"/> in ACT-THEN-CLAIM mode (at-least-once): non-claiming
 /// check on the deterministic key → send → claim. A FAILED send leaves the key unclaimed so the queue

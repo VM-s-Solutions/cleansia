@@ -49,7 +49,9 @@
       "resend_code": "Znovu odoslať kód",
       "email_sent": "E-mail bol úspešne odoslaný",
       "verify_code": "Overiť kód",
-      "code_cooldown": "Potvrdzovací kód bol odoslaný. Počkajte prosím {{ cooldown }} sekúnd pred vyžiadaním nového kódu."
+      "code_cooldown": "Potvrdzovací kód bol odoslaný. Počkajte prosím {{ cooldown }} sekúnd pred vyžiadaním nového kódu.",
+      "password_lead": "Zvoľte si heslo, ktorým sa budete prihlasovať.",
+      "password_invalid": "Zvoľte si heslo, ktoré spĺňa pravidlá, a zadajte ho dvakrát rovnako."
     },
     "forgot_password": {
       "email": "E-mail",

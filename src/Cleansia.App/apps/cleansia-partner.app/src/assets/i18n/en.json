@@ -49,7 +49,9 @@
       "resend_code": "Resend code",
       "email_sent": "Email sent successfully",
       "verify_code": "Verify code",
-      "code_cooldown": "Confirmation code has been sent. Please wait {{ cooldown }} seconds before requesting a new code."
+      "code_cooldown": "Confirmation code has been sent. Please wait {{ cooldown }} seconds before requesting a new code.",
+      "password_lead": "Choose the password you will sign in with.",
+      "password_invalid": "Choose a password that meets the rules and type it the same way twice."
     },
     "forgot_password": {
       "email": "Email",

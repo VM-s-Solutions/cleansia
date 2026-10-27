@@ -110,6 +110,22 @@ describe('PartnerAuthService command payloads', () => {
       expect(sentBody('confirmUserEmail')['password']).toBe('Heslo2026');
     });
 
+    it('prefers the password typed on the confirm screen over the one held', () => {
+      service.registerEmployee('a@b.cz', 'Heslo2026', 'Jan', 'Novak', true).subscribe();
+
+      service.confirmUserEmail('123456', 'a@b.cz', 'Jine2027').subscribe();
+
+      expect(sentBody('confirmUserEmail')['password']).toBe('Jine2027');
+    });
+
+    it('holds no password for another address', () => {
+      service.registerEmployee('a@b.cz', 'Heslo2026', 'Jan', 'Novak', true).subscribe();
+
+      service.confirmUserEmail('123456', 'other@b.cz').subscribe();
+
+      expect(sentBody('confirmUserEmail')['password']).toBeUndefined();
+    });
+
     it('forgets the password once the address is confirmed', () => {
       service.registerEmployee('a@b.cz', 'Heslo2026', 'Jan', 'Novak', true).subscribe();
       service.confirmUserEmail('123456', 'a@b.cz').subscribe();

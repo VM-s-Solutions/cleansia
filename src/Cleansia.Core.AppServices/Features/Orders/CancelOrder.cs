@@ -7,6 +7,7 @@ using Cleansia.Core.AppServices.Shared.DTOs.Enums;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -100,7 +101,9 @@ public class CancelOrder
         IOrderAccessService orderAccessService,
         IUserSessionProvider userSessionProvider,
         CustomerOrderCancellation cancellation,
-        CleanerNoShowCancellation noShowCancellation
+        CleanerNoShowCancellation noShowCancellation,
+        GuestOrderAccessTokenIssuer accessTokenIssuer,
+        IPendingDispatch pending
     ) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -109,7 +112,7 @@ public class CancelOrder
             // Missing and foreign orders share the handler's refusal and failure-audit path. The apology
             // credit of a booking nobody came to is read off its currency.
             var order = await orderAccessService
-                .OrdersForCaller()
+                .OrdersListedForCaller()
                 .Include(o => o.OrderStatusHistory)
                 .Include(o => o.AssignedEmployees)
                     .ThenInclude(ae => ae.Employee)
@@ -123,7 +126,8 @@ public class CancelOrder
                     BusinessErrorMessage.OrderNotFound));
             }
 
-            if (order.UserId != userId)
+            var listedGuestBooking = orderAccessService.IsListedGuestBooking(order);
+            if (order.UserId != userId && !listedGuestBooking)
             {
                 return BusinessResult.Failure<Response>(new Error(
                     nameof(command.OrderId),
@@ -135,6 +139,16 @@ public class CancelOrder
                 return BusinessResult.Failure<Response>(new Error(
                     nameof(command.OrderId),
                     blockedReason));
+            }
+
+            // A booking made without an account is cancelled on its own guest terms, as its e-mailed link
+            // cancels it, whoever opens it, and before the no-cleaner body, which pays an account.
+            if (listedGuestBooking)
+            {
+                var guestOutcome = await cancellation.ExecuteAsync(order, command.Reason, userId, cancellationToken);
+                await GuestCancellationEmail.EnqueueAsync(order, languageCode: null, guestOutcome.SuccessfulRefundAmount,
+                    accessTokenIssuer, pending, cancellationToken);
+                return BusinessResult.Success(guestOutcome.Response);
             }
 
             var result = cancellation.IsUnfilledAtItsStart(order)

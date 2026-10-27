@@ -271,7 +271,9 @@ public sealed class CancelOrderNoCleanerAtStartTests
             _notifications.Object,
             new GuestOrderAccessTokenIssuer(Mock.Of<IGuestOrderAccessTokenRepository>()),
             new RecordingDispatch(_enqueued),
-            NullLogger<CleanerNoShowCancellation>.Instance));
+            NullLogger<CleanerNoShowCancellation>.Instance),
+        new GuestOrderAccessTokenIssuer(Mock.Of<IGuestOrderAccessTokenRepository>()),
+        new RecordingDispatch(_enqueued));
 
     private Order ArrangeOrder(
         double startedMinutesAgo,

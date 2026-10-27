@@ -119,7 +119,9 @@ public class CancellationAcceptanceSignalTests
                 new AuditContext(),
                 TimeProvider.System,
                 NullLogger<CustomerOrderCancellation>.Instance),
-            NoShowCancellationDoubles.Inert());
+            NoShowCancellationDoubles.Inert(),
+            new GuestOrderAccessTokenIssuer(Mock.Of<IGuestOrderAccessTokenRepository>()),
+            Mock.Of<IPendingDispatch>());
 
     private HandlePaymentNotification.Handler CreateWebhookHandler() =>
         new(

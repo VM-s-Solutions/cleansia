@@ -4,11 +4,13 @@ using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
 using Cleansia.Core.AppServices.Features.Orders.Filters;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
+using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.Infra.Database;
 using Cleansia.TestUtilities;
@@ -16,6 +18,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Moq;
 
 namespace Cleansia.IntegrationTests.Features.Orders;
 
@@ -46,10 +49,19 @@ public class GuestBookingsInMyOrdersTests(PostgresContainerFixture fixture) : Ba
     private const string AccessInstructions = "Code 1234 at the gate.";
 
     private IUserSessionProvider _session = Customer();
+    private readonly Mock<IStripeClient> _stripe = new();
+
+    private string _emailedLink = string.Empty;
 
     private Task Setup(IServiceCollection services)
     {
         services.Replace(ServiceDescriptor.Scoped<IUserSessionProvider>(_ => _session));
+        var factory = new Mock<IStripeClientFactory>();
+        factory.Setup(f => f.CreateClient()).Returns(_stripe.Object);
+        services.Replace(ServiceDescriptor.Singleton(factory.Object));
+        _stripe.Setup(s => s.RefundPaymentIntentAsync(
+                It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
         return Task.CompletedTask;
     }
 
@@ -216,6 +228,65 @@ public class GuestBookingsInMyOrdersTests(PostgresContainerFixture fixture) : Ba
             transactional: false);
     }
 
+    /// <summary>
+    /// The account prices and cancels the booking it lists on that booking's own guest terms, the e-mailed link
+    /// stops working and the cancellation e-mail carries the one that does, and the booking stays a guest booking:
+    /// no account is written to it, and no credit, loyalty or receivable row comes of it.
+    /// </summary>
+    [Fact]
+    public async Task A_Listed_Guest_Booking_Is_Priced_And_Cancelled_From_The_Account_On_Its_Own_Terms_And_Stays_A_Guest_Booking()
+    {
+        await TestMethod(
+            setup: Setup,
+            arrange: SeedAsync,
+            act: async provider =>
+            {
+                var preview = await SendAsync(provider, new GetCancellationFeePreview.Query(GuestTypedInCapitalsId));
+                var cancel = await SendAsync(provider, new CancelOrder.Command(GuestTypedInCapitalsId, "Booked it twice."));
+                var oldLink = await SendAsync(provider, new LookupOrder.Query(_emailedLink));
+                return (preview, cancel, oldLink);
+            },
+            assert: async (CleansiaDbContext context, (BusinessResult<GetCancellationFeePreview.Response> Preview, BusinessResult<CancelOrder.Response> Cancel, BusinessResult<LookupOrder.Response> OldLink) walk) =>
+            {
+                Assert.True(walk.Preview.IsSuccess, walk.Preview.Error?.Message);
+                Assert.True(walk.Cancel.IsSuccess, walk.Cancel.Error?.Message);
+                Assert.Equal(walk.Preview.Value!.FeeRate, walk.Cancel.Value!.FeeRate);
+                Assert.Equal(walk.Preview.Value.RefundAmount, walk.Cancel.Value.RefundAmount);
+                Assert.True(walk.OldLink.IsFailure);
+
+                var order = await context.Orders.IgnoreQueryFilters().AsNoTracking()
+                    .SingleAsync(o => o.Id == GuestTypedInCapitalsId);
+                Assert.Equal(OrderStatus.Cancelled, order.CurrentStatus);
+                Assert.Equal(CancelledBy.Customer, order.CancelledBy);
+                Assert.Equal("Booked it twice.", order.CancellationReason);
+                Assert.Null(order.UserId);
+                Assert.Equal(TestTenants.Second, order.TenantId);
+
+                var refund = Assert.Single(await context.Refunds.IgnoreQueryFilters().AsNoTracking()
+                    .Where(r => r.OrderId == GuestTypedInCapitalsId).ToListAsync());
+                Assert.Equal($"refund:{GuestTypedInCapitalsId}:cancel", refund.RefundKey);
+                Assert.All(await context.GuestOrderAccessTokens.IgnoreQueryFilters().AsNoTracking()
+                        .Where(t => t.OrderId == GuestTypedInCapitalsId).ToListAsync(),
+                    token => Assert.NotNull(token.RevokedOn));
+                Assert.Single(await context.OutboxMessages.IgnoreQueryFilters().AsNoTracking()
+                    .Where(m => m.MessageKey == MessageKeys.GuestOrderCancelledEmail(GuestTypedInCapitalsId))
+                    .ToListAsync());
+
+                var audit = Assert.Single(await context.CustomerActionAudits.IgnoreQueryFilters().AsNoTracking()
+                    .Where(a => a.Action == "customer.order.cancel").ToListAsync());
+                Assert.True(audit.Success);
+                Assert.Equal(JanaId, audit.UserId);
+                Assert.Equal(GuestTypedInCapitalsId, audit.ResourceId);
+                Assert.Equal(TestTenants.Second, audit.TenantId);
+
+                Assert.Empty(await context.CreditTransactions.IgnoreQueryFilters().AsNoTracking()
+                    .Where(t => t.OrderId == GuestTypedInCapitalsId).ToListAsync());
+                Assert.Empty(await context.LoyaltyTransactions.IgnoreQueryFilters().AsNoTracking().ToListAsync());
+                Assert.Empty(await context.Receivables.IgnoreQueryFilters().AsNoTracking().ToListAsync());
+            },
+            transactional: false);
+    }
+
     private static IUserSessionProvider Customer() =>
         new TestUserSessionProvider(JanaId, JanaEmail, [new Claim(ClaimTypes.Role, UserProfile.Customer.ToString())]);
 
@@ -226,11 +297,12 @@ public class GuestBookingsInMyOrdersTests(PostgresContainerFixture fixture) : Ba
     }
 
     /// <summary>
-    /// Jana's account and her own booking; two bookings made without an account under her address, one typed in
-    /// capitals a month before the account existed and one in the second operator's market; and three that are
-    /// not hers to list: one under another address, another account's booking carrying hers, and an erased one.
+    /// Jana's account and her own booking; two bookings made without an account under her address in the second
+    /// operator's market, one typed in capitals a month before the account existed and holding a live e-mailed
+    /// link, one completed; and three that are not hers to list: one under another address, another account's
+    /// booking carrying hers, and an erased one.
     /// </summary>
-    private static async Task SeedAsync(CleansiaDbContext context)
+    private async Task SeedAsync(CleansiaDbContext context)
     {
         context.Languages.Add(Language.Create("en", "English"));
         var country = Country.Create("Czechia", "CZE", "CZ", isServiced: true);
@@ -251,15 +323,18 @@ public class GuestBookingsInMyOrdersTests(PostgresContainerFixture fixture) : Ba
         context.Users.AddRange(jana, other);
         StampUnstampedAdded(context, TestTenants.Default);
 
-        context.Orders.Add(NewOrder(GuestInSecondMarketId, userId: null, JanaEmail, OrderStatus.Completed));
+        var typedInCapitals = NewOrder(GuestTypedInCapitalsId, userId: null, JanaEmail.ToUpperInvariant(), OrderStatus.New,
+            bookedOn: DateTimeOffset.UtcNow.AddDays(-30));
+        context.Orders.AddRange(typedInCapitals, NewOrder(GuestInSecondMarketId, userId: null, JanaEmail, OrderStatus.Completed));
+        var emailedLink = GuestOrderAccessToken.Issue(GuestTypedInCapitalsId, GuestOrderAccessToken.ExpiryFor(typedInCapitals.CleaningDateTime));
+        _emailedLink = emailedLink.RawToken!;
+        context.GuestOrderAccessTokens.Add(emailedLink);
         StampUnstampedAdded(context, TestTenants.Second);
 
         var erased = NewOrder(ErasedGuestOrderId, userId: null, JanaEmail, OrderStatus.Completed);
         erased.AnonymizeCustomerData();
         context.Orders.AddRange(
             NewOrder(OwnOrderId, JanaId, JanaEmail, OrderStatus.New),
-            NewOrder(GuestTypedInCapitalsId, userId: null, JanaEmail.ToUpperInvariant(), OrderStatus.New,
-                bookedOn: DateTimeOffset.UtcNow.AddDays(-30)),
             NewOrder(GuestUnderAnotherEmailId, userId: null, "someone.else@cleansia.test", OrderStatus.New),
             NewOrder(OtherAccountsOrderId, OtherCustomerId, JanaEmail, OrderStatus.New),
             erased);

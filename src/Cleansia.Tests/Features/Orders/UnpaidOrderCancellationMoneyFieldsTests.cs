@@ -159,7 +159,9 @@ public class UnpaidOrderCancellationMoneyFieldsTests
                 new AuditContext(),
                 TimeProvider.System,
                 NullLogger<CustomerOrderCancellation>.Instance),
-            NoShowCancellationDoubles.Inert());
+            NoShowCancellationDoubles.Inert(),
+            new GuestOrderAccessTokenIssuer(Mock.Of<IGuestOrderAccessTokenRepository>()),
+            Mock.Of<IPendingDispatch>());
 
         return handler.Handle(new CancelOrder.Command(OrderId, null), CancellationToken.None);
     }

@@ -67,7 +67,7 @@ public sealed class GetOrderDetailsWorkContractTests
         var seat = OrderEmployee.Create(order, employee);
         order.AddAssignedEmployee(seat);
 
-        _orderAccessService.Setup(a => a.LoadOrderForCallerAsync(OrderId, It.IsAny<CancellationToken>())).ReturnsAsync(order);
+        _orderAccessService.Setup(a => a.LoadListedOrderForCallerAsync(OrderId, It.IsAny<CancellationToken>())).ReturnsAsync(order);
         _orderAccessService.Setup(a => a.CanBrowseOrderAsync(order, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         _orderAccessService.Setup(a => a.CanAccessOrderAsync(order, It.IsAny<CancellationToken>())).ReturnsAsync(entitled);
         _orderAccessService.Setup(a => a.GetCallerEmployeeIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(caller);

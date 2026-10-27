@@ -205,7 +205,8 @@ public sealed class OrderListProjectionEquivalenceTests : IAsyncLifetime, IDispo
         var handler = (IRequestHandler<GetCustomerOrders.Request, PagedData<OrderListItem>>)Activator.CreateInstance(
             handlerType,
             new OrderRepository(ctx),
-            new TestUserSessionProvider(CustomerUserId, "customer-proj@cleansia.test"))!;
+            new TestUserSessionProvider(CustomerUserId, "customer-proj@cleansia.test"),
+            Mock.Of<IOrderAccessService>())!;
 
         var page = await handler.Handle(new GetCustomerOrders.Request(), CancellationToken.None);
 
@@ -437,7 +438,8 @@ public sealed class OrderListProjectionEquivalenceTests : IAsyncLifetime, IDispo
             var handlerType = typeof(GetCustomerOrders).GetNestedType("Handler", BindingFlags.NonPublic)!;
             var handler = (IRequestHandler<GetCustomerOrders.Request, PagedData<OrderListItem>>)Activator.CreateInstance(
                 handlerType, new OrderRepository(ctx),
-                new TestUserSessionProvider(CustomerUserId, "customer-proj@cleansia.test"))!;
+                new TestUserSessionProvider(CustomerUserId, "customer-proj@cleansia.test"),
+                Mock.Of<IOrderAccessService>())!;
             return await handler.Handle(new GetCustomerOrders.Request { Offset = offset, Limit = 2, Sort = sort }, CancellationToken.None);
         }
 

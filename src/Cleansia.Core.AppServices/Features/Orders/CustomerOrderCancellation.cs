@@ -36,6 +36,50 @@ public sealed class CustomerOrderCancellation(
     public string? BlockedReason(Order order) =>
         CancellationAssessor.BlockedReason(order, timeProvider.GetUtcNow().UtcDateTime);
 
+    /// <summary>
+    /// A booking the unfilled sweep would cancel, from its booked start on: its customer's own cancel of it
+    /// is paid as the sweep pays (<see cref="ExecuteAsNoCleanerAsync"/>), apology credit included, not as a
+    /// plain free cancel. → /product/business-rules#when-the-cleaner-cancels-or-no-shows
+    /// </summary>
+    public bool IsUnfilledAtItsStart(Order order) =>
+        CancelUnfilledOrders.IsUnfilled(order)
+        && timeProvider.GetUtcNow().UtcDateTime >= order.CleaningDateTime;
+
+    /// <summary>
+    /// A signed-in customer's own cancel of a booking <see cref="IsUnfilledAtItsStart"/>: the sweep's body
+    /// cancels it, so the refund, the apology credit, the push and the e-mail are the sweep's, and the
+    /// cancellation keeps the no-cleaner reason key; the reason the customer typed is kept beside it.
+    /// </summary>
+    public async Task<Result> ExecuteAsNoCleanerAsync(
+        Order order,
+        string? reason,
+        string actorId,
+        CleanerNoShowCancellation noShowCancellation,
+        CancellationToken cancellationToken)
+    {
+        var now = timeProvider.GetUtcNow().UtcDateTime;
+        var policy = await cancellationPolicyResolver.ResolveForOrderAsync(order, cancellationToken);
+        var assessment = CancellationAssessor.Assess(order, policy, now);
+        var paymentStatusAtCancel = order.PaymentStatus;
+        if (!string.IsNullOrEmpty(order.TenantId))
+        {
+            tenantProvider.SetTenantOverride(order.TenantId);
+        }
+
+        var outcome = await noShowCancellation.ExecuteAsync(
+            order, CancelledBy.Customer, actorId, now, cancellationToken);
+        order.RecordCustomerCancellationReason(reason);
+        await liveActivityProducer.NotifyOrderTransitionAsync(
+            order, LiveActivityEventKeys.End, outcome.Transition, cancellationToken);
+
+        return await FinishAsync(
+            order, reason, now, policy, assessment, paymentStatusAtCancel,
+            refundInitiated: outcome.RefundedAmount is not null,
+            successfulRefundAmount: outcome.RefundedAmount,
+            refundPending: outcome.RefundPending,
+            cancellationToken);
+    }
+
     public async Task<Result> ExecuteAsync(
         Order order, string? reason, string actorId, CancellationToken cancellationToken)
     {
@@ -125,36 +169,9 @@ public sealed class CustomerOrderCancellation(
             CalculateOrderPay.EnqueueForCrew(order, pending);
         }
 
-        var waiverReleased = !assessment.HasBeenAccepted
-            && await expressWaiverConsumer.ReleaseForOrderAsync(order.Id, cancellationToken);
-        await OrderAssignmentCancellationNotifier.NotifyAssignedEmployeesOfCancellationAsync(
-            order, notificationProducer, cancellationToken);
-        await loyaltyService.RevokeForCancelledOrderAsync(order.Id, cancellationToken);
-
-        var refundAmount = order.CancellationRefundAmount ?? 0m;
-        auditContext.RecordEvidence("Order", order.Id, new OrderCancellationEvidence(
-            Tier: assessment.Tier,
-            FeeRate: assessment.FeeRate,
-            FeeAmount: assessment.FeeAmount,
-            RefundAmount: refundAmount,
-            TotalPrice: order.TotalPrice,
-            CurrencyId: order.CurrencyId,
-            HasBeenAccepted: assessment.HasBeenAccepted,
-            HoursBeforeCleaning: Math.Round((decimal)(order.CleaningDateTime - now).TotalHours, 2),
-            MinutesSinceBooking: Math.Round((decimal)(now - order.CreatedOn.UtcDateTime).TotalMinutes, 2),
-            FreeCancellationHoursApplied: policy.FreeCancellationHours,
-            OopsMinutesApplied: policy.OopsWindowMinutes,
-            OopsRuleApplied: policy.OopsWindowRule,
-            PolicyFigures: CancellationPolicyFigures.Of(order),
-            ExpressWaiverReleased: waiverReleased,
-            RefundInitiated: refundInitiated,
-            PaymentType: order.PaymentType,
-            PaymentStatus: paymentStatusAtCancel,
-            ReasonProvided: !string.IsNullOrWhiteSpace(reason),
-            ActualRefundAmount: successfulRefundAmount));
-
-        return new Result(new Response(order.Id, assessment.FeeRate, refundAmount,
-            order.TotalPrice, refundInitiated, successfulRefundAmount, refundPending), successfulRefundAmount);
+        return await FinishAsync(
+            order, reason, now, policy, assessment, paymentStatusAtCancel,
+            refundInitiated, successfulRefundAmount, refundPending, cancellationToken);
 
         async Task RefundAsync(bool recoverGuestAttempt)
         {
@@ -205,5 +222,49 @@ public sealed class CustomerOrderCancellation(
                     }, order.TenantId, order.Id, cancellationToken);
             }
         }
+    }
+
+    private async Task<Result> FinishAsync(
+        Order order,
+        string? reason,
+        DateTime now,
+        CancellationPolicy policy,
+        CancellationAssessment assessment,
+        PaymentStatus paymentStatusAtCancel,
+        bool refundInitiated,
+        decimal? successfulRefundAmount,
+        bool refundPending,
+        CancellationToken cancellationToken)
+    {
+        var waiverReleased = !assessment.HasBeenAccepted
+            && await expressWaiverConsumer.ReleaseForOrderAsync(order.Id, cancellationToken);
+        await OrderAssignmentCancellationNotifier.NotifyAssignedEmployeesOfCancellationAsync(
+            order, notificationProducer, cancellationToken);
+        await loyaltyService.RevokeForCancelledOrderAsync(order.Id, cancellationToken);
+
+        var refundAmount = order.CancellationRefundAmount ?? 0m;
+        auditContext.RecordEvidence("Order", order.Id, new OrderCancellationEvidence(
+            Tier: assessment.Tier,
+            FeeRate: assessment.FeeRate,
+            FeeAmount: assessment.FeeAmount,
+            RefundAmount: refundAmount,
+            TotalPrice: order.TotalPrice,
+            CurrencyId: order.CurrencyId,
+            HasBeenAccepted: assessment.HasBeenAccepted,
+            HoursBeforeCleaning: Math.Round((decimal)(order.CleaningDateTime - now).TotalHours, 2),
+            MinutesSinceBooking: Math.Round((decimal)(now - order.CreatedOn.UtcDateTime).TotalMinutes, 2),
+            FreeCancellationHoursApplied: policy.FreeCancellationHours,
+            OopsMinutesApplied: policy.OopsWindowMinutes,
+            OopsRuleApplied: policy.OopsWindowRule,
+            PolicyFigures: CancellationPolicyFigures.Of(order),
+            ExpressWaiverReleased: waiverReleased,
+            RefundInitiated: refundInitiated,
+            PaymentType: order.PaymentType,
+            PaymentStatus: paymentStatusAtCancel,
+            ReasonProvided: !string.IsNullOrWhiteSpace(reason),
+            ActualRefundAmount: successfulRefundAmount));
+
+        return new Result(new Response(order.Id, assessment.FeeRate, refundAmount,
+            order.TotalPrice, refundInitiated, successfulRefundAmount, refundPending), successfulRefundAmount);
     }
 }

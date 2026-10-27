@@ -3672,6 +3672,11 @@ export interface IOrderClient {
      * @param body (optional) 
      * @return OK
      */
+    markMyPartDone(body?: MarkMyPartDoneCommand | undefined): Observable<MarkMyPartDoneResponse>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
     markCashCollected(body?: MarkCashCollectedCommand | undefined): Observable<MarkCashCollectedResponse>;
     /**
      * @param body (optional) 
@@ -4315,6 +4320,83 @@ export class OrderClient implements IOrderClient {
             let result200: any = null;
             let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = CompleteOrderResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    markMyPartDone(body?: MarkMyPartDoneCommand | undefined): Observable<MarkMyPartDoneResponse> {
+        let url = this.baseUrl + "/api/Order/MarkMyPartDone";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processMarkMyPartDone(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processMarkMyPartDone(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<MarkMyPartDoneResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<MarkMyPartDoneResponse>;
+        }));
+    }
+
+    protected processMarkMyPartDone(response: HttpResponseBase): Observable<MarkMyPartDoneResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = MarkMyPartDoneResponse.fromJS(resultData200);
             return ObservableOf(result200);
             }));
         } else if (status === 400) {
@@ -6726,6 +6808,7 @@ export class AssignedEmployeeDto implements IAssignedEmployeeDto {
     employeeId!: string | undefined;
     fullName!: string | undefined;
     phoneNumber!: string | undefined;
+    completionConfirmedAt!: Date | undefined;
 
     constructor(data?: IAssignedEmployeeDto) {
         if (data) {
@@ -6742,6 +6825,7 @@ export class AssignedEmployeeDto implements IAssignedEmployeeDto {
             this.employeeId = Data["employeeId"];
             this.fullName = Data["fullName"];
             this.phoneNumber = Data["phoneNumber"];
+            this.completionConfirmedAt = Data["completionConfirmedAt"] ? new Date(Data["completionConfirmedAt"].toString()) : undefined as any;
         }
     }
 
@@ -6758,6 +6842,7 @@ export class AssignedEmployeeDto implements IAssignedEmployeeDto {
         data["employeeId"] = this.employeeId;
         data["fullName"] = this.fullName;
         data["phoneNumber"] = this.phoneNumber;
+        data["completionConfirmedAt"] = this.completionConfirmedAt ? this.completionConfirmedAt.toISOString() : undefined as any;
         return data;
     }
 }
@@ -6767,6 +6852,7 @@ export interface IAssignedEmployeeDto {
     employeeId: string | undefined;
     fullName: string | undefined;
     phoneNumber: string | undefined;
+    completionConfirmedAt: Date | undefined;
 }
 
 export class BlobFileDto implements IBlobFileDto {
@@ -7262,6 +7348,7 @@ export interface ICompleteOrderResponse {
 export class ConfirmUserEmailCommand implements IConfirmUserEmailCommand {
     code!: string | undefined;
     email!: string | undefined;
+    password!: string | undefined;
 
     constructor(data?: IConfirmUserEmailCommand) {
         if (data) {
@@ -7276,6 +7363,7 @@ export class ConfirmUserEmailCommand implements IConfirmUserEmailCommand {
         if (Data) {
             this.code = Data["code"];
             this.email = Data["email"];
+            this.password = Data["password"];
         }
     }
 
@@ -7290,6 +7378,7 @@ export class ConfirmUserEmailCommand implements IConfirmUserEmailCommand {
         data = typeof data === 'object' ? data : {};
         data["code"] = this.code;
         data["email"] = this.email;
+        data["password"] = this.password;
         return data;
     }
 }
@@ -7297,6 +7386,7 @@ export class ConfirmUserEmailCommand implements IConfirmUserEmailCommand {
 export interface IConfirmUserEmailCommand {
     code: string | undefined;
     email: string | undefined;
+    password: string | undefined;
 }
 
 export enum ConsentType {
@@ -10482,6 +10572,86 @@ export interface IMarkCashCollectedResponse {
     paymentStatus: PaymentStatus;
 }
 
+export class MarkMyPartDoneCommand implements IMarkMyPartDoneCommand {
+    orderId!: string | undefined;
+
+    constructor(data?: IMarkMyPartDoneCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.orderId = Data["orderId"];
+        }
+    }
+
+    static fromJS(data: any): MarkMyPartDoneCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new MarkMyPartDoneCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["orderId"] = this.orderId;
+        return data;
+    }
+}
+
+export interface IMarkMyPartDoneCommand {
+    orderId: string | undefined;
+}
+
+export class MarkMyPartDoneResponse implements IMarkMyPartDoneResponse {
+    orderId!: string | undefined;
+    completionConfirmedAt!: Date;
+    crewDone!: boolean;
+
+    constructor(data?: IMarkMyPartDoneResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.orderId = Data["orderId"];
+            this.completionConfirmedAt = Data["completionConfirmedAt"] ? new Date(Data["completionConfirmedAt"].toString()) : undefined as any;
+            this.crewDone = Data["crewDone"];
+        }
+    }
+
+    static fromJS(data: any): MarkMyPartDoneResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new MarkMyPartDoneResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["orderId"] = this.orderId;
+        data["completionConfirmedAt"] = this.completionConfirmedAt ? this.completionConfirmedAt.toISOString() : undefined as any;
+        data["crewDone"] = this.crewDone;
+        return data;
+    }
+}
+
+export interface IMarkMyPartDoneResponse {
+    orderId: string | undefined;
+    completionConfirmedAt: Date;
+    crewDone: boolean;
+}
+
 export class MarketListItem implements IMarketListItem {
     countryId!: string | undefined;
     isoCode!: string | undefined;
@@ -11301,6 +11471,7 @@ export class OrderItem implements IOrderItem {
     lockoutReportedAt!: Date | undefined;
     lockoutCallAttempts!: string | undefined;
     freeCancellationHours!: number | undefined;
+    isGuestBooking!: boolean | undefined;
 
     constructor(data?: IOrderItem) {
         if (data) {
@@ -11417,6 +11588,7 @@ export class OrderItem implements IOrderItem {
             this.lockoutReportedAt = Data["lockoutReportedAt"] ? new Date(Data["lockoutReportedAt"].toString()) : undefined as any;
             this.lockoutCallAttempts = Data["lockoutCallAttempts"];
             this.freeCancellationHours = Data["freeCancellationHours"];
+            this.isGuestBooking = Data["isGuestBooking"];
         }
     }
 
@@ -11533,6 +11705,7 @@ export class OrderItem implements IOrderItem {
         data["lockoutReportedAt"] = this.lockoutReportedAt ? this.lockoutReportedAt.toISOString() : undefined as any;
         data["lockoutCallAttempts"] = this.lockoutCallAttempts;
         data["freeCancellationHours"] = this.freeCancellationHours;
+        data["isGuestBooking"] = this.isGuestBooking;
         return data;
     }
 }
@@ -11608,6 +11781,7 @@ export interface IOrderItem {
     lockoutReportedAt: Date | undefined;
     lockoutCallAttempts: string | undefined;
     freeCancellationHours: number | undefined;
+    isGuestBooking: boolean | undefined;
 }
 
 export class OrderListItem implements IOrderListItem {
@@ -11651,6 +11825,7 @@ export class OrderListItem implements IOrderListItem {
     countryId!: string | undefined;
     dirtinessLevel!: DirtinessLevel;
     dirtinessSurchargeAmount!: number;
+    isGuestBooking!: boolean | undefined;
 
     constructor(data?: IOrderListItem) {
         if (data) {
@@ -11721,6 +11896,7 @@ export class OrderListItem implements IOrderListItem {
             this.countryId = Data["countryId"];
             this.dirtinessLevel = Data["dirtinessLevel"];
             this.dirtinessSurchargeAmount = Data["dirtinessSurchargeAmount"];
+            this.isGuestBooking = Data["isGuestBooking"];
         }
     }
 
@@ -11791,6 +11967,7 @@ export class OrderListItem implements IOrderListItem {
         data["countryId"] = this.countryId;
         data["dirtinessLevel"] = this.dirtinessLevel;
         data["dirtinessSurchargeAmount"] = this.dirtinessSurchargeAmount;
+        data["isGuestBooking"] = this.isGuestBooking;
         return data;
     }
 }
@@ -11836,6 +12013,7 @@ export interface IOrderListItem {
     countryId: string | undefined;
     dirtinessLevel: DirtinessLevel;
     dirtinessSurchargeAmount: number;
+    isGuestBooking: boolean | undefined;
 }
 
 export class OrderNoteDto implements IOrderNoteDto {

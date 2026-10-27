@@ -28,7 +28,8 @@ public class GetOrderDetails
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
-                .MustAsync(orderAccessService.OrderExistsForCallerAsync)
+                .MustAsync((orderId, cancellationToken) => orderAccessService.OrdersListedForCaller()
+                    .AnyAsync(o => o.Id == orderId, cancellationToken))
                 .WithMessage(BusinessErrorMessage.OrderNotFound);
         }
     }
@@ -53,8 +54,10 @@ public class GetOrderDetails
     {
         public async Task<BusinessResult<OrderItem>> Handle(Query query, CancellationToken cancellationToken)
         {
-            var order = await orderAccessService.LoadOrderForCallerAsync(query.OrderId, cancellationToken);
-            if (order == null || !await orderAccessService.CanBrowseOrderAsync(order, cancellationToken))
+            var order = await orderAccessService.LoadListedOrderForCallerAsync(query.OrderId, cancellationToken);
+            var listedGuestBooking = order is not null && orderAccessService.IsListedGuestBooking(order);
+            if (order == null
+                || (!listedGuestBooking && !await orderAccessService.CanBrowseOrderAsync(order, cancellationToken)))
             {
                 return BusinessResult.Failure<OrderItem>(new Error(
                     nameof(query.OrderId), BusinessErrorMessage.OrderNotFound));
@@ -68,9 +71,10 @@ public class GetOrderDetails
             // Photos count is cheap to look up and lets the partner
             // mobile gate the Complete slide client-side. Same query
             // CompleteOrder.Validator uses, so the two stay in sync.
-            var afterPhotoCount = orderAccessService.IsCustomerCaller()
-                ? await orderPhotoRepository.GetPhotoCountForOwnerAsync(order.Id, order.UserId!, PhotoType.After, cancellationToken)
-                : await orderPhotoRepository.GetPhotoCountByOrderIdAndTypeAsync(order.Id, PhotoType.After, cancellationToken);
+            var afterPhotoCount = listedGuestBooking ? 0
+                : orderAccessService.IsCustomerCaller()
+                    ? await orderPhotoRepository.GetPhotoCountForOwnerAsync(order.Id, order.UserId!, PhotoType.After, cancellationToken)
+                    : await orderPhotoRepository.GetPhotoCountByOrderIdAndTypeAsync(order.Id, PhotoType.After, cancellationToken);
             var hasAfterPhotos = afterPhotoCount > 0;
 
             // Resolve caller-context fields: only employee callers get a
@@ -168,6 +172,11 @@ public class GetOrderDetails
                     : null,
                 acceptances.Select(a => a.MapToDto()).ToList(),
                 freeCancellationHours);
+
+            if (listedGuestBooking)
+            {
+                return BusinessResult.Success(detail.RedactForListedGuestBooking());
+            }
 
             if (!isEntitledToCustomerData)
             {

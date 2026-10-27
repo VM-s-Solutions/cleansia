@@ -51,9 +51,9 @@ public class GuestPlatformCancellationEmailTests(PostgresContainerFixture fixtur
             services.Replace(ServiceDescriptor.Singleton(factory.Object));
             EmailService.Setup(x => x.SendOrderStatusUpdateEmailAsync(It.IsAny<string>(), It.IsAny<Order>(),
                     "Cancelled", It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<decimal?>(), It.IsAny<string?>(),
-                    It.IsAny<decimal?>()))
+                    It.IsAny<decimal?>(), It.IsAny<bool>()))
                 .Returns((string to, Order _, string _, string _, CancellationToken _, decimal? amount, string? token,
-                    decimal? apology) =>
+                    decimal? apology, bool _) =>
                 {
                     DeliveredTo = to;
                     DeliveredAmount = amount;

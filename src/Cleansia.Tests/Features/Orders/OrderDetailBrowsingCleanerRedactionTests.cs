@@ -506,7 +506,7 @@ public class OrderDetailBrowsingCleanerRedactionTests
             .Setup(r => r.GetByIdAsync(OrderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(order);
         _orderAccessService
-            .Setup(a => a.LoadOrderForCallerAsync(OrderId, It.IsAny<CancellationToken>()))
+            .Setup(a => a.LoadListedOrderForCallerAsync(OrderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(order);
         _orderPhotoRepository
             .Setup(r => r.GetPhotoCountByOrderIdAndTypeAsync(OrderId, PhotoType.After, It.IsAny<CancellationToken>()))

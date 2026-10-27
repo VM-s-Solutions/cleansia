@@ -21,11 +21,12 @@ namespace Cleansia.IntegrationTests.Features.Auth;
 
 /// <summary>
 /// Account pre-hijacking, walked end to end on Postgres, one DI scope per request as in production. Someone
-/// registers an address that is not theirs and keeps the password; the owner registers it later with their
-/// own and confirms it from their mailbox. Registering again used to keep the first registrant's password,
-/// so that stranger signed in to the owner's account from then on. Now no password chosen by anybody else
-/// works once the owner confirms, the only session is the one the confirmation opened (an unconfirmed
-/// account is never given one), and the owner sets a password of their own through the reset.
+/// registers an address that is not theirs and keeps the password; the owner confirms it from their mailbox,
+/// whether or not they registered it themselves. Registering again used to keep the first registrant's
+/// password, and confirming a single registration still kept it, so that stranger signed in to the owner's
+/// account from then on. Now the confirmation leaves the password its confirmer chose and no other, the only
+/// session is the one the confirmation opened (an unconfirmed account is never given one), and a confirmation
+/// that brings no password leaves none, which the owner then sets through the reset.
 /// </summary>
 [Collection("PostgresCollection")]
 public class AccountPreHijackingTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
@@ -84,7 +85,7 @@ public class AccountPreHijackingTests(PostgresContainerFixture fixture) : BaseIn
     }
 
     [Fact]
-    public async Task A_Customer_Who_Registers_Twice_With_The_Same_Password_Signs_In_With_It()
+    public async Task A_Customer_Who_Registers_Twice_With_The_Same_Password_And_Confirms_With_It_Signs_In_With_It()
     {
         await TestMethod(
             arrange: SeedLanguageAsync,
@@ -92,13 +93,96 @@ public class AccountPreHijackingTests(PostgresContainerFixture fixture) : BaseIn
             {
                 await SendAsync(provider, Customer(OwnersPassword));
                 await SendAsync(provider, Customer(OwnersPassword));
-                await SendAsync(provider, new ConfirmUserEmail.Command(await LiveCodeAsync(provider, EmailType.ConfirmationEmail), Email));
+                await SendAsync(provider, new ConfirmUserEmail.Command(await LiveCodeAsync(provider, EmailType.ConfirmationEmail), Email, OwnersPassword));
                 return await SendAsync(provider, new Login.Command(Email, OwnersPassword, true));
             },
             assert: (CleansiaDbContext _, BusinessResult<JwtTokenResponse> signIn) =>
             {
                 Assert.True(signIn.IsSuccess);
                 Assert.NotEmpty(signIn.Value!.Token);
+                return Task.CompletedTask;
+            },
+            transactional: false);
+    }
+
+    [Fact]
+    public async Task A_Customer_Who_Confirms_A_Strangers_Only_Registration_Signs_In_With_The_Password_They_Chose_And_The_Stranger_Does_Not()
+    {
+        await TestMethod(
+            arrange: SeedLanguageAsync,
+            act: async provider =>
+            {
+                await SendAsync(provider, Customer(StrangersPassword));
+                var ownerConfirms = await SendAsync(provider, new ConfirmUserEmail.Command(await LiveCodeAsync(provider, EmailType.ConfirmationEmail), Email, OwnersPassword));
+                var strangerSignsIn = await SendAsync(provider, new Login.Command(Email, StrangersPassword, true));
+                var ownerSignsIn = await SendAsync(provider, new Login.Command(Email, OwnersPassword, true));
+                return (ownerConfirms, strangerSignsIn, ownerSignsIn, await SessionsAsync(provider));
+            },
+            assert: (CleansiaDbContext _, (BusinessResult<JwtTokenResponse> OwnerConfirms, BusinessResult<JwtTokenResponse> StrangerSignsIn, BusinessResult<JwtTokenResponse> OwnerSignsIn, int Sessions) walk) =>
+            {
+                Assert.True(walk.OwnerConfirms.IsSuccess);
+                Assert.NotEmpty(walk.OwnerConfirms.Value!.Token);
+                AssertRefusedAsAWrongPassword(walk.StrangerSignsIn);
+                Assert.True(walk.OwnerSignsIn.IsSuccess);
+                Assert.NotEmpty(walk.OwnerSignsIn.Value!.Token);
+                Assert.Equal(2, walk.Sessions);
+                return Task.CompletedTask;
+            },
+            transactional: false);
+    }
+
+    [Fact]
+    public async Task A_Confirmation_That_Brings_No_Password_Leaves_The_Strangers_Only_Registration_With_None_Working()
+    {
+        await TestMethod(
+            arrange: SeedLanguageAsync,
+            act: async provider =>
+            {
+                await SendAsync(provider, Customer(StrangersPassword));
+                var ownerConfirms = await SendAsync(provider, new ConfirmUserEmail.Command(await LiveCodeAsync(provider, EmailType.ConfirmationEmail), Email));
+                var strangerSignsIn = await SendAsync(provider, new Login.Command(Email, StrangersPassword, true));
+                await SendAsync(provider, new RequestPasswordChange.Command(Email));
+                var ownerResets = await SendAsync(provider, new ChangePassword.Command(Email, OwnersNewPassword, await LiveCodeAsync(provider, EmailType.ResetPassword)));
+                var ownerSignsInAfterReset = await SendAsync(provider, new Login.Command(Email, OwnersNewPassword, true));
+                return (ownerConfirms, strangerSignsIn, ownerResets, ownerSignsInAfterReset);
+            },
+            assert: (CleansiaDbContext _, (BusinessResult<JwtTokenResponse> OwnerConfirms, BusinessResult<JwtTokenResponse> StrangerSignsIn, BusinessResult<ChangePassword.Response> OwnerResets, BusinessResult<JwtTokenResponse> OwnerSignsInAfterReset) walk) =>
+            {
+                Assert.True(walk.OwnerConfirms.IsSuccess);
+                Assert.NotEmpty(walk.OwnerConfirms.Value!.Token);
+                AssertRefusedAsAWrongPassword(walk.StrangerSignsIn);
+                Assert.True(walk.OwnerResets.IsSuccess);
+                Assert.True(walk.OwnerSignsInAfterReset.IsSuccess);
+                return Task.CompletedTask;
+            },
+            transactional: false);
+    }
+
+    [Fact]
+    public async Task A_Cleaner_Who_Confirms_A_Strangers_Only_Registration_Signs_In_With_The_Password_They_Chose_And_The_Stranger_Does_Not()
+    {
+        await TestMethod(
+            setup: services =>
+            {
+                services.AddSingleton<IHostAudienceProvider>(new HostAudienceProvider(JwtAudiences.Partner));
+                return Task.CompletedTask;
+            },
+            arrange: SeedLanguageAsync,
+            act: async provider =>
+            {
+                await SendAsync(provider, Cleaner(StrangersPassword));
+                var ownerConfirms = await SendAsync(provider, new ConfirmUserEmail.Command(await LiveCodeAsync(provider, EmailType.ConfirmationEmail), Email, OwnersPassword));
+                var strangerSignsIn = await SendAsync(provider, new PartnerLogin.Command(Email, StrangersPassword, true));
+                var ownerSignsIn = await SendAsync(provider, new PartnerLogin.Command(Email, OwnersPassword, true));
+                return (ownerConfirms, strangerSignsIn, ownerSignsIn);
+            },
+            assert: (CleansiaDbContext _, (BusinessResult<JwtTokenResponse> OwnerConfirms, BusinessResult<JwtTokenResponse> StrangerSignsIn, BusinessResult<JwtTokenResponse> OwnerSignsIn) walk) =>
+            {
+                Assert.True(walk.OwnerConfirms.IsSuccess);
+                Assert.NotEmpty(walk.OwnerConfirms.Value!.Token);
+                AssertRefusedAsAWrongPassword(walk.StrangerSignsIn);
+                Assert.True(walk.OwnerSignsIn.IsSuccess);
+                Assert.NotEmpty(walk.OwnerSignsIn.Value!.Token);
                 return Task.CompletedTask;
             },
             transactional: false);

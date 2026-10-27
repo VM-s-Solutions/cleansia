@@ -34,8 +34,8 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// <para><b>All the money for this failure moves through <see cref="CleanerNoShowCancellation"/>.</b> A
 /// drop does not cancel a booking (owner ruling 2026-09-06), so <c>DropOrder</c> refunds nothing —
 /// whether the crew left or never arrived, the same empty seat at the same instant is what triggers
-/// payment. An administrator's no-show confirmation runs the same body; an order is cancelled once, so
-/// neither can pay the customer a second time.</para>
+/// payment. An administrator's no-show confirmation and a customer's own cancel from the booked start run
+/// the same body; an order is cancelled once, so none can pay the customer a second time.</para>
 ///
 /// <para><b>The apology goes on both failure paths</b> because they are the same path: owner ruling,
 /// "the customer must not be paid less when the platform failed harder". Its amount is the order

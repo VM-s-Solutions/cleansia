@@ -5,6 +5,7 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 
 /// <summary>
 /// What a cleaner who has NOT taken this job and is not its customer may read about it.
+/// Listed guest bookings use that browsing shape with only what their e-mails carried put back.
 ///
 /// <para><b>One rule, two shapes, in one file on purpose</b> — when the list and the detail lived apart,
 /// the detail answered with everything the list had just withheld. A field added to either DTO is
@@ -22,6 +23,38 @@ public static class OrderPiiRedaction
             CustomerAddress = string.Empty,
             CustomerAddressLatitude = null,
             CustomerAddressLongitude = null,
+            IsGuestBooking = null,
+        };
+
+    /// <summary>
+    /// A booking made without an account, as a signed-in customer's My orders lists it under their e-mail
+    /// (owner ruling 2026-10-26, "I select option B"): what its own e-mails carried, which is not the phone.
+    /// </summary>
+    public static OrderListItem RedactForListedGuestBooking(this OrderListItem item) =>
+        item.RedactForBrowsingCleaner() with
+        {
+            CustomerName = item.CustomerName,
+            CustomerEmail = item.CustomerEmail,
+            CustomerAddress = item.CustomerAddress,
+            CustomerAddressLatitude = item.CustomerAddressLatitude,
+            CustomerAddressLongitude = item.CustomerAddressLongitude,
+            IsGuestBooking = true,
+        };
+
+    /// <summary>
+    /// The detail of the same listed booking: the browsing shape, with what the booking's e-mails carried put
+    /// back — the name, the e-mail, the address and the cancellation window — and the crew as a customer sees
+    /// it. Built from the browsing shape so a member added to the DTO later is withheld here until someone
+    /// says otherwise; nothing the household or the crew wrote is shown, nor the phone.
+    /// </summary>
+    public static OrderItem RedactForListedGuestBooking(this OrderItem item) =>
+        item.RedactForBrowsingCleaner() with
+        {
+            CustomerName = item.CustomerName,
+            CustomerEmail = item.CustomerEmail,
+            Address = item.Address,
+            FreeCancellationHours = item.FreeCancellationHours,
+            IsGuestBooking = true,
         };
 
     /// <summary>
@@ -73,6 +106,7 @@ public static class OrderPiiRedaction
             LockoutReportedAt = null,
             LockoutCallAttempts = null,
             FreeCancellationHours = null,
+            IsGuestBooking = null,
         };
 
     /// <summary>
@@ -92,14 +126,16 @@ public static class OrderPiiRedaction
 
     /// <summary>
     /// The same disclosure the customer gets about the crew (<c>MapToAssignedEmployeeDto</c>): a given
-    /// name and no phone number. <c>EmployeeId</c> stays — the partner apps decide "am I on this job?"
-    /// by looking for their own id in this list, so removing it would answer that question wrong.
+    /// name, no phone number and no time a cleaner marked their part done. <c>EmployeeId</c> stays — the
+    /// partner apps decide "am I on this job?" by looking for their own id in this list, so removing it
+    /// would answer that question wrong.
     /// </summary>
     private static AssignedEmployeeDto WithoutPersonalContact(AssignedEmployeeDto employee) =>
         employee with
         {
             FullName = GivenNameOnly(employee.FullName),
             PhoneNumber = null,
+            CompletionConfirmedAt = null,
         };
 
     private static string GivenNameOnly(string fullName)

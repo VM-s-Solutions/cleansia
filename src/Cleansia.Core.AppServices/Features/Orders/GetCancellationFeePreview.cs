@@ -80,13 +80,14 @@ public class GetCancellationFeePreview
             // AssignedEmployees without the Employee graph: the fee needs the row's existence, and the
             // customer is owed the price, not the roster.
             var order = await orderAccessService
-                .OrdersForCaller()
+                .OrdersListedForCaller()
                 .Include(o => o.AssignedEmployees)
                 .Include(o => o.Currency)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(o => o.Id == query.OrderId, cancellationToken);
 
-            if (order == null || order.UserId != userId)
+            // A booking made without an account is priced on its own terms, as its e-mailed link prices it.
+            if (order == null || (order.UserId != userId && !orderAccessService.IsListedGuestBooking(order)))
             {
                 return BusinessResult.Failure<Response>(new Error(
                     nameof(query.OrderId),

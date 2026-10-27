@@ -45,7 +45,8 @@ public sealed record OrderListRow(
     DateTime? CompletedAt,
     DirtinessLevel DirtinessLevel,
     decimal DirtinessSurchargeAmount,
-    decimal DirtinessRate);
+    decimal DirtinessRate,
+    bool IsGuestBooking = false);
 
 public sealed record OrderListAddressRow(
     string Id,

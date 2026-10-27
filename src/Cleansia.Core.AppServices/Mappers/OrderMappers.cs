@@ -92,7 +92,8 @@ public static class OrderMappers
             o.CompletedAt,
             o.DirtinessLevel,
             o.DirtinessSurchargeAmount,
-            o.DirtinessRate));
+            o.DirtinessRate,
+            o.UserId == null));
     }
 
     public static OrderListItem MapToDto(this OrderListRow row)
@@ -397,7 +398,8 @@ public static class OrderMappers
                 : user != null
                     ? $"{user.FirstName} {user.LastName}".Trim()
                     : string.Empty,
-            PhoneNumber: isCustomerCaller ? null : user?.PhoneNumber
+            PhoneNumber: isCustomerCaller ? null : user?.PhoneNumber,
+            CompletionConfirmedAt: isCustomerCaller ? null : orderEmployee.CompletionConfirmedAt
         );
     }
 

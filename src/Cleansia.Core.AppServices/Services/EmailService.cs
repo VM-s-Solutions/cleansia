@@ -594,9 +594,10 @@ public sealed partial class EmailService : IEmailService
         CancellationToken ct = default,
         decimal? refundedAmount = null,
         string? guestAccessToken = null,
-        decimal? apologyCreditAmount = null) =>
+        decimal? apologyCreditAmount = null,
+        bool noCleanerAvailable = false) =>
         SendStatusEmailAsync(email, order, newStatus, languageCode, ct, refundedAmount, guestAccessToken, freeCancellationHours: null,
-            attachmentBytes: null, attachmentFileName: null, apologyCreditAmount);
+            attachmentBytes: null, attachmentFileName: null, apologyCreditAmount, noCleanerAvailable);
 
     /// <summary>
     /// The status e-mail's booked arm, sent when the contract is concluded with its confirmation attached:
@@ -613,7 +614,7 @@ public sealed partial class EmailService : IEmailService
         byte[]? confirmationPdf = null,
         string? confirmationFileName = null) =>
         SendStatusEmailAsync(email, order, BookedStatus, languageCode, ct, refundedAmount: null, guestAccessToken, freeCancellationHours,
-            confirmationPdf, confirmationFileName, apologyCreditAmount: null);
+            confirmationPdf, confirmationFileName, apologyCreditAmount: null, noCleanerAvailable: false);
 
     // In-code copy only: the status e-mail's translation rows are that e-mail's, and a Subject entered for
     // it would retitle this one.
@@ -1007,7 +1008,8 @@ public sealed partial class EmailService : IEmailService
         int? freeCancellationHours,
         byte[]? attachmentBytes,
         string? attachmentFileName,
-        decimal? apologyCreditAmount)
+        decimal? apologyCreditAmount,
+        bool noCleanerAvailable)
     {
         var translations = await emailTemplateTranslationRepository
             .GetTranslationsByTypeAndLanguageAsync(EmailType.OrderStatusUpdate, languageCode, ct);
@@ -1100,7 +1102,9 @@ public sealed partial class EmailService : IEmailService
             ]
             : [];
         string? platformReason = null;
-        if (statusClass == "cancelled" && order.CancelledBy is CancelledBy.Admin or CancelledBy.System)
+        if (statusClass == "cancelled"
+            && (order.CancelledBy is CancelledBy.Admin or CancelledBy.System
+                || noCleanerAvailable))
         {
             // The reason code, never an admin's free text: that is written for the company, not the guest.
             platformReason = translations.GetValueOrDefault(order.CancellationReason switch
@@ -1274,6 +1278,9 @@ public sealed partial class EmailService : IEmailService
 
         // Pressing Reply reaches support, not the delivery sender.
         msg.SetReplyTo(new EmailAddress(SupportAddress));
+        // Every button stays the real link. A tracked one is a SendGrid redirect whose click log keeps the
+        // whole target, a guest's booking token or a reset code included.
+        msg.SetClickTracking(false, false);
 
         if (attachmentBytes is { Length: > 0 } && !string.IsNullOrWhiteSpace(attachmentFileName))
         {

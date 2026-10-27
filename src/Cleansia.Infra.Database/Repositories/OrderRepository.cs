@@ -116,10 +116,32 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
         return (filter is null ? query : query.Where(filter)).CountAsync(cancellationToken);
     }
 
-    public IQueryable<Order> GetPagedSortForOwner<TSort>(
-        string userId, int offset, int limit, Expression<Func<Order, bool>>? filter, IEnumerable<SortDefinition> sort)
+    public IQueryable<Order> GetQueryableListedForCustomer(string userId, string? accountEmail) =>
+        string.IsNullOrEmpty(accountEmail)
+            ? GetQueryableForOwner(userId)
+            // CustomerEmail is citext, so the guest term folds case in Postgres and can seek its index.
+            : GetQueryableIgnoringTenant()
+                .Where(o => o.UserId == userId || (o.UserId == null && o.CustomerEmail == accountEmail));
+
+    public Task<Order?> GetByIdListedForCustomerAsync(
+        string id, string userId, string? accountEmail, CancellationToken cancellationToken)
+    {
+        return WithDetailGraph(GetQueryableListedForCustomer(userId, accountEmail))
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+    }
+
+    public Task<int> GetCountListedForCustomerAsync(
+        string userId, string? accountEmail, Expression<Func<Order, bool>>? filter, CancellationToken cancellationToken)
+    {
+        var query = GetQueryableListedForCustomer(userId, accountEmail);
+        return (filter is null ? query : query.Where(filter)).CountAsync(cancellationToken);
+    }
+
+    public IQueryable<Order> GetPagedSortListedForCustomer<TSort>(
+        string userId, string? accountEmail, int offset, int limit,
+        Expression<Func<Order, bool>>? filter, IEnumerable<SortDefinition> sort)
         where TSort : BaseSort<Order>
-        => PagedSort<TSort>(GetQueryableForOwner(userId), offset, limit, filter, sort);
+        => PagedSort<TSort>(GetQueryableListedForCustomer(userId, accountEmail), offset, limit, filter, sort);
 
     public async Task<CustomerProfileStats> GetCustomerProfileStatsAsync(string userId, CancellationToken cancellationToken)
     {

@@ -91,6 +91,19 @@ public class OrderController(IMediator mediator) : MobileApiController(mediator)
         return HandleResult<CompleteOrder.Response>(result);
     }
 
+    [HttpPost("MarkMyPartDone")]
+    [Permission(Policy.CanCompleteOrder)]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(MarkMyPartDone.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> MarkMyPartDone([FromBody] MarkMyPartDone.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<MarkMyPartDone.Response>(result);
+    }
+
     [HttpPost("MarkCashCollected")]
     [Permission(Policy.CanCompleteOrder)]
     [EnableRateLimiting("auth")]

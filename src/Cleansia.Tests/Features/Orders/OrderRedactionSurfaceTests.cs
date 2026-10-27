@@ -76,6 +76,8 @@ public class OrderRedactionSurfaceTests
         nameof(OrderItem.LockoutCallAttempts),
         // The customer's own cancellation window tells whether they are a Plus member.
         nameof(OrderItem.FreeCancellationHours),
+        // Whether the customer booked without an account is between the customer and the company.
+        nameof(OrderItem.IsGuestBooking),
     ];
 
     private static readonly string[] DetailReshaped =
@@ -147,6 +149,7 @@ public class OrderRedactionSurfaceTests
         nameof(OrderListItem.CustomerAddress),
         nameof(OrderListItem.CustomerAddressLatitude),
         nameof(OrderListItem.CustomerAddressLongitude),
+        nameof(OrderListItem.IsGuestBooking),
     ];
 
     private static readonly string[] ListKept =
@@ -319,6 +322,84 @@ public class OrderRedactionSurfaceTests
         Assert.Null(crewMember.PhoneNumber);
     }
 
+    [Fact]
+    public void The_Reshaped_Crew_Does_Not_Say_When_Each_Cleaner_Marked_Their_Part_Done()
+    {
+        var populated = FullyPopulatedDetail();
+        Assert.NotNull(Assert.Single(populated.AssignedEmployees).CompletionConfirmedAt);
+
+        var crewMember = Assert.Single(populated.RedactForBrowsingCleaner().AssignedEmployees);
+
+        Assert.Null(crewMember.CompletionConfirmedAt);
+    }
+
+    /// <summary>
+    /// A booking made without an account, listed in a signed-in customer's My orders under their e-mail, reads as
+    /// its own e-mails did: the browsing shape with only the e-mailed fields put back, flagged as a guest booking.
+    /// </summary>
+    [Fact]
+    public void A_Listed_Guest_Booking_Row_Is_The_Browsing_Shape_With_Only_What_Its_Emails_Carried_Put_Back()
+    {
+        var populated = FullyPopulatedListItem() with { IsGuestBooking = null };
+        string[] putBack =
+        [
+            nameof(OrderListItem.CustomerName),
+            nameof(OrderListItem.CustomerEmail),
+            nameof(OrderListItem.CustomerAddress),
+            nameof(OrderListItem.CustomerAddressLatitude),
+            nameof(OrderListItem.CustomerAddressLongitude),
+        ];
+
+        var listed = populated.RedactForListedGuestBooking();
+        var browsing = populated.RedactForBrowsingCleaner();
+
+        Assert.All(putBack, member =>
+        {
+            Assert.False(IsBlank(Read(populated, member)), $"{member} was never populated by the fixture");
+            Assert.Equal(Read(populated, member), Read(listed, member));
+        });
+        Assert.True(listed.IsGuestBooking);
+        var asBrowsing = typeof(OrderListItem).GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .Where(p => p.Name != "EqualityContract" && p.Name != nameof(OrderListItem.IsGuestBooking) && !putBack.Contains(p.Name));
+        Assert.All(asBrowsing, p => Assert.Equal(p.GetValue(browsing), p.GetValue(listed)));
+    }
+
+    /// <summary>
+    /// The detail of that listed booking is the browsing shape with exactly what the booking's own e-mails carried
+    /// put back: the name, the e-mail, the address and the cancellation window, and the flag. Everything the
+    /// household or the crew wrote stays withheld, and the crew reads as a customer reads it.
+    /// </summary>
+    [Fact]
+    public void A_Listed_Guest_Booking_Detail_Is_The_Browsing_Shape_With_Only_What_Its_Emails_Carried_Put_Back()
+    {
+        var populated = FullyPopulatedDetail() with { IsGuestBooking = null };
+        string[] putBack =
+        [
+            nameof(OrderItem.CustomerName),
+            nameof(OrderItem.CustomerEmail),
+            nameof(OrderItem.Address),
+            nameof(OrderItem.FreeCancellationHours),
+        ];
+
+        var listed = populated.RedactForListedGuestBooking();
+        var browsing = populated.RedactForBrowsingCleaner();
+
+        Assert.All(putBack, member =>
+        {
+            Assert.False(IsBlank(Read(populated, member)), $"{member} was never populated by the fixture");
+            Assert.Equal(Read(populated, member), Read(listed, member));
+        });
+        Assert.True(listed.IsGuestBooking);
+        var crewMember = Assert.Single(listed.AssignedEmployees);
+        Assert.Equal("Petra", crewMember.FullName);
+        Assert.Null(crewMember.PhoneNumber);
+        var asBrowsing = typeof(OrderItem).GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .Where(p => p.Name != "EqualityContract" && p.Name != nameof(OrderItem.IsGuestBooking) && !putBack.Contains(p.Name));
+        Assert.All(asBrowsing, p => Assert.Equal(
+            System.Text.Json.JsonSerializer.Serialize(p.GetValue(browsing)),
+            System.Text.Json.JsonSerializer.Serialize(p.GetValue(listed))));
+    }
+
     public static TheoryData<string> DetailBlankedMembers => ToTheoryData(DetailBlanked);
 
     public static TheoryData<string> DetailKeptMembers => ToTheoryData(DetailKept);
@@ -406,7 +487,12 @@ public class OrderRedactionSurfaceTests
             StatusHistory: [new OrderStatusTrackDto(new Code("OrderStatus", "Completed", 5), DateTimeOffset.UtcNow)],
             CreatedOn: DateTimeOffset.UtcNow.AddDays(-3),
             UpdatedOn: DateTimeOffset.UtcNow.AddHours(-1),
-            AssignedEmployees: [new AssignedEmployeeDto("assignment-1", "employee-1", "Petra Svobodova", "+420602987654")],
+            AssignedEmployees:
+            [
+                new AssignedEmployeeDto(
+                    "assignment-1", "employee-1", "Petra Svobodova", "+420602987654",
+                    new DateTime(2026, 8, 20, 11, 50, 0, DateTimeKind.Utc)),
+            ],
             RequiredEmployees: RequiredEmployees,
             MaxEmployees: MaxEmployees,
             AvailableSpots: AvailableSpots,
@@ -441,7 +527,8 @@ public class OrderRedactionSurfaceTests
             DirtinessSurchargeAmount: 540m,
             LockoutReportedAt: new DateTime(2026, 8, 20, 9, 20, 0, DateTimeKind.Utc),
             LockoutCallAttempts: "Called 09:05, 09:10 and 09:15, no answer; rang the bell twice",
-            FreeCancellationHours: 4);
+            FreeCancellationHours: 4,
+            IsGuestBooking: true);
 
     private static OrderListItem FullyPopulatedListItem() =>
         new(
@@ -483,5 +570,6 @@ public class OrderRedactionSurfaceTests
             CustomerAddressLongitude: 14.4378,
             HasReview: true,
             DirtinessLevel: DirtinessLevel.Heavy,
-            DirtinessSurchargeAmount: 540m);
+            DirtinessSurchargeAmount: 540m,
+            IsGuestBooking: true);
 }

@@ -11,9 +11,10 @@ namespace Cleansia.Core.Domain.Orders;
 /// are the orders the erasure reaches; the walk leaves out the ones still live, the export does not.
 ///
 /// <para>The <c>UserId == null</c> term is load-bearing: another ACCOUNT's order that merely carries the
-/// subject's address in its contact field is that account's, not the subject's. The comparison folds
-/// case the way every other read of an order by its contact e-mail does (<c>LookupOrder</c>), because
-/// the column is plain text and a guest types whatever they type.</para>
+/// subject's address in its contact field is that account's, not the subject's. The e-mail term is plain
+/// equality because <c>Orders.CustomerEmail</c> is citext: Postgres folds the case a guest typed and can
+/// seek <c>IX_Orders_CustomerEmail</c>, as the first-booking read does. Compiled in memory, or run over
+/// SQLite, the comparison is exact.</para>
 ///
 /// <para>Ask it with the subject's LIVE e-mail — after <c>User.Anonymize()</c> the address is a
 /// placeholder and the guest term matches nothing.</para>
@@ -22,5 +23,5 @@ public static class SubjectOrders
 {
     public static Expression<Func<Order, bool>> Of(string userId, string email)
         => o => o.UserId == userId
-             || (o.UserId == null && o.CustomerEmail.ToLower() == email.ToLower());
+             || (o.UserId == null && o.CustomerEmail == email);
 }

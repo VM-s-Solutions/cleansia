@@ -89,7 +89,7 @@ public sealed class OrderDetailFreeCancellationHoursTests
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
 
         var access = new Mock<IOrderAccessService>();
-        access.Setup(a => a.LoadOrderForCallerAsync(OrderId, It.IsAny<CancellationToken>())).ReturnsAsync(order);
+        access.Setup(a => a.LoadListedOrderForCallerAsync(OrderId, It.IsAny<CancellationToken>())).ReturnsAsync(order);
         access.Setup(a => a.CanBrowseOrderAsync(order, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         access.Setup(a => a.CanAccessOrderAsync(order, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         access.Setup(a => a.IsCustomerCaller()).Returns(role == UserProfile.Customer);

@@ -414,8 +414,6 @@ public class CancellationFeePreviewAgreementTests
             CancellationFeeTier.Partial, 0.30m, 700m, 300m, BookingPolicy.OopsWindowMinutesPlus);
     }
 
-    // ── A booking made without an account, listed in the account's My orders: its own guest terms ──
-
     [Fact]
     public async Task A_Plus_Member_Quoted_A_Listed_Guest_Booking_Six_Hours_Out_Is_Charged_Its_Guest_Terms_Not_The_Plus_Window()
     {

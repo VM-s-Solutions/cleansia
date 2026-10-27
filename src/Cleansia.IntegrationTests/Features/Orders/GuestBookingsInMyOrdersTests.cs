@@ -5,10 +5,13 @@ using Cleansia.Core.AppServices.Features.LiveActivities;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
 using Cleansia.Core.AppServices.Features.Orders.Filters;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.Loyalty;
+using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
@@ -291,8 +294,8 @@ public class GuestBookingsInMyOrdersTests(PostgresContainerFixture fixture) : Ba
 
     /// <summary>
     /// Listed, never owned: every other action on one booking keeps the owner pin, so the account is refused on
-    /// a booking it lists as on one it does not, and nothing is written. Choosing a preferred cleaner asks for
-    /// Cleansia Plus before it reads any order.
+    /// a booking it lists as on one it does not, and nothing is written. The preferred-cleaner case has Plus
+    /// and an eligible cleaner, so the ownership check is the refusal.
     /// </summary>
     [Theory]
     [InlineData("receipt", BusinessErrorMessage.OrderNotFound)]
@@ -303,12 +306,19 @@ public class GuestBookingsInMyOrdersTests(PostgresContainerFixture fixture) : Ba
     [InlineData("payment", BusinessErrorMessage.OrderNotFound)]
     [InlineData("resume-checkout", BusinessErrorMessage.OrderNotFound)]
     [InlineData("live-activity", BusinessErrorMessage.OrderNotFound)]
-    [InlineData("preferred-cleaner", BusinessErrorMessage.PreferredEmployeeMembershipRequired)]
+    [InlineData("preferred-cleaner", BusinessErrorMessage.OrderNotFound)]
     public async Task Every_Other_Action_On_A_Listed_Guest_Booking_Is_Refused_And_Writes_Nothing(string action, string refusal)
     {
         await TestMethod(
             setup: Setup,
-            arrange: SeedAsync,
+            arrange: async context =>
+            {
+                await SeedAsync(context);
+                if (action == "preferred-cleaner")
+                {
+                    await SeedPreferredCleanerEntitlementAsync(context);
+                }
+            },
             act: async provider =>
             {
                 using var scope = provider.CreateScope();
@@ -344,6 +354,114 @@ public class GuestBookingsInMyOrdersTests(PostgresContainerFixture fixture) : Ba
                 return Task.CompletedTask;
             },
             transactional: false);
+    }
+
+    [Fact]
+    public async Task Completing_A_Listed_Guest_Booking_Earns_No_Loyalty_Or_Referral_For_The_Account()
+    {
+        await TestMethod(
+            setup: Setup,
+            arrange: async context =>
+            {
+                await SeedAsync(context);
+                await SeedAcceptedReferralAsync(context);
+            },
+            act: async provider =>
+            {
+                using var scope = provider.CreateScope();
+                var services = scope.ServiceProvider;
+                services.GetRequiredService<ITenantProvider>().SetTenantOverride(TestTenants.Second);
+                var context = services.GetRequiredService<CleansiaDbContext>();
+                Assert.NotNull(await context.Orders.SingleOrDefaultAsync(o => o.Id == GuestInSecondMarketId));
+                await services.GetRequiredService<ILoyaltyService>()
+                    .GrantForCompletedOrderAsync(GuestInSecondMarketId, CancellationToken.None);
+                await services.GetRequiredService<IReferralService>()
+                    .ProcessOrderCompletedAsync(GuestInSecondMarketId, JanaId, CancellationToken.None);
+                await context.CommitAsync(CancellationToken.None);
+                return true;
+            },
+            assert: async (CleansiaDbContext context, bool _) =>
+            {
+                Assert.Empty(await context.LoyaltyAccounts.IgnoreQueryFilters().AsNoTracking().ToListAsync());
+                Assert.Empty(await context.LoyaltyTransactions.IgnoreQueryFilters().AsNoTracking().ToListAsync());
+                Assert.Empty(await context.CreditTransactions.IgnoreQueryFilters().AsNoTracking().ToListAsync());
+                var referral = await context.Referrals.IgnoreQueryFilters().AsNoTracking().SingleAsync();
+                Assert.Equal(ReferralStatus.Accepted, referral.Status);
+                Assert.Null(referral.FirstQualifyingOrderId);
+            },
+            transactional: false);
+    }
+
+    [Fact]
+    public async Task A_Completed_Listed_Guest_Booking_Does_Not_Disqualify_The_Accounts_First_Own_Completion_From_Referral()
+    {
+        await TestMethod(
+            setup: Setup,
+            arrange: async context =>
+            {
+                await SeedAsync(context);
+                await SeedAcceptedReferralAsync(context);
+                var own = await context.Orders.SingleAsync(o => o.Id == OwnOrderId);
+                own.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Completed, own));
+                await context.CommitAsync(CancellationToken.None);
+            },
+            act: async provider =>
+            {
+                using var scope = provider.CreateScope();
+                var services = scope.ServiceProvider;
+                await services.GetRequiredService<IReferralService>()
+                    .ProcessOrderCompletedAsync(OwnOrderId, JanaId, CancellationToken.None);
+                await services.GetRequiredService<CleansiaDbContext>().CommitAsync(CancellationToken.None);
+                return true;
+            },
+            assert: async (CleansiaDbContext context, bool _) =>
+            {
+                var referral = await context.Referrals.IgnoreQueryFilters().AsNoTracking().SingleAsync();
+                Assert.Equal(ReferralStatus.Qualified, referral.Status);
+                Assert.Equal(OwnOrderId, referral.FirstQualifyingOrderId);
+                var grants = await context.CreditTransactions.IgnoreQueryFilters().AsNoTracking().ToListAsync();
+                Assert.Equal(2, grants.Count);
+                Assert.All(grants, grant =>
+                {
+                    Assert.Equal(OwnOrderId, grant.OrderId);
+                    Assert.Equal(150m, grant.Amount);
+                });
+            },
+            transactional: false);
+    }
+
+    private static async Task SeedAcceptedReferralAsync(CleansiaDbContext context)
+    {
+        var currency = await context.Currencies.SingleAsync(c => c.Id == CurrencyId);
+        currency.SetReferralCredit(150m);
+        currency.SetLoyaltyPointsDivisor(1m);
+        var referrer = User.CreateWithPassword("referrer-listed@cleansia.test", "Seed-Password-123", "Pavel", "Jiný");
+        referrer.ConfirmEmail();
+        context.Users.Add(referrer);
+        var code = ReferralCode.Generate(referrer.Id, "LISTED", "seed");
+        context.ReferralCodes.Add(code);
+        context.Referrals.Add(Referral.CreateAccepted(referrer.Id, JanaId, code.Id, "seed"));
+        StampUnstampedAdded(context, TestTenants.Default);
+        await context.CommitAsync(CancellationToken.None);
+    }
+
+    private static async Task SeedPreferredCleanerEntitlementAsync(CleansiaDbContext context)
+    {
+        var plan = MembershipPlan.Create("PLUS-LISTED", "Cleansia Plus", 5m, allowsExpressUpgrade: true);
+        context.MembershipPlans.Add(plan);
+        context.UserMemberships.Add(UserMembership.Create(JanaId, plan.Id, CurrencyId, "sub_listed",
+            DateTime.UtcNow.AddDays(-1), DateTime.UtcNow.AddDays(30)));
+        var user = User.CreateWithPassword("cleaner-listed@cleansia.test", "Seed-Password-123", "Petra", "Čistá", UserProfile.Employee);
+        var cleaner = Employee.CreateWithUser(user);
+        cleaner.Id = "emp-listed";
+        cleaner.Approve("seed");
+        cleaner.AssignWorkCountry(CountryId);
+        context.Employees.Add(cleaner);
+        var completed = NewOrder("order-listed-history", JanaId, JanaEmail, OrderStatus.Completed);
+        completed.AddAssignedEmployee(OrderEmployee.Create(completed, cleaner));
+        context.Orders.Add(completed);
+        StampUnstampedAdded(context, TestTenants.Default);
+        await context.CommitAsync(CancellationToken.None);
     }
 
     private static object RequestFor(string action) => action switch

@@ -5,6 +5,7 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 
 /// <summary>
 /// What a cleaner who has NOT taken this job and is not its customer may read about it.
+/// Listed guest bookings use that browsing shape with only what their e-mails carried put back.
 ///
 /// <para><b>One rule, two shapes, in one file on purpose</b> — when the list and the detail lived apart,
 /// the detail answered with everything the list had just withheld. A field added to either DTO is
@@ -30,9 +31,13 @@ public static class OrderPiiRedaction
     /// (owner ruling 2026-10-26, "I select option B"): what its own e-mails carried, which is not the phone.
     /// </summary>
     public static OrderListItem RedactForListedGuestBooking(this OrderListItem item) =>
-        item with
+        item.RedactForBrowsingCleaner() with
         {
-            CustomerPhone = string.Empty,
+            CustomerName = item.CustomerName,
+            CustomerEmail = item.CustomerEmail,
+            CustomerAddress = item.CustomerAddress,
+            CustomerAddressLatitude = item.CustomerAddressLatitude,
+            CustomerAddressLongitude = item.CustomerAddressLongitude,
             IsGuestBooking = true,
         };
 

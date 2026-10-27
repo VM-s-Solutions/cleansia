@@ -335,20 +335,33 @@ public class OrderRedactionSurfaceTests
 
     /// <summary>
     /// A booking made without an account, listed in a signed-in customer's My orders under their e-mail, reads as
-    /// its own e-mails did: everything but the phone, flagged as a guest booking.
+    /// its own e-mails did: the browsing shape with only the e-mailed fields put back, flagged as a guest booking.
     /// </summary>
     [Fact]
-    public void A_Listed_Guest_Booking_Row_Differs_From_The_Customers_Own_Only_In_The_Phone_And_The_Flag()
+    public void A_Listed_Guest_Booking_Row_Is_The_Browsing_Shape_With_Only_What_Its_Emails_Carried_Put_Back()
     {
         var populated = FullyPopulatedListItem() with { IsGuestBooking = null };
+        string[] putBack =
+        [
+            nameof(OrderListItem.CustomerName),
+            nameof(OrderListItem.CustomerEmail),
+            nameof(OrderListItem.CustomerAddress),
+            nameof(OrderListItem.CustomerAddressLatitude),
+            nameof(OrderListItem.CustomerAddressLongitude),
+        ];
 
         var listed = populated.RedactForListedGuestBooking();
+        var browsing = populated.RedactForBrowsingCleaner();
 
-        Assert.Equal(string.Empty, listed.CustomerPhone);
+        Assert.All(putBack, member =>
+        {
+            Assert.False(IsBlank(Read(populated, member)), $"{member} was never populated by the fixture");
+            Assert.Equal(Read(populated, member), Read(listed, member));
+        });
         Assert.True(listed.IsGuestBooking);
-        var unchanged = typeof(OrderListItem).GetProperties(BindingFlags.Public | BindingFlags.Instance)
-            .Where(p => p.Name is not ("EqualityContract" or nameof(OrderListItem.CustomerPhone) or nameof(OrderListItem.IsGuestBooking)));
-        Assert.All(unchanged, p => Assert.Equal(p.GetValue(populated), p.GetValue(listed)));
+        var asBrowsing = typeof(OrderListItem).GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .Where(p => p.Name != "EqualityContract" && p.Name != nameof(OrderListItem.IsGuestBooking) && !putBack.Contains(p.Name));
+        Assert.All(asBrowsing, p => Assert.Equal(p.GetValue(browsing), p.GetValue(listed)));
     }
 
     /// <summary>

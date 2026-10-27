@@ -5,8 +5,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -24,13 +27,15 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -46,6 +51,8 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.R
@@ -54,6 +61,7 @@ import cz.cleansia.customer.core.orders.OrderReviewDto
 import cz.cleansia.customer.core.orders.ReviewLineScoreRequest
 import cz.cleansia.customer.core.orders.ReviewTag
 import cz.cleansia.customer.ui.theme.WarningStar
+import cz.cleansia.customer.ui.theme.CleansiaTheme
 
 // 1000, because that is what SubmitOrderReview.Validator and OrderReview.Comment's [MaxLength]
 // actually enforce. This said 2000 under a comment claiming it matched the backend, so a customer
@@ -133,257 +141,280 @@ fun SubmitReviewSheet(
         onDismissRequest = { if (!isSubmitting) onDismiss() },
         sheetState = sheetState,
         containerColor = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 8.dp),
+                .fillMaxHeight(0.9f)
+                .imePadding(),
         ) {
-            // Title — switches between "Rate your cleaning" and "Edit your review"
-            // based on whether an existing review was supplied.
-            Text(
-                text = stringResource(
-                    titleRes ?: if (isEdit) R.string.order_review_edit_title
-                    else R.string.order_review_sheet_title,
-                ),
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Spacer(Modifier.height(14.dp))
-
-            // Star row — centered, tappable. Each IconButton gives us the 40dp
-            // hit target automatically.
-            StarRow(
-                rating = rating,
-                enabled = !isSubmitting,
-                onRatingChange = { next ->
-                    // Crossing the 4-star boundary swaps the whole chip set, so anything already
-                    // picked belongs to the other polarity and would be refused by the server.
-                    // Dropped here rather than at submit, so the customer SEES it happen.
-                    if (ReviewTag.forRating(next) != ReviewTag.forRating(rating)) {
-                        selectedTags = emptySet()
-                    }
-                    rating = next
-                },
-            )
-            Spacer(Modifier.height(4.dp))
-
-            // Rating description — changes with current rating.
-            Text(
-                text = stringResource(ratingDescriptionRes(rating)),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(16.dp))
-
-            // Chips appear only once a rating exists, because the set they offer IS a function of it:
-            // 1-3 asks what went wrong, 4-5 what went well. Changing the rating across the boundary
-            // clears the selection rather than carrying it — the server refuses a mismatched tag, and
-            // silently dropping one would store a review the customer did not give.
-            val offered = ReviewTag.forRating(rating)
-            if (offered.isNotEmpty()) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp)
+                    .padding(top = 8.dp, bottom = 24.dp),
+            ) {
                 Text(
                     text = stringResource(
-                        if (rating >= ReviewTag.POSITIVE_RATING_FLOOR) {
-                            R.string.order_review_tags_positive_prompt
-                        } else {
-                            R.string.order_review_tags_negative_prompt
-                        },
+                        titleRes ?: if (isEdit) R.string.order_review_edit_title
+                        else R.string.order_review_sheet_title,
                     ),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = primaryText(),
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                Spacer(Modifier.height(10.dp))
-                ReviewTagChips(
-                    offered = offered,
-                    selected = selectedTags,
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = stringResource(R.string.order_review_rating_hint),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(24.dp))
+
+                StarRow(
+                    rating = rating,
                     enabled = !isSubmitting,
-                    onToggle = { tag ->
-                        selectedTags = when {
-                            tag in selectedTags -> selectedTags - tag
-                            // The cap is the server's; the sheet stops offering rather than letting the
-                            // customer pick a fifth and be refused after submit.
-                            selectedTags.size >= ReviewTag.MAX_TAGS -> selectedTags
-                            else -> selectedTags + tag
+                    onRatingChange = { next ->
+                        // Crossing the 4-star boundary swaps the whole chip set, so anything already
+                        // picked belongs to the other polarity and would be refused by the server.
+                        // Dropped here rather than at submit, so the customer SEES it happen.
+                        if (ReviewTag.forRating(next) != ReviewTag.forRating(rating)) {
+                            selectedTags = emptySet()
                         }
+                        rating = next
                     },
                 )
-                Spacer(Modifier.height(16.dp))
-            }
+                Spacer(Modifier.height(8.dp))
 
-            // Comment textarea — capped client-side at the backend validator's real limit; see
-            // REVIEW_COMMENT_MAX_LENGTH above for why that number is 1000 and not 2000. Optional field.
-            OutlinedTextField(
-                value = comment,
-                onValueChange = { next ->
-                    comment = if (next.length > REVIEW_COMMENT_MAX_LENGTH) {
-                        next.substring(0, REVIEW_COMMENT_MAX_LENGTH)
-                    } else {
-                        next
-                    }
-                },
-                enabled = !isSubmitting,
-                label = { Text(stringResource(R.string.order_review_comment_label)) },
-                placeholder = { Text(stringResource(R.string.order_review_comment_placeholder)) },
-                minLines = 2,
-                maxLines = 6,
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth(),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                    focusedLabelColor = primaryText(),
-                ),
-            )
-
-            // ── Per-item scores ──
-            //
-            // Behind a disclosure and closed by default: the overall stars above are the required
-            // answer, and a customer who wants to leave five and go should never meet this list.
-            if (lineOptions.isNotEmpty()) {
-                Spacer(Modifier.height(14.dp))
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(10.dp))
-                        .clickable { linesExpanded = !linesExpanded }
-                        .padding(vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(
-                        imageVector = if (linesExpanded) {
-                            Icons.Outlined.KeyboardArrowDown
-                        } else {
-                            Icons.AutoMirrored.Outlined.KeyboardArrowRight
-                        },
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Spacer(Modifier.width(4.dp))
+                if (rating in 1..5) {
                     Text(
-                        text = stringResource(R.string.order_review_rate_items),
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                        color = MaterialTheme.colorScheme.onSurface,
+                        text = stringResource(ratingDescriptionRes(rating)),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = primaryText(),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 }
+                Spacer(Modifier.height(24.dp))
 
-                if (linesExpanded) {
-                    Text(
-                        text = stringResource(R.string.order_review_rate_items_hint),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Spacer(Modifier.height(6.dp))
-                    lineOptions.forEach { option ->
-                        ReviewLineRow(
-                            option = option,
-                            rating = lineScores[option.key] ?: 0,
-                            onRate = { star ->
-                                // Pressing the star already chosen clears the row — the only way back
-                                // to "not scored" once it has been touched, and without it a mis-tap
-                                // is permanent.
-                                lineScores = if (lineScores[option.key] == star) {
-                                    lineScores - option.key
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceContainerLow,
+                    shape = RoundedCornerShape(24.dp),
+                ) {
+                    Column(Modifier.padding(16.dp)) {
+                        // Chips appear only once a rating exists, because the set they offer IS a function of it:
+                        // 1-3 asks what went wrong, 4-5 what went well. Changing the rating across the boundary
+                        // clears the selection rather than carrying it — the server refuses a mismatched tag, and
+                        // silently dropping one would store a review the customer did not give.
+                        val offered = ReviewTag.forRating(rating)
+                        if (offered.isNotEmpty()) {
+                            Text(
+                                text = stringResource(
+                                    if (rating >= ReviewTag.POSITIVE_RATING_FLOOR) {
+                                        R.string.order_review_tags_positive_prompt
+                                    } else {
+                                        R.string.order_review_tags_negative_prompt
+                                    },
+                                ),
+                                style = MaterialTheme.typography.titleSmall,
+                                color = primaryText(),
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                            Spacer(Modifier.height(10.dp))
+                            ReviewTagChips(
+                                offered = offered,
+                                selected = selectedTags,
+                                enabled = !isSubmitting,
+                                onToggle = { tag ->
+                                    selectedTags = when {
+                                        tag in selectedTags -> selectedTags - tag
+                                        // The cap is the server's; the sheet stops offering rather than letting the
+                                        // customer pick a fifth and be refused after submit.
+                                        selectedTags.size >= ReviewTag.MAX_TAGS -> selectedTags
+                                        else -> selectedTags + tag
+                                    }
+                                },
+                            )
+                            Spacer(Modifier.height(16.dp))
+                        }
+
+                        // Comment textarea — capped client-side at the backend validator's real limit; see
+                        // REVIEW_COMMENT_MAX_LENGTH above for why that number is 1000 and not 2000. Optional field.
+                        OutlinedTextField(
+                            value = comment,
+                            onValueChange = { next ->
+                                comment = if (next.length > REVIEW_COMMENT_MAX_LENGTH) {
+                                    next.substring(0, REVIEW_COMMENT_MAX_LENGTH)
                                 } else {
-                                    lineScores + (option.key to star)
+                                    next
                                 }
                             },
+                            enabled = !isSubmitting,
+                            label = { Text(stringResource(R.string.order_review_comment_label)) },
+                            placeholder = { Text(stringResource(R.string.order_review_comment_placeholder)) },
+                            minLines = 2,
+                            maxLines = 6,
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                                focusedLabelColor = primaryText(),
+                            ),
                         )
-                    }
-                }
-            }
 
-            // Inline error row (shown below the textarea if the submit failed).
-            if (!errorMessage.isNullOrBlank()) {
-                Spacer(Modifier.height(10.dp))
-                Text(
-                    text = errorMessage,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
-                )
-            }
+                        // ── Per-item scores ──
+                        //
+                        // Behind a disclosure and closed by default: the overall stars above are the required
+                        // answer, and a customer who wants to leave five and go should never meet this list.
+                        if (lineOptions.isNotEmpty()) {
+                            Spacer(Modifier.height(14.dp))
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .clickable(enabled = !isSubmitting) { linesExpanded = !linesExpanded }
+                                    .padding(vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(
+                                    imageVector = if (linesExpanded) {
+                                        Icons.Outlined.KeyboardArrowDown
+                                    } else {
+                                        Icons.AutoMirrored.Outlined.KeyboardArrowRight
+                                    },
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    text = stringResource(R.string.order_review_rate_items),
+                                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                            }
 
-            Spacer(Modifier.height(20.dp))
-
-            // Footer buttons — Cancel (secondary, outlined) above Submit
-            // (primary, filled). Matches the CancelOrderSheet stack order but
-            // inverts the tint since this is a positive action.
-            OutlinedButton(
-                onClick = onDismiss,
-                enabled = !isSubmitting,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
-                shape = CircleShape,
-            ) {
-                Text(
-                    text = stringResource(dismissLabelRes),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-            }
-            Spacer(Modifier.height(10.dp))
-            val canSubmit = rating in 1..5 && !isSubmitting
-            Button(
-                onClick = {
-                    if (canSubmit) {
-                        onConfirm(
-                            rating,
-                            comment.trim().ifBlank { null },
-                            // Ordered by wire value so two identical selections submit identically,
-                            // whatever order the chips were tapped in.
-                            selectedTags.sortedBy { it.code },
-                            // Only the rows actually scored, in list order so two identical reviews
-                            // submit identically whatever order the stars were tapped in.
-                            lineOptions.mapNotNull { option ->
-                                lineScores[option.key]?.let { score ->
-                                    ReviewLineScoreRequest(
-                                        serviceId = option.serviceId,
-                                        packageId = option.packageId,
-                                        rating = score,
+                            if (linesExpanded) {
+                                Text(
+                                    text = stringResource(R.string.order_review_rate_items_hint),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Spacer(Modifier.height(6.dp))
+                                lineOptions.forEach { option ->
+                                    ReviewLineRow(
+                                        option = option,
+                                        rating = lineScores[option.key] ?: 0,
+                                        enabled = !isSubmitting,
+                                        onRate = { star ->
+                                            // Pressing the star already chosen clears the row — the only way back
+                                            // to "not scored" once it has been touched, and without it a mis-tap
+                                            // is permanent.
+                                            lineScores = if (lineScores[option.key] == star) {
+                                                lineScores - option.key
+                                            } else {
+                                                lineScores + (option.key to star)
+                                            }
+                                        },
                                     )
                                 }
-                            },
-                        )
+                            }
+                        }
                     }
-                },
-                enabled = canSubmit,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
-                shape = CircleShape,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                    disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                    disabledContentColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
-                ),
-            ) {
-                if (isSubmitting) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        strokeWidth = 2.dp,
-                    )
-                } else {
-                    Text(
-                        text = stringResource(
-                            if (isEdit) R.string.order_review_save
-                            else R.string.order_review_submit,
-                        ),
-                        style = MaterialTheme.typography.titleMedium,
-                    )
                 }
             }
 
-            Spacer(Modifier.navigationBarsPadding())
-            Spacer(Modifier.height(8.dp))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .padding(top = 12.dp)
+                    .navigationBarsPadding(),
+            ) {
+                if (!errorMessage.isNullOrBlank()) {
+                    Text(
+                        text = errorMessage,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                    Spacer(Modifier.height(8.dp))
+                }
+
+                val canSubmit = rating in 1..5 && !isSubmitting
+                Button(
+                    onClick = {
+                        if (canSubmit) {
+                            onConfirm(
+                                rating,
+                                comment.trim().ifBlank { null },
+                                // Ordered by wire value so two identical selections submit identically,
+                                // whatever order the chips were tapped in.
+                                selectedTags.sortedBy { it.code },
+                                // Only the rows actually scored, in list order so two identical reviews
+                                // submit identically whatever order the stars were tapped in.
+                                lineOptions.mapNotNull { option ->
+                                    lineScores[option.key]?.let { score ->
+                                        ReviewLineScoreRequest(
+                                            serviceId = option.serviceId,
+                                            packageId = option.packageId,
+                                            rating = score,
+                                        )
+                                    }
+                                },
+                            )
+                        }
+                    },
+                    enabled = canSubmit,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp),
+                    shape = CircleShape,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                        disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                        disabledContentColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
+                    ),
+                ) {
+                    if (isSubmitting) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            strokeWidth = 2.dp,
+                        )
+                    } else {
+                        Text(
+                            text = stringResource(
+                                if (isEdit) R.string.order_review_save
+                                else R.string.order_review_submit,
+                            ),
+                            style = MaterialTheme.typography.titleMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+
+                TextButton(
+                    onClick = onDismiss,
+                    enabled = !isSubmitting,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                    colors = ButtonDefaults.textButtonColors(contentColor = primaryText()),
+                ) {
+                    Text(
+                        text = stringResource(dismissLabelRes),
+                        style = MaterialTheme.typography.labelLarge,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
         }
     }
 }
@@ -444,8 +475,7 @@ private fun ReviewTag.labelRes(): Int = when (this) {
 
 /**
  * Centered row of 5 tappable star icons. Filled + amber up to and including
- * [rating]; outlined + muted beyond it. IconButton provides the 40dp hit
- * target out of the box.
+ * [rating]; outlined + muted beyond it. Each star has a 48dp touch target.
  */
 @Composable
 private fun StarRow(
@@ -455,7 +485,7 @@ private fun StarRow(
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Center,
+        horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         for (star in 1..5) {
@@ -463,12 +493,13 @@ private fun StarRow(
             IconButton(
                 onClick = { onRatingChange(star) },
                 enabled = enabled,
+                modifier = Modifier.size(48.dp),
             ) {
                 Icon(
                     imageVector = if (isFilled) Icons.Filled.Star else Icons.Outlined.StarBorder,
                     contentDescription = pluralStringResource(R.plurals.order_review_star_content_desc, star, star),
-                    tint = if (isFilled) WarningStar else MaterialTheme.colorScheme.outlineVariant,
-                    modifier = Modifier.size(32.dp),
+                    tint = if (isFilled) WarningStar else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(36.dp),
                 )
             }
         }
@@ -486,22 +517,21 @@ private fun ratingDescriptionRes(rating: Int): Int = when (rating) {
 }
 
 /**
- * One item, with a compact star row. Name left, stars right, so the stars line up into a column the
- * eye can run down — seeing them side by side is the whole value of scoring items separately.
+ * Item labels sit above their stars so translated names do not squeeze the touch targets.
  */
 @Composable
 private fun ReviewLineRow(
     option: ReviewLineOption,
     rating: Int,
+    enabled: Boolean,
     onRate: (Int) -> Unit,
 ) {
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(Modifier.weight(1f)) {
+        Column {
             Text(
                 text = option.label,
                 style = MaterialTheme.typography.bodyMedium,
@@ -516,11 +546,12 @@ private fun ReviewLineRow(
                 )
             }
         }
-        Row {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
             (1..5).forEach { star ->
                 IconButton(
                     onClick = { onRate(star) },
-                    modifier = Modifier.size(28.dp),
+                    modifier = Modifier.size(48.dp),
+                    enabled = enabled,
                 ) {
                     Icon(
                         imageVector = if (star <= rating) Icons.Filled.Star else Icons.Outlined.StarBorder,
@@ -530,10 +561,38 @@ private fun ReviewLineRow(
                             star,
                         ),
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(18.dp),
+                        modifier = Modifier.size(24.dp),
                     )
                 }
             }
         }
+    }
+}
+
+@Preview(name = "Rating · light", widthDp = 360, heightDp = 740)
+@Composable
+fun RatingSheetLightPreview() {
+    CleansiaTheme(darkTheme = false) {
+        SubmitReviewSheet(
+            onDismiss = {},
+            onConfirm = { _, _, _, _ -> },
+            titleRes = R.string.order_review_prompt_title,
+            dismissLabelRes = R.string.order_review_prompt_not_now,
+            lineOptions = listOf(ReviewLineOption("preview-service", null, "Kitchen cleaning", null)),
+        )
+    }
+}
+
+@Preview(name = "Rating · dark", widthDp = 360, heightDp = 740)
+@Composable
+fun RatingSheetDarkPreview() {
+    CleansiaTheme(darkTheme = true) {
+        SubmitReviewSheet(
+            onDismiss = {},
+            onConfirm = { _, _, _, _ -> },
+            titleRes = R.string.order_review_prompt_title,
+            dismissLabelRes = R.string.order_review_prompt_not_now,
+            lineOptions = listOf(ReviewLineOption("preview-service", null, "Kitchen cleaning", null)),
+        )
     }
 }

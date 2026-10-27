@@ -358,7 +358,7 @@
 
     <!-- Order review (Wave 2 Phase 3) -->
     <string name="order_review_sheet_title">Rate your cleaning</string>
-    <string name="order_review_rating_hint">Tap a star to rate</string>
+    <string name="order_review_rating_hint">Only your star rating is required.</string>
     <string name="order_review_rating_1">Terrible</string>
     <string name="order_review_rating_2">Poor</string>
     <string name="order_review_rating_3">Okay</string>

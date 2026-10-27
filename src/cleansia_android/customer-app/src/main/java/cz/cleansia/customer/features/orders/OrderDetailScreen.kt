@@ -8,12 +8,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -33,6 +35,7 @@ import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.PersonOff
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.ReportProblem
+import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -57,10 +60,13 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -72,6 +78,7 @@ import cz.cleansia.core.ui.components.CleansiaErrorState
 import cz.cleansia.core.ui.components.SnapAnchor
 import cz.cleansia.core.ui.components.SnapSheet
 import cz.cleansia.core.ui.components.SnapSheetState
+import cz.cleansia.core.ui.components.SnapSheetDefaults
 import cz.cleansia.core.ui.components.rememberSnapSheetState
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.core.ui.theme.primaryText
@@ -360,9 +367,6 @@ fun OrderDetailScreen(
         )
     }
 
-    // Review sheet — opened from ReviewCard for both new reviews ("Leave a
-    // review") and edits ("Edit review"). The sheet itself flips title +
-    // submit-button copy based on whether an existing review is supplied.
     // The `loaded` guard keeps us defensive if state flips mid-submit.
     if (showReviewSheet && loaded != null) {
         val currentReview = loaded.order.review
@@ -441,7 +445,16 @@ private fun OrderDetailMapLayout(
 ) {
     val status = orderStatusFromValue(order.orderStatus?.value)
     val darkTheme = isSystemInDarkTheme()
-    val sheetState = rememberSnapSheetState()
+    val density = LocalDensity.current
+    var pinnedHeaderHeight by remember { mutableStateOf(0.dp) }
+    var footerHeight by remember { mutableStateOf(0.dp) }
+    val showLeaveReview = customerCanLeaveReview(order.orderStatus?.value, order.isGuestBooking, order.review != null)
+    val minimumHeight = if (showLeaveReview) {
+        maxOf(SnapSheetDefaults.MinSheetHeight, pinnedHeaderHeight + footerHeight + 48.dp)
+    } else {
+        SnapSheetDefaults.MinSheetHeight
+    }
+    val sheetState = rememberSnapSheetState(minSheetHeight = minimumHeight)
     val scope = rememberCoroutineScope()
     // Hoisted out of the sheet content because the mascot in the overlay needs it too: it is anchored to
     // the TOP OF THE CONTENT, not to the viewport, and the only way an overlay can know where the
@@ -529,6 +542,8 @@ private fun OrderDetailMapLayout(
             onConfirmRecurring = onConfirmRecurring,
             onSaveCardChange = onSaveCardChange,
             onTermsAcceptedChange = onTermsAcceptedChange,
+            onHeaderHeightChanged = { pinnedHeaderHeight = with(density) { it.toDp() } },
+            onFooterHeightChanged = { footerHeight = with(density) { it.toDp() } },
         )
     }
 }
@@ -583,11 +598,14 @@ private fun OrderDetailSheetContent(
     onConfirmRecurring: () -> Unit,
     onSaveCardChange: (Boolean) -> Unit,
     onTermsAcceptedChange: (Boolean) -> Unit,
+    onHeaderHeightChanged: (Int) -> Unit = {},
+    onFooterHeightChanged: (Int) -> Unit = {},
 ) {
     val payByCard = order.paymentType?.value == 2
     // Without a Stripe key a card occurrence is not offered: its confirm spends credit for a sheet that cannot open.
     val showConfirmRecurringCta = order.needsConfirmation && (cardPaymentAvailable || !payByCard)
-    val hasFooter = showCancel || showCleanerNoShow || showReportIssue || showRebook || showMakeRecurring
+    val showLeaveReview = customerCanLeaveReview(order.orderStatus?.value, order.isGuestBooking, order.review != null)
+    val hasFooter = showLeaveReview || showCancel || showCleanerNoShow || showReportIssue || showRebook || showMakeRecurring
 
     // Gesture-priority guard, the same one the partner sheet carries: once the customer has scrolled
     // INTO the sheet content, a vertical drag must keep scrolling that content rather than collapsing
@@ -623,13 +641,10 @@ private fun OrderDetailSheetContent(
             .fillMaxHeight()
             .nestedScroll(sheetGuard),
     ) {
-        SheetGrabber()
-
-        // Identity, pinned: it does not scroll, so dragging the sheet down onto the map still leaves
-        // the customer looking at which order this is. The mascot rides the sheet's top edge on the
-        // RIGHT, so this row keeps its trailing half clear — that is why the date sits under the order
-        // number rather than opposite it. The iOS twin is `OrderDetailCompactHeader`.
-        OrderDetailCompactHeader(order = order)
+        Column(Modifier.onSizeChanged { onHeaderHeightChanged(it.height) }) {
+            SheetGrabber()
+            OrderDetailCompactHeader(order = order)
+        }
 
         Column(
             modifier = Modifier
@@ -747,7 +762,7 @@ private fun OrderDetailSheetContent(
                 TimelineCard(order.statusHistory)
             }
 
-            if (status == OrderStatus.Completed && !order.isGuestBooking) {
+            if (status == OrderStatus.Completed && !order.isGuestBooking && order.review != null) {
                 ReviewCard(order = order, onLeaveReview = onLeaveReview)
             }
 
@@ -765,6 +780,7 @@ private fun OrderDetailSheetContent(
 
         if (hasFooter) {
             ActionsFooter(
+                showLeaveReview = showLeaveReview,
                 showCancel = showCancel,
                 showCleanerNoShow = showCleanerNoShow,
                 showReportIssue = showReportIssue,
@@ -776,6 +792,8 @@ private fun OrderDetailSheetContent(
                 onReportIssue = onReportIssue,
                 onRebook = onRebook,
                 onMakeRecurring = onMakeRecurring,
+                onLeaveReview = onLeaveReview,
+                modifier = Modifier.onSizeChanged { onFooterHeightChanged(it.height) },
             )
         }
     }
@@ -836,15 +854,12 @@ private fun ConfirmRecurringButton(
 /* ── Actions footer ── */
 
 /**
- * Footer that hosts the Cancel + Report Issue actions. Both buttons are
- * full-width; when both are visible they stack vertically with Cancel on
- * top (destructive intent gets the prime real-estate) and Report Issue
- * below (constructive secondary). Sits on a filled surface so the borders
- * read cleanly regardless of the page bg tint, and respects the system nav
- * inset so it isn't clipped on gesture-bar devices.
+ * Keep eligible actions reachable while order content scrolls. The filled surface
+ * separates them from the page and respects the system navigation inset.
  */
 @Composable
 private fun ActionsFooter(
+    showLeaveReview: Boolean,
     showCancel: Boolean,
     showCleanerNoShow: Boolean,
     showReportIssue: Boolean,
@@ -856,13 +871,15 @@ private fun ActionsFooter(
     onReportIssue: () -> Unit,
     onRebook: () -> Unit,
     onMakeRecurring: () -> Unit,
+    onLeaveReview: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val showCancelSlot = showCancel || showCleanerNoShow
     Surface(
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 0.dp,
         shadowElevation = 8.dp,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
             modifier = Modifier
@@ -870,21 +887,30 @@ private fun ActionsFooter(
                 .windowInsetsPadding(WindowInsets.navigationBars)
                 .padding(horizontal = 16.dp, vertical = 12.dp),
         ) {
-            // Wave 3 — "Book again" sits on top as the primary CTA when shown.
-            // Status gating in the parent guarantees showRebook is only true
-            // when status == Completed; cancel + rebook never coexist.
-            if (showRebook) {
+            if (showLeaveReview) {
                 Button(
-                    onClick = onRebook,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
+                    onClick = onLeaveReview,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
                     shape = CircleShape,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary,
                     ),
                 ) {
+                    Icon(Icons.Outlined.Star, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(R.string.order_review_sheet_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                Spacer(Modifier.height(8.dp))
+            }
+
+            if (showRebook) {
+                val label: @Composable RowScope.() -> Unit = {
                     Icon(
                         Icons.Outlined.Refresh,
                         contentDescription = null,
@@ -894,6 +920,29 @@ private fun ActionsFooter(
                     Text(
                         text = stringResource(R.string.order_action_rebook),
                         style = MaterialTheme.typography.titleMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                if (showLeaveReview) {
+                    OutlinedButton(
+                        onClick = onRebook,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                        shape = CircleShape,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = primaryText()),
+                        content = label,
+                    )
+                } else {
+                    Button(
+                        onClick = onRebook,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                        shape = CircleShape,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                        ),
+                        content = label,
                     )
                 }
             }
@@ -902,15 +951,12 @@ private fun ActionsFooter(
                 Spacer(Modifier.height(8.dp))
             }
 
-            // PA14 Path B — sits between Rebook (primary) and the
-            // outlined Cancel/Report buttons. Outlined-secondary style so
-            // it doesn't compete with Rebook.
             if (showMakeRecurring) {
                 OutlinedButton(
                     onClick = onMakeRecurring,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp),
+                        .heightIn(min = 48.dp),
                     shape = CircleShape,
                     // The border keeps the primary; the label and its icon take the text blue.
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
@@ -927,6 +973,8 @@ private fun ActionsFooter(
                     Text(
                         text = stringResource(R.string.order_action_make_recurring),
                         style = MaterialTheme.typography.titleMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
                 if (showCancelSlot || showReportIssue) {
@@ -940,7 +988,7 @@ private fun ActionsFooter(
                     enabled = cancelEnabled,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp),
+                        .heightIn(min = 48.dp),
                     shape = CircleShape,
                     border = BorderStroke(
                         1.dp,
@@ -959,6 +1007,8 @@ private fun ActionsFooter(
                     Text(
                         text = stringResource(R.string.order_action_cancel),
                         style = MaterialTheme.typography.titleMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             } else if (showCleanerNoShow) {
@@ -966,7 +1016,7 @@ private fun ActionsFooter(
                     onClick = onReportCleanerNoShow,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp),
+                        .heightIn(min = 48.dp),
                     shape = CircleShape,
                     border = BorderStroke(
                         1.dp,
@@ -985,6 +1035,8 @@ private fun ActionsFooter(
                     Text(
                         text = stringResource(R.string.order_action_cleaner_no_show),
                         style = MaterialTheme.typography.titleMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
@@ -1007,7 +1059,7 @@ private fun ActionsFooter(
                     onClick = onReportIssue,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp),
+                        .heightIn(min = 48.dp),
                     shape = CircleShape,
                     border = BorderStroke(
                         1.dp,
@@ -1026,6 +1078,8 @@ private fun ActionsFooter(
                     Text(
                         text = stringResource(R.string.order_action_report_issue),
                         style = MaterialTheme.typography.titleMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
@@ -1254,3 +1308,75 @@ internal fun cancellationReasonRes(reason: String?): Int? = when (reason) {
 @Composable
 private fun cancellationReasonText(reason: String?): String? =
     cancellationReasonRes(reason)?.let { stringResource(it) }
+
+@Preview(name = "Pending rating footer · light", widthDp = 360)
+@Composable
+fun PendingRatingFooterLightPreview() {
+    CleansiaTheme(darkTheme = false) { PendingRatingFooterPreviewContent() }
+}
+
+@Preview(name = "Pending rating footer · dark", widthDp = 360)
+@Composable
+fun PendingRatingFooterDarkPreview() {
+    CleansiaTheme(darkTheme = true) { PendingRatingFooterPreviewContent() }
+}
+
+@Composable
+private fun PendingRatingFooterPreviewContent() {
+    ActionsFooter(
+        showLeaveReview = true,
+        showCancel = false,
+        showCleanerNoShow = false,
+        showReportIssue = true,
+        showRebook = true,
+        showMakeRecurring = true,
+        cancelEnabled = true,
+        onCancel = {},
+        onReportCleanerNoShow = {},
+        onReportIssue = {},
+        onRebook = {},
+        onMakeRecurring = {},
+        onLeaveReview = {},
+    )
+}
+
+@Preview(name = "Completed unrated detail", widthDp = 360, heightDp = 740)
+@Composable
+fun CompletedUnratedDetailPreview() {
+    CleansiaTheme {
+        OrderDetailMapLayout(
+            order = previewOrder.copy(
+                address = null,
+                orderStatus = CodeDto(type = "OrderStatus", name = "Completed", value = 5),
+            ),
+            markets = MarketState.Unavailable,
+            photosState = PhotosUiState.Idle,
+            showCancel = false,
+            showCleanerNoShow = false,
+            showReportIssue = true,
+            showRebook = true,
+            showMakeRecurring = true,
+            cancelEnabled = true,
+            confirmingRecurring = false,
+            cardPaymentAvailable = false,
+            offersCardSaving = false,
+            saveCard = false,
+            termsAsked = false,
+            termsAccepted = false,
+            canConfirmRecurring = false,
+            isDownloadingReceipt = false,
+            onBack = {},
+            onCancel = {},
+            onReportCleanerNoShow = {},
+            onReportIssue = {},
+            onRebook = {},
+            onMakeRecurring = {},
+            onLeaveReview = {},
+            onDownloadReceipt = {},
+            onViewPhotos = {},
+            onConfirmRecurring = {},
+            onSaveCardChange = {},
+            onTermsAcceptedChange = {},
+        )
+    }
+}

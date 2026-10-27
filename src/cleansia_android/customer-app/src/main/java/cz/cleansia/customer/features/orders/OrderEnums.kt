@@ -53,6 +53,9 @@ fun customerCanCancelOrder(statusValue: Int?): Boolean = when (orderStatusFromVa
     else -> false
 }
 
+internal fun customerCanLeaveReview(statusValue: Int?, isGuestBooking: Boolean, hasReview: Boolean): Boolean =
+    orderStatusFromValue(statusValue) == OrderStatus.Completed && !isGuestBooking && !hasReview
+
 /**
  * Past the booked start with a cleaner on the job and nobody started: the server refuses a cancel
  * (`order.start_passed_cannot_cancel`) and the customer reports that the cleaner did not arrive.

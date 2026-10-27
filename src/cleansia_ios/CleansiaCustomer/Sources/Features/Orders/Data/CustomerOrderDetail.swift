@@ -119,6 +119,10 @@ struct CustomerOrderDetail: Equatable {
         !isGuestBooking && OrderStatusGroup.isCompleted(status)
     }
 
+    var needsReview: Bool {
+        offersReview && review == nil
+    }
+
     var offersReceipt: Bool {
         !isGuestBooking && (!(receiptNumber?.isBlank ?? true) || OrderStatusGroup.isCompleted(status))
     }

@@ -75,6 +75,37 @@ final class ReviewPromptTests: XCTestCase {
     }
 }
 
+final class OrderDetailReviewEligibilityTests: XCTestCase {
+    func testOnlyACompletedAccountBookingWithoutAReviewNeedsARating() {
+        for status in OrderStatus.allCases {
+            let order = OrderFixtures.detail(statusValue: status.rawValue)
+            XCTAssertEqual(order.needsReview, status == ._5, "status \(status)")
+        }
+    }
+
+    func testAnUnknownStatusNeverOffersANewRating() {
+        XCTAssertFalse(OrderFixtures.detail().needsReview)
+        XCTAssertFalse(OrderFixtures.detail(statusValue: 999).needsReview)
+    }
+
+    func testGuestBookingsNeverOfferANewRating() {
+        for status in OrderStatus.allCases {
+            var order = OrderFixtures.detail(statusValue: status.rawValue)
+            order.isGuestBooking = true
+            XCTAssertFalse(order.needsReview, "status \(status)")
+        }
+    }
+
+    func testASavedReviewStopsTheRatingInvitationAndKeepsTheEditPath() {
+        let review = CustomerOrderReview(rating: 4, comment: nil, tags: [], lines: [])
+        for status in OrderStatus.allCases {
+            let order = OrderFixtures.detail(statusCode: Code(value: status.rawValue), review: review)
+            XCTAssertFalse(order.needsReview, "status \(status)")
+            XCTAssertEqual(order.offersReview, status == ._5, "status \(status)")
+        }
+    }
+}
+
 final class CustomerReviewTagTests: XCTestCase {
     func testLowRatingsOfferOnlyNegativeTags() {
         for rating in 1 ... 3 {

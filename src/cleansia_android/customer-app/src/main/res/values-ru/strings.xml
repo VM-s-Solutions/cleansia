@@ -357,7 +357,7 @@
 
     <!-- Order review -->
     <string name="order_review_sheet_title">Оцените уборку</string>
-    <string name="order_review_rating_hint">Нажмите звезду для оценки</string>
+    <string name="order_review_rating_hint">Обязательна только оценка звёздами.</string>
     <string name="order_review_rating_1">Ужасно</string>
     <string name="order_review_rating_2">Плохо</string>
     <string name="order_review_rating_3">Нормально</string>

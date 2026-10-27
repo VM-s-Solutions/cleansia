@@ -86,23 +86,19 @@ private struct TimelineRow: View {
 }
 
 struct OrderReviewCard: View {
-    let review: CustomerOrderReview?
+    let review: CustomerOrderReview
     let onLeaveReview: () -> Void
 
     var body: some View {
         OrderCardSurface {
             OrderSectionHeaderRow(title: L10n.OrderDetail.yourReview)
-            if let review {
-                StarsRow(rating: review.rating)
-                if let comment = review.comment, !comment.isBlank {
-                    Text(verbatim: "“\(comment)”")
-                        .font(CleansiaTypography.bodyMedium)
-                        .foregroundColor(CleansiaColors.onSurfaceVariant)
-                }
-                CleansiaOutlinedButton(L10n.OrderDetail.editReview, action: onLeaveReview)
-            } else {
-                CleansiaPrimaryButton(L10n.OrderDetail.leaveReview, action: onLeaveReview)
+            StarsRow(rating: review.rating)
+            if let comment = review.comment, !comment.isBlank {
+                Text(verbatim: "“\(comment)”")
+                    .font(CleansiaTypography.bodyMedium)
+                    .foregroundColor(CleansiaColors.onSurfaceVariant)
             }
+            CleansiaOutlinedButton(L10n.OrderDetail.editReview, action: onLeaveReview)
         }
     }
 }

@@ -29,11 +29,6 @@ export class PartnerAuthService {
   private readonly cookieKeys = inject(AUTH_COOKIE_KEYS);
 
   readonly isLoggedIn$ = new BehaviorSubject<boolean>(this.isLoggedIn());
-
-  // The confirmation sets the password its confirmer chooses (owner ruling 2026-10-26, "Close"). Right
-  // after a registration that is the password just typed, held here in memory and nowhere else until
-  // the address is confirmed; a reload forgets it and the confirm screen asks for one.
-  private registeredPassword: { email: string; password: string } | null = null;
   readonly isLoggedInAction$: Observable<boolean> = this.isLoggedIn$.pipe(
     map((isLoggedIn: boolean) => {
       if (!isLoggedIn) {
@@ -42,6 +37,11 @@ export class PartnerAuthService {
       return isLoggedIn;
     })
   );
+
+  // The confirmation sets the password its confirmer chooses (owner ruling 2026-10-26, "Close"). Right
+  // after a registration that is the password just typed, held here in memory and nowhere else until
+  // the address is confirmed; a reload forgets it and the confirm screen asks for one.
+  private registeredPassword: { email: string; password: string } | null = null;
 
   private currentLanguage(): string {
     return this.translate.currentLang || this.translate.getDefaultLang();

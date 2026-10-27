@@ -161,7 +161,6 @@ export class OrderDetailsComponent implements OnInit {
     const order = this.orderDetails();
     const eid = this.currentEmployeeId();
     if (!order || !eid) return false;
-    // Per spec: Complete requires InProgress + employee assigned + at least one After photo.
     return canCompleteOrder(order.orderStatus.value, order.assignedEmployees, eid) && this.hasAfterPhotos();
   });
 
@@ -184,7 +183,6 @@ export class OrderDetailsComponent implements OnInit {
       : 'pages.order_details.complete_order'
   );
 
-  // A crew job under way names, on each cleaner's row, whether they have marked their part yet.
   protected readonly crewJobUnderWay = computed(() => {
     const order = this.orderDetails();
     return order?.orderStatus?.value === OrderStatus.InProgress && (order.assignedEmployees?.length ?? 0) >= 2;

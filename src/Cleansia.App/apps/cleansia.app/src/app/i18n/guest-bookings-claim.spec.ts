@@ -33,7 +33,7 @@ function trackOrderCopy(locale: string): Record<string, unknown> {
 
 /**
  * An account lists a booking made without one only when the booking carries the account's own e-mail
- * (owner ruling 2026-10-26, option B), so a promise that the account shows "every order" is true only
+ * (owner ruling 2026-10-26), so a promise that the account shows "every order" is true only
  * with that condition: an account opened under another address, an Apple relay among them, sees none.
  */
 describe('the track page promises the account only the bookings made with its e-mail', () => {

@@ -58,6 +58,7 @@
     <!-- Auth — email verify -->
     <string name="verify_title">Подтвердите email</string>
     <string name="verify_description">Мы отправили 6-значный код подтверждения на ваш email. Введите его ниже для подтверждения учётной записи.</string>
+    <string name="verify_password_prompt">Выберите пароль, с которым вы будете входить после подтверждения email.</string>
     <string name="verify_submit">Подтвердить код</string>
     <string name="verify_resend_code">Отправить код повторно</string>
     <string name="auth_resend_success">Письмо подтверждения отправлено повторно.</string>

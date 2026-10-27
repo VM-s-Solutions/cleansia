@@ -98,7 +98,21 @@ class AuthRepositoryTest {
     @Test
     fun confirmEmail_clearsEverySuppliedCacheBeforeSavingFreshTokens() = kotlinx.coroutines.test.runTest {
         coEvery { api.confirmUserEmail(any()) } returns Response.success(freshIdentity())
-        assertSuccessfulSignInWipe { it.confirmEmail("next@example.com", "123456") }
+        assertSuccessfulSignInWipe { it.confirmEmail("next@example.com", "123456", "Heslo2026") }
+    }
+
+    /** The confirmation sets the account's password to the one it carries, under the name the server binds. */
+    @Test
+    fun confirmEmail_sendsTheChosenPasswordWithTheCode() = kotlinx.coroutines.test.runTest {
+        val sent = io.mockk.slot<ConfirmUserEmailRequest>()
+        coEvery { api.confirmUserEmail(capture(sent)) } returns Response.success(freshIdentity())
+
+        newRepository().confirmEmail("next@example.com", "123456", "Heslo2026")
+
+        assertEquals(
+            """{"code":"123456","email":"next@example.com","password":"Heslo2026"}""",
+            AuthModule.provideJson().encodeToString(sent.captured),
+        )
     }
 
     @Test
@@ -571,7 +585,7 @@ class AuthRepositoryTest {
         val repo = newRepository()
         repo.register("user@example.com", "pw", "Ada", "Lovelace", "en", termsAccepted = true)
         repo.googleAuth("id-token", "subject", "user@example.com", "Ada", "Lovelace", termsAccepted = true)
-        repo.confirmEmail("user@example.com", "123456")
+        repo.confirmEmail("user@example.com", "123456", "Heslo2026")
         repo.resendConfirmationEmail("user@example.com", "en")
         repo.requestPasswordChange("user@example.com", "en")
         repo.changePassword("user@example.com", "123456", "pw2")

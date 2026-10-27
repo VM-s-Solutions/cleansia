@@ -58,6 +58,7 @@
     <!-- Auth — email verify -->
     <string name="verify_title">Ověřte svůj e-mail</string>
     <string name="verify_description">Poslali jsme šestimístný ověřovací kód na váš e-mail. Zadejte ho níže pro ověření účtu.</string>
+    <string name="verify_password_prompt">Zvolte heslo, kterým se budete přihlašovat po potvrzení e-mailu.</string>
     <string name="verify_submit">Ověřit kód</string>
     <string name="verify_resend_code">Poslat kód znovu</string>
     <string name="auth_resend_success">Ověřovací e-mail byl znovu odeslán.</string>

@@ -58,6 +58,7 @@
     <!-- Auth — email verify -->
     <string name="verify_title">Overte svoj e-mail</string>
     <string name="verify_description">Poslali sme šesťmiestny overovací kód na váš e-mail. Zadajte ho nižšie pre overenie účtu.</string>
+    <string name="verify_password_prompt">Zvoľte heslo, ktorým sa budete prihlasovať po potvrdení e-mailu.</string>
     <string name="verify_submit">Overiť kód</string>
     <string name="verify_resend_code">Poslať kód znova</string>
     <string name="auth_resend_success">Overovací e-mail bol znova odoslaný.</string>

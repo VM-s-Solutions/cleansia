@@ -114,9 +114,10 @@ data class GoogleAuthRequest(
 )
 
 // The email names the account the 6-digit code was issued to — the server verifies the code ONLY
-// against that account (a bare code proves nothing by itself).
+// against that account (a bare code proves nothing by itself). The confirmation sets the account's
+// password to [password].
 @Serializable
-data class ConfirmUserEmailRequest(val code: String, val email: String)
+data class ConfirmUserEmailRequest(val code: String, val email: String, val password: String)
 
 @Serializable
 data class ResendConfirmationEmailRequest(

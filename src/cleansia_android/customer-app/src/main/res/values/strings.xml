@@ -58,6 +58,7 @@
     <!-- Auth — email verify -->
     <string name="verify_title">Verify your email</string>
     <string name="verify_description">We\'ve sent a 6-digit verification code to your email. Enter the code below to verify your account.</string>
+    <string name="verify_password_prompt">Choose the password you\'ll sign in with once your email is confirmed.</string>
     <string name="verify_submit">Verify code</string>
     <string name="verify_resend_code">Resend code</string>
     <string name="auth_resend_success">Verification email resent.</string>

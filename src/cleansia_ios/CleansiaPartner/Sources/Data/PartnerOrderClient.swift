@@ -48,8 +48,9 @@ protocol PartnerOrderClient: AnyObject {
     func markCashCollected(orderId: String) async -> ApiResult<Void>
     /// The customer paid nothing at the door: the job completes and the price becomes the customer's debt.
     func reportCashNotPaid(orderId: String) async -> ApiResult<Void>
-    /// "I'm done" on a crew job: stamps the caller's own seat, which the server reads off the session.
-    func markMyPartDone(orderId: String) async -> ApiResult<Void>
+    /// "I'm done" on a crew job: stamps the caller's own seat, which the server reads off the session. Answers
+    /// whether everyone still on the job has now marked theirs.
+    func markMyPartDone(orderId: String) async -> ApiResult<Bool>
     func completeOrder(orderId: String, actualMinutes: Int?, notes: String?) async -> ApiResult<Void>
     /// Leaves the crew: the seat goes back on the board and the customer's booking stands. Answers how many
     /// cleaners are still on the job.
@@ -225,11 +226,12 @@ final class LivePartnerOrderClient: PartnerOrderClient {
         }
     }
 
-    func markMyPartDone(orderId: String) async -> ApiResult<Void> {
+    func markMyPartDone(orderId: String) async -> ApiResult<Bool> {
         await apiResult(mapError: ApiError.fromGenerated) {
-            _ = try await PartnerOrderAPI.orderMarkMyPartDone(
+            try await PartnerOrderAPI.orderMarkMyPartDone(
                 markMyPartDoneCommand: MarkMyPartDoneCommand(orderId: orderId)
             )
+            .crewDone.require("crewDone")
         }
     }
 

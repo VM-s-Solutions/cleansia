@@ -211,8 +211,11 @@ final class FakePartnerOrderClient: PartnerOrderClient {
         await record("reportCashNotPaid", orderId)
     }
 
-    func markMyPartDone(orderId: String) async -> ApiResult<Void> {
-        await record("markMyPartDone", orderId)
+    /// Whether the server says everyone on the job has marked once this mark lands.
+    var crewDoneAfterMark = false
+
+    func markMyPartDone(orderId: String) async -> ApiResult<Bool> {
+        await record("markMyPartDone", orderId).map { crewDoneAfterMark }
     }
 
     func completeOrder(orderId: String, actualMinutes _: Int?, notes _: String?) async -> ApiResult<Void> {

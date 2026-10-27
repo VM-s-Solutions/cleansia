@@ -103,6 +103,10 @@ extension L10n.Orders {
         L10n.localized("order_part_marked_done_toast")
     }
 
+    static var crewDoneToast: String {
+        L10n.localized("order_crew_done_toast")
+    }
+
     static var crewWaiting: String {
         L10n.localized("order_crew_waiting")
     }

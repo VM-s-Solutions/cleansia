@@ -54,12 +54,11 @@ enum OrderAction: Equatable {
         case .start: L10n.Orders.orderStartedToast
         case .markCashCollected: L10n.Orders.cashCollectedToast
         case .reportCashNotPaid: L10n.Orders.cashNotPaidReportedToast
-        case .markDone: L10n.Orders.partMarkedDoneToast
         case .complete: L10n.Orders.orderCompletedToast
         case .declineOffer: L10n.Offers.declinedToast
         case .reportLockout: L10n.Orders.lockoutReportedToast
-        // Which sentence depends on the crew the server says is left.
-        case .take, .acceptContract, .drop: nil
+        // Which sentence depends on what the server says of the crew.
+        case .take, .acceptContract, .markDone, .drop: nil
         }
     }
 }
@@ -279,7 +278,11 @@ final class OrderDetailViewModel: ViewModel {
     }
 
     func markMyPartDone() async {
-        await run(.markDone) { await self.client.markMyPartDone(orderId: self.orderId) }
+        await run(
+            .markDone,
+            confirmation: { crewDone in crewDone ? L10n.Orders.crewDoneToast : L10n.Orders.partMarkedDoneToast },
+            { await self.client.markMyPartDone(orderId: self.orderId) }
+        )
     }
 
     func complete() async {
@@ -343,15 +346,23 @@ final class OrderDetailViewModel: ViewModel {
     }
 
     private func run(_ action: OrderAction, _ block: @escaping () async -> ApiResult<Void>) async {
+        await run(action, confirmation: { _ in action.successFeedback }, block)
+    }
+
+    private func run<Value>(
+        _ action: OrderAction,
+        confirmation: (Value) -> String?,
+        _ block: @escaping () async -> ApiResult<Value>
+    ) async {
         // Re-entry guard: one mutation in flight (O4).
         guard !actionState.isSubmitting else { return }
         actionState = .submitting
         inFlightAction = action
 
         switch await block() {
-        case .success:
-            if let confirmation = action.successFeedback {
-                snackbar.showSuccess(confirmation)
+        case let .success(value):
+            if let message = confirmation(value) {
+                snackbar.showSuccess(message)
             }
             staleness.invalidatePanes(for: action.mutation)
             staleness.invalidateOrder(orderId)

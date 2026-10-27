@@ -14471,6 +14471,41 @@
         }
       }
     },
+    "order_crew_done_toast": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Označeno jako hotové. Svou část už označili všichni na této zakázce."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marked as done. Everyone on this job has now marked their part."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отмечено как готовое. Все на этом заказе уже отметили свою часть."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Označené ako hotové. Svoju časť už označili všetci na tejto zákazke."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Позначено як готове. Усі на цьому замовленні вже позначили свою частину."
+          }
+        }
+      }
+    },
     "order_crew_waiting": {
       "extractionState": "manual",
       "localizations": {

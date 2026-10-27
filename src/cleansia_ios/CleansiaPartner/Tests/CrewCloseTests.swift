@@ -142,7 +142,8 @@ final class CrewCloseTests: XCTestCase {
             "marking_done",
             "order_part_marked_done_toast",
             "order_crew_waiting",
-            "order_complete_job"
+            "order_complete_job",
+            "order_crew_done_toast"
         ]
         let english = try table("en")
         // The names the owner was given for the two crew controls, the ones the partner web shows.
@@ -267,6 +268,18 @@ final class CrewCloseDetailTests: XCTestCase {
         }
     }
 
+    /// The last cleaner to mark is told the whole crew has: the shared Complete job is open to all of them now.
+    func testTheLastMarkSaysEveryoneOnTheJobHasMarked() async {
+        let vm = await loadedVM(job(myPartDone: false, mateDone: true))
+        client.crewDoneAfterMark = true
+
+        await vm.dispatch(.markDone)
+
+        XCTAssertEqual(client.commands.map(\.name), ["markMyPartDone"])
+        XCTAssertEqual(snackbar.current?.severity, .success)
+        XCTAssertEqual(snackbar.current?.text, L10n.Orders.crewDoneToast)
+    }
+
     func testARefusedMarkShowsTheReasonAndReReadsTheJob() async {
         let vm = await loadedVM(job(myPartDone: false, mateDone: false))
         client.commandResult = .failure(ApiError(code: "order.not_in_progress", httpStatus: 400))
@@ -338,11 +351,27 @@ final class CrewCloseWireTests: XCTestCase {
             .utf8)
         GeneratedWireSpine.install(recording: bodies) { _ in (200, answer) }
 
-        try await LivePartnerOrderClient(staleness: shared).markMyPartDone(orderId: "order-1").get()
+        let crewDone = try await LivePartnerOrderClient(staleness: shared).markMyPartDone(orderId: "order-1").get()
 
+        XCTAssertFalse(crewDone)
         XCTAssertEqual(bodies.paths, ["/api/Order/MarkMyPartDone"])
         XCTAssertEqual(bodies.json(ofPath: "/api/Order/MarkMyPartDone")?.keys.sorted(), ["orderId"])
         XCTAssertEqual(bodies.json(ofPath: "/api/Order/MarkMyPartDone")?["orderId"] as? String, "order-1")
         XCTAssertFalse(shared.isDashboardStale)
+    }
+
+    /// The toast is chosen by whether the server says everyone on the job has now marked, so an answer
+    /// without it is refused rather than read as a crew still working.
+    func testTheMarkReadsWhetherTheCrewIsDoneOrRefusesAnAnswerWithout() async throws {
+        let done = Data(#"{"orderId":"order-1","completionConfirmedAt":"2026-10-27T10:00:00Z","crewDone":true}"#.utf8)
+        GeneratedWireSpine.install(recording: WireBodies()) { _ in (200, done) }
+        let crewDone = try await LivePartnerOrderClient(staleness: OrdersStaleness()).markMyPartDone(orderId: "order-1")
+            .get()
+        XCTAssertTrue(crewDone)
+
+        let unsaid = Data(#"{"orderId":"order-1","completionConfirmedAt":"2026-10-27T10:00:00Z"}"#.utf8)
+        GeneratedWireSpine.install(recording: WireBodies()) { _ in (200, unsaid) }
+        let result = await LivePartnerOrderClient(staleness: OrdersStaleness()).markMyPartDone(orderId: "order-1")
+        XCTAssertEqual(result.apiErrorOrNil?.code, ApiError.wireContractCode)
     }
 }

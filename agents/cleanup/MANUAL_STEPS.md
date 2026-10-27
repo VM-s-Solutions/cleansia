@@ -129,11 +129,11 @@ tracker row is now inside the archived backlog, which is why it is re-filed here
 **Action:** rotate the token at Mapbox, provision the new value as `Mapbox--GeocodingAccessToken` in Key
 Vault (`deploy/AZURE-DEV-RUNBOOK.md:281`), then delete the four `MANUAL_STEP` comments.
 
-## Cleared
-
 ### MS-2 — Drop the DEV database with the next deploy — **deferred by decision**
 
-**Current disposition — 2026-10-16 UTC: DISCHARGED.** This entire MS-2 section is now under Cleared. The retained "deferred by decision" heading and all earlier Open, unrun, pending and promo statements are historical checkpoints; the current reset/reseed/final-readiness obligation is complete. T-0636 remains open for Mike's separate unresolved startup goal.
+**Current disposition — 2026-10-27: OWED, for `20261027013728`.** Phase 2 regenerated `Initial` (the last bullet of the chronology below), which renews the drop discharged on 2026-10-16 for `20261013160545`, so MS-2 is back under Open until the phase-2 deploy's one DEV wipe and re-seed takes it (owner ruling 2026-10-26, "Recommended").
+
+**2026-10-16 UTC: DISCHARGED** (for `20261013160545`). The retained "deferred by decision" heading and all earlier Open, unrun, pending and promo statements are historical checkpoints; that wave's reset/reseed/final-readiness obligation is complete. T-0636 remains open for Mike's separate unresolved startup goal.
 
 > **Owner, 2026-08-14:** *"I'll drop the db and reseed the data after all of the Phases are done."*
 > Deferred deliberately — not overlooked. It stays open until the drop happens.
@@ -324,13 +324,11 @@ what is named against the id before it:
   project; nothing ran against DEV. The drop it owes is the one DEV wipe and re-seed of the phase-2 deploy
   (owner ruling 2026-10-26, "Recommended": add the column, wipe DEV once, with the phase-2 deploy).
 
-**The one owed drop belongs to `20261013160545`** (it renews the one owed for `20261012190449`).
-Mike approved exactly the end-of-wave reset and fresh DEV deployment on 2026-10-13:
-"You can reset db, but once we're done with everything and we can do a fresh deployment".
-It runs after every program PR has merged green, immediately before the fresh deployment from final
-master. A shared DEV reset needs explicit approval (`CLAUDE.md`), and code approval alone does not
-provide it: a DEV database whose `__EFMigrationsHistory` records any earlier id replays the
-whole create script against tables that already exist. The legal texts need no extra step — every host seeds
+**The one owed drop belongs to `20261027013728`** (it renews the one discharged on 2026-10-16 for
+`20261013160545`). The owner ruled on 2026-10-26 ("Recommended"): add the column, and wipe DEV once, with
+the phase-2 deploy. It runs immediately before that deploy, and whoever runs the deploy takes it: the DEV
+drop is no longer owner-only (`CLAUDE.md`). A DEV database whose `__EFMigrationsHistory` records any
+earlier id replays the whole create script against tables that already exist. The legal texts need no extra step — every host seeds
 them at start, and since `b34dff07` a fresh Development database is seeded once more in the boot that
 migrates it (the factory now refuses a booking with no contract text in force, so a first boot must not come
 up without one).
@@ -445,6 +443,8 @@ The one-YAML diagnostic evidence candidate has scoped correctness/security and c
 #### 2026-10-16 UTC — final actual acceptance; MS-2 discharged
 
 The approved single reset and original current `20261013160545_Initial` application, docs `38658881649`, original DEV `38660355359/a3`, bootstrap `38702440461`, fixtures `38702856219`, admin `38703413453` and corrected promo `38820436701` are complete; no replay. Final DEV health `38885747547/a1` and the once 13 public batch are accepted. [T-0636](../backlog/tickets/T-0636-deployment-startup.md#final-dev-acceptance-and-current-disposition--2026-10-16-utc) carries exact selected-package/M4-input/readiness evidence and limits. No fresh migration-history/exact seed-total claim follows from final pg_stat statistics; promo INSERT 0 60 remains affected rows with qualified autocommit inference. T-0838/T-0844/T-0849 are done; the original failed startup rollout and unresolved T-0636 goal remain. Final records-head checks are pending.
+
+## Cleared
 
 ### MS-14 — Regenerate the customer client for the property-size catalogue — **DISCHARGED 2026-09-15**
 

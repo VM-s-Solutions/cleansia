@@ -190,6 +190,23 @@ public sealed class GuestPlatformCancellationEmailCopyTests
         Assert.Equal("Your order has been cancelled.", message);
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(0.25)]
+    [InlineData(0.5)]
+    public async Task A_Guests_Typed_No_Cleaner_Key_Does_Not_Claim_The_Platform_Cancelled_The_Booking(decimal feeRate)
+    {
+        var order = PaidCardOrder();
+        var refund = order.TotalPrice * (1m - feeRate);
+        order.Cancel(DateTime.UtcNow, CancelledBy.Customer, feeRate, refund, OrderCancellationReasons.NoCleanerAvailable);
+
+        var message = await StatusMessageAsync(order, "en", refundedAmount: refund);
+
+        Assert.DoesNotContain("No cleaner was available", message);
+        Assert.DoesNotContain("We had to cancel", message);
+        Assert.Contains("Refund issued:", message);
+    }
+
     /// <summary>
     /// Owner ruling 2026-10-25 ("Fix"): a customer who cancels, from its start, a booking nobody is on is paid
     /// as the unfilled sweep pays, and the cancellation keeps the no-cleaner key though the customer made it,
@@ -201,7 +218,8 @@ public sealed class GuestPlatformCancellationEmailCopyTests
         var order = PaidCardOrder();
         order.Cancel(DateTime.UtcNow, CancelledBy.Customer, 0m, order.TotalPrice, OrderCancellationReasons.NoCleanerAvailable);
 
-        var message = await StatusMessageAsync(order, "en", refundedAmount: 1000m, apologyCreditAmount: 250m);
+        var message = await StatusMessageAsync(order, "en", refundedAmount: 1000m, apologyCreditAmount: 250m,
+            noCleanerAvailable: true);
 
         Assert.Equal(
             "Your order has been cancelled. No cleaner was available for this booking, so it was cancelled. "
@@ -238,11 +256,13 @@ public sealed class GuestPlatformCancellationEmailCopyTests
     }
 
     private static async Task<string> StatusMessageAsync(
-        Order order, string language, decimal? refundedAmount, decimal? apologyCreditAmount = null)
+        Order order, string language, decimal? refundedAmount, decimal? apologyCreditAmount = null,
+        bool noCleanerAvailable = false)
     {
         var (service, values) = BuildService();
         await service.SendOrderStatusUpdateEmailAsync(Recipient, order, "Cancelled", language,
-            CancellationToken.None, refundedAmount, guestAccessToken: "token", apologyCreditAmount: apologyCreditAmount);
+            CancellationToken.None, refundedAmount, guestAccessToken: "token", apologyCreditAmount: apologyCreditAmount,
+            noCleanerAvailable: noCleanerAvailable);
         return values["StatusMessage"]!;
     }
 

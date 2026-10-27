@@ -90,7 +90,7 @@ public sealed class CleanerNoShowCancellation(
 
         await GuestCancellationEmail.EnqueueAsync(order, EmailLocale.Resolve(order.LanguageCode),
             refundedAmount, guestAccessTokenIssuer, pending, cancellationToken,
-            alsoToAccount: true, apologyCreditAmount: apology);
+            alsoToAccount: true, apologyCreditAmount: apology, noCleanerAvailable: true);
 
         return new Outcome(transition, refundedAmount, refundPending, apology);
     }

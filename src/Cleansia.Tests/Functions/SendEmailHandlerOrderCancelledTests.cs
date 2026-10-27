@@ -89,6 +89,20 @@ public sealed class SendEmailHandlerOrderCancelledTests : IDisposable
     }
 
     [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task The_Renderer_Receives_The_No_Cleaner_Fact_From_The_Queued_Message(bool noCleanerAvailable)
+    {
+        await SeedAsync(OrderStatus.Cancelled, guest: false, bookedLanguage: "cs");
+        await using var ctx = Context();
+
+        await Handler(ctx).HandleAsync(Body(apology: null, noCleanerAvailable: noCleanerAvailable), CancellationToken.None);
+
+        _email.Verify(s => s.SendOrderStatusUpdateEmailAsync(BookingEmail, It.IsAny<Order>(), "Cancelled", "cs",
+            It.IsAny<CancellationToken>(), 1000m, null, null, noCleanerAvailable), Times.Once);
+    }
+
+    [Theory]
     [InlineData(OrderStatus.New)]
     [InlineData(OrderStatus.Confirmed)]
     public async Task An_Accounts_Booking_That_Is_Not_Cancelled_Is_Not_Emailed(OrderStatus current)
@@ -149,10 +163,10 @@ public sealed class SendEmailHandlerOrderCancelledTests : IDisposable
         Mock.Of<ICancellationPolicyResolver>(), Mock.Of<IReceivableRepository>(), Mock.Of<IContractConfirmationService>(),
         Mock.Of<IWorkContractAcceptanceRepository>(), Mock.Of<IEmployeeRepository>());
 
-    private static string Body(decimal? apology, string language = "cs") => JsonSerializer.Serialize(
+    private static string Body(decimal? apology, string language = "cs", bool noCleanerAvailable = false) => JsonSerializer.Serialize(
         new QueueEnvelope<SendGuestOrderCancellationEmailMessage>(
             MessageKeys.GuestOrderCancelledEmail(OrderId), TestTenants.Default,
-            new SendGuestOrderCancellationEmailMessage(OrderId, language, 1000m, TestTenants.Default, apology)),
+            new SendGuestOrderCancellationEmailMessage(OrderId, language, 1000m, TestTenants.Default, apology, noCleanerAvailable)),
         new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
 
     private CleansiaDbContext Context() => new(new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).Options,

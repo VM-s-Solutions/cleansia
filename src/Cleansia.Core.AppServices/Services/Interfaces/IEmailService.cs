@@ -25,7 +25,7 @@ public interface IEmailService
     /// </summary>
     Task<string> SendPromoCodeEmailAsync(string email, string promoCode, string discountLabel, DateTime? expiresOn, string languageCode = Constants.Language.English, CancellationToken ct = default);
 
-    Task<string> SendOrderStatusUpdateEmailAsync(string email, Order order, string newStatus, string languageCode = Constants.Language.English, CancellationToken ct = default, decimal? refundedAmount = null, string? guestAccessToken = null, decimal? apologyCreditAmount = null);
+    Task<string> SendOrderStatusUpdateEmailAsync(string email, Order order, string newStatus, string languageCode = Constants.Language.English, CancellationToken ct = default, decimal? refundedAmount = null, string? guestAccessToken = null, decimal? apologyCreditAmount = null, bool noCleanerAvailable = false);
 
     /// <summary>
     /// The booking e-mail sent when the contract is concluded, with <paramref name="confirmationPdf"/>

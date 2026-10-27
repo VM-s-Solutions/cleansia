@@ -113,6 +113,7 @@ public sealed class CancelOrderNoCleanerAtStartTests
         var email = Assert.IsType<QueueEnvelope<SendGuestOrderCancellationEmailMessage>>(Assert.Single(_enqueued).Message).Payload;
         Assert.Equal(1000m, email.SuccessfulRefundAmount);
         Assert.Equal(250m, email.ApologyCreditAmount);
+        Assert.True(email.NoCleanerAvailable);
 
         _waiver.Verify(w => w.ReleaseForOrderAsync(OrderId, It.IsAny<CancellationToken>()), Times.Once);
         _liveActivity.Verify(l => l.NotifyOrderTransitionAsync(

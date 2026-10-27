@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
@@ -35,6 +36,7 @@ public class CompleteOrder
         OrderStatus NewStatus,
         int ActualCompletionTime);
 
+    /// <summary>One chain, so one reason is given, and the crew first, so a cleaner not on the job learns nothing of it.</summary>
     public class Validator : AbstractValidator<Command>
     {
         private readonly IOrderRepository _orderRepository;
@@ -62,7 +64,15 @@ public class CompleteOrder
                 .WithMessage(BusinessErrorMessage.Required)
                 .MustAsync(_orderRepository.ExistsAsync)
                 .WithMessage(BusinessErrorMessage.OrderNotFound)
-                .MustAsync(OrderIsInProgressAsync)
+                .MustAsync(async (orderId, ct) => await CallerSeatIdAsync(orderId, ct) is not null)
+                .WithMessage(BusinessErrorMessage.EmployeeNotAssignedToOrder)
+                .MustAsync(HasAcceptedWorkContractForSeatAsync)
+                .WithMessage(BusinessErrorMessage.WorkContractAcceptanceRequired)
+                .MustAsync(HasCompletedProfileAsync)
+                .WithMessage(BusinessErrorMessage.EmployeeProfileIncomplete)
+                .MustAsync(EmployeeIsApprovedAsync)
+                .WithMessage(BusinessErrorMessage.EmployeeNotApproved)
+                .MustAsync((orderId, ct) => OrderIsAsync(orderId, o => o.CurrentStatus == OrderStatus.InProgress, ct))
                 .WithMessage(BusinessErrorMessage.OrderNotInProgress)
                 .MustAsync(HasAfterPhotosAsync)
                 .WithMessage(BusinessErrorMessage.AfterPhotosRequired)
@@ -75,29 +85,27 @@ public class CompleteOrder
                 // rules so each surfaces the right, actionable message: cash-not-collected tells the
                 // cleaner to collect + mark it; payment-not-confirmed says the card charge hasn't
                 // cleared yet.
-                .MustAsync(CashIsCollectedIfCashPaymentAsync)
+                .MustAsync((orderId, ct) => OrderIsAsync(
+                    orderId, o => o.PaymentType != PaymentType.Cash || o.PaymentStatus == PaymentStatus.Paid, ct))
                 .WithMessage(BusinessErrorMessage.OrderCashNotCollected)
-                .MustAsync(CardPaymentIsConfirmedIfCardPaymentAsync)
-                .WithMessage(BusinessErrorMessage.OrderPaymentNotConfirmed);
+                // A refund before the job ends, partial or full, leaves a card charged: the crew did the
+                // work, and completion takes the points share of what went back.
+                .MustAsync((orderId, ct) => OrderIsAsync(
+                    orderId,
+                    o => o.PaymentType != PaymentType.Card
+                        || o.PaymentStatus == PaymentStatus.Paid
+                        || o.PaymentStatus == PaymentStatus.PartiallyRefunded
+                        || o.PaymentStatus == PaymentStatus.Refunded,
+                    ct))
+                .WithMessage(BusinessErrorMessage.OrderPaymentNotConfirmed)
+                .MustAsync(CrewIsNotPartlyDoneAsync)
+                .WithMessage(BusinessErrorMessage.OrderCrewNotDone);
 
             // No length / positivity check on ActualCompletionTimeMinutes:
             // when the caller doesn't supply it (or sends 0), the handler
             // derives the value from the InProgress status-history entry.
             // The validator can't run that derivation cheaply (would need
             // a second repo round-trip), so it's the handler's job.
-
-            RuleFor(x => x)
-                .Cascade(CascadeMode.Stop)
-                .MustAsync(EmployeeIsAssignedToOrderAsync)
-                .WithMessage(BusinessErrorMessage.EmployeeNotAssignedToOrder)
-                .MustAsync(HasAcceptedWorkContractForSeatAsync)
-                .WithMessage(BusinessErrorMessage.WorkContractAcceptanceRequired)
-                .MustAsync(HasCompletedProfileAsync)
-                .WithMessage(BusinessErrorMessage.EmployeeProfileIncomplete)
-                .MustAsync(EmployeeIsApprovedAsync)
-                .WithMessage(BusinessErrorMessage.EmployeeNotApproved)
-                .MustAsync(CrewIsNotPartlyDoneAsync)
-                .WithMessage(BusinessErrorMessage.OrderCrewNotDone);
 
             When(x => !string.IsNullOrEmpty(x.CompletionNotes), () =>
             {
@@ -107,31 +115,22 @@ public class CompleteOrder
             });
         }
 
-        private async Task<bool> OrderIsInProgressAsync(string orderId, CancellationToken cancellationToken)
-        {
-            var order = await _orderRepository
-                .GetQueryable()
-                .Include(o => o.OrderStatusHistory)
-                .FirstOrDefaultAsync(o => o.Id == orderId, cancellationToken);
+        private Task<bool> OrderIsAsync(
+            string orderId, Expression<Func<Order, bool>> predicate, CancellationToken cancellationToken) =>
+            _orderRepository.GetQueryable().Where(o => o.Id == orderId).AnyAsync(predicate, cancellationToken);
 
-            if (order == null) return false;
-
-            var currentStatus = order.CurrentStatus;
-
-            return currentStatus == OrderStatus.InProgress;
-        }
-
-        private async Task<bool> EmployeeIsAssignedToOrderAsync(Command command, CancellationToken cancellationToken)
+        private async Task<string?> CallerSeatIdAsync(string orderId, CancellationToken cancellationToken)
         {
             var employeeId = await _orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
-            if (string.IsNullOrEmpty(employeeId)) return false;
+            if (string.IsNullOrEmpty(employeeId)) return null;
 
-            var order = await _orderRepository
+            return await _orderRepository
                 .GetQueryable()
-                .Include(o => o.AssignedEmployees)
-                .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
-
-            return order?.AssignedEmployees.Any(oe => oe.EmployeeId == employeeId) ?? false;
+                .Where(o => o.Id == orderId)
+                .SelectMany(o => o.AssignedEmployees)
+                .Where(oe => oe.EmployeeId == employeeId)
+                .Select(oe => oe.Id)
+                .FirstOrDefaultAsync(cancellationToken);
         }
 
         /// <summary>
@@ -140,24 +139,11 @@ public class CompleteOrder
         /// (the order is already in progress) but may complete, so the start gate alone never sees them.
         /// After the assignment rule, so a non-assignee still learns nothing.
         /// </summary>
-        private async Task<bool> HasAcceptedWorkContractForSeatAsync(Command command, CancellationToken cancellationToken)
-        {
-            var employeeId = await _orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
-            if (string.IsNullOrEmpty(employeeId)) return false;
+        private async Task<bool> HasAcceptedWorkContractForSeatAsync(string orderId, CancellationToken cancellationToken) =>
+            await CallerSeatIdAsync(orderId, cancellationToken) is { } seatId
+            && await _workContractAcceptanceRepository.AnyForSeatAsync(seatId, cancellationToken);
 
-            var seatId = await _orderRepository
-                .GetQueryable()
-                .Where(o => o.Id == command.OrderId)
-                .SelectMany(o => o.AssignedEmployees)
-                .Where(oe => oe.EmployeeId == employeeId)
-                .Select(oe => oe.Id)
-                .FirstOrDefaultAsync(cancellationToken);
-
-            return seatId is not null
-                && await _workContractAcceptanceRepository.AnyForSeatAsync(seatId, cancellationToken);
-        }
-
-        private async Task<bool> HasCompletedProfileAsync(Command command, CancellationToken cancellationToken)
+        private async Task<bool> HasCompletedProfileAsync(string orderId, CancellationToken cancellationToken)
         {
             var employeeId = await _orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
             if (string.IsNullOrEmpty(employeeId)) return false;
@@ -176,7 +162,7 @@ public class CompleteOrder
         // employee is server-derived from the caller (S1 server-truth); empty caller
         // fails closed. Replaces the misnamed HasUploadedDocumentsAsync (which was
         // only a ContractStatus != Pending check and let rejected cleaners complete).
-        private async Task<bool> EmployeeIsApprovedAsync(Command command, CancellationToken cancellationToken)
+        private async Task<bool> EmployeeIsApprovedAsync(string orderId, CancellationToken cancellationToken)
         {
             var employeeId = await _orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
             if (string.IsNullOrEmpty(employeeId)) return false;
@@ -185,11 +171,11 @@ public class CompleteOrder
             return employee?.ContractStatus == ContractStatus.Approved;
         }
 
-        private async Task<bool> CrewIsNotPartlyDoneAsync(Command command, CancellationToken cancellationToken)
+        private async Task<bool> CrewIsNotPartlyDoneAsync(string orderId, CancellationToken cancellationToken)
         {
             var marks = await _orderRepository
                 .GetQueryable()
-                .Where(o => o.Id == command.OrderId)
+                .Where(o => o.Id == orderId)
                 .SelectMany(o => o.AssignedEmployees)
                 .Select(oe => oe.CompletionConfirmedAt)
                 .ToListAsync(cancellationToken);
@@ -203,34 +189,6 @@ public class CompleteOrder
                 .GetPhotoCountByOrderIdAndTypeAsync(orderId, PhotoType.After, cancellationToken);
 
             return photoCount > 0;
-        }
-
-        // A cash order may complete only once the cleaner has collected the cash (PaymentStatus == Paid).
-        // Passes trivially for non-cash orders — those are covered by the card rule below.
-        private async Task<bool> CashIsCollectedIfCashPaymentAsync(string orderId, CancellationToken cancellationToken)
-        {
-            var order = await _orderRepository
-                .GetQueryable()
-                .FirstOrDefaultAsync(o => o.Id == orderId, cancellationToken);
-
-            if (order is null) return false;
-
-            return order.PaymentType != PaymentType.Cash || order.PaymentStatus == PaymentStatus.Paid;
-        }
-
-        // A card order may complete only once Stripe has charged the card. A refund before the job ends,
-        // partial or full, leaves it charged: the crew did the work, and completion takes the points
-        // share of what went back. Passes trivially for non-card orders — cash is handled by the rule above.
-        private async Task<bool> CardPaymentIsConfirmedIfCardPaymentAsync(string orderId, CancellationToken cancellationToken)
-        {
-            var order = await _orderRepository
-                .GetQueryable()
-                .FirstOrDefaultAsync(o => o.Id == orderId, cancellationToken);
-
-            if (order is null) return false;
-
-            return order.PaymentType != PaymentType.Card
-                || order.PaymentStatus is PaymentStatus.Paid or PaymentStatus.PartiallyRefunded or PaymentStatus.Refunded;
         }
     }
 

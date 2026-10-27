@@ -137,5 +137,9 @@ extension CustomerAuthViewModelTests {
             screen.contains("if vm.isVerifyReadyToConfirm, !vm.confirmState.isSubmitting {"),
             "the complete code confirms without waiting for the password the screen asks for"
         )
+        XCTAssertTrue(
+            screen.contains("passwordForm: vm.asksForVerifyPassword ? vm.verifyPasswordForm : nil,"),
+            "the password fields no longer follow whether the confirmation asks for a password"
+        )
     }
 }

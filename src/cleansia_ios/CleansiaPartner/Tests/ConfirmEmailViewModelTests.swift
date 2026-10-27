@@ -299,7 +299,8 @@ final class ConfirmEmailViewModelTests: XCTestCase {
         XCTAssertTrue(vm.isReadyToConfirm)
     }
 
-    /// The screen confirms the complete code through the readiness above, never on the sixth digit alone.
+    /// The screen confirms the complete code through the readiness above, never on the sixth digit alone, and
+    /// shows the password fields exactly when the confirmation asks for a password.
     func testTheScreenConfirmsTheCompleteCodeOnlyWhenReady() throws {
         let root = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
@@ -310,6 +311,10 @@ final class ConfirmEmailViewModelTests: XCTestCase {
             encoding: .utf8
         )
         XCTAssertTrue(screen.contains("if vm.isReadyToConfirm, !vm.confirmState.isSubmitting {"))
+        XCTAssertTrue(
+            screen.contains("passwordForm: vm.asksForPassword ? vm.passwordForm : nil,"),
+            "the password fields no longer follow whether the confirmation asks for a password"
+        )
     }
 
     func testConfirmAndResendActionStatesAreIndependent() async {

@@ -37,7 +37,53 @@
         />
       }
 
-      <cleansia-code-input formControlName="code" (codeComplete)="onVerifyCode()" />
+      <cleansia-code-input formControlName="code" (codeComplete)="onCodeComplete()" />
+
+      @if (facade.passwordAsked()) {
+        <p class="cl-muted cl-auth__password-lead">{{ 'pages.email_confirm.password_lead' | translate }}</p>
+        <cleansia-text-input
+          [floatVariant]="null"
+          [label]="'auth.register.password' | translate"
+          formControlName="password"
+          [dataType]="'password'"
+          [required]="true"
+          [showErrors]="false"
+          [autocomplete]="'new-password'"
+        />
+        @if (passwordCheck; as check) {
+          <ul class="cl-auth__rules">
+            <li class="cl-auth__rule" [class.cl-auth__rule--met]="check.hasMinLength">
+              <i [class]="check.hasMinLength ? 'pi pi-check' : 'pi pi-circle'"></i>
+              {{ 'auth.register.validation.password_min_length' | translate }}
+            </li>
+            <li class="cl-auth__rule" [class.cl-auth__rule--met]="check.hasLetter">
+              <i [class]="check.hasLetter ? 'pi pi-check' : 'pi pi-circle'"></i>
+              {{ 'auth.register.validation.password_letter' | translate }}
+            </li>
+            <li class="cl-auth__rule" [class.cl-auth__rule--met]="check.hasNumber">
+              <i [class]="check.hasNumber ? 'pi pi-check' : 'pi pi-circle'"></i>
+              {{ 'auth.register.validation.password_number' | translate }}
+            </li>
+          </ul>
+        }
+        <cleansia-text-input
+          [floatVariant]="null"
+          [label]="'auth.register.confirm_password' | translate"
+          formControlName="confirmPassword"
+          [dataType]="'password'"
+          [required]="true"
+          [showErrors]="false"
+          [autocomplete]="'new-password'"
+        />
+        @if (confirmPasswordCheck; as check) {
+          <ul class="cl-auth__rules">
+            <li class="cl-auth__rule" [class.cl-auth__rule--met]="check.arePasswordsEqual">
+              <i [class]="check.arePasswordsEqual ? 'pi pi-check' : 'pi pi-circle'"></i>
+              {{ 'auth.register.validation.passwords_match' | translate }}
+            </li>
+          </ul>
+        }
+      }
 
       <!--
         One centred muted line, as the board draws it — a countdown and the

@@ -1620,7 +1620,9 @@
       "verify_code": "Verify code",
       "email_sent": "Email sent successfully",
       "code_cooldown": "Confirmation code has been sent. Please wait {{ cooldown }} seconds before requesting a new code.",
-      "change_email": "Change e-mail"
+      "change_email": "Change e-mail",
+      "password_lead": "Choose the password you will sign in with.",
+      "password_invalid": "Choose a password that meets the rules and type it the same way twice."
     },
     "track_order": {
       "cancellation": {

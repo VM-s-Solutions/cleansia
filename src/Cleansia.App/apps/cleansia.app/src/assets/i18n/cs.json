@@ -1620,7 +1620,9 @@
       "verify_code": "Potvrdit kód",
       "email_sent": "E-mail byl úspěšně odeslán",
       "code_cooldown": "Kód potvrzení byl odeslán. Prosím, počkejte {{ cooldown }} sekund, než požádáte o nový kód.",
-      "change_email": "Změnit e-mail"
+      "change_email": "Změnit e-mail",
+      "password_lead": "Zvolte heslo, kterým se budete přihlašovat.",
+      "password_invalid": "Zvolte heslo, které splňuje pravidla, a zadejte ho dvakrát stejně."
     },
     "track_order": {
       "cancellation": {

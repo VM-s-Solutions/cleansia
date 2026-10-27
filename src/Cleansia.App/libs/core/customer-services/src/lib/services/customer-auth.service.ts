@@ -40,6 +40,11 @@ export class CustomerAuthService {
   private readonly _isLoggedIn = signal<boolean>(this.hasValidSession());
   readonly isLoggedIn: Signal<boolean> = computed(() => this._isLoggedIn());
 
+  // The confirmation sets the password its confirmer chooses (owner ruling 2026-10-26, "Close"). Right
+  // after a registration that is the password just typed, held here in memory and nowhere else until
+  // the address is confirmed; a reload forgets it and the confirm screen asks for one.
+  private registeredPassword: { email: string; password: string } | null = null;
+
   private currentLanguage(): string {
     return this.translate.currentLang || this.translate.getDefaultLang();
   }
@@ -87,20 +92,35 @@ export class CustomerAuthService {
 
     // 200 with no body since T-0665 — the bool was always `true`, failures come through as
     // errors. Success is "it did not throw", matching logout() in this same service.
-    return this.customerClient.authClient.register(command).pipe(map(() => true));
+    return this.customerClient.authClient.register(command).pipe(
+      tap(() => (this.registeredPassword = { email, password })),
+      map(() => true)
+    );
   }
 
-  confirmUserEmail(code: string, email: string): Observable<JwtTokenResponse> {
+  holdsRegisteredPasswordFor(email: string): boolean {
+    return this.registeredPasswordFor(email) !== undefined;
+  }
+
+  /** `password` is the one chosen on the confirm screen; without it, the one just registered with. */
+  confirmUserEmail(code: string, email: string, password?: string): Observable<JwtTokenResponse> {
     const command = new ConfirmUserEmailCommand();
     command.code = code;
     command.email = email;
+    command.password = password ?? this.registeredPasswordFor(email);
 
     return this.customerClient.authClient.confirmUserEmail(command).pipe(
       map((authResult: JwtTokenResponse) => {
+        this.registeredPassword = null;
         this.setSession(authResult);
         return authResult;
       })
     );
+  }
+
+  private registeredPasswordFor(email: string): string | undefined {
+    const held = this.registeredPassword;
+    return held && held.email.trim().toLowerCase() === email.trim().toLowerCase() ? held.password : undefined;
   }
 
   resendEmailConfirmation(email: string): Observable<boolean> {

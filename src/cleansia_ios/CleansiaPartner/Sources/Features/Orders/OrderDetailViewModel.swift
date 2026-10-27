@@ -12,6 +12,7 @@ enum OrderAction: Equatable {
     case start
     case markCashCollected
     case reportCashNotPaid
+    case markDone
     case complete
     case declineOffer
     case reportLockout
@@ -23,7 +24,7 @@ enum OrderAction: Equatable {
         switch self {
         case .take: .confirm
         case .declineOffer: .release
-        case .acceptContract, .notifyOnTheWay, .start, .markCashCollected, .reportCashNotPaid, .complete,
+        case .acceptContract, .notifyOnTheWay, .start, .markCashCollected, .reportCashNotPaid, .markDone, .complete,
              .reportLockout, .drop: nil
         }
     }
@@ -36,6 +37,7 @@ enum OrderAction: Equatable {
         case .start: .startOrder
         case .markCashCollected: .markCashCollected
         case .reportCashNotPaid: .completeOrder
+        case .markDone: .markMyPartDone
         case .complete: .completeOrder
         case .declineOffer: .declinePreferredOffer
         case .reportLockout: .reportLockout
@@ -52,6 +54,7 @@ enum OrderAction: Equatable {
         case .start: L10n.Orders.orderStartedToast
         case .markCashCollected: L10n.Orders.cashCollectedToast
         case .reportCashNotPaid: L10n.Orders.cashNotPaidReportedToast
+        case .markDone: L10n.Orders.partMarkedDoneToast
         case .complete: L10n.Orders.orderCompletedToast
         case .declineOffer: L10n.Offers.declinedToast
         case .reportLockout: L10n.Orders.lockoutReportedToast
@@ -139,7 +142,8 @@ final class OrderDetailViewModel: ViewModel {
             isMine: order.isAssignedToCurrentUser,
             hasAfterPhotos: order.hasAfterPhotos,
             isCashPayment: order.payment.isCash,
-            isPaymentSettled: order.payment.isSettled
+            isPaymentSettled: order.payment.isSettled,
+            crew: order.crewFinish(myEmployeeId: myEmployeeId)
         )
     }
 
@@ -231,8 +235,9 @@ final class OrderDetailViewModel: ViewModel {
         case .notifyOnTheWay: await notifyOnTheWay()
         case .start: await start()
         case .collectCash: await markCashCollected()
+        case .markDone: await markMyPartDone()
         case .complete: await complete()
-        case .completeBlocked, .none: break
+        case .awaitingCrew, .completeBlocked, .none: break
         }
     }
 
@@ -271,6 +276,10 @@ final class OrderDetailViewModel: ViewModel {
 
     func reportCashNotPaid() async {
         await run(.reportCashNotPaid) { await self.client.reportCashNotPaid(orderId: self.orderId) }
+    }
+
+    func markMyPartDone() async {
+        await run(.markDone) { await self.client.markMyPartDone(orderId: self.orderId) }
     }
 
     func complete() async {

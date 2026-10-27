@@ -13,6 +13,11 @@ enum OrderPrimaryAction: Equatable {
     /// collected and marked before the order can complete (the server's
     /// payment-settled guard, surfaced early).
     case collectCash
+    /// InProgress & mine on a crew job whose caller has not marked their part done: "I'm done".
+    case markDone
+    /// InProgress & mine on a crew job whose caller has marked their part done while someone else on it
+    /// has not: nothing to do but wait for them.
+    case awaitingCrew
     case complete
     /// InProgress & mine but no "after" photo yet — the slide is blocked and a
     /// hint is shown instead (the server's after-photos guard, surfaced early).
@@ -29,17 +34,21 @@ enum OrderPrimaryAction: Equatable {
         case .notifyOnTheWay: .notifyOnTheWay
         case .start: .start
         case .collectCash: .markCashCollected
+        case .markDone: .markDone
         case .complete: .complete
-        case .completeBlocked, .none: nil
+        case .awaitingCrew, .completeBlocked, .none: nil
         }
     }
 
+    // One parameter per fact the action is decided by, each named at the call site.
+    // swiftlint:disable:next function_parameter_count
     static func action(
         for status: OrderStatus?,
         isMine: Bool,
         hasAfterPhotos: Bool,
         isCashPayment: Bool,
-        isPaymentSettled: Bool
+        isPaymentSettled: Bool,
+        crew: CrewFinish
     ) -> OrderPrimaryAction {
         switch status {
         case ._0:
@@ -63,13 +72,25 @@ enum OrderPrimaryAction: Equatable {
             // Same as OnTheWay: the work has begun short-crewed and a seat is open. A late joiner
             // is worth more to the customer than an empty seat.
             guard isMine else { return .take }
-            let cashPending = isCashPayment && !isPaymentSettled
-            guard hasAfterPhotos else { return .completeBlocked(cashPending: cashPending) }
-            if cashPending { return .collectCash }
-            return .complete
+            return finishing(
+                crew: crew,
+                hasAfterPhotos: hasAfterPhotos,
+                cashPending: isCashPayment && !isPaymentSettled
+            )
         case ._1, ._5, ._6, .none:
             // Pending / Completed / Cancelled / unknown — no action.
             return .none
         }
+    }
+
+    /// A crew job's mark has no photo or payment rule of its own; those stay the shared Complete's.
+    private static func finishing(crew: CrewFinish, hasAfterPhotos: Bool, cashPending: Bool) -> OrderPrimaryAction {
+        switch crew {
+        case .myPartOpen: return .markDone
+        case .waitingForCrew: return .awaitingCrew
+        case .solo, .everyoneDone: break
+        }
+        guard hasAfterPhotos else { return .completeBlocked(cashPending: cashPending) }
+        return cashPending ? .collectCash : .complete
     }
 }

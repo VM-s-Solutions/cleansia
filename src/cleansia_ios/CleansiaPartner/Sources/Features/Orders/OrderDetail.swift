@@ -76,7 +76,8 @@ struct OrderDetailPackage: Equatable, Hashable {
 }
 
 /// One crew entry: `id` is the SEAT (`OrderEmployee.Id`), which is what an acceptance names; the
-/// name and phone the wire also carries are not read here.
+/// name and phone the wire also carries are not read here. `completionConfirmedAt` is when its cleaner
+/// marked their part of the job done.
 ///
 /// **Drop the row.** A seat with no id or no employee id pairs with nothing and nothing sums the
 /// crew, so a dropped entry falsifies no figure — while refusing would blank a detail the server
@@ -84,16 +85,19 @@ struct OrderDetailPackage: Equatable, Hashable {
 struct OrderSeat: Equatable {
     let id: String
     let employeeId: String
+    let completionConfirmedAt: Date?
 
-    init(id: String, employeeId: String) {
+    init(id: String, employeeId: String, completionConfirmedAt: Date? = nil) {
         self.id = id
         self.employeeId = employeeId
+        self.completionConfirmedAt = completionConfirmedAt
     }
 
     init?(_ dto: AssignedEmployeeDto) {
         guard let id = dto.id, !id.isBlank, let employeeId = dto.employeeId, !employeeId.isBlank else { return nil }
         self.id = id
         self.employeeId = employeeId
+        completionConfirmedAt = dto.completionConfirmedAt
     }
 }
 

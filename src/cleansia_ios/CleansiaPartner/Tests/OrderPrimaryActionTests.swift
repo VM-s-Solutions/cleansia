@@ -15,7 +15,8 @@ final class OrderPrimaryActionTests: XCTestCase {
             isMine: mine,
             hasAfterPhotos: photos,
             isCashPayment: cash,
-            isPaymentSettled: settled
+            isPaymentSettled: settled,
+            crew: .solo
         )
     }
 

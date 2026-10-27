@@ -48,6 +48,8 @@ protocol PartnerOrderClient: AnyObject {
     func markCashCollected(orderId: String) async -> ApiResult<Void>
     /// The customer paid nothing at the door: the job completes and the price becomes the customer's debt.
     func reportCashNotPaid(orderId: String) async -> ApiResult<Void>
+    /// "I'm done" on a crew job: stamps the caller's own seat, which the server reads off the session.
+    func markMyPartDone(orderId: String) async -> ApiResult<Void>
     func completeOrder(orderId: String, actualMinutes: Int?, notes: String?) async -> ApiResult<Void>
     /// Leaves the crew: the seat goes back on the board and the customer's booking stands. Answers how many
     /// cleaners are still on the job.
@@ -219,6 +221,14 @@ final class LivePartnerOrderClient: PartnerOrderClient {
         await dashboardMutation {
             _ = try await PartnerOrderAPI.orderReportCashNotPaid(
                 reportCashNotPaidCommand: ReportCashNotPaidCommand(orderId: orderId)
+            )
+        }
+    }
+
+    func markMyPartDone(orderId: String) async -> ApiResult<Void> {
+        await apiResult(mapError: ApiError.fromGenerated) {
+            _ = try await PartnerOrderAPI.orderMarkMyPartDone(
+                markMyPartDoneCommand: MarkMyPartDoneCommand(orderId: orderId)
             )
         }
     }

@@ -16,6 +16,7 @@ enum OrdersMutation {
     case notifyOnTheWay
     case startOrder
     case markCashCollected
+    case markMyPartDone
     case completeOrder
     case declinePreferredOffer
     case reportLockout
@@ -31,6 +32,8 @@ enum OrdersMutation {
         case .declinePreferredOffer: [.available]
         // The job stays as it is until an administrator confirms the report.
         case .reportLockout: []
+        // The job stays in progress, and no list shows who on it has finished.
+        case .markMyPartDone: []
         }
     }
 }

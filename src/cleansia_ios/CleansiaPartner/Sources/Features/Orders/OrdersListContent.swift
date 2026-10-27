@@ -292,8 +292,9 @@ private struct ActiveOrderRow: View {
         case .notifyOnTheWay: (L10n.Orders.swipeToNotifyOnTheWay, L10n.Orders.customerNotifiedOnTheWay)
         case .start: (L10n.Orders.swipeToStart, L10n.Orders.startingOrder)
         case .complete: (L10n.Orders.swipeToComplete, L10n.Orders.completingOrder)
+        case .markDone: (L10n.Orders.slideToMarkDone, L10n.Orders.markingDone)
         // .collectCash is a tap button (StickyActionFooter), never a swipe — no swipe labels.
-        case .take, .collectCash, .completeBlocked, .none: nil
+        case .take, .collectCash, .awaitingCrew, .completeBlocked, .none: nil
         }
     }
 }

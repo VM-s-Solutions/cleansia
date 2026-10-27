@@ -14436,6 +14436,76 @@
         }
       }
     },
+    "order_part_marked_done_toast": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaše část je označena jako hotová"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your part is marked done"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваша часть отмечена как выполненная"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaša časť je označená ako hotová"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вашу частину позначено як виконану"
+          }
+        }
+      }
+    },
+    "order_crew_waiting": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Svou část máte označenou jako hotovou. Až to udělají všichni na této zakázce, může ji kdokoli z vás dokončit."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You've marked your part done. Once everyone on this job has, any of you can complete it."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вы отметили свою часть как выполненную. Когда это сделают все на этом заказе, любой из вас сможет его завершить."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Svoju časť máte označenú ako hotovú. Keď to urobia všetci na tejto zákazke, môže ju ktokoľvek z vás dokončiť."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ви позначили свою частину як виконану. Коли це зроблять усі на цьому замовленні, будь-хто з вас зможе його завершити."
+          }
+        }
+      }
+    },
     "order_removal_message": {
       "extractionState": "manual",
       "localizations": {
@@ -23081,6 +23151,76 @@
           "stringUnit": {
             "state": "translated",
             "value": "Проведіть, щоб завершити"
+          }
+        }
+      }
+    },
+    "slide_to_mark_done": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Posunutím označte svou část jako hotovou"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Slide to mark your part done"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проведите, чтобы отметить свою часть выполненной"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Posunutím označte svoju časť ako hotovú"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проведіть, щоб позначити свою частину виконаною"
+          }
+        }
+      }
+    },
+    "marking_done": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Označuji jako hotové…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marking it done…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отмечаю как выполненное…"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Označujem ako hotové…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Позначаю як виконане…"
           }
         }
       }

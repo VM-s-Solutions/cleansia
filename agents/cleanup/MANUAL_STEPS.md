@@ -314,6 +314,15 @@ what is named against the id before it:
   `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p2/migration/`.
   Full combined suite evidence is recorded with the backend PR's Work records; no shared DEV reset
   or deploy ran during this regeneration.
+- **`20261027013728`** (2026-10-27, phase 2 of the owner's decisions of 2026-10-26): two nullable columns,
+  `Orders.CustomerCancellationReason` (`varchar(500)`), the reason a customer typed when the cancellation
+  records a platform reason key, and `OrderEmployees.CompletionConfirmedAt` (`timestamptz`), when a cleaner
+  marked their part of a crew job done. No index and no backfill. The body diff against `20261013160545` is
+  exactly those two columns, and the Designer and the snapshot each gain the two properties; tables and
+  tenant foreign keys are unchanged. Ran `migrations remove --force`, `migrations add Initial` and
+  `migrations has-pending-model-changes` (none) from `src/`, with `Cleansia.Web.Partner` as startup
+  project; nothing ran against DEV. The drop it owes is the one DEV wipe and re-seed of the phase-2 deploy
+  (owner ruling 2026-10-26, "Recommended": add the column, wipe DEV once, with the phase-2 deploy).
 
 **The one owed drop belongs to `20261013160545`** (it renews the one owed for `20261012190449`).
 Mike approved exactly the end-of-wave reset and fresh DEV deployment on 2026-10-13:

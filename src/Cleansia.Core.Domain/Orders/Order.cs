@@ -399,6 +399,13 @@ public class Order : TenantAuditable
     public string? CancellationReason { get; private set; }
 
     /// <summary>
+    /// The reason the customer typed, kept apart from <see cref="CancellationReason"/> when that holds a
+    /// platform reason key, so the key means the same to every reader of it.
+    /// </summary>
+    [MaxLength(500)]
+    public string? CustomerCancellationReason { get; private set; }
+
+    /// <summary>
     /// An administrator confirmed the cleaner's report that they could not get in. Read from what only that
     /// confirmation writes together, and what erasure keeps: a customer's cancellation can carry any text as
     /// its reason, including the lockout key, and is never one.

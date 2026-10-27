@@ -61,6 +61,12 @@ public class OrderEmployee : BaseEntity
     public DateTime? CoverRequestedAt { get; private set; }
 
     /// <summary>
+    /// When this cleaner marked their part of the job done. Null until they do; never cleared. On the seat
+    /// for the reason the reminder stamps are: a crew job has one of these per cleaner.
+    /// </summary>
+    public DateTime? CompletionConfirmedAt { get; private set; }
+
+    /// <summary>
     /// The job figures this seat's reward was priced from when its contract for work formed: the summed
     /// base and extras and the clamp bounds of the cleaner's rates then, before the split across the crew
     /// and the dirtiness term. The seat is paid from them, so a rate edit after the take reprices only jobs

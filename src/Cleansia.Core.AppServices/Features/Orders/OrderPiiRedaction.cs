@@ -37,6 +37,22 @@ public static class OrderPiiRedaction
         };
 
     /// <summary>
+    /// The detail of the same listed booking: the browsing shape, with what the booking's e-mails carried put
+    /// back — the name, the e-mail, the address and the cancellation window — and the crew as a customer sees
+    /// it. Built from the browsing shape so a member added to the DTO later is withheld here until someone
+    /// says otherwise; nothing the household or the crew wrote is shown, nor the phone.
+    /// </summary>
+    public static OrderItem RedactForListedGuestBooking(this OrderItem item) =>
+        item.RedactForBrowsingCleaner() with
+        {
+            CustomerName = item.CustomerName,
+            CustomerEmail = item.CustomerEmail,
+            Address = item.Address,
+            FreeCancellationHours = item.FreeCancellationHours,
+            IsGuestBooking = true,
+        };
+
+    /// <summary>
     /// Withhold the entry instructions from an admin read. They are free text of the form "key under
     /// the mat" — the one field on this DTO that is a physical key to somebody's home — and until
     /// 2026-08-14 every admin who opened an order got them, with no reveal step and therefore no record

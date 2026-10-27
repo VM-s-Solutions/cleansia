@@ -351,6 +351,42 @@ public class OrderRedactionSurfaceTests
         Assert.All(unchanged, p => Assert.Equal(p.GetValue(populated), p.GetValue(listed)));
     }
 
+    /// <summary>
+    /// The detail of that listed booking is the browsing shape with exactly what the booking's own e-mails carried
+    /// put back: the name, the e-mail, the address and the cancellation window, and the flag. Everything the
+    /// household or the crew wrote stays withheld, and the crew reads as a customer reads it.
+    /// </summary>
+    [Fact]
+    public void A_Listed_Guest_Booking_Detail_Is_The_Browsing_Shape_With_Only_What_Its_Emails_Carried_Put_Back()
+    {
+        var populated = FullyPopulatedDetail() with { IsGuestBooking = null };
+        string[] putBack =
+        [
+            nameof(OrderItem.CustomerName),
+            nameof(OrderItem.CustomerEmail),
+            nameof(OrderItem.Address),
+            nameof(OrderItem.FreeCancellationHours),
+        ];
+
+        var listed = populated.RedactForListedGuestBooking();
+        var browsing = populated.RedactForBrowsingCleaner();
+
+        Assert.All(putBack, member =>
+        {
+            Assert.False(IsBlank(Read(populated, member)), $"{member} was never populated by the fixture");
+            Assert.Equal(Read(populated, member), Read(listed, member));
+        });
+        Assert.True(listed.IsGuestBooking);
+        var crewMember = Assert.Single(listed.AssignedEmployees);
+        Assert.Equal("Petra", crewMember.FullName);
+        Assert.Null(crewMember.PhoneNumber);
+        var asBrowsing = typeof(OrderItem).GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .Where(p => p.Name != "EqualityContract" && p.Name != nameof(OrderItem.IsGuestBooking) && !putBack.Contains(p.Name));
+        Assert.All(asBrowsing, p => Assert.Equal(
+            System.Text.Json.JsonSerializer.Serialize(p.GetValue(browsing)),
+            System.Text.Json.JsonSerializer.Serialize(p.GetValue(listed))));
+    }
+
     public static TheoryData<string> DetailBlankedMembers => ToTheoryData(DetailBlanked);
 
     public static TheoryData<string> DetailKeptMembers => ToTheoryData(DetailKept);

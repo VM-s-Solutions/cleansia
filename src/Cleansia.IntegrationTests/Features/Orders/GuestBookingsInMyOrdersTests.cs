@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
 using Cleansia.Core.AppServices.Features.Orders.Filters;
@@ -8,6 +9,7 @@ using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Infra.Common.Validations;
 using Cleansia.Infra.Database;
 using Cleansia.TestUtilities;
 using MediatR;
@@ -41,6 +43,7 @@ public class GuestBookingsInMyOrdersTests(PostgresContainerFixture fixture) : Ba
     private const string OtherAccountsOrderId = "order-listed-other-acct";
     private const string ErasedGuestOrderId = "order-listed-anonymised";
     private const string GuestPhone = "+420777000111";
+    private const string AccessInstructions = "Code 1234 at the gate.";
 
     private IUserSessionProvider _session = Customer();
 
@@ -150,6 +153,69 @@ public class GuestBookingsInMyOrdersTests(PostgresContainerFixture fixture) : Ba
             transactional: false);
     }
 
+    [Theory]
+    [InlineData(GuestTypedInCapitalsId)]
+    [InlineData(GuestInSecondMarketId)]
+    public async Task A_Listed_Guest_Booking_Opens_With_What_Its_Emails_Carried_And_Nothing_The_Household_Wrote(string orderId)
+    {
+        await TestMethod(
+            setup: Setup,
+            arrange: SeedAsync,
+            act: provider => SendAsync(provider, new GetOrderDetails.Query(orderId)),
+            assert: (CleansiaDbContext _, BusinessResult<OrderItem> result) =>
+            {
+                Assert.True(result.IsSuccess, result.Error?.Message);
+                var detail = result.Value!;
+                Assert.True(detail.IsGuestBooking);
+                Assert.Equal("Jana Nováková", detail.CustomerName);
+                Assert.Equal("Vinohradská 12", detail.Address!.Street);
+                Assert.NotNull(detail.FreeCancellationHours);
+                Assert.Empty(detail.CustomerPhone);
+                Assert.Null(detail.AccessInstructions);
+                Assert.Null(detail.HasAccessInstructions);
+                return Task.CompletedTask;
+            },
+            transactional: false);
+    }
+
+    [Fact]
+    public async Task The_Accounts_Own_Booking_Opens_As_Before()
+    {
+        await TestMethod(
+            setup: Setup,
+            arrange: SeedAsync,
+            act: provider => SendAsync(provider, new GetOrderDetails.Query(OwnOrderId)),
+            assert: (CleansiaDbContext _, BusinessResult<OrderItem> result) =>
+            {
+                Assert.True(result.IsSuccess, result.Error?.Message);
+                Assert.Null(result.Value!.IsGuestBooking);
+                Assert.Equal(GuestPhone, result.Value.CustomerPhone);
+                Assert.Equal(AccessInstructions, result.Value.AccessInstructions);
+                return Task.CompletedTask;
+            },
+            transactional: false);
+    }
+
+    [Theory]
+    [InlineData(GuestUnderAnotherEmailId)]
+    [InlineData(OtherAccountsOrderId)]
+    [InlineData(ErasedGuestOrderId)]
+    public async Task A_Booking_The_Account_Is_Not_Listed_For_Is_Not_Found(string orderId)
+    {
+        await TestMethod(
+            setup: Setup,
+            arrange: SeedAsync,
+            act: provider => SendAsync(provider, new GetOrderDetails.Query(orderId)),
+            assert: (CleansiaDbContext _, BusinessResult<OrderItem> result) =>
+            {
+                Assert.True(result.IsFailure);
+                Assert.Contains(Assert.IsAssignableFrom<IValidationResult>(result).Errors,
+                    e => e.Message == BusinessErrorMessage.OrderNotFound);
+                return Task.CompletedTask;
+            },
+            transactional: false);
+    }
+
     private static IUserSessionProvider Customer() =>
         new TestUserSessionProvider(JanaId, JanaEmail, [new Claim(ClaimTypes.Role, UserProfile.Customer.ToString())]);
 
@@ -217,6 +283,7 @@ public class GuestBookingsInMyOrdersTests(PostgresContainerFixture fixture) : Ba
             currencyId: CurrencyId,
             paymentStatus: PaymentStatus.Paid,
             userId: userId,
+            accessInstructions: AccessInstructions,
             cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = id;
         order.Created("seed", bookedOn ?? DateTimeOffset.UtcNow.AddDays(-2));

@@ -123,6 +123,13 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
             : GetQueryableIgnoringTenant()
                 .Where(o => o.UserId == userId || (o.UserId == null && o.CustomerEmail == accountEmail));
 
+    public Task<Order?> GetByIdListedForCustomerAsync(
+        string id, string userId, string? accountEmail, CancellationToken cancellationToken)
+    {
+        return WithDetailGraph(GetQueryableListedForCustomer(userId, accountEmail))
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+    }
+
     public Task<int> GetCountListedForCustomerAsync(
         string userId, string? accountEmail, Expression<Func<Order, bool>>? filter, CancellationToken cancellationToken)
     {

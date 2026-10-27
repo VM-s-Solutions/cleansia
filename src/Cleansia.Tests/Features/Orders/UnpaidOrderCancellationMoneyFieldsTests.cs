@@ -220,7 +220,7 @@ public class UnpaidOrderCancellationMoneyFieldsTests
     private static async Task<Core.AppServices.Features.Orders.DTOs.OrderItem> ReadDetailAs(Order order, UserProfile role)
     {
         var access = new Mock<IOrderAccessService>();
-        access.Setup(a => a.LoadOrderForCallerAsync(OrderId, It.IsAny<CancellationToken>())).ReturnsAsync(order);
+        access.Setup(a => a.LoadListedOrderForCallerAsync(OrderId, It.IsAny<CancellationToken>())).ReturnsAsync(order);
         access.Setup(a => a.CanBrowseOrderAsync(order, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         access.Setup(a => a.CanAccessOrderAsync(order, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         access.Setup(a => a.IsCustomerCaller()).Returns(role == UserProfile.Customer);

@@ -70,6 +70,28 @@ public class OrderAccessService : IOrderAccessService
             ? _userSessionProvider.GetUserEmail()
             : null;
 
+    public IQueryable<Order> OrdersListedForCaller()
+    {
+        var email = ListedGuestEmailForCaller();
+        return string.IsNullOrEmpty(email)
+            ? OrdersForCaller()
+            : _orderRepository.GetQueryableListedForCustomer(_userSessionProvider.GetUserId()!, email);
+    }
+
+    public Task<Order?> LoadListedOrderForCallerAsync(string orderId, CancellationToken cancellationToken)
+    {
+        var email = ListedGuestEmailForCaller();
+        return string.IsNullOrEmpty(email)
+            ? LoadOrderForCallerAsync(orderId, cancellationToken)
+            : _orderRepository.GetByIdListedForCustomerAsync(
+                orderId, _userSessionProvider.GetUserId()!, email, cancellationToken);
+    }
+
+    public bool IsListedGuestBooking(Order order) =>
+        string.IsNullOrEmpty(order.UserId)
+        && ListedGuestEmailForCaller() is { Length: > 0 } email
+        && string.Equals(order.CustomerEmail, email, StringComparison.OrdinalIgnoreCase);
+
     public Task<string?> GetCallerEmployeeIdAsync(CancellationToken cancellationToken)
     {
         return _callerEmployeeId.Value;

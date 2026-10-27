@@ -280,6 +280,12 @@ public interface IOrderRepository : IRepository<Order, string>
     /// </summary>
     IQueryable<Order> GetQueryableListedForCustomer(string userId, string? accountEmail);
 
+    /// <summary>
+    /// <see cref="IRepository{Order,String}.GetByIdAsync"/>'s graph over <see cref="GetQueryableListedForCustomer"/>.
+    /// </summary>
+    Task<Order?> GetByIdListedForCustomerAsync(
+        string id, string userId, string? accountEmail, CancellationToken cancellationToken);
+
     Task<int> GetCountListedForCustomerAsync(
         string userId, string? accountEmail, Expression<Func<Order, bool>>? filter, CancellationToken cancellationToken);
 

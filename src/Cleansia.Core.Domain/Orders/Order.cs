@@ -1111,6 +1111,12 @@ public class Order : TenantAuditable
         return this;
     }
 
+    public Order RecordCustomerCancellationReason(string? reason)
+    {
+        CustomerCancellationReason = reason;
+        return this;
+    }
+
     public Order AddNote(OrderNote note)
     {
         _notes.Add(note);

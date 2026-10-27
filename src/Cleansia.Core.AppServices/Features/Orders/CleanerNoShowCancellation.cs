@@ -15,8 +15,9 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// <summary>
 /// Cancelling a booking nobody cleaned because of us: no fee, the whole card refund, the customer's own
 /// applied credit back, the apology credit, and a message saying which of those actually happened — a push
-/// to an account, and an e-mail to every booking. The one body behind the unfilled sweep and an
-/// administrator's cleaner-no-show confirmation, so the two pay a customer the same.
+/// to an account, and an e-mail to every booking. The one body behind the unfilled sweep, an
+/// administrator's cleaner-no-show confirmation and a customer's own cancel, from its start, of a booking
+/// nobody is on, so the three pay a customer the same.
 /// → /product/business-rules#when-the-cleaner-cancels-or-no-shows
 /// </summary>
 public sealed class CleanerNoShowCancellation(

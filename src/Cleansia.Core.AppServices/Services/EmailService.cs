@@ -1100,7 +1100,9 @@ public sealed partial class EmailService : IEmailService
             ]
             : [];
         string? platformReason = null;
-        if (statusClass == "cancelled" && order.CancelledBy is CancelledBy.Admin or CancelledBy.System)
+        if (statusClass == "cancelled"
+            && (order.CancelledBy is CancelledBy.Admin or CancelledBy.System
+                || order.CancellationReason == OrderCancellationReasons.NoCleanerAvailable))
         {
             // The reason code, never an admin's free text: that is written for the company, not the guest.
             platformReason = translations.GetValueOrDefault(order.CancellationReason switch

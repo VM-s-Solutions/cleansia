@@ -89,7 +89,8 @@ public class CancellationFeePreviewAgreementTests
                 Mock.Of<IPendingDispatch>(),
                 new AuditContext(),
                 TimeProvider.System,
-                NullLogger<CustomerOrderCancellation>.Instance));
+                NullLogger<CustomerOrderCancellation>.Instance),
+            NoShowCancellationDoubles.Inert());
 
     private GetCancellationFeePreview.Handler CreatePreviewHandler() =>
         new(

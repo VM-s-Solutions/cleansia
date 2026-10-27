@@ -118,7 +118,8 @@ public class CancellationAcceptanceSignalTests
                 Mock.Of<IPendingDispatch>(),
                 new AuditContext(),
                 TimeProvider.System,
-                NullLogger<CustomerOrderCancellation>.Instance));
+                NullLogger<CustomerOrderCancellation>.Instance),
+            NoShowCancellationDoubles.Inert());
 
     private HandlePaymentNotification.Handler CreateWebhookHandler() =>
         new(

@@ -190,6 +190,25 @@ public sealed class GuestPlatformCancellationEmailCopyTests
         Assert.Equal("Your order has been cancelled.", message);
     }
 
+    /// <summary>
+    /// Owner ruling 2026-10-25 ("Fix"): a customer who cancels, from its start, a booking nobody is on is paid
+    /// as the unfilled sweep pays, and the cancellation keeps the no-cleaner key though the customer made it,
+    /// so the e-mail says what the sweep's would: why, what came back and the apology credit.
+    /// </summary>
+    [Fact]
+    public async Task A_Booking_Its_Customer_Cancelled_With_Nobody_On_It_At_Its_Start_Says_No_Cleaner_Was_Available()
+    {
+        var order = PaidCardOrder();
+        order.Cancel(DateTime.UtcNow, CancelledBy.Customer, 0m, order.TotalPrice, OrderCancellationReasons.NoCleanerAvailable);
+
+        var message = await StatusMessageAsync(order, "en", refundedAmount: 1000m, apologyCreditAmount: 250m);
+
+        Assert.Equal(
+            "Your order has been cancelled. No cleaner was available for this booking, so it was cancelled. "
+                + "Refund issued: €1,000.00. We have added €250.00 credit towards your next clean.",
+            message);
+    }
+
     private static Order PaidCardOrder()
     {
         var order = NewOrder(PaymentType.Card, PaymentStatus.Paid);

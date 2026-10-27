@@ -81,7 +81,8 @@ public class CancelOrderRefundWiringTests
                 Mock.Of<IPendingDispatch>(),
                 new AuditContext(),
                 TimeProvider.System,
-                NullLogger<CustomerOrderCancellation>.Instance));
+                NullLogger<CustomerOrderCancellation>.Instance),
+            NoShowCancellationDoubles.Inert());
 
     private void Arrange(Order order) =>
         _orderRepository

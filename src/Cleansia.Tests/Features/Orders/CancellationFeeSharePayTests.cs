@@ -117,7 +117,8 @@ public class CancellationFeeSharePayTests
                 _pending.Object,
                 new AuditContext(),
                 TimeProvider.System,
-                NullLogger<CustomerOrderCancellation>.Instance));
+                NullLogger<CustomerOrderCancellation>.Instance),
+            NoShowCancellationDoubles.Inert());
 
         return handler.Handle(new CancelOrder.Command(OrderId, null), CancellationToken.None);
     }

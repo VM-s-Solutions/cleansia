@@ -217,9 +217,8 @@ final class OrdersListViewModel: ViewModel {
         case .notifyOnTheWay: await client.notifyOnTheWay(orderId: orderId)
         case .start: await client.startOrder(orderId: orderId)
         case .collectCash: await client.markCashCollected(orderId: orderId)
-        case .markDone: await client.markMyPartDone(orderId: orderId)
         case .complete: await client.completeOrder(orderId: orderId, actualMinutes: nil, notes: nil)
-        case .take, .awaitingCrew, .completeBlocked, .none: .failure(ApiError(code: "orders.no_action"))
+        case .take, .markDone, .awaitingCrew, .completeBlocked, .none: .failure(ApiError(code: "orders.no_action"))
         }
     }
 

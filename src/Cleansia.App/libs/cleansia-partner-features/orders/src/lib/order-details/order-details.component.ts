@@ -174,7 +174,9 @@ export class OrderDetailsComponent implements OnInit {
 
   protected readonly canMarkMyPartDone = computed(() => this.crewCloseStanding() === CrewCloseStanding.MarkDone);
 
-  protected readonly crewCloseLineKey = computed(() => crewCloseLineKey(this.crewCloseStanding()));
+  protected readonly crewCloseLineKey = computed(() =>
+    crewCloseLineKey(this.crewCloseStanding(), this.hasAfterPhotos())
+  );
 
   protected readonly completeLabelKey = computed(() =>
     this.crewCloseStanding() === CrewCloseStanding.ReadyToComplete

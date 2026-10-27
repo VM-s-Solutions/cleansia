@@ -491,11 +491,12 @@
       "crew_close": {
         "mark_done": "I'm done",
         "mark_done_hint": "Press I'm done when your part is finished. Once everyone on this job has, any of you can complete it.",
-        "waiting": "You've marked your part done. Complete job appears here once everyone on this job has marked theirs.",
+        "waiting": "You've marked your part done. Once everyone on this job has, any of you can complete it.",
         "ready": "Everyone on this job has marked their part done. Any of you can complete it now.",
+        "needs_after_photo": "Everyone on this job has marked their part done. Add an after photo, then any of you can complete it.",
         "complete_job": "Complete job",
-        "marked_done": "Marked as done. Complete job appears once everyone on this job has marked their part.",
-        "crew_done": "Marked as done. Everyone on this job has now marked their part, so any of you can complete it."
+        "marked_done": "Marked as done. Once everyone on this job has marked their part, any of you can complete it.",
+        "crew_done": "Marked as done. Everyone on this job has now marked their part."
       }
     },
     "invoices": {

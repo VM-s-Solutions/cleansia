@@ -491,11 +491,12 @@
       "crew_close": {
         "mark_done": "Mám hotovo",
         "mark_done_hint": "Keď bude vaša časť hotová, stlačte Mám hotovo. Keď to urobia všetci na tejto zákazke, ktokoľvek z vás ju môže dokončiť.",
-        "waiting": "Svoju časť máte označenú ako hotovú. Dokončiť zákazku sa tu zobrazí, keď svoju časť označia všetci na tejto zákazke.",
+        "waiting": "Svoju časť máte označenú ako hotovú. Keď to urobia všetci na tejto zákazke, ktokoľvek z vás ju môže dokončiť.",
         "ready": "Všetci na tejto zákazke majú svoju časť označenú ako hotovú. Ktokoľvek z vás ju teraz môže dokončiť.",
+        "needs_after_photo": "Všetci na tejto zákazke majú svoju časť označenú ako hotovú. Pridajte fotografiu po upratovaní a potom ju ktokoľvek z vás môže dokončiť.",
         "complete_job": "Dokončiť zákazku",
-        "marked_done": "Označené ako hotové. Dokončiť zákazku sa zobrazí, keď svoju časť označia všetci na tejto zákazke.",
-        "crew_done": "Označené ako hotové. Svoju časť už označili všetci na tejto zákazke, takže ju ktokoľvek z vás môže dokončiť."
+        "marked_done": "Označené ako hotové. Keď svoju časť označia všetci na tejto zákazke, ktokoľvek z vás ju môže dokončiť.",
+        "crew_done": "Označené ako hotové. Svoju časť už označili všetci na tejto zákazke."
       }
     },
     "invoices": {

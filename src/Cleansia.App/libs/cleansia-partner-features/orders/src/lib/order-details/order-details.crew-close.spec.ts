@@ -204,10 +204,11 @@ describe('the job sheet of a job in progress', () => {
       expect(facade.completeOrder).toHaveBeenCalledTimes(1);
     });
 
-    it('withholds the shared Complete, as any Complete, until the job has an after photo', () => {
-      render(job(crew(MARKED, MARKED)), false);
+    it('withholds the shared Complete, as any Complete, until the job has an after photo, and says to add one', () => {
+      const page = render(job(crew(MARKED, MARKED)), false);
 
       expect(buttons()).not.toContain('pages.order_details.crew_close.complete_job');
+      expect(crewLine(page)).toBe('pages.order_details.crew_close.needs_after_photo');
     });
 
     it('shows when each cleaner marked their part, and who has not yet', () => {

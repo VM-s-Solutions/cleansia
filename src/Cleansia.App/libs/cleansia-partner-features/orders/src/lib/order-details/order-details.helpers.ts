@@ -164,7 +164,10 @@ const CREW_CLOSE_LINE_KEYS: Readonly<Record<CrewCloseStanding, string | null>> =
   [CrewCloseStanding.ReadyToComplete]: 'pages.order_details.crew_close.ready',
 };
 
-export function crewCloseLineKey(standing: CrewCloseStanding): string | null {
+export function crewCloseLineKey(standing: CrewCloseStanding, hasAfterPhotos: boolean): string | null {
+  if (standing === CrewCloseStanding.ReadyToComplete && !hasAfterPhotos) {
+    return 'pages.order_details.crew_close.needs_after_photo';
+  }
   return CREW_CLOSE_LINE_KEYS[standing];
 }
 

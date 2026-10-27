@@ -409,10 +409,21 @@ describe('completing a crew job', () => {
   });
 
   it('words each step on the sheet, and nothing outside a crew job in progress', () => {
-    expect(crewCloseLineKey(CrewCloseStanding.MarkDone)).toBe('pages.order_details.crew_close.mark_done_hint');
-    expect(crewCloseLineKey(CrewCloseStanding.WaitingForCrew)).toBe('pages.order_details.crew_close.waiting');
-    expect(crewCloseLineKey(CrewCloseStanding.ReadyToComplete)).toBe('pages.order_details.crew_close.ready');
-    expect(crewCloseLineKey(CrewCloseStanding.Hidden)).toBeNull();
+    expect(crewCloseLineKey(CrewCloseStanding.MarkDone, false)).toBe('pages.order_details.crew_close.mark_done_hint');
+    expect(crewCloseLineKey(CrewCloseStanding.WaitingForCrew, false)).toBe('pages.order_details.crew_close.waiting');
+    expect(crewCloseLineKey(CrewCloseStanding.ReadyToComplete, true)).toBe('pages.order_details.crew_close.ready');
+    expect(crewCloseLineKey(CrewCloseStanding.Hidden, true)).toBeNull();
+  });
+
+  // Marking needs no photo and Complete, the shared one included, needs an after photo, so a crew can
+  // all have marked on a job that has none yet.
+  it('asks for an after photo once everyone has marked, until the job has one', () => {
+    expect(crewCloseLineKey(CrewCloseStanding.ReadyToComplete, false)).toBe(
+      'pages.order_details.crew_close.needs_after_photo'
+    );
+    expect(crewCloseLineKey(CrewCloseStanding.MarkDone, true)).toBe('pages.order_details.crew_close.mark_done_hint');
+    expect(crewCloseLineKey(CrewCloseStanding.WaitingForCrew, true)).toBe('pages.order_details.crew_close.waiting');
+    expect(crewCloseLineKey(CrewCloseStanding.Hidden, false)).toBeNull();
   });
 
   it.each(PARTNER_LOCALES)('words every step and the refusal in %s', (locale) => {
@@ -422,6 +433,7 @@ describe('completing a crew job', () => {
         'pages.order_details.crew_close.mark_done_hint',
         'pages.order_details.crew_close.waiting',
         'pages.order_details.crew_close.ready',
+        'pages.order_details.crew_close.needs_after_photo',
         'pages.order_details.crew_close.complete_job',
         'pages.order_details.crew_close.marked_done',
         'pages.order_details.crew_close.crew_done',

@@ -54,6 +54,29 @@ public class OrderMappersAssignedEmployeeMaskingTests
     }
 
     [Fact]
+    public void Customer_Caller_Is_Not_Told_When_A_Cleaner_Marked_Their_Part_Done()
+    {
+        var assignment = BuildAssignment(OrderMockFactory.Generate());
+        assignment.MarkCompletionConfirmed(new DateTime(2026, 10, 27, 10, 30, 0, DateTimeKind.Utc));
+
+        var dto = assignment.MapToAssignedEmployeeDto(isCustomerCaller: true);
+
+        Assert.Null(dto.CompletionConfirmedAt);
+    }
+
+    [Fact]
+    public void Non_Customer_Caller_Reads_When_A_Cleaner_Marked_Their_Part_Done()
+    {
+        var markedAt = new DateTime(2026, 10, 27, 10, 30, 0, DateTimeKind.Utc);
+        var assignment = BuildAssignment(OrderMockFactory.Generate());
+        assignment.MarkCompletionConfirmed(markedAt);
+
+        var dto = assignment.MapToAssignedEmployeeDto();
+
+        Assert.Equal(markedAt, dto.CompletionConfirmedAt);
+    }
+
+    [Fact]
     public void MapToDetail_For_Customer_Caller_Masks_Assigned_Employees()
     {
         var order = OrderMockFactory.Generate();

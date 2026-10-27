@@ -108,6 +108,13 @@ public class OrderEmployee : BaseEntity
         return this;
     }
 
+    /// <inheritdoc cref="MarkCoverRequested"/>
+    public OrderEmployee MarkCompletionConfirmed(DateTime confirmedAtUtc)
+    {
+        CompletionConfirmedAt ??= confirmedAtUtc;
+        return this;
+    }
+
     /// <summary>
     /// Written once, by the contract's one writer. A seat has one contract, so a second freeze is a
     /// programming error rather than a re-price.

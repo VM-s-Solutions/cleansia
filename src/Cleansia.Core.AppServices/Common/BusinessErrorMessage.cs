@@ -269,6 +269,8 @@ public static class BusinessErrorMessage
     public const string EmployeeAlreadyHasOrderInProgress = "order.employee_already_has_order_in_progress";
     public const string CompletionNotesTooLong = "order.completion_notes.too_long";
     public const string AfterPhotosRequired = "order.after_photos.required";
+    /// <summary>A crew job is completed once every cleaner on it has marked their part done.</summary>
+    public const string OrderCrewNotDone = "order.crew_not_done";
     /// <summary>A before photo from Confirmed through InProgress, an after photo during InProgress.</summary>
     public const string OrderPhotoWindowClosed = "order.photo.window_closed";
     /// <summary>A photo is deleted only before the order is completed or cancelled.</summary>

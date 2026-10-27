@@ -7744,6 +7744,11 @@
           "phoneNumber": {
             "type": "string",
             "nullable": true
+          },
+          "completionConfirmedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
           }
         },
         "additionalProperties": false

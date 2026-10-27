@@ -322,6 +322,17 @@ public class OrderRedactionSurfaceTests
         Assert.Null(crewMember.PhoneNumber);
     }
 
+    [Fact]
+    public void The_Reshaped_Crew_Does_Not_Say_When_Each_Cleaner_Marked_Their_Part_Done()
+    {
+        var populated = FullyPopulatedDetail();
+        Assert.NotNull(Assert.Single(populated.AssignedEmployees).CompletionConfirmedAt);
+
+        var crewMember = Assert.Single(populated.RedactForBrowsingCleaner().AssignedEmployees);
+
+        Assert.Null(crewMember.CompletionConfirmedAt);
+    }
+
     public static TheoryData<string> DetailBlankedMembers => ToTheoryData(DetailBlanked);
 
     public static TheoryData<string> DetailKeptMembers => ToTheoryData(DetailKept);
@@ -409,7 +420,12 @@ public class OrderRedactionSurfaceTests
             StatusHistory: [new OrderStatusTrackDto(new Code("OrderStatus", "Completed", 5), DateTimeOffset.UtcNow)],
             CreatedOn: DateTimeOffset.UtcNow.AddDays(-3),
             UpdatedOn: DateTimeOffset.UtcNow.AddHours(-1),
-            AssignedEmployees: [new AssignedEmployeeDto("assignment-1", "employee-1", "Petra Svobodova", "+420602987654")],
+            AssignedEmployees:
+            [
+                new AssignedEmployeeDto(
+                    "assignment-1", "employee-1", "Petra Svobodova", "+420602987654",
+                    new DateTime(2026, 8, 20, 11, 50, 0, DateTimeKind.Utc)),
+            ],
             RequiredEmployees: RequiredEmployees,
             MaxEmployees: MaxEmployees,
             AvailableSpots: AvailableSpots,

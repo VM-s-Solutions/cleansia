@@ -8135,6 +8135,7 @@ export class AssignedEmployeeDto implements IAssignedEmployeeDto {
     employeeId!: string | undefined;
     fullName!: string | undefined;
     phoneNumber!: string | undefined;
+    completionConfirmedAt!: Date | undefined;
 
     constructor(data?: IAssignedEmployeeDto) {
         if (data) {
@@ -8151,6 +8152,7 @@ export class AssignedEmployeeDto implements IAssignedEmployeeDto {
             this.employeeId = Data["employeeId"];
             this.fullName = Data["fullName"];
             this.phoneNumber = Data["phoneNumber"];
+            this.completionConfirmedAt = Data["completionConfirmedAt"] ? new Date(Data["completionConfirmedAt"].toString()) : undefined as any;
         }
     }
 
@@ -8167,6 +8169,7 @@ export class AssignedEmployeeDto implements IAssignedEmployeeDto {
         data["employeeId"] = this.employeeId;
         data["fullName"] = this.fullName;
         data["phoneNumber"] = this.phoneNumber;
+        data["completionConfirmedAt"] = this.completionConfirmedAt ? this.completionConfirmedAt.toISOString() : undefined as any;
         return data;
     }
 }
@@ -8176,6 +8179,7 @@ export interface IAssignedEmployeeDto {
     employeeId: string | undefined;
     fullName: string | undefined;
     phoneNumber: string | undefined;
+    completionConfirmedAt: Date | undefined;
 }
 
 export class BlobFileDto implements IBlobFileDto {

@@ -94,14 +94,16 @@ public static class OrderPiiRedaction
 
     /// <summary>
     /// The same disclosure the customer gets about the crew (<c>MapToAssignedEmployeeDto</c>): a given
-    /// name and no phone number. <c>EmployeeId</c> stays — the partner apps decide "am I on this job?"
-    /// by looking for their own id in this list, so removing it would answer that question wrong.
+    /// name, no phone number and no time a cleaner marked their part done. <c>EmployeeId</c> stays — the
+    /// partner apps decide "am I on this job?" by looking for their own id in this list, so removing it
+    /// would answer that question wrong.
     /// </summary>
     private static AssignedEmployeeDto WithoutPersonalContact(AssignedEmployeeDto employee) =>
         employee with
         {
             FullName = GivenNameOnly(employee.FullName),
             PhoneNumber = null,
+            CompletionConfirmedAt = null,
         };
 
     private static string GivenNameOnly(string fullName)

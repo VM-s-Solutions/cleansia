@@ -95,7 +95,9 @@ public class CompleteOrder
                 .MustAsync(HasCompletedProfileAsync)
                 .WithMessage(BusinessErrorMessage.EmployeeProfileIncomplete)
                 .MustAsync(EmployeeIsApprovedAsync)
-                .WithMessage(BusinessErrorMessage.EmployeeNotApproved);
+                .WithMessage(BusinessErrorMessage.EmployeeNotApproved)
+                .MustAsync(CrewIsNotPartlyDoneAsync)
+                .WithMessage(BusinessErrorMessage.OrderCrewNotDone);
 
             When(x => !string.IsNullOrEmpty(x.CompletionNotes), () =>
             {
@@ -181,6 +183,18 @@ public class CompleteOrder
 
             var employee = await _employeeRepository.GetByIdAsync(employeeId, cancellationToken);
             return employee?.ContractStatus == ContractStatus.Approved;
+        }
+
+        private async Task<bool> CrewIsNotPartlyDoneAsync(Command command, CancellationToken cancellationToken)
+        {
+            var marks = await _orderRepository
+                .GetQueryable()
+                .Where(o => o.Id == command.OrderId)
+                .SelectMany(o => o.AssignedEmployees)
+                .Select(oe => oe.CompletionConfirmedAt)
+                .ToListAsync(cancellationToken);
+
+            return marks.All(mark => mark is null) || marks.All(mark => mark is not null);
         }
 
         private async Task<bool> HasAfterPhotosAsync(string orderId, CancellationToken cancellationToken)

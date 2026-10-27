@@ -116,12 +116,17 @@ final class OrderDetailViewModel: ViewModel {
     /// Whether the footer offers Cancel: the server's set, read off the loaded order's status and, past
     /// the booked start, off whether a cleaner is on the job.
     var canCancel: Bool {
-        OrderStatusGroup.isCancellable(state.loadedValue?.status) && !canReportCleanerNoShow
+        OrderStatusGroup.isCancellable(state.loadedValue?.status) && !awaitsCleanerPastStart
     }
 
-    /// Whether the footer offers "the cleaner did not arrive" in Cancel's place. Re-read on every render,
-    /// and the active-order poller re-renders a staffed order across its start.
+    /// Whether the footer offers "the cleaner did not arrive" in Cancel's place — never on a guest booking,
+    /// whose dispute the server refuses.
     var canReportCleanerNoShow: Bool {
+        awaitsCleanerPastStart && state.loadedValue?.isGuestBooking == false
+    }
+
+    /// Re-read on every render, and the active-order poller re-renders a staffed order across its start.
+    private var awaitsCleanerPastStart: Bool {
         guard let order = state.loadedValue else { return false }
         return OrderStatusGroup.isAwaitingCleanerPastStart(
             order.status,
@@ -229,7 +234,8 @@ final class OrderDetailViewModel: ViewModel {
     /// `estimatedTime` minutes) and the actual phase timestamps off the status history, so the card's ETA
     /// counts against what really happened.
     private func syncLiveActivity(for order: CustomerOrderDetail) {
-        guard let orderId = order.id, !orderId.isBlank else { return }
+        // The server refuses a guest booking's registration and no push would ever update its card.
+        guard !order.isGuestBooking, let orderId = order.id, !orderId.isBlank else { return }
         let status = order.status
         let orderNumber = order.displayOrderNumber ?? ""
         if let wireStatus = OrderStatusGroup.liveActivityStatus(status) {
@@ -519,7 +525,7 @@ final class OrderDetailViewModel: ViewModel {
     /// SAS URLs carry a ~1h TTL, so each detail open fetches fresh — no cache
     /// across re-opens (`OrderDetailViewModel.kt:498-506`).
     func ensurePhotosLoaded() async {
-        guard !orderId.isBlank else { return }
+        guard !orderId.isBlank, state.loadedValue?.isGuestBooking != true else { return }
         switch photos {
         case .idle, .error:
             break

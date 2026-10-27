@@ -5214,6 +5214,41 @@
         }
       }
     },
+    "error.order.crew_not_done": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zakázku lze dokončit, až svou část označí jako hotovou všichni, kdo na ní pracují."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Everyone on this job has to mark their part done before it can be completed."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заказ можно завершить, только когда все, кто на нём работает, отметят свою часть как выполненную."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zákazku možno dokončiť, až keď svoju časť označia ako hotovú všetci, ktorí na nej pracujú."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Замовлення можна завершити, лише коли всі, хто на ньому працює, позначать свою частину як виконану."
+          }
+        }
+      }
+    },
     "error.order.not_takeable": {
       "extractionState": "stale",
       "localizations": {

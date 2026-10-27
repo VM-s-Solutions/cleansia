@@ -111,10 +111,10 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
         }
     }
 
-    public func confirmEmail(email: String, code: String) async -> ApiResult<LoginOutcome> {
+    public func confirmEmail(email: String, code: String, password: String) async -> ApiResult<LoginOutcome> {
         let result: ApiResult<JwtTokenResponseDto> = await post(
             path: "api/Auth/ConfirmUserEmail",
-            body: ConfirmUserEmailRequest(code: code, email: email),
+            body: ConfirmUserEmailRequest(code: code, email: email, password: password),
             useNoAuthSession: false,
             method: .put
         )

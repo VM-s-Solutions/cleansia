@@ -49,10 +49,12 @@ public struct RegisterRequest: Encodable, Sendable {
 }
 
 /// The email names the account the 6-digit code was issued to — the server verifies the code ONLY
-/// against that account (a bare code proves nothing by itself).
+/// against that account (a bare code proves nothing by itself). The confirmation sets `password`, replacing
+/// whatever a registration stored, so nobody but the holder of the mailbox ends with a working password.
 public struct ConfirmUserEmailRequest: Encodable, Sendable {
     public let code: String
     public let email: String
+    public let password: String
 }
 
 public struct ResendConfirmationEmailRequest: Encodable, Sendable {

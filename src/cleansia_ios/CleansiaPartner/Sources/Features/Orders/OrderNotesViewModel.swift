@@ -176,6 +176,10 @@ final class OrderNotesViewModel: ViewModel {
             .success(())
         }
 
+        func markMyPartDone(orderId _: String) async -> ApiResult<Bool> {
+            .success(false)
+        }
+
         func completeOrder(orderId _: String, actualMinutes _: Int?, notes _: String?) async -> ApiResult<Void> {
             .success(())
         }

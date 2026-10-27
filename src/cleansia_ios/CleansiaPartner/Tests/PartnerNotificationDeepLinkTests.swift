@@ -25,6 +25,7 @@ final class PartnerNotificationDeepLinkTests: XCTestCase {
             "order.seat_open",
             "order.preferred_offer",
             "order.assigned",
+            "order.crew_mate_done",
             "dispute.reply"
         ]
         for key in keys {
@@ -56,6 +57,18 @@ final class PartnerNotificationDeepLinkTests: XCTestCase {
         ] {
             XCTAssertNil(PartnerNotificationDeepLink.resolve(eventKey: key, orderId: "ord-1"), key)
         }
+    }
+
+    /// A crew-mate's "I'm done" opens the job it was marked on, where the shared Complete appears once
+    /// everyone on it has marked.
+    func testACrewMateFinishingOpensTheJob() {
+        let userInfo = alertCarryingUserInfo(
+            eventKey: "order.crew_mate_done",
+            locArgs: ["A-2201"],
+            extra: ["orderId": "ord-7"]
+        )
+        XCTAssertEqual(PartnerNotificationDeepLink.resolve(userInfo), .order(orderId: "ord-7"))
+        XCTAssertNil(PartnerNotificationDeepLink.resolve(eventKey: "order.crew_mate_done", orderId: nil))
     }
 
     func testOrderEventWithoutIdResolvesToNil() {

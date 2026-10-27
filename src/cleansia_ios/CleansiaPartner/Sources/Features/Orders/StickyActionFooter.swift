@@ -98,6 +98,17 @@ struct StickyActionFooter: View {
                     }
                 }
             }
+        case .markDone:
+            footer {
+                SlideToConfirm(
+                    idleLabel: L10n.Orders.markDone,
+                    busyLabel: L10n.Orders.markingDone,
+                    isBusy: isBusy(.markDone),
+                    onConfirm: { onConfirm(.markDone) }
+                )
+            }
+        case .awaitingCrew:
+            footer { CrewWaitingHint() }
         case .complete:
             footer {
                 SlideToConfirm(
@@ -105,6 +116,15 @@ struct StickyActionFooter: View {
                     busyLabel: L10n.Orders.completingOrder,
                     isBusy: isBusy(.complete),
                     onConfirm: { onConfirm(.complete) }
+                )
+            }
+        case .completeJob:
+            footer {
+                SlideToConfirm(
+                    idleLabel: L10n.Orders.completeJob,
+                    busyLabel: L10n.Orders.completingOrder,
+                    isBusy: isBusy(.complete),
+                    onConfirm: { onConfirm(.completeJob) }
                 )
             }
         case let .completeBlocked(cashPending):
@@ -163,6 +183,28 @@ private struct FooterTextLink: View {
             CleansiaTextLink(label, action: onTap)
                 .disabled(!enabled)
         }
+    }
+}
+
+/// Where the Complete slide stands on a crew job once the caller has marked their part done and someone
+/// else on it has not.
+private struct CrewWaitingHint: View {
+    @Environment(\.locale) private var locale
+
+    var body: some View {
+        HStack(spacing: Spacing.xs) {
+            Image(systemName: "person.2")
+                .foregroundColor(CleansiaColors.onSurfaceVariant)
+            Text(L10n.Orders.crewWaiting)
+                .font(CleansiaTypography.labelMedium)
+                .foregroundColor(CleansiaColors.onSurfaceVariant)
+                .multilineTextAlignment(.leading)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, Spacing.s)
+        .padding(.horizontal, Spacing.m)
+        .background(CleansiaColors.surfaceVariant, in: Capsule())
+        .id(locale.identifier)
     }
 }
 

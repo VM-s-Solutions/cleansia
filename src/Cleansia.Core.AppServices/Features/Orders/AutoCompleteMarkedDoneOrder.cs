@@ -13,11 +13,8 @@ using BusinessResult = Cleansia.Infra.Common.Validations.BusinessResult;
 namespace Cleansia.Core.AppServices.Features.Orders;
 
 /// <summary>
-/// Completes one crew job for <see cref="AutoCompleteMarkedDoneOrders"/>, which sends each in a DI scope of its
-/// own: everyone on it marked their part done, the last of them by the cutoff, and nobody completed it. It runs
-/// the completion a cleaner's Complete runs, on the same order rules, so every seat is paid. The pipeline
-/// commits it inside that scope and a failure leaves with the scope, so this handler neither commits nor
-/// catches. → /decisions/adr-0072
+/// Closes one fully marked crew job under its own company through the shared completion.
+/// Its own DI scope discards a failed completion. → /decisions/adr-0072
 /// </summary>
 public class AutoCompleteMarkedDoneOrder
 {

@@ -11,15 +11,8 @@ using BusinessResult = Cleansia.Infra.Common.Validations.BusinessResult;
 namespace Cleansia.Core.AppServices.Features.Orders;
 
 /// <summary>
-/// A crew job that everyone on it marked done, and that nobody completed, closes itself two hours after the
-/// last mark, through the completion a cleaner's Complete runs (owner ruling 2026-10-26: "If everyone marked
-/// that they're done, but didn't click on a shared button then yes. If not then they're still cleaning"). A
-/// job with anyone on it still unmarked is never closed here, and no administrator is told.
-///
-/// <para><b>A dispatcher, not a worker.</b> It selects the job ids across every company and sends one
-/// <see cref="AutoCompleteMarkedDoneOrder"/> per id, each in its OWN DI scope, so a job that fails takes its
-/// changes away with its scope, holds back none of the others, and is retried on the next run.
-/// → /decisions/adr-0072</para>
+/// Closes jobs whose whole crew marked done at least two hours ago, each in its own DI scope.
+/// A failed job holds back none of the others and is retried next tick. → /decisions/adr-0072
 /// </summary>
 public class AutoCompleteMarkedDoneOrders
 {

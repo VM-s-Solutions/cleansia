@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Authentication;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
@@ -164,6 +165,64 @@ public class CrewCloseRaceTests(PostgresContainerFixture fixture) : BaseIntegrat
         Assert.All(order.AssignedEmployees, seat => Assert.NotNull(seat.CompletionConfirmedAt));
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_Repeated_Mark_And_The_Automatic_Close_Keep_The_First_Stamp_And_Complete_Once(bool closeFirst)
+    {
+        await ResetAndSeedAsync([CleanerA, CleanerB], DateTime.UtcNow.AddHours(-3));
+        DateTime firstStamp;
+        await using (var before = NewContext("before"))
+        {
+            var order = await LoadAsync(before);
+            firstStamp = order.AssignedEmployees.Single(s => s.EmployeeId == CleanerA).CompletionConfirmedAt!.Value;
+        }
+
+        if (closeFirst)
+        {
+            var tenants = new FixedTenantProvider(null);
+            await using var closeContext = NewContext("system", tenants);
+            var closed = await CloseHandler(closeContext, tenants).Handle(
+                new AutoCompleteMarkedDoneOrder.Command(OrderId, DateTime.UtcNow.AddHours(-2)), CancellationToken.None);
+            Assert.True(closed.IsSuccess && closed.Value!.Completed, closed.Error?.Message);
+
+            var marking = MarkAndCommitAsync(CleanerA);
+            await UntilItWaitsOnTheRowOrEndsAsync(marking);
+            await closeContext.CommitAsync(CancellationToken.None);
+            var marked = await marking;
+
+            Assert.False(marked.IsSuccess);
+            Assert.Equal(BusinessErrorMessage.OrderNotInProgress, marked.Error!.Message);
+        }
+        else
+        {
+            await using var markContext = NewContext(UserOf(CleanerA));
+            var marked = await MarkHandler(markContext, CleanerA).Handle(new MarkMyPartDone.Command(OrderId), CancellationToken.None);
+            Assert.True(marked.IsSuccess, marked.Error?.Message);
+            Assert.Equal(firstStamp, marked.Value!.CompletionConfirmedAt);
+            Assert.True(marked.Value.CrewDone);
+
+            var closing = CloseAndCommitAsync(DateTime.UtcNow.AddHours(-2));
+            await UntilItWaitsOnTheRowOrEndsAsync(closing);
+            await markContext.CommitAsync(CancellationToken.None);
+            var closed = await closing;
+
+            Assert.True(closed.IsSuccess && closed.Value!.Completed, closed.Error?.Message);
+        }
+
+        await using var verify = NewContext("verify");
+        var completedOrder = await LoadAsync(verify);
+        Assert.Equal(OrderStatus.Completed, completedOrder.CurrentStatus);
+        Assert.Single(completedOrder.OrderStatusHistory, s => s.Status == OrderStatus.Completed);
+        Assert.Equal(firstStamp, completedOrder.AssignedEmployees.Single(s => s.EmployeeId == CleanerA).CompletionConfirmedAt);
+        Assert.Equal([NotificationEventCatalog.OrderCompleted], _pushed);
+        Assert.Equal([OrderId], _loyaltyGrants);
+        var queued = await verify.OutboxMessages.IgnoreQueryFilters().Select(m => m.QueueName).ToListAsync();
+        Assert.Single(queued, q => q == QueueNames.SendEmail);
+        Assert.Single(queued, q => q == QueueNames.GenerateReceipt);
+        Assert.Equal(2, queued.Count(q => q == QueueNames.CalculateOrderPay));
+    }
+
     private async Task<BusinessResult<CompleteOrder.Response>> CompleteAndCommitAsync(string employeeId)
     {
         await using var context = NewContext(UserOf(employeeId));
@@ -178,12 +237,12 @@ public class CrewCloseRaceTests(PostgresContainerFixture fixture) : BaseIntegrat
         return completed;
     }
 
-    private async Task<BusinessResult<AutoCompleteMarkedDoneOrder.Response>> CloseAndCommitAsync()
+    private async Task<BusinessResult<AutoCompleteMarkedDoneOrder.Response>> CloseAndCommitAsync(DateTime? cutoff = null)
     {
         var tenants = new FixedTenantProvider(null);
         await using var context = NewContext("system", tenants);
         var closed = await CloseHandler(context, tenants).Handle(
-            new AutoCompleteMarkedDoneOrder.Command(OrderId, DateTime.UtcNow), CancellationToken.None);
+            new AutoCompleteMarkedDoneOrder.Command(OrderId, cutoff ?? DateTime.UtcNow), CancellationToken.None);
         if (closed.IsSuccess)
         {
             await context.CommitAsync(CancellationToken.None);
@@ -316,7 +375,7 @@ public class CrewCloseRaceTests(PostgresContainerFixture fixture) : BaseIntegrat
             .SingleAsync(o => o.Id == OrderId);
 
     /// <summary>A two-seat card job in progress, paid, booked from an account, with both cleaners on it.</summary>
-    private async Task ResetAndSeedAsync(string[] markedDone)
+    private async Task ResetAndSeedAsync(string[] markedDone, DateTime? completionConfirmedAt = null)
     {
         await using (var conn = new NpgsqlConnection(Fixture.GetConnectionString()))
         {
@@ -352,7 +411,7 @@ public class CrewCloseRaceTests(PostgresContainerFixture fixture) : BaseIntegrat
             customerAddress: Address.Create("Testovaci 15", "Praha", "11000", CountryId),
             rooms: 3,
             bathrooms: 2,
-            cleaningDateTime: DateTime.UtcNow.AddHours(-1),
+            cleaningDateTime: (completionConfirmedAt ?? DateTime.UtcNow).AddHours(-1),
             paymentType: PaymentType.Card,
             totalPrice: 2400m,
             currencyId: CurrencyId,
@@ -361,7 +420,7 @@ public class CrewCloseRaceTests(PostgresContainerFixture fixture) : BaseIntegrat
             cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.SetMaxEmployees(2);
-        var stamp = DateTimeOffset.UtcNow.AddHours(-3);
+        var stamp = new DateTimeOffset(completionConfirmedAt ?? DateTime.UtcNow).AddHours(-3);
         foreach (var status in new[] { OrderStatus.New, OrderStatus.Confirmed, OrderStatus.InProgress })
         {
             var track = OrderStatusTrack.Create(status, order);
@@ -384,7 +443,7 @@ public class CrewCloseRaceTests(PostgresContainerFixture fixture) : BaseIntegrat
             var seat = OrderEmployee.Create(order, cleaner);
             if (markedDone.Contains(employeeId))
             {
-                seat.MarkCompletionConfirmed(DateTime.UtcNow.AddMinutes(-5));
+                seat.MarkCompletionConfirmed(completionConfirmedAt ?? DateTime.UtcNow.AddMinutes(-5));
             }
 
             order.AddAssignedEmployee(seat);

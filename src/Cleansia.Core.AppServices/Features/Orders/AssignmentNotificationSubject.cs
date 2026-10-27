@@ -10,8 +10,7 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// several over its life. With the order id alone, the second cleaner taking a two-seat job minted a key
 /// the first cleaner's take had already written, the insert hit the unique index at the pipeline's
 /// commit, and the whole take rolled back: a 500, and a seat that could never be filled. Crew is
-/// <c>ceil(EstimatedTime / 120)</c>, so that is every 180-minute service in the catalogue, not an edge
-/// case.</para>
+/// <c>ceil(EstimatedTime / 120)</c>, so that is every booking over 120 minutes, not an edge case.</para>
 ///
 /// <para><b>Why the assignment row's id and not the cleaner's.</b> An employee id fixes the two-seat
 /// case and the plain reassign, and still collides when an admin undoes their own reassign — A, then B,

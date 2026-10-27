@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Addresses.DTOs;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Features.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
@@ -24,29 +25,29 @@ namespace Cleansia.IntegrationTests.Deploy;
 /// <summary>
 /// sql-scripts/prod-bootstrap.sql first runs for real on the freshly migrated production database (runbook
 /// P7), which no agent may touch. So it runs here on the migrated schema emptied of every row, the
-/// tenant registry included, twice; and then a guest quotes and books once an administrator has typed in
+/// tenant registry included, twice; an administrator then adds a service in one of the categories it
+/// creates, which no admin screen can; and a guest quotes and books once an administrator has typed in
 /// the smallest catalogue, because an anonymous booking resolves its market to the operating company the
 /// bootstrap alone provides.
 /// </summary>
 [Collection("PostgresCollection")]
 public class ProductionBootstrapScriptTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
 {
-    private const string CategoryId = "bootstrap-category";
     private const string ServiceId = "bootstrap-service";
     private const decimal ServicePriceCzk = 1200m;
 
     private static readonly string[] ReferenceTables =
     [
-        "Tenants", "Languages", "Countries", "ServiceCities", "Currencies", "CountryInvoiceConfigs",
-        "CountryConfigurations", "EmployeeDocumentRequirements", "EmailTemplateTranslations",
-        "LoyaltyTierConfigs", "PropertySizePresets",
+        "Tenants", "Languages", "Countries", "ServiceCities", "ServiceCategories", "Currencies",
+        "CountryInvoiceConfigs", "CountryConfigurations", "EmployeeDocumentRequirements",
+        "EmailTemplateTranslations", "LoyaltyTierConfigs", "PropertySizePresets",
     ];
 
     private static readonly string[] OwnerTypedTables =
     [
         "Users", "Orders", "PromoCodes", "CompanyInfo", "MembershipPlans", "MembershipPlanPrices",
-        "ServiceCategories", "Services", "Packages", "Extras", "ServicePrices", "PackagePrices",
-        "ExtraPrices", "EmployeePayConfigs",
+        "Services", "Packages", "Extras", "ServicePrices", "PackagePrices", "ExtraPrices",
+        "EmployeePayConfigs",
     ];
 
     [Fact]
@@ -102,6 +103,38 @@ public class ProductionBootstrapScriptTests(PostgresContainerFixture fixture) : 
     }
 
     [Fact]
+    public async Task An_administrator_adds_a_service_in_a_category_the_bootstrap_created()
+    {
+        await TestMethod(
+            arrange: async (CleansiaDbContext _) => await RunBootstrapOnEmptyDatabaseAsync(),
+            act: async provider =>
+            {
+                var context = provider.GetRequiredService<CleansiaDbContext>();
+                var homeId = await context.ServiceCategories.Where(c => c.Slug == "home").Select(c => c.Id).SingleAsync();
+                var languageCodes = await context.Languages.Select(l => l.Code).ToListAsync();
+
+                return await provider.GetRequiredService<IMediator>().Send(new CreateService.Command(
+                    homeId,
+                    "General Cleaning",
+                    "Standard cleaning",
+                    EstimatedTime: 120,
+                    Prices: new Dictionary<string, CreateService.ServicePriceInput> { ["CZK"] = new(ServicePriceCzk, 0m) },
+                    Translations: languageCodes.ToDictionary(
+                        code => code, _ => new CreateService.TranslationInput("General Cleaning", "Standard cleaning"))));
+            },
+            assert: async (CleansiaDbContext context, BusinessResult<CreateService.Response> created) =>
+            {
+                Assert.True(created.IsSuccess, $"CreateService failed with: {string.Join("; ", (created as IValidationResult)?.Errors.Select(e => $"{e.Code}={e.Message}") ?? [created.Error?.Message])}");
+                Assert.Equal(
+                    ["home", "deep", "laundry", "pet"],
+                    await context.ServiceCategories.OrderBy(c => c.DisplayOrder).Select(c => c.Slug).ToListAsync());
+                var service = await context.Services.SingleAsync(s => s.Id == created.Value.ServiceId);
+                Assert.Equal("home", await context.ServiceCategories.Where(c => c.Id == service.CategoryId).Select(c => c.Slug).SingleAsync());
+            },
+            transactional: false);
+    }
+
+    [Fact]
     public async Task A_guest_quotes_and_books_once_an_administrator_adds_a_minimal_catalogue()
     {
         await TestMethod(
@@ -112,11 +145,10 @@ public class ProductionBootstrapScriptTests(PostgresContainerFixture fixture) : 
                 await LegalSeed.SeedAsync(context);
 
                 var czkId = await context.Currencies.Where(c => c.Code == "CZK").Select(c => c.Id).SingleAsync();
-                var category = ServiceCategory.Create("home", "Home", "Home cleaning");
-                category.Id = CategoryId;
-                var service = Service.Create(CategoryId, "General Cleaning", "Standard cleaning", 120);
+                var homeId = await context.ServiceCategories.Where(c => c.Slug == "home").Select(c => c.Id).SingleAsync();
+                var service = Service.Create(homeId, "General Cleaning", "Standard cleaning", 120);
                 service.Id = ServiceId;
-                context.AddRange(category, service);
+                context.Add(service);
                 context.ServicePrices.Add(ServicePrice.Create(ServiceId, czkId, ServicePriceCzk, 0m));
                 context.EmployeePayConfigs.Add(EmployeePayConfig.CreateForService(ServiceId, ServicePriceCzk / 2, czkId));
                 StampUnstampedAdded(context, TestTenants.Default);

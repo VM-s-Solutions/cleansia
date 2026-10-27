@@ -210,6 +210,7 @@ public partial class CreateOrderCallerCurrencyTests
             arrange: async context =>
             {
                 await SeedCrossOrderAsync(context);
+                await StartCrossOrderAsync(context);
                 (await context.Currencies.SingleAsync(c => c.Id == Eur)).SetReferralCredit(6m);
                 var referrer = User.CreateWithPassword("referrer@test.local", "Password123!", "Ref", "Errer", UserProfile.Customer);
                 referrer.Id = referrerId;

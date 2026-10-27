@@ -187,6 +187,16 @@ public class Order : TenantAuditable
     /// </summary>
     public bool HasTakeableSeat => HasAvailableSpots || CoverSeatsOpen > 0;
 
+    /// <summary>Everyone on the job has marked their part done; false while nobody is on it.</summary>
+    public bool EveryCleanerMarkedDone =>
+        _assignedEmployees.Count > 0 && _assignedEmployees.All(oe => oe.CompletionConfirmedAt is not null);
+
+    /// <summary>
+    /// Whether the crew lets the job be completed (owner ruling 2026-10-26): a job one cleaner holds
+    /// completes on their own tap, a crew of two or more once everyone on it has marked their part done.
+    /// </summary>
+    public bool CrewLetsTheJobComplete => _assignedEmployees.Count < 2 || EveryCleanerMarkedDone;
+
     [MaxLength(50)]
     public string ConfirmationCode { get; private set; } = OrderExtensions.GenerateConfirmationCode();
 

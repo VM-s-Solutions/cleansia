@@ -10,9 +10,10 @@ using Moq;
 namespace Cleansia.Tests.Features.Orders;
 
 /// <summary>
-/// A crew that has started marking their parts done closes only once every cleaner on it has. Owner
-/// ruling 2026-10-26: "each cleaner has to mark on his device that he's done. And then there is a shared
-/// button appears that can be clicked by any on them".
+/// A job of two or more cleaners is completed only once every cleaner on it has marked their part done,
+/// and then by any of them; a job one cleaner holds still completes on their one tap. Owner ruling
+/// 2026-10-26: "each cleaner has to mark on his device that he's done. And then there is a shared button
+/// appears that can be clicked by any on them".
 /// </summary>
 public sealed class CompleteOrderCrewNotDoneTests
 {
@@ -88,8 +89,30 @@ public sealed class CompleteOrderCrewNotDoneTests
 
         var result = await CreateValidator().ValidateAsync(new CompleteOrder.Command(OrderId));
 
-        Assert.False(result.IsValid);
-        Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.EmployeeNotAssignedToOrder);
-        Assert.DoesNotContain(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.OrderCrewNotDone);
+        Assert.Equal(BusinessErrorMessage.EmployeeNotAssignedToOrder, Assert.Single(result.Errors).ErrorMessage);
+    }
+
+    [Fact]
+    public async Task A_Crew_Nobody_Has_Marked_Done_Is_Refused()
+    {
+        ArrangeTwoSeatCrew(CleanerA);
+
+        var result = await CreateValidator().ValidateAsync(new CompleteOrder.Command(OrderId));
+
+        Assert.Equal(BusinessErrorMessage.OrderCrewNotDone, Assert.Single(result.Errors).ErrorMessage);
+    }
+
+    /// <summary>The owner was told this default and did not veto it: a solo job stays one tap.</summary>
+    [Fact]
+    public async Task A_Job_One_Cleaner_Holds_Completes_On_Their_One_Tap()
+    {
+        ArrangeTwoSeatCrew(CleanerA);
+        var solo = ValidatorTestHelpers.BuildOrder(
+            OrderId, OrderStatus.InProgress, CleanerA, PaymentType.Cash, PaymentStatus.Paid, maxEmployees: 2);
+        _orderRepository.Setup(r => r.GetQueryable()).Returns(new[] { solo }.AsQueryable().BuildMock());
+
+        var result = await CreateValidator().ValidateAsync(new CompleteOrder.Command(OrderId));
+
+        Assert.True(result.IsValid, string.Join("; ", result.Errors.Select(e => e.ErrorMessage)));
     }
 }

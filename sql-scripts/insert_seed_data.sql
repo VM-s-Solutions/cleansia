@@ -46,32 +46,11 @@ VALUES
   (generate_ulid()::TEXT, false, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'GBP', '£', 'Pound Sterling', NULL, 9.00),
   (generate_ulid()::TEXT, false, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'USD', '$', 'US Dollar', NULL, 10.00);
 
--- 6. SERVICE CATEGORIES
--- Slugs are the client-facing stable identifier (mobile maps them to icons/colors).
--- Keep slugs immutable once seeded; rename Name freely via admin.
-INSERT INTO public."ServiceCategories" (
-  "Id", "IsActive", "CreatedBy", "CreatedOn",
-  "UpdatedBy", "UpdatedOn", "DeactivatedBy",
-  "DeactivatedOn", "Slug", "Name", "Description", "DisplayOrder", "Translations"
-)
-VALUES
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   'home', 'Home', 'Everyday home cleaning services', 10,
-   '{"en": {"Name": "Home", "Description": "Everyday home cleaning services"}, "cs": {"Name": "Domácnost", "Description": "Každodenní úklid domácnosti"}, "sk": {"Name": "Domácnosť", "Description": "Každodenné upratovanie domácnosti"}, "uk": {"Name": "Дім", "Description": "Щоденне прибирання будинку"}, "ru": {"Name": "Дом", "Description": "Ежедневная уборка дома"}}'),
-
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   'deep', 'Deep clean', 'Thorough and specialized cleaning', 20,
-   '{"en": {"Name": "Deep clean", "Description": "Thorough and specialized cleaning"}, "cs": {"Name": "Hloubkový úklid", "Description": "Důkladné a specializované čištění"}, "sk": {"Name": "Hĺbkové čistenie", "Description": "Dôkladné a špecializované čistenie"}, "uk": {"Name": "Глибоке прибирання", "Description": "Ретельне та спеціалізоване прибирання"}, "ru": {"Name": "Глубокая уборка", "Description": "Тщательная и специализированная уборка"}}'),
-
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   'laundry', 'Laundry', 'Washing, ironing, and linen care', 30,
-   '{"en": {"Name": "Laundry", "Description": "Washing, ironing, and linen care"}, "cs": {"Name": "Praní", "Description": "Praní, žehlení a péče o prádlo"}, "sk": {"Name": "Pranie", "Description": "Pranie, žehlenie a starostlivosť o bielizeň"}, "uk": {"Name": "Прання", "Description": "Прання, прасування та догляд за білизною"}, "ru": {"Name": "Стирка", "Description": "Стирка, глажка и уход за бельём"}}'),
-
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   'pet', 'Pet', 'Services tailored for pet owners', 40,
-   '{"en": {"Name": "Pet", "Description": "Services tailored for pet owners"}, "cs": {"Name": "Mazlíčci", "Description": "Služby pro majitele domácích mazlíčků"}, "sk": {"Name": "Domáce zvieratá", "Description": "Služby pre majiteľov domácich miláčikov"}, "uk": {"Name": "Тварини", "Description": "Послуги для власників домашніх тварин"}, "ru": {"Name": "Питомцы", "Description": "Услуги для владельцев домашних животных"}}');
-
 -- 7. SERVICES
+-- DEV durations are minutes, for testing: every service books 2 minutes and a package the sum of its
+-- services', so a test job is over in minutes. A booking over 120 minutes needs two cleaners and no
+-- booking of this catalogue comes near it; to try a crew, an administrator sets one service above 120
+-- minutes in the DEV console. Production's durations are typed into the admin console, never read here.
 INSERT INTO public."Services" (
   "Id", "IsActive", "CreatedBy", "CreatedOn",
   "UpdatedBy", "UpdatedOn", "DeactivatedBy",
@@ -82,63 +61,63 @@ VALUES
   -- Basic Cleaning Services
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'General Cleaning', 'Standard cleaning of all rooms including dusting, vacuuming, and sanitizing',
-   120,
+   2,
    (SELECT "Id" FROM public."ServiceCategories" WHERE "Slug" = 'home'),
    '{"en":{"Name":"General Cleaning","Description":"Standard cleaning of all rooms including dusting, vacuuming, and sanitizing"},"cs":{"Name":"Obecný úklid","Description":"Standardní úklid všech místností včetně otírání prachu, vysávání a dezinfekce"},"sk":{"Name":"Všeobecné upratovanie","Description":"Štandardné upratovanie všetkých miestností vrátane utierania prachu, vysávania a dezinfekcie"},"uk":{"Name":"Загальне прибирання","Description":"Стандартне прибирання всіх кімнат, включно з витиранням пилу, пилососом та дезінфекцією"},"ru":{"Name":"Общая уборка","Description":"Стандартная уборка всех комнат включая протирание пыли, пылесос и дезинфекцию"}}'),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Deep Cleaning', 'Thorough cleaning including baseboards, inside appliances, and detailed sanitization',
-   180,
+   2,
    (SELECT "Id" FROM public."ServiceCategories" WHERE "Slug" = 'deep'),
    '{"en":{"Name":"Deep Cleaning","Description":"Thorough cleaning including baseboards, inside appliances, and detailed sanitization"},"cs":{"Name":"Hloubkový úklid","Description":"Důkladný úklid včetně lišt, vnitřků spotřebičů a detailní dezinfekce"},"sk":{"Name":"Hĺbkové upratovanie","Description":"Dôkladné upratovanie vrátane líšt, vnútra spotrebičov a detailnej dezinfekcie"},"uk":{"Name":"Глибоке прибирання","Description":"Ретельне прибирання, включно з плінтусами, всередині побутової техніки та детальною дезінфекцією"},"ru":{"Name":"Глубокая уборка","Description":"Тщательная уборка включая плинтуса, внутри бытовой техники и детальная дезинфекция"}}'),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Bathroom Cleaning', 'Specialized bathroom cleaning with tile scrubbing and grout cleaning',
-   45,
+   2,
    (SELECT "Id" FROM public."ServiceCategories" WHERE "Slug" = 'home'),
    '{"en":{"Name":"Bathroom Cleaning","Description":"Specialized bathroom cleaning with tile scrubbing and grout cleaning"},"cs":{"Name":"Úklid koupelny","Description":"Specializovaný úklid koupelny s drhnáním dlaždic a čištěním spár"},"sk":{"Name":"Upratovanie kúpeľne","Description":"Špecializované upratovanie kúpeľne s drhnutím dlaždíc a čistením škár"},"uk":{"Name":"Прибирання ванної","Description":"Спеціалізоване прибирання ванної з чищенням плитки та швів"},"ru":{"Name":"Уборка ванной","Description":"Специализированная уборка ванной с чисткой плитки и швов"}}'),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Kitchen Deep Clean', 'Comprehensive kitchen cleaning including oven, refrigerator, and cabinets',
-   90,
+   2,
    (SELECT "Id" FROM public."ServiceCategories" WHERE "Slug" = 'deep'),
    '{"en":{"Name":"Kitchen Deep Clean","Description":"Comprehensive kitchen cleaning including oven, refrigerator, and cabinets"},"cs":{"Name":"Hloubkový úklid kuchyně","Description":"Komplexní úklid kuchyně včetně trouby, lednice a skříněk"},"sk":{"Name":"Hĺbkové upratovanie kuchyne","Description":"Komplexné upratovanie kuchyne vrátane rúry, chladničky a skriniek"},"uk":{"Name":"Глибоке прибирання кухні","Description":"Комплексне прибирання кухні, включно з духовкою, холодильником та шафами"},"ru":{"Name":"Глубокая уборка кухни","Description":"Комплексная уборка кухни включая духовку, холодильник и шкафы"}}'),
 
   -- Specialized Services
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Window Cleaning', 'Interior and exterior window cleaning with streak-free finish',
-   60,
+   2,
    (SELECT "Id" FROM public."ServiceCategories" WHERE "Slug" = 'home'),
    '{"en":{"Name":"Window Cleaning","Description":"Interior and exterior window cleaning with streak-free finish"},"cs":{"Name":"Mytí oken","Description":"Mytí oken zevnitř i zvenčí bez šmouh"},"sk":{"Name":"Umývanie okien","Description":"Umývanie okien zvnútra aj zvonku bez šmúh"},"uk":{"Name":"Миття вікон","Description":"Миття вікон зсередини та зовні без розводів"},"ru":{"Name":"Мытье окон","Description":"Мытье окон изнутри и снаружи без разводов"}}'),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Carpet Cleaning', 'Professional carpet steam cleaning and stain removal',
-   90,
+   2,
    (SELECT "Id" FROM public."ServiceCategories" WHERE "Slug" = 'home'),
    '{"en":{"Name":"Carpet Cleaning","Description":"Professional carpet steam cleaning and stain removal"},"cs":{"Name":"Čištění koberců","Description":"Profesionální parní čištění koberců a odstraňování skvrn"},"sk":{"Name":"Čistenie kobercov","Description":"Profesionálne parné čistenie kobercov a odstraňovanie škvŕn"},"uk":{"Name":"Чищення килимів","Description":"Професійне парове чищення килимів та видалення плям"},"ru":{"Name":"Чистка ковров","Description":"Профессиональная паровая чистка ковров и удаление пятен"}}'),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Upholstery Cleaning', 'Deep cleaning of sofas, chairs, and fabric furniture',
-   75,
+   2,
    (SELECT "Id" FROM public."ServiceCategories" WHERE "Slug" = 'home'),
    '{"en":{"Name":"Upholstery Cleaning","Description":"Deep cleaning of sofas, chairs, and fabric furniture"},"cs":{"Name":"Čištění čalounění","Description":"Hloubkové čištění sedaček, židlí a látkového nábytku"},"sk":{"Name":"Čistenie čalúnenia","Description":"Hĺbkové čistenie sedačiek, stoličiek a látkového nábytku"},"uk":{"Name":"Чищення оббивки","Description":"Глибоке чищення диванів, крісел та тканинних меблів"},"ru":{"Name":"Чистка обивки","Description":"Глубокая чистка диванов, кресел и тканевой мебели"}}'),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Post-Construction Cleanup', 'Specialized cleaning after renovation or construction work',
-   240,
+   2,
    (SELECT "Id" FROM public."ServiceCategories" WHERE "Slug" = 'deep'),
    '{"en":{"Name":"Post-Construction Cleanup","Description":"Specialized cleaning after renovation or construction work"},"cs":{"Name":"Úklid po rekonstrukci","Description":"Specializovaný úklid po rekonstrukci nebo stavebních pracích"},"sk":{"Name":"Upratovanie po rekonštrukcii","Description":"Špecializované upratovanie po rekonštrukcii alebo stavebných prácach"},"uk":{"Name":"Прибирання після ремонту","Description":"Спеціалізоване прибирання після ремонту або будівельних робіт"},"ru":{"Name":"Уборка после ремонта","Description":"Специализированная уборка после ремонта или строительных работ"}}'),
 
   -- Premium Services
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Move-in/Move-out Cleaning', 'Complete cleaning for moving in or out of property',
-   180,
+   2,
    (SELECT "Id" FROM public."ServiceCategories" WHERE "Slug" = 'deep'),
    '{"en":{"Name":"Move-in/Move-out Cleaning","Description":"Complete cleaning for moving in or out of property"},"cs":{"Name":"Úklid při stěhování","Description":"Kompletní úklid při nastěhování nebo vystěhování z nemovitosti"},"sk":{"Name":"Upratovanie pri sťahovaní","Description":"Kompletné upratovanie pri nasťahovaní alebo vysťahovaní z nehnuteľnosti"},"uk":{"Name":"Прибирання при переїзді","Description":"Повне прибирання при в''їзді або виїзді з нерухомості"},"ru":{"Name":"Уборка при переезде","Description":"Полная уборка при въезде или выезде из недвижимости"}}'),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Eco-Friendly Cleaning', 'Green cleaning using only eco-friendly and non-toxic products',
-   135,
+   2,
    (SELECT "Id" FROM public."ServiceCategories" WHERE "Slug" = 'home'),
    '{"en":{"Name":"Eco-Friendly Cleaning","Description":"Green cleaning using only eco-friendly and non-toxic products"},"cs":{"Name":"Ekologický úklid","Description":"Zelený úklid používající pouze ekologické a netoxické produkty"},"sk":{"Name":"Ekologické upratovanie","Description":"Zelené upratovanie používajúce iba ekologické a netoxické produkty"},"uk":{"Name":"Екологічне прибирання","Description":"Зелене прибирання з використанням лише екологічних та нетоксичних продуктів"},"ru":{"Name":"Экологическая уборка","Description":"Зеленая уборка с использованием только экологически чистых и нетоксичных продуктов"}}');
 

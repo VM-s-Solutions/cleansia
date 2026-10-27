@@ -23,10 +23,10 @@ public class OrderEmployee : BaseEntity
     /// never cleared.
     ///
     /// <para><b>On the assignment, not on the Order.</b> An order's crew is
-    /// <c>ceil(EstimatedTime / 120)</c> and the seeded catalogue contains single 180- and 240-minute
-    /// services, so two-seat orders exist today — a scalar on <c>Order</c> would remind the first
-    /// cleaner and silently skip the second. <c>CompleteOrder</c> carried a comment asserting the
-    /// opposite until 2026-08-22, which is how long the belief survived unexamined.</para>
+    /// <c>ceil(EstimatedTime / 120)</c>, so every booking over 120 minutes is a two-seat order — a scalar
+    /// on <c>Order</c> would remind the first cleaner and silently skip the second. <c>CompleteOrder</c>
+    /// carried a comment asserting the opposite until 2026-08-22, which is how long the belief survived
+    /// unexamined.</para>
     ///
     /// <para>An unassign hard-DELETEs this row, so a reassignment correctly reminds the replacement
     /// cleaner with a fresh null stamp rather than inheriting the previous one's receipt.</para>

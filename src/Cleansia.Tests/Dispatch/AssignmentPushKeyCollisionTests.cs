@@ -83,10 +83,10 @@ public sealed class AssignmentPushKeyCollisionTests : IDisposable
 
     /// <summary>
     /// <b>The ordinary path, and the reason this is not an admin-only defect.</b> A crew is
-    /// <c>ceil(EstimatedTime / 120)</c>, so every 180- or 240-minute service in the seeded catalogue
-    /// carries two cleaners. Both takes tell the SAME customer about the SAME order, so a subject of
-    /// <c>order.Id</c> alone makes the second cleaner's take collide — and its rollback takes the seat
-    /// with it, so the job can never be fully crewed.
+    /// <c>ceil(EstimatedTime / 120)</c>, so every booking over 120 minutes carries two cleaners. Both
+    /// takes tell the SAME customer about the SAME order, so a subject of <c>order.Id</c> alone makes the
+    /// second cleaner's take collide — and its rollback takes the seat with it, so the job can never be
+    /// fully crewed.
     /// </summary>
     [Fact]
     public async Task Two_Cleaners_Taking_One_Two_Seat_Job_Do_Not_Collide()

@@ -15,7 +15,8 @@ namespace Cleansia.Tests.Functions;
 /// <summary>
 /// Two timers carry several commands only to save a trigger, so a command that throws must not cost the
 /// others their tick: the stale-checkout timer's third command is the only sweep that refunds paid orders
-/// nobody took, and the recurring timer's second re-drives stuck card refunds. Each command is sent from
+/// nobody took, its fourth completes the crew jobs everyone marked done, and the recurring timer's second
+/// re-drives stuck card refunds. Each command is sent from
 /// a scope of its own, which takes a thrown command's change tracker and tenant override away with it,
 /// and the invocation still fails once the last command has run, because the host's error middleware is
 /// what makes a thrown timer visible.
@@ -33,7 +34,7 @@ public sealed class TimerCommandIsolationTests
     private int _mediatorScopes;
 
     [Fact]
-    public async Task A_Throwing_Stale_Checkout_Sweep_Still_Sends_The_Other_Two_Then_Escapes()
+    public async Task A_Throwing_Stale_Checkout_Sweep_Still_Sends_The_Others_Then_Escapes()
     {
         StaleCheckoutCommandsSucceed();
         var thrown = new InvalidOperationException("stale checkout sweep");
@@ -50,10 +51,13 @@ public sealed class TimerCommandIsolationTests
         _mediator.Verify(
             m => m.Send(It.IsAny<CancelUnfilledOrders.Command>(), It.IsAny<CancellationToken>()),
             Times.Once);
+        _mediator.Verify(
+            m => m.Send(It.IsAny<AutoCompleteMarkedDoneOrders.Command>(), It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
-    public async Task A_Throwing_Middle_Command_Still_Lets_The_First_And_Third_Run_Then_Escapes()
+    public async Task A_Throwing_Middle_Command_Still_Lets_The_Others_Run_Then_Escapes()
     {
         StaleCheckoutCommandsSucceed();
         var thrown = new InvalidOperationException("orphaned reservation release");
@@ -71,10 +75,13 @@ public sealed class TimerCommandIsolationTests
         _mediator.Verify(
             m => m.Send(It.IsAny<CancelUnfilledOrders.Command>(), It.IsAny<CancellationToken>()),
             Times.Once);
+        _mediator.Verify(
+            m => m.Send(It.IsAny<AutoCompleteMarkedDoneOrders.Command>(), It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
-    public async Task Two_Throwing_Commands_Escape_Together_After_All_Three_Ran()
+    public async Task Two_Throwing_Commands_Escape_Together_After_All_Four_Ran()
     {
         StaleCheckoutCommandsSucceed();
         var first = new InvalidOperationException("stale checkout sweep");
@@ -98,6 +105,9 @@ public sealed class TimerCommandIsolationTests
             Times.Once);
         _mediator.Verify(
             m => m.Send(It.IsAny<CancelUnfilledOrders.Command>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+        _mediator.Verify(
+            m => m.Send(It.IsAny<AutoCompleteMarkedDoneOrders.Command>(), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -138,6 +148,9 @@ public sealed class TimerCommandIsolationTests
         _mediator.Verify(
             m => m.Send(It.IsAny<CancelUnfilledOrders.Command>(), It.IsAny<CancellationToken>()),
             Times.Never);
+        _mediator.Verify(
+            m => m.Send(It.IsAny<AutoCompleteMarkedDoneOrders.Command>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     [Fact]
@@ -158,17 +171,20 @@ public sealed class TimerCommandIsolationTests
         _mediator.Verify(
             m => m.Send(It.IsAny<CancelUnfilledOrders.Command>(), It.IsAny<CancellationToken>()),
             Times.Once);
+        _mediator.Verify(
+            m => m.Send(It.IsAny<AutoCompleteMarkedDoneOrders.Command>(), It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
-    public async Task The_Stale_Checkout_Timer_Sends_Each_Of_Its_Three_Commands_From_A_Scope_Of_Its_Own()
+    public async Task The_Stale_Checkout_Timer_Sends_Each_Of_Its_Four_Commands_From_A_Scope_Of_Its_Own()
     {
         StaleCheckoutCommandsSucceed();
 
         var escaped = await RunStaleCheckoutTimerAsync();
 
         Assert.Null(escaped);
-        Assert.Equal(3, _mediatorScopes);
+        Assert.Equal(4, _mediatorScopes);
     }
 
     [Fact]
@@ -264,8 +280,8 @@ public sealed class TimerCommandIsolationTests
             + "CleanupStalePendingOrdersHandler does. Offenders:\n  " + string.Join("\n  ", offenders));
 
         Assert.True(
-            severalCommands.Any(f => f.Name == "CleanupStalePendingOrdersHandler.cs" && f.Sends == 3),
-            "The walk no longer finds CleanupStalePendingOrdersHandler.cs with its three commands, so this "
+            severalCommands.Any(f => f.Name == "CleanupStalePendingOrdersHandler.cs" && f.Sends == 4),
+            "The walk no longer finds CleanupStalePendingOrdersHandler.cs with its four commands, so this "
             + "guard could pass on no multi-command handler at all. Either the call's text changed and the "
             + "count must learn it, or the handler moved and this anchor must move with it.");
     }
@@ -282,6 +298,9 @@ public sealed class TimerCommandIsolationTests
         _mediator
             .Setup(m => m.Send(It.IsAny<CancelUnfilledOrders.Command>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(BusinessResult.Success(new CancelUnfilledOrders.Response(0, 0, 0)));
+        _mediator
+            .Setup(m => m.Send(It.IsAny<AutoCompleteMarkedDoneOrders.Command>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResult.Success(new AutoCompleteMarkedDoneOrders.Response(0, 0)));
     }
 
     private void RecurringCommandsSucceed()

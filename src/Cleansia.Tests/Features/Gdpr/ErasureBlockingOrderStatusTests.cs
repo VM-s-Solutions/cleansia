@@ -94,25 +94,26 @@ public sealed class ErasureBlockingOrderStatusTests : IDisposable
     /// refusing on it would dead-end the subject on "blocked by a live order" over a stranger's mistyped
     /// address — an order that is not theirs to cancel and that their account does not list. The booking
     /// keeps its contact data until the order-PII sweep reaches it; an ENDED one is anonymised with the
-    /// rest, matched case-insensitively as everywhere else an order is found by its contact address.
+    /// rest. Seeded in the subject's own case: SQLite compares the citext column exactly, and the fold of
+    /// another case is Postgres's, pinned by GuestOrderErasureTests.
     /// </summary>
     [Fact]
     public async Task A_Live_Guest_Order_Under_The_Subjects_Email_Neither_Refuses_The_Erasure_Nor_Is_Touched_By_It()
     {
-        await SeedAsync(OrderStatus.Confirmed, userId: null, customerEmail: SubjectEmail.ToUpperInvariant());
+        await SeedAsync(OrderStatus.Confirmed, userId: null, customerEmail: SubjectEmail);
 
         var result = await EraseAsync();
 
         Assert.True(result.IsSuccess, result.Error?.Message);
         var order = await ReadOrderAsync();
         Assert.Equal("Zdenka Hruskova", order.CustomerName);
-        Assert.Equal(SubjectEmail.ToUpperInvariant(), order.CustomerEmail);
+        Assert.Equal(SubjectEmail, order.CustomerEmail);
     }
 
     [Fact]
     public async Task An_Ended_Guest_Order_Under_The_Subjects_Email_Is_Anonymised_With_The_Erasure()
     {
-        await SeedAsync(OrderStatus.Completed, userId: null, customerEmail: SubjectEmail.ToUpperInvariant());
+        await SeedAsync(OrderStatus.Completed, userId: null, customerEmail: SubjectEmail);
 
         var result = await EraseAsync();
 

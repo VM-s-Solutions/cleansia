@@ -187,13 +187,14 @@ All three answered *yes* the next day; no schema change. What changed in the sha
   `CountryId => null` still decides the stamp of an unknown-address refusal. Tenancy stays out of the
   validators (ADR-0061 D3).
 - **`SubjectOrders.Of(userId, email)` in `Core.Domain/Orders` (T-0751)** is the one definition of a
-  data subject's orders — the account's, or `UserId == null && CustomerEmail.ToLower() == email.ToLower()`
-  — asked by the erasure walk and the subject export, both **past the tenant filter** (a guest checkout
-  is stamped with the market's operator; ADR-0051's bypass-and-re-pin cell, pinned by `SubjectOrders`
-  then by the ids it yielded; `CommitAsync` re-stamps Added rows only). The erasure's blocking check
-  stays `o.UserId == user.Id`; the walk reads `SubjectOrders` minus `ErasureBlockingStatuses` (a live
-  guest booking is left out, not a refusal — a guest booking has no cancel path; Q-GDPR-03 asks
-  whether it should refuse; T-0753 gives it a cancel path). **The immutability walk now expects two
+  data subject's orders — the account's, or `UserId == null && CustomerEmail == email` (citext, so
+  Postgres folds the case and can seek `IX_Orders_CustomerEmail`) — asked by the erasure walk and the
+  subject export, both **past the tenant filter** (a guest checkout is stamped with the market's
+  operator; ADR-0051's bypass-and-re-pin cell, pinned by `SubjectOrders` then by the ids it yielded;
+  `CommitAsync` re-stamps Added rows only). The erasure's blocking check stays `o.UserId == user.Id`;
+  the walk reads `SubjectOrders` minus `ErasureBlockingStatuses` (a live guest booking is left out, not
+  a refusal — a guest booking has no cancel path; Q-GDPR-03 asks whether it should refuse; T-0753 gives
+  it a cancel path). **The immutability walk now expects two
   repository writes**: `PseudonymiseForSubjectAsync` and `PseudonymiseGuestRowsForOrdersAsync(orderIds)`
   (`UserId` null, `ResourceType == nameof(Order)`, id in the set; tracked, on the single commit). The
   export's trail stays the account's own rows (the guest rows' IP/device may be a stranger's).

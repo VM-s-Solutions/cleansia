@@ -142,6 +142,25 @@ public class AdminReassignOrderValidatorTests
         Assert.True(result.IsValid, string.Join(", ", result.Errors.Select(e => e.ErrorMessage)));
     }
 
+    /// <summary>
+    /// Owner ruling 2026-10-26 ("Fix the findings as well"): a job that is over takes no cleaner. Nothing
+    /// refused it before, so an administrator could put a cleaner on a completed or a cancelled order.
+    /// </summary>
+    [Theory]
+    [InlineData(OrderStatus.Completed, BusinessErrorMessage.OrderAlreadyCompleted)]
+    [InlineData(OrderStatus.Cancelled, BusinessErrorMessage.OrderAlreadyCancelled)]
+    public async Task An_Order_That_Is_Over_Takes_No_Cleaner(OrderStatus status, string expected)
+    {
+        ArrangeTarget();
+        _order.AddOrderStatus(OrderStatusTrack.Create(status, _order));
+
+        var result = await Validator().ValidateAsync(Placement());
+
+        var error = Assert.Single(result.Errors);
+        Assert.Equal(nameof(AdminReassignOrder.Command.OrderId), error.PropertyName);
+        Assert.Equal(expected, error.ErrorMessage);
+    }
+
     [Fact]
     public async Task A_Missing_Cleaner_Is_Refused_As_Not_Found()
     {

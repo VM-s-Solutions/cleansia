@@ -7348,6 +7348,7 @@ export interface ICompleteOrderResponse {
 export class ConfirmUserEmailCommand implements IConfirmUserEmailCommand {
     code!: string | undefined;
     email!: string | undefined;
+    password!: string | undefined;
 
     constructor(data?: IConfirmUserEmailCommand) {
         if (data) {
@@ -7362,6 +7363,7 @@ export class ConfirmUserEmailCommand implements IConfirmUserEmailCommand {
         if (Data) {
             this.code = Data["code"];
             this.email = Data["email"];
+            this.password = Data["password"];
         }
     }
 
@@ -7376,6 +7378,7 @@ export class ConfirmUserEmailCommand implements IConfirmUserEmailCommand {
         data = typeof data === 'object' ? data : {};
         data["code"] = this.code;
         data["email"] = this.email;
+        data["password"] = this.password;
         return data;
     }
 }
@@ -7383,6 +7386,7 @@ export class ConfirmUserEmailCommand implements IConfirmUserEmailCommand {
 export interface IConfirmUserEmailCommand {
     code: string | undefined;
     email: string | undefined;
+    password: string | undefined;
 }
 
 export enum ConsentType {

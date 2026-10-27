@@ -45,6 +45,22 @@ public class AuthWireContractTests
         Assert.DoesNotContain(command.GetProperties(), p => p.Name == "CountryId");
     }
 
+    /// <summary>
+    /// The e-mail confirmation carries the password the confirmer chooses, beside the code and the
+    /// address. Owner ruling 2026-10-26, "Close" (account pre-hijacking).
+    /// </summary>
+    [Fact]
+    public void ConfirmUserEmail_Carries_The_Password_The_Confirmer_Chooses()
+    {
+        const string body = """{"code":"123456","email":"owner@example.com","password":"Chosen2026"}""";
+
+        var command = JsonSerializer.Deserialize<ConfirmUserEmail.Command>(body, Options)!;
+
+        Assert.Equal("123456", command.Code);
+        Assert.Equal("owner@example.com", command.Email);
+        Assert.Equal("Chosen2026", command.Password);
+    }
+
     [Fact]
     public void WebLogin_TrustedDeviceToken_Cannot_Be_Set_From_The_Body()
     {

@@ -61,6 +61,7 @@ final class CustomerAuthViewModel: ViewModel {
     @Published private(set) var signUpForm = SignUpFormState()
     @Published private(set) var forgotForm = ForgotPasswordFormState()
     @Published private(set) var verifyCode = ""
+    @Published private(set) var verifyPasswordForm = ChosenPassword()
 
     /// True once the reset code has actually been emailed, which is what moves the
     /// forgot-password screen from "type your address" to "type the code and a new password".
@@ -104,6 +105,8 @@ final class CustomerAuthViewModel: ViewModel {
     private let settings: AppSettingsStore
     private let snackbar: SnackbarController
     private let pendingEmail: String?
+    /// The sign-up's password, which the confirmation sets; nil when the address is confirmed later.
+    private let pendingPassword: String?
     private let errorLocalizer = ApiErrorLocalizer()
 
     /// One session lifetime for every mobile surface: 30 days, always requested.
@@ -129,6 +132,7 @@ final class CustomerAuthViewModel: ViewModel {
         settings: AppSettingsStore,
         snackbar: SnackbarController,
         pendingEmail: String? = nil,
+        pendingPassword: String? = nil,
         changePasswordClient: ChangePasswordClient = LiveChangePasswordClient(),
         referralClient: ReferralClient = LiveReferralClient(),
         market: AnyPublisher<MarketState, Never> = Just(.unavailable).eraseToAnyPublisher()
@@ -144,6 +148,7 @@ final class CustomerAuthViewModel: ViewModel {
         self.settings = settings
         self.snackbar = snackbar
         self.pendingEmail = pendingEmail
+        self.pendingPassword = pendingPassword
         super.init()
         market.assign(to: &$marketState)
     }
@@ -155,6 +160,15 @@ final class CustomerAuthViewModel: ViewModel {
     var canResend: Bool {
         guard let pendingEmail else { return false }
         return !pendingEmail.isBlank
+    }
+
+    var asksForVerifyPassword: Bool {
+        pendingPassword == nil
+    }
+
+    /// The code's sixth digit confirms on its own only once there is a password to send; until then Verify does.
+    var isVerifyReadyToConfirm: Bool {
+        verifyCode.count == confirmCodeLength && (!asksForVerifyPassword || verifyPasswordForm.isValid)
     }
 
     func onSignInEmailChange(_ value: String) {
@@ -277,7 +291,7 @@ final class CustomerAuthViewModel: ViewModel {
 
         switch result {
         case .success:
-            outcome.send(.needsEmailConfirm(email: signUpForm.email))
+            outcome.send(.needsEmailConfirm(email: signUpForm.email, password: signUpForm.password))
         case let .failure(error):
             snackbar.showApiError(error)
         }
@@ -285,6 +299,14 @@ final class CustomerAuthViewModel: ViewModel {
 
     func onVerifyCodeChange(_ value: String) {
         verifyCode = String(value.filter(\.isNumber).prefix(confirmCodeLength))
+    }
+
+    func onVerifyPasswordChange(_ value: String) {
+        verifyPasswordForm.setPassword(value)
+    }
+
+    func onVerifyConfirmPasswordChange(_ value: String) {
+        verifyPasswordForm.setConfirmation(value)
     }
 
     func confirmEmail() async {
@@ -295,9 +317,14 @@ final class CustomerAuthViewModel: ViewModel {
             snackbar.showError(L10n.Auth.errorGeneric)
             return
         }
+        guard let password = pendingPassword ?? verifyPasswordForm.validated(
+            rulesError: L10n.Auth.errorPasswordRules,
+            mismatchError: L10n.Auth.errorPasswordsNoMatch
+        ) else { return }
 
         confirmState = .submitting
-        let result = await emailConfirmationClient.confirmEmail(email: pendingEmail, code: verifyCode)
+        let result = await emailConfirmationClient
+            .confirmEmail(email: pendingEmail, code: verifyCode, password: password)
         confirmState = .idle
 
         switch result {

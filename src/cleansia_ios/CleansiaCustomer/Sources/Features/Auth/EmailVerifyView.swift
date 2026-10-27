@@ -19,16 +19,19 @@ struct EmailVerifyView: View {
     var body: some View {
         EmailVerifyContent(
             code: vm.verifyCode,
+            passwordForm: vm.asksForVerifyPassword ? vm.verifyPasswordForm : nil,
             isConfirming: vm.confirmState.isSubmitting,
             isResending: vm.resendState.isSubmitting,
             canResend: vm.canResend,
             onCodeChange: vm.onVerifyCodeChange,
+            onPasswordChange: vm.onVerifyPasswordChange,
+            onConfirmPasswordChange: vm.onVerifyConfirmPasswordChange,
             onBack: onBack,
             onConfirm: { Task { await vm.confirmEmail() } },
             onResend: { Task { await vm.resendCode() } }
         )
-        .onChange(of: vm.verifyCode) { value in
-            if value.count == confirmCodeLength, !vm.confirmState.isSubmitting {
+        .onChange(of: vm.verifyCode) { _ in
+            if vm.isVerifyReadyToConfirm, !vm.confirmState.isSubmitting {
                 Task { await vm.confirmEmail() }
             }
         }
@@ -38,10 +41,14 @@ struct EmailVerifyView: View {
 
 private struct EmailVerifyContent: View {
     let code: String
+    /// Nil when the confirmation sets the password just typed on the sign-up.
+    let passwordForm: ChosenPassword?
     let isConfirming: Bool
     let isResending: Bool
     let canResend: Bool
     let onCodeChange: (String) -> Void
+    var onPasswordChange: (String) -> Void = { _ in }
+    var onConfirmPasswordChange: (String) -> Void = { _ in }
     let onBack: () -> Void
     let onConfirm: () -> Void
     let onResend: () -> Void
@@ -83,6 +90,17 @@ private struct EmailVerifyContent: View {
 
                     CodeInput(code: codeBinding, length: confirmCodeLength)
 
+                    if let passwordForm {
+                        Spacer().frame(height: Spacing.l)
+
+                        VerifyPasswordFields(
+                            form: passwordForm,
+                            enabled: !isConfirming,
+                            onPasswordChange: onPasswordChange,
+                            onConfirmPasswordChange: onConfirmPasswordChange
+                        )
+                    }
+
                     Spacer().frame(height: Spacing.l)
 
                     CleansiaPrimaryButton(
@@ -111,6 +129,59 @@ private struct EmailVerifyContent: View {
     }
 }
 
+private struct VerifyPasswordFields: View {
+    let form: ChosenPassword
+    let enabled: Bool
+    let onPasswordChange: (String) -> Void
+    let onConfirmPasswordChange: (String) -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Text(L10n.Auth.verifyChoosePassword)
+                .font(CleansiaTypography.bodyMedium)
+                .foregroundColor(CleansiaColors.onSurfaceVariant)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+
+            Spacer().frame(height: Spacing.s)
+
+            CleansiaTextField(
+                value: Binding(get: { form.password }, set: onPasswordChange),
+                label: L10n.Auth.password,
+                errorText: form.passwordError,
+                textContentType: .newPassword,
+                isPassword: true,
+                enabled: enabled
+            )
+
+            PasswordRuleList(
+                rules: [
+                    PasswordRule(label: L10n.Auth.ruleMinLength, isSatisfied: form.hasMinLength),
+                    PasswordRule(label: L10n.Auth.ruleLetter, isSatisfied: form.hasLetter),
+                    PasswordRule(label: L10n.Auth.ruleNumber, isSatisfied: form.hasNumber)
+                ],
+                hasInput: !form.password.isEmpty
+            )
+
+            Spacer().frame(height: Spacing.xs)
+
+            CleansiaTextField(
+                value: Binding(get: { form.confirmation }, set: onConfirmPasswordChange),
+                label: L10n.Auth.confirmPassword,
+                errorText: form.confirmationError,
+                textContentType: .newPassword,
+                isPassword: true,
+                enabled: enabled
+            )
+
+            PasswordRuleList(
+                rules: [PasswordRule(label: L10n.Auth.ruleMatch, isSatisfied: form.matches)],
+                hasInput: !form.confirmation.isEmpty
+            )
+        }
+    }
+}
+
 #if DEBUG
     struct EmailVerifyView_Previews: PreviewProvider {
         static var previews: some View {
@@ -123,12 +194,32 @@ private struct EmailVerifyContent: View {
                     .previewDisplayName("Submitting")
                 preview(code: "", isConfirming: false, canResend: false)
                     .previewDisplayName("No email — resend disabled")
+                preview(
+                    code: "123456",
+                    passwordForm: refusedPassword,
+                    isConfirming: false,
+                    canResend: true
+                )
+                .previewDisplayName("Confirming later — asks for the password")
             }
         }
 
-        private static func preview(code: String, isConfirming: Bool, canResend: Bool) -> some View {
+        private static var refusedPassword: ChosenPassword {
+            var form = ChosenPassword()
+            form.setPassword("short")
+            _ = form.validated(rulesError: L10n.Auth.errorPasswordRules, mismatchError: L10n.Auth.errorPasswordsNoMatch)
+            return form
+        }
+
+        private static func preview(
+            code: String,
+            passwordForm: ChosenPassword? = nil,
+            isConfirming: Bool,
+            canResend: Bool
+        ) -> some View {
             EmailVerifyContent(
                 code: code,
+                passwordForm: passwordForm,
                 isConfirming: isConfirming,
                 isResending: false,
                 canResend: canResend,

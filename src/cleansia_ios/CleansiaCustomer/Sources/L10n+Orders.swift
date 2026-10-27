@@ -49,6 +49,10 @@ extension L10n {
             plural("orders_services_more", count)
         }
 
+        static var guestBooking: String {
+            localized("orders_guest_booking")
+        }
+
         static var errorTitle: String {
             localized("orders_error_title")
         }
@@ -87,6 +91,10 @@ extension L10n {
     }
 
     enum OrderDetail {
+        static var guestBookingNote: String {
+            localized("order_detail_guest_booking_note")
+        }
+
         static var timeline: String {
             localized("order_detail_timeline")
         }

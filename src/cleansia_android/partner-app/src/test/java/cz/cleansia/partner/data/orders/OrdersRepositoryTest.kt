@@ -4,6 +4,8 @@ import cz.cleansia.core.auth.SessionScopedCache
 import cz.cleansia.partner.api.client.OrderApi
 import cz.cleansia.partner.api.model.DropOrderCommand
 import cz.cleansia.partner.api.model.DropOrderResponse
+import cz.cleansia.partner.api.model.MarkMyPartDoneCommand
+import cz.cleansia.partner.api.model.MarkMyPartDoneResponse
 import cz.cleansia.partner.api.model.OrderItem
 import cz.cleansia.partner.api.model.PagedDataOfOrderListItem
 import cz.cleansia.partner.api.model.ReportCashNotPaidCommand
@@ -115,6 +117,23 @@ class OrdersRepositoryTest {
 
         assertTrue("the report must succeed; got $result", result is ApiResult.Success)
         assertTrue("the completed order must be refetched, not served warm", repo.isOrderStale("order-1"))
+    }
+
+    @Test
+    fun markMyPartDone_postsTheOrderAndExpiresTheOrder() = runTest {
+        coEvery { orderApi.orderGetById("order-1") } returns Response.success(mockk<OrderItem>(relaxed = true))
+        coEvery {
+            orderApi.orderMarkMyPartDone(MarkMyPartDoneCommand(orderId = "order-1"))
+        } returns Response.success(
+            MarkMyPartDoneResponse(orderId = "order-1", completionConfirmedAt = "2026-10-27T10:15:00Z", crewDone = false),
+        )
+        val repo = newRepo()
+        repo.getById("order-1")
+
+        val result = repo.markMyPartDone("order-1")
+
+        assertTrue("the mark must succeed; got $result", result is ApiResult.Success)
+        assertTrue("the marked job must be refetched, not served warm", repo.isOrderStale("order-1"))
     }
 
     private fun stubFreshReads() {

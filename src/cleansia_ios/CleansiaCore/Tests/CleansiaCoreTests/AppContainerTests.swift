@@ -238,7 +238,7 @@ private final class StubAuthSpine: AuthSpine, @unchecked Sendable {
         .success(true)
     }
 
-    func confirmEmail(email _: String, code _: String) async -> ApiResult<LoginOutcome> {
+    func confirmEmail(email _: String, code _: String, password _: String) async -> ApiResult<LoginOutcome> {
         .success(.authenticated)
     }
 

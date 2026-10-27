@@ -96,7 +96,7 @@ final class TrustedDeviceLoginTests: XCTestCase {
             email: "a@b.cz", password: "pw", firstName: "Ada", lastName: "Lovelace", language: "en",
             countryId: nil, termsAccepted: true
         )
-        _ = await client.confirmEmail(email: "a@b.cz", code: "123456")
+        _ = await client.confirmEmail(email: "a@b.cz", code: "123456", password: "Chosen123")
         _ = await client.resendConfirmation(email: "a@b.cz", language: "en")
         _ = await client.forgotPassword(email: "a@b.cz", language: "en")
         _ = await client.googleAuth(GoogleAuthRequest(

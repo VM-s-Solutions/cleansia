@@ -63,6 +63,12 @@ token per entry), which is what lets an unauthenticated customer reopen the book
 carried a session — an account booking mints none, because its owner signs in instead — so nothing is
 saved for a signed-in customer. → [Order tracking](/customer-app/order-tracking)
 
+The success and cancellation pages use the guest-tracking action when the checkout belongs to a
+guest, even if someone signs in later in the same browser; they do not send a guest into an
+account-only order-detail dead end. A matching confirmed customer can separately find the booking
+in My orders, labelled and redacted under the
+[listed-guest rule](/product/business-rules#listed-guest-bookings).
+
 ## Checkout Routes
 
 ```typescript

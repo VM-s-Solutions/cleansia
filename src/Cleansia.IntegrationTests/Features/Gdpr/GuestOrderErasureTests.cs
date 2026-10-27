@@ -243,6 +243,33 @@ public class GuestOrderErasureTests(PostgresContainerFixture fixture) : BaseInte
             transactional: false);
     }
 
+    /// <summary>
+    /// Orders.CustomerEmail is citext, so the subject's guest bookings are found by plain equality: Postgres folds
+    /// the case the guest typed, as the export above shows for one typed in capitals, and the planner can seek
+    /// IX_Orders_CustomerEmail instead of lowering the e-mail of every order of every company.
+    /// </summary>
+    [Fact]
+    public async Task The_Subjects_Guest_Bookings_Are_Found_By_Citext_Equality_Not_By_Lowering_Every_Order()
+    {
+        await TestMethod(
+            setup: AsTheSubject,
+            arrange: Seed,
+            act: provider =>
+            {
+                var orders = provider.GetRequiredService<CleansiaDbContext>().Orders.IgnoreQueryFilters()
+                    .Where(SubjectOrders.Of(SubjectId, SubjectEmail));
+                return Task.FromResult((Sql: orders.ToQueryString(), Ids: orders.Select(o => o.Id).Order().ToList()));
+            },
+            assert: (CleansiaDbContext _, (string Sql, List<string> Ids) read) =>
+            {
+                Assert.DoesNotContain("lower(", read.Sql, StringComparison.OrdinalIgnoreCase);
+                Assert.Contains("\"CustomerEmail\" = @", read.Sql, StringComparison.Ordinal);
+                Assert.Equal([LiveGuestOrderId, OwnOrderId, GuestOrderId], read.Ids);
+                return Task.CompletedTask;
+            },
+            transactional: false);
+    }
+
     private static async Task Seed(CleansiaDbContext context)
     {
         if (!await context.Languages.AnyAsync())

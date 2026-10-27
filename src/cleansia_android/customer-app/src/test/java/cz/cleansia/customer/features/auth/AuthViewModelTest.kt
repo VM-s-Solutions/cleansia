@@ -2,6 +2,7 @@ package cz.cleansia.customer.features.auth
 
 import android.content.Context
 import android.content.res.Resources
+import cz.cleansia.core.auth.RegistrationPassword
 import cz.cleansia.core.auth.TokenStore
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
@@ -31,6 +32,8 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -68,6 +71,7 @@ class AuthViewModelTest {
     private lateinit var marketRepository: MarketRepository
     private lateinit var context: Context
     private lateinit var resources: Resources
+    private val registrationPassword = RegistrationPassword()
 
     private val packageName = "cz.cleansia.customer"
     private val genericUnknown = "Something went wrong. Please try again."
@@ -113,6 +117,7 @@ class AuthViewModelTest {
         snackbar = snackbar,
         googleSignInController = googleSignInController,
         marketRepository = marketRepository,
+        registrationPassword = registrationPassword,
         appContext = context,
     )
 
@@ -303,6 +308,75 @@ class AuthViewModelTest {
         )
         verify(exactly = 0) { snackbar.showError(any<String>()) }
         verify(exactly = 0) { snackbar.showErrorKey(any()) }
+    }
+
+    private fun stubConfirm() {
+        coEvery { authRepository.confirmEmail(any(), any(), any()) } returns ApiResult.Success(
+            AuthSuccess.Authenticated(
+                TokenStore.Tokens(accessToken = "a", accessTokenExpiresAt = 1L, refreshToken = "r", refreshTokenExpiresAt = 1L),
+            ),
+        )
+    }
+
+    @Test
+    fun `register success holds the password just typed, so its confirmation asks for none`() = runTest {
+        stubRegister(ApiResult.Success(Unit))
+
+        val vm = viewModel()
+        vm.register("new@example.com", "Passw0rd!", "Ada", "Lovelace", acceptedTerms = true)
+        advanceUntilIdle()
+
+        assertEquals("Passw0rd!", registrationPassword.heldFor("new@example.com"))
+        assertFalse(vm.asksForPassword("new@example.com"))
+    }
+
+    @Test
+    fun `a refused registration holds nothing, so its confirmation asks for a password`() = runTest {
+        stubRegister(ApiResult.Error(ApiError.Network("failed to connect to 10.0.2.2")))
+
+        val vm = viewModel()
+        vm.register("new@example.com", "Passw0rd!", "Ada", "Lovelace", acceptedTerms = true)
+        advanceUntilIdle()
+
+        assertNull(registrationPassword.heldFor("new@example.com"))
+        assertTrue(vm.asksForPassword("new@example.com"))
+        assertTrue(vm.asksForPassword(null))
+    }
+
+    @Test
+    fun `right after registering the confirmation sends the password just typed`() = runTest {
+        registrationPassword.hold("new@example.com", "Passw0rd!")
+        stubConfirm()
+
+        val vm = viewModel()
+        vm.confirmEmail("new@example.com", "123456", password = null)
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { authRepository.confirmEmail("new@example.com", "123456", "Passw0rd!") }
+        assertEquals(AuthOutcome.SignedIn, vm.uiState.value.outcome)
+    }
+
+    @Test
+    fun `confirming later sends the password chosen on the confirm screen`() = runTest {
+        stubConfirm()
+
+        val vm = viewModel()
+        vm.confirmEmail("later@example.com", "123456", password = "Moje2026heslo")
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { authRepository.confirmEmail("later@example.com", "123456", "Moje2026heslo") }
+    }
+
+    @Test
+    fun `a chosen password that breaks the rules, or no password at all, sends nothing`() = runTest {
+        stubConfirm()
+
+        val vm = viewModel()
+        vm.confirmEmail("later@example.com", "123456", password = "short1")
+        vm.confirmEmail("later@example.com", "123456", password = null)
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { authRepository.confirmEmail(any(), any(), any()) }
     }
 
     // ─── Email sign-up: the tick reaches the server on the registration itself ───

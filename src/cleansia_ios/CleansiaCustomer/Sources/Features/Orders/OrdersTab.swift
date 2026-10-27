@@ -176,6 +176,9 @@ struct OrderListCard: View {
                 Spacer()
                 OrderStatusPill(code: order.statusCode)
             }
+            if order.isGuestBooking {
+                GuestBookingLabel()
+            }
             Text(OrdersFormat.dateRange(
                 order.cleaningDateTime,
                 estimatedMinutes: order.estimatedMinutes,

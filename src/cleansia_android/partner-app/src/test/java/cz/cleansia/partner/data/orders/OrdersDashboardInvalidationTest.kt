@@ -49,6 +49,7 @@ class OrdersDashboardInvalidationTest(private val mutation: String) {
         coEvery { api.orderCompleteOrder(any()) } coAnswers { block(); Response.success(mockk(relaxed = true)) }
         coEvery { api.orderReportCashNotPaid(any()) } coAnswers { block(); Response.success(mockk(relaxed = true)) }
         coEvery { api.orderMarkCashCollected(any()) } coAnswers { block(); Response.success(mockk(relaxed = true)) }
+        coEvery { api.orderMarkMyPartDone(any()) } coAnswers { block(); Response.success(mockk(relaxed = true)) }
         coEvery { api.orderDeclinePreferredOffer(any()) } coAnswers { block(); Response.success(mockk(relaxed = true)) }
         coEvery { api.orderDropOrder(any()) } coAnswers {
             block()
@@ -63,6 +64,7 @@ class OrdersDashboardInvalidationTest(private val mutation: String) {
         "completeOrder" -> repo.completeOrder("same-id", null, null)
         "reportCashNotPaid" -> repo.reportCashNotPaid("same-id")
         "markCashCollected" -> repo.markCashCollected("same-id")
+        "markMyPartDone" -> repo.markMyPartDone("same-id")
         "dropOrder" -> repo.dropOrder("same-id").map { }
         else -> repo.declinePreferredOffer("same-id")
     }
@@ -148,7 +150,7 @@ class OrdersDashboardInvalidationTest(private val mutation: String) {
     companion object {
         @JvmStatic @Parameterized.Parameters(name = "{0}") fun mutations() = listOf(
             "takeOrder", "notifyOnTheWay", "startOrder", "completeOrder", "reportCashNotPaid",
-            "markCashCollected", "declinePreferredOffer", "dropOrder",
+            "markCashCollected", "markMyPartDone", "declinePreferredOffer", "dropOrder",
         ).map { arrayOf(it) }
     }
 }

@@ -100,6 +100,9 @@
         <h1 class="order-detail__title">
           {{ 'pages.order_detail.order' | translate }} {{ o.displayOrderNumber }}
         </h1>
+        @if (isGuestBooking()) {
+        <span class="order-detail__guest">{{ 'pages.orders.guest_booking' | translate }}</span>
+        }
         <p class="order-detail__lead">
           {{ o.orderStatus | orderStatusLabel }} · {{ formatDate(o.cleaningDateTime) }}
         </p>
@@ -351,7 +354,7 @@
       </section>
 
       <!-- Rating, once the clean is over. -->
-      @if (isCompleted()) {
+      @if (isCompleted() && !isGuestBooking()) {
       <section class="order-detail__card order-detail__review">
         <h2 class="order-detail__card-title">
           {{ 'pages.order_detail.review.title' | translate }}
@@ -558,7 +561,7 @@
             {{ 'pages.order_detail.action_recurring' | translate }}
           </button>
           }
-          @if (order()!.receiptNumber) {
+          @if (order()!.receiptNumber && !isGuestBooking()) {
           <button
             type="button"
             class="order-detail__action"
@@ -569,10 +572,12 @@
             {{ 'pages.order_detail.action_invoice' | translate }}
           </button>
           }
+          @if (!isGuestBooking()) {
           <button type="button" class="order-detail__action" (click)="reportIssue()">
             <i class="pi pi-question-circle"></i>
             {{ 'pages.order_detail.action_report' | translate }}
           </button>
+          }
           @if (canCancel()) {
           <button
             type="button"
@@ -584,7 +589,7 @@
             {{ 'pages.order_detail.cancellation.action' | translate }}
           </button>
           }
-          @if (canReportCleanerNoShow()) {
+          @if (canReportCleanerNoShow() && !isGuestBooking()) {
           <cleansia-button
             [block]="true"
             severity="danger"
@@ -594,6 +599,13 @@
           />
           }
         </div>
+
+        @if (isGuestBooking()) {
+        <p class="order-detail__policy" data-spec-guest-booking-note>
+          <i class="pi pi-info-circle"></i>
+          {{ 'pages.order_detail.guest_booking_note' | translate }}
+        </p>
+        }
 
         @if (confirmAwaitsTerms()) {
         <p class="order-detail__policy" data-spec-terms-missing>
@@ -619,7 +631,7 @@
         </p>
         }
 
-        @if (canReportCleanerNoShow()) {
+        @if (canReportCleanerNoShow() && !isGuestBooking()) {
         <p class="order-detail__policy">
           <i class="pi pi-info-circle"></i>
           {{ 'pages.order_detail.cleaner_no_show.note' | translate }}

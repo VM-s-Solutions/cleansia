@@ -25,6 +25,19 @@ final class CustomerRootRouteTests: XCTestCase {
         )
     }
 
+    /// Right after signing up, the password just typed rides to the confirm step, which sends it instead of
+    /// asking for one again; every other way onto that step carries none.
+    func testTheSignUpPasswordRidesOntoTheConfirmStep() {
+        XCTAssertEqual(
+            CustomerRootView.Route.afterAuth(.needsEmailConfirm(email: "a@b.cz", password: "abcdefg1")),
+            .verifyEmail(email: "a@b.cz", password: "abcdefg1")
+        )
+        XCTAssertEqual(
+            CustomerRootView.Route.afterAuth(.needsEmailConfirm(email: "a@b.cz")),
+            .verifyEmail(email: "a@b.cz", password: nil)
+        )
+    }
+
     func testPasswordResetOutcomeRoutesToLogin() {
         XCTAssertEqual(CustomerRootView.Route.afterAuth(.passwordReset), .login)
     }

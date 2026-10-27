@@ -86,7 +86,10 @@ public class CancelOrderStandardTierFeeTests
                 Mock.Of<IPendingDispatch>(),
                 new AuditContext(),
                 TimeProvider.System,
-                NullLogger<CustomerOrderCancellation>.Instance));
+                NullLogger<CustomerOrderCancellation>.Instance),
+            NoShowCancellationDoubles.Inert(),
+            new GuestOrderAccessTokenIssuer(Mock.Of<IGuestOrderAccessTokenRepository>()),
+            Mock.Of<IPendingDispatch>());
 
     private Order ArrangeAcceptedCardPaidOrder(DateTime cleaningUtc, decimal totalPrice, decimal creditApplied = 0m)
     {

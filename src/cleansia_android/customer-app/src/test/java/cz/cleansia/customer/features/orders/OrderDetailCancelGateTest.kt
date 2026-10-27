@@ -110,6 +110,7 @@ class OrderDetailCancelGateTest {
         startsAt: Instant? = null,
         paymentType: Int? = null,
         paymentStatus: Int? = null,
+        guest: Boolean = false,
     ) = OrderDetailDto(
         id = orderId,
         totalPrice = 1000.0,
@@ -121,6 +122,7 @@ class OrderDetailCancelGateTest {
         assignedEmployees = if (staffed) listOf(AssignedEmployeeDto(id = "seat-1", employeeId = "emp-1")) else null,
         paymentType = paymentType?.let { CodeDto(type = "PaymentType", name = "type-$it", value = it) },
         paymentStatus = paymentStatus?.let { CodeDto(type = "PaymentStatus", name = "status-$it", value = it) },
+        isGuestBooking = guest,
     )
 
     private fun stubOrder(statusValue: Int) {
@@ -217,6 +219,25 @@ class OrderDetailCancelGateTest {
     @Test
     fun `past the start with nobody on the job Cancel stays, as the server allows it`() = runTest {
         assertEquals(true to false, footerFor(orderDto(0, staffed = false, startsAt = Clock.System.now() - 1.hours)))
+    }
+
+    /**
+     * A guest booking is cancelled on its own guest terms, which refuse a cancel after the start just as
+     * the account's do, and the server answers a no-show report on one with order.not_found.
+     */
+    @Test
+    fun `past the start a guest booking with a cleaner on it offers neither Cancel nor the report`() = runTest {
+        val started = Clock.System.now() - 1.hours
+        assertEquals(false to false, footerFor(orderDto(2, staffed = true, startsAt = started, guest = true)))
+        assertEquals(false to false, footerFor(orderDto(3, staffed = true, startsAt = started, guest = true)))
+    }
+
+    @Test
+    fun `before the start a guest booking keeps Cancel`() = runTest {
+        assertEquals(
+            true to false,
+            footerFor(orderDto(2, staffed = true, startsAt = Clock.System.now() + 2.hours, guest = true)),
+        )
     }
 
     @Test

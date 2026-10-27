@@ -61,8 +61,11 @@ After successful registration, an email confirmation is sent and the user is red
 The `/confirm-email` page asks for the 6-digit code the confirmation e-mail carries, in six boxes
 (`cleansia-code-input`, the control the partner page uses). The address comes from the `email` query
 parameter that login and registration add; an e-mail field shows only when the parameter is missing or
-is not a valid address. The page confirms as soon as the sixth digit is in, and *Verify* sends the same
-request. *Resend code* e-mails a new code and then waits 30 seconds before it can be used again, and a
+is not a valid address. Immediately after registration it uses the just-typed password held only in
+memory. On a later visit it asks for a chosen password and matching confirmation under the existing
+password rules; automatic code submission and *Verify* wait until that form is valid. The request
+carries the code, address and chosen password. *Resend code* e-mails a new code and then waits 30
+seconds before it can be used again, and a
 link leads back to registration to change the address. On success the customer is signed in and taken
 to their orders.
 
@@ -72,6 +75,15 @@ keep theirs; the focus then moves to the box after them, or stays on the last bo
 next continue the code. The page sends one confirm at a time, so a code the boxes complete twice while
 the first confirm is in flight is sent once.
 → [Partner onboarding — e-mail confirmation](/partner-app/onboarding#step-2-email-confirmation)
+
+A legacy confirmation request without a password still opens the session but withdraws the old
+registration hash. Update before confirming to use the chosen-password flow. After a legacy
+confirmation, updating alone cannot restore it: use Forgot password before the next password login.
+→ [Mailbox confirmation](/flows/auth-and-identity#confirmation-password)
+
+The customer Google sign-in and registration buttons pass the page's active translation language to
+Google Identity Services, so their label follows the page rather than the browser's or Google
+account's language.
 
 ## Password Reset
 
@@ -119,6 +131,11 @@ After a sign-in — password, Google or Apple — `LoginFacade` navigates to tha
 path on this site (starts with one `/`), and to `/orders` otherwise. It is what makes an order e-mail's
 button open the booking it names: an account booking's e-mail links `/orders/:orderId`, and a reader
 who is signed out on that device used to land on the order board instead.
+
+A failed session refresh follows the same rule: after any navigation settles, an account-guarded
+page redirects to login with its full local URL, including its query, as `returnUrl`. Public pages
+such as guest tracking, checkout and reset remain in place; their tokens/codes are not copied into
+a login URL. The sign-in handler accepts only a local path, retaining the existing redirect guard.
 
 ### `customerGuestGuard`
 

@@ -72,7 +72,10 @@ public sealed class CancelOrderAuditEvidenceTests
                 Mock.Of<IPendingDispatch>(),
                 _auditContext,
                 TimeProvider.System,
-                NullLogger<CustomerOrderCancellation>.Instance));
+                NullLogger<CustomerOrderCancellation>.Instance),
+            NoShowCancellationDoubles.Inert(),
+            new GuestOrderAccessTokenIssuer(Mock.Of<IGuestOrderAccessTokenRepository>()),
+            Mock.Of<IPendingDispatch>());
 
     private void ArrangePlusMember()
     {

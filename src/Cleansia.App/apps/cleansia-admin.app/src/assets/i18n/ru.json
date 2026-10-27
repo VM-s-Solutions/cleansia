@@ -845,7 +845,11 @@
         "photo_hint": "В разделе «Фотографии заказа»"
       },
       "entrance_photos": "Фото входа",
-      "entrance": "Вход"
+      "entrance": "Вход",
+      "completion": {
+        "label": "Отмечено как готовое",
+        "pending": "Ещё нет"
+      }
     },
     "invoice_management": {
       "title": "Управление счетами",

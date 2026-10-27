@@ -93,6 +93,7 @@
     <string name="confirm_email">Confirm Email</string>
     <string name="verify_email">Verify Your Email</string>
     <string name="verify_email_subtitle">We\'ve sent a verification code to your email. Please enter it below.</string>
+    <string name="confirm_email_password_prompt">Choose the password you\'ll sign in with once your email is confirmed.</string>
     <string name="confirm_email_subtitle">Please enter the confirmation code sent to your email</string>
     <string name="confirmation_code">Confirmation Code</string>
     <string name="verification_code">Verification Code</string>
@@ -342,6 +343,7 @@
     <string name="access_label">Access</string>
     <string name="special_label">Special instructions</string>
     <string name="order_completed_toast">Order marked as completed</string>
+    <string name="order_my_part_done_toast">Your part is marked as done</string>
     <string name="before">Before</string>
     <string name="after">After</string>
     <string name="notes_and_issues">Notes &amp; issues</string>
@@ -911,7 +913,11 @@
     <string name="slide_to_start">Slide to start cleaning</string>
     <string name="starting_order">Starting the job…</string>
     <string name="slide_to_complete">Slide to complete</string>
+    <string name="order_complete_job">Complete job</string>
     <string name="completing_order">Completing…</string>
+    <string name="slide_to_mark_my_part_done">I\'m done</string>
+    <string name="marking_my_part_done">Marking…</string>
+    <string name="order_my_part_done_waiting">You\'ve marked your part done. Once everyone on this job has, any of you can complete it.</string>
     <string name="order_mark_cash_collected">Mark cash collected</string>
 
     <!-- Cash collection is irreversible: the server rejects a second call
@@ -1176,6 +1182,7 @@
     <string name="error_order_completion_notes_required">Completion notes are required.</string>
     <string name="error_order_completion_notes_too_long">Completion notes are too long.</string>
     <string name="error_order_after_photos_required">Take at least one \"after\" photo before completing the order.</string>
+    <string name="error_order_crew_not_done">Everyone on this job has to mark their part done before it can be completed.</string>
     <string name="error_order_photo_window_closed">This photo can\'t be added now: before photos from the moment you hold the job until it\'s finished, after photos while the work is in progress.</string>
     <string name="error_order_photo_locked">Photos can\'t be deleted once the order is completed or cancelled.</string>
     <string name="error_order_cash_not_collected">Collect the cash and mark it as received before completing this order.</string>
@@ -1295,6 +1302,8 @@
     <string name="notification_order_in_progress_body">Job #%1$s is underway. Tap to follow along.</string>
     <string name="notification_order_completed_title">Job completed</string>
     <string name="notification_order_completed_body">Job #%1$s is complete. Tap to see the summary.</string>
+    <string name="notification_order_crew_mate_done_title">Someone on your job has finished</string>
+    <string name="notification_order_crew_mate_done_body">Once everyone on job #%1$s has marked their part done, any of you can complete it.</string>
     <string name="notification_order_cancelled_title">Job cancelled</string>
     <string name="notification_order_cancelled_body">Job #%1$s has been cancelled. Tap for details.</string>
     <string name="notification_dispute_reply_title">Support replied</string>

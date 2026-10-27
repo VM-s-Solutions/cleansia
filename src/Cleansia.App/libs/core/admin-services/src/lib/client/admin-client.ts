@@ -21006,6 +21006,7 @@ export class AssignedEmployeeDto implements IAssignedEmployeeDto {
     employeeId!: string | undefined;
     fullName!: string | undefined;
     phoneNumber!: string | undefined;
+    completionConfirmedAt!: Date | undefined;
 
     constructor(data?: IAssignedEmployeeDto) {
         if (data) {
@@ -21022,6 +21023,7 @@ export class AssignedEmployeeDto implements IAssignedEmployeeDto {
             this.employeeId = Data["employeeId"];
             this.fullName = Data["fullName"];
             this.phoneNumber = Data["phoneNumber"];
+            this.completionConfirmedAt = Data["completionConfirmedAt"] ? new Date(Data["completionConfirmedAt"].toString()) : undefined as any;
         }
     }
 
@@ -21038,6 +21040,7 @@ export class AssignedEmployeeDto implements IAssignedEmployeeDto {
         data["employeeId"] = this.employeeId;
         data["fullName"] = this.fullName;
         data["phoneNumber"] = this.phoneNumber;
+        data["completionConfirmedAt"] = this.completionConfirmedAt ? this.completionConfirmedAt.toISOString() : undefined as any;
         return data;
     }
 }
@@ -21047,6 +21050,7 @@ export interface IAssignedEmployeeDto {
     employeeId: string | undefined;
     fullName: string | undefined;
     phoneNumber: string | undefined;
+    completionConfirmedAt: Date | undefined;
 }
 
 export enum BillingInterval {
@@ -30623,6 +30627,7 @@ export class OrderItem implements IOrderItem {
     lockoutReportedAt!: Date | undefined;
     lockoutCallAttempts!: string | undefined;
     freeCancellationHours!: number | undefined;
+    isGuestBooking!: boolean | undefined;
 
     constructor(data?: IOrderItem) {
         if (data) {
@@ -30739,6 +30744,7 @@ export class OrderItem implements IOrderItem {
             this.lockoutReportedAt = Data["lockoutReportedAt"] ? new Date(Data["lockoutReportedAt"].toString()) : undefined as any;
             this.lockoutCallAttempts = Data["lockoutCallAttempts"];
             this.freeCancellationHours = Data["freeCancellationHours"];
+            this.isGuestBooking = Data["isGuestBooking"];
         }
     }
 
@@ -30855,6 +30861,7 @@ export class OrderItem implements IOrderItem {
         data["lockoutReportedAt"] = this.lockoutReportedAt ? this.lockoutReportedAt.toISOString() : undefined as any;
         data["lockoutCallAttempts"] = this.lockoutCallAttempts;
         data["freeCancellationHours"] = this.freeCancellationHours;
+        data["isGuestBooking"] = this.isGuestBooking;
         return data;
     }
 }
@@ -30930,6 +30937,7 @@ export interface IOrderItem {
     lockoutReportedAt: Date | undefined;
     lockoutCallAttempts: string | undefined;
     freeCancellationHours: number | undefined;
+    isGuestBooking: boolean | undefined;
 }
 
 export class OrderListItem implements IOrderListItem {
@@ -30973,6 +30981,7 @@ export class OrderListItem implements IOrderListItem {
     countryId!: string | undefined;
     dirtinessLevel!: DirtinessLevel;
     dirtinessSurchargeAmount!: number;
+    isGuestBooking!: boolean | undefined;
 
     constructor(data?: IOrderListItem) {
         if (data) {
@@ -31043,6 +31052,7 @@ export class OrderListItem implements IOrderListItem {
             this.countryId = Data["countryId"];
             this.dirtinessLevel = Data["dirtinessLevel"];
             this.dirtinessSurchargeAmount = Data["dirtinessSurchargeAmount"];
+            this.isGuestBooking = Data["isGuestBooking"];
         }
     }
 
@@ -31113,6 +31123,7 @@ export class OrderListItem implements IOrderListItem {
         data["countryId"] = this.countryId;
         data["dirtinessLevel"] = this.dirtinessLevel;
         data["dirtinessSurchargeAmount"] = this.dirtinessSurchargeAmount;
+        data["isGuestBooking"] = this.isGuestBooking;
         return data;
     }
 }
@@ -31158,6 +31169,7 @@ export interface IOrderListItem {
     countryId: string | undefined;
     dirtinessLevel: DirtinessLevel;
     dirtinessSurchargeAmount: number;
+    isGuestBooking: boolean | undefined;
 }
 
 export class OrderNoteDto implements IOrderNoteDto {

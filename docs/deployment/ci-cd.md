@@ -500,8 +500,10 @@ until `sql-scripts/prod-bootstrap.sql` has run. The owner runs it once, as the a
 the database window. It is one transaction and idempotent, so a second run changes nothing: the
 operating company, the languages, every country with Czechia serviced, the Czech service cities, CZK,
 the Czech market and its operator, its invoice configuration, the cleaner document requirements (the
-insurance certificate among them, optional since 2026-10-04), the e-mail texts, the four loyalty tiers
-and the Czech size ladder. No users, orders, promo codes, catalogue, prices, pay rates, Plus plans or
+insurance certificate among them, optional since 2026-10-04), the e-mail texts, the four loyalty tiers,
+the Czech size ladder and the four service categories (`home`, `deep`, `laundry`, `pet`, idempotent
+on Slug). The categories let the admin create services; no service catalogue is seeded here.
+No users, orders, promo codes, catalogue services, prices, pay rates, Plus plans or
 company record: those come from the launch values sheet (decision 77), typed into the admin console. A
 Development boot runs the
 same file before the DEV fixtures in `insert_seed_data.sql`, and `ProductionBootstrapScriptTests`

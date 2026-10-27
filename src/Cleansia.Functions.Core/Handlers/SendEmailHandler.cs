@@ -271,7 +271,7 @@ public class SendEmailHandler(
             : EmailLocale.Resolve(order.LanguageCode ?? order.User?.PreferredLanguageCode ?? message.LanguageCode);
         await emailService.SendOrderStatusUpdateEmailAsync(order.CustomerEmail, order, "Cancelled",
             languageCode, ct, message.SuccessfulRefundAmount, guestAccessToken,
-            apologyCreditAmount: message.ApologyCreditAmount);
+            apologyCreditAmount: message.ApologyCreditAmount, noCleanerAvailable: message.NoCleanerAvailable);
         try
         {
             await idempotencyGuard.MarkProcessedAsync(key, ct);

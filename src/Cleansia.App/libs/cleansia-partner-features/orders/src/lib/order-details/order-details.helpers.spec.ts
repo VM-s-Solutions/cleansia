@@ -11,6 +11,7 @@ import {
 } from '@cleansia/partner-services';
 import {
   canAcceptWorkContract,
+  canCompleteOrder,
   canDropOrder,
   canMarkCashCollected,
   canReportCashNotPaid,
@@ -19,6 +20,9 @@ import {
   canUploadBeforePhotos,
   cashCollectionRefusal,
   cashRefusedOnCardOrder,
+  CrewCloseStanding,
+  crewCloseLineKey,
+  crewCloseStanding,
   customerDetailsClosedNoticeKey,
   dirtinessLevelLabelKey,
   findCallerWorkContractAcceptance,
@@ -319,6 +323,123 @@ describe('a customer who did not pay at the door', () => {
         'pages.order_details.cash_not_paid.confirm_action',
         'pages.order_details.cash_not_paid.gating_error',
         'global.messages.orders.cash_not_paid_reported',
+      ])
+    ).toEqual([]);
+  });
+});
+
+// Owner ruling 2026-10-26: on a job with two or more cleaners each marks their own part done, and once
+// everyone still on it has, a shared Complete appears to all of them; a one-cleaner job keeps its one
+// Complete. The server answers order.crew_not_done to a Complete that comes too early.
+describe('completing a crew job', () => {
+  const MARKED = '2026-10-27T10:40:00Z';
+  const seat = (employeeId: string, completionConfirmedAt?: string): AssignedEmployeeDto =>
+    AssignedEmployeeDto.fromJS({ id: `seat-${employeeId}`, employeeId, completionConfirmedAt });
+  const job = (status: OrderStatus, seats: AssignedEmployeeDto[]): OrderItem =>
+    OrderItem.fromJS({ id: 'ord-1', orderStatus: { value: status }, assignedEmployees: seats.map((s) => s.toJSON()) });
+
+  describe('Complete', () => {
+    it('is offered to the one cleaner of a job in progress, as it always was', () => {
+      expect(canCompleteOrder(OrderStatus.InProgress, [seat(EMPLOYEE_ID)], EMPLOYEE_ID)).toBe(true);
+    });
+
+    it('is offered to nobody off the crew, nor before the job is under way', () => {
+      expect(canCompleteOrder(OrderStatus.InProgress, [seat('emp-2')], EMPLOYEE_ID)).toBe(false);
+      expect(canCompleteOrder(OrderStatus.OnTheWay, [seat(EMPLOYEE_ID)], EMPLOYEE_ID)).toBe(false);
+    });
+
+    it.each([
+      ['nobody has marked', [seat(EMPLOYEE_ID), seat('emp-2')]],
+      ['only the caller has marked', [seat(EMPLOYEE_ID, MARKED), seat('emp-2')]],
+      ['only the crew-mate has marked', [seat(EMPLOYEE_ID), seat('emp-2', MARKED)]],
+    ])('is withheld on a crew job while %s', (_case, seats) => {
+      expect(canCompleteOrder(OrderStatus.InProgress, seats, EMPLOYEE_ID)).toBe(false);
+    });
+
+    it('is offered to every cleaner of a crew job once all of them have marked', () => {
+      const seats = [seat(EMPLOYEE_ID, MARKED), seat('emp-2', MARKED), seat('emp-3', MARKED)];
+
+      expect(canCompleteOrder(OrderStatus.InProgress, seats, EMPLOYEE_ID)).toBe(true);
+      expect(canCompleteOrder(OrderStatus.InProgress, seats, 'emp-3')).toBe(true);
+    });
+  });
+
+  describe('where the caller stands', () => {
+    it('asks the caller to mark their part while their seat is unmarked, whoever else has', () => {
+      expect(crewCloseStanding(job(OrderStatus.InProgress, [seat(EMPLOYEE_ID), seat('emp-2')]), EMPLOYEE_ID)).toBe(
+        CrewCloseStanding.MarkDone
+      );
+      expect(
+        crewCloseStanding(job(OrderStatus.InProgress, [seat(EMPLOYEE_ID), seat('emp-2', MARKED)]), EMPLOYEE_ID)
+      ).toBe(CrewCloseStanding.MarkDone);
+    });
+
+    it('has the caller wait once they have marked and someone on the job has not', () => {
+      expect(
+        crewCloseStanding(job(OrderStatus.InProgress, [seat(EMPLOYEE_ID, MARKED), seat('emp-2')]), EMPLOYEE_ID)
+      ).toBe(CrewCloseStanding.WaitingForCrew);
+    });
+
+    it('offers the shared Complete once everyone on the job has marked', () => {
+      expect(
+        crewCloseStanding(job(OrderStatus.InProgress, [seat(EMPLOYEE_ID, MARKED), seat('emp-2', MARKED)]), EMPLOYEE_ID)
+      ).toBe(CrewCloseStanding.ReadyToComplete);
+    });
+
+    it('stays out of a one-cleaner job, which keeps its single Complete', () => {
+      expect(crewCloseStanding(job(OrderStatus.InProgress, [seat(EMPLOYEE_ID)]), EMPLOYEE_ID)).toBe(
+        CrewCloseStanding.Hidden
+      );
+    });
+
+    it.each([OrderStatus.Confirmed, OrderStatus.OnTheWay, OrderStatus.Completed, OrderStatus.Cancelled])(
+      'stays out of a crew job in status %s',
+      (status) => {
+        expect(crewCloseStanding(job(status, [seat(EMPLOYEE_ID), seat('emp-2')]), EMPLOYEE_ID)).toBe(
+          CrewCloseStanding.Hidden
+        );
+      }
+    );
+
+    it('stays out for a cleaner who is not on the crew', () => {
+      expect(crewCloseStanding(job(OrderStatus.InProgress, [seat('emp-2'), seat('emp-3')]), EMPLOYEE_ID)).toBe(
+        CrewCloseStanding.Hidden
+      );
+    });
+  });
+
+  it('words each step on the sheet, and nothing outside a crew job in progress', () => {
+    expect(crewCloseLineKey(CrewCloseStanding.MarkDone, false)).toBe('pages.order_details.crew_close.mark_done_hint');
+    expect(crewCloseLineKey(CrewCloseStanding.WaitingForCrew, false)).toBe('pages.order_details.crew_close.waiting');
+    expect(crewCloseLineKey(CrewCloseStanding.ReadyToComplete, true)).toBe('pages.order_details.crew_close.ready');
+    expect(crewCloseLineKey(CrewCloseStanding.Hidden, true)).toBeNull();
+  });
+
+  // Marking needs no photo and Complete, the shared one included, needs an after photo, so a crew can
+  // all have marked on a job that has none yet.
+  it('asks for an after photo once everyone has marked, until the job has one', () => {
+    expect(crewCloseLineKey(CrewCloseStanding.ReadyToComplete, false)).toBe(
+      'pages.order_details.crew_close.needs_after_photo'
+    );
+    expect(crewCloseLineKey(CrewCloseStanding.MarkDone, true)).toBe('pages.order_details.crew_close.mark_done_hint');
+    expect(crewCloseLineKey(CrewCloseStanding.WaitingForCrew, true)).toBe('pages.order_details.crew_close.waiting');
+    expect(crewCloseLineKey(CrewCloseStanding.Hidden, false)).toBeNull();
+  });
+
+  it.each(PARTNER_LOCALES)('words every step and the refusal in %s', (locale) => {
+    expect(
+      missingIn(locale, [
+        'pages.order_details.crew_close.mark_done',
+        'pages.order_details.crew_close.mark_done_hint',
+        'pages.order_details.crew_close.waiting',
+        'pages.order_details.crew_close.ready',
+        'pages.order_details.crew_close.needs_after_photo',
+        'pages.order_details.crew_close.complete_job',
+        'pages.order_details.crew_close.marked_done',
+        'pages.order_details.crew_close.crew_done',
+        'pages.order_details.employee_finished',
+        'pages.order_details.employee_not_finished',
+        'api.order.crew_not_done',
       ])
     ).toEqual([]);
   });

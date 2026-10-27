@@ -292,6 +292,28 @@ resources, so the two must stay in step.
 
 Several keys exist as separate keys for reasons that are easy to undo by "simplifying" them.
 
+### A crew mate marked their part done {#crew-mate-done}
+
+`order.crew_mate_done` is partner-targeted and **push-only**. At each cleaner's first mark,
+`MarkMyPartDone` tells every other eligible assignee on that job, including cleaners already marked.
+A repeat preserves the first stamp and sends no second push. The payload carries `orderNumber`
+for localization and `orderId` for opening the job; no cleaner's name is sent. Following the push
+opens the job; its refetched crew state determines whether everyone has marked, rather than the
+generic notification text. The photo/payment gates still apply to Complete.
+
+It is not mutable (`GetCategoryFor` returns null) and appears in neither feed keyset. Android has
+its template/deep link; both iOS source catalogs carry `push.order.crew_mate_done.title` and `.body`
+in five locales, with `%1$@` for the order number. The APNs display map registers
+`OrderCrewMateDone -> [orderNumber]`. These source changes do not update installed apps: older
+TestFlight builds lack the copy and mark action, and signing still blocks the new release.
+A foreground push also does not refresh an already-open job detail.
+
+Source: `src/Cleansia.Core.AppServices/Features/Orders/MarkMyPartDone.cs:90`,
+`src/Cleansia.Core.Domain/Notifications/NotificationEventCatalog.cs:128`,
+`src/Cleansia.Core.Domain/Notifications/NotificationFeedEventKeys.cs:51` and
+`src/Cleansia.Infra.Clients/Fcm/FcmMessageFactory.cs:48`.
+→ [ADR-0077](/decisions/adr-0077), [Mobile crew completion](/mobile-app/features#crew-completion)
+
 ### The admin audience: a feed and an e-mail, never a push {#admin-audience}
 
 The in-app feed has **three** audiences, and the host controller sets which one a request serves —
@@ -364,9 +386,10 @@ cleaner's take of the reserved job stamps nothing.
 
 ### The no-show pushes say what happened to the money {#no-show-outcomes}
 
-A booking the platform cancels because no cleaner came — the unfilled sweep, or an administrator's
-no-show confirmation, which since the fix plan of 2026-10-25 may come before the start on a booking
-nobody is on — sends **one** of four keys, chosen by what actually moved:
+A booking cancelled through the no-cleaner remedy — by the unfilled sweep, an administrator's
+no-show confirmation (which may come before the start when nobody is on it), or the account owner's
+own cancellation from the booked start when the unfilled-sweep rule holds — sends **one** of four
+keys, chosen by what actually moved:
 `order.no_cleaner_refunded` (the card refund went through), `order.no_cleaner_refund_pending` (a card
 refund is owed and has not gone through; the hourly re-drive owns it), `order.no_cleaner_nothing_charged`
 (the order took no payment) — each announcing the apology credit with its `amount` — or the plain

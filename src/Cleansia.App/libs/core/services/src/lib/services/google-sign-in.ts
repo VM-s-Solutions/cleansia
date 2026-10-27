@@ -36,6 +36,8 @@ export interface GoogleIdButtonOptions {
   width: number;
   text: 'signin_with' | 'signup_with' | 'continue_with' | 'signin';
   shape: 'rectangular' | 'pill' | 'circle' | 'square';
+  /** The button's language; without it GSI uses the browser's or the Google account's. */
+  locale?: string;
 }
 
 /** `google.accounts.id` — the identity half of the GSI script. */

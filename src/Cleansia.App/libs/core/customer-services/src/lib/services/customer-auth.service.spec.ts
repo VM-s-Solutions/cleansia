@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { AUTH_COOKIE_KEYS } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { Observable, of } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 import { CustomerClient } from '../client/customer-base-client';
 import { CustomerAuthService } from './customer-auth.service';
 import { SESSION_LIFECYCLE_LISTENERS } from './session-lifecycle';
@@ -118,6 +118,70 @@ describe('CustomerAuthService command payloads', () => {
     expect(sentBody(authClient, 'confirmUserEmail')).toEqual({
       code: '123456',
       email: 'a@b.cz',
+    });
+  });
+
+  // Owner ruling 2026-10-26 ("Close"): the confirmation sets the password its confirmer chose, so a
+  // password anybody else typed into a registration of the address stops working.
+  describe('the password the confirmation sets', () => {
+    it('sends the password chosen on the confirm screen', () => {
+      service.confirmUserEmail('123456', 'a@b.cz', 'Heslo2026').subscribe();
+
+      expect(sentBody(authClient, 'confirmUserEmail')).toEqual({
+        code: '123456',
+        email: 'a@b.cz',
+        password: 'Heslo2026',
+      });
+    });
+
+    it('sends the password this page just registered the address with, held in memory only', () => {
+      service.register('a@b.cz', 'Heslo2026', 'Jan', 'Novak', true).subscribe();
+
+      expect(service.holdsRegisteredPasswordFor('A@b.cz ')).toBe(true);
+      expect(service.holdsRegisteredPasswordFor('other@b.cz')).toBe(false);
+
+      service.confirmUserEmail('123456', 'a@b.cz').subscribe();
+      expect(sentBody(authClient, 'confirmUserEmail')['password']).toBe('Heslo2026');
+    });
+
+    it('prefers the password typed on the confirm screen over the one held', () => {
+      service.register('a@b.cz', 'Heslo2026', 'Jan', 'Novak', true).subscribe();
+
+      service.confirmUserEmail('123456', 'a@b.cz', 'Jine2027').subscribe();
+
+      expect(sentBody(authClient, 'confirmUserEmail')['password']).toBe('Jine2027');
+    });
+
+    it('holds no password for another address', () => {
+      service.register('a@b.cz', 'Heslo2026', 'Jan', 'Novak', true).subscribe();
+
+      service.confirmUserEmail('123456', 'other@b.cz').subscribe();
+
+      expect(sentBody(authClient, 'confirmUserEmail')['password']).toBeUndefined();
+    });
+
+    it('forgets the password once the address is confirmed', () => {
+      service.register('a@b.cz', 'Heslo2026', 'Jan', 'Novak', true).subscribe();
+      service.confirmUserEmail('123456', 'a@b.cz').subscribe();
+
+      expect(service.holdsRegisteredPasswordFor('a@b.cz')).toBe(false);
+    });
+
+    it('keeps it through a refused code, for the next try', () => {
+      service.register('a@b.cz', 'Heslo2026', 'Jan', 'Novak', true).subscribe();
+      authClient['confirmUserEmail'].mockReturnValueOnce(throwError(() => ({ status: 400 })));
+
+      service.confirmUserEmail('000000', 'a@b.cz').subscribe({ error: () => undefined });
+
+      expect(service.holdsRegisteredPasswordFor('a@b.cz')).toBe(true);
+    });
+
+    it('holds nothing from a registration the server refused', () => {
+      authClient['register'].mockReturnValueOnce(throwError(() => ({ status: 400 })));
+
+      service.register('a@b.cz', 'Heslo2026', 'Jan', 'Novak', true).subscribe({ error: () => undefined });
+
+      expect(service.holdsRegisteredPasswordFor('a@b.cz')).toBe(false);
     });
   });
 

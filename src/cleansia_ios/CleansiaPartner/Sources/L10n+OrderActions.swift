@@ -91,6 +91,30 @@ extension L10n.Orders {
         L10n.localized("order_dropped_toast")
     }
 
+    static var markDone: String {
+        L10n.localized("order_mark_done")
+    }
+
+    static var markingDone: String {
+        L10n.localized("marking_done")
+    }
+
+    static var partMarkedDoneToast: String {
+        L10n.localized("order_part_marked_done_toast")
+    }
+
+    static var crewDoneToast: String {
+        L10n.localized("order_crew_done_toast")
+    }
+
+    static var crewWaiting: String {
+        L10n.localized("order_crew_waiting")
+    }
+
+    static var completeJob: String {
+        L10n.localized("order_complete_job")
+    }
+
     static var slideToComplete: String {
         L10n.localized("slide_to_complete")
     }

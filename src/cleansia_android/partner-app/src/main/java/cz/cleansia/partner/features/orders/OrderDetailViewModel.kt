@@ -28,7 +28,7 @@ import java.time.Instant
 import javax.inject.Inject
 
 /** Per-action discriminator so individual buttons can show their own spinners. */
-enum class OrderAction { Take, AcceptContract, Start, NotifyOnTheWay, MarkCashCollected, ReportCashNotPaid, Complete, DeclineOffer, ReportLockout, Drop }
+enum class OrderAction { Take, AcceptContract, Start, NotifyOnTheWay, MarkCashCollected, ReportCashNotPaid, MarkMyPartDone, Complete, DeclineOffer, ReportLockout, Drop }
 
 sealed interface OrderDetailUiState {
     data object Loading : OrderDetailUiState
@@ -95,6 +95,11 @@ class OrderDetailViewModel @Inject constructor(
             (state as? OrderDetailUiState.Loaded)?.order?.workContractStanding(employeeId)
                 ?: WorkContractStanding.None
         }.stateIn(viewModelScope, SharingStarted.Eagerly, WorkContractStanding.None)
+
+    val completionStep: StateFlow<CompletionStep> =
+        combine(_uiState, myEmployeeId) { state, employeeId ->
+            (state as? OrderDetailUiState.Loaded)?.order?.completionStep(employeeId) ?: CompletionStep.Complete
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, CompletionStep.Complete)
 
     init {
         ensureFreshOrCachedAsync()
@@ -204,6 +209,8 @@ class OrderDetailViewModel @Inject constructor(
         ordersRepository.reportCashNotPaid(orderId)
     }
 
+    fun markMyPartDone() = runAction(OrderAction.MarkMyPartDone) { ordersRepository.markMyPartDone(orderId) }
+
     fun complete(actualMinutes: Int?, notes: String?) = runAction(OrderAction.Complete) {
         ordersRepository.completeOrder(orderId, actualMinutes, notes)
     }
@@ -256,6 +263,9 @@ class OrderDetailViewModel @Inject constructor(
                 is ApiResult.Success -> {
                     if (action == OrderAction.Complete) {
                         snackbar.showSuccessKey(R.string.order_completed_toast)
+                    }
+                    if (action == OrderAction.MarkMyPartDone) {
+                        snackbar.showSuccessKey(R.string.order_my_part_done_toast)
                     }
                     if (action == OrderAction.DeclineOffer) {
                         snackbar.showSuccessKey(R.string.offer_declined_toast)

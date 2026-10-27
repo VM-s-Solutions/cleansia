@@ -23,7 +23,9 @@ final class OrderDetailViewModelTests: XCTestCase {
         pollInterval: TimeInterval = 60,
         snackbar: SnackbarController? = nil,
         onCreditMoved: @escaping () -> Void = {},
-        cardPaymentAvailable: Bool = true
+        cardPaymentAvailable: Bool = true,
+        liveActivity: OrderLiveActivitySyncing? = nil,
+        now: @escaping () -> Date = Date.init
     ) -> OrderDetailViewModel {
         let repo = OrderRepository(client: client)
         return OrderDetailViewModel(
@@ -37,9 +39,10 @@ final class OrderDetailViewModelTests: XCTestCase {
             paymentIntentClient: paymentIntent,
             isCardPaymentAvailable: cardPaymentAvailable,
             consentClient: consent,
-            liveActivity: NoopLiveActivitySync(),
+            liveActivity: liveActivity ?? NoopLiveActivitySync(),
             onCreditMoved: onCreditMoved,
-            pollInterval: pollInterval
+            pollInterval: pollInterval,
+            now: now
         )
     }
 

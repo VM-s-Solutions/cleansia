@@ -25,7 +25,8 @@ public static class GuestCancellationEmail
         IPendingDispatch pending,
         CancellationToken cancellationToken,
         bool alsoToAccount = false,
-        decimal? apologyCreditAmount = null)
+        decimal? apologyCreditAmount = null,
+        bool noCleanerAvailable = false)
     {
         var guest = string.IsNullOrEmpty(order.UserId);
         if (!guest && !alsoToAccount)
@@ -43,7 +44,7 @@ public static class GuestCancellationEmail
             new QueueEnvelope<SendGuestOrderCancellationEmailMessage>(key, order.TenantId,
                 new SendGuestOrderCancellationEmailMessage(
                     order.Id, languageCode ?? EmailLocale.Resolve(order.LanguageCode), successfulRefundAmount, order.TenantId,
-                    apologyCreditAmount)),
+                    apologyCreditAmount, noCleanerAvailable)),
             key);
     }
 }

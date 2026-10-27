@@ -187,6 +187,16 @@ public class Order : TenantAuditable
     /// </summary>
     public bool HasTakeableSeat => HasAvailableSpots || CoverSeatsOpen > 0;
 
+    /// <summary>Everyone on the job has marked their part done; false while nobody is on it.</summary>
+    public bool EveryCleanerMarkedDone =>
+        _assignedEmployees.Count > 0 && _assignedEmployees.All(oe => oe.CompletionConfirmedAt is not null);
+
+    /// <summary>
+    /// Whether the crew lets the job be completed (owner ruling 2026-10-26): a job one cleaner holds
+    /// completes on their own tap, a crew of two or more once everyone on it has marked their part done.
+    /// </summary>
+    public bool CrewLetsTheJobComplete => _assignedEmployees.Count < 2 || EveryCleanerMarkedDone;
+
     [MaxLength(50)]
     public string ConfirmationCode { get; private set; } = OrderExtensions.GenerateConfirmationCode();
 
@@ -397,6 +407,13 @@ public class Order : TenantAuditable
 
     [MaxLength(500)]
     public string? CancellationReason { get; private set; }
+
+    /// <summary>
+    /// The reason the customer typed, kept apart from <see cref="CancellationReason"/> when that holds a
+    /// platform reason key, so the key means the same to every reader of it.
+    /// </summary>
+    [MaxLength(500)]
+    public string? CustomerCancellationReason { get; private set; }
 
     /// <summary>
     /// An administrator confirmed the cleaner's report that they could not get in. Read from what only that
@@ -1104,6 +1121,12 @@ public class Order : TenantAuditable
         return this;
     }
 
+    public Order RecordCustomerCancellationReason(string? reason)
+    {
+        CustomerCancellationReason = reason;
+        return this;
+    }
+
     public Order AddNote(OrderNote note)
     {
         _notes.Add(note);
@@ -1188,6 +1211,7 @@ public class Order : TenantAuditable
         LockoutCallAttempts = null;
         EarlyPerformanceConsentIpAddress = null;
         EarlyPerformanceConsentDeviceLabel = null;
+        CustomerCancellationReason = null;
         // A platform reason is a code, not personal data: the wind-down's refund re-drive selects its
         // cancelled orders by it, and a confirmed lockout's crew is paid by it. The customer's or an admin's
         // free text goes.

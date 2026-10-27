@@ -115,7 +115,8 @@ its container if it is missing — so it appears the first time a company is arc
 A local Development boot that finds an empty `Languages` table runs three scripts from the repo-root
 `sql-scripts/`, in order (`CleansiaStartupBase.DevelopmentSeedScripts`): `prod-bootstrap.sql` — the
 reference data production gets as well: `generate_ulid()`, the `cleansia-cz` tenant, the languages,
-the countries, CZK and the Czech market — then `insert_seed_data.sql` — the DEV fixtures: the
+the countries, CZK, the Czech market and the four service categories
+(`home`, `deep`, `laundry`, `pet`) — then `insert_seed_data.sql` — the DEV fixtures: the
 catalogue with its prices and pay rates, Plus plans, promo codes and the company record — then
 `insert_local_dev_admin.sql`, which creates the local administrator whose password the README
 publishes. The split exists so that the known-password account reaches a shared database only on
@@ -127,6 +128,18 @@ promoted with `set-admin-role.sql` after they register, and `fix-deactivate-loca
 retires the published account once one exists; the README has the steps. `execute-sql.yml` refuses
 that script for PRO too, from the same list of DEV-only file names
 ([CI/CD](/deployment/ci-cd#workflows-overview)).
+
+**DEV durations are deliberately short.** Every service in `insert_seed_data.sql` has
+`EstimatedTime = 2` minutes and packages derive their duration from their services. Prices, pay,
+lead time, early-start window and crew formula are unchanged. To exercise a two-cleaner job,
+an administrator can set a DEV service to 121 minutes. Production catalogue values are entered
+through the admin console; there is no production catalogue seed file. The category bootstrap is
+idempotent on Slug and leaves an existing category as last saved.
+
+The approved post-merge DEV reset sequence is reset → deploy → `prod-bootstrap.sql` →
+`insert_seed_data.sql` → `insert_local_dev_admin.sql` →
+`seed/insert_email_template_translations_promo_code.sql`, then all five API health checks.
+No phase-2 reset or deploy has run during branch work.
 
 ## The Functions host's local settings are each developer's own {#functions-local-settings}
 

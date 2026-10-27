@@ -150,6 +150,23 @@ public partial class CreateOrderCallerCurrencyTests
         await context.CommitAsync(CancellationToken.None);
     }
 
+    /// <summary>The cross order under way, where a completion finds a job: it re-reads the status under the row lock.</summary>
+    private static async Task StartCrossOrderAsync(CleansiaDbContext context)
+    {
+        var order = await context.Orders.IgnoreQueryFilters()
+            .Include(o => o.OrderStatusHistory)
+            .SingleAsync(o => o.Id == CrossOrderId);
+        var at = order.OrderStatusHistory.Max(s => s.CreatedOn);
+        foreach (var status in new[] { OrderStatus.Confirmed, OrderStatus.InProgress })
+        {
+            at = at.AddMinutes(1);
+            var track = OrderStatusTrack.Create(status, order);
+            track.TenantId = TestTenants.Second;
+            track.Created("seed", at);
+            order.AddOrderStatus(track);
+        }
+    }
+
     [Fact]
     public async Task CrossMarket_Dispute_And_Its_Audit_Follow_The_Order_And_Remain_Readable_By_The_Customer()
     {
@@ -180,6 +197,7 @@ public partial class CreateOrderCallerCurrencyTests
             arrange: async context =>
             {
                 await SeedCrossOrderAsync(context);
+                await StartCrossOrderAsync(context);
                 if (accountExists) context.LoyaltyAccounts.Add(LoyaltyAccount.Create(CustomerUserId));
                 await context.CommitAsync(CancellationToken.None);
             },

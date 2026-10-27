@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, inject, AfterViewInit, ElementRef, viewChild, NgZone, PLATFORM_ID } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, AfterViewInit, ElementRef, viewChild, NgZone, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import {
@@ -18,9 +19,10 @@ import {
   getAppleIdApi,
   getGoogleIdApi,
   GOOGLE_CLIENT_ID,
+  GoogleIdApi,
   isAppleSignInCancelled,
 } from '@cleansia/services';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { LoginFacade } from './login.facade';
 
 @Component({
@@ -43,6 +45,8 @@ export class LoginComponent implements AfterViewInit {
   protected readonly facade = inject(LoginFacade);
   protected routes = CleansiaCustomerRoute;
   private readonly zone = inject(NgZone);
+  private readonly translate = inject(TranslateService);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   /**
@@ -109,23 +113,31 @@ export class LoginComponent implements AfterViewInit {
       },
     });
 
-    const btnEl = this.googleBtnRef()?.nativeElement;
-    if (btnEl) {
-      // GSI's `width` rejects percentage strings ("Provided button width is
-      // invalid: 100%") — it wants an integer pixel value, max 400. Measure
-      // the container at render time; clamp so we don't blow past GSI's cap.
-      // Falls back to 400 (the max) if the container has no width yet, which
-      // can happen if the parent is display:none on first paint.
-      const measured = (btnEl as HTMLElement).clientWidth;
-      const width = Math.min(measured > 0 ? measured : 400, 400);
-      googleId.renderButton(btnEl, {
-        theme: 'outline',
-        size: 'large',
-        width,
-        text: 'continue_with',
-        shape: 'rectangular',
-      });
-    }
+    this.renderGoogleButton(googleId);
+    this.translate.onLangChange
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.renderGoogleButton(googleId));
+  }
+
+  private renderGoogleButton(googleId: GoogleIdApi): void {
+    const btnEl = this.googleBtnRef()?.nativeElement as HTMLElement | undefined;
+    if (!btnEl) return;
+    // GSI's `width` rejects percentage strings ("Provided button width is
+    // invalid: 100%") — it wants an integer pixel value, max 400. Measure
+    // the container at render time; clamp so we don't blow past GSI's cap.
+    // Falls back to 400 (the max) if the container has no width yet, which
+    // can happen if the parent is display:none on first paint.
+    const measured = btnEl.clientWidth;
+    const width = Math.min(measured > 0 ? measured : 400, 400);
+    btnEl.replaceChildren();
+    googleId.renderButton(btnEl, {
+      theme: 'outline',
+      size: 'large',
+      width,
+      text: 'continue_with',
+      shape: 'rectangular',
+      locale: this.translate.currentLang || this.translate.getDefaultLang(),
+    });
   }
 
   private _appleRetries = 0;

@@ -41,6 +41,11 @@ public class CleanupStalePendingOrdersHandlerSmokeTests
             .Setup(m => m.Send(
                 It.IsAny<CancelUnfilledOrders.Command>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(BusinessResult.Success(new CancelUnfilledOrders.Response(0, 0, 0)));
+        // And a FOURTH: a crew job everyone marked done two hours ago and nobody completed closes itself.
+        _mediator
+            .Setup(m => m.Send(
+                It.IsAny<AutoCompleteMarkedDoneOrders.Command>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResult.Success(new AutoCompleteMarkedDoneOrders.Response(0, 0)));
 
         var handler = CreateHandler();
 
@@ -55,6 +60,9 @@ public class CleanupStalePendingOrdersHandlerSmokeTests
             Times.Once);
         _mediator.Verify(
             m => m.Send(It.IsAny<CancelUnfilledOrders.Command>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+        _mediator.Verify(
+            m => m.Send(It.Is<AutoCompleteMarkedDoneOrders.Command>(c => c.GraceMinutes == 120), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 }

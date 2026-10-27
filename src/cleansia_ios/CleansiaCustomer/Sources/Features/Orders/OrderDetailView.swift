@@ -173,7 +173,13 @@ struct OrderDetailView: View {
             ) {
                 Task { await vm.confirmRecurring() }
             }
-        } else if OrderDetailFooterActions.showFooter(order.status, authoring: vm.recurringAuthoring) {
+        } else if OrderDetailFooterActions.showFooter(
+            order.status,
+            authoring: vm.recurringAuthoring,
+            isGuestBooking: order.isGuestBooking,
+            canCancel: vm.canCancel,
+            canReportCleanerNoShow: vm.canReportCleanerNoShow
+        ) {
             OrderDetailActionsFooter(
                 showRebook: OrderDetailFooterActions.showRebook(order.status),
                 showMakeRecurring: OrderDetailFooterActions.showMakeRecurring(
@@ -182,7 +188,10 @@ struct OrderDetailView: View {
                 ),
                 showCancel: vm.canCancel,
                 showCleanerDidNotArrive: vm.canReportCleanerNoShow,
-                showReportIssue: OrderStatusGroup.isReportable(order.status),
+                showReportIssue: OrderDetailFooterActions.showReportIssue(
+                    order.status,
+                    isGuestBooking: order.isGuestBooking
+                ),
                 cancelEnabled: !vm.cancelState.isSubmitting,
                 onRebook: { onRebook(orderId) },
                 onMakeRecurring: { onMakeRecurring(orderId) },
@@ -335,13 +344,26 @@ enum OrderDetailFooterActions {
         showRebook(status) && authoring == .allowed
     }
 
-    /// The footer renders if any of its four actions would. Completed used to
-    /// arrive here only via `isReportable`, which is an accident of the dispute
-    /// window happening to extend past completion rather than a statement about
-    /// re-booking; naming all four keeps the gate honest if that window narrows.
-    static func showFooter(_ status: OrderStatus?, authoring: RecurringAuthoringGate) -> Bool {
-        OrderStatusGroup.isCancellable(status)
-            || OrderStatusGroup.isReportable(status)
+    /// A guest booking's dispute is refused on the server, so it is never offered.
+    static func showReportIssue(_ status: OrderStatus?, isGuestBooking: Bool) -> Bool {
+        !isGuestBooking && OrderStatusGroup.isReportable(status)
+    }
+
+    /// The footer renders if any of its actions would, Cancel and the no-show report as the view model
+    /// resolves them: a staffed guest booking past its start offers neither, and its status alone would
+    /// draw an empty footer. Completed used to arrive here only via `isReportable`, which is an accident
+    /// of the dispute window happening to extend past completion rather than a statement about
+    /// re-booking; naming every action keeps the gate honest if that window narrows.
+    static func showFooter(
+        _ status: OrderStatus?,
+        authoring: RecurringAuthoringGate,
+        isGuestBooking: Bool,
+        canCancel: Bool,
+        canReportCleanerNoShow: Bool
+    ) -> Bool {
+        canCancel
+            || canReportCleanerNoShow
+            || showReportIssue(status, isGuestBooking: isGuestBooking)
             || showRebook(status)
             || showMakeRecurring(status, authoring: authoring)
     }

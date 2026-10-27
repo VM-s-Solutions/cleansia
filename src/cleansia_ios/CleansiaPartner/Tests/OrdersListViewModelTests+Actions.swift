@@ -135,6 +135,18 @@ extension OrdersListViewModelTests {
         XCTAssertFalse(staleness.isPaneStale(.available))
     }
 
+    /// A crew's "I'm done" and its "Complete job" read the seats, which only the detail has: a row never sends
+    /// either.
+    func testARowNeverRunsACrewStep() async {
+        let vm = makeVM()
+        await vm.selectTab(.active)
+
+        await vm.runInlineAction(.markDone, on: .sample(id: "o1", status: ._4))
+        await vm.runInlineAction(.completeJob, on: .sample(id: "o1", status: ._4))
+
+        XCTAssertTrue(client.commands.isEmpty)
+    }
+
     func testInlineActionPerRowInFlightThenClears() async {
         client.pagedResult = .success([.sample(id: "o1", status: ._3)])
         client.suspendCommands = true

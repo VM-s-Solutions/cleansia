@@ -27,6 +27,31 @@ final class PartnerRootRouteTests: XCTestCase {
         XCTAssertEqual(route, .verifyEmail(email: "a@b.cz"))
     }
 
+    /// Signing in to an unconfirmed account is confirming later: no password rides the route, so the confirm
+    /// screen asks for the one the confirmation sets.
+    func testUnverifiedLoginCarriesNoPasswordOntoTheConfirmStep() {
+        let route = PartnerRootView.Route.afterLogin(
+            LoginSuccess(requiresEmailConfirmation: true, email: "a@b.cz")
+        )
+        XCTAssertEqual(route, .verifyEmail(email: "a@b.cz", password: nil))
+    }
+
+    /// Right after registering, the password just typed rides to the confirm step, which sends it instead of
+    /// asking again. A router that dropped it would still compile.
+    func testTheRegistrationHandsItsPasswordToTheConfirmStep() throws {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let source = try String(
+            contentsOf: root.appendingPathComponent("CleansiaPartner/Sources/PartnerRootView.swift"),
+            encoding: .utf8
+        )
+        XCTAssertTrue(source
+            .contains("onRegistered: { email, password in route = .verifyEmail(email: email, password: password) }"))
+        XCTAssertTrue(source.contains("registeredPassword: password,"))
+    }
+
     func testUnverifiedLoginWithoutEmailRoutesToVerifyEmailNil() {
         let route = PartnerRootView.Route.afterLogin(
             LoginSuccess(requiresEmailConfirmation: true, email: nil)

@@ -16,6 +16,7 @@ import { selectLoading } from '@cleansia/partner-stores';
 import { Store } from '@ngrx/store';
 import { TranslateModule } from '@ngx-translate/core';
 import { ConfirmEmailFacade } from './confirm-email.facade';
+import { checkIfPasswordsValid, PasswordCheck } from './confirm-email.models';
 
 @Component({
   selector: 'cleansia-partner-confirm-email',
@@ -48,6 +49,16 @@ export class ConfirmEmailComponent implements OnInit {
     return `00:${t > 9 ? t : '0' + t}`;
   });
 
+  get passwordCheck(): PasswordCheck {
+    return checkIfPasswordsValid(this.facade.formGroup.get('password')?.value ?? '');
+  }
+
+  get confirmPasswordCheck(): PasswordCheck {
+    const confirmPassword = this.facade.formGroup.get('confirmPassword')?.value;
+    if (!confirmPassword) return checkIfPasswordsValid('');
+    return checkIfPasswordsValid(confirmPassword, this.facade.formGroup.get('password')?.value);
+  }
+
   ngOnInit(): void {
     const email = this.route.snapshot.queryParamMap.get('email');
     if (email) {
@@ -61,5 +72,9 @@ export class ConfirmEmailComponent implements OnInit {
 
   onVerifyCode(): void {
     this.facade.confirmEmail();
+  }
+
+  onCodeComplete(): void {
+    this.facade.confirmWhenComplete();
   }
 }

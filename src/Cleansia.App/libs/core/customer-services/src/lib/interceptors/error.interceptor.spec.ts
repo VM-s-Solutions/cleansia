@@ -7,10 +7,21 @@ import {
   HttpResponse,
   HttpStatusCode,
 } from '@angular/common/http';
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
+import {
+  ActivatedRouteSnapshot,
+  CanActivateFn,
+  Event as RouterEvent,
+  Navigation,
+  NavigationCancel,
+  NavigationCancellationCode,
+  NavigationEnd,
+  Router,
+} from '@angular/router';
 import { Observable, Subject, defer, of, throwError } from 'rxjs';
 import { CleansiaCustomerRoute } from '@cleansia/services';
+import { customerAuthGuard, customerGuestGuard } from '../guards';
 import { CustomerAuthService } from '../services';
 import {
   CUSTOMER_LOGIN_PATH,
@@ -34,13 +45,39 @@ function unauthorized(url: string): HttpErrorResponse {
   return new HttpErrorResponse({ status: HttpStatusCode.Unauthorized, url });
 }
 
+/** The page the reader is on: its URL and the guards on the chain of routes it matched. */
+interface Page {
+  url: string;
+  guards: CanActivateFn[];
+}
+
+const ORDER_PAGE: Page = { url: '/orders/01ORDER?tab=photos', guards: [customerAuthGuard] };
+const TRACK_PAGE: Page = { url: '/track-order?orderNumber=1&email=a%40b.cz&token=t', guards: [] };
+const LOGIN_PAGE: Page = { url: '/login?returnUrl=%2Forders%2FX', guards: [customerGuestGuard] };
+
+/** Root, then the matched route with the page's guards, then its child, as the router builds them. */
+function snapshotOf(page: Page): ActivatedRouteSnapshot {
+  const child = { routeConfig: { path: ':orderId' }, firstChild: null };
+  const matched = { routeConfig: { path: 'page', canActivate: page.guards }, firstChild: child };
+  return { routeConfig: null, firstChild: matched } as unknown as ActivatedRouteSnapshot;
+}
+
 describe('CustomerErrorInterceptorFn', () => {
   let isLoggedIn: jest.Mock<boolean, []>;
   let hasValidRefreshToken: jest.Mock<boolean, []>;
   let refreshSession: jest.Mock<Observable<boolean>, []>;
   let removeSession: jest.Mock<void, []>;
   let getCsrfToken: jest.Mock<string | null, []>;
-  let navigate: jest.Mock<Promise<boolean>, [unknown[]]>;
+  let navigate: jest.Mock<Promise<boolean>, [unknown[], unknown?]>;
+  let routerEvents: Subject<RouterEvent>;
+  let currentNavigation: ReturnType<typeof signal<Navigation | null>>;
+  let router: { navigate: typeof navigate; url: string; routerState: { snapshot: { root: ActivatedRouteSnapshot } } };
+
+  /** Puts the reader on `page`, as a finished navigation leaves the router. */
+  function onPage(page: Page): void {
+    router.url = page.url;
+    router.routerState.snapshot.root = snapshotOf(page);
+  }
 
   beforeEach(() => {
     isLoggedIn = jest.fn<boolean, []>(() => true);
@@ -48,7 +85,14 @@ describe('CustomerErrorInterceptorFn', () => {
     refreshSession = jest.fn<Observable<boolean>, []>(() => of(true));
     removeSession = jest.fn<void, []>();
     getCsrfToken = jest.fn<string | null, []>(() => 'csrf-123');
-    navigate = jest.fn<Promise<boolean>, [unknown[]]>(() => Promise.resolve(true));
+    navigate = jest.fn<Promise<boolean>, [unknown[], unknown?]>(() => Promise.resolve(true));
+    routerEvents = new Subject<RouterEvent>();
+    currentNavigation = signal<Navigation | null>(null);
+    router = {
+      navigate,
+      url: ORDER_PAGE.url,
+      routerState: { snapshot: { root: snapshotOf(ORDER_PAGE) } },
+    };
     TestBed.configureTestingModule({
       providers: [
         {
@@ -61,7 +105,10 @@ describe('CustomerErrorInterceptorFn', () => {
             getCsrfToken,
           },
         },
-        { provide: Router, useValue: { navigate } },
+        {
+          provide: Router,
+          useValue: Object.assign(router, { events: routerEvents.asObservable(), currentNavigation }),
+        },
       ],
     });
   });
@@ -103,10 +150,13 @@ describe('CustomerErrorInterceptorFn', () => {
     return { errors, responses };
   }
 
+  /** The default page needs an account, so a forced sign-out offers to bring the reader back to it. */
   function expectForcedLogout(): void {
     expect(removeSession).toHaveBeenCalledTimes(1);
     expect(navigate).toHaveBeenCalledTimes(1);
-    expect(navigate).toHaveBeenCalledWith(['/' + CleansiaCustomerRoute.LOGIN]);
+    expect(navigate).toHaveBeenCalledWith(['/' + CleansiaCustomerRoute.LOGIN], {
+      queryParams: { returnUrl: ORDER_PAGE.url },
+    });
   }
 
   describe('a 401 from the refresh route itself', () => {
@@ -293,6 +343,64 @@ describe('CustomerErrorInterceptorFn', () => {
 
       expect(forwarded).toHaveLength(2);
       expect(forwarded[1].headers.has('X-CSRF-Token')).toBe(false);
+    });
+  });
+
+  // An e-mail's button opens the page it names; a sign-in the server refuses must not lose that page
+  // for the reader who has to sign in to see it, nor send anyone to sign in from a page that needs none.
+  describe('where a refused sign-in leaves the reader', () => {
+    const refusedRefresh = (): void => {
+      refreshSession.mockReturnValue(
+        throwError(() => unauthorized(`${API_BASE}${CUSTOMER_REFRESH_TOKEN_PATH}`))
+      );
+      const url = `${API_BASE}${PROTECTED_PATH}`;
+      send(url, failOnceThenSucceed(url).next);
+    };
+
+    it('sends the reader of a page that needs an account to sign in, and back to that page after', () => {
+      refusedRefresh();
+
+      expectForcedLogout();
+    });
+
+    it.each([
+      ['a guest booking on the track page', TRACK_PAGE],
+      ['the login page, which keeps the page it was asked to return to', LOGIN_PAGE],
+    ])('leaves the reader on %s, signed out', (_page, page) => {
+      onPage(page);
+
+      refusedRefresh();
+
+      expect(removeSession).toHaveBeenCalledTimes(1);
+      expect(navigate).not.toHaveBeenCalled();
+    });
+
+    it('waits for a navigation under way, then sends the reader of the page it reached to sign in', () => {
+      onPage(TRACK_PAGE);
+      currentNavigation.set({} as Navigation);
+
+      refusedRefresh();
+      expect(navigate).not.toHaveBeenCalled();
+
+      onPage(ORDER_PAGE);
+      currentNavigation.set(null);
+      routerEvents.next(new NavigationEnd(1, ORDER_PAGE.url, ORDER_PAGE.url));
+
+      expectForcedLogout();
+    });
+
+    it('leaves a navigation the guard turned away to the guard, which keeps the page itself', () => {
+      onPage(TRACK_PAGE);
+      currentNavigation.set({} as Navigation);
+
+      refusedRefresh();
+      routerEvents.next(
+        new NavigationCancel(1, ORDER_PAGE.url, 'redirect', NavigationCancellationCode.Redirect)
+      );
+      routerEvents.next(new NavigationEnd(2, LOGIN_PAGE.url, LOGIN_PAGE.url));
+
+      expect(removeSession).toHaveBeenCalledTimes(1);
+      expect(navigate).not.toHaveBeenCalled();
     });
   });
 

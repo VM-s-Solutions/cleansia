@@ -16,6 +16,7 @@ const SOLUTION_DIR = findSolutionDir();
 const APP = join(SOLUTION_DIR, 'Cleansia.App/apps/cleansia-partner.app');
 const DEPLOY = join(SOLUTION_DIR, '../.github/workflows/deploy-azure.yml');
 const AASA = '/.well-known/apple-app-site-association';
+const AASA_FILE = 'apple-app-site-association.json';
 
 const read = (path: string): string => readFileSync(path, 'utf8');
 
@@ -33,7 +34,7 @@ function step(workflow: string, name: string): string {
  */
 describe('the partner host vouches for the partner iOS app', () => {
   it('names the partner app under webcredentials', () => {
-    expect(JSON.parse(read(join(APP, 'src/well-known/apple-app-site-association')))).toEqual({
+    expect(JSON.parse(read(join(APP, 'src/well-known', AASA_FILE)))).toEqual({
       webcredentials: { apps: ['ST9QYZHG63.cz.cleansia.partner'] },
     });
   });
@@ -44,11 +45,20 @@ describe('the partner host vouches for the partner iOS app', () => {
     expect(assets).toContainEqual({ glob: '**/*', input: 'apps/cleansia-partner.app/src/well-known', output: '/.well-known' });
   });
 
-  it('is answered as JSON by the Static Web App, since the file has no extension to type it by', () => {
-    const routes: { route: string; headers?: Record<string, string> }[] =
-      JSON.parse(read(join(APP, 'src/staticwebapp.config.json'))).routes ?? [];
+  // The Static Web App types a file by its extension: with a content-type route header on the bare
+  // name the deployed host still answered application/octet-stream. So the path is rewritten, with no
+  // redirect, to the file under the extension the JSON type is mapped to.
+  it('is answered as JSON by the Static Web App, through a rewrite to the file under a .json name', () => {
+    const config: {
+      routes?: { route: string; rewrite?: string; redirect?: string; statusCode?: number; headers?: Record<string, string> }[];
+      mimeTypes?: Record<string, string>;
+    } = JSON.parse(read(join(APP, 'src/staticwebapp.config.json')));
+    const route = (config.routes ?? []).find((r) => r.route === AASA);
 
-    expect(routes.find((r) => r.route === AASA)?.headers).toEqual({ 'content-type': 'application/json' });
+    expect(route).toEqual({ route: AASA, rewrite: `/.well-known/${AASA_FILE}` });
+    expect(config.mimeTypes?.['.json']).toBe('application/json');
+    expect(existsSync(join(APP, 'src/well-known', AASA_FILE))).toBe(true);
+    expect(existsSync(join(APP, 'src/well-known/apple-app-site-association'))).toBe(false);
   });
 
   it('reaches the deployed host, since the artifact upload drops dot-folders unless told to keep them', () => {

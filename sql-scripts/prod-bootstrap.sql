@@ -1,17 +1,17 @@
 -- ============================================================
 -- PRODUCTION REFERENCE DATA — the skeleton a freshly migrated database needs
 -- ============================================================
--- The operating company, the five languages, every country (Czechia serviced), the Czech service
--- cities, CZK, Czechia's market configuration and its operator, its invoice configuration and cleaner
--- document requirements, the e-mail template copy, the loyalty tiers and the Czech size ladder: the
--- rows no admin screen can create, and without which nobody can register or book.
+-- The operating company, the five languages, every country (Czechia serviced), the Czech service cities,
+-- the four service categories, CZK, Czechia's market configuration and its operator, its invoice
+-- configuration and cleaner document requirements, the e-mail template copy, the loyalty tiers and the
+-- Czech size ladder: the rows no admin screen can create, and without which nobody can register or book.
 --
 -- Deliberately absent, because the admin console types them in from the owner's launch values sheet
--- (decision 77): the catalogue and its CZK prices, cleaner pay rates, Cleansia Plus plans with their
--- live Stripe Price ids, the company record (CompanyInfo), promo codes and every user. The CZK loyalty
--- divisor and apology credit and the tier thresholds and discounts below are the documented defaults
--- (/product/business-rules); the sheet's figures replace them on the currency form and the loyalty
--- tier page.
+-- (decision 77): the services, packages and extras with their CZK prices, cleaner pay rates, Cleansia
+-- Plus plans with their live Stripe Price ids, the company record (CompanyInfo), promo codes and every
+-- user. The CZK loyalty divisor and apology credit and the tier thresholds and discounts below are the
+-- documented defaults (/product/business-rules); the sheet's figures replace them on the currency form
+-- and the loyalty tier page.
 --
 -- One transaction, and idempotent: a row that is already there is left as it is, so a second run
 -- changes nothing and keeps whatever the console has edited since.
@@ -484,6 +484,36 @@ WHERE NOT EXISTS (
   WHERE sc."CountryId" = (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1)
     AND LOWER(sc."Name") = LOWER(city.name)
 );
+
+-- 3d. SERVICE CATEGORIES
+-- No admin screen creates a category, and CreateService refuses a service whose category does not
+-- exist (service.category_not_found), so without these rows nobody can add a service. The slug is the
+-- client-facing identifier the apps map to an icon and a colour: keep it as it is once seeded, and
+-- rename Name freely in the admin console.
+--
+-- Idempotent on the unique Slug index: a category already there is left as the console last saved it.
+INSERT INTO public."ServiceCategories" (
+  "Id", "IsActive", "CreatedBy", "CreatedOn",
+  "UpdatedBy", "UpdatedOn", "DeactivatedBy",
+  "DeactivatedOn", "Slug", "Name", "Description", "DisplayOrder", "Translations"
+)
+VALUES
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+   'home', 'Home', 'Everyday home cleaning services', 10,
+   '{"en": {"Name": "Home", "Description": "Everyday home cleaning services"}, "cs": {"Name": "Domácnost", "Description": "Každodenní úklid domácnosti"}, "sk": {"Name": "Domácnosť", "Description": "Každodenné upratovanie domácnosti"}, "uk": {"Name": "Дім", "Description": "Щоденне прибирання будинку"}, "ru": {"Name": "Дом", "Description": "Ежедневная уборка дома"}}'),
+
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+   'deep', 'Deep clean', 'Thorough and specialized cleaning', 20,
+   '{"en": {"Name": "Deep clean", "Description": "Thorough and specialized cleaning"}, "cs": {"Name": "Hloubkový úklid", "Description": "Důkladné a specializované čištění"}, "sk": {"Name": "Hĺbkové čistenie", "Description": "Dôkladné a špecializované čistenie"}, "uk": {"Name": "Глибоке прибирання", "Description": "Ретельне та спеціалізоване прибирання"}, "ru": {"Name": "Глубокая уборка", "Description": "Тщательная и специализированная уборка"}}'),
+
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+   'laundry', 'Laundry', 'Washing, ironing, and linen care', 30,
+   '{"en": {"Name": "Laundry", "Description": "Washing, ironing, and linen care"}, "cs": {"Name": "Praní", "Description": "Praní, žehlení a péče o prádlo"}, "sk": {"Name": "Pranie", "Description": "Pranie, žehlenie a starostlivosť o bielizeň"}, "uk": {"Name": "Прання", "Description": "Прання, прасування та догляд за білизною"}, "ru": {"Name": "Стирка", "Description": "Стирка, глажка и уход за бельём"}}'),
+
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+   'pet', 'Pet', 'Services tailored for pet owners', 40,
+   '{"en": {"Name": "Pet", "Description": "Services tailored for pet owners"}, "cs": {"Name": "Mazlíčci", "Description": "Služby pro majitele domácích mazlíčků"}, "sk": {"Name": "Domáce zvieratá", "Description": "Služby pre majiteľov domácich miláčikov"}, "uk": {"Name": "Тварини", "Description": "Послуги для власників домашніх тварин"}, "ru": {"Name": "Питомцы", "Description": "Услуги для владельцев домашних животных"}}')
+ON CONFLICT ("Slug") DO NOTHING;
 
 -- 5. CURRENCIES
 -- CZK only (decision 76): the one currency the platform operates in, and the default.

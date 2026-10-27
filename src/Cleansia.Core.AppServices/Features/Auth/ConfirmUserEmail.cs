@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Core.AppServices.Tenancy;
@@ -60,6 +61,10 @@ public class ConfirmUserEmail
                 .MustAsync(ValidateUserTokenAsync)
                 .WithMessage(BusinessErrorMessage.InvalidConfirmationCode)
                 .WithErrorCode(nameof(Command.Code));
+
+            RuleFor(command => command.Password!)
+                .ValidatePassword(nameof(Command.Password))
+                .When(command => command.Password is not null);
         }
 
         // Every attempt that RESOLVES an account consumes one unit of that account's per-code budget
@@ -134,7 +139,8 @@ public class ConfirmUserEmail
     /// <param name="Email">The account the code was issued to. REQUIRED with a 6-digit code (the code
     /// only proves possession relative to a named account); ignored on the legacy-token branch, which
     /// keeps the old code-only wire shape so existing clients and in-flight emails stay valid.</param>
-    public record Command(string Code, string? Email = null) : ICommand<JwtTokenResponse>, IOperatorScopedRequest
+    /// <param name="Password">The password the confirmer chooses for the account.</param>
+    public record Command(string Code, string? Email = null, string? Password = null) : ICommand<JwtTokenResponse>, IOperatorScopedRequest
     {
         // The confirmation names no market: a refusal that resolved no account is stamped with the default
         // market's operator (ADR-0061 D3), and one on a known account is re-stamped by the failure sink
@@ -170,7 +176,7 @@ public class ConfirmUserEmail
                     new Error(nameof(Command.Email), BusinessErrorMessage.InsufficientPrivileges));
             }
 
-            user!.ConfirmEmail();
+            user!.ConfirmEmailWithChosenPassword(command.Password);
 
             auditContext.RecordEvidence(
                 "User",

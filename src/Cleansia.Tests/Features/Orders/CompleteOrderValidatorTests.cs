@@ -131,14 +131,37 @@ public class CompleteOrderValidatorTests
         Assert.True(result.IsValid);
     }
 
+    /// <summary>
+    /// Someone who is not on the crew is told that and nothing else: not whether the job is under way, has
+    /// its after photo or is paid. The order's rules used to run as a chain of their own beside the crew's,
+    /// so they reported on another cleaner's job alongside the refusal.
+    /// </summary>
+    [Theory]
+    [InlineData(OrderStatus.Confirmed, 1, PaymentType.Cash, PaymentStatus.Paid)]
+    [InlineData(OrderStatus.InProgress, 0, PaymentType.Cash, PaymentStatus.Paid)]
+    [InlineData(OrderStatus.InProgress, 1, PaymentType.Cash, PaymentStatus.Pending)]
+    [InlineData(OrderStatus.InProgress, 1, PaymentType.Card, PaymentStatus.Pending)]
+    public async Task A_Cleaner_Not_On_The_Crew_Is_Told_Only_That(
+        OrderStatus orderStatus, int afterPhotos, PaymentType paymentType, PaymentStatus paymentStatus)
+    {
+        ArrangeCompletableOrder(ContractStatus.Approved, paymentType, paymentStatus, orderStatus, afterPhotos);
+        _accessService.Setup(s => s.GetCallerEmployeeIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync("emp-not-on-the-crew");
+
+        var result = await _validator.ValidateAsync(new CompleteOrder.Command(OrderId));
+
+        Assert.Equal(BusinessErrorMessage.EmployeeNotAssignedToOrder, Assert.Single(result.Errors).ErrorMessage);
+    }
+
     private void ArrangeCompletableOrder(
         ContractStatus employeeStatus,
         PaymentType paymentType = PaymentType.Cash,
-        PaymentStatus paymentStatus = PaymentStatus.Paid)
+        PaymentStatus paymentStatus = PaymentStatus.Paid,
+        OrderStatus orderStatus = OrderStatus.InProgress,
+        int afterPhotos = 1)
     {
         // A completable order is payment-SETTLED by default (Paid): completion is now gated on payment,
         // so the "all rules pass" case must model a collected cash / confirmed card order.
-        var order = ValidatorTestHelpers.BuildOrder(OrderId, OrderStatus.InProgress, EmployeeId, paymentType, paymentStatus);
+        var order = ValidatorTestHelpers.BuildOrder(OrderId, orderStatus, EmployeeId, paymentType, paymentStatus);
         var employee = ValidatorTestHelpers.BuildEmployee(EmployeeId, employeeStatus, withAddress: true);
 
         _orderRepository.Setup(r => r.ExistsAsync(OrderId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
@@ -149,7 +172,7 @@ public class CompleteOrderValidatorTests
 
         _orderPhotoRepository
             .Setup(r => r.GetPhotoCountByOrderIdAndTypeAsync(OrderId, PhotoType.After, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(1);
+            .ReturnsAsync(afterPhotos);
 
         _accessService.Setup(s => s.GetCallerEmployeeIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(EmployeeId);
     }

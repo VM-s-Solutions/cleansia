@@ -19,7 +19,7 @@ object ReviewPromptGate {
     private const val COMPLETED = 5
 
     /**
-     * The newest completed, unreviewed order, or null.
+     * The newest completed, unreviewed booking of the account's own, or null.
      *
      * Newest rather than oldest deliberately: the prompt lands right after a clean finishes, and being
      * asked about the freshest one is what the customer expects. An older unreviewed order is not
@@ -31,6 +31,7 @@ object ReviewPromptGate {
     ): OrderListItemDto? = orders
         .filter { it.orderStatus?.value == COMPLETED }
         .filterNot { it.hasReview }
+        .filterNot { it.isGuestBooking }
         .filterNot { it.id in alreadyPrompted }
         .maxByOrNull { it.cleaningDateTime.orEmpty() }
 }

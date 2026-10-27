@@ -2,6 +2,7 @@ import {
   AssignedEmployeeDto,
   DirtinessLevel,
   OrderItem,
+  OrderStatus,
   TimelineEntryDto,
   TimelineSource,
   WorkContractAcceptanceDto,
@@ -37,6 +38,10 @@ export function dirtinessLevelLabelKey(level: DirtinessLevel | undefined): strin
 export interface CrewEntry {
   employee: AssignedEmployeeDto;
   acceptance: WorkContractAcceptanceDto | null;
+  /** When the seat's cleaner marked their part of a crew job done. */
+  markedDoneAt: Date | null;
+  /** A crew job in progress still waits for this seat's mark; a one-cleaner job completes without one. */
+  markPending: boolean;
 }
 
 /**
@@ -46,8 +51,12 @@ export interface CrewEntry {
  */
 export function buildCrewEntries(order: OrderItem | null): CrewEntry[] {
   const acceptances = order?.workContractAcceptances ?? [];
-  return (order?.assignedEmployees ?? []).map((employee) => ({
+  const seats = order?.assignedEmployees ?? [];
+  const crewJobUnderWay = order?.orderStatus?.value === OrderStatus.InProgress && seats.length >= 2;
+  return seats.map((employee) => ({
     employee,
     acceptance: acceptances.find((a) => !!a.orderEmployeeId && a.orderEmployeeId === employee.id) ?? null,
+    markedDoneAt: employee.completionConfirmedAt ?? null,
+    markPending: crewJobUnderWay && !employee.completionConfirmedAt,
   }));
 }

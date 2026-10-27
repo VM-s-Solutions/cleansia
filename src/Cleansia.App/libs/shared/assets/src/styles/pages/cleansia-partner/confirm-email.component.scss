@@ -55,6 +55,27 @@
     justify-content: center;
   }
 
+  &__password {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    row-gap: 0.5rem;
+    text-align: start;
+  }
+
+  &__password-validation {
+    padding: 0.5rem 1.5rem;
+    color: var(--cleansia-red);
+
+    li {
+      font-size: 0.8rem;
+    }
+
+    &--valid {
+      color: var(--cleansia-green);
+    }
+  }
+
   &__actions {
     display: flex;
     align-items: end;

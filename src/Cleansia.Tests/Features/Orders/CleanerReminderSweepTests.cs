@@ -18,9 +18,9 @@ namespace Cleansia.Tests.Features.Orders;
 /// The two per-job cleaner reminders.
 ///
 /// <para>The case that matters most is the two-seat one: an order's crew is
-/// <c>ceil(EstimatedTime / 120)</c>, so a 180-minute service — of which the seeded catalogue has
-/// several — carries two cleaners. A reminder stamp on the ORDER would remind the first and silently
-/// skip the second, which is why the stamps live on the assignment row.</para>
+/// <c>ceil(EstimatedTime / 120)</c>, so every booking over 120 minutes carries two cleaners. A reminder
+/// stamp on the ORDER would remind the first and silently skip the second, which is why the stamps live
+/// on the assignment row.</para>
 /// </summary>
 public class CleanerReminderSweepTests
 {

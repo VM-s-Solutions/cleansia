@@ -30,8 +30,8 @@ public class OrderDurationTests
     }
 
     /// <summary>
-    /// The sample catalogue's General Cleaning is exactly one cleaner's 120 minutes, so any level above
-    /// Normal makes it a two-cleaner job, and a two-cleaner job cannot pay cash.
+    /// A 120-minute service is exactly one cleaner's share, so any level above Normal makes it a
+    /// two-cleaner job, and a two-cleaner job cannot pay cash.
     /// </summary>
     [Theory]
     [InlineData(DirtinessLevel.Normal, 1, true)]

@@ -22,6 +22,7 @@ import cz.cleansia.customer.core.notifications.OrderEventBus
 import cz.cleansia.customer.core.orders.OrderDetailDto
 import cz.cleansia.customer.core.orders.ConfirmRecurringOrderResponse
 import cz.cleansia.customer.core.orders.OrderCurrencyDetailDto
+import cz.cleansia.customer.core.orders.OrderPhotosResponse
 import cz.cleansia.customer.core.orders.OrderRepository
 import cz.cleansia.customer.core.payments.CreatePaymentIntentResponse
 import cz.cleansia.customer.core.payments.PaymentRepository
@@ -152,6 +153,37 @@ class OrderDetailViewModelTest {
 
     private fun loadedOrder(vm: OrderDetailViewModel): OrderDetailDto =
         (vm.state.value as OrderDetailUiState.Loaded).order
+
+    /** The server refuses a guest booking's photos, so asking would open every guest detail on a refusal. */
+    @Test
+    fun `a guest booking's photos are never asked for`() = runTest {
+        coEvery { repository.getById(orderId) } returns ApiResult.Success(order(5).copy(isGuestBooking = true))
+
+        val vm = viewModel()
+        runCurrent()
+        vm.ensurePhotosLoaded()
+        runCurrent()
+
+        coVerify(exactly = 0) { repository.getPhotos(any()) }
+        assertEquals(PhotosUiState.Idle, vm.photos.value)
+        verify(exactly = 0) { snackbar.showError(any<ApiError>()) }
+        vm.viewModelScope.cancel()
+    }
+
+    @Test
+    fun `an account booking's photos are still fetched`() = runTest {
+        coEvery { repository.getById(orderId) } returns ApiResult.Success(order(5))
+        coEvery { repository.getPhotos(orderId) } returns ApiResult.Success(OrderPhotosResponse())
+
+        val vm = viewModel()
+        runCurrent()
+        vm.ensurePhotosLoaded()
+        runCurrent()
+
+        coVerify(exactly = 1) { repository.getPhotos(orderId) }
+        assertEquals(PhotosUiState.Loaded(OrderPhotosResponse()), vm.photos.value)
+        vm.viewModelScope.cancel()
+    }
 
     // ── poller arm / stop rule ──
 

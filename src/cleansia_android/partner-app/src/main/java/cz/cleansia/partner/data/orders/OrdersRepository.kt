@@ -9,6 +9,7 @@ import cz.cleansia.partner.api.model.DeclinePreferredOfferCommand
 import cz.cleansia.partner.api.model.DropOrderCommand
 import cz.cleansia.partner.api.model.GetOrderPhotosResponse
 import cz.cleansia.partner.api.model.MarkCashCollectedCommand
+import cz.cleansia.partner.api.model.MarkMyPartDoneCommand
 import cz.cleansia.partner.api.model.NotifyOnTheWayCommand
 import cz.cleansia.partner.api.model.OrderItem
 import cz.cleansia.partner.api.model.OrderStatus
@@ -106,6 +107,8 @@ interface OrdersRepository {
     /** The customer paid nothing at the door: the job completes and its price becomes the customer's debt. */
     suspend fun reportCashNotPaid(orderId: String): ApiResult<Unit>
     suspend fun notifyOnTheWay(orderId: String): ApiResult<Unit>
+    /** Marks the caller's own seat on a crew job done; marking again keeps the first mark. */
+    suspend fun markMyPartDone(orderId: String): ApiResult<Unit>
     suspend fun completeOrder(
         orderId: String,
         actualCompletionMinutes: Int?,
@@ -429,6 +432,10 @@ class OrdersRepositoryImpl @Inject constructor(
 
     override suspend fun notifyOnTheWay(orderId: String): ApiResult<Unit> = materialMutation(orderId) {
         safeApiCall(json) { orderApi.orderNotifyOnTheWay(NotifyOnTheWayCommand(orderId = orderId)) }.map { }
+    }
+
+    override suspend fun markMyPartDone(orderId: String): ApiResult<Unit> = materialMutation(orderId) {
+        safeApiCall(json) { orderApi.orderMarkMyPartDone(MarkMyPartDoneCommand(orderId = orderId)) }.map { }
     }
 
     override suspend fun completeOrder(

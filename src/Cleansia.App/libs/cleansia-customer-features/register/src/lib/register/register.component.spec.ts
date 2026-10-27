@@ -4,6 +4,7 @@ import { FormControl, FormGroup } from '@angular/forms';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { selectCustomerLoading } from '@cleansia/customer-stores';
+import { GOOGLE_CLIENT_ID } from '@cleansia/services';
 import { provideMockStore } from '@ngrx/store/testing';
 import { TranslateLoader, TranslateModule, TranslateService } from '@ngx-translate/core';
 import { of } from 'rxjs';
@@ -129,5 +130,86 @@ describe('RegisterComponent — what the referral dialog promises', () => {
 
     expect(helper).toBe('Enter the code here.');
     expect(status).toBe('Code accepted.');
+  });
+});
+
+type GoogleWindow = Window & { google?: unknown };
+
+/**
+ * Google draws its button in the language it is given, else in the browser's or the Google account's,
+ * which put a Czech button on an English page.
+ */
+describe('RegisterComponent — the Google button', () => {
+  let renderButton: jest.Mock;
+
+  beforeEach(() => {
+    renderButton = jest.fn((parent: HTMLElement) => parent.appendChild(document.createElement('iframe')));
+    (window as GoogleWindow).google = { accounts: { id: { initialize: jest.fn(), renderButton } } };
+  });
+
+  afterEach(() => {
+    delete (window as GoogleWindow).google;
+    document.head.querySelectorAll('script[src*="accounts.google.com"]').forEach((script) => script.remove());
+  });
+
+  function render(lang: string) {
+    const facade = {
+      formGroup: new FormGroup({
+        firstName: new FormControl(''),
+        lastName: new FormControl(''),
+        email: new FormControl(''),
+        password: new FormControl(''),
+        confirmPassword: new FormControl(''),
+        referralCode: new FormControl(''),
+        terms: new FormControl(false),
+      }),
+      referralCode: signal(''),
+      referralState: signal<ReferralUiState>({ kind: 'idle' }),
+      referralCreditAmount: signal<string | null>(null),
+      termsAccepted: signal(false),
+      applyReferralCodeFromUrl: jest.fn(),
+      validateReferralCodeNow: jest.fn(),
+      clearReferralCode: jest.fn(),
+      register: jest.fn(),
+      googleRegister: jest.fn(),
+      socialSignUpBlocked: jest.fn(),
+    };
+
+    TestBed.configureTestingModule({
+      imports: [RegisterComponent, TranslateModule.forRoot()],
+      providers: [
+        provideNoopAnimations(),
+        provideRouter([]),
+        provideMockStore({ selectors: [{ selector: selectCustomerLoading, value: false }] }),
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({}) } } },
+        { provide: GOOGLE_CLIENT_ID, useValue: 'gsi-client' },
+      ],
+    }).overrideComponent(RegisterComponent, {
+      set: { providers: [{ provide: RegisterFacade, useValue: facade }] },
+    });
+
+    const translate = TestBed.inject(TranslateService);
+    translate.use(lang);
+    const fixture = TestBed.createComponent(RegisterComponent);
+    fixture.detectChanges();
+    return { fixture, translate };
+  }
+
+  it('is drawn in the language of the page', () => {
+    render('sk');
+
+    expect(renderButton).toHaveBeenCalledTimes(1);
+    expect(renderButton).toHaveBeenCalledWith(expect.any(HTMLElement), expect.objectContaining({ locale: 'sk' }));
+  });
+
+  it('is drawn again, alone, when the page changes language', () => {
+    const { fixture, translate } = render('sk');
+
+    translate.use('uk');
+
+    expect(renderButton).toHaveBeenCalledTimes(2);
+    expect(renderButton).toHaveBeenLastCalledWith(expect.any(HTMLElement), expect.objectContaining({ locale: 'uk' }));
+    const container = (fixture.nativeElement as HTMLElement).querySelector('.cl-auth__google');
+    expect(container?.querySelectorAll('iframe')).toHaveLength(1);
   });
 });

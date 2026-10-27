@@ -93,6 +93,7 @@
     <string name="confirm_email">Подтвердить электронную почту</string>
     <string name="verify_email">Подтвердите вашу электронную почту</string>
     <string name="verify_email_subtitle">Мы отправили код подтверждения на вашу электронную почту. Введите его ниже.</string>
+    <string name="confirm_email_password_prompt">Выберите пароль, с которым вы будете входить после подтверждения электронной почты.</string>
     <string name="confirm_email_subtitle">Введите код подтверждения, отправленный на вашу электронную почту</string>
     <string name="confirmation_code">Код подтверждения</string>
     <string name="verification_code">Код верификации</string>
@@ -342,6 +343,7 @@
     <string name="access_label">Доступ</string>
     <string name="special_label">Особые инструкции</string>
     <string name="order_completed_toast">Заказ отмечен как выполненный</string>
+    <string name="order_my_part_done_toast">Ваша часть отмечена выполненной</string>
     <string name="before">До</string>
     <string name="after">После</string>
     <string name="notes_and_issues">Заметки и проблемы</string>
@@ -921,7 +923,11 @@
     <string name="slide_to_start">Проведите, чтобы начать уборку</string>
     <string name="starting_order">Начинаю уборку…</string>
     <string name="slide_to_complete">Проведите, чтобы завершить</string>
+    <string name="order_complete_job">Завершить заказ</string>
     <string name="completing_order">Завершаю…</string>
+    <string name="slide_to_mark_my_part_done">Моя часть готова</string>
+    <string name="marking_my_part_done">Отмечаю…</string>
+    <string name="order_my_part_done_waiting">Вы отметили свою часть выполненной. Как только это сделают все на этом заказе, любой из вас сможет его завершить.</string>
     <string name="order_mark_cash_collected">Отметить наличные как полученные</string>
     <string name="partner_order_mark_cash_collected_confirm_title">Отметить наличные как полученные?</string>
     <string name="partner_order_mark_cash_collected_confirm_message">Подтвердите, что вы получили от клиента %1$s наличными. Это действие нельзя отменить.</string>
@@ -1155,6 +1161,7 @@
     <string name="error_order_completion_notes_required">Заметки о завершении обязательны.</string>
     <string name="error_order_completion_notes_too_long">Заметки о завершении слишком длинные.</string>
     <string name="error_order_after_photos_required">Перед завершением заказа сделайте хотя бы одно фото «после».</string>
+    <string name="error_order_crew_not_done">Прежде чем завершить заказ, каждый, кто на нём работает, должен отметить свою часть выполненной.</string>
     <string name="error_order_photo_window_closed">Это фото сейчас нельзя добавить: фото до уборки — с момента, когда вы взяли заказ, до его завершения, фото после — во время работы.</string>
     <string name="error_order_photo_locked">После завершения или отмены заказа фото удалить нельзя.</string>
     <string name="error_order_cash_not_collected">Прежде чем завершить заказ, получите наличные и отметьте их как принятые.</string>
@@ -1265,6 +1272,8 @@
     <string name="notification_order_in_progress_body">Заказ №%1$s выполняется. Нажмите, чтобы следить за ним.</string>
     <string name="notification_order_completed_title">Заказ завершён</string>
     <string name="notification_order_completed_body">Заказ №%1$s завершён. Нажмите, чтобы посмотреть сводку.</string>
+    <string name="notification_order_crew_mate_done_title">Кто-то на вашем заказе закончил</string>
+    <string name="notification_order_crew_mate_done_body">Когда все на заказе #%1$s отметят свою часть как выполненную, любой из вас сможет его завершить.</string>
     <string name="notification_order_cancelled_title">Заказ отменён</string>
     <string name="notification_order_cancelled_body">Заказ №%1$s отменён. Нажмите, чтобы посмотреть детали.</string>
     <string name="notification_dispute_reply_title">Поддержка ответила</string>

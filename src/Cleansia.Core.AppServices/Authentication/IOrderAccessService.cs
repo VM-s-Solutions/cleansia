@@ -40,4 +40,27 @@ public interface IOrderAccessService
 
     /// <summary>The validators' existence check over <see cref="OrdersForCaller"/>.</summary>
     Task<bool> OrderExistsForCallerAsync(string orderId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The e-mail under which a signed-in Customer's My orders also lists bookings made without an account:
+    /// the session's, which only a confirmed address is ever issued. Null for any other caller, staff signed
+    /// in to a customer host included, who lists none.
+    /// </summary>
+    string? ListedGuestEmailForCaller();
+
+    /// <summary>
+    /// <see cref="OrdersForCaller"/>, and for a signed-in Customer the bookings their My orders lists under
+    /// <see cref="ListedGuestEmailForCaller"/>. Only the reads and the cancel a listed booking is opened for
+    /// use it; every other action keeps the owner pin.
+    /// </summary>
+    IQueryable<Order> OrdersListedForCaller();
+
+    /// <summary>The detail graph of one order out of <see cref="OrdersListedForCaller"/>, or null.</summary>
+    Task<Order?> LoadListedOrderForCallerAsync(string orderId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Whether a loaded order is a booking made without an account that the caller reaches only because it
+    /// carries their session's e-mail: listed, never owned.
+    /// </summary>
+    bool IsListedGuestBooking(Order order);
 }

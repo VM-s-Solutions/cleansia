@@ -245,6 +245,14 @@ order with no registered `UserId`. The legitimate guest receives the credential;
 order id alone is insufficient. Those checks are load-bearing, and the guest lookup is why — see
 [When the gate is a secret the wrong people hold](#gate-secret-wrong-people).
 
+**Listed guest access is a separate, narrow permission** (owner ruling 2026-10-26,
+[ADR-0061 amendment](/decisions/adr-0061#listed-guest-bookings)). A confirmed Customer session may
+list/count, open redacted and cancel a booking with `UserId == null` whose `CustomerEmail` matches
+its session e-mail. The SQL comparison uses `citext` equality, across markets and before or after
+account creation. `OrdersListedForCaller` grants this set; `OrdersForCaller` remains the ownership
+set for other features. Listing does not attach the booking or change its operator or consents.
+Cancellation still records its ordinary effects, under guest terms; it grants no account-only benefit.
+
 ## S4 — DTO leak prevention
 
 **Never return an entity from a handler — always map to a DTO.** Even if every field is safe today,
@@ -266,6 +274,14 @@ on "is the caller assigned". Reference: `OrderPiiRedaction.cs` for the two shape
 `GetOrderDetails.cs:57`/`:136-138` for the predicate and its application. Enforced by the
 `OrderRedactionSurfaceTests` row of the S12 table (**`T1-CI`**), which is where the diagnostic that
 finds this class lives.
+
+**The listed-guest shape** starts from browsing redaction and restores only the name, e-mail,
+address and cancellation window; the list also restores coordinates. Phone, household/crew free text,
+door details, photos, receipt, review, preferred-offer, contract acceptances and crew completion
+timestamps remain withheld. The crew is shown by given name without phone. `IsGuestBooking = true`
+identifies this access; it stays null for other audiences. Source:
+`src/Cleansia.Core.AppServices/Features/Orders/OrderPiiRedaction.cs:33` and `:50`.
+→ [Guest bookings in My orders](/product/business-rules#listed-guest-bookings)
 
 ### When the gate is a secret the wrong people hold {#gate-secret-wrong-people}
 
@@ -304,6 +320,22 @@ audience reads, the gate is decorative — and the audience that holds it is usu
 motive.
 → [Guest order lookup](/flows/booking-and-pricing#guest-order-lookup),
 [the guest access token](/flows/booking-and-pricing#guest-access-token)
+
+### The mailbox confirmer chooses the password {#confirmation-password}
+
+A registration's password is not proof of mailbox ownership. On both customer and both partner
+hosts, `ConfirmUserEmail` sets the password supplied by the person proving the confirmation code,
+then confirms and issues the first session. Both OTP and legacy-token paths use this same handler.
+Updated web and native clients keep the just-registered password in memory only; a later visit
+asks for a new choice with the existing password rules. It never enters a URL or persistent storage.
+
+A legacy request with no password remains accepted, but **withdraws the stored password hash**;
+the mailbox holder uses Forgot password once to set one. This also closes the single-registration
+pre-hijack path without trusting a password a stranger may have registered.
+`src/Cleansia.Core.AppServices/Features/Auth/ConfirmUserEmail.cs:65` validates a supplied password;
+`:179` calls `src/Cleansia.Core.Domain/Users/User.cs:394`, which replaces it before confirmation.
+Re-registration's earlier password-withdrawal rule remains.
+→ [Auth and identity](/flows/auth-and-identity#confirmation-password)
 
 ## S5 — Rate limiting on auth + side-effecting endpoints
 
@@ -590,6 +622,16 @@ preconditions exclude), `BulkRevokeIgnoringConcurrencyAsync` (`RefreshTokens`), 
 conditional `UPDATE` (needs a booking, refused upstream). A reviewer re-derives the list with
 `grep -rn "ExecuteUpdateAsync\|ExecuteDeleteAsync\|ExecuteSqlRawAsync\|ON CONFLICT" src/Cleansia.Infra.Database src/Cleansia.Core.AppServices`.
 → [Company archive](/domain/roles/company-archive), [Cross-cutting concerns](/flows/cross-cutting#tenancy)
+
+**The listed-guest read pin** adds `UserId == null && CustomerEmail == sessionEmail` beside the
+account-owner arm on customer list/count/detail/cancel reads. It is evaluated past the tenant
+filter, using the confirmed session's identity, never an e-mail supplied in the order-id request.
+`src/Cleansia.Infra.Database/Repositories/OrderRepository.cs:119` holds the shared predicate.
+Cancellation adopts the booking's operator for its writes; listing itself changes no booking
+identity. It does not widen receipt, photo, review, dispute, no-show, payment, preferred-cleaner,
+Live Activity or push access. Mailbox reassignment and older confirmed sessions remain a reported
+identity residual; no owner acceptance of that residual is implied.
+→ [ADR-0061 amendment](/decisions/adr-0061#listed-guest-bookings)
 
 ### The one question that decides every bypass (ADR-0051)
 

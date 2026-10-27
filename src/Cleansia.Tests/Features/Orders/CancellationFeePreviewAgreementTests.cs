@@ -89,7 +89,13 @@ public class CancellationFeePreviewAgreementTests
                 Mock.Of<IPendingDispatch>(),
                 new AuditContext(),
                 TimeProvider.System,
-                NullLogger<CustomerOrderCancellation>.Instance));
+                NullLogger<CustomerOrderCancellation>.Instance),
+            NoShowCancellationDoubles.Inert(),
+            new GuestOrderAccessTokenIssuer(Mock.Of<IGuestOrderAccessTokenRepository>(tokens =>
+                tokens.GetLiveForOrderIgnoringTenantAsync(
+                    It.IsAny<string>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>())
+                == Task.FromResult<IReadOnlyList<GuestOrderAccessToken>>(Array.Empty<GuestOrderAccessToken>()))),
+            Mock.Of<IPendingDispatch>());
 
     private GetCancellationFeePreview.Handler CreatePreviewHandler() =>
         new(
@@ -106,7 +112,8 @@ public class CancellationFeePreviewAgreementTests
         int bookedMinutesAgo = 120,
         PaymentType paymentType = PaymentType.Card,
         PaymentStatus paymentStatus = PaymentStatus.Paid,
-        CancellationTerms? terms = null)
+        CancellationTerms? terms = null,
+        string? userId = UserId)
     {
         var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         var order = Order.Create(
@@ -121,7 +128,7 @@ public class CancellationFeePreviewAgreementTests
             totalPrice: totalPrice,
             currencyId: currency.Id,
             paymentStatus: paymentStatus,
-            userId: UserId,
+            userId: userId,
             cancellationTerms: terms ?? BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.Created("tester", DateTime.UtcNow.AddMinutes(-bookedMinutesAgo));
@@ -145,6 +152,21 @@ public class CancellationFeePreviewAgreementTests
         }
 
         _orderRepository.Setup(r => r.GetQueryable()).Returns(new[] { order }.AsQueryable().BuildMock());
+        return order;
+    }
+
+    /// <summary>
+    /// The booking was made without an account under the e-mail of the signed-in customer, whose My orders lists
+    /// it (owner ruling 2026-10-26, "I select option B"): it is quoted and cancelled from the account.
+    /// </summary>
+    private Order ArrangeListedGuestBooking(double cleaningInHours, int bookedMinutesAgo = 120)
+    {
+        _session.Setup(s => s.GetUserEmail()).Returns("c@x.test");
+        _session.Setup(s => s.GetTypedUserClaim(System.Security.Claims.ClaimTypes.Role))
+            .Returns(new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, UserProfile.Customer.ToString()));
+        var order = ArrangeOrder(cleaningInHours, assignCleaner: true, bookedMinutesAgo: bookedMinutesAgo, userId: null);
+        _orderRepository.Setup(r => r.GetQueryableListedForCustomer(UserId, "c@x.test"))
+            .Returns(new[] { order }.AsQueryable().BuildMock());
         return order;
     }
 
@@ -390,6 +412,30 @@ public class CancellationFeePreviewAgreementTests
 
         await AssertQuoteMatchesChargeAsync(
             CancellationFeeTier.Partial, 0.30m, 700m, 300m, BookingPolicy.OopsWindowMinutesPlus);
+    }
+
+    [Fact]
+    public async Task A_Plus_Member_Quoted_A_Listed_Guest_Booking_Six_Hours_Out_Is_Charged_Its_Guest_Terms_Not_The_Plus_Window()
+    {
+        // The member's own booking would be free here (Plus_Member_Six_Hours_Out_Quotes_Free_And_Charges_Free);
+        // a booking with no account is outside Cleansia Plus, so the standard 24 h window makes it 25 %.
+        GivenPlusMembership();
+        ArrangeListedGuestBooking(cleaningInHours: 6);
+
+        await AssertQuoteMatchesChargeAsync(CancellationFeeTier.Partial, 0.25m, 750m, 250m);
+    }
+
+    [Fact]
+    public async Task A_Listed_Guest_Booking_That_Is_Its_Emails_First_Is_Quoted_And_Charged_The_Sixty_Minute_Window()
+    {
+        ArrangeListedGuestBooking(cleaningInHours: 3, bookedMinutesAgo: 30);
+        _orderRepository
+            .Setup(r => r.IsFirstBookingIgnoringTenantAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        await AssertQuoteMatchesChargeAsync(
+            CancellationFeeTier.FreeOopsWindow, expectedRate: 0m, expectedRefund: 1000m, expectedFee: 0m,
+            expectedOopsMinutes: BookingPolicy.OopsWindowMinutesFirstBooking);
     }
 
     // ── Rounding ──

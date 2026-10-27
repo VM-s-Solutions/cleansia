@@ -845,7 +845,11 @@
         "photo_hint": "Under Order Photos"
       },
       "entrance_photos": "Entrance photos",
-      "entrance": "Entrance"
+      "entrance": "Entrance",
+      "completion": {
+        "label": "Marked done",
+        "pending": "Not yet"
+      }
     },
     "invoice_management": {
       "title": "Invoice Management",

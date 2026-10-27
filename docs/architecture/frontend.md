@@ -2,6 +2,26 @@
 
 The Cleansia frontend is an **Nx monorepo** containing three Angular 20.3 applications and a set of shared libraries. All apps share a common design system, API client layer, and state management infrastructure. The package manifest and lockfile in `src/Cleansia.App/` are the version source of truth.
 
+## E-mail navigation, translations and static assets {#email-navigation}
+
+An account-order e-mail opens its guarded order URL. If the customer session cannot be refreshed,
+the interceptor waits for navigation to settle and sends an account-guarded page to login with
+that full local URL as `returnUrl`; login returns there after password, Google or Apple sign-in.
+Public guest tracking, checkout and reset pages stay where they are, so their token/code query
+strings do not enter a login redirect. The existing local-path validation remains.
+
+Translation HTTP requests use `cache: 'no-cache'` so a reused locale URL revalidates. Customer SSR
+static files whose names carry the build hash are `public, max-age=31536000, immutable`; other
+static files are `no-cache`, retaining ETag/conditional responses. This policy is for static assets,
+not authenticated HTML. Google sign-in/register buttons pass the active page language as their
+locale.
+
+Source: `src/Cleansia.App/libs/core/customer-services/src/lib/interceptors/error.interceptor.ts:102`,
+`src/Cleansia.App/libs/core/services/src/lib/services/translation-loader.service.ts:60`,
+`src/Cleansia.App/apps/cleansia.app/src/app/ssr/static-cache-control.ts:8` and
+`src/Cleansia.App/apps/cleansia.app/server.ts:85`.
+→ [Customer guards](/customer-app/authentication#customerauthguard)
+
 ## Tech Stack
 
 | Technology | Version | Purpose |

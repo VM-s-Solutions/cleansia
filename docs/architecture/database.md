@@ -490,10 +490,12 @@ is ordinary work for whoever changes the model, proven by the integration suite 
 2026-10-13 approval schedules this wave's one reset with its final fresh deployment, after every PR
 has merged green; it does not run during branch work.
 
-Today that file is **`20261013160545_Initial`**, regenerated on 2026-10-13 for the nonunique
-`Devices(DeviceId, DeviceToken)` index used by the shared-install withdrawal read. That index is the
-only DDL change from `20261012190449`; the preceding regeneration added `Orders.PaymentStatus`
-as the second order concurrency token beside `CurrentStatus` ([ADR-0071](/decisions/adr-0071)).
+Today that file is **`20261027013728_Initial`**, regenerated on 2026-10-27 with
+`Orders.CustomerCancellationReason` (nullable, 500 characters) and
+`OrderEmployees.CompletionConfirmedAt` (nullable timestamptz). It retains the shared-install
+`Devices(DeviceId, DeviceToken)` index from the 2026-10-13 regeneration and the two order
+concurrency tokens, `CurrentStatus` and `PaymentStatus` ([ADR-0071](/decisions/adr-0071)).
+The one DEV wipe/re-seed belongs to this migration at the phase-2 deploy after merge; it has not run.
 **89 tables**, 53 of them stamped with a `Tenants` foreign key
 (`TenantId` NOT NULL on 51; `OutboxMessages` and `DeadLetters` nullable). The chain of regenerations before
 it — the per-currency schema of 2026-09-12, the customer audit and legal documents, the tenant FK, the

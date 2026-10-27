@@ -607,6 +607,17 @@ it can be changed or cleared on an edit, and on the web a refusal on create offe
 > schema**, so moving the sweep to another scheduler or fanning it out would have reintroduced duplicate
 > billing silently. The lease still holds; it is no longer the only thing holding.
 
+## Guest bookings listed in My orders {#listed-guest-bookings}
+
+The confirmed Customer session lists its own bookings plus null-`UserId` bookings made with its
+e-mail. The shared SQL predicate uses `citext` equality across markets, without an account-age
+cutoff. The web and both mobile apps label these guest bookings and open the redacted detail with
+guest-term cancellation. They do not acquire account ownership, consent, rewards or the other
+account actions. The signed-in cancel branch sends the guest cancellation e-mail to the persisted
+booking address and records its ordinary effects without attaching the account.
+→ [Business rules](/product/business-rules#listed-guest-bookings),
+[ADR-0061 amendment](/decisions/adr-0061#listed-guest-bookings)
+
 ## Guest order lookup {#guest-order-lookup}
 
 **A guest proves a booking with one per-order access token, and it arrives only by e-mail.** The
@@ -743,7 +754,8 @@ two lines the guest's own cancel does not need:
 The texts are in the e-mail's own defaults, in all five languages.
 
 **An account's booking gets the same e-mail in two cases** (since the fix plan of 2026-10-25): when the
-no-cleaner body cancels it — the unfilled sweep, or an administrator's no-show confirmation — and when
+no-cleaner body cancels it — the unfilled sweep, an administrator's no-show confirmation, or the
+account owner's own unstaffed cancel from its start — and when
 an administrator cancels it. `GuestCancellationEmail.EnqueueAsync(…, alsoToAccount: true)` stages it on
 the same key, `email:guest-order-cancelled:{orderId}`; the consumer sends it to the booking's address in
 the booking's language, else the account's, with the order page's link, and revokes and mints no guest

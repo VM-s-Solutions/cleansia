@@ -39,6 +39,7 @@ public sealed class LegalDocumentSeederTests : IDisposable
         (LegalDocumentType.TermsOfService, new DateOnly(2026, 10, 5)),
         (LegalDocumentType.TermsOfService, new DateOnly(2026, 10, 6)),
         (LegalDocumentType.TermsOfService, new DateOnly(2026, 10, 7)),
+        (LegalDocumentType.TermsOfService, new DateOnly(2026, 10, 28)),
         (LegalDocumentType.PrivacyPolicy, new DateOnly(2026, 9, 14)),
         (LegalDocumentType.PrivacyPolicy, new DateOnly(2026, 9, 29)),
         (LegalDocumentType.PrivacyPolicy, new DateOnly(2026, 10, 3)),
@@ -678,6 +679,27 @@ public sealed class LegalDocumentSeederTests : IDisposable
         string language, int section, string phrase)
     {
         Assert.Contains(phrase, SectionOf(LegalDocumentType.TermsOfService, language, section));
+    }
+
+    /// <summary>
+    /// Owner ruling 2026-10-26 ("I select option B", and "Fix the findings as well"): the newest terms say, in
+    /// section 2 beside the guest's own rules, that bookings made as a guest appear in an account created and
+    /// confirmed with the same e-mail address, where they can be followed and cancelled, and stay guest bookings.
+    /// None of the 2026-10-07 terms says so.
+    /// </summary>
+    [Theory]
+    [InlineData("en", "If you later create an account with the same e-mail address and confirm it, the bookings you made as a guest with that address also appear in your account, where you can follow and cancel them; they remain guest bookings.")]
+    [InlineData("cs", "Pokud si později založíte účet se stejnou e-mailovou adresou a potvrdíte ji, uvidíte objednávky, které jste s touto adresou vytvořili jako host, i ve svém účtu a můžete je tam sledovat a zrušit; zůstávají objednávkami hosta.")]
+    [InlineData("sk", "Ak si neskôr založíte účet s rovnakou e-mailovou adresou a potvrdíte ju, objednávky, ktoré ste s touto adresou vytvorili ako hosť, uvidíte aj vo svojom účte a môžete ich tam sledovať a zrušiť; zostávajú objednávkami hosťa.")]
+    [InlineData("uk", "Якщо згодом ви створите обліковий запис із тією самою адресою електронної пошти й підтвердите її, замовлення, які ви зробили як гість із цією адресою, з’являться й у вашому обліковому записі, де ви зможете їх відстежувати та скасовувати; вони залишаються замовленнями гостя.")]
+    [InlineData("ru", "Если позже вы создадите учётную запись с тем же адресом электронной почты и подтвердите его, заказы, которые вы сделали как гость с этим адресом, появятся и в вашей учётной записи, где вы сможете их отслеживать и отменять; они остаются заказами гостя.")]
+    public void The_Newest_Terms_Say_That_Guest_Bookings_Appear_In_An_Account_With_Their_Email(string language, string sentence)
+    {
+        Assert.Contains(sentence, SectionOf(LegalDocumentType.TermsOfService, language, 2));
+        Assert.DoesNotContain(sentence, string.Join("\n\n", BlocksOf(LegalSeedResource.ReadAll()
+            .Single(r => r.Type == LegalDocumentType.TermsOfService
+                && r.EffectiveFrom == new DateOnly(2026, 10, 7)
+                && r.Language == language).ContentMarkdown, 2)));
     }
 
     /// <summary>

@@ -41,6 +41,7 @@ public class OrderEmployeeEntityConfiguration : BaseEntityConfiguration<OrderEmp
         // Unindexed on the same argument. Every reader is already narrowed by the order's status and
         // date before it looks at a seat, and cover requests are a vanishing fraction of assignments.
         builder.Property(oe => oe.CoverRequestedAt).IsRequired(false);
+        builder.Property(oe => oe.CompletionConfirmedAt).IsRequired(false);
 
         builder.Property(oe => oe.JobBasePay).IsRequired(false).HasPrecision(18, 2);
         builder.Property(oe => oe.JobExtrasPay).IsRequired(false).HasPrecision(18, 2);

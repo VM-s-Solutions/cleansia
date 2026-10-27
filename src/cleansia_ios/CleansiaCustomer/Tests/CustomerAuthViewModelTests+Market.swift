@@ -159,7 +159,7 @@ extension CustomerAuthViewModelTests {
 
     func testConfirmEmailAuthenticatedEmitsSignedIn() async {
         confirmation.confirmResult = .success(.authenticated)
-        let vm = makeViewModel(pendingEmail: "a@b.cz")
+        let vm = makeViewModel(pendingEmail: "a@b.cz", pendingPassword: "abcdefg1")
         let received = collectOutcome(vm)
         vm.setVerifyCodeForTest("123456")
 
@@ -170,7 +170,7 @@ extension CustomerAuthViewModelTests {
 
     func testConfirmEmailUnverifiedShowsErrorAndEmitsNothing() async {
         confirmation.confirmResult = .success(.unverifiedEmail(email: "a@b.cz", hasToken: false))
-        let vm = makeViewModel(pendingEmail: "a@b.cz")
+        let vm = makeViewModel(pendingEmail: "a@b.cz", pendingPassword: "abcdefg1")
         let received = collectOutcome(vm)
         vm.setVerifyCodeForTest("123456")
 

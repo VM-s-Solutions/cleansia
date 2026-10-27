@@ -43,8 +43,8 @@ public class OrderStatusEmailLanguageTests
             .Setup(s => s.SendOrderStatusUpdateEmailAsync(
                 It.IsAny<string>(), It.IsAny<Order>(), It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<CancellationToken>(), It.IsAny<decimal?>(), It.IsAny<string?>(), It.IsAny<decimal?>()))
-            .Callback<string, Order, string, string, CancellationToken, decimal?, string?, decimal?>(
-                (_, _, _, language, _, _, _, _) => _emailLanguage = language)
+            .Callback<string, Order, string, string, CancellationToken, decimal?, string?, decimal?, bool>(
+                (_, _, _, language, _, _, _, _, _) => _emailLanguage = language)
             .ReturnsAsync("message-id");
     }
 

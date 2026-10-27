@@ -165,17 +165,24 @@ describe('CheckoutSuccessComponent', () => {
     });
   });
 
+  // The button names the page it opens: the loaded dictionary holds only the two titles, so a key
+  // renders as itself.
   describe('orders link', () => {
-    it('sends a signed-in customer to their own order list', async () => {
+    const cta = (): string =>
+      ((fixture.nativeElement as HTMLElement).querySelector('.cl-out__cta')?.textContent ?? '').trim();
+
+    it('sends a signed-in customer to their own order list, saying so', async () => {
       await render({ loggedIn: true });
 
       expect(fixture.componentInstance.ordersRoute).toBe('/orders');
+      expect(cta()).toBe('pages.checkout.success.view_orders');
     });
 
-    it('sends a guest to the public order tracker instead', async () => {
+    it('sends a guest to the public order tracker instead, named as the tracker', async () => {
       await render({ loggedIn: false });
 
       expect(fixture.componentInstance.ordersRoute).toBe('/track-order');
+      expect(cta()).toBe('nav.track_order');
     });
   });
 

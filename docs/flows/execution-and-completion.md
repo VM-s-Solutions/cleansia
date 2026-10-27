@@ -22,7 +22,7 @@ sequenceDiagram
   alt cash taken at the door
     C->>API: cash collected
     API->>O: Paid, amount due stamped (no receipt yet)
-    C->>API: complete
+    C->>API: complete (crew: after every seat marked done)
     API->>O: Completed
     O-->>N: push (+ receipt — for cash, the first one)
   else the customer paid nothing
@@ -30,7 +30,7 @@ sequenceDiagram
     API->>O: Completed, payment still Pending, price owed
     O-->>N: push + e-mail: the amount owed, pay it on the order page
   else card
-    C->>API: complete
+    C->>API: complete (crew: after every seat marked done)
     API->>O: Completed
     O-->>N: push (+ receipt)
   end
@@ -41,8 +41,9 @@ sequenceDiagram
 `StartOrder`, `CompleteOrder` and `NotifyOnTheWay` each gate on the caller being **assigned to this
 order**, not merely on being a cleaner. A non-participant cannot advance somebody else's job.
 
-The customer-facing cancel is the mirror image: it is customer-only and checks `order.UserId` against
-the caller in the handler.
+The customer-facing cancel is customer-only: it checks account ownership or the narrow confirmed-email
+listed-guest predicate in the handler. Other account actions keep the ownership gate.
+→ [Guest bookings in My orders](/product/business-rules#listed-guest-bookings)
 
 ## And not without the contract for work {#the-contract-gate}
 
@@ -92,6 +93,27 @@ out on another job, because asking someone mid-clean whether they have set off i
 order, under that company's override and commit. It never cancels or refunds: a missing tap is not
 proof of absence, so an administrator confirms the no-show.
 → [Business rules — when the cleaner no-shows](/product/business-rules#when-the-cleaner-cancels-or-no-shows)
+
+## Each cleaner marks done before the crew completes {#crew-completion}
+
+On a job with two or more actual assignees, `MarkMyPartDone` stamps the caller's seat, idempotently,
+while the job is `InProgress`, and pushes `order.crew_mate_done` to the other eligible assignees.
+When every seat is marked, any cleaner can use shared **Complete job**, with the existing after-photo,
+payment and manual cleaner checks. A premature Complete returns `order.crew_not_done`.
+A single assigned cleaner keeps ordinary Complete, including when a booked crew is short.
+
+If nobody completes it, the job is eligible **120 minutes after the last stamp** and is checked
+on the existing fifteen-minute cleanup tick. An absent stamp, after photo or settled payment keeps
+it in progress; the wait itself is not counted as work. Mark, manual Complete and automatic close
+read under the same order-row lock. The common `CompleteOrder.FinishAsync` completes the status,
+stages the receipt/e-mail and applicable customer effects, and requests each seat's pay once.
+
+Partner web and admin show the seat times. Mobile slides say **I'm done** and **Complete job**,
+with **Slide to complete** for solo. The web crew list-row Complete opens the detail rather than
+skipping the marks. A last-fetched-state limit remains: web reload/reopen, Android pull-to-refresh
+or freshness reload, and iOS reopen/action reload reveal another cleaner's mark; a foreground push
+alone does not refresh an already-open detail. A done cleaner still blocks overlapping work.
+→ [ADR-0077](/decisions/adr-0077), [Business rules](/product/business-rules#crew-completion)
 
 ## When the customer does not pay at the door {#cash-not-paid}
 

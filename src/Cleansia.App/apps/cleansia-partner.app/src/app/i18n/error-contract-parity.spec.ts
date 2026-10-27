@@ -482,6 +482,8 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   'order.payment_not_outstanding',
   'order.cash_not_collected',
   'order.completion_notes.too_long',
+  // Complete on a crew job before every cleaner on it has marked their part done (MarkMyPartDone).
+  'order.crew_not_done',
   'order.employee_already_assigned',
   'order.employee_already_has_order_in_progress',
   'order.employee_not_assigned',

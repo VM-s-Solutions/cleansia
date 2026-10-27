@@ -1,5 +1,6 @@
 package cz.cleansia.partner.data.auth
 
+import cz.cleansia.core.auth.RegistrationPassword
 import cz.cleansia.core.auth.SessionScopedCache
 import cz.cleansia.partner.core.auth.UserProfileStore
 import dagger.Binds
@@ -20,4 +21,8 @@ abstract class AuthModule {
     @Binds
     @IntoSet
     abstract fun bindUserProfileStore(impl: UserProfileStore): SessionScopedCache
+
+    @Binds
+    @IntoSet
+    abstract fun bindRegistrationPassword(impl: RegistrationPassword): SessionScopedCache
 }

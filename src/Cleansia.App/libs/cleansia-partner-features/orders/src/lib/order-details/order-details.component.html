@@ -169,8 +169,9 @@
 
       <!-- Action buttons row: Report Issue / Add Note available across active statuses, Mark Cash Collected
            only while InProgress, awaiting payment and not refused by anything the job sheet shows, Customer Did Not Pay only on a cash order
-           InProgress and awaiting payment, Cancel Job only before the job is under way, Complete only in InProgress with after-photos. -->
-      @if (canAddNoteOrIssue() || canMarkCashCollected() || canReportCashNotPaid() || canDropOrder() || canCompleteOrder()) {
+           InProgress and awaiting payment, Cancel Job only before the job is under way, I'm done on a crew job until the caller has marked
+           their part, Complete only in InProgress with after-photos and, on a crew job, once every cleaner on it has marked theirs. -->
+      @if (canAddNoteOrIssue() || canMarkCashCollected() || canReportCashNotPaid() || canDropOrder() || canMarkMyPartDone() || canCompleteOrder()) {
       <div class="cleansia-order-details__actions-row">
         @if (canMarkCashCollected()) {
         <cleansia-button
@@ -217,15 +218,31 @@
           [loading]="loading()"
         />
         }
+        @if (canMarkMyPartDone()) {
+        <cleansia-button
+          [label]="'pages.order_details.crew_close.mark_done' | translate"
+          [icon]="'pi pi-check'"
+          [severity]="'success'"
+          (onClick)="markMyPartDone()"
+          [loading]="loading()"
+        />
+        }
         @if (canCompleteOrder()) {
         <cleansia-button
-          [label]="'pages.order_details.complete_order' | translate"
+          [label]="completeLabelKey() | translate"
           [icon]="'pi pi-check-circle'"
           [severity]="'success'"
           (onClick)="completeOrder()"
           [loading]="loading()"
         />
         }
+      </div>
+      }
+
+      @if (crewCloseLineKey(); as lineKey) {
+      <div class="cleansia-order-details__crew-close" role="status">
+        <i class="pi pi-users"></i>
+        <span>{{ lineKey | translate }}</span>
       </div>
       }
 
@@ -302,6 +319,17 @@
           <div class="detail-grid__item">
             <span class="detail-grid__label">{{ 'pages.order_details.employee_phone' | translate }}</span>
             <span class="detail-grid__value">{{ employee.phoneNumber }}</span>
+          </div>
+          }
+          @if (employee.completionConfirmedAt; as finishedAt) {
+          <div class="detail-grid__item">
+            <span class="detail-grid__label">{{ 'pages.order_details.employee_finished' | translate }}</span>
+            <span class="detail-grid__value">{{ formatDateTime(finishedAt) }}</span>
+          </div>
+          } @else if (crewJobUnderWay()) {
+          <div class="detail-grid__item">
+            <span class="detail-grid__label">{{ 'pages.order_details.employee_finished' | translate }}</span>
+            <span class="detail-grid__value">{{ 'pages.order_details.employee_not_finished' | translate }}</span>
           </div>
           }
         </div>

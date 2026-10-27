@@ -223,10 +223,25 @@ final class AuthApiClientTests: XCTestCase {
             (200, Data(#"{"token":"\#(access)","isEmailConfirmed":true,"refreshToken":"r1"}"#.utf8))
         }
 
-        _ = await client.confirmEmail(email: "a@b.cz", code: "123456")
+        _ = await client.confirmEmail(email: "a@b.cz", code: "123456", password: "Chosen123")
 
         let confirm = try XCTUnwrap(MockURLProtocol.recorder.last(matching: "ConfirmUserEmail"))
         XCTAssertEqual(confirm.httpMethod, "PUT")
+    }
+
+    /// The confirmation sets the password it carries, replacing whatever a registration stored, so the
+    /// body names the code, the account and the password the confirmer chose.
+    func testConfirmEmailCarriesThePasswordTheConfirmerChose() async throws {
+        let store = MemTokenStore()
+        let client = try makeClient(store: store)
+        MockURLProtocol.handler = { _ in (200, Data(#"{"token":"","isEmailConfirmed":false}"#.utf8)) }
+
+        _ = await client.confirmEmail(email: "a@b.cz", code: "123456", password: "Chosen123")
+
+        let confirm = try XCTUnwrap(MockURLProtocol.recorder.last(matching: "ConfirmUserEmail"))
+        let body = try XCTUnwrap(MockURLProtocol.body(of: confirm))
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: String])
+        XCTAssertEqual(json, ["code": "123456", "email": "a@b.cz", "password": "Chosen123"])
     }
 
     func testOtherAuthPathsStayPost() async throws {
@@ -256,7 +271,7 @@ final class AuthApiClientTests: XCTestCase {
             (200, Data(#"{"token":"","isEmailConfirmed":false,"email":"a@b.cz"}"#.utf8))
         }
 
-        let result = await client.confirmEmail(email: "a@b.cz", code: "123456")
+        let result = await client.confirmEmail(email: "a@b.cz", code: "123456", password: "Chosen123")
 
         guard case let .success(.unverifiedEmail(_, hasToken)) = result else {
             return XCTFail("expected unverifiedEmail")
@@ -273,7 +288,7 @@ final class AuthApiClientTests: XCTestCase {
             (200, Data(#"{"token":"\#(access)","isEmailConfirmed":true,"refreshToken":"r9"}"#.utf8))
         }
 
-        let result = await client.confirmEmail(email: "a@b.cz", code: "123456")
+        let result = await client.confirmEmail(email: "a@b.cz", code: "123456", password: "Chosen123")
 
         guard case .success(.authenticated) = result else { return XCTFail("expected authenticated") }
         XCTAssertEqual(store.current()?.accessToken, access)
@@ -291,7 +306,7 @@ final class AuthApiClientTests: XCTestCase {
         let client = try makeClient(store: store)
         MockURLProtocol.handler = { _ in (200, Data(#"{"token":"","isEmailConfirmed":false}"#.utf8)) }
 
-        _ = await client.confirmEmail(email: "a@b.cz", code: "123456")
+        _ = await client.confirmEmail(email: "a@b.cz", code: "123456", password: "Chosen123")
 
         let confirm = try XCTUnwrap(MockURLProtocol.recorder.last(matching: "ConfirmUserEmail"))
         XCTAssertNil(confirm.value(forHTTPHeaderField: "Authorization"))

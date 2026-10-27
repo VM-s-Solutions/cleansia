@@ -32,9 +32,58 @@
       <div class="cleansia-email-confirm__form-control">
         <cleansia-code-input
           formControlName="code"
-          (codeComplete)="onVerifyCode()"
+          (codeComplete)="onCodeComplete()"
         />
       </div>
+      @if (facade.passwordAsked()) {
+      <p class="cleansia-email-confirm__message">
+        {{ 'pages.email_confirm.password_lead' | translate }}
+      </p>
+      <div class="cleansia-email-confirm__password">
+        <cleansia-text-input
+          [label]="'auth.register.password' | translate"
+          [floatVariant]="'on'"
+          formControlName="password"
+          [dataType]="'password'"
+          [autocomplete]="'new-password'"
+          [showErrors]="false"
+        />
+        @if (passwordCheck; as check) {
+        <div class="cleansia-email-confirm__password-validation">
+          <ul>
+            <li [class.cleansia-email-confirm__password-validation--valid]="check.hasMinLength">
+              {{ 'auth.register.validation.password_min_length' | translate }}
+            </li>
+            <li [class.cleansia-email-confirm__password-validation--valid]="check.hasLetter">
+              {{ 'auth.register.validation.password_letter' | translate }}
+            </li>
+            <li [class.cleansia-email-confirm__password-validation--valid]="check.hasNumber">
+              {{ 'auth.register.validation.password_number' | translate }}
+            </li>
+          </ul>
+        </div>
+        }
+      </div>
+      <div class="cleansia-email-confirm__password">
+        <cleansia-text-input
+          [label]="'auth.register.confirm_password' | translate"
+          [floatVariant]="'on'"
+          formControlName="confirmPassword"
+          [dataType]="'password'"
+          [autocomplete]="'new-password'"
+          [showErrors]="false"
+        />
+        @if (confirmPasswordCheck; as check) {
+        <div class="cleansia-email-confirm__password-validation">
+          <ul>
+            <li [class.cleansia-email-confirm__password-validation--valid]="check.arePasswordsEqual">
+              {{ 'auth.register.validation.passwords_match' | translate }}
+            </li>
+          </ul>
+        </div>
+        }
+      </div>
+      }
       <div class="cleansia-email-confirm__actions">
         <div>
           @if (facade.isResendDisabled()) {

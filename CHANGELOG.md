@@ -620,16 +620,41 @@ need backfilling.
 
 ### Changed
 
+- **Customer, cleaner, admin and operator — guest bookings in My orders and crew completion.**
+  - A confirmed customer's web, Android and iOS My orders includes guest bookings made with their
+    e-mail, even before the account existed and in other markets. A badge and note distinguish the
+    redacted detail; cancellation uses the booking's guest terms, with no account attachment or
+    account-only benefits/actions.
+  - Each cleaner on a crew marks **I'm done**; once everyone has, any can use **Complete job**.
+    Solo keeps one completion action. Fully marked work nobody closes becomes eligible two hours
+    after the last mark, on a later fifteen-minute sweep, still requiring an after photo and
+    settled payment. Partner web and admin show the mark times. Another cleaner's already-open
+    detail may need reopening/refreshing after a push. A marked cleaner still blocks overlapping work.
+  - An account owner cancelling an unstaffed booking from its start gets the same no-cleaner
+    refund, apology credit where applicable, push and e-mail as the sweep. The typed reason is
+    retained separately from the system reason. Administrators cannot reassign terminal orders.
+  - The mailbox confirmer chooses the password on customer/partner web and both native apps.
+    Older no-password confirmation requests withdraw the registration hash; updating afterwards
+    does not restore it, so Forgot password is required before password login.
+  - Order e-mail navigation preserves the guarded page through sign-in; public guest/reset pages
+    stay public. Translation files revalidate, hashed SSR assets cache immutably, the Google
+    button follows the page language and transactional e-mails disable SendGrid click tracking.
+    Partner AASA uses a JSON rewrite; its live post-deploy content-type check remains owed.
+  - **Operator:** the single regenerated migration is `20261027013728_Initial`. After merge,
+    one DEV reset/deploy/re-seed runs bootstrap, DEV data, local admin and promo translations in
+    order; services seed at two minutes, and bootstrap owns the four service categories.
+    The customer terms folder `2026-10-28` is provisional: rename it and its seeder-test date
+    to the first DEV deploy day, never earlier. No phase-2 deploy is claimed.
+    Android tester releases remain deferred and TestFlight is signing-blocked. Old partner apps
+    cannot complete an unstamped crew; zero marks never auto-close, so use updated clients or
+    partner web. New iOS crew-push copy in source does not mean older installed apps contain it.
+    ([ADR-0077](docs/decisions/adr-0077.md), [listed guest access](docs/product/business-rules.md#listed-guest-bookings))
+
 - **Customer, cleaner, admin and operator — the fixes of 2026-10-25.** What the owner's answers of
   2026-10-25 changed, on the gaps the partner wave left (*"Fix"*, *"Fix the wording"*) and on the fix plan
-  built from them; the release notice is under *Added*. Two parts of the plan are not built. A signed-in
-  customer cancelling a booking nobody is on from its start was to be paid as the unfilled-booking
-  cancellation pays and keep the reason they typed (*"It's important to store"*), and keeping both needs a
-  new database column, which comes in a later change; until then that cancel is still free and pays no
-  apology credit. And a stranger who registers an address once still keeps a working password if the
-  address's owner then confirms that registration by its code, until the owner resets it; closing it needs
-  the confirmation to carry the password the confirmer chooses, which comes in the same later change
-  (*"Close"*).
+  built from them; the release notice is under *Added*. The own unstaffed-cancel remedy/typed-reason
+  column and the confirmation's chosen password were deferred from this change and are implemented
+  by the guest-booking/crew-completion entry above.
   - *Customer — a cancellation reaches you by e-mail, and names the credit.* When nobody was on your
     booking at its slot, or an administrator confirms that the cleaner did not come, the cancellation
     e-mail comes with an account as well as without, in the booking's language, and names the apology
@@ -704,6 +729,9 @@ need backfilling.
     changes points at it, or DEV keeps enforcing the seeded regional ZIP prefixes. Check both hosts'
     `/.well-known/apple-app-site-association` after the deploy. The two `2026-10-27` legal folders are
     dated for that deploy: if it is later, rename them, never to an earlier day. (ADR-0067, ADR-0068.)
+    **Closure 2026-10-27:** PR #359 merged as `709d77868`; DEV deployment and the Prague postcode
+    correction completed. TestFlight partner 17/customer 16 failed at archive because signing and
+    Associated Domains were unavailable; no new build was released.
 
 - **Cleaner and API consumer — a job under way can no longer be dropped.** `POST api/Order/DropOrder`
   on the partner web and partner mobile hosts takes a drop only while the job is *New* or *Confirmed*.

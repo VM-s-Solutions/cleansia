@@ -4222,6 +4222,10 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<string>("CustomerCancellationReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
                     b.Property<DateTime?>("CustomerConfirmedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -4479,6 +4483,9 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<string>("Id")
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
+
+                    b.Property<DateTime?>("CompletionConfirmedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime?>("CoverRequestedAt")
                         .HasColumnType("timestamp with time zone");

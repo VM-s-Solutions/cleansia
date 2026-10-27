@@ -38,7 +38,7 @@ final class SignInWipeTests: XCTestCase {
         let client = try makeClient()
         answer(isEmailConfirmed: true)
 
-        _ = await client.confirmEmail(email: "a@b.cz", code: "123456")
+        _ = await client.confirmEmail(email: "a@b.cz", code: "123456", password: "Chosen123")
 
         await assertWipedBeforeTheNewTokens()
     }

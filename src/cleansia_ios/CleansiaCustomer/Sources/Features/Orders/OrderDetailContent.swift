@@ -40,6 +40,14 @@ struct OrderDetailContent: View {
                                 .fixedSize(horizontal: false, vertical: true)
                                 .padding(.top, Spacing.xxs)
                         }
+
+                        if order.isGuestBooking {
+                            Text(L10n.OrderDetail.guestBookingNote)
+                                .font(CleansiaTypography.bodyMedium)
+                                .foregroundColor(CleansiaColors.onSurfaceVariant)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .padding(.top, Spacing.xxs)
+                        }
                     }
                     OrderHeroFactsStrip(order: order)
                         // The bar is a thin 4pt rule; the parent's Spacing.s alone left the facts row
@@ -88,11 +96,11 @@ struct OrderDetailContent: View {
                         OrderTimelineCard(history: order.statusHistory)
                     }
 
-                    if OrderStatusGroup.isCompleted(status) {
+                    if order.offersReview {
                         OrderReviewCard(review: order.review, onLeaveReview: onLeaveReview)
                     }
 
-                    if showReceipt {
+                    if order.offersReceipt {
                         OrderReceiptCard(
                             order: order,
                             isDownloading: isDownloadingReceipt,
@@ -106,10 +114,6 @@ struct OrderDetailContent: View {
                 .padding(.top, Spacing.xs)
             }
         }
-    }
-
-    private var showReceipt: Bool {
-        !(order.receiptNumber?.isBlank ?? true) || OrderStatusGroup.isCompleted(status)
     }
 }
 
@@ -144,6 +148,9 @@ struct OrderDetailCompactHeader: View {
                 .foregroundColor(CleansiaColors.onSurfaceVariant)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
+                if order.isGuestBooking {
+                    GuestBookingLabel()
+                }
             }
             Spacer(minLength: mascotClearance)
         }

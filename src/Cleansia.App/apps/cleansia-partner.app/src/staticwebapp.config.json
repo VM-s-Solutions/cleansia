@@ -2,9 +2,7 @@
   "routes": [
     {
       "route": "/.well-known/apple-app-site-association",
-      "headers": {
-        "content-type": "application/json"
-      }
+      "rewrite": "/.well-known/apple-app-site-association.json"
     }
   ],
   "navigationFallback": {
@@ -16,6 +14,9 @@
       "rewrite": "/index.html",
       "statusCode": 200
     }
+  },
+  "mimeTypes": {
+    ".json": "application/json"
   },
   "globalHeaders": {
     "X-Content-Type-Options": "nosniff",

@@ -7744,6 +7744,11 @@
           "phoneNumber": {
             "type": "string",
             "nullable": true
+          },
+          "completionConfirmedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -8029,6 +8034,10 @@
             "nullable": true
           },
           "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "password": {
             "type": "string",
             "nullable": true
           }
@@ -11151,6 +11160,10 @@
             "type": "integer",
             "format": "int32",
             "nullable": true
+          },
+          "isGuestBooking": {
+            "type": "boolean",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -11327,6 +11340,10 @@
           "dirtinessSurchargeAmount": {
             "type": "number",
             "format": "double"
+          },
+          "isGuestBooking": {
+            "type": "boolean",
+            "nullable": true
           }
         },
         "additionalProperties": false

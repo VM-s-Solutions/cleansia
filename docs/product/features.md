@@ -59,6 +59,12 @@ ruling its parties become the operating company and the cleaner once the lawyer 
 customer will no longer see it. → [Business rules — the contract for work](/product/business-rules#work-contract),
 [ADR-0068](/decisions/adr-0068)
 
+**Guest bookings in My orders** — a confirmed customer sees bookings made without an account under
+their e-mail on web, Android and iOS, including older bookings and other markets. They are badged,
+open redacted and can be cancelled on their own guest terms. They are never attached to the
+account and gain no receipt/photo/review/dispute/no-show/preferred-cleaner/payment/Live Activity or
+push access through it. → [The precise rule](/product/business-rules#listed-guest-bookings)
+
 **Tracking** — see the order move through on-the-way, in progress and completed, with push
 notifications and a Live Activity on iOS.
 
@@ -288,8 +294,14 @@ the fix plan of 2026-10-25), is quoted at their own pay for one seat, and a job'
 customer's price only on a cash job, as the amount to collect (since the same day)
 → [Business rules — cleaner pay](/product/business-rules#cleaner-pay).
 
-**Doing the job** — take a job, mark on-the-way, start, add photos and notes, complete. Entry
-instructions and the full address become visible on assignment. A job cannot be started more than an
+**Doing the job** — take a job, mark on-the-way, start, add photos and notes. On a crew of two or
+more, each cleaner marks **I'm done**, then any cleaner uses shared **Complete job** once all have
+marked, with the existing after-photo and payment checks. Solo keeps one Complete action. A fully
+marked job nobody completes is eligible two hours after the last mark on the next cleanup tick;
+without all marks, an after photo or settled payment it stays in progress.
+→ [Crew completion](/product/business-rules#crew-completion)
+
+Entry instructions and the full address become visible on assignment. A job cannot be started more than an
 hour before it is booked for.
 
 **Accepting the contract for work** — every take passes through the contract: the app shows the job
@@ -373,6 +385,8 @@ without a sign-out. → [Where the server gates and the web hides](/architecture
 [ADR-0066](/decisions/adr-0066)
 
 **Orders** — search, inspect, reassign a cleaner, override a status, cancel, refund in full or in part.
+The crew card shows each cleaner's marked-done time; an administrator cannot mark on their behalf.
+Reassignment refuses Completed or Cancelled orders.
 The override moves strictly forward and cannot set *Confirmed* on an order with nobody assigned —
 reassign to put a cleaner on it; an override to *Completed* dates the completion so the order is
 revenue of a month. The crew list on the order detail says per cleaner whether the **contract for

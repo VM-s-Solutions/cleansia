@@ -103,19 +103,18 @@ re-registers into a company they did not choose.
 account is left with **no password** (`User.RegisterAgain`); the same password again is kept, and a
 withdrawn one is never restored by a later registration. Whoever confirms the address proves they hold
 the mailbox, not which of two passwords typed for it is theirs, so once it is confirmed neither of them
-signs in: the confirmation signs the confirmer in, and *Forgot password* gives them a password of their
-own. Keeping the newest password instead would let a stranger who registers after the owner arm one the
+survives by default: confirmation sets the password the mailbox holder chose, as described below.
+Keeping the newest registration password instead would let a stranger who registers after the owner arm one the
 owner then confirms. An account with no password is refused at sign-in like a wrong password, at the cost
 of one password-hash derivation, and a registration again costs one too, so neither answer's timing
 tells whether a password was withdrawn. No session exists before the confirmation: an unconfirmed
-account's sign-in opens none. A genuine user who registers twice with two passwords also has to use
-*Forgot password* once.
+account's sign-in opens none. A legacy confirmation without a password still needs *Forgot password*
+once; updated clients choose it at confirmation.
 
-**Still open:** a stranger who registers an address once, and its owner then confirming that
-registration by its code (the first e-mail or a resend), leave the stranger's password working until the
-owner resets it. The owner ruled on 2026-10-26 to close it (*"Close"*): the confirmation will carry the
-password the confirmer chooses, and the stored one is kept only on a match. That is a contract change in
-every app and both webs.
+**The single-registration pre-hijack path is closed** under the 2026-10-26 ruling (*"Close"*):
+confirmation replaces the stored password with the confirmer's choice, or withdraws it when a legacy
+client sends none. Every updated customer/partner web and native confirmation path sends that choice.
+This does not prove historical mailbox ownership after address reassignment.
 :::
 
 ---
@@ -209,11 +208,18 @@ PUT /api/Auth/ConfirmUserEmail
 ```json
 {
   "email": "user@example.com",
-  "confirmationCode": "abc123"
+  "code": "123456",
+  "password": "SecureP@ss123"
 }
 ```
 
-**Response:** `JwtTokenResponse` with a valid token upon successful confirmation.
+**Response:** `JwtTokenResponse` with a valid session upon successful confirmation (cookie mapping
+on web, token data on mobile). A six-digit `code` requires `email`; a legacy 22-character token
+retains its old code-only resolution. Both set the supplied password after proving the code.
+A supplied password must meet the existing policy; omitted/null `password` remains compatible but
+**withdraws** the registration hash. Updating after such a confirmation cannot restore it:
+Forgot password is required before password login.
+→ [Confirmation security](/architecture/security-rules#confirmation-password)
 
 ---
 

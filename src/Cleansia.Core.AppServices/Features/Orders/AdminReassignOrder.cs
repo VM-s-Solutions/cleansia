@@ -58,7 +58,11 @@ public class AdminReassignOrder
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
                 .MustAsync(orderRepository.ExistsAsync)
-                .WithMessage(BusinessErrorMessage.OrderNotFound);
+                .WithMessage(BusinessErrorMessage.OrderNotFound)
+                .MustAsync((orderId, ct) => OrderIsNotAsync(orderId, OrderStatus.Completed, ct))
+                .WithMessage(BusinessErrorMessage.OrderAlreadyCompleted)
+                .MustAsync((orderId, ct) => OrderIsNotAsync(orderId, OrderStatus.Cancelled, ct))
+                .WithMessage(BusinessErrorMessage.OrderAlreadyCancelled);
 
             RuleFor(x => x.ToEmployeeId)
                 .Cascade(CascadeMode.Stop)
@@ -83,6 +87,11 @@ public class AdminReassignOrder
                 .WithMessage(BusinessErrorMessage.MaxLength)
                 .When(x => !string.IsNullOrEmpty(x.FromEmployeeId));
         }
+
+        private Task<bool> OrderIsNotAsync(string orderId, OrderStatus status, CancellationToken cancellationToken) =>
+            _orderRepository.GetQueryable()
+                .Where(o => o.Id == orderId)
+                .AnyAsync(o => o.CurrentStatus != status, cancellationToken);
 
         private async Task<bool> TargetExistsAsync(string employeeId, CancellationToken cancellationToken) =>
             await _employeeRepository.GetByIdAsync(employeeId, cancellationToken) is not null;

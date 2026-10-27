@@ -54,9 +54,9 @@ struct CustomerRootView: View {
                 onBack: { route = .login },
                 onOutcome: { route = Route.afterAuth($0) }
             )
-        case let .verifyEmail(email):
+        case let .verifyEmail(email, password):
             EmailVerifyView(
-                makeViewModel: { makeAuthViewModel(pendingEmail: email) },
+                makeViewModel: { makeAuthViewModel(pendingEmail: email, pendingPassword: password) },
                 onBack: { route = .login },
                 onOutcome: { route = Route.afterAuth($0) }
             )
@@ -83,7 +83,10 @@ struct CustomerRootView: View {
         )
     }
 
-    private func makeAuthViewModel(pendingEmail: String? = nil) -> CustomerAuthViewModel {
+    private func makeAuthViewModel(
+        pendingEmail: String? = nil,
+        pendingPassword: String? = nil
+    ) -> CustomerAuthViewModel {
         CustomerAuthViewModel(
             loginClient: container.loginClient,
             registrationClient: container.registrationAuthClient,
@@ -94,6 +97,7 @@ struct CustomerRootView: View {
             settings: container.appSettings,
             snackbar: container.snackbar,
             pendingEmail: pendingEmail,
+            pendingPassword: pendingPassword,
             changePasswordClient: container.changePasswordClient,
             market: container.marketStore.statePublisher
         )
@@ -104,7 +108,7 @@ struct CustomerRootView: View {
         case login
         case register
         case forgotPassword
-        case verifyEmail(email: String?)
+        case verifyEmail(email: String?, password: String? = nil)
         case home
         case profileOnboarding
 
@@ -115,7 +119,7 @@ struct CustomerRootView: View {
         static func afterAuth(_ outcome: AuthOutcome) -> Route {
             switch outcome {
             case .signedIn: .home
-            case let .needsEmailConfirm(email): .verifyEmail(email: email)
+            case let .needsEmailConfirm(email, password): .verifyEmail(email: email, password: password)
             case .passwordReset: .login
             }
         }

@@ -58,6 +58,7 @@
     <!-- Auth — email verify -->
     <string name="verify_title">Подтвердите email</string>
     <string name="verify_description">Мы отправили 6-значный код подтверждения на ваш email. Введите его ниже для подтверждения учётной записи.</string>
+    <string name="verify_password_prompt">Выберите пароль, с которым вы будете входить после подтверждения email.</string>
     <string name="verify_submit">Подтвердить код</string>
     <string name="verify_resend_code">Отправить код повторно</string>
     <string name="auth_resend_success">Письмо подтверждения отправлено повторно.</string>
@@ -230,6 +231,8 @@
     <string name="orders_status_in_progress">Выполняется</string>
     <string name="orders_status_completed">Завершён</string>
     <string name="orders_status_cancelled">Отменён</string>
+    <string name="orders_guest_booking">Гостевой заказ</string>
+    <string name="order_detail_guest_booking_note">Заказ оформлен без входа в аккаунт на ваш e-mail. Здесь его можно отслеживать, но нельзя оценить или сообщить о проблеме с ним.</string>
     <string name="orders_payment_paid">Оплачено</string>
     <string name="orders_payment_pending">Ожидает оплаты</string>
     <string name="orders_payment_failed">Ошибка</string>

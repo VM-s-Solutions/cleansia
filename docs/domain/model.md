@@ -131,6 +131,14 @@ snapshots the extra's `Slug` and `UnitPrice` for the same reason. `OrderStatusTr
 status history; `Order.CurrentStatus` is a denormalisation of its latest row, and the history is
 authoritative.
 
+**`Order.CustomerCancellationReason` keeps the customer's typed text separately from
+`CancellationReason`'s no-cleaner system key** on the account owner's unstaffed cancel from start.
+It is nullable, capped at 500 characters and cleared by anonymisation; no new export/incident/archive
+reader is implied. **`OrderEmployee.CompletionConfirmedAt`** is the nullable first mark of that
+cleaner's own part, not the job's `CompletedAt`. It drives crew completion and is withheld from
+customer/browsing DTOs. → [Crew completion](/decisions/adr-0077),
+[Cancellation](/flows/cancellation-refund-dispute#cancellation)
+
 **`Order.CurrencyId` is the unit of every money column on the row**, stamped at creation from the
 service address's country and never changed. The foreign key is `ON DELETE RESTRICT`, so a currency
 that any order was ever priced in cannot be deleted. → [Business rules](/product/business-rules#price-stages)

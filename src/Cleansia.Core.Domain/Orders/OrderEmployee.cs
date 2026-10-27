@@ -23,10 +23,10 @@ public class OrderEmployee : BaseEntity
     /// never cleared.
     ///
     /// <para><b>On the assignment, not on the Order.</b> An order's crew is
-    /// <c>ceil(EstimatedTime / 120)</c> and the seeded catalogue contains single 180- and 240-minute
-    /// services, so two-seat orders exist today — a scalar on <c>Order</c> would remind the first
-    /// cleaner and silently skip the second. <c>CompleteOrder</c> carried a comment asserting the
-    /// opposite until 2026-08-22, which is how long the belief survived unexamined.</para>
+    /// <c>ceil(EstimatedTime / 120)</c>, so every booking over 120 minutes is a two-seat order — a scalar
+    /// on <c>Order</c> would remind the first cleaner and silently skip the second. <c>CompleteOrder</c>
+    /// carried a comment asserting the opposite until 2026-08-22, which is how long the belief survived
+    /// unexamined.</para>
     ///
     /// <para>An unassign hard-DELETEs this row, so a reassignment correctly reminds the replacement
     /// cleaner with a fresh null stamp rather than inheriting the previous one's receipt.</para>
@@ -59,6 +59,12 @@ public class OrderEmployee : BaseEntity
     /// index precisely what the predicate excludes. Same argument the file's siblings make.</para>
     /// </summary>
     public DateTime? CoverRequestedAt { get; private set; }
+
+    /// <summary>
+    /// When this cleaner marked their part of the job done. Null until they do; never cleared. On the seat
+    /// for the reason the reminder stamps are: a crew job has one of these per cleaner.
+    /// </summary>
+    public DateTime? CompletionConfirmedAt { get; private set; }
 
     /// <summary>
     /// The job figures this seat's reward was priced from when its contract for work formed: the summed
@@ -99,6 +105,13 @@ public class OrderEmployee : BaseEntity
     public OrderEmployee MarkCoverRequested(DateTime requestedAtUtc)
     {
         CoverRequestedAt ??= requestedAtUtc;
+        return this;
+    }
+
+    /// <summary>First stamp wins, so marking again keeps the first time.</summary>
+    public OrderEmployee MarkCompletionConfirmed(DateTime confirmedAtUtc)
+    {
+        CompletionConfirmedAt ??= confirmedAtUtc;
         return this;
     }
 

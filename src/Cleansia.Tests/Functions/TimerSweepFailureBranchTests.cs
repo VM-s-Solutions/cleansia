@@ -70,11 +70,15 @@ public class TimerSweepFailureBranchTests
                 It.IsAny<ReleaseOrphanedBenefitReservations.Command>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Fail<ReleaseOrphanedBenefitReservations.Response>());
         // The third command on this tick is the one that moves money, so its failure branch matters
-        // most: a refund that could not be issued must log and let the other two finish, never throw.
+        // most: a refund that could not be issued must log and let the others finish, never throw.
         _mediator
             .Setup(m => m.Send(
                 It.IsAny<CancelUnfilledOrders.Command>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Fail<CancelUnfilledOrders.Response>());
+        _mediator
+            .Setup(m => m.Send(
+                It.IsAny<AutoCompleteMarkedDoneOrders.Command>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Fail<AutoCompleteMarkedDoneOrders.Response>());
 
         var handler = new CleanupStalePendingOrdersHandler(
             ScopesServingTheMediator(), NullLogger<CleanupStalePendingOrdersHandler>.Instance);
@@ -90,6 +94,9 @@ public class TimerSweepFailureBranchTests
             Times.Once);
         _mediator.Verify(
             m => m.Send(It.IsAny<CancelUnfilledOrders.Command>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+        _mediator.Verify(
+            m => m.Send(It.IsAny<AutoCompleteMarkedDoneOrders.Command>(), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 

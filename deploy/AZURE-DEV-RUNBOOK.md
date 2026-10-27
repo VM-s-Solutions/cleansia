@@ -707,8 +707,10 @@ any of this — it lives in each provider's console — so it is recorded here a
 >    It creates the operating company `cleansia-cz`, the five languages, every country with Czechia
 >    serviced, the Czech service cities, CZK, the Czech market and its operator, the Czech invoice
 >    configuration, the cleaner document requirements (the insurance certificate among them), the e-mail
->    texts, the four loyalty tiers and the Czech size ladder. One transaction; a second run changes
->    nothing. It writes no users, orders, promo codes, catalogue, prices, Plus plans or company record.
+>    texts, the four loyalty tiers, the Czech size ladder and the service categories `home`, `deep`,
+>    `laundry` and `pet` (idempotent on Slug). One transaction; a second run changes nothing. It writes
+>    no users, orders, promo codes, catalogue services, prices, Plus plans or company record; service
+>    durations still come from the launch values entered in the admin console.
 >    `execute-sql.yml` cannot run it: the database is private and that workflow opens no window.
 > 2. The first administrator: register on the customer site with the address that will administer,
 >    with a password of at least 12 characters, and confirm the e-mail. In the same window set

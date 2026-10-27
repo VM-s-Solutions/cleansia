@@ -2,7 +2,7 @@ namespace Cleansia.Core.Queue.Abstractions.Messages;
 
 public record SendGuestOrderCancellationEmailMessage(
     string OrderId, string LanguageCode, decimal? SuccessfulRefundAmount, string? TenantId,
-    decimal? ApologyCreditAmount = null)
+    decimal? ApologyCreditAmount = null, bool NoCleanerAvailable = false)
 {
     public string MessageType => "guest-order-cancelled";
 }

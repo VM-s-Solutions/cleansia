@@ -14,5 +14,10 @@ public record AssignedEmployeeDto(
     string Id,
     string EmployeeId,
     string FullName,
-    string? PhoneNumber
+    string? PhoneNumber,
+    /// <summary>
+    /// When this cleaner marked their part of the job done; null until they do, and always null for a
+    /// customer and in the view a cleaner gets of a job they are not working on.
+    /// </summary>
+    DateTime? CompletionConfirmedAt = null
 );

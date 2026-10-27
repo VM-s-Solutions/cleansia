@@ -12,9 +12,8 @@ namespace Cleansia.Tests.Features.Orders;
 ///
 /// <para>The negative cases are the point. Without the <c>UserId == null</c> term the e-mail match would
 /// reach another ACCOUNT's order that merely carries the subject's address in its contact field, and
-/// anonymise a stranger's booking underneath them; without the case fold a guest who typed their address
-/// in capitals at checkout would keep their name, phone and address on file after asking to be
-/// forgotten.</para>
+/// anonymise a stranger's booking underneath them. Whatever case a guest typed their address in is the
+/// citext column's to fold, which only Postgres does; GuestOrderErasureTests pins it there.</para>
 /// </summary>
 public class SubjectOrdersTests
 {
@@ -31,10 +30,9 @@ public class SubjectOrdersTests
     }
 
     [Fact]
-    public void A_Guest_Order_Placed_With_The_Subjects_Email_Is_The_Subjects_Whatever_The_Case_It_Was_Typed_In()
+    public void A_Guest_Order_Placed_With_The_Subjects_Email_Is_The_Subjects()
     {
-        Assert.True(Matches(NewOrder(userId: null, customerEmail: "ZDENKA.HRUSKOVA@CLEANSIA.TEST")));
-        Assert.True(Matches(NewOrder(userId: null, customerEmail: "zdenka.hruskova@cleansia.test")));
+        Assert.True(Matches(NewOrder(userId: null, customerEmail: SubjectEmail)));
     }
 
     [Fact]

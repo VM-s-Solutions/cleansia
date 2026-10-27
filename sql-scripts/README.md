@@ -29,14 +29,18 @@ workflow, `CleansiaStartupBase`, the tests and the docs call them by name.
 - **`prod-bootstrap.sql`** — the reference data a freshly migrated database needs before anyone can
   register or book: the operating company, languages, countries, the Czech service cities, CZK, the
   Czech market with its operator, its invoice configuration and cleaner document requirements, the
-  e-mail template copy, the loyalty tiers and the Czech size ladder. No users, orders, promo codes,
-  catalogue, prices, Plus plans or company record: in production those are typed into the admin
+  e-mail template copy, the loyalty tiers, the Czech size ladder and the service categories `home`,
+  `deep`, `laundry` and `pet` (idempotent on Slug). No users, orders, promo codes, catalogue services,
+  prices, Plus plans or company record: in production those are typed into the admin
   console. One transaction, idempotent. **Production runs it once, by the owner, as runbook step P7
   (`deploy/AZURE-DEV-RUNBOOK.md`); an agent never runs anything against PRO.**
 - **`insert_seed_data.sql`** — the DEV fixtures on top of it: the sample catalogue with prices and pay
   rates, Plus plans, promo codes, the company record and the markets DEV configures but does not
   operate. It needs the bootstrap first and never runs on its own; `execute-sql.yml` refuses it
-  against PRO.
+  against PRO. Every DEV service seeds `EstimatedTime = 2` minutes; packages derive their duration
+  from their services. This changes test data only: the booking lead time, early-start window and
+  crew-size formula stay unchanged. Production durations are entered in the admin catalogue; no
+  production catalogue seed file is added. To test a crew, set a DEV service to 121 minutes.
 
 A Development boot runs both, then `insert_local_dev_admin.sql`
 (`CleansiaStartupBase.DevelopmentSeedScripts`). To re-seed the shared DEV database, run

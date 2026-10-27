@@ -385,6 +385,18 @@ public class User : TenantAuditable
         return this;
     }
 
+    /// <summary>
+    /// The confirmation of a registered address by the holder of its mailbox, who is the one person proven
+    /// here: a password stored by a registration may be a stranger's, so the account keeps the one its
+    /// confirmer chose and no other. A confirmation that brings none leaves the account with none, and the
+    /// reset gives its holder a password nobody else chose.
+    /// </summary>
+    public User ConfirmEmailWithChosenPassword(string? password)
+    {
+        Password = password;
+        return ConfirmEmail();
+    }
+
     public User UpdatePhoneNumber(string phoneNumber)
     {
         PhoneNumber = phoneNumber;

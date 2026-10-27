@@ -50,7 +50,7 @@ final class CustomerAuthViewModelTests: XCTestCase {
         super.tearDown()
     }
 
-    func makeViewModel(pendingEmail: String? = nil) -> CustomerAuthViewModel {
+    func makeViewModel(pendingEmail: String? = nil, pendingPassword: String? = nil) -> CustomerAuthViewModel {
         CustomerAuthViewModel(
             loginClient: login,
             registrationClient: registration,
@@ -61,6 +61,7 @@ final class CustomerAuthViewModelTests: XCTestCase {
             settings: settings,
             snackbar: snackbar,
             pendingEmail: pendingEmail,
+            pendingPassword: pendingPassword,
             changePasswordClient: changePassword,
             referralClient: referral,
             market: market.eraseToAnyPublisher()
@@ -167,7 +168,7 @@ final class CustomerAuthViewModelTests: XCTestCase {
 
         await vm.signUp()
 
-        XCTAssertEqual(received(), .needsEmailConfirm(email: "jana@b.cz"))
+        XCTAssertEqual(received(), .needsEmailConfirm(email: "jana@b.cz", password: "abcdefg1"))
         XCTAssertEqual(registration.callCount, 1)
     }
 
@@ -469,13 +470,23 @@ final class FakeRegistrationClient: RegistrationAuthClient {
 }
 
 final class FakeEmailConfirmationClient: EmailConfirmationClient {
+    struct ConfirmCall {
+        let email: String
+        let code: String
+        let password: String
+    }
+
     var confirmResult: ApiResult<LoginOutcome> = .success(.authenticated)
     var resendResult: ApiResult<Bool> = .success(true)
+    private(set) var confirmCallCount = 0
+    private(set) var lastConfirm: ConfirmCall?
     private(set) var resendCallCount = 0
     private(set) var lastResendArgs: (email: String, language: String)?
 
-    func confirmEmail(email _: String, code _: String) async -> ApiResult<LoginOutcome> {
-        confirmResult
+    func confirmEmail(email: String, code: String, password: String) async -> ApiResult<LoginOutcome> {
+        confirmCallCount += 1
+        lastConfirm = ConfirmCall(email: email, code: code, password: password)
+        return confirmResult
     }
 
     func resendConfirmation(email: String, language: String) async -> ApiResult<Bool> {

@@ -55,7 +55,9 @@ export class JsonTranslationLoader implements TranslateLoader {
     if (!this.isBrowser) {
       return of({});
     }
-    return this.http.get<Record<string, unknown>>(`/assets/i18n/${lang}.json`);
+    // The address is the same for every build, so a copy the browser holds is used only once the
+    // server confirms it is current (a 304), or replaced: a stale one shows every newer key raw.
+    return this.http.get<Record<string, unknown>>(`/assets/i18n/${lang}.json`, { cache: 'no-cache' });
   }
 }
 

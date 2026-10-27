@@ -533,8 +533,10 @@ does not, enable the capability on each App ID in the Apple Developer portal.
 web (the team id is in every signed build, and public by design). The customer web serves the file from
 its server render (`apps/cleansia.app/src/root-assets/well-known/`, its content type set in `server.ts`,
 since an extensionless file would go out as `application/octet-stream`), the partner web from its Static
-Web App (`apps/cleansia-partner.app/src/well-known/`, copied to `/.well-known`, a route setting the
-content type), and both deploy artifacts keep the dot-folder (`include-hidden-files: true`). Apple's CDN
+Web App (`apps/cleansia-partner.app/src/well-known/`, copied to `/.well-known`). Its config rewrites
+the extensionless URL to `apple-app-site-association.json` and maps `.json` to `application/json`;
+the earlier route-header approach was ignored by the deployed host. Both deploy artifacts keep the
+dot-folder (`include-hidden-files: true`). Apple's CDN
 must have fetched the file before a tester installs the build. The production hosts are parked, so a
 Release build offers nothing until the same two files answer on `cleansia.cz` and `partner.cleansia.cz`
 (`deploy/AZURE-DEV-RUNBOOK.md` §12).
@@ -547,6 +549,14 @@ characters of letters and a digit in groups joined by hyphens, already meets the
 An e-mail keyboard opens in lower case with autocorrection off, on every field that asks for the
 `.emailAddress` keyboard (`CleansiaTextField`). Android declares the same hints through Compose's content
 types, which need Compose 1.8 ([above](#compose-1-8)).
+
+The partner rewrite is verified by static config tests; a live HTTP 200, JSON content type and
+no-redirect check is still owed after the phase-2 DEV deploy. Phase 1 (#359) merged on 2026-10-27
+as `709d77868` and DEV plus the Prague postcode correction completed. TestFlight partner 17 and
+customer 16 from that commit failed at archive: Xcode has no signed-in account and both App IDs lack
+Associated Domains. Mike must sign back in and enable that capability before a new archive.
+No TestFlight release is claimed; crew-push copy in merged source still has a client-release
+dependency. E-mail buttons opening installed apps remain next-wave work.
 
 ### The Xcode projects and `Info.plist` are generated — do not edit them
 

@@ -97,8 +97,9 @@ Employee registration is not gated. → [ADR-0062](/decisions/adr-0062) D4 as am
 
 **Registering an unconfirmed address again with another password withdraws the stored one** (since the
 fix plan of 2026-10-25, `Register` and `RegisterEmployee`): the account is left with no password, so of
-two passwords typed for one address neither signs in once it is confirmed, and the confirmer sets their
-own through the reset. The same password again is kept. → [Re-registration](/api/authentication#register)
+two passwords typed for one address neither survives by default. The confirmer sets their own at
+confirmation as described below. The same password again is kept until confirmation replaces it.
+→ [Re-registration](/api/authentication#register)
 
 **The registration and new-password fields offer the platform's strong password.** On the web, both
 registration forms, the customer's reset step and the admin profile declare
@@ -108,6 +109,28 @@ too, so iCloud Keychain or Google Password Manager suggests one, saves it and fi
 iOS the app's associated domain must be live on its web host
 → [Strong passwords](/mobile-app/overview#webcredentials). The suggestion meets the password rule: at
 least 8 characters with a letter, of any alphabet, and a digit.
+
+## The mailbox confirmer chooses the password {#confirmation-password}
+
+The confirmation carries the password chosen by the mailbox holder (owner ruling 2026-10-26,
+*"Close"*). Immediately after registration the web, Android and iOS reuse the password just typed,
+held only in memory; on a later confirmation visit, including a sign-in detour, the screen asks for
+one with the existing password rules and matching confirmation. Auto-submit waits for that form
+to be valid. The code and chosen password reach the shared `ConfirmUserEmail` handler on all four
+hosts, replacing the registration's hash before the first session is issued.
+
+A legacy app or link request that sends no password still confirms and opens the session, but
+leaves the account with **no password**. Forgot password sets one; an older registration password
+never survives by default. Both the six-digit OTP and legacy-token branch follow this rule.
+Source: `src/Cleansia.Core.AppServices/Features/Auth/ConfirmUserEmail.cs:179`,
+`src/Cleansia.Core.Domain/Users/User.cs:394`.
+→ [Security rule](/architecture/security-rules#confirmation-password)
+
+Update before confirmation to avoid the legacy fallback. Once an old client has confirmed and the
+hash is withdrawn, updating alone cannot restore it: Forgot password is needed before password login.
+Installed builds do not acquire this screen from a server deploy. Android tester releases remain
+deferred; the new TestFlight builds remain signing-blocked. Tell testers about the legacy reset
+behavior until they run an updated client.
 
 ## The native customer apps need an account {#native-account-only}
 

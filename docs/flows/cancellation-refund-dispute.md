@@ -53,6 +53,18 @@ started it, the cancel and both previews answer `order.start_passed_cannot_cance
 dispute when signed in, `ReportGuestNoShow` for a guest. Until then the only self-service answer to an
 absent cleaner was a cancel that cost 50 %.
 
+**An account owner's own cancel of an unstaffed booking from its start uses the no-cleaner remedy**
+(owner ruling 2026-10-26). When `CancelUnfilledOrders.IsUnfilled` holds and the booked start has
+arrived, `CancelOrder` runs `CleanerNoShowCancellation`: the sweep's refund key, apology credit
+where applicable, outcome push and e-mail. `CancellationReason` keeps
+`order.cancelled.no_cleaner_available`; the reason typed by the customer is retained separately
+in `CustomerCancellationReason` (up to 500 characters) and cleared by order anonymisation. It is
+not added to cleaner DTOs, the incident file, export or archive readers. A listed guest booking is
+cancelled on its own guest terms before this branch, so matching an account e-mail grants no apology
+credit or Plus cancellation window. Source:
+`src/Cleansia.Core.AppServices/Features/Orders/CancelOrder.cs:144`,
+`src/Cleansia.Core.AppServices/Features/Orders/CustomerOrderCancellation.cs:53`.
+
 When the **cleaner** cancels or no-shows, the customer is refunded *and* credited the apology figure
 authored for the order's currency — `Currency.NoShowCredit`, 250 on a CZK order, paid into the
 customer's credit account in that currency. The credit is the apology; the refund is not. A guest has

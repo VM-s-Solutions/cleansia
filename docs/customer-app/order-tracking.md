@@ -53,6 +53,20 @@ their own customer's booking. There is nothing to type on this page any more.
 → [Guest order lookup](/flows/booking-and-pricing#guest-order-lookup)
 :::
 
+## Guest bookings in My orders {#guest-bookings-in-my-orders}
+
+Signing in with the confirmed e-mail used for a guest booking also lists that booking in My orders,
+on web, Android and iOS, even if it was made before the account. A guest badge and note explain that
+it was booked without signing in. The detail is redacted and can cancel on the booking's guest
+terms; it does not attach the booking or enable account-only receipt, photos, review, dispute,
+no-show, payment, preferred-cleaner or Live Activity actions.
+→ [The precise access rule](/product/business-rules#listed-guest-bookings)
+
+The public track page explains that a matching confirmed e-mail can find guest bookings in My orders.
+It still opens its token directly without requiring sign-in, and its own guest-token cancellation
+and no-show paths keep their existing capabilities. The remembered-browser list below remains a
+separate convenience, not the source of the account list.
+
 ## Remembered bookings
 
 `GuestOrderService` keeps, in `localStorage` under `cleansia_guest_orders`, the bookings **this

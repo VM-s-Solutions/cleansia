@@ -616,6 +616,12 @@ late or fired again for a customer who had already answered.
 
 ---
 
+For the customer My orders surface, list and count also include null-`UserId` guest bookings whose
+`CustomerEmail` equals the confirmed session e-mail under PostgreSQL `citext`, across markets and
+without an account-age cutoff. `isGuestBooking: true` marks the redacted list/detail.
+The permission grants guest-term cancellation, not ownership or other account actions.
+→ [Listed guest bookings](/product/business-rules#listed-guest-bookings)
+
 ### GetById
 
 Returns full details of a single order.
@@ -949,28 +955,31 @@ when the job is scheduled. → [business rules](/product/business-rules#start-gr
 
 ---
 
+### MarkMyPartDone
+
+`POST /api/Order/MarkMyPartDone` is available on Partner and Partner Mobile with
+`CanCompleteOrder` and the auth rate limit. Send `{ "orderId": "order-id" }`.
+The handler locks the order, verifies the caller's seat before exposing status, and while
+InProgress retains the first `completionConfirmedAt`. The response is
+`{ orderId, completionConfirmedAt, crewDone }`; `crewDone` means every current seat is marked,
+not that the order has completed. The first mark pushes to eligible crew mates.
+
+The intended solo UI uses Complete directly; the mark endpoint itself accepts a solo mark.
+It neither adds a photo/payment rule to the mark nor grants completion to a non-assignee.
+→ [Crew completion](/flows/execution-and-completion#crew-completion)
+
 ### CompleteOrder
 
-Employee marks the order as completed.
+`POST /api/Order/CompleteOrder` on both partner hosts takes `{ "orderId": "order-id" }`,
+with optional actual minutes and completion notes. It requires `CanCompleteOrder`, the caller's
+current seat, accepted contract for work, profile/approval, InProgress, an after photo and settled
+payment. With two or more assigned cleaners, any unmarked seat also refuses it as
+`order.crew_not_done`; one assigned cleaner keeps ordinary completion.
 
-```
-POST /api/Order/CompleteOrder
-```
-
-**Auth:** `CanCompleteOrder` (Employee)
-
-**Request body:**
-
-```json
-{
-  "orderId": "order-id"
-}
-```
-
-**Refused when the caller's seat has no accepted contract for work** — `contract.acceptance_required`,
-right after the assignment rule, like `StartOrder`: on a two-seat crew the second cleaner never starts
-(the order is already in progress) but may complete, and Complete is the last act with a contract
-behind it. `NotifyOnTheWay` is not gated. → [the contract gate](/flows/execution-and-completion#the-contract-gate)
+The handler reads under the same order-row lock as mark and automatic close. A call that waited
+while another completed succeeds with `newStatus: Completed` without replaying the effects.
+Automatic completion is eligible two hours after the last mark and retains photo/payment checks.
+→ [ADR-0077](/decisions/adr-0077), [The contract gate](/flows/execution-and-completion#the-contract-gate)
 
 ---
 

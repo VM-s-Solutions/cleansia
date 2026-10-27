@@ -240,6 +240,7 @@ until it is under way, and a placement past that is declined by not accepting it
 | **[ADR-0074](./adr-0074)** | The read that asks which cleaners are busy in a window reads every company's orders, so it is one method, `GetBusyEmployeeIdsInWindowIgnoringTenantAsync`, with no scoped sibling; S8 says a method every caller needs across companies carries `IgnoringTenant` (2026-10-12, T-0833; supersedes every passage of ADR-0039 on the set read's tenancy) | `accepted` |
 | **[ADR-0075](./adr-0075)** | The mobile contract states a query sort the way the server binds it (T-0832: the two mobile hosts describe `DataRangeRequest.Sort` as `Sort[0].Field` and `Sort[0].Direction`) | `accepted` |
 | **[ADR-0076](./adr-0076)** | An open cleaning seat stops being offered and takeable when its booked slot ends (owner ruling 2026-10-13; partially supersedes ADR-0037 D1) | `accepted` |
+| **[ADR-0077](./adr-0077)** | Every cleaner marks done before a crew uses shared Complete; automatic completion waits two hours after the last mark and retains after-photo/payment checks (owner rulings 2026-10-26 and 2026-10-27) | `accepted` |
 
 ⟲ = superseded in whole or in part by a later record.
 

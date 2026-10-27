@@ -49,8 +49,9 @@ app's associated domain to be live → [Strong passwords](/mobile-app/overview#w
 **Registering again before confirming.** A registration of an address nobody has confirmed yet sends a
 fresh code. When it brings a password other than the one stored, the account is left with **no
 password** (since the same day): whoever confirms the address proves they hold the mailbox, not which
-of the two passwords is theirs, so neither signs in. The confirmation signs them in, and a password of
-their own comes from *Forgot password*. The same password again is kept.
+of the two passwords is theirs. Confirmation now replaces the hash with the mailbox holder's chosen
+password. A legacy confirmation with no password leaves none and needs *Forgot password* once.
+The same re-registration password again is kept only until confirmation replaces it.
 → [Re-registration](/api/authentication#register)
 
 ::: info
@@ -68,9 +69,13 @@ After registration, partners are redirected to `/confirm-email`. The confirmatio
 
 1. Partner receives an email with a 6-digit confirmation code
 2. The confirm-email page presents a 6-digit code input component with individual digit fields that auto-advance to the next field on entry; the Android and iOS apps draw six boxes over one real text field
-3. The form auto-submits when the 6th digit is entered. A code can be pasted on all three (below)
-4. The code is sent to the backend for validation
-5. On success, the email is marked as confirmed
+3. Immediately after registration it reuses the password held in memory. A later arrival, including
+   the unconfirmed-login detour, asks for a chosen password and matching confirmation under the
+   existing password policy.
+4. Code submission waits for the password form when needed. The code, e-mail and chosen password are
+   sent to the backend; a code can be pasted on all three clients (below).
+5. On success, the chosen password replaces the registration hash and the e-mail is confirmed.
+   No password is carried in the confirmation URL or persistent storage.
 
 **A long press on the boxes reaches a real field and its Paste, on partner web, Android and iOS**
 (since 2026-10-24). On partner web each box is an input of its own, and a pasted code fills all six.
@@ -97,6 +102,10 @@ code depends on the gesture and the platform:
   a digit a box already holds keeps all six digits. The page sends one confirm at a time: a code the
   boxes complete again while the first confirm is in flight, as AutoFill can deliver it, is not sent a
   second time.
+
+An old client that confirms with no password leaves the account without one. Updating before
+confirmation avoids this fallback; updating afterwards does not restore the hash, so Forgot password
+is needed before password sign-in. → [Mailbox confirmation](/flows/auth-and-identity#confirmation-password)
 
 VoiceOver and TalkBack read the apps' field as *Verification code, 6 digits*; the boxes drawn over it
 are hidden from them.

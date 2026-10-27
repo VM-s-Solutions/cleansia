@@ -111,6 +111,27 @@ never-started/empty-crew selection and its existing refund and credit rules. Bef
 it, a late unfilled slot remains takeable while its booked time is open. At end it stops being offered
 even if the sweep has not run. A stale list's take gets `order.not_takeable` when expiry is the first failed check; earlier opaque existence/hold/currency checks and terminal-status refusals keep their existing keys; seat-open notices stop too.
 
+## Guest bookings in My orders {#listed-guest-bookings}
+
+A confirmed Customer session lists and counts bookings made **without an account** under its
+e-mail, including bookings made before the account existed and in other markets. PostgreSQL
+`citext` equality matches `CustomerEmail`; `UserId` must remain null. The web, Android and iOS
+badge them as guest bookings, open a redacted detail, and offer cancellation on the booking's
+guest terms: its stored fee ladder and first-booking window, with no account Plus extension.
+
+This grants read and cancel, not attachment. No account, tenant or consent is written onto the
+booking. Cancellation records its normal effects and e-mail, but creates no guest account feed,
+push, loyalty/referral entitlement or apology credit through the viewing account. Receipt, photos,
+review, dispute/no-show reporting, preferred cleaner, payment and Live Activity are not granted by
+this listing. Name, e-mail, address and the cancellation window remain visible; phone, household
+free text and crew contact/completion times do not. The crew is shown by given name.
+
+The web guest-token page remains a separate access route with its own capabilities. An e-mail
+match is not proof of historical mailbox ownership: an old confirmed account after mailbox
+reassignment and locale-specific non-ASCII case folding remain reported residuals, not accepted
+new policy. → [ADR-0061 amendment](/decisions/adr-0061#listed-guest-bookings),
+[Customer order tracking](/customer-app/order-tracking#guest-bookings-in-my-orders)
+
 ## Cancellation
 
 The fee is a fraction of the order total, decided by how much notice the customer gives:
@@ -217,7 +238,8 @@ cancel and on both previews (`CancellationAssessor.BlockedReason`). Until then a
 had not turned up could only cancel, and paid the 50 % last-minute fee for the platform's no-show. The
 clients replace *Cancel* with **the cleaner did not arrive**, which feeds the no-show path
 [below](#when-the-cleaner-cancels-or-no-shows). Before the start nothing changes; an order still
-unassigned at its start stays free to cancel (the unfilled sweep owns it); an order in progress
+unassigned at its start stays free to cancel and, on its account owner's own cancel, receives the
+no-cleaner remedy described below; an order in progress
 stays refused (`order.in_progress_cannot_cancel`).
 
 **A card refund that does not go through is owed, not lost.** When a signed-in customer's cancellation
@@ -412,12 +434,19 @@ The customer is refunded **and** credited the apology figure authored for the or
 **250 CZK** on a CZK order. The credit is the apology; the refund is not. A guest has no credit account
 and gets the refund only.
 
-**Two ways the platform establishes it, and only one moves money without a person.**
+**The unfilled sweep, the customer's own unstaffed cancel, and an administrator's confirmation use the same remedy.**
 
 - **Nobody ever took the seat** — the unfilled-order sweep (`CancelUnfilledOrders`), 30 minutes past the
   slot, looking back up to **168 h** (a week, so a Functions outage of days still leaves every missed
   order to the first tick after it; it was 6 h until 2026-09-28). The one no-show the platform can
   prove: there was nobody to tap.
+- **The account owner cancels an unstaffed booking from its booked start** (owner ruling 2026-10-26) —
+  if the unfilled-sweep predicate holds, their own Cancel runs the same no-cleaner body immediately:
+  its refund key, apology credit where applicable, outcome push and e-mail. It keeps the system key in
+  `CancellationReason` and stores their typed reason in `CustomerCancellationReason`, cleared on
+  anonymisation. This column has no new incident/export/archive reader and never reaches a cleaner.
+  A guest booking listed through matching e-mail stays on guest terms, with no account apology or
+  Plus benefit. → [Cancellation flow](/flows/cancellation-refund-dispute#cancellation)
 - **An assigned cleaner did not come** (owner ruling 2026-09-28) — **an administrator confirms**. Every
   other version of "the cleaner did not arrive" rests on a missing tap, which is indistinguishable from
   a cleaner who turned up and forgot to slide to start, so no timer refunds on its own and a drop
@@ -763,18 +792,19 @@ migrated. → [Order lifecycle](/domain/order-lifecycle)
 
 ### When the platform cancels {#platform-cancellation}
 
-Four reasons exist for a cancellation nobody asked for, each a stable key the customer's apps turn into
-a sentence (`OrderCancellationReasons`): the card payment never completed
+The system cancellation reasons have stable keys the customer's apps turn into sentences
+(`OrderCancellationReasons`): the card payment never completed
 (`order.cancelled.payment_not_completed` — the checkout was abandoned and the slot released), a recurring
 occurrence went unconfirmed (`order.cancelled.recurring_not_confirmed`, fee-free at the lead-time
 cut-off), nobody was on the job at its slot, an administrator confirmed that the assigned cleaner did
-not come or, since the fix plan of 2026-10-25, called off before its start a booking nobody is on
+not come or, since the fix plan of 2026-10-25, called off before its start a booking nobody is on;
+the account owner's own unstaffed cancel from start now uses the same key too
 (`order.cancelled.no_cleaner_available` — the no-show above; an admin's no-show confirmation
 exposes this key, never the administrator's own words, as the reason the customer sees), and **the operating company is
 closing** (`order.cancelled.company_wind_down`): the booking fell on or after the company's last day of
 service, so the platform cancelled it and — on a card booking — refunded it in full, absorbing the Stripe
 fee; a cash booking is simply cancelled. No fee is ever charged on a platform cancellation. →
-[A company's lifecycle](#company-lifecycle). A fifth key, `order.cancelled.customer_lockout`, is not
+[A company's lifecycle](#company-lifecycle). The key `order.cancelled.customer_lockout` is not
 the platform's cancellation but the customer's, written by an administrator's confirmation and exposed
 like a platform reason, never as the administrator's words → [the lockout](#lockout).
 
@@ -1219,6 +1249,28 @@ re-crews the order, so a one-cleaner cash job stays one cleaner. **Extra work on
 (decision 37): the cleaner does the booked scope, and anything else is a new order. The cleaner brings the
 supplies, included in the price (decision 38).
 
+## Completing a crew job {#crew-completion}
+
+On a job held by **two or more cleaners**, each marks **I'm done** on their own device. The server
+keeps the first time on their seat and tells the other eligible cleaners by push. Once every seat
+still on the job is marked, any of them can use the shared **Complete job**. Until then a Complete
+is refused as `order.crew_not_done`, even if nobody marked. A job held by one cleaner keeps one
+Complete action; the gate counts actual assignments rather than the booked crew requirement.
+
+Completion still requires the after photo and settled payment, and manual Complete retains the
+cleaner's contract/profile/approval checks. If nobody presses the shared action, a fully marked job
+is eligible for automatic completion **two hours after the last mark**, on the next existing
+fifteen-minute cleanup tick. A missing mark, after photo or payment leaves it in progress (Mike's
+clarification 2026-10-27). Automatic completion ends measured work at the last mark and runs the same
+status, receipt/e-mail, applicable rewards and per-seat pay-calculation effects once, under the
+order-row lock. It adds no administrator alert.
+
+Partner web and admin show the per-seat times; customers see no new completion timestamps.
+A marked cleaner still blocks other work until the job completes or the relevant window ends.
+That is a reported residual, not a new ruling. There is no undo or administrator marking on behalf
+of another cleaner. → [ADR-0077](/decisions/adr-0077),
+[Execution flow](/flows/execution-and-completion#crew-completion)
+
 ## Crew size
 
 ```
@@ -1245,8 +1297,9 @@ definition; its SQL twins sum the catalogue in the database and scale through th
 
 **The level can add a cleaner, and with it take cash away.** A 120-minute job is one cleaner; the same
 job is 156 minutes at *Increased* and 192 at *Heavy*, so it needs two, and a two-cleaner job pays by card
-([Paying in cash](#cash)). With the seeded catalogue a lone *General Cleaning* (120 min) is exactly that
-case. The quote answers `estimatedDurationMinutes` and `requiredEmployees` at the level it priced, so
+([Paying in cash](#cash)). This is a duration example: DEV services now seed at 2 minutes each,
+with packages following the sum, and production durations are entered in the admin catalogue.
+The quote answers `estimatedDurationMinutes` and `requiredEmployees` at the level it priced, so
 every client knows before the customer submits.
 
 Every reader of "how long is this job" asks the same estimate: the order, the quote, the Plus preview,
@@ -1897,6 +1950,12 @@ announces the new version: a cleaner meets it at their next take, which points t
 later deploy renames the two folders in the last commit before the merge.
 → [ADR-0068 §Amended 2026-10-25](/decisions/adr-0068#amended-2026-10-25)
 
+**The next customer terms version is provisional.** The five-language folder
+`src/Cleansia.Infra.Database/Seed/Legal/customer/terms-of-service/any/2026-10-28/` explains the
+confirmed-email guest listing and cancellation. It must be renamed, with its explicit seeder-test
+version row, to the day it first deploys to DEV after the merge, never an earlier date. It is not
+already deployed or in force; the table above retains the current deployed version.
+
 ### The seller is named from the company record {#company-identity}
 
 **Decision 54.** A text never spells out the company. It carries the placeholders `companyLegalName`,
@@ -2099,6 +2158,10 @@ reward — and so is how the parties are named: the company from its record, the
 on the PDF copy.
 
 ### An administrator's placement is an offer {#placement-is-an-offer}
+
+`AdminReassignOrder` refuses a Completed or Cancelled order with `order.already_completed` or
+`order.already_cancelled` before considering the incoming cleaner. Its pre-existing reassignment
+race is not changed by this status gate.
 
 **Owner ruling 2026-09-28**, which answers ADR-0068's open question on forcing a crew member. An
 administrator may still place a cleaner on a job (`AdminReassignOrder`), and the placed cleaner still

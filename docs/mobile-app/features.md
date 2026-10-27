@@ -97,6 +97,46 @@ comment says so) and the customer app's `ui/format/` formatters, which shadow `c
 the `:core` definition in new code.
 :::
 
+## Guest bookings in the customer's account {#listed-guest-bookings}
+
+Both signed-in customer apps list/count guest bookings matching the confirmed session e-mail, badge
+their cards and detail, and show the note explaining they were made without signing in. They offer
+guest-term cancellation and hide receipt, photos, review/automatic review prompt, issue/no-show,
+payment, preferred-cleaner and Live Activity actions. A guest photo request is not sent.
+There is no anonymous guest screen reintroduced.
+→ [Guest listing and its limits](/product/business-rules#listed-guest-bookings)
+
+## Crew completion in the partner apps {#crew-completion}
+
+With two or more assigned cleaners, each uses the **I'm done** slide; after their first mark the
+footer waits for the others. Once all seats are marked, the shared **Complete job** slide is available
+subject to the existing photo/payment gates. One assigned cleaner keeps **Slide to complete**.
+The gesture is unchanged. The server owns the rule and returns translated `order.crew_not_done`
+for a stale premature Complete. Crew steps are detail actions; a list swipe does not mark a seat.
+
+The apps use timestamps for the action state but add no crew list or time panel. A first mark pushes
+`order.crew_mate_done` to the other eligible cleaners, including those already marked. Android
+re-fetches after a local action and supports pull-to-refresh/on-resume freshness checks; iOS loads
+on entering the detail and after its local actions. Following the push can open the job. An already
+open detail does **not** refresh merely because the foreground push arrived; reopen or refresh to
+see the changed crew. The server's two-hour automatic close still needs all marks, an after photo
+and settled payment. → [ADR-0077](/decisions/adr-0077)
+
+**Compatibility:** installed partner builds without I'm done cannot complete a job with two or more
+assigned cleaners. With zero marks it never qualifies for automatic close. Use updated clients or
+partner web for crew jobs while Android tester releases are deferred and TestFlight signing is
+blocked. The new iOS crew-push catalog keys are present in source and registered in the APNs map;
+older installed apps do not gain those keys from the server.
+
+## Choosing a password at e-mail confirmation {#confirmation-password}
+
+Both apps reuse the just-registered password only in memory; later confirmation visits ask for a
+password and matching confirmation with the existing policy. Submission waits for a valid choice.
+Both customer and partner send it with the code so only the mailbox holder chooses the working
+password. Update before confirming to use this flow. A legacy confirmation sends no password,
+withdraws the stored hash and needs Forgot password before password login; updating afterwards
+cannot recreate it. → [Auth and identity](/flows/auth-and-identity#confirmation-password)
+
 ## Anatomy of a feature
 
 ### Android

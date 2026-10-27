@@ -101,7 +101,7 @@ Offerable (the work is not over, and it is Paid — or a one-off cash order; see
         → OnTheWay
           → Start Order
             → InProgress (work begins, timer starts)
-              → Complete Order
+              → solo: Complete; crew: each I'm done, then any Complete job
                 → Completed (work finished)
 ```
 
@@ -198,6 +198,10 @@ what a stale or broken client sees.
 **there is no spare seat** (`BookingPolicy.SpareSeatsPerOrder = 0`). A job needing a crew of two shows
 two seats and no more, so a partner will never find an extra slot on a job that does not need them.
 
+On in-progress crew jobs, each row also shows **Done** with the cleaner's mark time or **Not yet**.
+The mark records that cleaner's part, not the whole job's completion; customer/browsing DTOs do not
+receive it.
+
 ### Start Order
 
 - Called via `OrderDetailsFacade.startOrder(orderId, employeeId)`
@@ -210,31 +214,24 @@ two seats and no more, so a partner will never find an extra slot on a job that 
 
 ### Complete Order
 
-Completion is handled directly from the order detail page (aligned with the Android app -- no dialog):
+For a job held by one cleaner, Complete keeps the existing direct completion: the detail computes
+actual minutes from the InProgress status timestamp and sends optional notes as an empty string.
+From a solo list row, `CompleteOrderDialogComponent` keeps the optional actual-minutes and notes
+form; nothing in pay reads those minutes.
 
-- `OrderDetailsFacade.completeOrder()` automatically calculates `actualMinutes` from the `InProgress` status timestamp
-- Dispatches `completeOrder` NgRx action
-- No manual time entry is required; the elapsed time is computed automatically
+For **two or more assigned cleaners**, each sees **I'm done** until their own seat is marked.
+`OrderDetailsFacade.markMyPartDone` calls the server and reloads the detail; the waiting line
+asks for the other cleaners' marks. Once every seat is marked, any cleaner may use shared
+**Complete job**. The button still needs an after photo; without it the line reads *Add an after
+photo, then any of you can complete it.* Existing payment and cleaner checks still apply.
+A crew list-row Complete opens the job detail instead of the solo dialog.
 
-```typescript
-// Elapsed time calculation (auto-computed on completion) — order-details.facade.ts
-// Compare against the OrderStatus enum, never a magic number: InProgress is 4, not 3.
-const inProgressEntry = order.statusHistory?.find(
-  (h) => h.status.value === OrderStatus.InProgress
-);
-let actualMinutes = 0;
-if (inProgressEntry) {
-  const start = new Date(inProgressEntry.createdOn);
-  actualMinutes = Math.max(1, Math.floor((Date.now() - start.getTime()) / 60000));
-}
-```
-
-**From the orders list, completion opens a dialog** (`CompleteOrderDialogComponent`, via
-`OrdersFacade.openCompleteOrderDialog`). It shows the estimated and actual minutes side by side, takes
-the actual minutes (prefilled with the estimate) and **optional** notes — the form requires none,
-like the server and the detail page, which sends an empty string. It passes no verdict: the *Delay* /
-*On time* row is gone (2026-09-28), and the hint under the notes says only that they help improve the
-estimates. Nothing in pay reads the minutes; the dashboard's time and productivity analytics do.
+The detail uses the last fetched crew state. Another cleaner's foreground push does not refresh
+an already-open sheet; reopen or reload it to see the shared action. A premature request is
+authoritatively refused as `order.crew_not_done`, translated in all five locales.
+A fully marked job nobody closes is eligible for automatic completion two hours after the last
+mark on a later fifteen-minute sweep, still requiring the photo and settled payment.
+→ [Crew completion](/product/business-rules#crew-completion), [ADR-0077](/decisions/adr-0077)
 
 ### Customer did not pay {#customer-did-not-pay}
 

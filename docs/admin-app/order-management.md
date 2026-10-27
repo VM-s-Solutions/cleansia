@@ -82,6 +82,10 @@ The admin order detail page provides a comprehensive view of a single order with
 | Notes | All notes added by partners and admins |
 | Photos | Before/after photos from partners |
 
+The crew card also shows **Marked done** with each cleaner's time; an unstamped seat reads **Not yet**
+only on an in-progress job with two or more assignees, and otherwise a dash. An administrator cannot
+mark done for a cleaner. → [Crew completion](/product/business-rules#crew-completion)
+
 ### Cancel as a no-show {#cancel-as-no-show}
 
 When the assigned cleaner did not come, **Cancel as a no-show** confirms it (owner ruling 2026-09-28;
@@ -216,6 +220,11 @@ already on the way or in progress cannot be dropped — and, from 2026-10-27 (th
 second decline: the partner stays on the crew, *contract pending*, until an administrator takes them
 off with a reason
 → [Business rules — placement is an offer](/product/business-rules#placement-is-an-offer).
+
+**Terminal orders cannot be reassigned.** `AdminReassignOrder` refuses Completed with
+`order.already_completed` and Cancelled with `order.already_cancelled` before the incoming-cleaner
+rules. This adds a status gate, not a new order-row lock; the previously reported concurrent
+reassignment residual remains.
 
 **The cleaner placed must be able to do the job.** `AdminReassignOrder` refuses, in this order:
 

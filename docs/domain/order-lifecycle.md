@@ -146,6 +146,16 @@ Two rules span both axes and neither can be expressed as a status list:
   term only excludes** (since 2026-09-28): an order already cancelled is not an abandoned checkout, and
   re-cancelling it would restage the guest e-mail under a key its first cancellation already wrote.
 
+## Crew completion {#crew-completion}
+
+An own-seat `CompletionConfirmedAt` records a cleaner's **I'm done**, not a new order status.
+With two or more assigned cleaners all seats must be marked before shared **Complete job**;
+one assigned cleaner keeps ordinary Complete. Until then the job remains `InProgress`.
+A fully marked job may be automatically completed two hours after its last mark on a later
+fifteen-minute sweep, retaining after-photo/payment checks. Manual and automatic completion share
+the same locked completion body.
+→ [ADR-0077](/decisions/adr-0077), [Execution flow](/flows/execution-and-completion#crew-completion)
+
 ## Seats
 
 `RequiredEmployees = ceil(EstimatedTime / 120)`, and `MaxEmployees = RequiredEmployees +

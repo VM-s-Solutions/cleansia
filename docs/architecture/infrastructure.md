@@ -422,6 +422,10 @@ private async Task<string> SendRenderedAsync(
 
 - **From** is `SendGrid:AddressFrom`, shown as *Cleansia*. It only delivers mail and is never shown as
   the contact ([Environment configuration — SendGrid](/deployment/environment-config#sendgrid)).
+- **Click tracking is off** for the transactional e-mails rendered by this service, for HTML and
+  plain text (`EmailService.SendRenderedAsync`, `SetClickTracking(false, false)` at
+  `src/Cleansia.Core.AppServices/Services/EmailService.cs:1283`). Buttons retain their real URL rather
+  than a SendGrid redirect that records the full target, including a guest token or reset code.
 - **Reply-To** is `support@cleansia.cz` on every e-mail, the same constant the support line prints, so
   pressing Reply writes to support ([Decision 54](/product/business-rules#company-identity)).
 - **The transport** is the named `SendGrid` `HttpClient` from `IHttpClientFactory`, pooled, with the

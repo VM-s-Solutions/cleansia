@@ -1,5 +1,7 @@
 using System.Security.Claims;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.Disputes;
+using Cleansia.Core.AppServices.Features.LiveActivities;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
 using Cleansia.Core.AppServices.Features.Orders.Filters;
@@ -286,6 +288,86 @@ public class GuestBookingsInMyOrdersTests(PostgresContainerFixture fixture) : Ba
             },
             transactional: false);
     }
+
+    /// <summary>
+    /// Listed, never owned: every other action on one booking keeps the owner pin, so the account is refused on
+    /// a booking it lists as on one it does not, and nothing is written. Choosing a preferred cleaner asks for
+    /// Cleansia Plus before it reads any order.
+    /// </summary>
+    [Theory]
+    [InlineData("receipt", BusinessErrorMessage.OrderNotFound)]
+    [InlineData("photos", BusinessErrorMessage.OrderNotFound)]
+    [InlineData("review", BusinessErrorMessage.OrderNotFound)]
+    [InlineData("dispute", BusinessErrorMessage.OrderNotFound)]
+    [InlineData("no-show", BusinessErrorMessage.OrderNotFound)]
+    [InlineData("payment", BusinessErrorMessage.OrderNotFound)]
+    [InlineData("resume-checkout", BusinessErrorMessage.OrderNotFound)]
+    [InlineData("live-activity", BusinessErrorMessage.OrderNotFound)]
+    [InlineData("preferred-cleaner", BusinessErrorMessage.PreferredEmployeeMembershipRequired)]
+    public async Task Every_Other_Action_On_A_Listed_Guest_Booking_Is_Refused_And_Writes_Nothing(string action, string refusal)
+    {
+        await TestMethod(
+            setup: Setup,
+            arrange: SeedAsync,
+            act: async provider =>
+            {
+                using var scope = provider.CreateScope();
+                return await scope.ServiceProvider.GetRequiredService<IMediator>().Send(RequestFor(action));
+            },
+            assert: async (CleansiaDbContext context, object? result) =>
+            {
+                Assert.Contains(refusal, ErrorKeys(result));
+                Assert.Empty(await context.OrderReviews.IgnoreQueryFilters().AsNoTracking().ToListAsync());
+                Assert.Empty(await context.Disputes.IgnoreQueryFilters().AsNoTracking().ToListAsync());
+                Assert.Empty(await context.LiveActivityTokens.IgnoreQueryFilters().AsNoTracking().ToListAsync());
+                var booking = await context.Orders.IgnoreQueryFilters().AsNoTracking()
+                    .SingleAsync(o => o.Id == GuestTypedInCapitalsId);
+                Assert.Equal(OrderStatus.New, booking.CurrentStatus);
+                Assert.Null(booking.UserId);
+                Assert.Null(booking.PreferredEmployeeId);
+            },
+            transactional: false);
+    }
+
+    /// <summary>The profile's bookings figure stays the account's own: listed bookings are not counted.</summary>
+    [Fact]
+    public async Task The_Profiles_Bookings_Figure_Counts_The_Accounts_Own_Bookings_Only()
+    {
+        await TestMethod(
+            setup: Setup,
+            arrange: SeedAsync,
+            act: provider => provider.GetRequiredService<IOrderRepository>()
+                .GetCustomerProfileStatsAsync(JanaId, CancellationToken.None),
+            assert: (CleansiaDbContext _, CustomerProfileStats stats) =>
+            {
+                Assert.Equal(1, stats.TotalBookings);
+                return Task.CompletedTask;
+            },
+            transactional: false);
+    }
+
+    private static object RequestFor(string action) => action switch
+    {
+        "receipt" => new DownloadOrderReceipt.Query(GuestInSecondMarketId),
+        "photos" => new GetOrderPhotos.Query(GuestInSecondMarketId),
+        "review" => new SubmitOrderReview.Command(GuestInSecondMarketId, 5, "Spotless."),
+        "dispute" => new CreateDispute.Command(
+            GuestInSecondMarketId, DisputeReason.QualityIssue, "The kitchen and the bathroom were not cleaned at all."),
+        "no-show" => new CreateDispute.Command(
+            GuestTypedInCapitalsId, DisputeReason.ServiceNotProvided, "Nobody came to clean at the booked time today."),
+        "payment" => new CreatePaymentIntent.Command(GuestTypedInCapitalsId),
+        "resume-checkout" => new ResumeOrderCheckout.Command(GuestTypedInCapitalsId),
+        "live-activity" => new RegisterLiveActivityToken.Command("device-listed", "token-listed", GuestTypedInCapitalsId),
+        "preferred-cleaner" => new ChoosePreferredCleaner.Command(GuestTypedInCapitalsId, "emp-listed"),
+        _ => throw new ArgumentOutOfRangeException(nameof(action), action, null),
+    };
+
+    private static IEnumerable<string> ErrorKeys(object? result) => result switch
+    {
+        IValidationResult validation => validation.Errors.Select(e => e.Message),
+        BusinessResult { IsFailure: true } failure => [failure.Error!.Message],
+        _ => [],
+    };
 
     private static IUserSessionProvider Customer() =>
         new TestUserSessionProvider(JanaId, JanaEmail, [new Claim(ClaimTypes.Role, UserProfile.Customer.ToString())]);

@@ -199,6 +199,23 @@ class BackendKeyStringsTest {
     }
 
     /**
+     * The crew close: `MarkMyPartDone` refuses a cleaner off the crew or a job not under way, and `CompleteOrder`
+     * refuses a crew job until everyone still on it has marked their part done.
+     */
+    @Test
+    fun `every refusal of the crew close resolves to a sentence in all five locales`() {
+        val keys = listOf("order.not_found", "order.employee_not_assigned", "order.not_in_progress", "order.crew_not_done")
+        val raw = locales.flatMap { locale ->
+            val declared = declared(locale)
+            keys
+                .map { it to "error_" + it.replace('.', '_').lowercase() }
+                .filterNot { (_, resName) -> resName in declared }
+                .map { (key, resName) -> "$locale/$resName ($key)" }
+        }
+        assertTrue("these refusals render raw: $raw", raw.isEmpty())
+    }
+
+    /**
      * `UpdateIdentificationInfo` and `UpdateEmployee` refuse an IČO the country's business register (ARES)
      * does not hold, and an approved cleaner's changed IČO gets approval's full register check.
      */

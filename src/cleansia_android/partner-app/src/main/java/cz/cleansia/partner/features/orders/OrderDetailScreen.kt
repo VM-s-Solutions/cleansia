@@ -109,6 +109,7 @@ fun OrderDetailScreen(
     val preferredOffer by viewModel.preferredOffer.collectAsStateWithLifecycle()
     val contractRequest by viewModel.contractRequest.collectAsStateWithLifecycle()
     val contractStanding by viewModel.contractStanding.collectAsStateWithLifecycle()
+    val completionStep by viewModel.completionStep.collectAsStateWithLifecycle()
     val removalReason by viewModel.removalReason.collectAsStateWithLifecycle()
     val checkedIds by checklistViewModel.checkedIds.collectAsStateWithLifecycle()
 
@@ -158,6 +159,7 @@ fun OrderDetailScreen(
                     inFlight = inFlightAction,
                     preferredOffer = preferredOffer,
                     contractStanding = contractStanding,
+                    completionStep = completionStep,
                     checkedIds = checkedIds,
                     onToggleChecklistItem = checklistViewModel::setChecked,
                     onTake = viewModel::take,
@@ -169,6 +171,7 @@ fun OrderDetailScreen(
                     // and notes — the cleaner just confirms with the
                     // slide gesture and the order flips to Completed.
                     onCompleteClick = { viewModel.complete(null, null) },
+                    onMarkMyPartDone = viewModel::markMyPartDone,
                     onCashConfirmRequested = { confirmingCash = true },
                     onCashNotPaidRequested = { confirmingCashNotPaid = true },
                     onDeclineOffer = { decliningOffer = true },
@@ -363,6 +366,7 @@ private fun OrderDetailBottomSheetLayout(
     inFlight: OrderAction?,
     preferredOffer: PendingOffer?,
     contractStanding: WorkContractStanding,
+    completionStep: CompletionStep,
     checkedIds: Set<String>,
     onToggleChecklistItem: (String, Boolean) -> Unit,
     onTake: () -> Unit,
@@ -370,6 +374,7 @@ private fun OrderDetailBottomSheetLayout(
     onStart: () -> Unit,
     onNotifyOnTheWay: () -> Unit,
     onCompleteClick: () -> Unit,
+    onMarkMyPartDone: () -> Unit,
     onCashConfirmRequested: () -> Unit,
     onCashNotPaidRequested: () -> Unit,
     onDeclineOffer: () -> Unit,
@@ -432,6 +437,7 @@ private fun OrderDetailBottomSheetLayout(
                     inFlight = inFlight,
                     preferredOffer = preferredOffer,
                     contractStanding = contractStanding,
+                    completionStep = completionStep,
                     checkedIds = checkedIds,
                     onToggleChecklistItem = onToggleChecklistItem,
                     onTake = onTake,
@@ -439,6 +445,7 @@ private fun OrderDetailBottomSheetLayout(
                     onStart = onStart,
                     onNotifyOnTheWay = onNotifyOnTheWay,
                     onCompleteClick = onCompleteClick,
+                    onMarkMyPartDone = onMarkMyPartDone,
                     onCashConfirmRequested = onCashConfirmRequested,
                     onCashNotPaidRequested = onCashNotPaidRequested,
                     onDeclineOffer = onDeclineOffer,
@@ -652,6 +659,7 @@ private fun OrderDetailSheetContent(
     inFlight: OrderAction?,
     preferredOffer: PendingOffer?,
     contractStanding: WorkContractStanding,
+    completionStep: CompletionStep,
     checkedIds: Set<String>,
     onToggleChecklistItem: (String, Boolean) -> Unit,
     onTake: () -> Unit,
@@ -659,6 +667,7 @@ private fun OrderDetailSheetContent(
     onStart: () -> Unit,
     onNotifyOnTheWay: () -> Unit,
     onCompleteClick: () -> Unit,
+    onMarkMyPartDone: () -> Unit,
     onCashConfirmRequested: () -> Unit,
     onCashNotPaidRequested: () -> Unit,
     onDeclineOffer: () -> Unit,
@@ -860,6 +869,7 @@ private fun OrderDetailSheetContent(
             status = status,
             isMine = isMine,
             inFlight = inFlight,
+            completionStep = completionStep,
             canComplete = order.hasAfterPhotos == true,
             needsCashCollection = order.needsCashCollection(),
             canReportCashNotPaid = order.cashNotPaidReportable(),
@@ -869,6 +879,7 @@ private fun OrderDetailSheetContent(
             onStart = onStart,
             onNotifyOnTheWay = onNotifyOnTheWay,
             onCompleteClick = onCompleteClick,
+            onMarkMyPartDone = onMarkMyPartDone,
             onCashConfirmRequested = onCashConfirmRequested,
             onCashNotPaidRequested = onCashNotPaidRequested,
             onDeclineOffer = onDeclineOffer,
@@ -882,6 +893,7 @@ private fun StickyActionFooter(
     status: OrderStatus?,
     isMine: Boolean,
     inFlight: OrderAction?,
+    completionStep: CompletionStep,
     canComplete: Boolean,
     needsCashCollection: Boolean,
     canReportCashNotPaid: Boolean,
@@ -891,6 +903,7 @@ private fun StickyActionFooter(
     onStart: () -> Unit,
     onNotifyOnTheWay: () -> Unit,
     onCompleteClick: () -> Unit,
+    onMarkMyPartDone: () -> Unit,
     onCashConfirmRequested: () -> Unit,
     onCashNotPaidRequested: () -> Unit,
     onDeclineOffer: () -> Unit,
@@ -940,6 +953,8 @@ private fun StickyActionFooter(
                 onCompleteClick = onCompleteClick,
                 onCashConfirmRequested = onCashConfirmRequested,
                 onCashNotPaidRequested = onCashNotPaidRequested,
+                onMarkMyPartDone = onMarkMyPartDone,
+                completionStep = completionStep,
                 canComplete = canComplete,
                 needsCashCollection = needsCashCollection,
                 canReportCashNotPaid = canReportCashNotPaid,

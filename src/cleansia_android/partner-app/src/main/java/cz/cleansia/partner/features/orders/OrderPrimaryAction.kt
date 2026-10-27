@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.HourglassTop
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -19,6 +20,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -36,7 +38,8 @@ import cz.cleansia.partner.api.model.OrderStatus
  *   Confirmed (mine):            "Notify on the way" (single button)
  *   OnTheWay (mine):             Slide-to-start
  *   InProgress (mine):           "Mark cash collected" (unpaid cash, with "Customer did not pay"
- *                                beneath it) then Slide-to-complete
+ *                                beneath it) then Slide-to-complete; on a crew job, Slide-to-mark-my-part,
+ *                                then the waiting line until every seat is marked, then Slide-to-complete
  *   Completed / Cancelled:       (nothing)
  *
  * Taking is a button rather than a slide because the deliberate gesture now sits under the contract
@@ -58,6 +61,8 @@ fun OrderPrimaryAction(
     onCompleteClick: () -> Unit,
     onCashConfirmRequested: () -> Unit,
     onCashNotPaidRequested: () -> Unit = {},
+    onMarkMyPartDone: () -> Unit = {},
+    completionStep: CompletionStep = CompletionStep.Complete,
     canComplete: Boolean = true,
     needsCashCollection: Boolean = false,
     canReportCashNotPaid: Boolean = false,
@@ -114,7 +119,21 @@ fun OrderPrimaryAction(
             // three terminal actions feel symmetrical. We dropped the
             // old CompleteOrderDialog entirely — actual-time and
             // completion-notes are both optional on the backend.
-            if (isAssignedToCurrentUser) {
+            if (isAssignedToCurrentUser && completionStep == CompletionStep.MarkMyPart) {
+                SlideToCommit(
+                    idleLabel = stringResource(R.string.slide_to_mark_my_part_done),
+                    busyLabel = stringResource(R.string.marking_my_part_done),
+                    onCommit = onMarkMyPartDone,
+                    isBusy = inFlight == OrderAction.MarkMyPartDone,
+                    modifier = modifier,
+                )
+            } else if (isAssignedToCurrentUser && completionStep == CompletionStep.WaitingForCrew) {
+                FooterHint(
+                    icon = Icons.Outlined.HourglassTop,
+                    text = stringResource(R.string.order_my_part_done_waiting),
+                    modifier = modifier,
+                )
+            } else if (isAssignedToCurrentUser) {
                 if (canComplete) {
                     if (needsCashCollection) {
                         // Cash order still unpaid — the server rejects
@@ -159,7 +178,11 @@ fun OrderPrimaryAction(
                     // surfaces the requirement instantly without
                     // round-tripping. Same wording as the backend's
                     // error_key_order_after_photos_required.
-                    CompleteBlockedHint(modifier = modifier)
+                    FooterHint(
+                        icon = Icons.Outlined.PhotoCamera,
+                        text = stringResource(R.string.error_key_order_after_photos_required),
+                        modifier = modifier,
+                    )
                 }
             } else {
                 // Same as OnTheWay above: the work has begun with a short crew and a seat is open.
@@ -205,18 +228,13 @@ private fun TakeButton(
 }
 
 /**
- * Disabled-state stand-in for the Complete slide. Shown when the
- * cleaner is on InProgress but hasn't uploaded any "after" photo yet
- * (server's [BusinessErrorMessage.AfterPhotosRequired] guard). Uses a
- * muted outline + camera icon + clear copy so the cleaner knows
- * exactly what to do to unlock the slide.
- *
- * Sized to roughly match [SlideToCommit]'s 56dp track so the footer
- * doesn't jump in height when the cleaner uploads a photo and the
- * slide swaps in.
+ * A muted line in the slide's place, saying what the cleaner waits for: the "after" photo the server's
+ * [BusinessErrorMessage.AfterPhotosRequired] guard asks for, or the rest of the crew marking their part
+ * done. Sized to roughly match [SlideToCommit]'s 56dp track so the footer doesn't jump in height when
+ * the slide swaps in.
  */
 @Composable
-private fun CompleteBlockedHint(modifier: Modifier = Modifier) {
+private fun FooterHint(icon: ImageVector, text: String, modifier: Modifier = Modifier) {
     val muted = MaterialTheme.colorScheme.onSurfaceVariant
     Row(
         modifier = modifier
@@ -229,14 +247,14 @@ private fun CompleteBlockedHint(modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
-            imageVector = Icons.Outlined.PhotoCamera,
+            imageVector = icon,
             contentDescription = null,
             tint = muted,
             modifier = Modifier.size(20.dp),
         )
         Spacer(Modifier.width(12.dp))
         Text(
-            text = stringResource(R.string.error_key_order_after_photos_required),
+            text = text,
             style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
             color = muted,
         )

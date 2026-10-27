@@ -288,6 +288,7 @@
     <string name="access_label">Přístup</string>
     <string name="special_label">Speciální pokyny</string>
     <string name="order_completed_toast">Objednávka označena jako dokončená</string>
+    <string name="order_my_part_done_toast">Vaše část je označena jako hotová</string>
     <string name="before">Před</string>
     <string name="after">Po</string>
     <string name="notes_and_issues">Poznámky a problémy</string>
@@ -938,6 +939,9 @@
     <string name="starting_order">Začínám úklid…</string>
     <string name="slide_to_complete">Posunutím dokončete</string>
     <string name="completing_order">Dokončuji…</string>
+    <string name="slide_to_mark_my_part_done">Posunutím označte svou část jako hotovou</string>
+    <string name="marking_my_part_done">Označuji…</string>
+    <string name="order_my_part_done_waiting">Svou část máte označenou jako hotovou. Až to udělají všichni na této zakázce, kdokoli z vás ji může dokončit.</string>
     <string name="order_mark_cash_collected">Označit hotovost jako přijatou</string>
     <string name="partner_order_mark_cash_collected_confirm_title">Označit hotovost jako přijatou?</string>
     <string name="partner_order_mark_cash_collected_confirm_message">Potvrďte, že jste od zákazníka převzali %1$s v hotovosti. Tuto akci nelze vzít zpět.</string>
@@ -1171,6 +1175,7 @@
     <string name="error_order_completion_notes_required">Poznámky k dokončení jsou povinné.</string>
     <string name="error_order_completion_notes_too_long">Poznámky k dokončení jsou příliš dlouhé.</string>
     <string name="error_order_after_photos_required">Před dokončením zakázky pořiďte alespoň jednu fotografii „po\".</string>
+    <string name="error_order_crew_not_done">Než půjde zakázku dokončit, musí svou část označit jako hotovou všichni, kdo na ní pracují.</string>
     <string name="error_order_photo_window_closed">Tuto fotografii teď nelze přidat: fotografie před úklidem od převzetí zakázky do jejího dokončení, fotografie po úklidu během práce.</string>
     <string name="error_order_photo_locked">Po dokončení nebo zrušení zakázky nelze fotografie smazat.</string>
     <string name="error_order_cash_not_collected">Před dokončením zakázky vyberte hotovost a označte ji jako přijatou.</string>

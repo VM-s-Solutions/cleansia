@@ -108,7 +108,7 @@ public class OrderEmployee : BaseEntity
         return this;
     }
 
-    /// <inheritdoc cref="MarkCoverRequested"/>
+    /// <summary>First stamp wins, so marking again keeps the first time.</summary>
     public OrderEmployee MarkCompletionConfirmed(DateTime confirmedAtUtc)
     {
         CompletionConfirmedAt ??= confirmedAtUtc;

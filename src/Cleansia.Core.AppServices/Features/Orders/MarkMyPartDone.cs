@@ -10,8 +10,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Cleansia.Core.AppServices.Features.Orders;
 
 /// <summary>
-/// A cleaner on a job with two or more cleaners marks their own part of it done; the job is completed once
-/// everyone on it has.
+/// A cleaner on a job with two or more cleaners marks their own part of it done; once everyone still on it
+/// has, any of them can complete it.
 /// </summary>
 public class MarkMyPartDone
 {

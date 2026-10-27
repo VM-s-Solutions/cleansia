@@ -203,7 +203,7 @@ public class CrewCloseRaceTests(PostgresContainerFixture fixture) : BaseIntegrat
     }
 
     private static MarkMyPartDone.Handler MarkHandler(CleansiaDbContext context, string callerEmployeeId) =>
-        new(new OrderRepository(context), CallerIs(callerEmployeeId));
+        new(new OrderRepository(context), CallerIs(callerEmployeeId), Mock.Of<INotificationProducer>());
 
     private static IOrderAccessService CallerIs(string employeeId)
     {

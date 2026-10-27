@@ -1,8 +1,11 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Specifications;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -39,7 +42,8 @@ public class MarkMyPartDone
 
     public class Handler(
         IOrderRepository orderRepository,
-        IOrderAccessService orderAccessService) : ICommandHandler<Command, Response>
+        IOrderAccessService orderAccessService,
+        INotificationProducer notificationProducer) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
@@ -58,6 +62,8 @@ public class MarkMyPartDone
             var order = await orderRepository
                 .GetQueryable()
                 .Include(o => o.AssignedEmployees)
+                    .ThenInclude(oe => oe.Employee)
+                    .ThenInclude(e => e!.User)
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
             if (order is null)
@@ -81,7 +87,31 @@ public class MarkMyPartDone
                     new Error(nameof(command.OrderId), BusinessErrorMessage.OrderNotInProgress));
             }
 
+            var firstMark = seat.CompletionConfirmedAt is null;
             seat.MarkCompletionConfirmed(DateTime.UtcNow);
+
+            if (firstMark)
+            {
+                foreach (var crewMate in order.AssignedEmployees.Where(oe => oe.Id != seat.Id))
+                {
+                    if (!JobReminderRecipient.IsEligible(crewMate.Employee))
+                    {
+                        continue;
+                    }
+
+                    await notificationProducer.NotifyAsync(
+                        crewMate.Employee!.UserId,
+                        NotificationEventCatalog.OrderCrewMateDone,
+                        new Dictionary<string, string>
+                        {
+                            ["orderId"] = order.Id,
+                            ["orderNumber"] = order.DisplayOrderNumber,
+                        },
+                        order.TenantId,
+                        AssignmentNotificationSubject.For(order.Id, seat.Id),
+                        cancellationToken);
+                }
+            }
 
             return BusinessResult.Success(new Response(
                 order.Id,

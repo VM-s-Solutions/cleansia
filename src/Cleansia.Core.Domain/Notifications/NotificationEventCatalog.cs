@@ -119,6 +119,15 @@ public static class NotificationEventCatalog
     public const string ReminderNotStarted = "order.reminder_not_started";
 
     /// <summary>
+    /// Partner-targeted: someone on this cleaner's crew job marked their part of it done
+    /// (<c>MarkMyPartDone</c>). Sent to everyone else still on the job at each cleaner's first mark, so the
+    /// last cleaner's mark is what tells the others that any of them can now complete the job (owner
+    /// ruling 2026-10-26). Args: <c>orderNumber</c> (loc) + <c>orderId</c> (deep link); no name. Push-only,
+    /// in no feed keyset, and not mutable, like the job reminders: it is about work they took.
+    /// </summary>
+    public const string OrderCrewMateDone = "order.crew_mate_done";
+
+    /// <summary>
     /// Partner-targeted: a customer this cleaner has worked for before asked for them by name on a new
     /// booking (ADR-0036 D4). One order, not a count — args: <c>orderNumber</c> (loc) + <c>orderId</c>
     /// (deep link). It bypasses the digest cadence entirely and does NOT stamp the digest watermark:

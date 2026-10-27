@@ -643,8 +643,8 @@ need backfilling.
   - **Operator:** the single regenerated migration is `20261027013728_Initial`. After merge,
     one DEV reset/deploy/re-seed runs bootstrap, DEV data, local admin and promo translations in
     order; services seed at two minutes, and bootstrap owns the four service categories.
-    The customer terms folder `2026-10-28` is provisional: rename it and its seeder-test date
-    to the first DEV deploy day, never earlier. No phase-2 deploy is claimed.
+    The customer terms folder and its seeder-test row are dated `2026-10-27` for the planned
+    first DEV deploy day, never earlier. No phase-2 deploy is claimed.
     Android tester releases remain deferred and TestFlight is signing-blocked. Old partner apps
     cannot complete an unstamped crew; zero marks never auto-close, so use updated clients or
     partner web. New iOS crew-push copy in source does not mean older installed apps contain it.

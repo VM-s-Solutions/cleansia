@@ -7,9 +7,17 @@ import {
   HttpStatusCode,
 } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { Router } from '@angular/router';
-import { Observable, catchError, switchMap, throwError } from 'rxjs';
+import {
+  ActivatedRouteSnapshot,
+  NavigationCancel,
+  NavigationEnd,
+  NavigationError,
+  NavigationSkipped,
+  Router,
+} from '@angular/router';
+import { Observable, catchError, filter, of, switchMap, take, throwError } from 'rxjs';
 import { CleansiaCustomerRoute } from '@cleansia/services';
+import { customerAuthGuard } from '../guards/auth.guard';
 import { CustomerAuthService } from '../services';
 import { isSessionIssuingRoute } from './auth-routes';
 import { CustomerRefreshCoordinator } from './refresh-coordinator';
@@ -86,9 +94,47 @@ function withFreshCsrf(req: HttpRequest<unknown>, authService: CustomerAuthServi
     : req;
 }
 
+/**
+ * Signs the reader out, and sends them to sign in only from a page that needs an account, with that
+ * page to return to, as the auth guard does; a public page (a guest's tracked booking, the booking
+ * wizard, the login page itself) stays where it is.
+ */
 function forceLogout(authService: CustomerAuthService, router: Router): void {
-  if (authService.isLoggedIn() || authService.hasValidRefreshToken()) {
-    authService.removeSession();
-    router.navigate(['/' + CleansiaCustomerRoute.LOGIN]);
+  if (!authService.isLoggedIn() && !authService.hasValidRefreshToken()) {
+    return;
   }
+  authService.removeSession();
+  pageSettled(router).subscribe(() => {
+    if (needsAccount(router.routerState.snapshot.root)) {
+      router.navigate(['/' + CleansiaCustomerRoute.LOGIN], { queryParams: { returnUrl: router.url } });
+    }
+  });
+}
+
+// A navigation under way has either passed the auth guard already, and lands on its page, or meets the
+// guard now without a session and is turned away to sign in by the guard itself.
+function pageSettled(router: Router): Observable<unknown> {
+  if (!router.currentNavigation()) {
+    return of(null);
+  }
+  return router.events.pipe(
+    filter(
+      (event) =>
+        event instanceof NavigationEnd ||
+        event instanceof NavigationSkipped ||
+        event instanceof NavigationCancel ||
+        event instanceof NavigationError
+    ),
+    take(1),
+    filter((event) => event instanceof NavigationEnd || event instanceof NavigationSkipped)
+  );
+}
+
+function needsAccount(root: ActivatedRouteSnapshot): boolean {
+  for (let route: ActivatedRouteSnapshot | null = root; route; route = route.firstChild) {
+    if (route.routeConfig?.canActivate?.includes(customerAuthGuard)) {
+      return true;
+    }
+  }
+  return false;
 }

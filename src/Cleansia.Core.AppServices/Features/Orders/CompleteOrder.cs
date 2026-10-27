@@ -36,6 +36,20 @@ public class CompleteOrder
         OrderStatus NewStatus,
         int ActualCompletionTime);
 
+    /// <summary>A cash order is settled once the cleaner has marked the cash collected.</summary>
+    internal static readonly Expression<Func<Order, bool>> CashIsCollected =
+        o => o.PaymentType != PaymentType.Cash || o.PaymentStatus == PaymentStatus.Paid;
+
+    /// <summary>
+    /// A card order once Stripe has charged it. A refund before the job ends, partial or full, leaves it
+    /// charged: the crew did the work, and completion takes the points share of what went back.
+    /// </summary>
+    internal static readonly Expression<Func<Order, bool>> CardIsCharged =
+        o => o.PaymentType != PaymentType.Card
+            || o.PaymentStatus == PaymentStatus.Paid
+            || o.PaymentStatus == PaymentStatus.PartiallyRefunded
+            || o.PaymentStatus == PaymentStatus.Refunded;
+
     /// <summary>
     /// One chain, so one reason is given, and the crew first, so a cleaner not on the job learns nothing of it.
     /// It tracks neither the order nor its seats: the handler reads them again under the order's row lock.
@@ -88,18 +102,9 @@ public class CompleteOrder
                 // rules so each surfaces the right, actionable message: cash-not-collected tells the
                 // cleaner to collect + mark it; payment-not-confirmed says the card charge hasn't
                 // cleared yet.
-                .MustAsync((orderId, ct) => OrderIsAsync(
-                    orderId, o => o.PaymentType != PaymentType.Cash || o.PaymentStatus == PaymentStatus.Paid, ct))
+                .MustAsync((orderId, ct) => OrderIsAsync(orderId, CashIsCollected, ct))
                 .WithMessage(BusinessErrorMessage.OrderCashNotCollected)
-                // A refund before the job ends, partial or full, leaves a card charged: the crew did the
-                // work, and completion takes the points share of what went back.
-                .MustAsync((orderId, ct) => OrderIsAsync(
-                    orderId,
-                    o => o.PaymentType != PaymentType.Card
-                        || o.PaymentStatus == PaymentStatus.Paid
-                        || o.PaymentStatus == PaymentStatus.PartiallyRefunded
-                        || o.PaymentStatus == PaymentStatus.Refunded,
-                    ct))
+                .MustAsync((orderId, ct) => OrderIsAsync(orderId, CardIsCharged, ct))
                 .WithMessage(BusinessErrorMessage.OrderPaymentNotConfirmed)
                 .MustAsync(CrewLetsTheJobCompleteAsync)
                 .WithMessage(BusinessErrorMessage.OrderCrewNotDone);
@@ -210,16 +215,7 @@ public class CompleteOrder
             // it decided about the job is decided again below on that read.
             await orderRepository.LockForCrewChangeAsync(command.OrderId, cancellationToken);
 
-            var order = await orderRepository
-                .GetQueryable()
-                .Include(o => o.OrderStatusHistory)
-                .Include(o => o.SelectedServices).ThenInclude(os => os.Service)
-                .Include(o => o.SelectedPackages).ThenInclude(op => op.Package)
-                .Include(o => o.CustomerAddress).ThenInclude(a => a!.Country)
-                .Include(o => o.Currency)
-                .Include(o => o.Receipts)
-                .Include(o => o.User).ThenInclude(u => u!.PreferredLanguage)
-                .Include(o => o.AssignedEmployees)
+            var order = await IncludeForCompletion(orderRepository.GetQueryable())
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
             if (order == null)
@@ -245,62 +241,16 @@ public class CompleteOrder
 
             var actualMinutes = ActualMinutes(order, command.ActualCompletionTimeMinutes);
 
-            order.CompleteOrder(actualMinutes, command.CompletionNotes);
-
-            var completedStatusTrack = OrderStatusTrack.Create(OrderStatus.Completed, order);
-            order.AddOrderStatus(completedStatusTrack);
-
-            await liveActivityProducer.NotifyOrderTransitionAsync(
-                order, LiveActivityEventKeys.End, completedStatusTrack, cancellationToken);
-
-            if (order.Receipt is null)
-            {
-                var languageCode = order.User?.PreferredLanguageCode ?? Constants.Language.English;
-                pending.Enqueue(
-                    QueueNames.GenerateReceipt,
-                    new QueueEnvelope<GenerateReceiptMessage>(
-                        MessageKeys.Receipt(order.Id),
-                        order.TenantId,
-                        new GenerateReceiptMessage(order.Id, languageCode)),
-                    MessageKeys.Receipt(order.Id));
-            }
-
-            // Push notification for the customer's "All done!" toast.
-            // Skip for guest orders (no UserId → no device).
-            if (!string.IsNullOrEmpty(order.UserId))
-            {
-                await notificationProducer.NotifyAsync(
-                    order.UserId,
-                    NotificationEventCatalog.OrderCompleted,
-                    new Dictionary<string, string>
-                    {
-                        ["orderId"] = order.Id,
-                        ["orderNumber"] = order.DisplayOrderNumber,
-                    },
-                    order.TenantId,
-                    order.Id,
-                    cancellationToken);
-            }
-
-            var statusLanguageCode = EmailLocale.Resolve(order.LanguageCode ?? order.User?.PreferredLanguageCode ?? Constants.Language.English);
-            var emailKey = MessageKeys.OrderStatusEmail(order.Id, OrderStatus.Completed);
-            pending.Enqueue(QueueNames.SendEmail,
-                new QueueEnvelope<SendOrderStatusEmailMessage>(emailKey, order.TenantId,
-                    new SendOrderStatusEmailMessage(order.Id, OrderStatus.Completed, statusLanguageCode, order.TenantId)), emailKey);
-
-            await loyaltyService.GrantForCompletedOrderAsync(order.Id, cancellationToken);
-
-            await referralService.ProcessOrderCompletedAsync(order.Id, order.UserId, cancellationToken);
-
-            // Fan out one CalculateOrderPay per assigned cleaner. Off the
-            // user-facing path so the partner "slide to complete" returns
-            // immediately and pay-calc failures (missing pay config, missing
-            // pay period, validator rejection) don't block completion or
-            // surface as toast errors to the cleaner — the consumer logs and
-            // queue retries handle it. The loop is NOT forward-compat: an order's crew is
-            // ceil(EstimatedTime / 120), so every booking over 120 minutes is a two-seat job and
-            // pays two cleaners.
-            CalculateOrderPay.EnqueueForCrew(order, pending);
+            await FinishAsync(
+                order,
+                actualMinutes,
+                command.CompletionNotes,
+                pending,
+                notificationProducer,
+                liveActivityProducer,
+                loyaltyService,
+                referralService,
+                cancellationToken);
 
             return BusinessResult.Success(new Response(
                 OrderId: order.Id,
@@ -310,11 +260,12 @@ public class CompleteOrder
         }
 
         /// <summary>
-        /// The stated minutes, or else the time since the InProgress entry, which is when the cleaner slid to
-        /// start, rounded up to one minute so a completed order always has a non-zero duration for invoice and
-        /// analytics math. An order that skipped the start (an admin override) falls back to its estimate.
+        /// The stated minutes, or else the time from the InProgress entry, which is when the cleaner slid to
+        /// start, to now or to <paramref name="endedAt"/>, rounded up to one minute so a completed order always
+        /// has a non-zero duration for invoice and analytics math. An order that skipped the start (an admin
+        /// override) falls back to its estimate.
         /// </summary>
-        internal static int ActualMinutes(Order order, int? statedMinutes)
+        internal static int ActualMinutes(Order order, int? statedMinutes, DateTimeOffset? endedAt = null)
         {
             if (statedMinutes is > 0)
             {
@@ -328,8 +279,97 @@ public class CompleteOrder
                 .FirstOrDefault();
 
             return startedAt.HasValue
-                ? Math.Max(1, (int)Math.Round((DateTimeOffset.UtcNow - startedAt.Value).TotalMinutes))
+                ? Math.Max(1, (int)Math.Round(((endedAt ?? DateTimeOffset.UtcNow) - startedAt.Value).TotalMinutes))
                 : Math.Max(1, order.EstimatedTime);
         }
+    }
+
+    /// <summary>
+    /// What a completion reads: the history its Completed row is numbered from, what the receipt and the
+    /// e-mail name, the customer's language and the crew whose pay it asks.
+    /// </summary>
+    internal static IQueryable<Order> IncludeForCompletion(IQueryable<Order> orders) =>
+        orders
+            .Include(o => o.OrderStatusHistory)
+            .Include(o => o.SelectedServices).ThenInclude(os => os.Service)
+            .Include(o => o.SelectedPackages).ThenInclude(op => op.Package)
+            .Include(o => o.CustomerAddress).ThenInclude(a => a!.Country)
+            .Include(o => o.Currency)
+            .Include(o => o.Receipts)
+            .Include(o => o.User).ThenInclude(u => u!.PreferredLanguage)
+            .Include(o => o.AssignedEmployees);
+
+    /// <summary>
+    /// The completion itself, for a cleaner's Complete and for the automatic close of a crew job everyone
+    /// marked done: the minutes and notes, the Completed row, the Live Activity's end, the receipt, the
+    /// customer's push and e-mail, points, the referral and every seat's pay.
+    /// </summary>
+    internal static async Task FinishAsync(
+        Order order,
+        int actualMinutes,
+        string? completionNotes,
+        IPendingDispatch pending,
+        INotificationProducer notificationProducer,
+        ILiveActivityProducer liveActivityProducer,
+        ILoyaltyService loyaltyService,
+        IReferralService referralService,
+        CancellationToken cancellationToken)
+    {
+        order.CompleteOrder(actualMinutes, completionNotes);
+
+        var completedStatusTrack = OrderStatusTrack.Create(OrderStatus.Completed, order);
+        order.AddOrderStatus(completedStatusTrack);
+
+        await liveActivityProducer.NotifyOrderTransitionAsync(
+            order, LiveActivityEventKeys.End, completedStatusTrack, cancellationToken);
+
+        if (order.Receipt is null)
+        {
+            var languageCode = order.User?.PreferredLanguageCode ?? Constants.Language.English;
+            pending.Enqueue(
+                QueueNames.GenerateReceipt,
+                new QueueEnvelope<GenerateReceiptMessage>(
+                    MessageKeys.Receipt(order.Id),
+                    order.TenantId,
+                    new GenerateReceiptMessage(order.Id, languageCode)),
+                MessageKeys.Receipt(order.Id));
+        }
+
+        // Push notification for the customer's "All done!" toast.
+        // Skip for guest orders (no UserId → no device).
+        if (!string.IsNullOrEmpty(order.UserId))
+        {
+            await notificationProducer.NotifyAsync(
+                order.UserId,
+                NotificationEventCatalog.OrderCompleted,
+                new Dictionary<string, string>
+                {
+                    ["orderId"] = order.Id,
+                    ["orderNumber"] = order.DisplayOrderNumber,
+                },
+                order.TenantId,
+                order.Id,
+                cancellationToken);
+        }
+
+        var statusLanguageCode = EmailLocale.Resolve(order.LanguageCode ?? order.User?.PreferredLanguageCode ?? Constants.Language.English);
+        var emailKey = MessageKeys.OrderStatusEmail(order.Id, OrderStatus.Completed);
+        pending.Enqueue(QueueNames.SendEmail,
+            new QueueEnvelope<SendOrderStatusEmailMessage>(emailKey, order.TenantId,
+                new SendOrderStatusEmailMessage(order.Id, OrderStatus.Completed, statusLanguageCode, order.TenantId)), emailKey);
+
+        await loyaltyService.GrantForCompletedOrderAsync(order.Id, cancellationToken);
+
+        await referralService.ProcessOrderCompletedAsync(order.Id, order.UserId, cancellationToken);
+
+        // Fan out one CalculateOrderPay per assigned cleaner. Off the
+        // user-facing path so the partner "slide to complete" returns
+        // immediately and pay-calc failures (missing pay config, missing
+        // pay period, validator rejection) don't block completion or
+        // surface as toast errors to the cleaner — the consumer logs and
+        // queue retries handle it. The loop is NOT forward-compat: an order's crew is
+        // ceil(EstimatedTime / 120), so every booking over 120 minutes is a two-seat job and
+        // pays two cleaners.
+        CalculateOrderPay.EnqueueForCrew(order, pending);
     }
 }

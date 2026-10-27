@@ -14,7 +14,7 @@ namespace Cleansia.Functions.Core.Handlers;
 /// stay visible to cleaners (matching pool pollution) until Stripe eventually
 /// expires the underlying PaymentIntent ~24h later.
 ///
-/// <para>THREE commands ride this one schedule. Each is sent separately so a failure in one does not
+/// <para>FOUR commands ride this one schedule. Each is sent separately so a failure in one does not
 /// suppress the others, and each logs its own outcome. A new timer costs a trigger shell, a handler, a
 /// DI registration, a cron token in two settings files, a bicep entry and two test rows — and the
 /// eight tokenised timers silently never fired in Azure for months, which is the argument against
@@ -93,6 +93,28 @@ public class CleanupStalePendingOrdersHandler(
                 logger.LogError(
                     "CancelUnfilledOrders failed: {Error}",
                     unfilled.Error?.Message ?? "unknown");
+            }
+        }, ct);
+
+        // A FOURTH: a crew job everyone on it marked done two hours ago and nobody completed closes itself
+        // through the completion a cleaner's Complete runs (owner ruling 2026-10-26), so it closes 120 to 135
+        // minutes after the last mark.
+        await RunInOwnScopeAsync(nameof(AutoCompleteMarkedDoneOrders), thrown, async mediator =>
+        {
+            var closed = await mediator.Send(new AutoCompleteMarkedDoneOrders.Command(), ct);
+            if (closed.IsSuccess && closed.Value != null)
+            {
+                logger.LogInformation(
+                    "AutoCompleteMarkedDoneOrders completed; completed {Completed} of {Considered}, failed {Failed}",
+                    closed.Value.Completed,
+                    closed.Value.Considered,
+                    closed.Value.Failed);
+            }
+            else
+            {
+                logger.LogError(
+                    "AutoCompleteMarkedDoneOrders failed: {Error}",
+                    closed.Error?.Message ?? "unknown");
             }
         }, ct);
 

@@ -21,9 +21,10 @@ namespace Cleansia.IntegrationTests.Features.Orders;
 
 /// <summary>
 /// The crew close on real Postgres, two connections and both commit orders (owner ruling 2026-10-26: each
-/// cleaner marks their part done, then any of them completes the job). Both writers lock the order's row
-/// before they read it, so whichever reaches it second reads what the first committed: two cleaners
-/// pressing Complete at once complete the job once, and two cleaners marking at once each see the other.
+/// cleaner marks their part done, then any of them completes the job, or it closes itself two hours after
+/// the last mark). Every writer locks the order's row before it reads it, so whichever reaches it second
+/// reads what the first committed: two cleaners pressing Complete at once, or a cleaner and the automatic
+/// close, complete the job once, and two cleaners marking at once each see the other.
 /// </summary>
 [Collection("PostgresCollection")]
 public class CrewCloseRaceTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
@@ -77,6 +78,63 @@ public class CrewCloseRaceTests(PostgresContainerFixture fixture) : BaseIntegrat
     }
 
     /// <summary>
+    /// Nobody pressed Complete, and the sweep's unit closes the job just as a cleaner presses it. Whichever
+    /// holds the row first completes the job; the other waits on it and then finds the job completed - the
+    /// close closes nothing, the cleaner is answered Completed - so the completion runs once.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task The_Automatic_Close_And_A_Cleaner_Completing_At_Once_Complete_The_Job_Once(bool closeFirst)
+    {
+        await ResetAndSeedAsync(markedDone: [CleanerA, CleanerB]);
+
+        if (closeFirst)
+        {
+            var closeTenants = new FixedTenantProvider(null);
+            await using var closeContext = NewContext("system", closeTenants);
+            var closed = await CloseHandler(closeContext, closeTenants).Handle(
+                new AutoCompleteMarkedDoneOrder.Command(OrderId, DateTime.UtcNow), CancellationToken.None);
+            Assert.True(closed.IsSuccess && closed.Value!.Completed, closed.Error?.Message);
+
+            var completing = CompleteAndCommitAsync(CleanerA);
+            await UntilItWaitsOnTheRowOrEndsAsync(completing);
+            await closeContext.CommitAsync(CancellationToken.None);
+            var completed = await completing;
+
+            Assert.True(completed.IsSuccess, completed.Error?.Message);
+            Assert.Equal(OrderStatus.Completed, completed.Value!.NewStatus);
+        }
+        else
+        {
+            await using var completeContext = NewContext(UserOf(CleanerA));
+            var validated = await CompleteValidator(completeContext, CleanerA).ValidateAsync(new CompleteOrder.Command(OrderId));
+            Assert.True(validated.IsValid, string.Join("; ", validated.Errors.Select(e => e.ErrorMessage)));
+            var completed = await CompleteHandler(completeContext).Handle(new CompleteOrder.Command(OrderId), CancellationToken.None);
+            Assert.True(completed.IsSuccess, completed.Error?.Message);
+
+            var closing = CloseAndCommitAsync();
+            await UntilItWaitsOnTheRowOrEndsAsync(closing);
+            await completeContext.CommitAsync(CancellationToken.None);
+            var closed = await closing;
+
+            Assert.True(closed.IsSuccess, closed.Error?.Message);
+            Assert.False(closed.Value!.Completed);
+        }
+
+        await using var verify = NewContext("verify");
+        var order = await LoadAsync(verify);
+        Assert.Equal(OrderStatus.Completed, order.CurrentStatus);
+        var completedRow = Assert.Single(order.OrderStatusHistory, s => s.Status == OrderStatus.Completed);
+        Assert.Equal(TestTenants.Default, completedRow.TenantId);
+        Assert.Equal([NotificationEventCatalog.OrderCompleted], _pushed);
+        Assert.Equal([OrderId], _loyaltyGrants);
+        var queued = await verify.OutboxMessages.IgnoreQueryFilters().Select(m => m.QueueName).ToListAsync();
+        Assert.Single(queued, q => q == QueueNames.SendEmail);
+        Assert.Equal(2, queued.Count(q => q == QueueNames.CalculateOrderPay));
+    }
+
+    /// <summary>
     /// The last two cleaners mark their parts done at the same moment. The second waits on the row the
     /// first holds, then reads the first one's mark, so it answers that the crew is done and the shared
     /// Complete can show; both marks are kept and the job stays in progress.
@@ -120,6 +178,20 @@ public class CrewCloseRaceTests(PostgresContainerFixture fixture) : BaseIntegrat
         return completed;
     }
 
+    private async Task<BusinessResult<AutoCompleteMarkedDoneOrder.Response>> CloseAndCommitAsync()
+    {
+        var tenants = new FixedTenantProvider(null);
+        await using var context = NewContext("system", tenants);
+        var closed = await CloseHandler(context, tenants).Handle(
+            new AutoCompleteMarkedDoneOrder.Command(OrderId, DateTime.UtcNow), CancellationToken.None);
+        if (closed.IsSuccess)
+        {
+            await context.CommitAsync(CancellationToken.None);
+        }
+
+        return closed;
+    }
+
     private async Task<BusinessResult<MarkMyPartDone.Response>> MarkAndCommitAsync(string employeeId)
     {
         await using var context = NewContext(UserOf(employeeId));
@@ -157,12 +229,12 @@ public class CrewCloseRaceTests(PostgresContainerFixture fixture) : BaseIntegrat
 
     private static string UserOf(string employeeId) => $"{employeeId}-user";
 
-    private CleansiaDbContext NewContext(string userId) =>
+    private CleansiaDbContext NewContext(string userId, ITenantProvider? tenants = null) =>
         new(new DbContextOptionsBuilder<CleansiaDbContext>()
                 .UseNpgsql(Fixture.GetConnectionString())
                 .Options,
             new TestUserSessionProvider(userId, $"{userId}@cleansia.test"),
-            new FixedTenantProvider(TestTenants.Default));
+            tenants ?? new FixedTenantProvider(TestTenants.Default));
 
     private static CompleteOrder.Validator CompleteValidator(CleansiaDbContext context, string callerEmployeeId)
     {
@@ -179,7 +251,24 @@ public class CrewCloseRaceTests(PostgresContainerFixture fixture) : BaseIntegrat
             acceptances.Object);
     }
 
-    private CompleteOrder.Handler CompleteHandler(CleansiaDbContext context)
+    /// <summary>The sweep's unit: no JWT, so no company until it takes the job's own.</summary>
+    private AutoCompleteMarkedDoneOrder.Handler CloseHandler(CleansiaDbContext context, ITenantProvider tenants)
+    {
+        var photos = new Mock<IOrderPhotoRepository>();
+        photos.Setup(r => r.GetPhotoCountByOrderIdAndTypeAsync(OrderId, PhotoType.After, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+        return new AutoCompleteMarkedDoneOrder.Handler(
+            new OrderRepository(context),
+            photos.Object,
+            tenants,
+            new OutboxPendingDispatch(context),
+            RecordingNotifications(),
+            Mock.Of<ILiveActivityProducer>(),
+            RecordingLoyalty(),
+            Mock.Of<IReferralService>());
+    }
+
+    private INotificationProducer RecordingNotifications()
     {
         var notifications = new Mock<INotificationProducer>();
         notifications
@@ -189,18 +278,25 @@ public class CrewCloseRaceTests(PostgresContainerFixture fixture) : BaseIntegrat
             .Callback<string, string, Dictionary<string, string>, string?, string?, CancellationToken>(
                 (_, eventKey, _, _, _, _) => { lock (_pushed) { _pushed.Add(eventKey); } })
             .Returns(Task.CompletedTask);
+        return notifications.Object;
+    }
+
+    private ILoyaltyService RecordingLoyalty()
+    {
         var loyalty = new Mock<ILoyaltyService>();
         loyalty.Setup(l => l.GrantForCompletedOrderAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Callback<string, CancellationToken>((orderId, _) => { lock (_loyaltyGrants) { _loyaltyGrants.Add(orderId); } })
             .Returns(Task.CompletedTask);
-        return new CompleteOrder.Handler(
-            new OrderRepository(context),
-            new OutboxPendingDispatch(context),
-            notifications.Object,
-            Mock.Of<ILiveActivityProducer>(),
-            loyalty.Object,
-            Mock.Of<IReferralService>());
+        return loyalty.Object;
     }
+
+    private CompleteOrder.Handler CompleteHandler(CleansiaDbContext context) => new(
+        new OrderRepository(context),
+        new OutboxPendingDispatch(context),
+        RecordingNotifications(),
+        Mock.Of<ILiveActivityProducer>(),
+        RecordingLoyalty(),
+        Mock.Of<IReferralService>());
 
     private static MarkMyPartDone.Handler MarkHandler(CleansiaDbContext context, string callerEmployeeId) =>
         new(new OrderRepository(context), CallerIs(callerEmployeeId), Mock.Of<INotificationProducer>());

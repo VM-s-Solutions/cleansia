@@ -123,6 +123,51 @@ class NotificationTemplatesTest {
     }
 
 
+    /** Work the cleaner already took, so it rides the channel they cannot silence; a push, not a feed row. */
+    @Test
+    fun `a crew mate's mark rides order-updates, stays out of the feed and opens the job`() {
+        val template = NotificationTemplates.templateFor("order.crew_mate_done")
+        assertNotNull(template)
+        assertEquals(R.string.notification_order_crew_mate_done_title, template?.titleRes)
+        assertEquals(R.string.notification_order_crew_mate_done_body, template?.bodyRes)
+        assertEquals(NotificationChannels.CHANNEL_ORDER_UPDATES, template?.channelId)
+        assertFalse(PartnerFeedEventKeys.contains("order.crew_mate_done"))
+        assertEquals(
+            NavRoute.OrderDetail(orderId = "ord-7"),
+            NotificationDeepLink.resolve("order.crew_mate_done", "ord-7", null),
+        )
+        assertNull(NotificationDeepLink.resolve("order.crew_mate_done", null, null))
+    }
+
+    @Test
+    fun `a crew mate's mark formats the order number into the body`() {
+        val context = mockk<Context>()
+        val bodyRes = R.string.notification_order_crew_mate_done_body
+        every { context.getString(bodyRes, "A-1042") } returns "Job A-1042"
+        assertEquals(
+            "Job A-1042",
+            NotificationTemplates.formatBody(context, "order.crew_mate_done", bodyRes, mapOf("orderNumber" to "A-1042")),
+        )
+    }
+
+    @Test
+    fun `a crew mate's mark is written in every locale with the order number its only argument`() {
+        val english = stringsXml("values")
+        locales.forEach { locale ->
+            val xml = stringsXml(locale)
+            val title = valueOf(xml, "notification_order_crew_mate_done_title")
+            val body = valueOf(xml, "notification_order_crew_mate_done_body")
+            assertTrue("$locale crew mate title", title?.isNotBlank() == true)
+            assertTrue("$locale crew mate body", body?.isNotBlank() == true)
+            assertEquals(emptyList<String>(), formatSlots(title!!))
+            assertEquals(listOf("%1${'$'}s"), formatSlots(body!!))
+            if (locale != "values") {
+                assertFalse("$locale title left in English", title == valueOf(english, "notification_order_crew_mate_done_title"))
+                assertFalse("$locale body left in English", body == valueOf(english, "notification_order_crew_mate_done_body"))
+            }
+        }
+    }
+
     private val locales = listOf("values", "values-cs", "values-sk", "values-uk", "values-ru")
 
     /**

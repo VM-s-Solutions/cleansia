@@ -1270,6 +1270,8 @@
     <string name="notification_order_in_progress_body">Замовлення №%1$s виконується. Торкніться, щоб стежити за ним.</string>
     <string name="notification_order_completed_title">Замовлення завершено</string>
     <string name="notification_order_completed_body">Замовлення №%1$s завершено. Торкніться, щоб переглянути підсумок.</string>
+    <string name="notification_order_crew_mate_done_title">Хтось на вашому замовленні завершив</string>
+    <string name="notification_order_crew_mate_done_body">Замовлення №%1$s: щойно всі, хто на ньому працює, позначать свою частину виконаною, будь-хто з вас зможе його завершити.</string>
     <string name="notification_order_cancelled_title">Замовлення скасовано</string>
     <string name="notification_order_cancelled_body">Замовлення №%1$s скасовано. Торкніться, щоб переглянути деталі.</string>
     <string name="notification_dispute_reply_title">Підтримка відповіла</string>

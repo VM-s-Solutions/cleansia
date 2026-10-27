@@ -1300,6 +1300,8 @@
     <string name="notification_order_in_progress_body">Job #%1$s is underway. Tap to follow along.</string>
     <string name="notification_order_completed_title">Job completed</string>
     <string name="notification_order_completed_body">Job #%1$s is complete. Tap to see the summary.</string>
+    <string name="notification_order_crew_mate_done_title">Someone on your job has finished</string>
+    <string name="notification_order_crew_mate_done_body">Job #%1$s: once everyone on it has marked their part done, any of you can complete it.</string>
     <string name="notification_order_cancelled_title">Job cancelled</string>
     <string name="notification_order_cancelled_body">Job #%1$s has been cancelled. Tap for details.</string>
     <string name="notification_dispute_reply_title">Support replied</string>

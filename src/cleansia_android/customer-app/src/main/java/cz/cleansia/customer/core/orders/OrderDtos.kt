@@ -82,6 +82,11 @@ data class OrderListItemDto(
      * candidate order every time the app opens.
      */
     val hasReview: Boolean = false,
+    /**
+     * A booking made without an account under the e-mail this account signed in with, which My orders
+     * lists beside the account's own; it opens read-only, with Cancel.
+     */
+    val isGuestBooking: Boolean = false,
 )
 
 /** Mirrors backend `OrderItem` (GetById response). */
@@ -163,6 +168,8 @@ data class OrderDetailDto(
     val dirtinessLevel: DirtinessLevel = DirtinessLevel.Normal,
     /** Stored in cents at booking, before express and discounts; inside [originalSubtotal]. */
     val dirtinessSurchargeAmount: Double = 0.0,
+    /** See [OrderListItemDto.isGuestBooking]. */
+    val isGuestBooking: Boolean = false,
 )
 
 /**

@@ -71,10 +71,11 @@ sealed interface OrderDetailUiState {
 
 /**
  * Photos side-channel state. The main detail load does not include photos —
- * they're fetched lazily by [OrderDetailViewModel.ensurePhotosLoaded] once the
- * Loaded state is reached, so we don't block the primary render. Screens
- * observe this to render a summary "Photos" card only when we have a non-empty
- * response; Idle / Loading / Error all render nothing (snackbar owns errors).
+ * they're fetched lazily by [OrderDetailViewModel.ensurePhotosLoaded] once an
+ * account booking's Loaded state is reached, so we don't block the primary
+ * render. Screens observe this to render a summary "Photos" card only when we
+ * have a non-empty response; Idle / Loading / Error all render nothing
+ * (snackbar owns errors).
  */
 sealed interface PhotosUiState {
     data object Idle : PhotosUiState
@@ -133,9 +134,10 @@ class OrderDetailViewModel @Inject constructor(
      */
     private val readAt = MutableStateFlow(Clock.System.now())
 
-    /** Whether the footer offers "the cleaner did not arrive" in Cancel's place. */
+    /** Whether the footer offers "the cleaner did not arrive" in Cancel's place; never on a guest booking. */
     val canReportCleanerNoShow: StateFlow<Boolean> = combine(_state, readAt) { state, now ->
-        (state as? OrderDetailUiState.Loaded)?.order?.awaitsCleanerPastStart(now) == true
+        val order = (state as? OrderDetailUiState.Loaded)?.order ?: return@combine false
+        !order.isGuestBooking && order.awaitsCleanerPastStart(now)
     }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     /** Whether the footer offers Cancel: the server's set, read off the loaded order and the clock. */
@@ -725,20 +727,23 @@ class OrderDetailViewModel @Inject constructor(
      * round-trip. The repo already surfaces a snackbar on failure — we only
      * transition to `Error` so the screen can skip rendering the section.
      *
-     * SAS URLs carry a 1h TTL, so we don't cache across re-opens — each detail
-     * visit re-enters Idle → Loading → Loaded/Error.
+     * SAS URLs carry a 1h TTL, so we don't cache across re-opens — each visit
+     * to an account booking's detail re-enters Idle → Loading → Loaded/Error.
      */
     private val _photos = MutableStateFlow<PhotosUiState>(PhotosUiState.Idle)
     val photos: StateFlow<PhotosUiState> = _photos.asStateFlow()
 
     /**
-     * Fetch photos if we haven't already (or retry if the previous fetch
-     * errored). No-op once a successful Loaded result is held — screens
-     * navigating away and back to the detail get fresh data via the screen-
-     * level [OrderPhotosViewModel] rather than through this summary channel.
+     * Fetch an account booking's photos if we haven't already (or retry if the
+     * previous fetch errored); a guest booking's are never asked for, since the
+     * server refuses them. No-op once a successful Loaded result is held —
+     * screens navigating away and back to the detail get fresh data via the
+     * screen-level [OrderPhotosViewModel] rather than through this summary
+     * channel.
      */
     fun ensurePhotosLoaded() {
         val id = orderId ?: return
+        if ((_state.value as? OrderDetailUiState.Loaded)?.order?.isGuestBooking == true) return
         if (_photos.value !is PhotosUiState.Idle && _photos.value !is PhotosUiState.Error) return
         viewModelScope.launch {
             _photos.value = PhotosUiState.Loading

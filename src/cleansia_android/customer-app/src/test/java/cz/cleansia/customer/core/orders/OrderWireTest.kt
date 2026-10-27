@@ -11,6 +11,7 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import okhttp3.MediaType.Companion.toMediaType
@@ -18,6 +19,7 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -434,6 +436,24 @@ class OrderWireTest {
         val row = listed(pageWithFirstRow { it + ("tierDiscountAmount" to JsonNull) }).data.first()
 
         assertNull(row.tierDiscountAmount)
+    }
+
+    /** The server sets the flag only on a booking it lists through the session's e-mail. */
+    @Test
+    fun aListedGuestBookingArrivesFlaggedOnTheListAndTheDetail() = runTest {
+        val guest = JsonPrimitive(true)
+
+        assertTrue(listed(pageWithFirstRow { it + ("isGuestBooking" to guest) }).data.first().isGuestBooking)
+        assertTrue(detailed(withKey(CAPTURED_ORDER, "isGuestBooking", guest)).isGuestBooking)
+    }
+
+    /** Null, not false, on every account booking, so absent and null both read as the account's own. */
+    @Test
+    fun anAccountBookingIsNeverAGuestOneWhetherTheFlagIsAbsentOrNull() = runTest {
+        assertFalse(listed(CAPTURED_PAGE).data.first().isGuestBooking)
+        assertFalse(listed(pageWithFirstRow { it + ("isGuestBooking" to JsonNull) }).data.first().isGuestBooking)
+        assertFalse(detailed(CAPTURED_ORDER).isGuestBooking)
+        assertFalse(detailed(withKey(CAPTURED_ORDER, "isGuestBooking", JsonNull)).isGuestBooking)
     }
 
     // --- payload plumbing ---------------------------------------------------------

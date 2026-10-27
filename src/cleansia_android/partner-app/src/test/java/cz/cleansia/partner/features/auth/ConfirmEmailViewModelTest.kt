@@ -2,6 +2,7 @@ package cz.cleansia.partner.features.auth
 
 import android.content.Context
 import androidx.lifecycle.SavedStateHandle
+import cz.cleansia.core.auth.RegistrationPassword
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
@@ -42,6 +43,7 @@ class ConfirmEmailViewModelTest {
     private lateinit var appSettingsRepository: AppSettingsRepository
     private lateinit var snackbar: SnackbarController
     private lateinit var context: Context
+    private lateinit var registrationPassword: RegistrationPassword
 
     @Before
     fun setUp() {
@@ -51,6 +53,7 @@ class ConfirmEmailViewModelTest {
         appSettingsRepository = mockk()
         snackbar = mockk(relaxed = true)
         context = mockk()
+        registrationPassword = RegistrationPassword()
         every { errorTranslator.translate(any()) } returns "translated error"
         every { context.getString(any()) } returns "generic error"
         coEvery { userProfileStore.current() } returns profile()
@@ -74,8 +77,14 @@ class ConfirmEmailViewModelTest {
         userProfileStore,
         appSettingsRepository,
         snackbar,
+        registrationPassword,
         context,
     )
+
+    private fun ConfirmEmailViewModel.choosePassword(password: String = "Heslo2026", confirmation: String = password) {
+        onPasswordChange(password)
+        onConfirmPasswordChange(confirmation)
+    }
 
     @Test
     fun `stored profile email is loaded into state`() = runTest {
@@ -128,29 +137,31 @@ class ConfirmEmailViewModelTest {
     }
 
     @Test
-    fun `successful confirmation sends the stored email with the code and flags success`() = runTest {
-        coEvery { authRepository.confirmEmail("a@b.com", "123456") } returns
+    fun `successful confirmation sends the stored email with the code and the chosen password and flags success`() = runTest {
+        coEvery { authRepository.confirmEmail("a@b.com", "123456", "Heslo2026") } returns
             ApiResult.Success(LoginOutcome.Authenticated)
 
         val vm = viewModel()
         advanceUntilIdle()
         vm.onCodeChange("123456")
+        vm.choosePassword()
         vm.confirmEmail()
         advanceUntilIdle()
 
-        coVerify { authRepository.confirmEmail("a@b.com", "123456") }
+        coVerify { authRepository.confirmEmail("a@b.com", "123456", "Heslo2026") }
         assertTrue(vm.uiState.value.isConfirmationSuccessful)
         assertFalse(vm.uiState.value.isLoading)
     }
 
     @Test
     fun `confirmation failure snackbars and does not flag success`() = runTest {
-        coEvery { authRepository.confirmEmail("a@b.com", "123456") } returns
+        coEvery { authRepository.confirmEmail("a@b.com", "123456", "Heslo2026") } returns
             ApiResult.Error(ApiError.Network("down"))
 
         val vm = viewModel()
         advanceUntilIdle()
         vm.onCodeChange("123456")
+        vm.choosePassword()
         vm.confirmEmail()
         advanceUntilIdle()
 
@@ -169,7 +180,7 @@ class ConfirmEmailViewModelTest {
         vm.confirmEmail()
         advanceUntilIdle()
 
-        coVerify(exactly = 0) { authRepository.confirmEmail(any(), any()) }
+        coVerify(exactly = 0) { authRepository.confirmEmail(any(), any(), any()) }
         assertNotNull(vm.uiState.value.error)
     }
 
@@ -181,7 +192,85 @@ class ConfirmEmailViewModelTest {
         vm.confirmEmail()
         advanceUntilIdle()
 
-        coVerify(exactly = 0) { authRepository.confirmEmail(any(), any()) }
+        coVerify(exactly = 0) { authRepository.confirmEmail(any(), any(), any()) }
+    }
+
+    /** Right after registering, the confirmation sets the password just typed, so none is asked for. */
+    @Test
+    fun `right after registering the password just typed is sent and none is asked for`() = runTest {
+        coEvery { userProfileStore.current() } returns null
+        registrationPassword.hold("fresh@registrant.cz", "Registr2026")
+        coEvery { authRepository.confirmEmail("fresh@registrant.cz", "123456", "Registr2026") } returns
+            ApiResult.Success(LoginOutcome.Authenticated)
+
+        val vm = viewModel(routeEmail = "fresh@registrant.cz")
+        advanceUntilIdle()
+        assertFalse(vm.uiState.value.asksForPassword)
+        assertTrue("the code alone completes the form", vm.uiState.value.submitsOnCodeEntry)
+
+        vm.onCodeChange("123456")
+        vm.confirmEmail()
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { authRepository.confirmEmail("fresh@registrant.cz", "123456", "Registr2026") }
+        assertTrue(vm.uiState.value.isConfirmationSuccessful)
+    }
+
+    /**
+     * Confirming later — after a restart, or a registration made elsewhere — asks for a password, so the
+     * one a stranger may have registered the address with never survives its owner's confirmation.
+     */
+    @Test
+    fun `confirming later asks for a password and sends the one chosen`() = runTest {
+        registrationPassword.hold("someone@else.cz", "Registr2026")
+        coEvery { authRepository.confirmEmail("a@b.com", "123456", "Moje2026heslo") } returns
+            ApiResult.Success(LoginOutcome.Authenticated)
+
+        val vm = viewModel(routeEmail = "a@b.com")
+        advanceUntilIdle()
+        assertTrue(vm.uiState.value.asksForPassword)
+        assertFalse("the code alone must not submit", vm.uiState.value.submitsOnCodeEntry)
+
+        vm.onCodeChange("123456")
+        vm.choosePassword("Moje2026heslo")
+        assertTrue(vm.uiState.value.canSubmit)
+        vm.confirmEmail()
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { authRepository.confirmEmail("a@b.com", "123456", "Moje2026heslo") }
+    }
+
+    @Test
+    fun `an asked password that breaks the rules or does not match sends nothing`() = runTest {
+        val vm = viewModel(routeEmail = "a@b.com")
+        advanceUntilIdle()
+        vm.onCodeChange("123456")
+
+        listOf("short1" to "short1", "noDigitsHere" to "noDigitsHere", "Heslo2026" to "Heslo2027").forEach { (password, confirmation) ->
+            vm.choosePassword(password, confirmation)
+            assertFalse("$password / $confirmation must not be submittable", vm.uiState.value.canSubmit)
+            vm.confirmEmail()
+            advanceUntilIdle()
+        }
+
+        coVerify(exactly = 0) { authRepository.confirmEmail(any(), any(), any()) }
+    }
+
+    @Test
+    fun `a held password gone by the confirmation turns the form to asking and sends nothing`() = runTest {
+        coEvery { userProfileStore.current() } returns null
+        registrationPassword.hold("fresh@registrant.cz", "Registr2026")
+        val vm = viewModel(routeEmail = "fresh@registrant.cz")
+        advanceUntilIdle()
+        assertFalse(vm.uiState.value.asksForPassword)
+
+        registrationPassword.clear()
+        vm.onCodeChange("123456")
+        vm.confirmEmail()
+        advanceUntilIdle()
+
+        assertTrue(vm.uiState.value.asksForPassword)
+        coVerify(exactly = 0) { authRepository.confirmEmail(any(), any(), any()) }
     }
 
     /**

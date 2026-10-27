@@ -185,6 +185,8 @@ private fun GenOrderListItem.toAppDtoOrRefuse(): OrderListItemDto = OrderListIte
     // Defaulted rather than required: an older server that does not send it yields "not reviewed",
     // which costs at most one redundant prompt. Refusing would drop the whole row from the list.
     hasReview = hasReview ?: false,
+    // Null by design on every booking that belongs to the account, so only true names a guest booking.
+    isGuestBooking = isGuestBooking == true,
 )
 
 /**
@@ -242,6 +244,7 @@ private fun GenOrderItem?.toAppDto(): OrderDetailDto {
         review = order.review?.toAppDto(),
         dirtinessLevel = order.dirtinessLevel.required("dirtinessLevel").toApp(),
         dirtinessSurchargeAmount = order.dirtinessSurchargeAmount.required("dirtinessSurchargeAmount"),
+        isGuestBooking = order.isGuestBooking == true,
     )
 }
 

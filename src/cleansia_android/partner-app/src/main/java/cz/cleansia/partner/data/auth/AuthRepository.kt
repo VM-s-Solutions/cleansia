@@ -58,8 +58,11 @@ interface AuthRepository {
         countryId: String? = null,
     ): ApiResult<Unit>
 
-    /** Confirms the given email via the 6-digit code emailed at registration. Returns the issued JWT. */
-    suspend fun confirmEmail(email: String, code: String): ApiResult<LoginOutcome>
+    /**
+     * Confirms the given email via the 6-digit code emailed at registration, setting the account's password
+     * to [password]. Returns the issued JWT.
+     */
+    suspend fun confirmEmail(email: String, code: String, password: String): ApiResult<LoginOutcome>
 
     /** Resends the confirmation code to the given address. Carries no payload — see [register]. */
     suspend fun resendConfirmation(email: String, language: String): ApiResult<Unit>
@@ -180,9 +183,9 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun confirmEmail(email: String, code: String): ApiResult<LoginOutcome> = wireResult {
+    override suspend fun confirmEmail(email: String, code: String, password: String): ApiResult<LoginOutcome> = wireResult {
         val result = safeApiCall(json) {
-            authApi.authConfirmUserEmail(ConfirmUserEmailCommand(code = code, email = email))
+            authApi.authConfirmUserEmail(ConfirmUserEmailCommand(code = code, email = email, password = password))
         }
         if (result is ApiResult.Error) return ApiResult.Error(result.error)
         val body = (result as ApiResult.Success).data

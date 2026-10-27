@@ -79,6 +79,7 @@ object NotificationDeepLink {
         // screen that has the address on it.
         "order.reminder_soon",
         "order.reminder_not_started",
+        "order.crew_mate_done",
         -> orderId?.takeIf { it.isNotBlank() }?.let { NavRoute.OrderDetail(orderId = it) }
         // Still the order detail even though the cleaner is off the job: the copy says the job
         // moved, and the detail is where they can read which day just came off their schedule.

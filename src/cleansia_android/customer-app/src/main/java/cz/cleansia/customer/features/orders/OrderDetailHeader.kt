@@ -107,6 +107,13 @@ internal fun OrderDetailCompactHeader(
                 )
             }
         }
+        if (order.isGuestBooking) {
+            Text(
+                text = stringResource(R.string.orders_guest_booking),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         if (dateLabel != null) {
             Spacer(Modifier.height(2.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {

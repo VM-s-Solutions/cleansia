@@ -100,7 +100,7 @@ class AuthRepositorySignInWipeTest {
         coEvery { authApi.authConfirmUserEmail(any()) } returns session()
         employeeReadFails()
 
-        val outcome = newRepository().confirmEmail("next@cleansia.cz", "123456")
+        val outcome = newRepository().confirmEmail("next@cleansia.cz", "123456", "Heslo2026")
 
         assertTrue(outcome is cz.cleansia.core.network.ApiResult.Success)
         coVerifyOrder {

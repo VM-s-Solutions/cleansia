@@ -33,6 +33,11 @@ class AutofillHintsCallSiteTest {
         assertEquals(listOf("NewPassword", "NewPassword"), passwordHints(textFields("profile/SecurityScreen.kt")))
     }
 
+    @Test
+    fun `the confirm screen declares both password fields it asks for as new passwords`() {
+        assertEquals(listOf("NewPassword", "NewPassword"), passwordHints(textFields("auth/EmailVerifyScreen.kt")))
+    }
+
     private fun passwordHints(fields: List<String>) = fields.filter { "isPassword = true" in it }.map(::hint)
 
     private fun hint(field: String): String? =

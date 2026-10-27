@@ -1,6 +1,7 @@
 package cz.cleansia.customer.core.auth
 import cz.cleansia.core.auth.AuthAuthenticator
 
+import cz.cleansia.core.auth.RegistrationPassword
 import cz.cleansia.core.auth.SessionScopedCache
 import cz.cleansia.customer.core.data.AddressRepository
 import cz.cleansia.customer.core.disputes.DisputeRepository
@@ -68,4 +69,7 @@ abstract class SessionScopedModule {
 
     @Binds @IntoSet
     abstract fun bindSavedCardRepository(impl: SavedCardRepository): SessionScopedCache
+
+    @Binds @IntoSet
+    abstract fun bindRegistrationPassword(impl: RegistrationPassword): SessionScopedCache
 }

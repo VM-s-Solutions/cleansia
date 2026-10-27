@@ -93,6 +93,7 @@
     <string name="confirm_email">Підтвердити електронну пошту</string>
     <string name="verify_email">Підтвердіть Вашу електронну пошту</string>
     <string name="verify_email_subtitle">Ми надіслали код підтвердження на Вашу електронну пошту. Будь ласка, введіть його нижче.</string>
+    <string name="confirm_email_password_prompt">Оберіть пароль, яким ви входитимете після підтвердження електронної пошти.</string>
     <string name="confirm_email_subtitle">Будь ласка, введіть код підтвердження, надісланий на Вашу електронну пошту</string>
     <string name="confirmation_code">Код підтвердження</string>
     <string name="verification_code">Код верифікації</string>
@@ -342,6 +343,7 @@
     <string name="access_label">Доступ</string>
     <string name="special_label">Спеціальні інструкції</string>
     <string name="order_completed_toast">Замовлення позначено як виконане</string>
+    <string name="order_my_part_done_toast">Вашу частину позначено виконаною</string>
     <string name="before">До</string>
     <string name="after">Після</string>
     <string name="notes_and_issues">Примітки та проблеми</string>
@@ -922,6 +924,9 @@
     <string name="starting_order">Починаю прибирання…</string>
     <string name="slide_to_complete">Проведіть, щоб завершити</string>
     <string name="completing_order">Завершую…</string>
+    <string name="slide_to_mark_my_part_done">Проведіть, щоб позначити свою частину виконаною</string>
+    <string name="marking_my_part_done">Позначаю…</string>
+    <string name="order_my_part_done_waiting">Ви позначили свою частину виконаною. Щойно це зроблять усі на цьому замовленні, будь-хто з вас зможе його завершити.</string>
     <string name="order_mark_cash_collected">Позначити готівку як отриману</string>
     <string name="partner_order_mark_cash_collected_confirm_title">Позначити готівку як отриману?</string>
     <string name="partner_order_mark_cash_collected_confirm_message">Підтвердьте, що ви отримали від клієнта %1$s готівкою. Цю дію не можна скасувати.</string>
@@ -1155,6 +1160,7 @@
     <string name="error_order_completion_notes_required">Нотатки про завершення обов\'язкові.</string>
     <string name="error_order_completion_notes_too_long">Нотатки про завершення занадто довгі.</string>
     <string name="error_order_after_photos_required">Перед завершенням замовлення зробіть хоча б одне фото «після».</string>
+    <string name="error_order_crew_not_done">Перш ніж завершити замовлення, кожен, хто на ньому працює, має позначити свою частину виконаною.</string>
     <string name="error_order_photo_window_closed">Це фото зараз не можна додати: фото до прибирання — від моменту, коли ви взяли замовлення, до його завершення, фото після — під час роботи.</string>
     <string name="error_order_photo_locked">Після завершення або скасування замовлення фото видалити не можна.</string>
     <string name="error_order_cash_not_collected">Перш ніж завершити замовлення, отримайте готівку та позначте її як прийняту.</string>
@@ -1265,6 +1271,8 @@
     <string name="notification_order_in_progress_body">Замовлення №%1$s виконується. Торкніться, щоб стежити за ним.</string>
     <string name="notification_order_completed_title">Замовлення завершено</string>
     <string name="notification_order_completed_body">Замовлення №%1$s завершено. Торкніться, щоб переглянути підсумок.</string>
+    <string name="notification_order_crew_mate_done_title">Хтось на вашому замовленні завершив</string>
+    <string name="notification_order_crew_mate_done_body">Замовлення №%1$s: щойно всі, хто на ньому працює, позначать свою частину виконаною, будь-хто з вас зможе його завершити.</string>
     <string name="notification_order_cancelled_title">Замовлення скасовано</string>
     <string name="notification_order_cancelled_body">Замовлення №%1$s скасовано. Торкніться, щоб переглянути деталі.</string>
     <string name="notification_dispute_reply_title">Підтримка відповіла</string>

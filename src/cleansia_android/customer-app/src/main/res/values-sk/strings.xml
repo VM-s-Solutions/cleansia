@@ -58,6 +58,7 @@
     <!-- Auth — email verify -->
     <string name="verify_title">Overte svoj e-mail</string>
     <string name="verify_description">Poslali sme šesťmiestny overovací kód na váš e-mail. Zadajte ho nižšie pre overenie účtu.</string>
+    <string name="verify_password_prompt">Zvoľte heslo, ktorým sa budete prihlasovať po potvrdení e-mailu.</string>
     <string name="verify_submit">Overiť kód</string>
     <string name="verify_resend_code">Poslať kód znova</string>
     <string name="auth_resend_success">Overovací e-mail bol znova odoslaný.</string>
@@ -230,6 +231,8 @@
     <string name="orders_status_in_progress">Prebieha</string>
     <string name="orders_status_completed">Dokončená</string>
     <string name="orders_status_cancelled">Zrušená</string>
+    <string name="orders_guest_booking">Objednávka hosťa</string>
+    <string name="order_detail_guest_booking_note">Objednávka bola vytvorená bez prihlásenia na váš e-mail. Môžete ju tu sledovať, ale nemožno ju ohodnotiť ani pri nej nahlásiť problém.</string>
     <string name="orders_payment_paid">Zaplatené</string>
     <string name="orders_payment_pending">Platba čaká</string>
     <string name="orders_payment_failed">Zlyhalo</string>

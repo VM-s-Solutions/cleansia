@@ -93,6 +93,7 @@
     <string name="confirm_email">Potvrdiť e-mail</string>
     <string name="verify_email">Overte svoj e-mail</string>
     <string name="verify_email_subtitle">Na váš e-mail sme odoslali overovací kód. Zadajte ho nižšie.</string>
+    <string name="confirm_email_password_prompt">Zvoľte heslo, ktorým sa budete prihlasovať po potvrdení e-mailu.</string>
     <string name="confirm_email_subtitle">Zadajte prosím potvrdzovací kód odoslaný na váš e-mail</string>
     <string name="confirmation_code">Potvrdzovací kód</string>
     <string name="verification_code">Overovací kód</string>
@@ -342,6 +343,7 @@
     <string name="access_label">Prístup</string>
     <string name="special_label">Špeciálne pokyny</string>
     <string name="order_completed_toast">Objednávka označená ako dokončená</string>
+    <string name="order_my_part_done_toast">Vaša časť je označená ako hotová</string>
     <string name="before">Pred</string>
     <string name="after">Po</string>
     <string name="notes_and_issues">Poznámky a problémy</string>
@@ -917,6 +919,9 @@
     <string name="starting_order">Začínam upratovanie…</string>
     <string name="slide_to_complete">Posunutím dokončite</string>
     <string name="completing_order">Dokončujem…</string>
+    <string name="slide_to_mark_my_part_done">Posunutím označte svoju časť ako hotovú</string>
+    <string name="marking_my_part_done">Označujem…</string>
+    <string name="order_my_part_done_waiting">Svoju časť máte označenú ako hotovú. Keď to urobia všetci na tejto zákazke, ktokoľvek z vás ju môže dokončiť.</string>
     <string name="order_mark_cash_collected">Označiť hotovosť ako prijatú</string>
     <string name="partner_order_mark_cash_collected_confirm_title">Označiť hotovosť ako prijatú?</string>
     <string name="partner_order_mark_cash_collected_confirm_message">Potvrďte, že ste od zákazníka prevzali %1$s v hotovosti. Túto akciu nemožno vrátiť späť.</string>
@@ -1150,6 +1155,7 @@
     <string name="error_order_completion_notes_required">Poznámky k dokončeniu sú povinné.</string>
     <string name="error_order_completion_notes_too_long">Poznámky k dokončeniu sú príliš dlhé.</string>
     <string name="error_order_after_photos_required">Pred dokončením zákazky odfoťte aspoň jednu fotografiu „po\".</string>
+    <string name="error_order_crew_not_done">Skôr ako sa dá zákazka dokončiť, musia svoju časť označiť ako hotovú všetci, ktorí na nej pracujú.</string>
     <string name="error_order_photo_window_closed">Túto fotografiu teraz nemožno pridať: fotografie pred upratovaním od prevzatia zákazky do jej dokončenia, fotografie po upratovaní počas práce.</string>
     <string name="error_order_photo_locked">Po dokončení alebo zrušení zákazky nemožno fotografie vymazať.</string>
     <string name="error_order_cash_not_collected">Pred dokončením zákazky vyberte hotovosť a označte ju ako prijatú.</string>
@@ -1260,6 +1266,8 @@
     <string name="notification_order_in_progress_body">Zákazka č. %1$s práve prebieha. Ťuknutím ju môžete sledovať.</string>
     <string name="notification_order_completed_title">Zákazka dokončená</string>
     <string name="notification_order_completed_body">Zákazka č. %1$s je dokončená. Ťuknutím zobrazíte súhrn.</string>
+    <string name="notification_order_crew_mate_done_title">Niekto na vašej zákazke má hotovo</string>
+    <string name="notification_order_crew_mate_done_body">Zákazka č. %1$s: keď svoju časť označia ako hotovú všetci, ktorí na nej pracujú, ktokoľvek z vás ju môže dokončiť.</string>
     <string name="notification_order_cancelled_title">Zákazka zrušená</string>
     <string name="notification_order_cancelled_body">Zákazka č. %1$s bola zrušená. Ťuknutím zobrazíte podrobnosti.</string>
     <string name="notification_dispute_reply_title">Podpora odpovedala</string>

@@ -95,6 +95,11 @@ object NotificationTemplates {
             R.string.notification_reminder_not_started_body,
             NotificationChannels.CHANNEL_ORDER_UPDATES,
         )
+        "order.crew_mate_done" -> Template(
+            R.string.notification_order_crew_mate_done_title,
+            R.string.notification_order_crew_mate_done_body,
+            NotificationChannels.CHANNEL_ORDER_UPDATES,
+        )
         // New-jobs channel, not a channel of its own: the server treats this as
         // NotificationCategory.NewJobsAvailable and declines the whole offer for a cleaner who
         // muted new jobs, so a separate channel would be a mute the server cannot honor.
@@ -151,6 +156,7 @@ object NotificationTemplates {
             "order.preferred_offer",
             "order.reminder_soon",
             "order.reminder_not_started",
+            "order.crew_mate_done",
             -> context.getString(bodyRes, args["orderNumber"].orEmpty())
             "order.new_available",
             "order.reminder_tomorrow",

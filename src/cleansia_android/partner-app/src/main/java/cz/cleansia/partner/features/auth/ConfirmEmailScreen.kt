@@ -25,22 +25,26 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentType
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.ui.components.CleansiaOutlinedButton
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
+import cz.cleansia.core.ui.components.CleansiaTextField
 import cz.cleansia.core.ui.components.CodeInput
+import cz.cleansia.core.ui.components.PasswordRuleList
 import cz.cleansia.partner.R
 
-private const val CODE_LENGTH = 6
-
 /**
- * 6-digit email-verification entry. Auto-submits once the user reaches 6
- * digits via [LaunchedEffect] on code length. Resend re-issues the code with
- * the user's preferred locale. Back goes to login.
+ * 6-digit email-verification entry, and the password the confirmation sets when the one typed at
+ * registration is not held. Auto-submits once the user reaches 6 digits via [LaunchedEffect] on code
+ * length, unless it asks for a password. Resend re-issues the code with the user's preferred locale.
+ * Back goes to login.
  */
 @Composable
 fun ConfirmEmailScreen(
@@ -70,7 +74,7 @@ fun ConfirmEmailScreen(
     }
 
     LaunchedEffect(uiState.code) {
-        if (uiState.code.length == CODE_LENGTH && !uiState.isLoading) {
+        if (uiState.code.length == CONFIRMATION_CODE_LENGTH && !uiState.isLoading && uiState.submitsOnCodeEntry) {
             viewModel.confirmEmail()
         }
     }
@@ -118,8 +122,48 @@ fun ConfirmEmailScreen(
                 CodeInput(
                     code = uiState.code,
                     onCodeChange = viewModel::onCodeChange,
-                    length = CODE_LENGTH,
+                    length = CONFIRMATION_CODE_LENGTH,
                 )
+
+                if (uiState.asksForPassword) {
+                    Spacer(Modifier.height(24.dp))
+                    Text(
+                        text = stringResource(R.string.confirm_email_password_prompt),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    CleansiaTextField(
+                        value = uiState.password,
+                        onValueChange = viewModel::onPasswordChange,
+                        label = stringResource(R.string.password),
+                        modifier = Modifier.semantics { contentType = ContentType.NewPassword },
+                        isPassword = true,
+                        enabled = !uiState.isLoading,
+                    )
+                    PasswordRuleList(
+                        rules = listOf(
+                            stringResource(R.string.register_pw_min_length) to uiState.passwordHasMinLength,
+                            stringResource(R.string.register_pw_letter) to uiState.passwordHasLetter,
+                            stringResource(R.string.register_pw_number) to uiState.passwordHasNumber,
+                        ),
+                        hasInput = uiState.password.isNotEmpty(),
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    CleansiaTextField(
+                        value = uiState.confirmPassword,
+                        onValueChange = viewModel::onConfirmPasswordChange,
+                        label = stringResource(R.string.confirm_password),
+                        modifier = Modifier.semantics { contentType = ContentType.NewPassword },
+                        isPassword = true,
+                        enabled = !uiState.isLoading,
+                    )
+                    PasswordRuleList(
+                        rules = listOf(stringResource(R.string.register_pw_match) to uiState.passwordsMatch),
+                        hasInput = uiState.confirmPassword.isNotEmpty(),
+                    )
+                }
 
                 Spacer(Modifier.height(24.dp))
 
@@ -127,7 +171,7 @@ fun ConfirmEmailScreen(
                     text = stringResource(R.string.verify),
                     onClick = { viewModel.confirmEmail() },
                     loading = uiState.isLoading,
-                    enabled = uiState.code.length == CODE_LENGTH && !uiState.isLoading,
+                    enabled = uiState.canSubmit && !uiState.isLoading,
                     trailingIcon = Icons.Outlined.CheckCircle,
                 )
 

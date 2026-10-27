@@ -411,6 +411,93 @@ class OrderDetailViewModelTest {
         assertNull(vm.inFlightAction.value)
     }
 
+    private val marked = "2026-10-27T10:15:00Z"
+
+    private fun crewJob(myMark: String? = null, mateMark: String? = null) = OrderItem(
+        orderStatus = Code(value = 4),
+        isAssignedToCurrentUser = true,
+        assignedEmployees = listOf(
+            AssignedEmployeeDto(id = "seat-me", employeeId = "employee-me", fullName = "Me", completionConfirmedAt = myMark),
+            AssignedEmployeeDto(id = "seat-mate", employeeId = "employee-mate", fullName = "Mate", completionConfirmedAt = mateMark),
+        ),
+    )
+
+    @Test
+    fun `the footer's step reads my own seat on the loaded crew job`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(crewJob(myMark = marked))
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        assertEquals(CompletionStep.WaitingForCrew, vm.completionStep.value)
+    }
+
+    @Test
+    fun `marking my part sends it, confirms it and re-reads the job, which then waits for the crew`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returnsMany listOf(
+            ApiResult.Success(crewJob()),
+            ApiResult.Success(crewJob(myMark = marked)),
+        )
+        coEvery { ordersRepository.markMyPartDone(orderId) } returns ApiResult.Success(Unit)
+
+        val vm = viewModel()
+        advanceUntilIdle()
+        assertEquals(CompletionStep.MarkMyPart, vm.completionStep.value)
+
+        vm.markMyPartDone()
+        advanceUntilIdle()
+
+        io.mockk.coVerify(exactly = 1) { ordersRepository.markMyPartDone(orderId) }
+        io.mockk.coVerify(exactly = 0) { ordersRepository.completeOrder(any(), any(), any()) }
+        verify { snackbar.showSuccessKey(R.string.order_my_part_done_toast) }
+        assertEquals(ActionState.Idle, vm.actionState.value)
+        assertNull(vm.inFlightAction.value)
+        assertEquals(CompletionStep.WaitingForCrew, vm.completionStep.value)
+    }
+
+    @Test
+    fun `a refused mark snackbars the reason and confirms nothing`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(crewJob())
+        coEvery { ordersRepository.markMyPartDone(orderId) } returns ApiResult.Error(refusal("order.not_in_progress"))
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.markMyPartDone()
+        advanceUntilIdle()
+
+        verify { snackbar.showError("translated error") }
+        verify(exactly = 0) { snackbar.showSuccessKey(R.string.order_my_part_done_toast) }
+        assertTrue(vm.actionState.value is ActionState.Error)
+        assertNull(vm.inFlightAction.value)
+    }
+
+    @Test
+    fun `a mark runs as its own action and a second slide sends nothing`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(crewJob())
+        val gate = kotlinx.coroutines.CompletableDeferred<ApiResult<Unit>>()
+        coEvery { ordersRepository.markMyPartDone(orderId) } coAnswers { gate.await() }
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.markMyPartDone()
+        advanceUntilIdle()
+        assertEquals(OrderAction.MarkMyPartDone, vm.inFlightAction.value)
+
+        vm.markMyPartDone()
+        advanceUntilIdle()
+        io.mockk.coVerify(exactly = 1) { ordersRepository.markMyPartDone(orderId) }
+
+        gate.complete(ApiResult.Success(Unit))
+        advanceUntilIdle()
+        assertNull(vm.inFlightAction.value)
+    }
+
     @Test
     fun `a lockout report sends the trimmed note, confirms it and refetches the order`() = runTest {
         every { ordersRepository.isOrderStale(orderId) } returns true

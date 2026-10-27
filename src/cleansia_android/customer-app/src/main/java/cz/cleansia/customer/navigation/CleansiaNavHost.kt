@@ -11,6 +11,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -262,6 +263,7 @@ fun CleansiaNavHost(
             val vm: AuthViewModel = hiltViewModel()
             val state by vm.uiState.collectAsStateWithLifecycle()
             val args = backStackEntry.toRoute<Routes.EmailVerify>()
+            val asksForPassword = remember(args.email) { vm.asksForPassword(args.email) }
 
             LaunchedEffect(state.outcome) {
                 if (state.outcome is AuthOutcome.SignedIn) {
@@ -274,7 +276,8 @@ fun CleansiaNavHost(
 
             EmailVerifyScreen(
                 email = args.email,
-                onVerify = { code -> vm.confirmEmail(args.email, code) },
+                asksForPassword = asksForPassword,
+                onVerify = { code, password -> vm.confirmEmail(args.email, code, password) },
                 onResend = { targetEmail -> vm.resendConfirmationEmail(targetEmail) },
                 onBack = { navController.popBackStack() },
                 loading = state.loading,

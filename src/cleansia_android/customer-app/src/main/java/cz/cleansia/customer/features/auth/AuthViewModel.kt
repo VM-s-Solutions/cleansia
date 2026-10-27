@@ -3,7 +3,9 @@ package cz.cleansia.customer.features.auth
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cz.cleansia.core.auth.RegistrationPassword
 import cz.cleansia.core.network.ApiResult
+import cz.cleansia.core.validation.PasswordPolicy
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.auth.ApiErrorParser
 import cz.cleansia.customer.core.auth.AuthRepository
@@ -41,6 +43,7 @@ class AuthViewModel @Inject constructor(
     private val snackbar: SnackbarController,
     private val googleSignInController: GoogleSignInController,
     private val marketRepository: MarketRepository,
+    private val registrationPassword: RegistrationPassword,
     @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
 
@@ -108,6 +111,7 @@ class AuthViewModel @Inject constructor(
                 countryId = marketRepository.ensureLoaded().countryId,
             )
                 .onSuccess {
+                    registrationPassword.hold(email, password)
                     _uiState.value = AuthUiState(outcome = AuthOutcome.NeedsEmailConfirm(email))
                 }
                 .onError { error ->
@@ -124,16 +128,28 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    fun confirmEmail(email: String?, code: String) {
+    /** The confirmation sets the account's password, so the screen asks for one unless the one just typed is held. */
+    fun asksForPassword(email: String?): Boolean = email.isNullOrBlank() || registrationPassword.heldFor(email) == null
+
+    /** [password] is the one chosen on the confirm screen, or null when it asked for none. */
+    fun confirmEmail(email: String?, code: String, password: String?) {
         if (email.isNullOrBlank()) {
             // The 6-digit code only proves possession relative to the account it was issued to —
             // without the email there is nothing to verify against (reachable only via a nav bug).
             snackbar.showErrorKey(R.string.error_generic_unknown)
             return
         }
+        val chosen = if (password != null) {
+            password.takeIf(PasswordPolicy::isValid) ?: return
+        } else {
+            registrationPassword.heldFor(email) ?: run {
+                snackbar.showErrorKey(R.string.error_generic_unknown)
+                return
+            }
+        }
         _uiState.value = AuthUiState(loading = true)
         viewModelScope.launch {
-            _uiState.value = when (val result = authRepository.confirmEmail(email, code)) {
+            _uiState.value = when (val result = authRepository.confirmEmail(email, code, chosen)) {
                 is ApiResult.Success -> when (result.data) {
                     is AuthSuccess.Authenticated -> AuthUiState(outcome = AuthOutcome.SignedIn)
                     is AuthSuccess.EmailUnconfirmed -> {

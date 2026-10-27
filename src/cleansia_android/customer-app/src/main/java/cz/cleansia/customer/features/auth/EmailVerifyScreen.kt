@@ -34,9 +34,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentType
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -46,27 +49,34 @@ import androidx.compose.ui.unit.sp
 import cz.cleansia.customer.R
 import cz.cleansia.core.ui.components.CleansiaOutlinedButton
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
+import cz.cleansia.core.ui.components.CleansiaTextField
 import cz.cleansia.core.ui.components.CodeInput
+import cz.cleansia.core.ui.components.PasswordRuleList
+import cz.cleansia.core.validation.PasswordPolicy
+import cz.cleansia.customer.features.auth.EmailVerifyForm.CODE_LENGTH
 import cz.cleansia.customer.ui.theme.CleansiaTheme
-
-private const val CODE_LENGTH = 6
 
 /**
  * Email Verify — mirrors the web's [`confirm-email.component.html`].
- * 6-digit OTP code with auto-submit on completion, resend + verify buttons.
+ * 6-digit OTP code with resend + verify buttons, and the password the confirmation sets when the one
+ * typed at registration is not held ([asksForPassword]). The code submits on completion only when no
+ * password is asked.
  */
 @Composable
 fun EmailVerifyScreen(
     email: String? = null,
-    onVerify: (code: String) -> Unit = {},
+    asksForPassword: Boolean = true,
+    onVerify: (code: String, password: String?) -> Unit = { _, _ -> },
     onResend: (email: String) -> Unit = {},
     onBack: () -> Unit = {},
     loading: Boolean = false,
 ) {
     var code by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
 
     LaunchedEffect(code) {
-        if (code.length == CODE_LENGTH) onVerify(code)
+        if (code.length == CODE_LENGTH && !asksForPassword) onVerify(code, null)
     }
 
     // The activity is edge-to-edge and this route consumes no insets: the back row pads below the
@@ -121,13 +131,53 @@ fun EmailVerifyScreen(
                 onCodeChange = { new -> code = new.filter(Char::isDigit).take(CODE_LENGTH) },
             )
 
+            if (asksForPassword) {
+                Spacer(Modifier.height(24.dp))
+                Text(
+                    text = stringResource(R.string.verify_password_prompt),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+                Spacer(Modifier.height(8.dp))
+                CleansiaTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = stringResource(R.string.register_password),
+                    modifier = Modifier.semantics { contentType = ContentType.NewPassword },
+                    isPassword = true,
+                )
+                PasswordRuleList(
+                    rules = listOf(
+                        stringResource(R.string.register_pw_min_length) to PasswordPolicy.hasMinLength(password),
+                        stringResource(R.string.register_pw_letter) to PasswordPolicy.hasLetter(password),
+                        stringResource(R.string.register_pw_number) to PasswordPolicy.hasNumber(password),
+                    ),
+                    hasInput = password.isNotEmpty(),
+                )
+                Spacer(Modifier.height(8.dp))
+                CleansiaTextField(
+                    value = confirmPassword,
+                    onValueChange = { confirmPassword = it },
+                    label = stringResource(R.string.register_confirm_password),
+                    modifier = Modifier.semantics { contentType = ContentType.NewPassword },
+                    isPassword = true,
+                )
+                PasswordRuleList(
+                    rules = listOf(
+                        stringResource(R.string.register_pw_match) to PasswordPolicy.passwordsMatch(password, confirmPassword),
+                    ),
+                    hasInput = confirmPassword.isNotEmpty(),
+                )
+            }
+
             Spacer(Modifier.height(24.dp))
 
             CleansiaPrimaryButton(
                 text = stringResource(R.string.verify_submit),
-                onClick = { onVerify(code) },
+                onClick = { onVerify(code, if (asksForPassword) password else null) },
                 loading = loading,
-                enabled = code.length == CODE_LENGTH,
+                enabled = EmailVerifyForm.isSubmittable(code, asksForPassword, password, confirmPassword),
                 trailingIcon = Icons.Outlined.CheckCircle,
             )
 

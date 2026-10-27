@@ -408,6 +408,13 @@ private fun OrderCard(
                 color = statusColor,
             )
         }
+        if (order.isGuestBooking) {
+            Text(
+                text = stringResource(R.string.orders_guest_booking),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         Spacer(Modifier.height(6.dp))
 
         // Date + time range

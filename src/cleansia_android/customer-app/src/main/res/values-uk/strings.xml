@@ -230,6 +230,8 @@
     <string name="orders_status_in_progress">Виконується</string>
     <string name="orders_status_completed">Завершено</string>
     <string name="orders_status_cancelled">Скасовано</string>
+    <string name="orders_guest_booking">Гостьове замовлення</string>
+    <string name="order_detail_guest_booking_note">Замовлення оформлено без входу в акаунт на ваш e-mail. Тут його можна відстежувати, але не можна оцінити чи повідомити про проблему з ним.</string>
     <string name="orders_payment_paid">Сплачено</string>
     <string name="orders_payment_pending">Очікує оплати</string>
     <string name="orders_payment_failed">Не вдалося</string>

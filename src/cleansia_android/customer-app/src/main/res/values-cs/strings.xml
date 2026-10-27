@@ -230,6 +230,8 @@
     <string name="orders_status_in_progress">Probíhá</string>
     <string name="orders_status_completed">Dokončena</string>
     <string name="orders_status_cancelled">Zrušena</string>
+    <string name="orders_guest_booking">Objednávka hosta</string>
+    <string name="order_detail_guest_booking_note">Objednávka byla vytvořena bez přihlášení na váš e-mail. Můžete ji zde sledovat, ale nelze ji ohodnotit ani u ní nahlásit problém.</string>
     <string name="orders_payment_paid">Zaplaceno</string>
     <string name="orders_payment_pending">Platba čeká</string>
     <string name="orders_payment_failed">Selhalo</string>

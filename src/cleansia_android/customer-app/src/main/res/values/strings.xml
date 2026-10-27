@@ -229,6 +229,8 @@
     <string name="orders_status_in_progress">In progress</string>
     <string name="orders_status_completed">Completed</string>
     <string name="orders_status_cancelled">Cancelled</string>
+    <string name="orders_guest_booking">Guest booking</string>
+    <string name="order_detail_guest_booking_note">This booking was made without signing in, using your e-mail. You can follow it here, but you cannot rate it or report a problem with it.</string>
     <string name="orders_payment_paid">Paid</string>
     <string name="orders_payment_pending">Payment pending</string>
     <string name="orders_payment_failed">Failed</string>

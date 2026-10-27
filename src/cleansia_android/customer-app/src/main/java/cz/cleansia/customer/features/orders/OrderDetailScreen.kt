@@ -639,6 +639,14 @@ private fun OrderDetailSheetContent(
                 .padding(horizontal = Spacing.ML),
             verticalArrangement = Arrangement.spacedBy(Spacing.S),
         ) {
+            if (order.isGuestBooking) {
+                Text(
+                    text = stringResource(R.string.order_detail_guest_booking_note),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
             // Hero block: the status headline sits directly on the tracker bar with no gap, so the two
             // read as one group — and the inner Column is why it overrides the parent's spacedBy.
             Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {

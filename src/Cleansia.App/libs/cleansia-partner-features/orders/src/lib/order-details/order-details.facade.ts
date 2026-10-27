@@ -6,6 +6,7 @@ import {
   DropOrderCommand,
   GetMyAssignmentRemovalResponse,
   MarkCashCollectedCommand,
+  MarkMyPartDoneCommand,
   OrderClient,
   OrderItem,
   OrderStatus,
@@ -55,6 +56,7 @@ import {
 
 const ACCEPTANCE_REQUIRED = 'contract.acceptance_required';
 const ORDER_NOT_FOUND = 'order.not_found';
+const CREW_NOT_DONE = 'order.crew_not_done';
 
 @Injectable()
 export class OrderDetailsFacade extends UnsubscribeControlDirective {
@@ -360,6 +362,10 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
           this.loadOrderDetails(orderId);
           return;
         }
+        if (extractApiErrorCode(action.error) === CREW_NOT_DONE) {
+          this.loadOrderDetails(orderId);
+          return;
+        }
         this.openAcceptDialogWhenRequired(action.error);
       });
 
@@ -370,6 +376,44 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
         completionNotes: '',
       })
     );
+  }
+
+  // The re-read shows the seat marked and, once the last of the crew has marked, the shared Complete.
+  markMyPartDone(): void {
+    const orderId = this.orderDetails()?.id;
+    if (!orderId) {
+      this.snackbarService.showErrorTranslated(
+        'global.messages.orders.invalid_request'
+      );
+      return;
+    }
+
+    this.loading.set(true);
+
+    const command = new MarkMyPartDoneCommand();
+    command.orderId = orderId;
+
+    this.partnerClient.orderClient
+      .markMyPartDone(command)
+      .pipe(
+        takeUntil(this.destroyed$),
+        tap((response) => {
+          this.snackbarService.showSuccessTranslated(
+            response.crewDone
+              ? 'pages.order_details.crew_close.crew_done'
+              : 'pages.order_details.crew_close.marked_done'
+          );
+          this.loadOrderDetails(orderId);
+        }),
+        catchError((error) => {
+          if (extractApiErrorCode(error)) {
+            this.loadOrderDetails(orderId);
+          }
+          return of(null);
+        }),
+        finalize(() => this.loading.set(false))
+      )
+      .subscribe();
   }
 
   // Surfaces a translated warning when the partner tries to Complete an order without after photos.

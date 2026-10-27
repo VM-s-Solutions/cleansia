@@ -37,6 +37,9 @@ import {
   canStartOrder,
   canCompleteOrder,
   canDropOrder,
+  CrewCloseStanding,
+  crewCloseLineKey,
+  crewCloseStanding,
   canManagePhotos,
   canUploadBeforePhotos,
   canUploadAfterPhotos,
@@ -160,6 +163,29 @@ export class OrderDetailsComponent implements OnInit {
     if (!order || !eid) return false;
     // Per spec: Complete requires InProgress + employee assigned + at least one After photo.
     return canCompleteOrder(order.orderStatus.value, order.assignedEmployees, eid) && this.hasAfterPhotos();
+  });
+
+  protected readonly crewCloseStanding = computed((): CrewCloseStanding => {
+    const order = this.orderDetails();
+    const eid = this.currentEmployeeId();
+    if (!order || !eid) return CrewCloseStanding.Hidden;
+    return crewCloseStanding(order, eid);
+  });
+
+  protected readonly canMarkMyPartDone = computed(() => this.crewCloseStanding() === CrewCloseStanding.MarkDone);
+
+  protected readonly crewCloseLineKey = computed(() => crewCloseLineKey(this.crewCloseStanding()));
+
+  protected readonly completeLabelKey = computed(() =>
+    this.crewCloseStanding() === CrewCloseStanding.ReadyToComplete
+      ? 'pages.order_details.crew_close.complete_job'
+      : 'pages.order_details.complete_order'
+  );
+
+  // A crew job under way names, on each cleaner's row, whether they have marked their part yet.
+  protected readonly crewJobUnderWay = computed(() => {
+    const order = this.orderDetails();
+    return order?.orderStatus?.value === OrderStatus.InProgress && (order.assignedEmployees?.length ?? 0) >= 2;
   });
 
   protected readonly callerWorkContractAcceptance = computed(() => {
@@ -319,6 +345,10 @@ export class OrderDetailsComponent implements OnInit {
       return;
     }
     this.facade.completeOrder();
+  }
+
+  protected markMyPartDone(): void {
+    this.facade.markMyPartDone();
   }
 
   protected onAfterPhotosPresenceChange(present: boolean): void {

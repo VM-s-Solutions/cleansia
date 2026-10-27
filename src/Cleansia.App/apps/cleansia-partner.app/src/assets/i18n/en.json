@@ -388,6 +388,8 @@
       "assigned_employee": "Assigned Partner",
       "employee_name": "Partner Name",
       "employee_phone": "Partner Phone",
+      "employee_finished": "Done",
+      "employee_not_finished": "Not yet",
       "notes_instructions": "Notes & Instructions",
       "notes": "Notes",
       "special_instructions": "Special Instructions",
@@ -483,6 +485,15 @@
         "reported_title": "Reported: cannot get in",
         "reported_body": "Reported at {{time}}. An administrator will confirm it; until then the job stays as it is.",
         "reported_calls": "Calls: {{calls}}"
+      },
+      "crew_close": {
+        "mark_done": "I'm done",
+        "mark_done_hint": "Press I'm done when your part is finished. Once everyone on this job has, any of you can complete it.",
+        "waiting": "You've marked your part done. Complete job appears here once everyone on this job has marked theirs.",
+        "ready": "Everyone on this job has marked their part done. Any of you can complete it now.",
+        "complete_job": "Complete job",
+        "marked_done": "Marked as done. Complete job appears once everyone on this job has marked their part.",
+        "crew_done": "Marked as done. Everyone on this job has now marked their part, so any of you can complete it."
       }
     },
     "invoices": {
@@ -1003,6 +1014,7 @@
       "completion_notes": {
         "too_long": "Completion notes are too long"
       },
+      "crew_not_done": "Everyone on this job has to mark their part done before it can be completed.",
       "after_photos": {
         "required": "After photos are required to complete the order"
       },

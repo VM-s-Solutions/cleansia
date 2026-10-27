@@ -83,6 +83,25 @@
     }
   }
 
+  // Where the caller stands in closing a crew job: mark their part, wait for the rest, or complete.
+  &__crew-close {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1rem;
+    background: var(--cleansia-primary-50);
+    border: 1px solid var(--cleansia-primary-100);
+    border-radius: 6px;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--cleansia-text-primary);
+
+    i {
+      flex-shrink: 0;
+      color: var(--cleansia-primary-600);
+    }
+  }
+
   // The contract for work on the caller's seat: the accepted line, or the banner an
   // admin placement leaves behind until the cleaner accepts.
   &__contract {
@@ -628,6 +647,7 @@
     &__breadcrumb-bar,
     &__primary-action,
     &__actions-row,
+    &__crew-close,
     &__elapsed-time,
     &__contract--pending,
     .order-header-actions {

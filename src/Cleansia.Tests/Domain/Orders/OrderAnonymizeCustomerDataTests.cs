@@ -29,6 +29,19 @@ public sealed class OrderAnonymizeCustomerDataTests
     }
 
     [Fact]
+    public void The_Reason_A_Customer_Typed_Beside_A_Platform_Reason_Code_Is_Cleared()
+    {
+        var order = NewOrder();
+        order.Cancel(DateTime.UtcNow, CancelledBy.Customer, 0m, 0m, OrderCancellationReasons.NoCleanerAvailable);
+        typeof(Order).GetProperty(nameof(Order.CustomerCancellationReason))!
+            .SetValue(order, "My ex-husband lives at this flat now");
+
+        order.AnonymizeCustomerData();
+
+        Assert.Null(order.CustomerCancellationReason);
+    }
+
+    [Fact]
     public void The_Cleaners_Note_Of_The_Calls_To_The_Customer_Is_Cleared()
     {
         var order = NewOrder();

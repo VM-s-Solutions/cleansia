@@ -1195,6 +1195,7 @@ public class Order : TenantAuditable
         LockoutCallAttempts = null;
         EarlyPerformanceConsentIpAddress = null;
         EarlyPerformanceConsentDeviceLabel = null;
+        CustomerCancellationReason = null;
         // A platform reason is a code, not personal data: the wind-down's refund re-drive selects its
         // cancelled orders by it, and a confirmed lockout's crew is paid by it. The customer's or an admin's
         // free text goes.

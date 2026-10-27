@@ -1276,6 +1276,9 @@ public sealed partial class EmailService : IEmailService
 
         // Pressing Reply reaches support, not the delivery sender.
         msg.SetReplyTo(new EmailAddress(SupportAddress));
+        // Every button stays the real link. A tracked one is a SendGrid redirect whose click log keeps the
+        // whole target, a guest's booking token or a reset code included.
+        msg.SetClickTracking(false, false);
 
         if (attachmentBytes is { Length: > 0 } && !string.IsNullOrWhiteSpace(attachmentFileName))
         {

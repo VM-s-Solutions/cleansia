@@ -23,8 +23,8 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// which window an assignment falls into and which stamp it writes. Two features would be two timers,
 /// two cron settings and two near-identical files to keep in step.</para>
 ///
-/// <para><b>Per ASSIGNMENT, not per order.</b> An order's crew is <c>ceil(EstimatedTime / 120)</c> and
-/// the catalogue contains single 180- and 240-minute services, so a two-seat job sends two of each.
+/// <para><b>Per ASSIGNMENT, not per order.</b> An order's crew is <c>ceil(EstimatedTime / 120)</c>, so
+/// every booking over 120 minutes is a two-seat job and sends two of each.
 /// The stamps live on <see cref="Domain.Orders.OrderEmployee"/> for the same reason — a scalar on the
 /// order would remind the first cleaner and silently skip the second.</para>
 ///

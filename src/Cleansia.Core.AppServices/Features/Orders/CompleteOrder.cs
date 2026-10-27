@@ -317,8 +317,8 @@ public class CompleteOrder
             // pay period, validator rejection) don't block completion or
             // surface as toast errors to the cleaner — the consumer logs and
             // queue retries handle it. The loop is NOT forward-compat: an order's crew is
-            // ceil(EstimatedTime / 120), and the catalogue carries single 180- and 240-minute
-            // services, so a two-seat job is an ordinary booking and pays two cleaners today.
+            // ceil(EstimatedTime / 120), so every booking over 120 minutes is a two-seat job and
+            // pays two cleaners.
             CalculateOrderPay.EnqueueForCrew(order, pending);
 
             return BusinessResult.Success(new Response(

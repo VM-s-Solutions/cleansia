@@ -16,6 +16,7 @@ class CrewCloseStringsTest {
 
     private val keys = listOf(
         "slide_to_mark_my_part_done",
+        "order_complete_job",
         "marking_my_part_done",
         "order_my_part_done_waiting",
         "order_my_part_done_toast",

@@ -913,8 +913,9 @@
     <string name="slide_to_start">Slide to start cleaning</string>
     <string name="starting_order">Starting the job…</string>
     <string name="slide_to_complete">Slide to complete</string>
+    <string name="order_complete_job">Complete job</string>
     <string name="completing_order">Completing…</string>
-    <string name="slide_to_mark_my_part_done">Slide to mark your part done</string>
+    <string name="slide_to_mark_my_part_done">I\'m done</string>
     <string name="marking_my_part_done">Marking…</string>
     <string name="order_my_part_done_waiting">You\'ve marked your part done. Once everyone on this job has, any of you can complete it.</string>
     <string name="order_mark_cash_collected">Mark cash collected</string>
@@ -1302,7 +1303,7 @@
     <string name="notification_order_completed_title">Job completed</string>
     <string name="notification_order_completed_body">Job #%1$s is complete. Tap to see the summary.</string>
     <string name="notification_order_crew_mate_done_title">Someone on your job has finished</string>
-    <string name="notification_order_crew_mate_done_body">Job #%1$s: once everyone on it has marked their part done, any of you can complete it.</string>
+    <string name="notification_order_crew_mate_done_body">Once everyone on job #%1$s has marked their part done, any of you can complete it.</string>
     <string name="notification_order_cancelled_title">Job cancelled</string>
     <string name="notification_order_cancelled_body">Job #%1$s has been cancelled. Tap for details.</string>
     <string name="notification_dispute_reply_title">Support replied</string>

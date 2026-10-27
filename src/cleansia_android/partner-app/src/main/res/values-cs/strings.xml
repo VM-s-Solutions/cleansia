@@ -939,8 +939,9 @@
     <string name="slide_to_start">Posunutím začněte úklid</string>
     <string name="starting_order">Začínám úklid…</string>
     <string name="slide_to_complete">Posunutím dokončete</string>
+    <string name="order_complete_job">Dokončit zakázku</string>
     <string name="completing_order">Dokončuji…</string>
-    <string name="slide_to_mark_my_part_done">Posunutím označte svou část jako hotovou</string>
+    <string name="slide_to_mark_my_part_done">Mám hotovo</string>
     <string name="marking_my_part_done">Označuji…</string>
     <string name="order_my_part_done_waiting">Svou část máte označenou jako hotovou. Až to udělají všichni na této zakázce, kdokoli z vás ji může dokončit.</string>
     <string name="order_mark_cash_collected">Označit hotovost jako přijatou</string>
@@ -1288,7 +1289,7 @@
     <string name="notification_order_completed_title">Zakázka dokončena</string>
     <string name="notification_order_completed_body">Zakázka č. %1$s je dokončena. Klepnutím zobrazíte souhrn.</string>
     <string name="notification_order_crew_mate_done_title">Někdo na vaší zakázce má hotovo</string>
-    <string name="notification_order_crew_mate_done_body">Zakázka č. %1$s: až svou část označí jako hotovou všichni, kdo na ní pracují, kdokoli z vás ji může dokončit.</string>
+    <string name="notification_order_crew_mate_done_body">Až svou část zakázky #%1$s označí jako hotovou všichni, může ji kdokoli z vás dokončit.</string>
     <string name="notification_order_cancelled_title">Zakázka zrušena</string>
     <string name="notification_order_cancelled_body">Zakázka č. %1$s byla zrušena. Klepnutím zobrazíte podrobnosti.</string>
     <string name="notification_dispute_reply_title">Podpora odpověděla</string>

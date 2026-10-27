@@ -60,9 +60,9 @@ class CompletionStepTest {
 
     @Test
     fun `once every seat is marked, any of the crew completes the job`() {
-        assertEquals(CompletionStep.Complete, order(seat(me, marked), seat(mate, marked)).completionStep(me))
+        assertEquals(CompletionStep.CompleteJob, order(seat(me, marked), seat(mate, marked)).completionStep(me))
         assertEquals(
-            CompletionStep.Complete,
+            CompletionStep.CompleteJob,
             order(seat(me, marked), seat(mate, marked), seat("employee-third", marked)).completionStep(me),
         )
     }

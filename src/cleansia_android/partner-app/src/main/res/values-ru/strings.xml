@@ -923,8 +923,9 @@
     <string name="slide_to_start">Проведите, чтобы начать уборку</string>
     <string name="starting_order">Начинаю уборку…</string>
     <string name="slide_to_complete">Проведите, чтобы завершить</string>
+    <string name="order_complete_job">Завершить заказ</string>
     <string name="completing_order">Завершаю…</string>
-    <string name="slide_to_mark_my_part_done">Проведите, чтобы отметить свою часть выполненной</string>
+    <string name="slide_to_mark_my_part_done">Моя часть готова</string>
     <string name="marking_my_part_done">Отмечаю…</string>
     <string name="order_my_part_done_waiting">Вы отметили свою часть выполненной. Как только это сделают все на этом заказе, любой из вас сможет его завершить.</string>
     <string name="order_mark_cash_collected">Отметить наличные как полученные</string>
@@ -1272,7 +1273,7 @@
     <string name="notification_order_completed_title">Заказ завершён</string>
     <string name="notification_order_completed_body">Заказ №%1$s завершён. Нажмите, чтобы посмотреть сводку.</string>
     <string name="notification_order_crew_mate_done_title">Кто-то на вашем заказе закончил</string>
-    <string name="notification_order_crew_mate_done_body">Заказ №%1$s: как только все, кто на нём работает, отметят свою часть выполненной, любой из вас сможет его завершить.</string>
+    <string name="notification_order_crew_mate_done_body">Когда все на заказе #%1$s отметят свою часть как выполненную, любой из вас сможет его завершить.</string>
     <string name="notification_order_cancelled_title">Заказ отменён</string>
     <string name="notification_order_cancelled_body">Заказ №%1$s отменён. Нажмите, чтобы посмотреть детали.</string>
     <string name="notification_dispute_reply_title">Поддержка ответила</string>

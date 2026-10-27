@@ -9,13 +9,15 @@ import cz.cleansia.partner.api.model.OrderItem
  */
 sealed interface CompletionStep {
     data object Complete : CompletionStep
+    data object CompleteJob : CompletionStep
     data object MarkMyPart : CompletionStep
     data object WaitingForCrew : CompletionStep
 }
 
 fun OrderItem.completionStep(myEmployeeId: String?): CompletionStep {
     val seats = assignedEmployees.orEmpty()
-    if (seats.size < 2 || seats.all { !it.completionConfirmedAt.isNullOrBlank() }) return CompletionStep.Complete
+    if (seats.size < 2) return CompletionStep.Complete
+    if (seats.all { !it.completionConfirmedAt.isNullOrBlank() }) return CompletionStep.CompleteJob
     val mine = seats.firstOrNull { it.employeeId == myEmployeeId }
     return if (mine?.completionConfirmedAt.isNullOrBlank()) CompletionStep.MarkMyPart else CompletionStep.WaitingForCrew
 }

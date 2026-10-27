@@ -38,8 +38,8 @@ import cz.cleansia.partner.api.model.OrderStatus
  *   Confirmed (mine):            "Notify on the way" (single button)
  *   OnTheWay (mine):             Slide-to-start
  *   InProgress (mine):           "Mark cash collected" (unpaid cash, with "Customer did not pay"
- *                                beneath it) then Slide-to-complete; on a crew job, Slide-to-mark-my-part,
- *                                then the waiting line until every seat is marked, then Slide-to-complete
+ *                                beneath it) then Slide-to-complete; on a crew job, "I'm done",
+ *                                then the waiting line until every seat is marked, then "Complete job"
  *   Completed / Cancelled:       (nothing)
  *
  * Taking is a button rather than a slide because the deliberate gesture now sits under the contract
@@ -164,7 +164,13 @@ fun OrderPrimaryAction(
                         }
                     } else {
                         SlideToCommit(
-                            idleLabel = stringResource(R.string.slide_to_complete),
+                            idleLabel = stringResource(
+                                if (completionStep == CompletionStep.CompleteJob) {
+                                    R.string.order_complete_job
+                                } else {
+                                    R.string.slide_to_complete
+                                },
+                            ),
                             busyLabel = stringResource(R.string.completing_order),
                             onCommit = onCompleteClick,
                             isBusy = inFlight == OrderAction.Complete,

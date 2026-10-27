@@ -85,12 +85,48 @@ describe('getAvailableOrdersTableDefinition — take action visibility', () => {
   });
 });
 
+// Owner ruling 2026-10-26: a job of two or more cleaners is completed from its sheet once everyone on
+// it has marked their part done, and the server refuses an earlier Complete with order.crew_not_done.
+// A list row carries no seats, so it cannot tell who has marked.
+describe('getMyOrdersTableDefinition — Complete on a job in progress', () => {
+  const inProgress = (assignedEmployeesCount: number): OrderListItem =>
+    OrderListItem.fromJS({ id: 'ord-1', orderStatus: { value: OrderStatus.InProgress }, assignedEmployeesCount });
+
+  function press(order: OrderListItem) {
+    const defs = { onStartOrder: jest.fn(), onCompleteOrder: jest.fn(), onOpenOrder: jest.fn() };
+    const complete = getMyOrdersTableDefinition(defs, 'cs').actions.find(
+      (action) => action.tooltip === 'pages.orders.complete_order.title'
+    );
+    expect(complete?.visible?.(order)).toBe(true);
+    complete?.onClick(order);
+    return defs;
+  }
+
+  it('opens the completion dialog of a job one cleaner works', () => {
+    const order = inProgress(1);
+
+    const defs = press(order);
+
+    expect(defs.onCompleteOrder).toHaveBeenCalledWith(order);
+    expect(defs.onOpenOrder).not.toHaveBeenCalled();
+  });
+
+  it('opens the sheet of a crew job, where each cleaner marks their part and any of them completes it', () => {
+    const order = inProgress(2);
+
+    const defs = press(order);
+
+    expect(defs.onOpenOrder).toHaveBeenCalledWith(order);
+    expect(defs.onCompleteOrder).not.toHaveBeenCalled();
+  });
+});
+
 const NBSP = String.fromCharCode(0xa0);
 
 function bothTables(lang: string | undefined) {
   return [
     getAvailableOrdersTableDefinition({ onTakeOrder: jest.fn(), isTakeInFlight: () => false }, lang),
-    getMyOrdersTableDefinition({ onStartOrder: jest.fn(), onCompleteOrder: jest.fn() }, lang),
+    getMyOrdersTableDefinition({ onStartOrder: jest.fn(), onCompleteOrder: jest.fn(), onOpenOrder: jest.fn() }, lang),
   ];
 }
 
@@ -144,7 +180,7 @@ describe('the dirtiness level the customer booked is a column on both lists', ()
         template
       ),
       getMyOrdersTableDefinition(
-        { onStartOrder: jest.fn(), onCompleteOrder: jest.fn() },
+        { onStartOrder: jest.fn(), onCompleteOrder: jest.fn(), onOpenOrder: jest.fn() },
         'cs',
         undefined,
         undefined,

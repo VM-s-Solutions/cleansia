@@ -204,6 +204,7 @@ export function getMyOrdersTableDefinition(
   defs: {
     onStartOrder: (row: OrderListItem) => void;
     onCompleteOrder: (row: OrderListItem) => void;
+    onOpenOrder: (row: OrderListItem) => void;
   },
   lang: string | undefined,
   statusTemplate?: TemplateRef<OrderListItem>,
@@ -277,7 +278,9 @@ export function getMyOrdersTableDefinition(
         icon: 'pi pi-check-circle',
         tooltip: 'pages.orders.complete_order.title',
         color: 'success',
-        onClick: (row: OrderListItem) => defs.onCompleteOrder(row),
+        // A crew job is completed from its sheet, which knows who on it has marked their part done.
+        onClick: (row: OrderListItem) =>
+          (row.assignedEmployeesCount ?? 0) >= 2 ? defs.onOpenOrder(row) : defs.onCompleteOrder(row),
         visible: (row: OrderListItem) =>
           row.orderStatus.value === OrderStatus.InProgress,
       },

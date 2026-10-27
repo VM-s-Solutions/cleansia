@@ -86,6 +86,7 @@ export class OrdersComponent {
       {
         onStartOrder: (row) => this.startOrder(row),
         onCompleteOrder: (row) => this.facade.openCompleteOrderDialog(row),
+        onOpenOrder: (row) => this.viewOrderDetails(row),
       },
       this.facade.lang(),
       this.statusTemplate(),

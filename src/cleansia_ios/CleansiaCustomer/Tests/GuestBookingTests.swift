@@ -123,18 +123,30 @@ final class GuestBookingTests: XCTestCase {
     }
 
     func testTheViewBindsTheFooterAndTheCardsToTheGuestFlag() throws {
-        let view = try readSource("CleansiaCustomer/Sources/Features/Orders/OrderDetailView.swift")
-            .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+        let view = try normalizedSource("CleansiaCustomer/Sources/Features/Orders/OrderDetailView.swift")
         XCTAssertTrue(view.contains(
             "showReportIssue: OrderDetailFooterActions.showReportIssue( order.status, "
                 + "isGuestBooking: order.isGuestBooking ),"
         ))
-        let content = try readSource("CleansiaCustomer/Sources/Features/Orders/OrderDetailContent.swift")
+        let content = try normalizedSource("CleansiaCustomer/Sources/Features/Orders/OrderDetailContent.swift")
         XCTAssertTrue(content.contains("if order.offersReview {"))
         XCTAssertTrue(content.contains("if order.offersReceipt {"))
-        XCTAssertTrue(content.contains("if order.isGuestBooking {"))
-        let list = try readSource("CleansiaCustomer/Sources/Features/Orders/OrdersTab.swift")
-        XCTAssertTrue(list.contains("if order.isGuestBooking {"))
+    }
+
+    /// Each place the booking is marked, pinned on its own: the hero's note and the compact header's label
+    /// share a file, so one condition found anywhere in it would let either be deleted.
+    func testTheNoteAndBothLabelsAreEachBoundToTheGuestFlag() throws {
+        let content = try normalizedSource("CleansiaCustomer/Sources/Features/Orders/OrderDetailContent.swift")
+        XCTAssertTrue(
+            content.contains("if order.isGuestBooking { Text(L10n.OrderDetail.guestBookingNote)"),
+            "the note under the detail's hero"
+        )
+        XCTAssertTrue(
+            content.contains("if order.isGuestBooking { GuestBookingLabel() }"),
+            "the label in the detail's compact header"
+        )
+        let list = try normalizedSource("CleansiaCustomer/Sources/Features/Orders/OrdersTab.swift")
+        XCTAssertTrue(list.contains("if order.isGuestBooking { GuestBookingLabel() }"), "the label on the list card")
     }
 
     // MARK: - Copy
@@ -159,11 +171,12 @@ final class GuestBookingTests: XCTestCase {
         return try XCTUnwrap(NSDictionary(contentsOf: strings) as? [String: String], language)
     }
 
-    private func readSource(_ relativePath: String) throws -> String {
+    private func normalizedSource(_ relativePath: String) throws -> String {
         let root = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
             .deletingLastPathComponent()
             .deletingLastPathComponent()
         return try String(contentsOf: root.appendingPathComponent(relativePath), encoding: .utf8)
+            .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
     }
 }

@@ -388,6 +388,7 @@ public class FcmMessageFactoryTests
             "order.cleaner_assigned",
             "order.cleaner_released",
             "order.completed",
+            "order.crew_mate_done",
             "order.in_progress",
             "order.new_available",
             "order.no_cleaner_nothing_charged",

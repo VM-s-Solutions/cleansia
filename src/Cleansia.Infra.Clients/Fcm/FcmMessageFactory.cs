@@ -45,6 +45,7 @@ public static class FcmMessageFactory
             [NotificationEventCatalog.OrderOnTheWay] = OrderNumberArg,
             [NotificationEventCatalog.OrderInProgress] = OrderNumberArg,
             [NotificationEventCatalog.OrderCompleted] = OrderNumberArg,
+            [NotificationEventCatalog.OrderCrewMateDone] = OrderNumberArg,
             [NotificationEventCatalog.OrderCancelled] = OrderNumberArg,
             [NotificationEventCatalog.OrderRefunded] = OrderNumberArg,
             [NotificationEventCatalog.OrderNoCleanerRefunded] = OrderNumberAndAmountArgs,

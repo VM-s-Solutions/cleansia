@@ -40,4 +40,11 @@ public interface IOrderAccessService
 
     /// <summary>The validators' existence check over <see cref="OrdersForCaller"/>.</summary>
     Task<bool> OrderExistsForCallerAsync(string orderId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The e-mail under which a signed-in Customer's My orders also lists bookings made without an account:
+    /// the session's, which only a confirmed address is ever issued. Null for any other caller, staff signed
+    /// in to a customer host included, who lists none.
+    /// </summary>
+    string? ListedGuestEmailForCaller();
 }

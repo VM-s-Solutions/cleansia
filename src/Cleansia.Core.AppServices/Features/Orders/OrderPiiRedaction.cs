@@ -26,6 +26,17 @@ public static class OrderPiiRedaction
         };
 
     /// <summary>
+    /// A booking made without an account, as a signed-in customer's My orders lists it under their e-mail
+    /// (owner ruling 2026-10-26, "I select option B"): what its own e-mails carried, which is not the phone.
+    /// </summary>
+    public static OrderListItem RedactForListedGuestBooking(this OrderListItem item) =>
+        item with
+        {
+            CustomerPhone = string.Empty,
+            IsGuestBooking = true,
+        };
+
+    /// <summary>
     /// Withhold the entry instructions from an admin read. They are free text of the form "key under
     /// the mat" — the one field on this DTO that is a physical key to somebody's home — and until
     /// 2026-08-14 every admin who opened an order got them, with no reveal step and therefore no record

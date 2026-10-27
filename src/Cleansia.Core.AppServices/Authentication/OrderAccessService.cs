@@ -65,6 +65,11 @@ public class OrderAccessService : IOrderAccessService
         return OrdersForCaller().AnyAsync(o => o.Id == orderId, cancellationToken);
     }
 
+    public string? ListedGuestEmailForCaller() =>
+        IsCustomerCaller() && !string.IsNullOrEmpty(_userSessionProvider.GetUserId())
+            ? _userSessionProvider.GetUserEmail()
+            : null;
+
     public Task<string?> GetCallerEmployeeIdAsync(CancellationToken cancellationToken)
     {
         return _callerEmployeeId.Value;

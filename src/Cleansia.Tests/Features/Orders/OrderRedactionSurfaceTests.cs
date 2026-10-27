@@ -333,6 +333,24 @@ public class OrderRedactionSurfaceTests
         Assert.Null(crewMember.CompletionConfirmedAt);
     }
 
+    /// <summary>
+    /// A booking made without an account, listed in a signed-in customer's My orders under their e-mail, reads as
+    /// its own e-mails did: everything but the phone, flagged as a guest booking.
+    /// </summary>
+    [Fact]
+    public void A_Listed_Guest_Booking_Row_Differs_From_The_Customers_Own_Only_In_The_Phone_And_The_Flag()
+    {
+        var populated = FullyPopulatedListItem() with { IsGuestBooking = null };
+
+        var listed = populated.RedactForListedGuestBooking();
+
+        Assert.Equal(string.Empty, listed.CustomerPhone);
+        Assert.True(listed.IsGuestBooking);
+        var unchanged = typeof(OrderListItem).GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .Where(p => p.Name is not ("EqualityContract" or nameof(OrderListItem.CustomerPhone) or nameof(OrderListItem.IsGuestBooking)));
+        Assert.All(unchanged, p => Assert.Equal(p.GetValue(populated), p.GetValue(listed)));
+    }
+
     public static TheoryData<string> DetailBlankedMembers => ToTheoryData(DetailBlanked);
 
     public static TheoryData<string> DetailKeptMembers => ToTheoryData(DetailKept);

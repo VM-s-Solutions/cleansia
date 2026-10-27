@@ -272,8 +272,20 @@ public interface IOrderRepository : IRepository<Order, string>
 
     Task<int> GetCountForOwnerAsync(string userId, Expression<Func<Order, bool>>? filter, CancellationToken cancellationToken);
 
-    IQueryable<Order> GetPagedSortForOwner<TSort>(
-        string userId, int offset, int limit, Expression<Func<Order, bool>>? filter, IEnumerable<SortDefinition> sort)
+    /// <summary>
+    /// What a signed-in customer's My orders lists: <see cref="GetQueryableForOwner"/>, and, given
+    /// <paramref name="accountEmail"/>, every booking made without an account under that e-mail, in any market
+    /// and whenever it was made. Listed, never owned: every other reader of a customer's orders keeps the owner
+    /// pin. <paramref name="accountEmail"/> is the session's, never the request's.
+    /// </summary>
+    IQueryable<Order> GetQueryableListedForCustomer(string userId, string? accountEmail);
+
+    Task<int> GetCountListedForCustomerAsync(
+        string userId, string? accountEmail, Expression<Func<Order, bool>>? filter, CancellationToken cancellationToken);
+
+    IQueryable<Order> GetPagedSortListedForCustomer<TSort>(
+        string userId, string? accountEmail, int offset, int limit,
+        Expression<Func<Order, bool>>? filter, IEnumerable<SortDefinition> sort)
         where TSort : BaseSort<Order>;
 
     /// <summary>

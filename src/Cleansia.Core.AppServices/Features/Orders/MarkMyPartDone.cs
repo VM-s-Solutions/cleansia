@@ -51,6 +51,10 @@ public class MarkMyPartDone
                     new Error(nameof(command.OrderId), BusinessErrorMessage.OrderNotFound));
             }
 
+            // Before the crew is read, so two cleaners marking at once see each other's mark, and a mark that
+            // races the job's completion reads it.
+            await orderRepository.LockForCrewChangeAsync(command.OrderId, cancellationToken);
+
             var order = await orderRepository
                 .GetQueryable()
                 .Include(o => o.AssignedEmployees)
@@ -82,7 +86,7 @@ public class MarkMyPartDone
             return BusinessResult.Success(new Response(
                 order.Id,
                 seat.CompletionConfirmedAt!.Value,
-                order.AssignedEmployees.All(oe => oe.CompletionConfirmedAt is not null)));
+                order.EveryCleanerMarkedDone));
         }
     }
 }

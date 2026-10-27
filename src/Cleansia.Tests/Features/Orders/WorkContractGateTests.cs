@@ -154,7 +154,11 @@ public sealed class CompleteOrderWorkContractGateTests
     [Fact]
     public async Task The_Cleaner_Who_Took_The_Job_Completes_Without_A_Prompt()
     {
-        ArrangeTwoSeatCrew(CleanerA);
+        var order = ArrangeTwoSeatCrew(CleanerA);
+        foreach (var seat in order.AssignedEmployees)
+        {
+            seat.MarkCompletionConfirmed(DateTime.UtcNow);
+        }
 
         var result = await CreateValidator().ValidateAsync(new CompleteOrder.Command(OrderId));
 

@@ -36,7 +36,10 @@ public class CompleteOrder
         OrderStatus NewStatus,
         int ActualCompletionTime);
 
-    /// <summary>One chain, so one reason is given, and the crew first, so a cleaner not on the job learns nothing of it.</summary>
+    /// <summary>
+    /// One chain, so one reason is given, and the crew first, so a cleaner not on the job learns nothing of it.
+    /// It tracks neither the order nor its seats: the handler reads them again under the order's row lock.
+    /// </summary>
     public class Validator : AbstractValidator<Command>
     {
         private readonly IOrderRepository _orderRepository;
@@ -98,7 +101,7 @@ public class CompleteOrder
                         || o.PaymentStatus == PaymentStatus.Refunded,
                     ct))
                 .WithMessage(BusinessErrorMessage.OrderPaymentNotConfirmed)
-                .MustAsync(CrewIsNotPartlyDoneAsync)
+                .MustAsync(CrewLetsTheJobCompleteAsync)
                 .WithMessage(BusinessErrorMessage.OrderCrewNotDone);
 
             // No length / positivity check on ActualCompletionTimeMinutes:
@@ -171,16 +174,15 @@ public class CompleteOrder
             return employee?.ContractStatus == ContractStatus.Approved;
         }
 
-        private async Task<bool> CrewIsNotPartlyDoneAsync(string orderId, CancellationToken cancellationToken)
+        private async Task<bool> CrewLetsTheJobCompleteAsync(string orderId, CancellationToken cancellationToken)
         {
-            var marks = await _orderRepository
+            var order = await _orderRepository
                 .GetQueryable()
-                .Where(o => o.Id == orderId)
-                .SelectMany(o => o.AssignedEmployees)
-                .Select(oe => oe.CompletionConfirmedAt)
-                .ToListAsync(cancellationToken);
+                .AsNoTracking()
+                .Include(o => o.AssignedEmployees)
+                .FirstOrDefaultAsync(o => o.Id == orderId, cancellationToken);
 
-            return marks.All(mark => mark is null) || marks.All(mark => mark is not null);
+            return order?.CrewLetsTheJobComplete ?? false;
         }
 
         private async Task<bool> HasAfterPhotosAsync(string orderId, CancellationToken cancellationToken)
@@ -203,6 +205,11 @@ public class CompleteOrder
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
+            // Before the order is read: of two cleaners completing at once, or a cleaner and the automatic
+            // close, the second reads what the first committed. The validator ran before this lock, so what
+            // it decided about the job is decided again below on that read.
+            await orderRepository.LockForCrewChangeAsync(command.OrderId, cancellationToken);
+
             var order = await orderRepository
                 .GetQueryable()
                 .Include(o => o.OrderStatusHistory)
@@ -218,6 +225,22 @@ public class CompleteOrder
             if (order == null)
             {
                 return BusinessResult.Failure<Response>(new Error(nameof(command.OrderId), BusinessErrorMessage.OrderNotFound));
+            }
+
+            // A crew-mate completed it while this call waited on the row: the job is done, as asked.
+            if (order.CurrentStatus == OrderStatus.Completed)
+            {
+                return BusinessResult.Success(new Response(order.Id, OrderStatus.Completed, order.ActualCompletionTime ?? 0));
+            }
+
+            if (order.CurrentStatus != OrderStatus.InProgress)
+            {
+                return BusinessResult.Failure<Response>(new Error(nameof(command.OrderId), BusinessErrorMessage.OrderNotInProgress));
+            }
+
+            if (!order.CrewLetsTheJobComplete)
+            {
+                return BusinessResult.Failure<Response>(new Error(nameof(command.OrderId), BusinessErrorMessage.OrderCrewNotDone));
             }
 
             var actualMinutes = ActualMinutes(order, command.ActualCompletionTimeMinutes);

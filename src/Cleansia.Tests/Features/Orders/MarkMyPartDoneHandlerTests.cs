@@ -64,6 +64,29 @@ public class MarkMyPartDoneHandlerTests
         Assert.Equal(OrderStatus.InProgress, order.CurrentStatus);
     }
 
+    /// <summary>
+    /// The mark locks the order's row before it reads the crew, so two cleaners marking at once see each
+    /// other's mark, and one racing the job's completion reads it. → CrewCloseRaceTests
+    /// </summary>
+    [Fact]
+    public async Task The_Order_Row_Is_Locked_Before_The_Crew_Is_Read()
+    {
+        var order = OrderAt(OrderStatus.InProgress, EmployeeId, OtherEmployeeId);
+        Arrange(order);
+        var calls = new List<string>();
+        _orderRepository.Setup(r => r.LockForCrewChangeAsync(OrderId, It.IsAny<CancellationToken>()))
+            .Callback(() => calls.Add("lock"))
+            .Returns(Task.CompletedTask);
+        _orderRepository.Setup(r => r.GetQueryable())
+            .Callback(() => calls.Add("read"))
+            .Returns(new[] { order }.AsQueryable().BuildMock());
+
+        var result = await Handler().Handle(new MarkMyPartDone.Command(OrderId), default);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(["lock", "read"], calls);
+    }
+
     [Fact]
     public async Task Marking_Again_Is_A_Success_That_Keeps_The_First_Stamp()
     {

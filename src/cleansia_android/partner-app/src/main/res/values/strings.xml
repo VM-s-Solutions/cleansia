@@ -93,6 +93,7 @@
     <string name="confirm_email">Confirm Email</string>
     <string name="verify_email">Verify Your Email</string>
     <string name="verify_email_subtitle">We\'ve sent a verification code to your email. Please enter it below.</string>
+    <string name="confirm_email_password_prompt">Choose the password you\'ll sign in with once your email is confirmed.</string>
     <string name="confirm_email_subtitle">Please enter the confirmation code sent to your email</string>
     <string name="confirmation_code">Confirmation Code</string>
     <string name="verification_code">Verification Code</string>

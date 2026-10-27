@@ -1,6 +1,7 @@
 package cz.cleansia.partner.features.auth
 
 import android.content.Context
+import cz.cleansia.core.auth.RegistrationPassword
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
@@ -22,6 +23,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -48,6 +50,7 @@ class RegisterViewModelTest {
     private lateinit var snackbar: SnackbarController
     private lateinit var marketRepository: MarketRepository
     private lateinit var context: Context
+    private val registrationPassword = RegistrationPassword()
 
     private val cze = market("cze-id", "CZE", "Czech Republic", isDefault = true)
     private val svk = market("svk-id", "SVK", "Slovakia")
@@ -73,6 +76,7 @@ class RegisterViewModelTest {
         appSettingsRepository,
         snackbar,
         marketRepository,
+        registrationPassword,
         context,
     )
 
@@ -110,6 +114,35 @@ class RegisterViewModelTest {
                 termsAccepted = true,
             )
         }
+    }
+
+    /** The confirmation right after sets the account's password to the one just typed. */
+    @Test
+    fun `a successful registration holds the password just typed for the confirmation`() = runTest {
+        coEvery { appSettingsRepository.emailLanguageTag() } returns "cs"
+        coEvery { authRepository.register(any(), any(), any(), any(), any(), any(), any()) } returns
+            ApiResult.Success(Unit)
+
+        val vm = viewModel()
+        vm.fillValidForm()
+        vm.register()
+        advanceUntilIdle()
+
+        assertEquals("Passw0rd", registrationPassword.heldFor("ada@example.com"))
+    }
+
+    @Test
+    fun `a refused registration holds nothing`() = runTest {
+        coEvery { appSettingsRepository.emailLanguageTag() } returns "cs"
+        coEvery { authRepository.register(any(), any(), any(), any(), any(), any(), any()) } returns
+            ApiResult.Error(ApiError.BadRequest(message = "taken", errorKey = "user.existing_email"))
+
+        val vm = viewModel()
+        vm.fillValidForm()
+        vm.register()
+        advanceUntilIdle()
+
+        assertNull(registrationPassword.heldFor("ada@example.com"))
     }
 
     /**

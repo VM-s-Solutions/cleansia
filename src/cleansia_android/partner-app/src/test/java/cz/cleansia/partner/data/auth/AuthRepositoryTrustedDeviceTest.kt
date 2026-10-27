@@ -200,7 +200,7 @@ class AuthRepositoryTrustedDeviceTest {
 
         val repo = newRepository()
         repo.register("cleaner@example.com", "pw", "Ada", "Lovelace", "en", termsAccepted = true)
-        repo.confirmEmail("cleaner@example.com", "123456")
+        repo.confirmEmail("cleaner@example.com", "123456", "Heslo2026")
         repo.resendConfirmation("cleaner@example.com", "en")
         repo.forgotPassword("cleaner@example.com", "en")
 

@@ -112,7 +112,7 @@ class AuthRepositorySessionFlagsTest {
     fun confirmEmail_givenNoHasAdminAccess_refusesNamingTheField() = runTest {
         coEvery { authApi.authConfirmUserEmail(any()) } returns tokenResponse(hasAdminAccess = null)
 
-        refusalFor(newRepository().confirmEmail("jana@cleansia.cz", "123456"), "hasAdminAccess")
+        refusalFor(newRepository().confirmEmail("jana@cleansia.cz", "123456", "Heslo2026"), "hasAdminAccess")
     }
 
     @Test

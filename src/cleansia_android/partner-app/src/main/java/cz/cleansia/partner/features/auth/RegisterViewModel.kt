@@ -1,6 +1,7 @@
 package cz.cleansia.partner.features.auth
 
 import android.content.Context
+import cz.cleansia.core.auth.RegistrationPassword
 import cz.cleansia.core.validation.EmailValidator
 import cz.cleansia.core.validation.PasswordPolicy
 import androidx.lifecycle.ViewModel
@@ -59,6 +60,7 @@ class RegisterViewModel @Inject constructor(
     private val appSettingsRepository: AppSettingsRepository,
     private val snackbar: SnackbarController,
     private val marketRepository: MarketRepository,
+    private val registrationPassword: RegistrationPassword,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
@@ -127,6 +129,7 @@ class RegisterViewModel @Inject constructor(
                 countryId = state.selectedMarketId,
             )) {
                 is ApiResult.Success -> {
+                    registrationPassword.hold(state.email, state.password)
                     _uiState.update { it.copy(isLoading = false, isRegistrationSuccessful = true) }
                 }
                 is ApiResult.Error -> {

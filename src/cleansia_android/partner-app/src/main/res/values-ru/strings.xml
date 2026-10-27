@@ -93,6 +93,7 @@
     <string name="confirm_email">Подтвердить электронную почту</string>
     <string name="verify_email">Подтвердите вашу электронную почту</string>
     <string name="verify_email_subtitle">Мы отправили код подтверждения на вашу электронную почту. Введите его ниже.</string>
+    <string name="confirm_email_password_prompt">Выберите пароль, с которым вы будете входить после подтверждения электронной почты.</string>
     <string name="confirm_email_subtitle">Введите код подтверждения, отправленный на вашу электронную почту</string>
     <string name="confirmation_code">Код подтверждения</string>
     <string name="verification_code">Код верификации</string>

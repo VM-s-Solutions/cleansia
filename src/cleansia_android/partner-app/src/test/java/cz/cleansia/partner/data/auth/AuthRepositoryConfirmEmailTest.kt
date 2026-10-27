@@ -6,6 +6,7 @@ import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.notifications.PushTokenRepository
 import cz.cleansia.partner.api.client.AuthApi
 import cz.cleansia.partner.api.client.EmployeeApi
+import cz.cleansia.partner.api.model.ConfirmUserEmailCommand
 import cz.cleansia.partner.api.model.EmployeeItem
 import cz.cleansia.partner.api.model.JwtTokenResponse
 import cz.cleansia.partner.core.auth.UserProfileData
@@ -84,6 +85,18 @@ class AuthRepositoryConfirmEmailTest {
     private fun ApiResult<LoginOutcome>.isAuthenticated(): Boolean =
         this is ApiResult.Success && data is LoginOutcome.Authenticated
 
+    /** The confirmation sets the account's password to the one it carries, so the command must carry it. */
+    @Test
+    fun confirmEmail_carriesTheChosenPasswordOntoTheGeneratedCommand() = runTest {
+        val sent = io.mockk.slot<ConfirmUserEmailCommand>()
+        coEvery { authApi.authConfirmUserEmail(capture(sent)) } returns confirmResponse()
+        coEvery { employeeApi.employeeGetCurrentEmployee() } returns Response.success(EmployeeItem(id = "emp-9"))
+
+        newRepository().confirmEmail("fresh@cleansia.cz", "123456", "Heslo2026")
+
+        assertEquals(ConfirmUserEmailCommand(code = "123456", email = "fresh@cleansia.cz", password = "Heslo2026"), sent.captured)
+    }
+
     @Test
     fun confirmEmail_hydratesEmployeeId() = runTest {
         coEvery { authApi.authConfirmUserEmail(any()) } returns confirmResponse()
@@ -91,7 +104,7 @@ class AuthRepositoryConfirmEmailTest {
             EmployeeItem(id = "emp-9", firstName = "Jana", lastName = "Nováková"),
         )
 
-        val outcome = newRepository().confirmEmail("fresh@cleansia.cz", "123456")
+        val outcome = newRepository().confirmEmail("fresh@cleansia.cz", "123456", "Heslo2026")
 
         assertTrue(outcome.isAuthenticated())
         // The whole point: a session created by confirm-email is scoped.
@@ -108,7 +121,7 @@ class AuthRepositoryConfirmEmailTest {
             "boom".toResponseBody("text/plain".toMediaType()),
         )
 
-        val outcome = newRepository().confirmEmail("fresh@cleansia.cz", "123456")
+        val outcome = newRepository().confirmEmail("fresh@cleansia.cz", "123456", "Heslo2026")
 
         // Best-effort by design — the token is good, so blocking the sign-in on
         // a secondary call would be worse than a lazily back-filled id.

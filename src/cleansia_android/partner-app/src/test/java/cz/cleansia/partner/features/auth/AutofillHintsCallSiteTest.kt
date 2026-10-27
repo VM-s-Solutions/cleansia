@@ -27,6 +27,13 @@ class AutofillHintsCallSiteTest {
         assertEquals(listOf("Password"), fields.filter { "isPassword = true" in it }.map(::hint))
     }
 
+    @Test
+    fun `Confirm e-mail declares both password fields it asks for as new passwords`() {
+        val fields = textFields("ConfirmEmailScreen.kt")
+
+        assertEquals(listOf("NewPassword", "NewPassword"), fields.filter { "isPassword = true" in it }.map(::hint))
+    }
+
     private fun hint(field: String): String? =
         Regex("""contentType = ContentType\.(\w+)""").find(field)?.groupValues?.get(1)
 

@@ -93,6 +93,7 @@
     <string name="confirm_email">Potvrdiť e-mail</string>
     <string name="verify_email">Overte svoj e-mail</string>
     <string name="verify_email_subtitle">Na váš e-mail sme odoslali overovací kód. Zadajte ho nižšie.</string>
+    <string name="confirm_email_password_prompt">Zvoľte heslo, ktorým sa budete prihlasovať po potvrdení e-mailu.</string>
     <string name="confirm_email_subtitle">Zadajte prosím potvrdzovací kód odoslaný na váš e-mail</string>
     <string name="confirmation_code">Potvrdzovací kód</string>
     <string name="verification_code">Overovací kód</string>

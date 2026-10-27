@@ -222,5 +222,11 @@ public record OrderItem(
     /// this order free — the window frozen on it at booking, or its Plus window while the customer is an
     /// entitled member. Resolved as the cancel resolves it, so the note and the fee cannot disagree.
     /// </summary>
-    int? FreeCancellationHours = null
+    int? FreeCancellationHours = null,
+
+    /// <summary>
+    /// True only on a booking made without an account that a signed-in customer opens from My orders
+    /// because it carries their e-mail; null on every other read.
+    /// </summary>
+    bool? IsGuestBooking = null
 );

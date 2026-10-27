@@ -76,6 +76,8 @@ public class OrderRedactionSurfaceTests
         nameof(OrderItem.LockoutCallAttempts),
         // The customer's own cancellation window tells whether they are a Plus member.
         nameof(OrderItem.FreeCancellationHours),
+        // Whether the customer booked without an account is between the customer and the company.
+        nameof(OrderItem.IsGuestBooking),
     ];
 
     private static readonly string[] DetailReshaped =
@@ -147,6 +149,7 @@ public class OrderRedactionSurfaceTests
         nameof(OrderListItem.CustomerAddress),
         nameof(OrderListItem.CustomerAddressLatitude),
         nameof(OrderListItem.CustomerAddressLongitude),
+        nameof(OrderListItem.IsGuestBooking),
     ];
 
     private static readonly string[] ListKept =
@@ -441,7 +444,8 @@ public class OrderRedactionSurfaceTests
             DirtinessSurchargeAmount: 540m,
             LockoutReportedAt: new DateTime(2026, 8, 20, 9, 20, 0, DateTimeKind.Utc),
             LockoutCallAttempts: "Called 09:05, 09:10 and 09:15, no answer; rang the bell twice",
-            FreeCancellationHours: 4);
+            FreeCancellationHours: 4,
+            IsGuestBooking: true);
 
     private static OrderListItem FullyPopulatedListItem() =>
         new(
@@ -483,5 +487,6 @@ public class OrderRedactionSurfaceTests
             CustomerAddressLongitude: 14.4378,
             HasReview: true,
             DirtinessLevel: DirtinessLevel.Heavy,
-            DirtinessSurchargeAmount: 540m);
+            DirtinessSurchargeAmount: 540m,
+            IsGuestBooking: true);
 }

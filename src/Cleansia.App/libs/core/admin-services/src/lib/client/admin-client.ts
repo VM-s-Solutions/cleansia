@@ -30623,6 +30623,7 @@ export class OrderItem implements IOrderItem {
     lockoutReportedAt!: Date | undefined;
     lockoutCallAttempts!: string | undefined;
     freeCancellationHours!: number | undefined;
+    isGuestBooking!: boolean | undefined;
 
     constructor(data?: IOrderItem) {
         if (data) {
@@ -30739,6 +30740,7 @@ export class OrderItem implements IOrderItem {
             this.lockoutReportedAt = Data["lockoutReportedAt"] ? new Date(Data["lockoutReportedAt"].toString()) : undefined as any;
             this.lockoutCallAttempts = Data["lockoutCallAttempts"];
             this.freeCancellationHours = Data["freeCancellationHours"];
+            this.isGuestBooking = Data["isGuestBooking"];
         }
     }
 
@@ -30855,6 +30857,7 @@ export class OrderItem implements IOrderItem {
         data["lockoutReportedAt"] = this.lockoutReportedAt ? this.lockoutReportedAt.toISOString() : undefined as any;
         data["lockoutCallAttempts"] = this.lockoutCallAttempts;
         data["freeCancellationHours"] = this.freeCancellationHours;
+        data["isGuestBooking"] = this.isGuestBooking;
         return data;
     }
 }
@@ -30930,6 +30933,7 @@ export interface IOrderItem {
     lockoutReportedAt: Date | undefined;
     lockoutCallAttempts: string | undefined;
     freeCancellationHours: number | undefined;
+    isGuestBooking: boolean | undefined;
 }
 
 export class OrderListItem implements IOrderListItem {
@@ -30973,6 +30977,7 @@ export class OrderListItem implements IOrderListItem {
     countryId!: string | undefined;
     dirtinessLevel!: DirtinessLevel;
     dirtinessSurchargeAmount!: number;
+    isGuestBooking!: boolean | undefined;
 
     constructor(data?: IOrderListItem) {
         if (data) {
@@ -31043,6 +31048,7 @@ export class OrderListItem implements IOrderListItem {
             this.countryId = Data["countryId"];
             this.dirtinessLevel = Data["dirtinessLevel"];
             this.dirtinessSurchargeAmount = Data["dirtinessSurchargeAmount"];
+            this.isGuestBooking = Data["isGuestBooking"];
         }
     }
 
@@ -31113,6 +31119,7 @@ export class OrderListItem implements IOrderListItem {
         data["countryId"] = this.countryId;
         data["dirtinessLevel"] = this.dirtinessLevel;
         data["dirtinessSurchargeAmount"] = this.dirtinessSurchargeAmount;
+        data["isGuestBooking"] = this.isGuestBooking;
         return data;
     }
 }
@@ -31158,6 +31165,7 @@ export interface IOrderListItem {
     countryId: string | undefined;
     dirtinessLevel: DirtinessLevel;
     dirtinessSurchargeAmount: number;
+    isGuestBooking: boolean | undefined;
 }
 
 export class OrderNoteDto implements IOrderNoteDto {

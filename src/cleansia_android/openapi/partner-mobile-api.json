@@ -10849,6 +10849,10 @@
             "type": "integer",
             "format": "int32",
             "nullable": true
+          },
+          "isGuestBooking": {
+            "type": "boolean",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -11025,6 +11029,10 @@
           "dirtinessSurchargeAmount": {
             "type": "number",
             "format": "double"
+          },
+          "isGuestBooking": {
+            "type": "boolean",
+            "nullable": true
           }
         },
         "additionalProperties": false

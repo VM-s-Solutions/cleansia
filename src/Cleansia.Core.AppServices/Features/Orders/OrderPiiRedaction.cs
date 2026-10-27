@@ -22,6 +22,7 @@ public static class OrderPiiRedaction
             CustomerAddress = string.Empty,
             CustomerAddressLatitude = null,
             CustomerAddressLongitude = null,
+            IsGuestBooking = null,
         };
 
     /// <summary>
@@ -73,6 +74,7 @@ public static class OrderPiiRedaction
             LockoutReportedAt = null,
             LockoutCallAttempts = null,
             FreeCancellationHours = null,
+            IsGuestBooking = null,
         };
 
     /// <summary>

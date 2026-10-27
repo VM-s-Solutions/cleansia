@@ -75,4 +75,9 @@ public record OrderListItem(
     /// <summary>Service-address country for the market label, paired with this order's currency.</summary>
     string? CountryId = null,
     DirtinessLevel DirtinessLevel = DirtinessLevel.Normal,
-    decimal DirtinessSurchargeAmount = 0m);
+    decimal DirtinessSurchargeAmount = 0m,
+    /// <summary>
+    /// True only on a booking made without an account that a signed-in customer's My orders lists because
+    /// it carries their e-mail; null on every other read.
+    /// </summary>
+    bool? IsGuestBooking = null);

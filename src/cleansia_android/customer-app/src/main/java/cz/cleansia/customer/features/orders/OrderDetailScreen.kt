@@ -244,13 +244,16 @@ fun OrderDetailScreen(
     val isCancellable by viewModel.canCancel.collectAsStateWithLifecycle()
     val canReportCleanerNoShow by viewModel.canReportCleanerNoShow.collectAsStateWithLifecycle()
     val tookNoCardPayment by viewModel.tookNoCardPayment.collectAsStateWithLifecycle()
+    val isGuestBooking = loaded?.order?.isGuestBooking == true
     // Wave 2 Phase 6 — Report Issue is only meaningful AFTER the cleaning has
     // been picked up by a cleaner (Confirmed) and through Completed. New /
     // Pending / Cancelled are hidden because there's nothing to dispute yet.
-    val canReportIssue = status == OrderStatus.Confirmed ||
-        status == OrderStatus.OnTheWay ||
-        status == OrderStatus.InProgress ||
-        status == OrderStatus.Completed
+    val canReportIssue = !isGuestBooking && (
+        status == OrderStatus.Confirmed ||
+            status == OrderStatus.OnTheWay ||
+            status == OrderStatus.InProgress ||
+            status == OrderStatus.Completed
+        )
     // Wave 3 Phase R1 — "Book again" is only useful for a finished cleaning.
     // Hidden for everything else; the user can still navigate back to Home
     // and tap the FAB to start a fresh booking.
@@ -744,12 +747,11 @@ private fun OrderDetailSheetContent(
                 TimelineCard(order.statusHistory)
             }
 
-            if (status == OrderStatus.Completed) {
+            if (status == OrderStatus.Completed && !order.isGuestBooking) {
                 ReviewCard(order = order, onLeaveReview = onLeaveReview)
             }
 
-            val showReceipt = !order.receiptNumber.isNullOrBlank() ||
-                status == OrderStatus.Completed
+            val showReceipt = !order.isGuestBooking && (!order.receiptNumber.isNullOrBlank() || status == OrderStatus.Completed)
             if (showReceipt) {
                 ReceiptCard(
                     order = order,

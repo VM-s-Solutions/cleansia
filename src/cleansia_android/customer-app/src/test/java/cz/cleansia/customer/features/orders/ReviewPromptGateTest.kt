@@ -21,15 +21,17 @@ class ReviewPromptGateTest {
         statusValue: Int = 5,
         hasReview: Boolean = false,
         cleaningDateTime: String? = "2026-08-20T09:00:00Z",
+        isGuestBooking: Boolean = false,
     ) = OrderListItemDto(
         id = id,
-        // The gate reads four fields; the rest are required by the DTO and irrelevant here.
+        // The gate reads five fields; the rest are required by the DTO and irrelevant here.
         totalPrice = 0.0,
         originalSubtotal = 0.0,
         appliedDiscountSource = 0,
         orderStatus = CodeDto(type = "OrderStatus", name = "Completed", value = statusValue),
         hasReview = hasReview,
         cleaningDateTime = cleaningDateTime,
+        isGuestBooking = isGuestBooking,
     )
 
     @Test
@@ -72,6 +74,20 @@ class ReviewPromptGateTest {
         )
 
         assertEquals("new", candidate?.id)
+    }
+
+    /** The server refuses a review of a booking made without an account, so the sheet would ask for nothing. */
+    @Test
+    fun `a newer completed guest booking is never the candidate, and the account's own still is`() {
+        val candidate = ReviewPromptGate.candidate(
+            listOf(
+                order("guest", cleaningDateTime = "2026-08-21T09:00:00Z", isGuestBooking = true),
+                order("own", cleaningDateTime = "2026-08-20T09:00:00Z"),
+            ),
+            emptySet(),
+        )
+
+        assertEquals("own", candidate?.id)
     }
 
     @Test

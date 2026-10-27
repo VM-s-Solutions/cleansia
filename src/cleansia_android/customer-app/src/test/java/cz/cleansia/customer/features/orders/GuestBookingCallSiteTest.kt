@@ -51,6 +51,22 @@ class GuestBookingCallSiteTest {
         )
     }
 
+    /** The server answers order.not_found to a dispute, a review and a receipt on a guest booking. */
+    @Test
+    fun `a guest booking offers no issue report, review or receipt`() {
+        val screen = source("OrderDetailScreen.kt")
+        val reportIssue = Regex("""val canReportIssue = [^\n]*""").find(screen)?.value.orEmpty()
+        assertTrue("Report an issue must be withheld on a guest booking, got `$reportIssue`", reportIssue.contains("!isGuestBooking"))
+
+        val sheet = braced(screen, "private fun OrderDetailSheetContent(")
+        assertTrue(
+            "the review card must render on an account booking only",
+            sheet.contains("if (status == OrderStatus.Completed && !order.isGuestBooking) {"),
+        )
+        val receipt = Regex("""val showReceipt = [^\n]*""").find(sheet)?.value.orEmpty()
+        assertTrue("the receipt card must render on an account booking only, got `$receipt`", receipt.contains("!order.isGuestBooking"))
+    }
+
     /** The body of the first `{ … }` that follows [marker], which must occur exactly once in [text]. */
     private fun braced(text: String, marker: String): String {
         val start = text.indexOf(marker)

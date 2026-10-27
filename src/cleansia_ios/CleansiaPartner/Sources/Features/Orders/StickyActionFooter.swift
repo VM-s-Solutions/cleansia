@@ -189,6 +189,8 @@ private struct FooterTextLink: View {
 /// Where the Complete slide stands on a crew job once the caller has marked their part done and someone
 /// else on it has not.
 private struct CrewWaitingHint: View {
+    @Environment(\.locale) private var locale
+
     var body: some View {
         HStack(spacing: Spacing.xs) {
             Image(systemName: "person.2")
@@ -202,6 +204,7 @@ private struct CrewWaitingHint: View {
         .padding(.vertical, Spacing.s)
         .padding(.horizontal, Spacing.m)
         .background(CleansiaColors.surfaceVariant, in: Capsule())
+        .id(locale.identifier)
     }
 }
 

@@ -304,16 +304,19 @@ final class CrewCloseDetailTests: XCTestCase {
 /// What the footer draws for each crew step: the shared machine names the step, and this is where it gets its
 /// words and its dispatch.
 final class CrewCloseFooterTests: XCTestCase {
-    func testEachCrewStepAndTheSoloCompleteDrawTheirOwnControl() throws {
+    private func footerSource() throws -> String {
         let root = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
             .deletingLastPathComponent()
             .deletingLastPathComponent()
-        let footer = try String(
+        return try String(
             contentsOf: root.appendingPathComponent("CleansiaPartner/Sources/Features/Orders/StickyActionFooter.swift"),
             encoding: .utf8
         )
-        .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+    }
+
+    func testEachCrewStepAndTheSoloCompleteDrawTheirOwnControl() throws {
+        let footer = try footerSource().replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
 
         XCTAssertTrue(footer.contains(
             "case .markDone: footer { SlideToConfirm( idleLabel: L10n.Orders.markDone, "
@@ -331,6 +334,18 @@ final class CrewCloseFooterTests: XCTestCase {
                 + "busyLabel: L10n.Orders.completingOrder, isBusy: isBusy(.complete), "
                 + "onConfirm: { onConfirm(.complete) } ) }"
         ), "the solo Complete")
+    }
+
+    /// The wait reads no per-locale value, so after an in-app language switch nothing it observes changes and
+    /// it would keep the old language.
+    func testTheWaitFollowsAnInAppLanguageSwitch() throws {
+        let source = try footerSource()
+        let start = try XCTUnwrap(source.range(of: "private struct CrewWaitingHint: View {"))
+        let end = source.range(of: "\n}\n", range: start.upperBound ..< source.endIndex)?.upperBound ?? source.endIndex
+        let hint = source[start.lowerBound ..< end]
+
+        XCTAssertTrue(hint.contains("@Environment(\\.locale) private var locale"))
+        XCTAssertTrue(hint.contains(".id(locale.identifier)"))
     }
 }
 

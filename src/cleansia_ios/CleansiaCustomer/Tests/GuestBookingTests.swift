@@ -149,6 +149,18 @@ final class GuestBookingTests: XCTestCase {
         XCTAssertTrue(list.contains("if order.isGuestBooking { GuestBookingLabel() }"), "the label on the list card")
     }
 
+    /// The label reads no per-locale value, so after an in-app language switch nothing it observes changes
+    /// and it would keep the old language.
+    func testTheLabelFollowsAnInAppLanguageSwitch() throws {
+        let source = try rawSource("CleansiaCustomer/Sources/Features/Orders/OrderComponents.swift")
+        let start = try XCTUnwrap(source.range(of: "struct GuestBookingLabel: View {"))
+        let end = source.range(of: "\n}\n", range: start.upperBound ..< source.endIndex)?.upperBound ?? source.endIndex
+        let label = source[start.lowerBound ..< end]
+
+        XCTAssertTrue(label.contains("@Environment(\\.locale) private var locale"))
+        XCTAssertTrue(label.contains(".id(locale.identifier)"))
+    }
+
     // MARK: - Copy
 
     func testTheLabelAndTheNoteAreWrittenInAllFiveLanguages() throws {
@@ -172,11 +184,14 @@ final class GuestBookingTests: XCTestCase {
     }
 
     private func normalizedSource(_ relativePath: String) throws -> String {
+        try rawSource(relativePath).replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+    }
+
+    private func rawSource(_ relativePath: String) throws -> String {
         let root = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
             .deletingLastPathComponent()
             .deletingLastPathComponent()
         return try String(contentsOf: root.appendingPathComponent(relativePath), encoding: .utf8)
-            .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
     }
 }

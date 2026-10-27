@@ -10,6 +10,7 @@ struct ConfirmEmailView: View {
 
     init(
         email: String?,
+        registeredPassword: String?,
         client: EmailConfirmationClient,
         settings: AppSettingsStore,
         snackbar: SnackbarController,
@@ -18,6 +19,7 @@ struct ConfirmEmailView: View {
     ) {
         _vm = StateObject(wrappedValue: ConfirmEmailViewModel(
             email: email,
+            registeredPassword: registeredPassword,
             client: client,
             settings: settings,
             snackbar: snackbar
@@ -29,16 +31,19 @@ struct ConfirmEmailView: View {
     var body: some View {
         ConfirmEmailContent(
             code: vm.code,
+            passwordForm: vm.asksForPassword ? vm.passwordForm : nil,
             isConfirming: vm.confirmState.isSubmitting,
             isResending: vm.resendState.isSubmitting,
             canResend: vm.canResend,
             onCodeChange: vm.onCodeChange,
+            onPasswordChange: vm.onPasswordChange,
+            onConfirmPasswordChange: vm.onConfirmPasswordChange,
             onBack: onBack,
             onConfirm: { Task { await vm.confirmEmail() } },
             onResend: { Task { await vm.resendCode() } }
         )
-        .onChange(of: vm.code) { value in
-            if value.count == confirmCodeLength, !vm.confirmState.isSubmitting {
+        .onChange(of: vm.code) { _ in
+            if vm.isReadyToConfirm, !vm.confirmState.isSubmitting {
                 Task { await vm.confirmEmail() }
             }
         }
@@ -48,10 +53,14 @@ struct ConfirmEmailView: View {
 
 private struct ConfirmEmailContent: View {
     let code: String
+    /// Nil when the confirmation sets the password just typed on the registration.
+    let passwordForm: ChosenPassword?
     let isConfirming: Bool
     let isResending: Bool
     let canResend: Bool
     let onCodeChange: (String) -> Void
+    var onPasswordChange: (String) -> Void = { _ in }
+    var onConfirmPasswordChange: (String) -> Void = { _ in }
     let onBack: () -> Void
     let onConfirm: () -> Void
     let onResend: () -> Void
@@ -91,6 +100,17 @@ private struct ConfirmEmailContent: View {
 
                     CodeInput(code: codeBinding, length: confirmCodeLength)
 
+                    if let passwordForm {
+                        Spacer().frame(height: Spacing.l)
+
+                        ChosenPasswordFields(
+                            form: passwordForm,
+                            enabled: !isConfirming,
+                            onPasswordChange: onPasswordChange,
+                            onConfirmPasswordChange: onConfirmPasswordChange
+                        )
+                    }
+
                     Spacer().frame(height: Spacing.l)
 
                     CleansiaPrimaryButton(
@@ -119,6 +139,59 @@ private struct ConfirmEmailContent: View {
     }
 }
 
+private struct ChosenPasswordFields: View {
+    let form: ChosenPassword
+    let enabled: Bool
+    let onPasswordChange: (String) -> Void
+    let onConfirmPasswordChange: (String) -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Text(L10n.ConfirmEmail.choosePassword)
+                .font(CleansiaTypography.bodyMedium)
+                .foregroundColor(CleansiaColors.onSurfaceVariant)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+
+            Spacer().frame(height: Spacing.s)
+
+            CleansiaTextField(
+                value: Binding(get: { form.password }, set: onPasswordChange),
+                label: L10n.password,
+                errorText: form.passwordError,
+                textContentType: .newPassword,
+                isPassword: true,
+                enabled: enabled
+            )
+
+            PasswordRuleList(
+                rules: [
+                    PasswordRule(label: L10n.Register.ruleMinLength, isSatisfied: form.hasMinLength),
+                    PasswordRule(label: L10n.Register.ruleLetter, isSatisfied: form.hasLetter),
+                    PasswordRule(label: L10n.Register.ruleNumber, isSatisfied: form.hasNumber)
+                ],
+                hasInput: !form.password.isEmpty
+            )
+
+            Spacer().frame(height: Spacing.xs)
+
+            CleansiaTextField(
+                value: Binding(get: { form.confirmation }, set: onConfirmPasswordChange),
+                label: L10n.Register.confirmPassword,
+                errorText: form.confirmationError,
+                textContentType: .newPassword,
+                isPassword: true,
+                enabled: enabled
+            )
+
+            PasswordRuleList(
+                rules: [PasswordRule(label: L10n.Register.ruleMatch, isSatisfied: form.matches)],
+                hasInput: !form.confirmation.isEmpty
+            )
+        }
+    }
+}
+
 #if DEBUG
     struct ConfirmEmailView_Previews: PreviewProvider {
         static var previews: some View {
@@ -131,12 +204,35 @@ private struct ConfirmEmailContent: View {
                     .previewDisplayName("Submitting")
                 preview(code: "", isConfirming: false, canResend: false)
                     .previewDisplayName("No email — resend disabled")
+                preview(
+                    code: "123456",
+                    passwordForm: refusedPassword,
+                    isConfirming: false,
+                    canResend: true
+                )
+                .previewDisplayName("Confirming later — asks for the password")
             }
         }
 
-        private static func preview(code: String, isConfirming: Bool, canResend: Bool) -> some View {
+        private static var refusedPassword: ChosenPassword {
+            var form = ChosenPassword()
+            form.setPassword("short")
+            _ = form.validated(
+                rulesError: L10n.Register.errorPasswordRules,
+                mismatchError: L10n.Register.errorPasswordsNoMatch
+            )
+            return form
+        }
+
+        private static func preview(
+            code: String,
+            passwordForm: ChosenPassword? = nil,
+            isConfirming: Bool,
+            canResend: Bool
+        ) -> some View {
             ConfirmEmailContent(
                 code: code,
+                passwordForm: passwordForm,
                 isConfirming: isConfirming,
                 isResending: false,
                 canResend: canResend,

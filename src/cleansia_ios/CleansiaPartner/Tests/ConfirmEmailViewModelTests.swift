@@ -3,6 +3,12 @@ import Combine
 import XCTest
 @testable import CleansiaPartner
 
+private struct ConfirmCall {
+    let email: String
+    let code: String
+    let password: String
+}
+
 @MainActor
 final class ConfirmEmailViewModelTests: XCTestCase {
     private final class FakeConfirmClient: EmailConfirmationClient {
@@ -11,9 +17,11 @@ final class ConfirmEmailViewModelTests: XCTestCase {
         private(set) var confirmCallCount = 0
         private(set) var resendCallCount = 0
         private(set) var lastResendArgs: (email: String, language: String)?
+        private(set) var lastConfirm: ConfirmCall?
 
-        func confirmEmail(email _: String, code _: String) async -> ApiResult<LoginOutcome> {
+        func confirmEmail(email: String, code: String, password: String) async -> ApiResult<LoginOutcome> {
             confirmCallCount += 1
+            lastConfirm = ConfirmCall(email: email, code: code, password: password)
             return confirmResult
         }
 
@@ -79,8 +87,22 @@ final class ConfirmEmailViewModelTests: XCTestCase {
         super.tearDown()
     }
 
-    private func makeViewModel(email: String? = "a@b.cz") -> ConfirmEmailViewModel {
-        ConfirmEmailViewModel(email: email, client: client, settings: settings, snackbar: snackbar)
+    private func makeViewModel(
+        email: String? = "a@b.cz",
+        registeredPassword: String? = "abcdefg1"
+    ) -> ConfirmEmailViewModel {
+        ConfirmEmailViewModel(
+            email: email,
+            registeredPassword: registeredPassword,
+            client: client,
+            settings: settings,
+            snackbar: snackbar
+        )
+    }
+
+    private func typePassword(_ vm: ConfirmEmailViewModel, _ password: String, confirmation: String? = nil) {
+        vm.onPasswordChange(password)
+        vm.onConfirmPasswordChange(confirmation ?? password)
     }
 
     func testCodeChangeFiltersToDigitsAndCapsAtSix() {
@@ -184,6 +206,110 @@ final class ConfirmEmailViewModelTests: XCTestCase {
         await vm.resendCode()
 
         XCTAssertEqual(snackbar.current?.severity, .error)
+    }
+
+    // MARK: - The password the confirmation sets
+
+    /// Right after registering, the confirmation sets the password the cleaner has just typed, so the screen
+    /// asks for nothing more.
+    func testRightAfterRegisteringTheConfirmationSendsThePasswordJustTyped() async {
+        let vm = makeViewModel(registeredPassword: "abcdefg1")
+        XCTAssertFalse(vm.asksForPassword)
+        vm.onCodeChange("123456")
+
+        await vm.confirmEmail()
+
+        XCTAssertEqual(client.lastConfirm?.email, "a@b.cz")
+        XCTAssertEqual(client.lastConfirm?.code, "123456")
+        XCTAssertEqual(client.lastConfirm?.password, "abcdefg1")
+    }
+
+    func testConfirmingLaterTheScreenAsksForThePassword() {
+        XCTAssertTrue(makeViewModel(registeredPassword: nil).asksForPassword)
+    }
+
+    func testConfirmingLaterSendsThePasswordTypedOnTheScreen() async {
+        let vm = makeViewModel(registeredPassword: nil)
+        vm.onCodeChange("123456")
+        typePassword(vm, "Chosen123")
+
+        await vm.confirmEmail()
+
+        XCTAssertEqual(client.confirmCallCount, 1)
+        XCTAssertEqual(client.lastConfirm?.password, "Chosen123")
+    }
+
+    func testAPasswordOutsideTheRulesIsRefusedOnTheScreenAndNotSent() async {
+        let vm = makeViewModel(registeredPassword: nil)
+        vm.onCodeChange("123456")
+        typePassword(vm, "letters")
+
+        await vm.confirmEmail()
+
+        XCTAssertEqual(client.confirmCallCount, 0)
+        XCTAssertEqual(vm.passwordForm.passwordError, L10n.Register.errorPasswordRules)
+        XCTAssertEqual(vm.confirmState, .idle)
+    }
+
+    func testTwoDifferentPasswordsAreRefusedOnTheScreenAndNotSent() async {
+        let vm = makeViewModel(registeredPassword: nil)
+        vm.onCodeChange("123456")
+        typePassword(vm, "Chosen123", confirmation: "Chosen124")
+
+        await vm.confirmEmail()
+
+        XCTAssertEqual(client.confirmCallCount, 0)
+        XCTAssertNil(vm.passwordForm.passwordError)
+        XCTAssertEqual(vm.passwordForm.confirmationError, L10n.Register.errorPasswordsNoMatch)
+    }
+
+    func testTypingClearsTheFieldsError() async {
+        let vm = makeViewModel(registeredPassword: nil)
+        vm.onCodeChange("123456")
+        await vm.confirmEmail()
+        XCTAssertNotNil(vm.passwordForm.passwordError)
+        XCTAssertNotNil(vm.passwordForm.confirmationError)
+
+        typePassword(vm, "Chosen123")
+
+        XCTAssertNil(vm.passwordForm.passwordError)
+        XCTAssertNil(vm.passwordForm.confirmationError)
+    }
+
+    /// The code confirms itself on its sixth digit only when there is a password to send, so a cleaner who
+    /// types the code first is not shown an error for fields they have not reached yet.
+    func testTheCompleteCodeWaitsForAPasswordTheScreenAsksFor() {
+        let vm = makeViewModel(registeredPassword: nil)
+        vm.onCodeChange("123456")
+        XCTAssertFalse(vm.isReadyToConfirm)
+
+        typePassword(vm, "Chosen123", confirmation: "Chosen12")
+        XCTAssertFalse(vm.isReadyToConfirm)
+
+        vm.onConfirmPasswordChange("Chosen123")
+        XCTAssertTrue(vm.isReadyToConfirm)
+    }
+
+    func testTheCompleteCodeIsReadyAtOnceRightAfterRegistering() {
+        let vm = makeViewModel(registeredPassword: "abcdefg1")
+        vm.onCodeChange("12345")
+        XCTAssertFalse(vm.isReadyToConfirm)
+
+        vm.onCodeChange("123456")
+        XCTAssertTrue(vm.isReadyToConfirm)
+    }
+
+    /// The screen confirms the complete code through the readiness above, never on the sixth digit alone.
+    func testTheScreenConfirmsTheCompleteCodeOnlyWhenReady() throws {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let screen = try String(
+            contentsOf: root.appendingPathComponent("CleansiaPartner/Sources/Features/Auth/ConfirmEmailView.swift"),
+            encoding: .utf8
+        )
+        XCTAssertTrue(screen.contains("if vm.isReadyToConfirm, !vm.confirmState.isSubmitting {"))
     }
 
     func testConfirmAndResendActionStatesAreIndependent() async {

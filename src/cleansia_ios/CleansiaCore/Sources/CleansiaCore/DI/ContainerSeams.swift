@@ -43,7 +43,7 @@ public extension RegistrationAuthClient {
 public protocol EmailConfirmationClient: AnyObject {
     // The email is REQUIRED with the 6-digit code: the server resolves the account by email and only
     // proves the code against it (a bare code is never a lookup key).
-    func confirmEmail(email: String, code: String) async -> ApiResult<LoginOutcome>
+    func confirmEmail(email: String, code: String, password: String) async -> ApiResult<LoginOutcome>
     func resendConfirmation(email: String, language: String) async -> ApiResult<Bool>
 }
 

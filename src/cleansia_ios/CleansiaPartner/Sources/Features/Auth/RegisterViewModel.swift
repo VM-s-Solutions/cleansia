@@ -41,8 +41,9 @@ final class RegisterViewModel: ViewModel {
 
     /// Carries the registered email so the caller can land the user on the confirm-email step —
     /// the code was just sent there, and bouncing to login would make them sign in only to be
-    /// routed straight back (Route.afterLogin already does that for an unconfirmed account).
-    let registerSuccess = PassthroughSubject<String, Never>()
+    /// routed straight back (Route.afterLogin already does that for an unconfirmed account). The
+    /// password typed rides with it: the confirmation sets the password it carries.
+    let registerSuccess = PassthroughSubject<(email: String, password: String), Never>()
 
     private let client: RegistrationAuthClient
     private let marketClient: PartnerMarketClient
@@ -125,7 +126,7 @@ final class RegisterViewModel: ViewModel {
 
         switch result {
         case .success:
-            registerSuccess.send(form.email)
+            registerSuccess.send((email: form.email, password: form.password))
         case let .failure(error):
             snackbar.showApiError(error)
         }

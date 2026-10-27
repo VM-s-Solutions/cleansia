@@ -48,7 +48,7 @@ struct PartnerRootView: View {
                 settings: container.appSettings,
                 snackbar: container.snackbar,
                 onSignIn: { route = .login },
-                onRegistered: { route = .verifyEmail(email: $0) }
+                onRegistered: { email, password in route = .verifyEmail(email: email, password: password) }
             )
         case .forgotPassword:
             ForgotPasswordView(
@@ -105,9 +105,10 @@ struct PartnerRootView: View {
                 preferences: preferences,
                 onSignedOut: { route = .login }
             )
-        case let .verifyEmail(email):
+        case let .verifyEmail(email, password):
             ConfirmEmailView(
                 email: email,
+                registeredPassword: password,
                 client: container.emailConfirmationClient,
                 settings: container.appSettings,
                 snackbar: container.snackbar,
@@ -131,7 +132,9 @@ struct PartnerRootView: View {
         case register
         case forgotPassword
         case onboarding
-        case verifyEmail(email: String?)
+        /// `password` is the one just typed on the registration, which the confirmation sets; nil when the
+        /// address is confirmed later, and the confirm screen asks for it.
+        case verifyEmail(email: String?, password: String? = nil)
         case registrationLock
         case dashboard
 

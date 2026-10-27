@@ -178,6 +178,10 @@ extension L10n {
             localized("confirm_email_subtitle")
         }
 
+        static var choosePassword: String {
+            localized("verify_email_choose_password")
+        }
+
         static var errorGeneric: String {
             localized("error_generic")
         }

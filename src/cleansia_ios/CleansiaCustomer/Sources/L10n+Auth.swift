@@ -126,6 +126,10 @@ extension L10n {
             localized("verify_resend_code")
         }
 
+        static var verifyChoosePassword: String {
+            localized("verify_choose_password")
+        }
+
         static var resendSuccess: String {
             localized("auth_resend_success")
         }

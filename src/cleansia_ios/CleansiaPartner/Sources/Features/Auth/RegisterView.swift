@@ -4,7 +4,7 @@ import SwiftUI
 struct RegisterView: View {
     @StateObject private var vm: RegisterViewModel
     let onSignIn: () -> Void
-    let onRegistered: (String) -> Void
+    let onRegistered: (_ email: String, _ password: String) -> Void
 
     init(
         client: RegistrationAuthClient,
@@ -12,7 +12,7 @@ struct RegisterView: View {
         settings: AppSettingsStore,
         snackbar: SnackbarController,
         onSignIn: @escaping () -> Void,
-        onRegistered: @escaping (String) -> Void
+        onRegistered: @escaping (_ email: String, _ password: String) -> Void
     ) {
         _vm = StateObject(wrappedValue: RegisterViewModel(
             client: client,
@@ -40,7 +40,7 @@ struct RegisterView: View {
             onSubmit: { Task { await vm.register() } }
         )
         .task { await vm.loadMarkets() }
-        .onReceive(vm.registerSuccess) { onRegistered($0) }
+        .onReceive(vm.registerSuccess) { onRegistered($0.email, $0.password) }
     }
 }
 

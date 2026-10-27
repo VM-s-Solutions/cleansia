@@ -36943,6 +36943,41 @@
         }
       }
     },
+    "verify_choose_password": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zvolte si heslo, kterým se budete přihlašovat."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose the password you'll sign in with."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Придумайте пароль для входа."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zvoľte si heslo, ktorým sa budete prihlasovať."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Придумайте пароль для входу."
+          }
+        }
+      }
+    },
     "verify_resend_code": {
       "extractionState": "stale",
       "localizations": {

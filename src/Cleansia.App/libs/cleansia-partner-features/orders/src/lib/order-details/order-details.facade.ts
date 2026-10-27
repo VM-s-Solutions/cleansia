@@ -378,7 +378,6 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
     );
   }
 
-  // The re-read shows the seat marked and, once the last of the crew has marked, the shared Complete.
   markMyPartDone(): void {
     const orderId = this.orderDetails()?.id;
     if (!orderId) {

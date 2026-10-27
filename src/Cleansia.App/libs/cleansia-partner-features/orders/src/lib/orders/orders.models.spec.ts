@@ -87,7 +87,7 @@ describe('getAvailableOrdersTableDefinition — take action visibility', () => {
 
 // Owner ruling 2026-10-26: a job of two or more cleaners is completed from its sheet once everyone on
 // it has marked their part done, and the server refuses an earlier Complete with order.crew_not_done.
-// A list row carries no seats, so it cannot tell who has marked.
+// A list row does not say which seats have marked.
 describe('getMyOrdersTableDefinition — Complete on a job in progress', () => {
   const inProgress = (assignedEmployeesCount: number): OrderListItem =>
     OrderListItem.fromJS({ id: 'ord-1', orderStatus: { value: OrderStatus.InProgress }, assignedEmployeesCount });

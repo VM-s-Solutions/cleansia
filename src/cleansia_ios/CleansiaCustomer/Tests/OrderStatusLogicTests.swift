@@ -138,16 +138,28 @@ final class OrderDetailFooterActionsTests: XCTestCase {
         )
     }
 
+    private func showsFooter(_ status: OrderStatus?, canCancel: Bool = false, noShow: Bool = false) -> Bool {
+        OrderDetailFooterActions.showFooter(
+            status,
+            authoring: .upsell,
+            isGuestBooking: false,
+            canCancel: canCancel,
+            canReportCleanerNoShow: noShow
+        )
+    }
+
     /// The footer's own render gate. It used to be `isCancellable || isReportable`,
     /// which happens to cover Completed today only because Completed is reportable —
     /// an accident that would silently hide both new CTAs if the dispute window
     /// ever narrowed.
-    func testTheFooterRendersWheneverAnyOfItsFourActionsWould() {
-        XCTAssertTrue(OrderDetailFooterActions.showFooter(._5, authoring: .upsell, isGuestBooking: false))
-        XCTAssertTrue(OrderDetailFooterActions.showFooter(._2, authoring: .upsell, isGuestBooking: false))
-        XCTAssertTrue(OrderDetailFooterActions.showFooter(._0, authoring: .upsell, isGuestBooking: false))
-        XCTAssertFalse(OrderDetailFooterActions.showFooter(._6, authoring: .allowed, isGuestBooking: false))
-        XCTAssertFalse(OrderDetailFooterActions.showFooter(nil, authoring: .allowed, isGuestBooking: false))
+    func testTheFooterRendersWheneverAnyOfItsActionsWould() {
+        XCTAssertTrue(showsFooter(._5))
+        XCTAssertTrue(showsFooter(._2, canCancel: true))
+        XCTAssertTrue(showsFooter(._0, canCancel: true))
+        XCTAssertTrue(showsFooter(._0, noShow: true))
+        XCTAssertFalse(showsFooter(._0))
+        XCTAssertFalse(showsFooter(._6))
+        XCTAssertFalse(showsFooter(nil))
     }
 
     /// The pure gate above is only as good as what the view hands it. Reverting the
@@ -159,7 +171,8 @@ final class OrderDetailFooterActionsTests: XCTestCase {
         XCTAssertTrue(
             source.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression).contains(
                 "OrderDetailFooterActions.showFooter( order.status, authoring: vm.recurringAuthoring, "
-                    + "isGuestBooking: order.isGuestBooking )"
+                    + "isGuestBooking: order.isGuestBooking, canCancel: vm.canCancel, "
+                    + "canReportCleanerNoShow: vm.canReportCleanerNoShow )"
             ),
             "the footer gate no longer reads the resolved gate"
         )

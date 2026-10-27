@@ -123,4 +123,34 @@ extension OrderDetailViewModelTests {
         XCTAssertTrue(vm.canReportCleanerNoShow)
         XCTAssertFalse(vm.canCancel)
     }
+
+    /// Late cleaner or one on the way past the start: a guest booking has nothing left to offer, so it draws
+    /// no footer, while an account booking keeps the no-show report and the issue report.
+    func testAStaffedGuestBookingPastItsStartDrawsNoFooter() async throws {
+        for status in [2, 3] {
+            for guest in [true, false] {
+                let client = FakeOrderClient()
+                client.detailResults = [.success(booking(statusValue: status, guest: guest, staffed: true))]
+                let vm = makeVM(client: client, now: { Self.start.addingTimeInterval(60) })
+                await vm.load()
+                let order = try XCTUnwrap(vm.state.loadedValue)
+
+                let footer = OrderDetailFooterActions.showFooter(
+                    order.status,
+                    authoring: .allowed,
+                    isGuestBooking: order.isGuestBooking,
+                    canCancel: vm.canCancel,
+                    canReportCleanerNoShow: vm.canReportCleanerNoShow
+                )
+
+                XCTAssertEqual(footer, !guest, "status \(status), guest \(guest)")
+                XCTAssertEqual(vm.canReportCleanerNoShow, !guest, "status \(status), guest \(guest)")
+                XCTAssertEqual(
+                    OrderDetailFooterActions.showReportIssue(order.status, isGuestBooking: order.isGuestBooking),
+                    !guest,
+                    "status \(status), guest \(guest)"
+                )
+            }
+        }
+    }
 }

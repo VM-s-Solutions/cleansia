@@ -176,7 +176,9 @@ struct OrderDetailView: View {
         } else if OrderDetailFooterActions.showFooter(
             order.status,
             authoring: vm.recurringAuthoring,
-            isGuestBooking: order.isGuestBooking
+            isGuestBooking: order.isGuestBooking,
+            canCancel: vm.canCancel,
+            canReportCleanerNoShow: vm.canReportCleanerNoShow
         ) {
             OrderDetailActionsFooter(
                 showRebook: OrderDetailFooterActions.showRebook(order.status),
@@ -347,12 +349,20 @@ enum OrderDetailFooterActions {
         !isGuestBooking && OrderStatusGroup.isReportable(status)
     }
 
-    /// The footer renders if any of its four actions would. Completed used to
-    /// arrive here only via `isReportable`, which is an accident of the dispute
-    /// window happening to extend past completion rather than a statement about
-    /// re-booking; naming all four keeps the gate honest if that window narrows.
-    static func showFooter(_ status: OrderStatus?, authoring: RecurringAuthoringGate, isGuestBooking: Bool) -> Bool {
-        OrderStatusGroup.isCancellable(status)
+    /// The footer renders if any of its actions would, Cancel and the no-show report as the view model
+    /// resolves them: a staffed guest booking past its start offers neither, and its status alone would
+    /// draw an empty footer. Completed used to arrive here only via `isReportable`, which is an accident
+    /// of the dispute window happening to extend past completion rather than a statement about
+    /// re-booking; naming every action keeps the gate honest if that window narrows.
+    static func showFooter(
+        _ status: OrderStatus?,
+        authoring: RecurringAuthoringGate,
+        isGuestBooking: Bool,
+        canCancel: Bool,
+        canReportCleanerNoShow: Bool
+    ) -> Bool {
+        canCancel
+            || canReportCleanerNoShow
             || showReportIssue(status, isGuestBooking: isGuestBooking)
             || showRebook(status)
             || showMakeRecurring(status, authoring: authoring)

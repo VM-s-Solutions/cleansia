@@ -84,21 +84,42 @@ final class GuestBookingTests: XCTestCase {
         }
     }
 
+    private func showsFooter(
+        _ status: OrderStatus,
+        guest: Bool,
+        canCancel: Bool = false,
+        authoring: RecurringAuthoringGate = .allowed
+    ) -> Bool {
+        OrderDetailFooterActions.showFooter(
+            status,
+            authoring: authoring,
+            isGuestBooking: guest,
+            canCancel: canCancel,
+            canReportCleanerNoShow: false
+        )
+    }
+
     /// In progress, an account booking's footer is its issue report alone; a guest booking has none, so it
     /// draws no empty footer.
     func testAnInProgressGuestBookingDrawsNoFooter() {
-        XCTAssertFalse(OrderDetailFooterActions.showFooter(._4, authoring: .allowed, isGuestBooking: true))
-        XCTAssertTrue(OrderDetailFooterActions.showFooter(._4, authoring: .allowed, isGuestBooking: false))
+        XCTAssertFalse(showsFooter(._4, guest: true))
+        XCTAssertTrue(showsFooter(._4, guest: false))
     }
 
     func testAGuestBookingKeepsCancelBeforeItsStartAndBookAgainOnceDone() {
-        for status in [OrderStatus._0, ._1, ._2, ._3, ._5] {
-            XCTAssertTrue(
-                OrderDetailFooterActions.showFooter(status, authoring: .upsell, isGuestBooking: true),
-                "\(status)"
-            )
+        for status in [OrderStatus._0, ._1, ._2, ._3] {
+            XCTAssertTrue(showsFooter(status, guest: true, canCancel: true, authoring: .upsell), "\(status)")
         }
-        XCTAssertFalse(OrderDetailFooterActions.showFooter(._6, authoring: .allowed, isGuestBooking: true))
+        XCTAssertTrue(showsFooter(._5, guest: true, authoring: .upsell))
+        XCTAssertFalse(showsFooter(._6, guest: true))
+    }
+
+    /// Cancel withheld past a staffed start and no no-show report on a guest booking: the status alone still
+    /// counts as cancellable, but nothing would be drawn.
+    func testAGuestBookingThatCanNeitherCancelNorReportANoShowDrawsNoFooterBeforeItIsDone() {
+        for status in [OrderStatus._0, ._1, ._2, ._3] {
+            XCTAssertFalse(showsFooter(status, guest: true), "\(status)")
+        }
     }
 
     func testTheViewBindsTheFooterAndTheCardsToTheGuestFlag() throws {

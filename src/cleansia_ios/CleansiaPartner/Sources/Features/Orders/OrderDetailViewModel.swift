@@ -236,7 +236,7 @@ final class OrderDetailViewModel: ViewModel {
         case .start: await start()
         case .collectCash: await markCashCollected()
         case .markDone: await markMyPartDone()
-        case .complete: await complete()
+        case .complete, .completeJob: await complete()
         case .awaitingCrew, .completeBlocked, .none: break
         }
     }

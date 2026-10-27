@@ -101,7 +101,7 @@ struct StickyActionFooter: View {
         case .markDone:
             footer {
                 SlideToConfirm(
-                    idleLabel: L10n.Orders.slideToMarkDone,
+                    idleLabel: L10n.Orders.markDone,
                     busyLabel: L10n.Orders.markingDone,
                     isBusy: isBusy(.markDone),
                     onConfirm: { onConfirm(.markDone) }
@@ -116,6 +116,15 @@ struct StickyActionFooter: View {
                     busyLabel: L10n.Orders.completingOrder,
                     isBusy: isBusy(.complete),
                     onConfirm: { onConfirm(.complete) }
+                )
+            }
+        case .completeJob:
+            footer {
+                SlideToConfirm(
+                    idleLabel: L10n.Orders.completeJob,
+                    busyLabel: L10n.Orders.completingOrder,
+                    isBusy: isBusy(.complete),
+                    onConfirm: { onConfirm(.completeJob) }
                 )
             }
         case let .completeBlocked(cashPending):

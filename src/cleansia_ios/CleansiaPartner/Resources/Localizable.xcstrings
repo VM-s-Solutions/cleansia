@@ -14506,6 +14506,41 @@
         }
       }
     },
+    "order_complete_job": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dokončit zakázku"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Complete job"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Завершить заказ"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dokončiť zákazku"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Завершити замовлення"
+          }
+        }
+      }
+    },
     "order_removal_message": {
       "extractionState": "manual",
       "localizations": {
@@ -23225,37 +23260,37 @@
         }
       }
     },
-    "slide_to_mark_done": {
+    "order_mark_done": {
       "extractionState": "manual",
       "localizations": {
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Posunutím označte svou část jako hotovou"
+            "value": "Mám hotovo"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Slide to mark your part done"
+            "value": "I'm done"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Проведите, чтобы отметить свою часть выполненной"
+            "value": "Моя часть готова"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Posunutím označte svoju časť ako hotovú"
+            "value": "Mám hotovo"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Проведіть, щоб позначити свою частину виконаною"
+            "value": "Моя частина готова"
           }
         }
       }

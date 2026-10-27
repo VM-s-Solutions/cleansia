@@ -144,9 +144,9 @@ final class OrdersListViewModel: ViewModel {
     /// the Active row's is always true (assigned-to-me). Neither `hasAfterPhotos`
     /// nor the payment fields are on the list DTO, so an InProgress Active row
     /// resolves to `.complete` and the server's after-photos + payment guards are
-    /// the safety net (the inline parity). Cash collection lives on the detail, and so does
-    /// a crew's "I'm done": the row carries no seats, and an InProgress job shows as the banner
-    /// that opens the detail rather than as a row.
+    /// the safety net (the inline parity). Cash collection lives on the detail, and so do
+    /// a crew's "I'm done" and "Complete job": the row carries no seats, and an InProgress job shows as
+    /// the banner that opens the detail rather than as a row.
     func inlineAction(for order: OrderListItem) -> OrderPrimaryAction {
         let isMine = tab == .active
         return OrderPrimaryAction.action(
@@ -218,7 +218,8 @@ final class OrdersListViewModel: ViewModel {
         case .start: await client.startOrder(orderId: orderId)
         case .collectCash: await client.markCashCollected(orderId: orderId)
         case .complete: await client.completeOrder(orderId: orderId, actualMinutes: nil, notes: nil)
-        case .take, .markDone, .awaitingCrew, .completeBlocked, .none: .failure(ApiError(code: "orders.no_action"))
+        case .take, .markDone, .awaitingCrew, .completeJob, .completeBlocked, .none:
+            .failure(ApiError(code: "orders.no_action"))
         }
     }
 

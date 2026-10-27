@@ -74,14 +74,15 @@ final class CrewCloseTests: XCTestCase {
         _ crew: CrewFinish,
         status: OrderStatus? = ._4,
         mine: Bool = true,
-        photos: Bool = true
+        photos: Bool = true,
+        cashPending: Bool = false
     ) -> OrderPrimaryAction {
         OrderPrimaryAction.action(
             for: status,
             isMine: mine,
             hasAfterPhotos: photos,
-            isCashPayment: false,
-            isPaymentSettled: true,
+            isCashPayment: cashPending,
+            isPaymentSettled: !cashPending,
             crew: crew
         )
     }
@@ -104,9 +105,17 @@ final class CrewCloseTests: XCTestCase {
         XCTAssertNil(OrderPrimaryAction.awaitingCrew.orderAction)
     }
 
-    func testOnceEveryoneHasMarkedTheSharedCompleteAppearsUnderTheAfterPhotoRule() {
-        XCTAssertEqual(action(.everyoneDone), .complete)
+    /// The shared close is the crew's "Complete job", not the "Slide to complete" a job one cleaner works
+    /// shows; it sends the same completion.
+    func testOnceEveryoneHasMarkedTheSharedCompleteJobAppearsUnderTheAfterPhotoRule() {
+        XCTAssertEqual(action(.everyoneDone), .completeJob)
         XCTAssertEqual(action(.everyoneDone, photos: false), .completeBlocked(cashPending: false))
+        XCTAssertEqual(OrderPrimaryAction.completeJob.orderAction, .complete)
+    }
+
+    func testOnceEveryoneHasMarkedTheCashIsCollectedBeforeTheSharedCompleteJob() {
+        XCTAssertEqual(action(.everyoneDone, cashPending: true), .collectCash)
+        XCTAssertEqual(action(.everyoneDone, photos: false, cashPending: true), .completeBlocked(cashPending: true))
     }
 
     func testACleanerNotOnTheJobIsStillOfferedTheOpenSeat() {
@@ -128,8 +137,17 @@ final class CrewCloseTests: XCTestCase {
     // MARK: - Copy
 
     func testTheCrewCloseCopyIsWrittenInAllFiveLanguages() throws {
-        let keys = ["slide_to_mark_done", "marking_done", "order_part_marked_done_toast", "order_crew_waiting"]
+        let keys = [
+            "order_mark_done",
+            "marking_done",
+            "order_part_marked_done_toast",
+            "order_crew_waiting",
+            "order_complete_job"
+        ]
         let english = try table("en")
+        // The names the owner was given for the two crew controls, the ones the partner web shows.
+        XCTAssertEqual(english["order_mark_done"], "I'm done")
+        XCTAssertEqual(english["order_complete_job"], "Complete job")
         for language in ["en", "cs", "sk", "uk", "ru"] {
             let strings = try table(language)
             for key in keys {
@@ -205,10 +223,20 @@ final class CrewCloseDetailTests: XCTestCase {
         XCTAssertEqual(vm.primaryAction, .awaitingCrew)
     }
 
-    func testOnceEveryoneHasMarkedTheDetailOffersComplete() async {
+    func testOnceEveryoneHasMarkedTheDetailOffersCompleteJob() async {
         let vm = await loadedVM(job(myPartDone: true, mateDone: true))
 
-        XCTAssertEqual(vm.primaryAction, .complete)
+        XCTAssertEqual(vm.primaryAction, .completeJob)
+    }
+
+    func testCompleteJobSendsTheCompletion() async {
+        let vm = await loadedVM(job(myPartDone: true, mateDone: true))
+
+        await vm.dispatch(.completeJob)
+
+        XCTAssertEqual(client.commands.map(\.name), ["complete"])
+        XCTAssertEqual(client.commands.map(\.orderId), ["order-1"])
+        XCTAssertEqual(snackbar.current?.text, L10n.Orders.orderCompletedToast)
     }
 
     func testAJobOneCleanerWorksStillCompletesInOneTap() async {
@@ -257,6 +285,39 @@ final class CrewCloseDetailTests: XCTestCase {
         await vm.dispatch(.awaitingCrew)
 
         XCTAssertTrue(client.commands.isEmpty)
+    }
+}
+
+/// What the footer draws for each crew step: the shared machine names the step, and this is where it gets its
+/// words and its dispatch.
+final class CrewCloseFooterTests: XCTestCase {
+    func testEachCrewStepAndTheSoloCompleteDrawTheirOwnControl() throws {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let footer = try String(
+            contentsOf: root.appendingPathComponent("CleansiaPartner/Sources/Features/Orders/StickyActionFooter.swift"),
+            encoding: .utf8
+        )
+        .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+
+        XCTAssertTrue(footer.contains(
+            "case .markDone: footer { SlideToConfirm( idleLabel: L10n.Orders.markDone, "
+                + "busyLabel: L10n.Orders.markingDone, isBusy: isBusy(.markDone), "
+                + "onConfirm: { onConfirm(.markDone) } ) }"
+        ), "I'm done")
+        XCTAssertTrue(footer.contains("case .awaitingCrew: footer { CrewWaitingHint() }"), "the wait")
+        XCTAssertTrue(footer.contains(
+            "case .completeJob: footer { SlideToConfirm( idleLabel: L10n.Orders.completeJob, "
+                + "busyLabel: L10n.Orders.completingOrder, isBusy: isBusy(.complete), "
+                + "onConfirm: { onConfirm(.completeJob) } ) }"
+        ), "Complete job")
+        XCTAssertTrue(footer.contains(
+            "case .complete: footer { SlideToConfirm( idleLabel: L10n.Orders.slideToComplete, "
+                + "busyLabel: L10n.Orders.completingOrder, isBusy: isBusy(.complete), "
+                + "onConfirm: { onConfirm(.complete) } ) }"
+        ), "the solo Complete")
     }
 }
 

@@ -19,6 +19,9 @@ enum OrderPrimaryAction: Equatable {
     /// has not: nothing to do but wait for them.
     case awaitingCrew
     case complete
+    /// InProgress & mine on a crew job everyone on it has marked done: the shared "Complete job", which any
+    /// of them sends.
+    case completeJob
     /// InProgress & mine but no "after" photo yet — the slide is blocked and a
     /// hint is shown instead (the server's after-photos guard, surfaced early).
     /// `cashPending` carries the cash the photo gate is hiding, so the hint can
@@ -35,7 +38,7 @@ enum OrderPrimaryAction: Equatable {
         case .start: .start
         case .collectCash: .markCashCollected
         case .markDone: .markDone
-        case .complete: .complete
+        case .complete, .completeJob: .complete
         case .awaitingCrew, .completeBlocked, .none: nil
         }
     }
@@ -91,6 +94,7 @@ enum OrderPrimaryAction: Equatable {
         case .solo, .everyoneDone: break
         }
         guard hasAfterPhotos else { return .completeBlocked(cashPending: cashPending) }
-        return cashPending ? .collectCash : .complete
+        if cashPending { return .collectCash }
+        return crew == .everyoneDone ? .completeJob : .complete
     }
 }

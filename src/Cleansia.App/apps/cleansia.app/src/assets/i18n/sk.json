@@ -1111,6 +1111,7 @@
       "filter_done": "Hotové",
       "filter_cancelled": "Zrušené",
       "fixed_price": "Pevná cena",
+      "guest_booking": "Objednávka hosťa",
       "track": "Sledovať",
       "detail": "Detail",
       "book_cleaning": "Objednať upratovanie",
@@ -1202,6 +1203,7 @@
       "action_invoice": "Stiahnuť faktúru",
       "action_report": "Niečo nebolo v poriadku",
       "cancellation_note": "Zrušiť zadarmo sa dalo do {{hours}} hodín pred upratovaním.",
+      "guest_booking_note": "Objednávka bola vytvorená bez prihlásenia na váš e-mail. Môžete ju tu sledovať, ale nemožno ju ohodnotiť ani pri nej nahlásiť problém.",
       "cancellation": {
         "action": "Zrušiť objednávku",
         "title": "Zrušiť túto objednávku?",
@@ -1618,7 +1620,9 @@
       "verify_code": "Overiť kód",
       "email_sent": "E-mail bol úspešne odoslaný",
       "code_cooldown": "Potvrdzovací kód bol odoslaný. Počkajte prosím {{ cooldown }} sekúnd pred vyžiadaním nového kódu.",
-      "change_email": "Zmeniť e-mail"
+      "change_email": "Zmeniť e-mail",
+      "password_lead": "Zvoľte si heslo, ktorým sa budete prihlasovať.",
+      "password_invalid": "Zvoľte si heslo, ktoré spĺňa pravidlá, a zadajte ho dvakrát rovnako."
     },
     "track_order": {
       "cancellation": {
@@ -1664,13 +1668,13 @@
       "recent_orders": "Nedávne objednávky",
       "lookup_another": "Vyhľadať inú objednávku",
       "manual_lookup": "Ručné vyhľadávanie",
-      "guest_limit": "Ako hosť sa sleduje iba posledných 5 objednávok na tomto zariadení. Vytvorte si účet pre prístup ku všetkým objednávkam odkiaľkoľvek.",
+      "guest_limit": "Ako hosť sa sleduje iba posledných 5 objednávok na tomto zariadení. Vytvorte si účet s rovnakým e-mailom a uvidíte všetky svoje objednávky odkiaľkoľvek.",
       "guest_cta": "Vytvoriť účet",
       "view_details": "Zobraziť detail",
       "lead": "Účet na to nepotrebujete. Odkaz z potvrdzovacieho e-mailu otvorí vašu objednávku — nič nemusíte vypisovať.",
       "retry": "Skúsiť znova",
       "have_account": "Máte účet?",
-      "sign_in": "Prihláste sa a uvidíte všetky objednávky naraz.",
+      "sign_in": "Prihláste sa a uvidíte všetky objednávky na svoj e-mail.",
       "axis_order": "Upratovanie",
       "axis_order_lead": "Čo sa deje s objednávkou.",
       "axis_payment": "Platba",
@@ -1678,7 +1682,7 @@
       "paid_done": "zaplatené",
       "paid_after": "po upratovaní",
       "need_help": "Potrebujem pomoc",
-      "guest_cta_lead": "Založte si účet a nabudúce uvidíte všetky objednávky bez hľadania čísla.",
+      "guest_cta_lead": "Založte si účet s e-mailom, na ktorý ste objednávali, a nabudúce uvidíte všetky objednávky bez hľadania čísla.",
       "price_note_paid": "Pevná cena. Zaplatené.",
       "price_note_cash": "Pevná cena. Zaplatíte upratovačovi po upratovaní.",
       "headline": {

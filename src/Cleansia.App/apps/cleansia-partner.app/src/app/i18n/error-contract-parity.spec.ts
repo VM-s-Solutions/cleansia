@@ -730,7 +730,7 @@ const DECLARED_BUT_NEVER_EMITTED: readonly string[] = [];
 // reason, so the list may only ever shrink: translate the key in all five
 // locales and delete its line. A key that is BOTH listed here and translated
 // fails the ratchet below.
-const PENDING_TRANSLATION: readonly string[] = ['order.crew_not_done'];
+const PENDING_TRANSLATION: readonly string[] = [];
 
 const TRANSLATED_CONTRACT_KEYS = PARTNER_SURFACE_ERROR_KEYS.filter(
   (key) => !PENDING_TRANSLATION.includes(key)

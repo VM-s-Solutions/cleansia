@@ -10,6 +10,7 @@ import {
   CustomerAuditClient,
   DirtinessLevel,
   OrderItem,
+  OrderStatus,
   UserItem,
 } from '@cleansia/admin-services';
 import { CleansiaButtonComponent } from '@cleansia/components';
@@ -314,6 +315,30 @@ describe('OrderDetailComponent — incident file', () => {
       (button.componentInstance as CleansiaButtonComponent).onClick.emit(new MouseEvent('click'));
 
       expect(read).toHaveBeenCalledWith('acc-1');
+    });
+
+    it('shows when a seat of a crew job in progress marked its part done, and not yet on the other', () => {
+      details.mockReturnValue(
+        of(
+          OrderItem.fromJS({
+            ...crewOrder().toJSON(),
+            orderStatus: { type: 'order_status', name: 'InProgress', value: OrderStatus.InProgress },
+            assignedEmployees: [
+              { id: 'seat-1', employeeId: 'emp-1', fullName: 'Alice', completionConfirmedAt: '2026-10-27T10:40:00Z' },
+              { id: 'seat-2', employeeId: 'emp-2', fullName: 'Bob' },
+            ],
+          })
+        )
+      );
+      const fixture = render();
+
+      const marks = fixture.debugElement
+        .queryAll(By.css('.employee-card__completion'))
+        .map((cell) => (cell.nativeElement as HTMLElement).textContent?.replace(/\s+/g, ' ').trim() ?? '');
+      expect(marks).toHaveLength(2);
+      expect(marks[0]).toContain('pages.order_detail.completion.label');
+      expect(marks[0]).toMatch(/2026/);
+      expect(marks[1]).toContain('pages.order_detail.completion.pending');
     });
 
     it('renders no crew section for an order with no seats', () => {

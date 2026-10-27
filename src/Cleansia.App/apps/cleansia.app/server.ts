@@ -1,9 +1,10 @@
 import { AngularNodeAppEngine, createNodeRequestHandler, isMainModule, writeResponseToNodeResponse } from '@angular/ssr/node';
 import { ɵsetAngularAppEngineManifest } from '@angular/ssr';
-import { basename, dirname, resolve } from 'node:path';
+import { basename, dirname, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import compression from 'compression';
 import express from 'express';
+import { staticCacheControl } from './src/app/ssr/static-cache-control';
 
 const serverDistFolder = dirname(fileURLToPath(import.meta.url));
 const browserDistFolder = resolve(serverDistFolder, '../browser');
@@ -83,9 +84,12 @@ app.use(
 
 app.use(
   express.static(browserDistFolder, {
-    maxAge: '1y',
     index: false,
     redirect: false,
+    cacheControl: false,
+    setHeaders: (res, path) => {
+      res.setHeader('Cache-Control', staticCacheControl(relative(browserDistFolder, path)));
+    },
   }),
 );
 

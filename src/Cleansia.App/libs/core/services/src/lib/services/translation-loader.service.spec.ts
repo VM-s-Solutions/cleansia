@@ -1,4 +1,13 @@
-import { readPreferredLanguageCookie, resolveRequestLanguage } from './translation-loader.service';
+import { HttpClient, provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { TransferState } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import {
+  i18nStateKey,
+  JsonTranslationLoader,
+  readPreferredLanguageCookie,
+  resolveRequestLanguage,
+} from './translation-loader.service';
 
 /**
  * The server renders in the language the preference cookie names, and the browser must resolve the
@@ -60,5 +69,46 @@ describe('the browser resolves the language the server rendered with', () => {
     localStorage.setItem('preferred_language', 'uk');
 
     expect(readPreferredLanguageCookie(document.cookie) ?? localStorage.getItem('preferred_language')).toBe('uk');
+  });
+});
+
+/**
+ * The dictionary keeps one address for every build, so a copy a browser holds is only safe to use once
+ * the server has said it is still current: a stale one renders every newer key as the key itself.
+ */
+describe('JsonTranslationLoader in the browser', () => {
+  let http: HttpTestingController;
+
+  const createLoader = (): JsonTranslationLoader =>
+    TestBed.runInInjectionContext(() => new JsonTranslationLoader(TestBed.inject(HttpClient), true));
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
+    http = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => http.verify());
+
+  it('asks the server to revalidate any copy the browser holds before using it', () => {
+    let received: Record<string, unknown> | undefined;
+    createLoader().getTranslation('en').subscribe((dictionary) => (received = dictionary));
+
+    const request = http.expectOne('/assets/i18n/en.json');
+    expect(request.request.cache).toBe('no-cache');
+    request.flush({ auth: { login: { lead: 'Sign in to see your bookings' } } });
+
+    expect(received).toEqual({ auth: { login: { lead: 'Sign in to see your bookings' } } });
+  });
+
+  it('makes no request for the language the server render handed over', () => {
+    TestBed.inject(TransferState).set(i18nStateKey('cs'), { nav: { orders: 'Objednávky' } });
+    let received: Record<string, unknown> | undefined;
+
+    createLoader().getTranslation('cs').subscribe((dictionary) => (received = dictionary));
+
+    http.expectNone('/assets/i18n/cs.json');
+    expect(received).toEqual({ nav: { orders: 'Objednávky' } });
   });
 });

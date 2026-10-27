@@ -86,9 +86,11 @@ export class CheckoutSuccessComponent implements OnInit {
   );
 
   readonly routes = CleansiaCustomerRoute;
-  readonly ordersRoute = this.authService.isLoggedIn()
+  private readonly signedIn = this.authService.isLoggedIn();
+  readonly ordersRoute = this.signedIn
     ? '/' + CleansiaCustomerRoute.ORDERS
     : '/' + CleansiaCustomerRoute.TRACK_ORDER;
+  readonly ordersLabelKey = this.signedIn ? 'pages.checkout.success.view_orders' : 'nav.track_order';
 
   private readonly paymentType = toSignal(
     this.route.queryParamMap.pipe(map((params) => params.get('type') ?? 'card')),

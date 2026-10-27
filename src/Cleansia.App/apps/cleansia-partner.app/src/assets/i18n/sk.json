@@ -49,7 +49,9 @@
       "resend_code": "Znovu odoslať kód",
       "email_sent": "E-mail bol úspešne odoslaný",
       "verify_code": "Overiť kód",
-      "code_cooldown": "Potvrdzovací kód bol odoslaný. Počkajte prosím {{ cooldown }} sekúnd pred vyžiadaním nového kódu."
+      "code_cooldown": "Potvrdzovací kód bol odoslaný. Počkajte prosím {{ cooldown }} sekúnd pred vyžiadaním nového kódu.",
+      "password_lead": "Zvoľte si heslo, ktorým sa budete prihlasovať.",
+      "password_invalid": "Zvoľte si heslo, ktoré spĺňa pravidlá, a zadajte ho dvakrát rovnako."
     },
     "forgot_password": {
       "email": "E-mail",
@@ -388,6 +390,8 @@
       "assigned_employee": "Priradený partner",
       "employee_name": "Meno partnera",
       "employee_phone": "Telefón partnera",
+      "employee_finished": "Hotovo",
+      "employee_not_finished": "Zatiaľ nie",
       "notes_instructions": "Poznámky a inštrukcie",
       "notes": "Poznámky",
       "special_instructions": "Špeciálne inštrukcie",
@@ -483,6 +487,16 @@
         "reported_title": "Nahlásené: nedá sa dostať dnu",
         "reported_body": "Nahlásené o {{time}}. Administrátor to potvrdí; dovtedy zákazka zostáva bez zmeny.",
         "reported_calls": "Hovory: {{calls}}"
+      },
+      "crew_close": {
+        "mark_done": "Mám hotovo",
+        "mark_done_hint": "Keď bude vaša časť hotová, stlačte Mám hotovo. Keď to urobia všetci na tejto zákazke, ktokoľvek z vás ju môže dokončiť.",
+        "waiting": "Svoju časť máte označenú ako hotovú. Keď to urobia všetci na tejto zákazke, ktokoľvek z vás ju môže dokončiť.",
+        "ready": "Všetci na tejto zákazke majú svoju časť označenú ako hotovú. Ktokoľvek z vás ju teraz môže dokončiť.",
+        "needs_after_photo": "Všetci na tejto zákazke majú svoju časť označenú ako hotovú. Pridajte fotografiu po upratovaní a potom ju ktokoľvek z vás môže dokončiť.",
+        "complete_job": "Dokončiť zákazku",
+        "marked_done": "Označené ako hotové. Keď svoju časť označia všetci na tejto zákazke, ktokoľvek z vás ju môže dokončiť.",
+        "crew_done": "Označené ako hotové. Svoju časť už označili všetci na tejto zákazke."
       }
     },
     "invoices": {
@@ -1003,6 +1017,7 @@
       "completion_notes": {
         "too_long": "Poznámky k dokončeniu sú príliš dlhé"
       },
+      "crew_not_done": "Zákazku možno dokončiť, až keď svoju časť označia ako hotovú všetci, ktorí na nej pracujú.",
       "after_photos": {
         "required": "Fotografie po upratovaní sú povinné na dokončenie objednávky"
       },

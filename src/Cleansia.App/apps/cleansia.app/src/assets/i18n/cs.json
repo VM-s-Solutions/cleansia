@@ -1111,6 +1111,7 @@
       "filter_done": "Hotové",
       "filter_cancelled": "Zrušené",
       "fixed_price": "Pevná cena",
+      "guest_booking": "Objednávka hosta",
       "track": "Sledovat",
       "detail": "Detail",
       "book_cleaning": "Objednat úklid",
@@ -1202,6 +1203,7 @@
       "action_invoice": "Stáhnout fakturu",
       "action_report": "Něco nebylo v pořádku",
       "cancellation_note": "Zrušit zdarma šlo do {{hours}} hodin před úklidem.",
+      "guest_booking_note": "Objednávka byla vytvořena bez přihlášení na váš e-mail. Můžete ji zde sledovat, ale nelze ji ohodnotit ani u ní nahlásit problém.",
       "cancellation": {
         "action": "Zrušit objednávku",
         "title": "Zrušit tuto objednávku?",
@@ -1618,7 +1620,9 @@
       "verify_code": "Potvrdit kód",
       "email_sent": "E-mail byl úspěšně odeslán",
       "code_cooldown": "Kód potvrzení byl odeslán. Prosím, počkejte {{ cooldown }} sekund, než požádáte o nový kód.",
-      "change_email": "Změnit e-mail"
+      "change_email": "Změnit e-mail",
+      "password_lead": "Zvolte heslo, kterým se budete přihlašovat.",
+      "password_invalid": "Zvolte heslo, které splňuje pravidla, a zadejte ho dvakrát stejně."
     },
     "track_order": {
       "cancellation": {
@@ -1664,13 +1668,13 @@
       "recent_orders": "Nedávné objednávky",
       "lookup_another": "Vyhledat jinou objednávku",
       "manual_lookup": "Ruční vyhledávání",
-      "guest_limit": "Jako host je sledováno pouze posledních 5 objednávek na tomto zařízení. Vytvořte si účet pro přístup ke všem objednávkám odkudkoli.",
+      "guest_limit": "Jako host je sledováno pouze posledních 5 objednávek na tomto zařízení. Vytvořte si účet se stejným e-mailem a uvidíte všechny své objednávky odkudkoli.",
       "guest_cta": "Vytvořit účet",
       "view_details": "Zobrazit detail",
       "lead": "Účet k tomu nepotřebujete. Odkaz z potvrzovacího e-mailu otevře vaši objednávku — nic nemusíte vypisovat.",
       "retry": "Zkusit znovu",
       "have_account": "Máte účet?",
-      "sign_in": "Přihlaste se a uvidíte všechny objednávky najednou.",
+      "sign_in": "Přihlaste se a uvidíte všechny objednávky na svůj e-mail.",
       "axis_order": "Úklid",
       "axis_order_lead": "Co se děje s objednávkou.",
       "axis_payment": "Platba",
@@ -1678,7 +1682,7 @@
       "paid_done": "zaplaceno",
       "paid_after": "po úklidu",
       "need_help": "Potřebuji pomoc",
-      "guest_cta_lead": "Založte si účet a příště uvidíte všechny objednávky bez hledání čísla.",
+      "guest_cta_lead": "Založte si účet s e-mailem, na který jste objednávali, a příště uvidíte všechny objednávky bez hledání čísla.",
       "price_note_paid": "Pevná cena. Zaplaceno.",
       "price_note_cash": "Pevná cena. Zaplatíte uklízeči po úklidu.",
       "headline": {

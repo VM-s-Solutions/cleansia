@@ -6,11 +6,13 @@ import {
   DisputeDetails,
   DisputeListItem,
   DisputeSettlementPreference,
+  OrderListItem,
 } from '@cleansia/customer-services';
 import {
   CUSTOMER_DISPUTE_FEATURE_KEY,
   loadCustomerDisputeDetail,
   loadCustomerDisputes,
+  selectCustomerOrders,
 } from '@cleansia/customer-stores';
 import { SnackbarService } from '@cleansia/services';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
@@ -109,6 +111,32 @@ describe('DisputesFacade', () => {
     store = TestBed.inject(MockStore);
     dispatchSpy = jest.spyOn(store, 'dispatch');
     facade = TestBed.inject(DisputesFacade);
+  });
+
+  // A booking made without an account is listed in My orders but cannot be disputed from the account
+  // (CreateDispute answers order.not_found), so the dispute form never offers one.
+  describe('the orders a dispute can be opened on', () => {
+    const listed = (id: string, isGuestBooking?: boolean): OrderListItem =>
+      OrderListItem.fromJS({ id, displayOrderNumber: `CLS-${id}`, isGuestBooking });
+    let listing: DisputesFacade;
+
+    beforeEach(() => {
+      store.overrideSelector(selectCustomerOrders, [listed('own-1', false), listed('guest-1', true), listed('own-2')]);
+      listing = TestBed.runInInjectionContext(() => new DisputesFacade());
+    });
+
+    afterEach(() => store.resetSelectors());
+
+    it('leaves out the guest bookings the account lists', () => {
+      expect(listing.orders().map((order) => order.id)).toEqual(['own-1', 'own-2']);
+    });
+
+    it('offers only the account’s own bookings in the picker', () => {
+      expect(listing.orderOptions()).toEqual([
+        { label: '#CLS-own-1', value: 'own-1' },
+        { label: '#CLS-own-2', value: 'own-2' },
+      ]);
+    });
   });
 
   describe('status filter (D-10)', () => {

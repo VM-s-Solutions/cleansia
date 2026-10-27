@@ -50,9 +50,11 @@ export class CheckoutCancelComponent {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   readonly routes = CleansiaCustomerRoute;
-  readonly ordersRoute = this.authService.isLoggedIn()
+  private readonly signedIn = this.authService.isLoggedIn();
+  readonly ordersRoute = this.signedIn
     ? '/' + CleansiaCustomerRoute.ORDERS
     : '/' + CleansiaCustomerRoute.TRACK_ORDER;
+  readonly ordersLabelKey = this.signedIn ? 'pages.checkout.cancel.view_orders' : 'nav.track_order';
 
   /** Stripe's `CancelUrl` is built as `.../checkout/cancel?orderId={order.Id}`. */
   private readonly orderId = toSignal(

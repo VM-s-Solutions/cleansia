@@ -1,6 +1,6 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { ChangeDetectionStrategy, Component, AfterViewInit, computed, ElementRef, viewChild, NgZone, OnInit, PLATFORM_ID, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, Component, AfterViewInit, computed, DestroyRef, ElementRef, viewChild, NgZone, OnInit, PLATFORM_ID, inject, signal } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
@@ -22,6 +22,7 @@ import {
   getAppleIdApi,
   getGoogleIdApi,
   GOOGLE_CLIENT_ID,
+  GoogleIdApi,
   isAppleSignInCancelled,
 } from '@cleansia/services';
 import { Store } from '@ngrx/store';
@@ -70,6 +71,7 @@ export class RegisterComponent implements OnInit, AfterViewInit {
   protected readonly loading = toSignal(this.store.select(selectCustomerLoading));
   protected routes = CleansiaCustomerRoute;
   private readonly zone = inject(NgZone);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   /**
@@ -224,20 +226,28 @@ export class RegisterComponent implements OnInit, AfterViewInit {
       },
     });
 
-    const btnEl = this.googleBtnRef()?.nativeElement;
-    if (btnEl) {
-      // GSI's `width` rejects percentage strings — needs an integer pixel
-      // value, max 400. Measure the container; fall back to 400 if hidden.
-      const measured = (btnEl as HTMLElement).clientWidth;
-      const width = Math.min(measured > 0 ? measured : 400, 400);
-      googleId.renderButton(btnEl, {
-        theme: 'outline',
-        size: 'large',
-        width,
-        text: 'continue_with',
-        shape: 'rectangular',
-      });
-    }
+    this.renderGoogleButton(googleId);
+    this.translate.onLangChange
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.renderGoogleButton(googleId));
+  }
+
+  private renderGoogleButton(googleId: GoogleIdApi): void {
+    const btnEl = this.googleBtnRef()?.nativeElement as HTMLElement | undefined;
+    if (!btnEl) return;
+    // GSI's `width` rejects percentage strings — needs an integer pixel
+    // value, max 400. Measure the container; fall back to 400 if hidden.
+    const measured = btnEl.clientWidth;
+    const width = Math.min(measured > 0 ? measured : 400, 400);
+    btnEl.replaceChildren();
+    googleId.renderButton(btnEl, {
+      theme: 'outline',
+      size: 'large',
+      width,
+      text: 'continue_with',
+      shape: 'rectangular',
+      locale: this.translate.currentLang || this.translate.getDefaultLang(),
+    });
   }
 
   private _appleRetries = 0;

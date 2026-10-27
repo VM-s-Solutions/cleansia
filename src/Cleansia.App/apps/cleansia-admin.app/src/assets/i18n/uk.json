@@ -845,7 +845,11 @@
         "photo_hint": "У розділі «Фотографії замовлення»"
       },
       "entrance_photos": "Фото входу",
-      "entrance": "Вхід"
+      "entrance": "Вхід",
+      "completion": {
+        "label": "Позначено як готове",
+        "pending": "Ще ні"
+      }
     },
     "invoice_management": {
       "title": "Управління рахунками",

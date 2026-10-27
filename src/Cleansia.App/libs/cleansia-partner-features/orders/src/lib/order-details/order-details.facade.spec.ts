@@ -7,6 +7,8 @@ import {
   DropOrderResponse,
   MarkCashCollectedCommand,
   MarkCashCollectedResponse,
+  MarkMyPartDoneCommand,
+  MarkMyPartDoneResponse,
   OrderItem,
   OrderStatus,
   PartnerClient,
@@ -81,6 +83,7 @@ describe('OrderDetailsFacade', () => {
   let orderClient: {
     dropOrder: jest.Mock;
     markCashCollected: jest.Mock;
+    markMyPartDone: jest.Mock;
     reportCashNotPaid: jest.Mock;
     takeOrder: jest.Mock;
     startOrder: jest.Mock;
@@ -123,6 +126,7 @@ describe('OrderDetailsFacade', () => {
     orderClient = {
       dropOrder: jest.fn(),
       markCashCollected: jest.fn(),
+      markMyPartDone: jest.fn(),
       reportCashNotPaid: jest.fn(),
       takeOrder: jest.fn(),
       startOrder: jest.fn(),
@@ -425,6 +429,21 @@ describe('OrderDetailsFacade', () => {
       expect(dialogService.open).not.toHaveBeenCalled();
     });
 
+    // Someone can still take a seat on a job in progress, unmarked, after the page showed Complete.
+    it('re-reads the order when Complete is refused because not everyone on the job has marked', () => {
+      const facade = createFacade();
+      facade.orderDetails.set(buildOrder());
+      facade.currentEmployeeId.set(EMPLOYEE_ID);
+
+      facade.completeOrder();
+      actions$.next(
+        OrderActions.completeOrderFailure({ error: refusal('order.crew_not_done') as never })
+      );
+
+      expect(orderClient.getById).toHaveBeenCalledWith(ORDER_ID);
+      expect(dialogService.open).not.toHaveBeenCalled();
+    });
+
     it('re-reads the order when Complete succeeds', () => {
       const facade = createFacade();
       facade.orderDetails.set(buildOrder());
@@ -437,6 +456,89 @@ describe('OrderDetailsFacade', () => {
 
       expect(orderClient.getById).toHaveBeenCalledWith(ORDER_ID);
       expect(dialogService.open).not.toHaveBeenCalled();
+    });
+  });
+
+  // Owner ruling 2026-10-26: each cleaner on a crew job marks their own part done; the shared Complete
+  // appears once everyone has, which the re-read shows.
+  describe('marking my part of a crew job done', () => {
+    const marked = (crewDone: boolean) =>
+      of(
+        MarkMyPartDoneResponse.fromJS({
+          orderId: ORDER_ID,
+          completionConfirmedAt: '2026-10-27T10:40:00Z',
+          crewDone,
+        })
+      );
+
+    it('marks the seat with the order id as the whole body', () => {
+      orderClient.markMyPartDone.mockReturnValue(marked(false));
+      const facade = createFacade();
+      facade.orderDetails.set(buildOrder());
+
+      facade.markMyPartDone();
+
+      const command: MarkMyPartDoneCommand = orderClient.markMyPartDone.mock.calls[0][0];
+      expect(command).toBeInstanceOf(MarkMyPartDoneCommand);
+      expect(command.toJSON()).toEqual({ orderId: ORDER_ID });
+    });
+
+    it('says the job waits for the others while someone has not marked, and re-reads it', () => {
+      orderClient.markMyPartDone.mockReturnValue(marked(false));
+      const facade = createFacade();
+      facade.orderDetails.set(buildOrder());
+
+      facade.markMyPartDone();
+
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith('pages.order_details.crew_close.marked_done');
+      expect(orderClient.getById).toHaveBeenCalledWith(ORDER_ID);
+      expect(facade.loading()).toBe(false);
+    });
+
+    it('says the job can now be completed when the caller was the last to mark, and re-reads it', () => {
+      orderClient.markMyPartDone.mockReturnValue(marked(true));
+      const facade = createFacade();
+      facade.orderDetails.set(buildOrder());
+
+      facade.markMyPartDone();
+
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith('pages.order_details.crew_close.crew_done');
+      expect(orderClient.getById).toHaveBeenCalledWith(ORDER_ID);
+    });
+
+    it('re-reads the job after a refusal, leaving the translated toast to the interceptor', () => {
+      orderClient.markMyPartDone.mockReturnValue(throwError(() => refusal('order.not_in_progress')));
+      const facade = createFacade();
+      facade.orderDetails.set(buildOrder());
+
+      facade.markMyPartDone();
+
+      expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
+      expect(snackbar.showApiError).not.toHaveBeenCalled();
+      expect(orderClient.getById).toHaveBeenCalledWith(ORDER_ID);
+      expect(facade.loading()).toBe(false);
+    });
+
+    it('keeps the job sheet when the call never reached the server', () => {
+      orderClient.markMyPartDone.mockReturnValue(
+        throwError(() => new HttpErrorResponse({ status: 0, statusText: 'Unknown Error' }))
+      );
+      const facade = createFacade();
+      facade.orderDetails.set(buildOrder());
+
+      facade.markMyPartDone();
+
+      expect(orderClient.getById).not.toHaveBeenCalled();
+      expect(facade.loading()).toBe(false);
+    });
+
+    it('sends nothing without an order', () => {
+      const facade = createFacade();
+
+      facade.markMyPartDone();
+
+      expect(orderClient.markMyPartDone).not.toHaveBeenCalled();
+      expect(snackbar.showErrorTranslated).toHaveBeenCalledWith('global.messages.orders.invalid_request');
     });
   });
 

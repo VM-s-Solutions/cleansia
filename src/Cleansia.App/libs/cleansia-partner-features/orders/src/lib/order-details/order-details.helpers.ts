@@ -136,12 +136,54 @@ export function canStartOrder(
   return isReadyToStart && isEmployeeAssigned(assignedEmployees, employeeId);
 }
 
+// A one-cleaner job completes on its cleaner's one tap; a crew job once every seat still on it is
+// marked done (owner ruling 2026-10-26), which is when the server stops answering order.crew_not_done.
 export function canCompleteOrder(
   orderStatusValue: number,
   assignedEmployees: AssignedEmployeeDto[] | undefined,
   employeeId: string
 ): boolean {
-  return orderStatusValue === OrderStatus.InProgress && isEmployeeAssigned(assignedEmployees, employeeId);
+  if (orderStatusValue !== OrderStatus.InProgress || !isEmployeeAssigned(assignedEmployees, employeeId)) {
+    return false;
+  }
+  const seats = assignedEmployees ?? [];
+  return seats.length < 2 || seats.every((seat) => !!seat?.completionConfirmedAt);
+}
+
+export enum CrewCloseStanding {
+  Hidden,
+  MarkDone,
+  WaitingForCrew,
+  ReadyToComplete,
+}
+
+const CREW_CLOSE_LINE_KEYS: Readonly<Record<CrewCloseStanding, string | null>> = {
+  [CrewCloseStanding.Hidden]: null,
+  [CrewCloseStanding.MarkDone]: 'pages.order_details.crew_close.mark_done_hint',
+  [CrewCloseStanding.WaitingForCrew]: 'pages.order_details.crew_close.waiting',
+  [CrewCloseStanding.ReadyToComplete]: 'pages.order_details.crew_close.ready',
+};
+
+export function crewCloseLineKey(standing: CrewCloseStanding, hasAfterPhotos: boolean): string | null {
+  if (standing === CrewCloseStanding.ReadyToComplete && !hasAfterPhotos) {
+    return 'pages.order_details.crew_close.needs_after_photo';
+  }
+  return CREW_CLOSE_LINE_KEYS[standing];
+}
+
+// Mirrors MarkMyPartDone: a cleaner on the crew of a job in progress marks their own seat.
+export function crewCloseStanding(order: OrderItem, employeeId: string): CrewCloseStanding {
+  const seats = order.assignedEmployees ?? [];
+  const mine = seats.find((seat) => seat?.employeeId === employeeId);
+  if (order.orderStatus?.value !== OrderStatus.InProgress || seats.length < 2 || !mine) {
+    return CrewCloseStanding.Hidden;
+  }
+  if (!mine.completionConfirmedAt) {
+    return CrewCloseStanding.MarkDone;
+  }
+  return seats.every((seat) => !!seat?.completionConfirmedAt)
+    ? CrewCloseStanding.ReadyToComplete
+    : CrewCloseStanding.WaitingForCrew;
 }
 
 // DropOrder refuses a job under way (owner ruling 2026-10-25); the app offers it only before (owner

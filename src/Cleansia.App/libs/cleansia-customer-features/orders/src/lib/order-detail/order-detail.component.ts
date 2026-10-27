@@ -114,6 +114,7 @@ export class OrderDetailComponent implements OnInit {
   readonly reviewSubmitting = this.facade.reviewSubmitting;
   readonly downloading = this.facade.downloading;
 
+  readonly isGuestBooking = this.facade.isGuestBooking;
   readonly canCancel = this.facade.canCancel;
   readonly canReportCleanerNoShow = this.facade.canReportCleanerNoShow;
   readonly tookNoCardPayment = this.facade.tookNoCardPayment;

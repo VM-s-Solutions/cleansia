@@ -279,6 +279,11 @@ $auth-foot: 20px;
   margin: calc(0.375 * var(--cl-u)) 0 0;
 }
 
+.cl-auth__password-lead {
+  text-align: center;
+  margin: calc(0.25 * var(--cl-u)) 0 0;
+}
+
 // The password rules. All of them, always, at a fixed height — satisfying one
 // must not reflow the card underneath it. The state is carried by the GLYPH
 // rather than by colour alone, and a met rule is Sky700 rather than green:

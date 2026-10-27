@@ -845,7 +845,11 @@
         "photo_hint": "V časti Fotografie objednávky"
       },
       "entrance_photos": "Fotografie vchodu",
-      "entrance": "Vchod"
+      "entrance": "Vchod",
+      "completion": {
+        "label": "Označené ako hotové",
+        "pending": "Zatiaľ nie"
+      }
     },
     "invoice_management": {
       "title": "Správa faktúr",

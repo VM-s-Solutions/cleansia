@@ -108,6 +108,9 @@
           >
             {{ order.orderStatus | orderStatusLabel }}
           </span>
+          @if (order.isGuestBooking) {
+          <span class="order-row__guest">{{ 'pages.orders.guest_booking' | translate }}</span>
+          }
         </div>
 
         <div class="order-row__facts">

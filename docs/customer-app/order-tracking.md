@@ -123,6 +123,16 @@ timestamp read off the order's own `statusHistory` rather than inferred (an orde
 a cash job confirmed and started in one motion — and a timeline that infers timestamps invents them).
 `Pending` is deliberately absent: it has no production writer.
 
+**The axis is read off the booking's latest pass** (since the fix plan of 2026-10-25). A booking whose
+last cleaner left goes back to `New` ([When a cleaner leaves](/product/business-rules#crew-lost)), so
+its history can read *New, Confirmed, New*. `statusReachedAt(history, status)`
+(`order-status-history.models.ts`, shared by this page and the signed-in order page) sorts the rows by
+`createdOn` and reads a status from the rows from the last `New` on, and *Received* from the first `New`
+row, so it keeps the booking's own time. After a walk-back *Confirmed* is no longer ticked under a current
+*Received*, also when the sweep later cancels the booking, and after a re-take it is dated by the new
+take. Until then any `Confirmed` row ticked it, dated by the first take. The Android and iOS apps list
+the history instead, once per pass and with the walk-back named *Offered to cleaners again*.
+
 The **payment axis** carries no timestamps. The guest lookup returns `statusHistory` for the order
 only; the payment has no history of its own on the response, and borrowing the order's clock would
 date a different event. Its rows say what state the money is in and what happens next.

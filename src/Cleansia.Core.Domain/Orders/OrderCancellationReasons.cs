@@ -34,7 +34,8 @@ public static class OrderCancellationReasons
 
     /// <summary>
     /// The booking reached its slot with nobody assigned to it. Nobody ever took the job, or everyone
-    /// who had taken it came off before the clean.
+    /// who had taken it came off before the clean. An administrator's no-show confirmation records it too:
+    /// after the start, or before it on a booking nobody is on.
     ///
     /// <para><b>The one no-show the platform can prove.</b> Every other version of "the cleaner did not
     /// arrive" rests on a missed tap, which is indistinguishable from a cleaner who turned up and forgot

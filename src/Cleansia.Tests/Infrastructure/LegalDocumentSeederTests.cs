@@ -46,8 +46,10 @@ public sealed class LegalDocumentSeederTests : IDisposable
         (LegalDocumentType.WorkContract, new DateOnly(2026, 9, 20)),
         (LegalDocumentType.WorkContract, new DateOnly(2026, 9, 29)),
         (LegalDocumentType.WorkContract, new DateOnly(2026, 10, 5)),
+        (LegalDocumentType.WorkContract, new DateOnly(2026, 10, 27)),
         (LegalDocumentType.CleanerFrameworkContract, new DateOnly(2026, 9, 29)),
         (LegalDocumentType.CleanerFrameworkContract, new DateOnly(2026, 10, 5)),
+        (LegalDocumentType.CleanerFrameworkContract, new DateOnly(2026, 10, 27)),
         (LegalDocumentType.SelfBillingAgreement, new DateOnly(2026, 9, 29)),
         (LegalDocumentType.SelfBillingAgreement, new DateOnly(2026, 10, 5)),
         (LegalDocumentType.CleanerDataProcessingAgreement, new DateOnly(2026, 9, 29)),
@@ -512,9 +514,29 @@ public sealed class LegalDocumentSeederTests : IDisposable
     public void The_Newest_Version_Carries_None_Of_The_Wording_The_2026_10_04_Rulings_Retired(
         LegalDocumentType type, string replaced, int section, int block)
     {
-        var all = LegalSeedResource.ReadAll().Where(r => r.Type == type).ToList();
-        var retired = all
-            .Where(r => r.EffectiveFrom == DateOnly.Parse(replaced, CultureInfo.InvariantCulture))
+        AssertTheNewestVersionCarriesNoneOf(type, replaced, section, block);
+    }
+
+    /// <summary>
+    /// Owner ruling 2026-10-25: a cleaner releases a job only until it is on the way or in progress and no later
+    /// than its start, so the newest agreement no longer lets a job go at any time before it is finished or
+    /// declines every placement by releasing it, and the newest contract for work leaves the decline to the
+    /// agreement. Each row names a block of the replaced version as the 2026-10-04 rows do.
+    /// </summary>
+    [Theory]
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "2026-10-05", 6, 4)] // a placement is declined by releasing the job
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "2026-10-05", 6, 5)] // a job is released at any time before it is finished
+    [InlineData(LegalDocumentType.WorkContract, "2026-10-05", 2, 1)]             // a placement is declined by releasing the job
+    public void The_Newest_Version_Carries_None_Of_The_Wording_The_2026_10_25_Ruling_Retired(
+        LegalDocumentType type, string replaced, int section, int block)
+    {
+        AssertTheNewestVersionCarriesNoneOf(type, replaced, section, block);
+    }
+
+    private static void AssertTheNewestVersionCarriesNoneOf(LegalDocumentType type, string replaced, int section, int block)
+    {
+        var retired = LegalSeedResource.ReadAll()
+            .Where(r => r.Type == type && r.EffectiveFrom == DateOnly.Parse(replaced, CultureInfo.InvariantCulture))
             .ToDictionary(r => r.Language, r => BlocksOf(r.ContentMarkdown, section)[block]);
         var newest = NewestOf(type);
 

@@ -10,6 +10,7 @@ public static class AdminNotificationEventCatalog
 {
     public const string OrderNew = "admin.order.new";
     public const string OrderCrewLost = "admin.order.crew_lost";
+    public const string OrderCrewShort = "admin.order.crew_short";
     public const string OrderCleanerNotStarted = "admin.order.cleaner_not_started";
     public const string OrderNoCleanerYet = "admin.order.no_cleaner_yet";
     public const string OrderLockoutReported = "admin.order.lockout_reported";
@@ -31,6 +32,7 @@ public static class AdminNotificationEventCatalog
     [
         OrderNew,
         OrderCrewLost,
+        OrderCrewShort,
         OrderCleanerNotStarted,
         OrderNoCleanerYet,
         OrderLockoutReported,

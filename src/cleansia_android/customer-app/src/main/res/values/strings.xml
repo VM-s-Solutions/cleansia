@@ -286,6 +286,7 @@
     <string name="order_detail_review_comment">Add a comment (optional)</string>
     <string name="order_detail_submit_review">Submit review</string>
     <string name="order_detail_timeline">Status timeline</string>
+    <string name="order_detail_timeline_new_cleaner">Offered to cleaners again</string>
     <string name="order_detail_rebook">Rebook this cleaning</string>
     <string name="order_detail_download_receipt">Download receipt</string>
     <string name="order_detail_report_issue">Report an issue</string>
@@ -1352,8 +1353,8 @@
     <string name="notification_order_payment_confirmed_body">Your booking #%1$s is confirmed. Tap to see the details.</string>
     <string name="notification_cleaner_assigned_title">Cleaner found! 🎉</string>
     <string name="notification_cleaner_assigned_body">A cleaner is assigned to your booking #%1$s. Tap to see the details.</string>
-    <string name="notification_order_cleaner_released_title">Your cleaner can no longer come</string>
-    <string name="notification_order_cleaner_released_body">We\'re looking for another cleaner for booking #%1$s and will let you know as soon as one takes it.</string>
+    <string name="notification_order_cleaner_released_title">A cleaner can no longer come</string>
+    <string name="notification_order_cleaner_released_body">We\'re offering booking #%1$s to our cleaners again and will let you know as soon as one takes it.</string>
     <string name="notification_order_starting_soon_title">Cleaning starts soon</string>
     <string name="notification_order_starting_soon_body">Your booking #%1$s starts in about an hour. Tap to see the details.</string>
     <string name="notification_order_preferred_offer_closed_title">Your booking is open to all cleaners</string>
@@ -1369,7 +1370,7 @@
     <string name="notification_order_refunded_title">Refund on its way</string>
     <string name="notification_order_refunded_body">Your refund for booking #%1$s is being processed.</string>
     <string name="notification_order_no_cleaner_refunded_title">No cleaner was available</string>
-    <string name="notification_order_no_cleaner_refunded_body">Nobody was able to take booking #%1$s, so we have refunded it in full and added %2$s credit towards your next clean. Sorry.</string>
+    <string name="notification_order_no_cleaner_refunded_body">No cleaner could make it to booking #%1$s, so we have refunded it in full and added %2$s credit towards your next clean. Sorry.</string>
     <string name="notification_order_no_cleaner_refund_pending_title">No cleaner was available</string>
     <string name="notification_order_no_cleaner_refund_pending_body">No cleaner could make it to booking #%1$s, so we have cancelled it. Your refund is on its way, and we have added %2$s credit towards your next clean. Sorry.</string>
     <string name="notification_order_no_cleaner_nothing_charged_title">No cleaner was available</string>
@@ -1455,6 +1456,7 @@
     <string name="error_country_not_existing_id">Country not found</string>
     <string name="error_currency_invalid">Invalid currency</string>
     <string name="error_country_not_serviced">We don\'t operate in this country yet.</string>
+    <string name="error_city_not_serviced">We don\'t currently serve this city.</string>
     <string name="error_tenant_not_found">This market is not operated by any Cleansia company yet.</string>
     <string name="error_tenant_archived">This company\'s records are sealed for archive; nothing about them can be changed any more.</string>
     <string name="error_order_country_operator_mismatch">This address is served by another Cleansia company and cannot be booked from this account.</string>

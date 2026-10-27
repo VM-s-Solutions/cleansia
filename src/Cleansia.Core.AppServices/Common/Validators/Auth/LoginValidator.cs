@@ -16,9 +16,9 @@ namespace Cleansia.Core.AppServices.Common.Validators.Auth;
 /// account never evaluates the password) and the failed-login counting are defined once here. Each
 /// host's login command — Login, PartnerLogin, AdminLogin — derives from this with its own field
 /// selectors; the per-host profile gate lives in the handler, not here. An unknown address, an account
-/// that signs in with Google or Apple and a wrong password all get the same refusal, and each costs one
-/// password-hash derivation, so neither the answer nor its timing tells a caller whether an address is
-/// registered or how it signs in.
+/// that signs in with Google or Apple, an account left with no password and a wrong password all get the
+/// same refusal, and each costs one password-hash derivation, so neither the answer nor its timing tells a
+/// caller whether an address is registered or how it signs in.
 /// All user reads go through the IgnoringTenant variants: login is anonymous (no tenant claim), so the
 /// global tenant filter would otherwise hide every tenant-stamped account.
 /// </summary>
@@ -113,7 +113,11 @@ public abstract class LoginValidator<TCommand> : BaseAuthValidator<TCommand>
             return false;
         }
 
-        if (password.CheckIfPasswordSame(userEntity.Password!))
+        if (userEntity.Password is null)
+        {
+            _ = password.CheckIfPasswordSame(NoAccountPasswordHash);
+        }
+        else if (password.CheckIfPasswordSame(userEntity.Password))
         {
             return true;
         }

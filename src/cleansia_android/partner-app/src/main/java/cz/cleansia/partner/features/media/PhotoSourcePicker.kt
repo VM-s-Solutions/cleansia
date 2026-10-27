@@ -4,6 +4,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.Settings
+import androidx.annotation.StringRes
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material3.AlertDialog
@@ -51,13 +53,13 @@ fun interface PhotoSourcePicker {
 }
 
 /**
- * Camera-or-gallery picking, shared by the two partner surfaces that take a photo: the job
- * before/after rails and the profile avatar.
+ * Camera-or-gallery picking, shared by the partner surfaces that take a photo: the job before/after
+ * rails, the profile avatar and the documents screen, which adds a file row through [onChooseFile].
  *
- * Extracted rather than inlined because there are two callers today and the interesting part is
- * not the sheet — it is the four states underneath it that are easy to get wrong once and
- * impossible to keep right twice: no camera hardware, permission not yet asked, permission
- * permanently denied, and a capture the user backed out of.
+ * Extracted rather than inlined because the interesting part is not the sheet — it is the four
+ * states underneath it that are easy to get wrong once and impossible to keep right twice: no camera
+ * hardware, permission not yet asked, permission permanently denied, and a capture the user backed
+ * out of. A cancel at any of them calls nothing back.
  *
  * **Job photos are [cameraOnly].** A gallery photo is by definition a copy already on the device,
  * and may be an old one, so the job rails get no sheet and no gallery; a device without a camera
@@ -71,13 +73,15 @@ fun interface PhotoSourcePicker {
  * [purgeCaptures] on the next start.
  *
  * **The device may have no camera.** `required="false"` on the manifest's `uses-feature` keeps the
- * app installable on such a device, so for the avatar the sheet is skipped and the gallery opens
- * directly rather than offering an option that would fail.
+ * app installable on such a device, so the sheet drops the camera row, and when the gallery is then
+ * the only source it opens directly rather than behind a sheet with one option.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun rememberPhotoSourcePicker(
     cameraOnly: Boolean = false,
+    @StringRes title: Int = R.string.photo_source_title,
+    onChooseFile: (() -> Unit)? = null,
     onPickerUnavailable: () -> Unit = {},
     onPicked: (Uri) -> Unit,
 ): PhotoSourcePicker {
@@ -85,6 +89,7 @@ fun rememberPhotoSourcePicker(
     val hasCamera = remember(context) {
         context.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)
     }
+    val sources = photoSourceOptions(hasCamera = hasCamera, offersFile = onChooseFile != null)
 
     var showSheet by remember { mutableStateOf(false) }
     var showPermissionDialog by remember { mutableStateOf(false) }
@@ -143,27 +148,39 @@ fun rememberPhotoSourcePicker(
         ) {
             Column(Modifier.navigationBarsPadding().padding(bottom = 12.dp)) {
                 Text(
-                    text = stringResource(R.string.photo_source_title),
+                    text = stringResource(title),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
                 )
-                SourceOption(
-                    icon = Icons.Outlined.PhotoCamera,
-                    label = stringResource(R.string.take_photo),
-                    onClick = {
-                        showSheet = false
-                        requestCamera.launch(android.Manifest.permission.CAMERA)
-                    },
-                )
-                SourceOption(
-                    icon = Icons.Outlined.PhotoLibrary,
-                    label = stringResource(R.string.choose_from_gallery),
-                    onClick = {
-                        showSheet = false
-                        openGallery()
-                    },
-                )
+                sources.forEach { source ->
+                    when (source) {
+                        PhotoSource.Camera -> SourceOption(
+                            icon = Icons.Outlined.PhotoCamera,
+                            label = stringResource(R.string.take_photo),
+                            onClick = {
+                                showSheet = false
+                                requestCamera.launch(android.Manifest.permission.CAMERA)
+                            },
+                        )
+                        PhotoSource.Gallery -> SourceOption(
+                            icon = Icons.Outlined.PhotoLibrary,
+                            label = stringResource(R.string.choose_from_gallery),
+                            onClick = {
+                                showSheet = false
+                                openGallery()
+                            },
+                        )
+                        PhotoSource.File -> SourceOption(
+                            icon = Icons.Outlined.Description,
+                            label = stringResource(R.string.document_choose_file),
+                            onClick = {
+                                showSheet = false
+                                onChooseFile?.invoke()
+                            },
+                        )
+                    }
+                }
             }
         }
     }
@@ -207,11 +224,21 @@ fun rememberPhotoSourcePicker(
         when {
             cameraOnly && hasCamera -> requestCamera.launch(android.Manifest.permission.CAMERA)
             cameraOnly -> showNoCameraDialog = true
-            hasCamera -> showSheet = true
+            sources.size > 1 -> showSheet = true
             else -> openGallery()
         }
     }
 }
+
+internal enum class PhotoSource { Camera, Gallery, File }
+
+/** The sheet's rows. A device without a camera gets no camera row rather than one that would fail. */
+internal fun photoSourceOptions(hasCamera: Boolean, offersFile: Boolean): List<PhotoSource> =
+    listOfNotNull(
+        PhotoSource.Camera.takeIf { hasCamera },
+        PhotoSource.Gallery,
+        PhotoSource.File.takeIf { offersFile },
+    )
 
 /**
  * A fresh file in `cacheDir/camera/`, exposed through the FileProvider the invoice viewer already

@@ -316,6 +316,16 @@ can book a market also depends on its company →
 [Security rules — S10](/architecture/security-rules#s10-soft-delete-isactive-semantics),
 [A company's lifecycle](/product/business-rules#company-lifecycle).
 
+**A service city's ZIP prefix decides by postcode** (since the fix plan of 2026-10-25). Until then the
+field was stored and never read, and its hint said so. Now an address whose postcode is five digits
+counts as that city exactly when the postcode starts with the prefix, whatever city it names, and an
+address without one is matched by name; the hint says so in five languages and asks for a prefix that
+covers no other city. Only the Prague rows carry one (`1`). The field still takes any text up to 20
+characters, so a prefix with a letter or an inner space serves no valid postcode, and a whole postcode
+(the placeholder's `11000`) serves that postcode alone. Deleting `Praha` leaves `Prague` and the
+district rows, which still serve every Prague postcode.
+→ [Serviced cities](/product/business-rules#serviced-city)
+
 ## Mobile Responsiveness
 
 The admin app includes a mobile-optimized layout. On smaller screens, a **fixed mobile toolbar** is displayed with:

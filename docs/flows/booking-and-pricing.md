@@ -258,23 +258,38 @@ read, gets a receipt in the language they booked in. A recurring occurrence has 
 its own: its `LanguageCode` is null and its receipt follows the account's preference.
 → [What the receipt says](/flows/payment-and-fiscal#what-the-receipt-says)
 
-**So do the order's status e-mails, since 2026-10-01.** *A cleaner has taken your job* (`TakeOrder`),
-*started* (`StartOrder`) and *all done* (`CompleteOrder`) used to read the account's preferred
-language alone, so a customer whose stored preference was stale — a Google or Apple sign-up is stamped
-`en` — got a Czech confirmation followed by English status e-mails. They now resolve the order's
-language, then the account's preference, then English, the chain the booking confirmation already
-used: **one order, one language.** A booking language with no e-mail copy falls back to English, as
-the confirmation does. A customer who changes the app's language after booking keeps getting that
-order's e-mails in the language it was booked in. *We're finding you a new cleaner*, sent since
-2026-10-25 when the last cleaner leaves a confirmed booking (both release writers), resolves the same
-chain.
+**So do the order's status e-mails, since 2026-10-01.** The take's (`TakeOrder`), *started*
+(`StartOrder`) and *all done* (`CompleteOrder`) used to read the account's preferred language alone, so
+a customer whose stored preference was stale — a Google or Apple sign-up is stamped `en` — got a Czech
+confirmation followed by English status e-mails. They now resolve the order's language, then the
+account's preference, then English, the chain the booking confirmation already used: **one order, one
+language.** A booking language with no e-mail copy falls back to English, as the confirmation does. A
+customer who changes the app's language after booking keeps getting that order's e-mails in the
+language it was booked in. The release e-mail, sent since 2026-10-25 when a cleaner leaves a booking
+that has not started (both release writers), resolves the same chain.
 
-Started and Completed e-mails, and since 2026-10-25 *we're finding you a new cleaner*, are durable
-intents in the order's own commit — the release's, for the last. A refused commit sends nothing. The
-`send-email` consumer checks the committed current status — the last goes out only if the order is
-`New` when it is read, so a take or a cancellation in between sends none unless the order is back at
-`New` by then — and sends to the booking's `CustomerEmail`; for a guest it commits a fresh independent
-access token before sending the link. Delivery uses the existing send-then-record guard: sequential
+**And every one of them has its words in the five e-mail languages** (since the fix plan of 2026-10-25).
+Until then the take's, the started and the completed e-mails had no copy outside English, so a Czech
+booking got the right date and footer around an English *Order Confirmed*, *Cleaning Started* or
+*Cleaning Complete* and English labels. Each arm's title is now the e-mail's status label and the end of
+its subject, after the locale's *Order #*:
+
+| E-mail | Title — message (English) |
+|---|---|
+| A take that moves the booking to `Confirmed` | *Cleaner found* — *A cleaner has taken your booking.* — retitled from *Order Confirmed*, whose translation would repeat the booking e-mail's *Booking confirmed* in cs, sk, uk and ru (owner decision 2026-10-25, *"Confirm"*) |
+| A take after a walk-back | *We've found you a new cleaner* — *A new cleaner has taken your booking.* |
+| `StartOrder` | *Cleaning started* — *Your cleaning session has started.* |
+| `CompleteOrder` | *Cleaning complete* — *Your cleaning has been completed successfully.* |
+| A cleaner leaves | *A cleaner can no longer come* — *Your booking still stands. We're offering it to our cleaners again.* |
+
+An administrator's translation row for the status e-mail still wins over these defaults.
+
+Started and Completed e-mails, and since 2026-10-25 the release e-mail, are durable intents in the
+order's own commit — the release's, for the last. A refused commit sends nothing. The `send-email`
+consumer checks the committed current status — the release e-mail goes out only if the order has not
+started (`New` or `Confirmed`) and is still short of the cleaners it needs when it is read, so a refilled
+seat or a cancellation in between sends none — and sends to the booking's `CustomerEmail`; for a guest it
+commits a fresh independent access token before sending the link. Delivery uses the existing send-then-record guard: sequential
 redelivery sends once, while a crash between the external send and its delivery record can still
 duplicate an e-mail. Deploy the Functions consumer with or before API versions that publish the
 `order-status` or `order-cleaner-released` discriminator.
@@ -648,7 +663,7 @@ single booking it was minted for.
 |---|---|
 | `CreateOrder` | `guestAccessToken` on the checkout response — guest bookings only, `null` when the booking names an account |
 | The receipt e-mail | the *view your booking* button |
-| "A cleaner has taken your job" · "we're on our way" · "all done" · "we're finding you a new cleaner" | the same button on each status e-mail |
+| "Cleaner found" · "we've found you a new cleaner" · "we're on our way" · "all done" · "a cleaner can no longer come" | the same button on each status e-mail |
 | The cancellation e-mail | the same button |
 
 The link is `{clientDomain}/track-order?orderNumber=…&email=…&token=…`; only the `token` opens
@@ -723,8 +738,20 @@ two lines the guest's own cancel does not need:
 |---|---|
 | Why | Keyed on the reason **code**, never on an administrator's free text: *no cleaner was available* (`order.cancelled.no_cleaner_available`), *the payment wasn't completed* (`order.cancelled.payment_not_completed`), otherwise *we had to cancel this booking* |
 | Money | *Refund issued: {amount}* only with the amount a refund actually returned; *Nothing was charged* when the card was never charged (payment `Pending` or `Failed`); *Your refund is being processed* when the booking is still paid, so its refund was attempted and did not come back; otherwise nothing — a requested figure is never printed |
+| Credit | Only after a no-cleaner cancellation that issued the apology: *We have added {amount} credit towards your next clean.*, the amount in the e-mail's money format (since the fix plan of 2026-10-25) |
 
 The texts are in the e-mail's own defaults, in all five languages.
+
+**An account's booking gets the same e-mail in two cases** (since the fix plan of 2026-10-25): when the
+no-cleaner body cancels it — the unfilled sweep, or an administrator's no-show confirmation — and when
+an administrator cancels it. `GuestCancellationEmail.EnqueueAsync(…, alsoToAccount: true)` stages it on
+the same key, `email:guest-order-cancelled:{orderId}`; the consumer sends it to the booking's address in
+the booking's language, else the account's, with the order page's link, and revokes and mints no guest
+token for it. The other callers — the guest's own cancel, the stale-checkout sweep, the webhook's
+cancellation, an administrator's lockout confirmation and the wind-down — still send this e-mail to a
+guest only; the lockout has its own e-mail for an account, and the wind-down tells every live customer
+before it runs.
+→ [Business rules — when the platform cancels](/product/business-rules#platform-cancellation)
 
 **Shipped on every client.** The web track page, the Android customer app and the iOS customer app
 all draw the preview (tier, fee, refund estimate) before asking for confirmation, and all three key

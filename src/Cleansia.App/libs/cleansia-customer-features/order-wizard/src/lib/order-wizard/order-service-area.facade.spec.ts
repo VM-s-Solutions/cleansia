@@ -10,11 +10,11 @@ describe('OrderServiceAreaFacade', () => {
   let apiClient: { serviceCity: jest.Mock };
   let address: AddressDto;
 
-  function makeAddress(partial: Partial<{ city: string; countryId: string }> = {}): AddressDto {
+  function makeAddress(partial: Partial<{ city: string; zipCode: string; countryId: string }> = {}): AddressDto {
     return createAddressDto({
       street: 'Main 1',
       city: partial.city ?? 'Prague',
-      zipCode: '11000',
+      zipCode: partial.zipCode ?? '11000',
       countryId: partial.countryId ?? 'cz',
       state: '',
     });
@@ -107,6 +107,20 @@ describe('OrderServiceAreaFacade', () => {
       facade.refreshCheck();
 
       expect(apiClient.serviceCity).toHaveBeenCalledTimes(2);
+    });
+
+    it('reads the postcode against a ZIP prefix, and a corrected postcode lifts the refusal', () => {
+      apiClient.serviceCity.mockReturnValue(of([{ name: 'Praha', zipPrefix: '1' }]));
+      address = makeAddress({ city: 'Praha', zipCode: '602 00' });
+
+      facade.refreshCheck();
+      expect(facade.cityServiced()).toBe('rejected');
+
+      address = makeAddress({ city: 'Praha', zipCode: '110 00' });
+      facade.refreshCheck();
+
+      expect(apiClient.serviceCity).toHaveBeenCalledTimes(2);
+      expect(facade.cityServiced()).toBe('ok');
     });
 
     it('returns to idle when the city is cleared after a successful check', () => {

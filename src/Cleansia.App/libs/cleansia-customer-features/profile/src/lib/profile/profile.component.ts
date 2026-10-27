@@ -21,7 +21,7 @@ import {
 } from '@cleansia/components';
 import type { MapboxAddressSuggestion } from '@cleansia/services';
 import { LoyaltyTier, SavedAddressDto } from '@cleansia/customer-services';
-import { persistPreferredLanguage, ThemeService } from '@cleansia/services';
+import { CustomValidators, persistPreferredLanguage, ThemeService } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { InputTextModule } from 'primeng/inputtext';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -217,7 +217,7 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
     currentPassword: new FormControl('', [Validators.required]),
     newPassword: new FormControl('', [
       Validators.required,
-      Validators.pattern(/^(?=.*[a-zA-Z])(?=.*\d).{8,}$/),
+      CustomValidators.password(),
     ]),
     confirmPassword: new FormControl('', [Validators.required]),
   });
@@ -232,8 +232,8 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
     const pw = this.newPasswordValue();
     return {
       hasMinLength: pw.length >= 8,
-      hasLetter: /[a-zA-Z]/.test(pw),
-      hasNumber: /\d/.test(pw),
+      hasLetter: /\p{L}/u.test(pw),
+      hasNumber: /\p{Nd}/u.test(pw),
     };
   });
 

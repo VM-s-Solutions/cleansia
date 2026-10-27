@@ -694,7 +694,7 @@
         },
         "no_show": {
           "action": "Zrušiť ako nedostavenie sa upratovača",
-          "context": "Použite, keď pridelený upratovač neprišiel – potom, čo to zákazník nahlásil alebo prišlo upozornenie „Upratovač nezačal objednávku“. Najprv to overte u upratovača aj zákazníka.",
+          "context": "Použite, keď pridelený upratovač neprišiel – potom, čo to zákazník nahlásil alebo prišlo upozornenie „Upratovač nezačal objednávku“. Najprv to overte u upratovača aj zákazníka. Pri objednávke, ktorú nikto neprevzal, môžete túto akciu použiť aj pred začiatkom, keď je jasné, že sa upratovač nenájde: zákazník dostane rovnaké vrátenie platby a ospravedlňujúci kredit ako pri automatickom zrušení.",
           "confirm": "Objednávka sa zruší bez poplatku, platba kartou sa vráti v plnej výške, prihlásený zákazník dostane ospravedlňujúci kredit za nedostavenie sa a otvorený spor „služba nebola poskytnutá“ sa uzavrie. Akciu nie je možné vrátiť.",
           "submit": "Potvrdiť nedostavenie sa",
           "success": "Objednávka bola zrušená ako nedostavenie sa upratovača. {{refund}} {{credit}}",
@@ -1482,7 +1482,7 @@
         "name_placeholder": "napr. Bratislava, Košice, Žilina",
         "zip_prefix_label": "PSČ prefix (voliteľné)",
         "zip_prefix_placeholder": "napr. 1, 11, 11000",
-        "zip_prefix_hint": "Zatiaľ sa nevynucuje — zachytené pre budúcu prísnejšiu validáciu.",
+        "zip_prefix_hint": "Ak je vyplnený, adresa s päťmiestnym PSČ patrí k tomuto mestu, keď jej PSČ začína týmto prefixom, a inak nie, nech uvádza akékoľvek mesto; adresa bez päťmiestneho PSČ sa posudzuje podľa názvu. Použite len prefix, ktorý nepokrýva žiadne iné mesto.",
         "active_label": "Aktívne",
         "active": "Aktívne",
         "inactive": "Neaktívne"
@@ -2870,13 +2870,17 @@
                 "rejected": "účet upratovača bol zamietnutý"
               }
             },
+            "crew_short": {
+              "title": "Objednávka prišla o jedného z upratovačov",
+              "body": "Objednávka {{orderNumber}} dňa {{cleaningDateTime}} prišla o jedného z upratovačov — {{cause}}. Niekto na nej stále je a voľné miesto je späť na nástenke; ak ho nikto neprijme, upratovanie prebehne s menším počtom upratovačov, preto priraďte upratovača v objednávke."
+            },
             "cleaner_not_started": {
               "title": "Upratovač nezačal objednávku",
               "body": "Objednávka {{orderNumber}} bola objednaná na {{cleaningDateTime}} a nikto ju nezačal. Ak upratovač neprišiel, zrušte ju ako nedostavenie sa."
             },
             "no_cleaner_yet": {
               "title": "Objednávka stále nemá upratovača",
-              "body": "Na objednávke {{orderNumber}} dňa {{cleaningDateTime}} stále nikto nie je. Priraďte upratovača v objednávke; ak ju nikto neprijme, po začiatku sa automaticky zruší."
+              "body": "Na objednávke {{orderNumber}} dňa {{cleaningDateTime}} stále nikto nie je. Priraďte upratovača v objednávke; ak ju nikto neprijme, po začiatku sa automaticky zruší. Ak ju chcete zrušiť skôr, zrušte ju v objednávke ako nedostavenie sa: zákazník dostane rovnaké vrátenie platby a ospravedlňujúci kredit."
             },
             "lockout_reported": {
               "title": "Upratovač sa nemôže dostať dnu",

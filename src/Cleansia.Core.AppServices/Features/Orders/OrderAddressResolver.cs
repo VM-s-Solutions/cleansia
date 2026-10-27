@@ -35,7 +35,7 @@ public sealed class OrderAddressResolver(
         // anywhere within a serviced country. The country itself has
         // already been validated as IsServiced by ResolveAddressAsync.
         if (!await serviceCityRepository.CityIsServicedAsync(
-            address.CountryId, address.City, cancellationToken))
+            address.CountryId, address.City, address.ZipCode, cancellationToken))
         {
             return OrderAddressResolution.Fail(new Error(
                 nameof(address.City), BusinessErrorMessage.CityNotServiced));

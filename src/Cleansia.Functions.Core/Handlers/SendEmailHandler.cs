@@ -22,8 +22,8 @@ namespace Cleansia.Functions.Core.Handlers;
 /// notices, resolved by <see cref="EmailType"/>), the guest order cancellation, the booking
 /// confirmation, the admin notification, the receivable pay link, the lockout cancellation, the cash a
 /// customer did not pay at the door, the cleaner's copy of a contract for work, Started/Completed updates,
-/// and the notice that a booking's last cleaner left and another is being looked for. Each is sent via the
-/// existing <see cref="IEmailService"/> in the language the producer chose.
+/// and the notice that a cleaner left a booking, which is offered to cleaners again. Each is sent via the
+/// existing <see cref="IEmailService"/>.
 ///
 /// Idempotent via <see cref="IIdempotencyGuard"/> in ACT-THEN-CLAIM mode (at-least-once): non-claiming
 /// check on the deterministic key → send → claim. A FAILED send leaves the key unclaimed so the queue
@@ -241,9 +241,9 @@ public class SendEmailHandler(
 
         tenantProvider.SetTenantOverride(tenantId);
         var order = await orderRepository.GetQueryable()
-            .Include(o => o.Currency).Include(o => o.CustomerAddress)
+            .Include(o => o.Currency).Include(o => o.CustomerAddress).Include(o => o.User)
             .AsNoTracking()
-            .FirstOrDefaultAsync(o => o.Id == message.OrderId && o.UserId == null
+            .FirstOrDefaultAsync(o => o.Id == message.OrderId
                 && o.CurrentStatus == OrderStatus.Cancelled
                 && (o.CancelledBy == CancelledBy.Customer || o.CancelledBy == CancelledBy.Admin
                     || o.CancelledBy == CancelledBy.System), ct);
@@ -258,15 +258,20 @@ public class SendEmailHandler(
         // decision rather than opposite ones: cancelling withdraws every key that was outstanding, and
         // this — the last message the booking will ever send — carries the only one that still opens
         // it, so the customer can read what they were refunded. Committed before the send, so a crash
-        // after it cannot leave an e-mailed token with no row behind it.
+        // after it cannot leave an e-mailed token with no row behind it. An account's booking gets none:
+        // its link opens the order page the customer signs in to.
         var guestAccessToken = guestAccessTokenIssuer.IssueForGuest(order);
         if (guestAccessToken is not null)
         {
             await unitOfWork.CommitAsync(ct);
         }
 
+        var languageCode = order.UserId is null
+            ? message.LanguageCode
+            : EmailLocale.Resolve(order.LanguageCode ?? order.User?.PreferredLanguageCode ?? message.LanguageCode);
         await emailService.SendOrderStatusUpdateEmailAsync(order.CustomerEmail, order, "Cancelled",
-            message.LanguageCode, ct, message.SuccessfulRefundAmount, guestAccessToken);
+            languageCode, ct, message.SuccessfulRefundAmount, guestAccessToken,
+            apologyCreditAmount: message.ApologyCreditAmount);
         try
         {
             await idempotencyGuard.MarkProcessedAsync(key, ct);
@@ -311,8 +316,9 @@ public class SendEmailHandler(
         }
     }
 
-    // Act-then-claim like the shapes beside it. Sent only while the order is still back at New: a take since
-    // the release has sent the confirmed e-mail, and a cancelled booking has no cleaner to look for.
+    // Act-then-claim like the shapes beside it. Sent only while the job has not started and is still short of
+    // the cleaners it needs: a seat refilled since needs no notice, and a cancelled or started booking has no
+    // seat on offer.
     private async Task SendOrderCleanerReleasedAsync(
         SendOrderCleanerReleasedEmailMessage message, string? envelopeTenantId, CancellationToken ct)
     {
@@ -330,11 +336,13 @@ public class SendEmailHandler(
         var order = await orderRepository.GetQueryable()
             .Include(o => o.Currency).Include(o => o.CustomerAddress).Include(o => o.User)
             .AsNoTracking()
-            .FirstOrDefaultAsync(o => o.Id == message.OrderId && o.CurrentStatus == OrderStatus.New, ct);
+            .FirstOrDefaultAsync(o => o.Id == message.OrderId
+                && (o.CurrentStatus == OrderStatus.New || o.CurrentStatus == OrderStatus.Confirmed)
+                && o.AssignedEmployees.Count() < o.RequiredEmployees, ct);
         if (order is null || string.IsNullOrWhiteSpace(order.CustomerEmail)
             || order.CustomerEmail == AnonymizationMarker.Value)
         {
-            logger.LogWarning("Discarding cleaner-released e-mail: order {OrderId} has no eligible destination or is no longer at New", message.OrderId);
+            logger.LogWarning("Discarding cleaner-released e-mail: order {OrderId} has no eligible destination or is no longer short of cleaners before its start", message.OrderId);
             return;
         }
 

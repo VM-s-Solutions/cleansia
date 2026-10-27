@@ -76,12 +76,18 @@ The order detail page (`/orders/:id`) shows comprehensive order information thro
 | `OrderHeaderComponent` | Order number, status badge, action buttons |
 | `OrderStatusComponent` | Current status with status history timeline |
 | `OrderServiceDetailsComponent` | Service type, rooms, bathrooms, extras |
-| `OrderPackagesComponent` | Selected packages |
+| `OrderPackagesComponent` | Selected packages, each priced on a cash job only |
 | `OrderAdditionalServicesComponent` | Add-on services |
 | `OrderExtrasComponent` | Extra options |
 | `OrderCustomerInfoComponent` | Customer name, email, phone, address — while the job is live and for 24 h after completion; on a past or cancelled job a note says the customer's details were removed ([Execution and completion](/flows/execution-and-completion#crew-access)) |
-| `OrderPaymentInfoComponent` | Payment method, status, amount |
+| `OrderPaymentInfoComponent` | Payment type and currency, and the total on a cash job only |
 | `OrderPhotosComponent` | Before/after photo gallery with upload |
+
+**A cleaner sees the customer's price only on a cash job**, where it is the amount to collect (since the
+fix plan of 2026-10-25). The sheet's `showsCustomerPrice`, true for `PaymentType.Cash` alone — so a job
+with no payment type hides it too — feeds `[showsPrice]` to the payment and packages sections, on the page
+and on its printed copy. The cash-collected dialog still names the amount. It is display only: the
+API still sends the price → [Business rules — cleaner pay](/product/business-rules#cleaner-pay).
 
 ## Order Lifecycle: Take / Start / Complete
 
@@ -171,11 +177,15 @@ and `ContractStatus == Approved` (`employee.not_approved`). A rejected, still-pe
 cleaner is turned away. Document upload alone is not the gate. And while a partner document — the
 framework contract, the self-billing agreement, the data-processing agreement — is in force and its
 current version not accepted, the take is refused with `employee.legal_documents_not_accepted` and the
-page points to the profile, where the documents are read and accepted (none is seeded yet).
+page points to the profile, where the documents are read and accepted. All three are in force since
+2026-09-29, and a new version — the framework agreement `2026-10-27` — is accepted again before the
+next take → [Business rules — the legal texts](/product/business-rules#legal-texts).
 
 **Taken off a job by an administrator:** the job detail shows the reason the administrator gave, read
 from `GetMyAssignmentRemoval`; the notice itself carries only the order. A placement is an offer the
-partner may drop without consequence → [Business rules](/product/business-rules#placement-is-an-offer).
+partner may decline without consequence: by cancelling the job while it is `New` or `Confirmed` and its
+start is ahead, and otherwise by not accepting its contract for work and telling the company, as the
+framework agreement says since `2026-10-27` → [Business rules](/product/business-rules#placement-is-an-offer).
 
 **The contract for work** (ADR-0068) — a take without `acceptedWorkContractTextId` is
 `contract.not_accepted`, judged before existence; a text row that is not of this order's document is
@@ -262,7 +272,8 @@ others; the customer's booking is not cancelled (owner defaults 2026-10-24)
 - **Where it shows.** A *Cancel Job* button, outlined and marked as dangerous, in the actions row, while
   `canDropOrder(order, employeeId, Date.now())` in `order-details.helpers.ts` holds: the partner is on the
   crew, the job is `New` or `Confirmed`, no lockout has been reported, and its start (`cleaningDateTime`)
-  is still ahead; a job with no start, or one that does not read as a date, is judged without it. The
+  is still ahead (owner ruling 2026-10-25, *"Yup"*, on the apps closing *Cancel job* at the job's start);
+  a job with no start, or one that does not read as a date, is judged without it. The
   check reads the clock only when the page's copy of the job or of the partner changes, so nothing
   takes the button away at the start itself: it goes the next time the job is read, as on iOS, while
   Android hides it at the start.
@@ -291,7 +302,7 @@ job moved after the page last read it, as when a crew-mate sets off first: the i
 that key then shows and the job is read again ([ADR-0067](/decisions/adr-0067)). The page's gate is
 narrower in two ways only, the lockout report and the start; the server sets no limit at the start.
 Asking for cover (`RequestCover`) has no button.
-→ [Business rules — when the last cleaner leaves](/product/business-rules#crew-lost)
+→ [Business rules — when a cleaner leaves](/product/business-rules#crew-lost)
 
 ### Elapsed Timer
 

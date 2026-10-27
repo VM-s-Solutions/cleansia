@@ -263,6 +263,7 @@ public class UpdateRecurringBookingMembershipGuardTests
         new(_templateRepository.Object, _membershipRepository.Object, _session.Object,
             _orderRepository.Object, _savedAddressRepository.Object,
             OrderMarketDoubles.Trading(CreateOrderTestData.DefaultCurrency()), OrderMarketDoubles.Servicing("country-cz"),
+            OrderMarketDoubles.EveryCityServiced(),
             services ?? CatalogueDoubles.Services(), packages ?? CatalogueDoubles.Packages(),
             Mock.Of<IReceivableRepository>());
 

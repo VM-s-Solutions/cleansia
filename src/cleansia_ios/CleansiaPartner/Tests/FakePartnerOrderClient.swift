@@ -345,7 +345,8 @@ extension PendingOfferItem {
             rooms: 2,
             bathrooms: 1,
             totalPrice: 1200,
-            currencyCode: "CZK"
+            currencyCode: "CZK",
+            estimatedCleanerPay: 600
         )
     }
 }

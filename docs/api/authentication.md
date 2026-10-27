@@ -86,7 +86,9 @@ POST /api/Auth/Register          # Customer :5003, Customer Mobile :5004
   across the holding (`user.existing_email`; the check reads across companies on purpose, and the
   global unique index on `Users.Email` arbitrates the race two simultaneous registrations cannot see)
 - First/last name required
-- Password must meet complexity requirements
+- Password: at least 8 characters, with a letter and a digit (`auth.invalid_password_format`); a letter
+  of any alphabet counts since the fix plan of 2026-10-25 (`\p{L}`, so *Пароль2024* is accepted), where
+  it had to be a to z. Administrators need 12 characters
 - Language must reference a valid language record
 - `countryId`, if sent, must name a market with an operating company (the table above)
 
@@ -95,6 +97,25 @@ If a user exists but hasn't confirmed their email, calling Register again refres
 code and resends the email — **only in the market the account was created in**. The same email
 re-registered with another company's market is refused `user.existing_email`; a visitor never silently
 re-registers into a company they did not choose.
+
+**A different password withdraws the stored one** (since the fix plan of 2026-10-25, on `Register` and
+`RegisterEmployee` alike). When the registration again brings a password other than the stored one, the
+account is left with **no password** (`User.RegisterAgain`); the same password again is kept, and a
+withdrawn one is never restored by a later registration. Whoever confirms the address proves they hold
+the mailbox, not which of two passwords typed for it is theirs, so once it is confirmed neither of them
+signs in: the confirmation signs the confirmer in, and *Forgot password* gives them a password of their
+own. Keeping the newest password instead would let a stranger who registers after the owner arm one the
+owner then confirms. An account with no password is refused at sign-in like a wrong password, at the cost
+of one password-hash derivation, and a registration again costs one too, so neither answer's timing
+tells whether a password was withdrawn. No session exists before the confirmation: an unconfirmed
+account's sign-in opens none. A genuine user who registers twice with two passwords also has to use
+*Forgot password* once.
+
+**Still open:** a stranger who registers an address once, and its owner then confirming that
+registration by its code (the first e-mail or a resend), leave the stranger's password working until the
+owner resets it. The owner ruled on 2026-10-26 to close it (*"Close"*): the confirmation will carry the
+password the confirmer chooses, and the stored one is kept only on a match. That is a contract change in
+every app and both webs.
 :::
 
 ---

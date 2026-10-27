@@ -694,7 +694,7 @@
         },
         "no_show": {
           "action": "Zrušit jako nedostavení uklízeče",
-          "context": "Použijte, když přidělený uklízeč nedorazil – poté, co to zákazník nahlásil nebo přišlo upozornění „Uklízeč nezačal objednávku“. Nejprve to ověřte u uklízeče i zákazníka.",
+          "context": "Použijte, když přidělený uklízeč nedorazil – poté, co to zákazník nahlásil nebo přišlo upozornění „Uklízeč nezačal objednávku“. Nejprve to ověřte u uklízeče i zákazníka. U objednávky, kterou nikdo nepřevzal, můžete tuto akci použít i před začátkem, jakmile je jasné, že se uklízeč nenajde: zákazník dostane stejné vrácení platby a omluvný kredit jako při automatickém zrušení.",
           "confirm": "Objednávka se zruší bez poplatku, platba kartou se vrátí v plné výši, přihlášený zákazník dostane omluvný kredit za nedostavení a otevřený spor „služba nebyla poskytnuta“ se uzavře. Akci nelze vrátit zpět.",
           "submit": "Potvrdit nedostavení",
           "success": "Objednávka byla zrušena jako nedostavení uklízeče. {{refund}} {{credit}}",
@@ -1586,7 +1586,7 @@
         "name_placeholder": "např. Praha, Brno, Plzeň",
         "zip_prefix_label": "PSČ prefix (volitelné)",
         "zip_prefix_placeholder": "např. 1, 11, 11000",
-        "zip_prefix_hint": "Zatím se nevynucuje — zachyceno pro budoucí přísnější validaci.",
+        "zip_prefix_hint": "Je-li vyplněn, adresa s pětimístným PSČ patří k tomuto městu, když její PSČ začíná tímto prefixem, a jinak ne, ať uvádí jakékoli město; adresa bez pětimístného PSČ se posuzuje podle názvu. Použijte jen prefix, který nepokrývá žádné jiné město.",
         "active_label": "Aktivní",
         "active": "Aktivní",
         "inactive": "Neaktivní"
@@ -2870,13 +2870,17 @@
                 "rejected": "účet pracovníka byl zamítnut"
               }
             },
+            "crew_short": {
+              "title": "Objednávka přišla o jednoho z uklízečů",
+              "body": "Objednávka {{orderNumber}} dne {{cleaningDateTime}} přišla o jednoho z uklízečů — {{cause}}. Někdo na ní stále je a volné místo je zpět na nástěnce; pokud ho nikdo nepřijme, úklid proběhne s menším počtem uklízečů, proto přiřaďte uklízeče v objednávce."
+            },
             "cleaner_not_started": {
               "title": "Uklízeč nezačal objednávku",
               "body": "Objednávka {{orderNumber}} byla objednána na {{cleaningDateTime}} a nikdo ji nezačal. Pokud uklízeč nedorazil, zrušte ji jako nedostavení."
             },
             "no_cleaner_yet": {
               "title": "Objednávka stále nemá uklízeče",
-              "body": "Na objednávce {{orderNumber}} dne {{cleaningDateTime}} stále nikdo není. Přiřaďte uklízeče v objednávce; pokud ji nikdo nepřijme, po začátku se automaticky zruší."
+              "body": "Na objednávce {{orderNumber}} dne {{cleaningDateTime}} stále nikdo není. Přiřaďte uklízeče v objednávce; pokud ji nikdo nepřijme, po začátku se automaticky zruší. Chcete-li ji zrušit dříve, zrušte ji v objednávce jako nedostavení: zákazník dostane stejné vrácení platby a omluvný kredit."
             },
             "lockout_reported": {
               "title": "Uklízeč se nemůže dostat dovnitř",

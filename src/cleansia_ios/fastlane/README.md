@@ -65,11 +65,14 @@ domains have no DNS, a build without `api_base_url:` reaches no backend, so
 every build meant to be used passes the DEV host, as above.
 
 The URL is injected as a command-line build setting, which outranks the
-`project.yml` value, for that one archive only — nothing is edited. `all` refuses
-the option, because the two apps call different hosts. Such a build still
-carries the **production** APNs entitlement that App Store export always signs
-in, while the DEV backend sends Live Activity pushes through the APNs sandbox,
-so those do not reach it.
+`project.yml` value, for that one archive only — nothing is edited. With it the
+lane sets `WEBCREDENTIALS_HOST` to the app's DEV web host
+(`customer.dev.cleansia.cz` or `partner.dev.cleansia.cz`), so the password
+AutoFill domain is the host that serves the app's `apple-app-site-association`,
+not a parked production one. `all` refuses the option, because the two apps
+call different hosts. Such a build still carries the **production** APNs
+entitlement that App Store export always signs in, while the DEV backend sends
+Live Activity pushes through the APNs sandbox, so those do not reach it.
 
 ## What a lane does
 

@@ -10,6 +10,9 @@ namespace Cleansia.Infra.Database.Repositories;
 
 public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(context), IOrderRepository
 {
+    public Task LockForCrewChangeAsync(string orderId, CancellationToken cancellationToken) =>
+        Context.LockOrderAsync(orderId, cancellationToken);
+
     public async Task<bool> IsFirstBookingIgnoringTenantAsync(Order order, CancellationToken cancellationToken)
     {
         var userId = order.UserId;

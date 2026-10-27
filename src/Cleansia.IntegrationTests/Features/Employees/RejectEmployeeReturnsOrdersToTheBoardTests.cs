@@ -24,10 +24,11 @@ namespace Cleansia.IntegrationTests.Features.Employees;
 /// what this proves: the walk-back appends a status row, and a row appended to a graph loaded without
 /// its history collides with the creation row's <c>Sequence</c> — so the <c>New</c> row must land with
 /// the NEXT sequence, on every emptied order, in one commit with the contract change. The company's
-/// administrators each get one <c>admin.order.crew_lost</c> row per emptied order; another company's
-/// administrator gets none; a live reservation held by the rejected cleaner ends and one held by
-/// somebody else does not; a crew that remains keeps the status. The customer is told once per emptied
-/// order, a feed row and an e-mail of its own in the same commit, and nothing for the crewed one.
+/// administrators each get one <c>admin.order.crew_lost</c> row per emptied order and one
+/// <c>admin.order.crew_short</c> row for the order whose crew remains; another company's administrator gets
+/// none; a live reservation held by the rejected cleaner ends and one held by somebody else does not; a crew
+/// that remains keeps the status. Every released seat leaves its job short, so the customer is told once per
+/// released seat, the crewed order's included, a feed row and an e-mail of its own in the same commit.
 /// </summary>
 [Collection("PostgresCollection")]
 public class RejectEmployeeReturnsOrdersToTheBoardTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
@@ -202,16 +203,27 @@ public class RejectEmployeeReturnsOrdersToTheBoardTests(PostgresContainerFixture
                         .OrderBy(id => id);
                     Assert.Equal([HeldOrderId, OtherHoldOrderId], orderIds);
                 }
+
+                var shortRows = await context.Set<UserNotification>().IgnoreQueryFilters()
+                    .Where(n => n.EventKey == AdminNotificationEventCatalog.OrderCrewShort)
+                    .ToListAsync();
+                Assert.Equal([AdminA1, AdminA2], shortRows.Select(r => r.UserId).Order());
+                Assert.All(shortRows, row =>
+                {
+                    var args = JsonSerializer.Deserialize<Dictionary<string, string>>(row.ArgsJson)!;
+                    Assert.Equal(CrewedOrderId, args["orderId"]);
+                    Assert.Equal("rejected", args["cause"]);
+                });
             },
             transactional: false);
     }
 
     /// <summary>
-    /// Both emptied orders belong to one customer, so each notice must carry a key of its own: the outbox's
-    /// unique index would otherwise refuse the rejection's one commit.
+    /// All three released seats belong to one customer's bookings, so each notice must carry a key of its own:
+    /// the outbox's unique index would otherwise refuse the rejection's one commit.
     /// </summary>
     [Fact]
-    public async Task Every_Emptied_Order_Tells_Its_Customer_Once_In_The_Rejections_Commit()
+    public async Task Every_Released_Seat_Tells_Its_Customer_Once_In_The_Rejections_Commit()
     {
         await TestMethod(
             setup: AdminSession,
@@ -227,7 +239,7 @@ public class RejectEmployeeReturnsOrdersToTheBoardTests(PostgresContainerFixture
                     .Select(n => n.ArgsJson)
                     .ToListAsync();
                 Assert.Equal(
-                    [HeldOrderId, OtherHoldOrderId],
+                    new[] { HeldOrderId, OtherHoldOrderId, CrewedOrderId }.Order(),
                     feedOrderIds
                         .Select(args => JsonSerializer.Deserialize<Dictionary<string, string>>(args)!["orderId"])
                         .OrderBy(id => id));
@@ -237,9 +249,10 @@ public class RejectEmployeeReturnsOrdersToTheBoardTests(PostgresContainerFixture
                         && m.MessageKey.StartsWith("email:order-cleaner-released:"))
                     .Select(m => m.MessageKey)
                     .ToListAsync();
-                Assert.Equal(2, emailKeys.Count);
+                Assert.Equal(3, emailKeys.Count);
                 Assert.Single(emailKeys, key => key.StartsWith($"email:order-cleaner-released:{HeldOrderId}:"));
                 Assert.Single(emailKeys, key => key.StartsWith($"email:order-cleaner-released:{OtherHoldOrderId}:"));
+                Assert.Single(emailKeys, key => key.StartsWith($"email:order-cleaner-released:{CrewedOrderId}:"));
             },
             transactional: false);
     }

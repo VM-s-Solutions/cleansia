@@ -226,6 +226,9 @@ private struct ManagedTextField: UIViewRepresentable {
         field.tintColor = UIColor(tintColor)
         field.keyboardType = keyboardType
         field.textContentType = textContentType
+        let isAddress = keyboardType == .emailAddress
+        field.autocapitalizationType = isAddress ? .none : .sentences
+        field.autocorrectionType = isAddress ? .no : .default
         field.isEnabled = isEnabled
 
         applySecureEntry(field)

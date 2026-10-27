@@ -14,10 +14,11 @@ using Microsoft.EntityFrameworkCore;
 namespace Cleansia.Core.AppServices.Features.Orders;
 
 /// <summary>
-/// An administrator confirms that the cleaner did not arrive (owner ruling 2026-09-28): the order is
-/// cancelled with the no-show sweep's own remedy — no fee, the whole refund, the apology credit and the
-/// no-cleaner message — and a linked "service not provided" dispute is closed, unless its own card refund is
-/// still pending. A crew with one of two cleaners missing stays a dispute for the administrator's judgement.
+/// An administrator confirms that the cleaner did not arrive (owner ruling 2026-09-28), or calls off before
+/// its start a booking nobody is on: the order is cancelled with the no-show sweep's own remedy — no fee,
+/// the whole refund, the apology credit and the no-cleaner message — and a linked "service not provided"
+/// dispute is closed, unless its own card refund is still pending. A crew with one of two cleaners missing
+/// stays a dispute for the administrator's judgement.
 /// → /product/business-rules#when-the-cleaner-cancels-or-no-shows
 /// </summary>
 [AuditAction("order.cancel.no_show", ResourceType = "Order")]
@@ -78,9 +79,11 @@ public class AdminCancelOrderAsNoShow
             }
 
             // A cleaner who tapped Start after the customer's report did arrive: the report stands as a
-            // dispute for the administrator, and this refuses.
+            // dispute for the administrator, and this refuses. Before the start, only a booking the unfilled
+            // sweep would cancel at its start can be called off here, so its customer is paid the same.
             var nowUtc = timeProvider.GetUtcNow().UtcDateTime;
-            if (CleanerNoShow.RefusalFor(order, nowUtc) is { } refusal)
+            if (CleanerNoShow.RefusalFor(order, nowUtc) is { } refusal
+                && !(refusal == BusinessErrorMessage.OrderStartTimeNotReached && CancelUnfilledOrders.IsUnfilled(order)))
             {
                 return BusinessResult.Failure<Response>(new Error(nameof(command.OrderId), refusal));
             }

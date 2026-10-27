@@ -316,6 +316,19 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
             $"""SELECT "Id" FROM "Refunds" WHERE "Id" = {refundId} FOR UPDATE""", cancellationToken);
     }
 
+    internal async Task LockOrderAsync(string orderId, CancellationToken cancellationToken)
+    {
+        if (!Database.IsNpgsql())
+            return;
+        if (Database.CurrentTransaction is null && System.Transactions.Transaction.Current is null)
+            lockTransaction = await Database.BeginTransactionAsync(cancellationToken);
+
+        // Held through the final commit, so a take's UPDATE of this row waits for the crew change and then
+        // re-checks the order's tokens against it. NO KEY: the seats' foreign keys still take their share lock.
+        await Database.ExecuteSqlAsync(
+            $"""SELECT "Id" FROM "Orders" WHERE "Id" = {orderId} FOR NO KEY UPDATE""", cancellationToken);
+    }
+
     internal async Task LockCashHeldAsync(string employeeId, string currencyId, CancellationToken cancellationToken)
     {
         if (!Database.IsNpgsql())

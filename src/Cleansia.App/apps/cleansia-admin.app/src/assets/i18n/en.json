@@ -694,7 +694,7 @@
         },
         "no_show": {
           "action": "Cancel as cleaner no-show",
-          "context": "Use this when the assigned cleaner did not arrive — after the customer reported it or the alert “The cleaner has not started an order” came in. Check with the cleaner and the customer first.",
+          "context": "Use this when the assigned cleaner did not arrive — after the customer reported it or the alert “The cleaner has not started an order” came in. Check with the cleaner and the customer first. On a job nobody has taken, you can also use it before the start, once no cleaner will be found: the customer gets the same refund and apology credit as the automatic cancellation.",
           "confirm": "This cancels the order with no fee, refunds a paid card order in full, gives a signed-in customer the no-show apology credit and closes an open “service not provided” dispute. It cannot be undone.",
           "submit": "Confirm no-show",
           "success": "Order cancelled as a cleaner no-show. {{refund}} {{credit}}",
@@ -1482,7 +1482,7 @@
         "name_placeholder": "e.g., Praha, Brno, Plzeň",
         "zip_prefix_label": "ZIP prefix (optional)",
         "zip_prefix_placeholder": "e.g., 1, 11, 11000",
-        "zip_prefix_hint": "Not enforced yet — captured for future stricter validation.",
+        "zip_prefix_hint": "If set, an address with a five-digit postcode counts as this city when the postcode starts with this prefix, and not otherwise, whatever city it names; an address without a five-digit postcode is matched by name. Use only a prefix that covers no other city.",
         "active_label": "Active",
         "active": "Active",
         "inactive": "Inactive"
@@ -2870,13 +2870,17 @@
                 "rejected": "the cleaner's account was rejected"
               }
             },
+            "crew_short": {
+              "title": "An order lost one of its cleaners",
+              "body": "Order {{orderNumber}} on {{cleaningDateTime}} lost one of its cleaners — {{cause}}. Somebody is still on it and the free place is back on the board; if nobody takes it, the clean goes ahead short-staffed, so assign a cleaner from the order."
+            },
             "cleaner_not_started": {
               "title": "The cleaner has not started an order",
               "body": "Order {{orderNumber}} was booked for {{cleaningDateTime}} and nobody has started it. If the cleaner did not arrive, cancel it as a no-show."
             },
             "no_cleaner_yet": {
               "title": "An order still has no cleaner",
-              "body": "Order {{orderNumber}} on {{cleaningDateTime}} still has nobody on it. Assign a cleaner from the order; if nobody takes it, it is cancelled automatically after its start."
+              "body": "Order {{orderNumber}} on {{cleaningDateTime}} still has nobody on it. Assign a cleaner from the order; if nobody takes it, it is cancelled automatically after its start. To call it off before then, cancel it as a no-show from the order: the customer gets the same refund and apology credit."
             },
             "lockout_reported": {
               "title": "The cleaner cannot get in",

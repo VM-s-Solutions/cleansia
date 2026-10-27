@@ -14,9 +14,10 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 
 /// <summary>
 /// Cancelling a booking nobody cleaned because of us: no fee, the whole card refund, the customer's own
-/// applied credit back, the apology credit, and a message saying which of those actually happened. The
-/// one body behind the unfilled sweep and an administrator's cleaner-no-show confirmation, so the two pay
-/// a customer the same. → /product/business-rules#when-the-cleaner-cancels-or-no-shows
+/// applied credit back, the apology credit, and a message saying which of those actually happened — a push
+/// to an account, and an e-mail to every booking. The one body behind the unfilled sweep and an
+/// administrator's cleaner-no-show confirmation, so the two pay a customer the same.
+/// → /product/business-rules#when-the-cleaner-cancels-or-no-shows
 /// </summary>
 public sealed class CleanerNoShowCancellation(
     ICreditAccountRepository creditAccountRepository,
@@ -87,7 +88,8 @@ public sealed class CleanerNoShowCancellation(
         await NotifyCustomerAsync(order, refundedAmount, tookNoPayment, refundPending, apology, cancellationToken);
 
         await GuestCancellationEmail.EnqueueAsync(order, EmailLocale.Resolve(order.LanguageCode),
-            refundedAmount, guestAccessTokenIssuer, pending, cancellationToken);
+            refundedAmount, guestAccessTokenIssuer, pending, cancellationToken,
+            alsoToAccount: true, apologyCreditAmount: apology);
 
         return new Outcome(transition, refundedAmount, refundPending, apology);
     }
@@ -174,7 +176,7 @@ public sealed class CleanerNoShowCancellation(
             orderId: order.Id,
             note: order.AssignedEmployees.Count > 0
                 ? "The assigned cleaner did not arrive."
-                : "No cleaner was assigned when the booking's time arrived.");
+                : "No cleaner was on the booking.");
 
         return amount.Value;
     }

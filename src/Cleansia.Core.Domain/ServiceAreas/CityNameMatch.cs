@@ -5,44 +5,40 @@ using System.Text.RegularExpressions;
 namespace Cleansia.Core.Domain.ServiceAreas;
 
 /// <summary>
-/// Whether a customer's typed or geocoded city is the serviced city a <c>ServiceCity</c> row names.
-///
-/// <para><b>Why an exact compare was not enough.</b> The gate used to be
-/// <c>row.Name.ToLower() == city.Trim().ToLower()</c>, which refuses a booking for any spelling the
-/// operator did not seed verbatim. That is not hypothetical: this repo's own seed puts a customer at
-/// <c>'Plzen'</c> (<c>sql-scripts/seed/insert_addresses.sql:39</c>) while the serviced row is
-/// <c>'Plzeň'</c> (<c>prod-bootstrap.sql:392</c>), so that address cannot be booked. Reverse geocoders
-/// and hand-typing both drop diacritics, and both append districts.</para>
-///
-/// <para><b>The rule is MONOTONE — it accepts a strict superset of the exact compare.</b> Nothing that
-/// books today stops booking. That is what makes it safe to ship on its own.</para>
-///
-/// <para><b>The district strip is one-directional and that is load-bearing.</b> It is applied only to
-/// the CUSTOMER's string, never to the row's name. So a row named <c>Praha 8</c> continues to serve
-/// only Praha 8 and does not quietly become a claim over the whole city — an operator who seeded a
-/// single district meant a single district.</para>
-///
-/// <para><b>Exonyms are data, not algorithm.</b> <c>Prague</c> matches nothing but a <c>Prague</c> row,
-/// and <c>Прага</c> matches nothing at all until somebody seeds it. Folding those in code would mean
-/// shipping a translation table that goes stale the first time a market opens; a row is the honest
-/// place for it, and the admin surface already creates rows.</para>
+/// Whether a customer's address is in the serviced city a <c>ServiceCity</c> row names: a row with a ZIP
+/// prefix answers by a valid postcode, any other row and any address without one by the name, stripped on
+/// the customer's side only. The iOS, Android and customer web copies mirror this rule exactly and pin the
+/// same cases; a copy stricter than this one refuses a booking the server would take.
+/// → /product/business-rules#serviced-city
 /// </summary>
 public static class CityNameMatch
 {
-    /// <summary>
-    /// A trailing 1–2 digit district, optionally followed by a quarter after a dash —
-    /// <c>Praha 8</c>, <c>Praha 4 - Chodov</c>, <c>Praha 5 – Smíchov</c>.
-    ///
-    /// <para>A dash with NO leading number is deliberately not matched. <c>Praha-západ</c> and
-    /// <c>Brno-venkov</c> have that exact shape and are <i>okresy</i> — the rural districts AROUND the
-    /// city, not parts of it. Stripping them would serve the countryside on the strength of a row for
-    /// the city.</para>
-    /// </summary>
-    private static readonly Regex DistrictSuffix = new(
-        @"^(?<base>\S.*?)\s+\d{1,2}(\s*[-–—]\s*\S.*)?$",
+    private const int PostcodeLength = 5;
+
+    private static readonly (string City, string Ring)[] OkresRings =
+    [
+        ("praha", "zapad"),
+        ("praha", "vychod"),
+        ("brno", "venkov"),
+        ("plzen", "sever"),
+        ("plzen", "jih"),
+    ];
+
+    private static readonly Regex TrailingDistrict = new(
+        @"^(?<base>.+) (?:\d{1,2}|[ivx]{1,6})$",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
     private static readonly Regex WhitespaceRun = new(@"\s+", RegexOptions.Compiled);
+
+    public static bool Serves(string? servicedCityName, string? zipPrefix, string? customerCity, string? customerZipCode)
+    {
+        if (!string.IsNullOrWhiteSpace(zipPrefix) && PostcodeOf(customerZipCode) is { } postcode)
+        {
+            return postcode.StartsWith(zipPrefix.Trim(), StringComparison.Ordinal);
+        }
+
+        return Matches(servicedCityName, customerCity);
+    }
 
     public static bool Matches(string? servicedCityName, string? customerCity)
     {
@@ -54,10 +50,62 @@ public static class CityNameMatch
             return false;
         }
 
-        return row == city || row == StripDistrict(city);
+        return CandidatesOf(city).Contains(row, StringComparer.Ordinal);
     }
 
-    /// <summary>Trim, strip diacritics, lowercase, and collapse internal whitespace runs to one space.</summary>
+    private static string? PostcodeOf(string? zipCode)
+    {
+        if (zipCode is null)
+        {
+            return null;
+        }
+
+        var compact = string.Concat(zipCode.Where(character => !char.IsWhiteSpace(character)));
+        return compact.Length == PostcodeLength && compact.All(char.IsAsciiDigit) ? compact : null;
+    }
+
+    /// <summary>
+    /// The city itself, the city without the part after its first dash (unless that names an okres), and
+    /// each of those without a trailing district number or Roman numeral.
+    /// </summary>
+    private static IEnumerable<string> CandidatesOf(string city)
+    {
+        string[] forms = WithoutCityPart(city) is { } head ? [city, head] : [city];
+        foreach (var form in forms)
+        {
+            yield return form;
+
+            var district = TrailingDistrict.Match(form);
+            if (district.Success)
+            {
+                yield return district.Groups["base"].Value;
+            }
+        }
+    }
+
+    private static string? WithoutCityPart(string city)
+    {
+        var dash = city.IndexOf('-');
+        if (dash < 0)
+        {
+            return null;
+        }
+
+        var head = city[..dash].Trim();
+        var part = city[(dash + 1)..].Trim();
+        if (head.Length == 0 || part.Length == 0)
+        {
+            return null;
+        }
+
+        var partFirstWord = part.Split(' ')[0];
+        return OkresRings.Contains((head, partFirstWord)) ? null : head;
+    }
+
+    /// <summary>
+    /// Trim, strip diacritics, lowercase, write every dash as a hyphen and collapse every whitespace run,
+    /// a no-break space included, to one space.
+    /// </summary>
     private static string Fold(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -69,20 +117,17 @@ public static class CityNameMatch
         var builder = new StringBuilder(decomposed.Length);
         foreach (var character in decomposed)
         {
-            if (CharUnicodeInfo.GetUnicodeCategory(character) != UnicodeCategory.NonSpacingMark)
+            if (CharUnicodeInfo.GetUnicodeCategory(character) == UnicodeCategory.NonSpacingMark)
             {
-                builder.Append(character);
+                continue;
             }
+
+            builder.Append(IsDash(character) ? '-' : character);
         }
 
         var stripped = builder.ToString().Normalize(NormalizationForm.FormC).ToLowerInvariant();
         return WhitespaceRun.Replace(stripped, " ");
     }
 
-    /// <summary>Never returns empty — a bare "8" keeps its own shape and simply matches nothing.</summary>
-    private static string StripDistrict(string folded)
-    {
-        var match = DistrictSuffix.Match(folded);
-        return match.Success ? match.Groups["base"].Value : folded;
-    }
+    private static bool IsDash(char character) => character is (>= '\u2010' and <= '\u2015') or '\u2212';
 }

@@ -6561,6 +6561,41 @@
         }
       }
     },
+    "document_choose_file": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vybrat soubor"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose File"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выбрать файл"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vybrať súbor"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вибрати файл"
+          }
+        }
+      }
+    },
     "document_type_bank_statement": {
       "extractionState": "stale",
       "localizations": {
@@ -19552,31 +19587,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hledáme jiného uklízeče pro rezervaci #%1$@ a dáme vám vědět, jakmile ji někdo převezme."
+            "value": "Rezervaci #%1$@ znovu nabízíme našim uklízečům a dáme vám vědět, jakmile ji někdo převezme."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "We're looking for another cleaner for booking #%1$@ and will let you know as soon as one takes it."
+            "value": "We're offering booking #%1$@ to our cleaners again and will let you know as soon as one takes it."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Мы ищем другого клинера для заказа #%1$@ и сообщим вам, как только кто-то его возьмёт."
+            "value": "Мы снова предлагаем заказ #%1$@ нашим клинерам и сообщим вам, как только кто-то его возьмёт."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hľadáme iného upratovača pre rezerváciu #%1$@ a dáme vám vedieť, hneď ako ju niekto prevezme."
+            "value": "Rezerváciu #%1$@ opäť ponúkame našim upratovačom a dáme vám vedieť, hneď ako ju niekto prevezme."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ми шукаємо іншого клінера для замовлення #%1$@ і повідомимо вас, щойно хтось його візьме."
+            "value": "Ми знову пропонуємо замовлення #%1$@ нашим клінерам і повідомимо вас, щойно хтось його візьме."
           }
         }
       }
@@ -19587,31 +19622,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Váš uklízeč už nemůže přijít"
+            "value": "Uklízeč už nemůže přijít"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your cleaner can no longer come"
+            "value": "A cleaner can no longer come"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ваш клинер больше не может прийти"
+            "value": "Клинер больше не может прийти"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Váš upratovač už nemôže prísť"
+            "value": "Upratovač už nemôže prísť"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ваш клінер більше не може прийти"
+            "value": "Клінер більше не може прийти"
           }
         }
       }
@@ -20041,31 +20076,31 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nobody was able to take booking #%1$@, so we have refunded it in full and added %2$@ credit towards your next clean. Sorry."
+            "value": "No cleaner could make it to booking #%1$@, so we have refunded it in full and added %2$@ credit towards your next clean. Sorry."
           }
         },
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Objednávku #%1$@ nikdo nestihl převzít, proto vám vracíme celou částku a přidáváme kredit %2$@ na příští úklid. Omlouváme se."
+            "value": "Na objednávku #%1$@ nemohl dorazit žádný uklízeč, proto vám vracíme celou částku a přidáváme kredit %2$@ na příští úklid. Omlouváme se."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Objednávku #%1$@ nikto nestihol prevziať, preto vám vraciame celú sumu a pridávame kredit %2$@ na ďalšie upratovanie. Ospravedlňujeme sa."
+            "value": "Na objednávku #%1$@ nemohol prísť žiadny upratovač, preto vám vraciame celú sumu a pridávame kredit %2$@ na ďalšie upratovanie. Ospravedlňujeme sa."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Заказ #%1$@ никто не взял, поэтому мы вернули всю сумму и начислили %2$@ кредита на следующую уборку. Простите."
+            "value": "На заказ #%1$@ не смог приехать ни один уборщик, поэтому мы вернули всю сумму и начислили %2$@ кредита на следующую уборку. Простите."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Замовлення #%1$@ ніхто не взяв, тому ми повернули всю суму та нарахували %2$@ кредиту на наступне прибирання. Вибачте."
+            "value": "На замовлення #%1$@ не зміг приїхати жоден прибиральник, тому ми повернули всю суму та нарахували %2$@ кредиту на наступне прибирання. Вибачте."
           }
         }
       }

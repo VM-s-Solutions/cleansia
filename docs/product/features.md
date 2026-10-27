@@ -69,8 +69,9 @@ There is no longer any form asking for an order number, an e-mail and a code. **
 the Android and iOS apps are for customers with an account and have no guest screen at all (owner
 ruling 2026-10-01; until then the apps offered *Find a guest booking*, where the guest pasted the link).
 
-Every message about the booking — the receipt, *a cleaner has taken your job*, *we're on our way*,
-*all done*, *we're finding you a new cleaner*, the cancellation — carries a fresh working link, and a
+Every message about the booking — the receipt, *cleaner found*, *we've found you a new cleaner*,
+*we're on our way*, *all done*, *a cleaner can no longer come*, the cancellation — carries a fresh
+working link, and a
 browser remembers the bookings it holds tokens for. A link stops working 30 days after the cleaning, and
 every link the guest already held stops at once if the booking is cancelled — the cancellation e-mail
 then carries a new one, so they can still read what they were refunded.
@@ -272,8 +273,9 @@ application. The decision is pushed to the cleaner either way, and a rejection s
 administrator's reason with a way to contact support.
 → [The registration lock](/partner-app/onboarding#registration-lock-screen)
 
-**Their own documents** — a checklist of what the country expects, replace a file with a newer one
-without waiting for anybody, and ask an admin to remove one. Removing is the only one that needs a
+**Their own documents** — a checklist of what the country expects, a document photographed on the spot
+or picked from the photos or the files (on the Android and iOS apps since the fix plan of 2026-10-25),
+replace a file with a newer one without waiting for anybody, and ask an admin to remove one. Removing is the only one that needs a
 person: some of these the employer has to hold, and self-delete used to cost a cleaner their access to
 work in a single tap. Every upload is its own document, several of one type are fine, and the same file
 twice is refused unless the earlier copy was rejected.
@@ -281,7 +283,10 @@ twice is refused unless the earlier copy was rejected.
 
 **Finding work** — a board of offerable jobs, new-job push notifications and a digest. What a browsing
 cleaner sees is the job, not the household — the customer's identity, address and free text are
-withheld until they take it.
+withheld until they take it. Every job, a job reserved for them on *Pending offers* included (since
+the fix plan of 2026-10-25), is quoted at their own pay for one seat, and a job's detail shows the
+customer's price only on a cash job, as the amount to collect (since the same day)
+→ [Business rules — cleaner pay](/product/business-rules#cleaner-pay).
 
 **Doing the job** — take a job, mark on-the-way, start, add photos and notes, complete. Entry
 instructions and the full address become visible on assignment. A job cannot be started more than an
@@ -301,30 +306,31 @@ between the preview and the take, the app re-fetches it and asks again. → [Bus
 the cleaner is on its crew, the job is *New* or *Confirmed* and no lockout has been reported, never once
 they are on the way or the clean has started (owner defaults 2026-10-24), and the server refuses it
 then too (owner ruling 2026-10-25). Since 2026-10-25 the apps also require its start to be still ahead
-(the server sets no such limit): from the start on, a job nobody started is a no-show for the
-administrators; a job with no start time is judged without it. Android takes *Cancel job* away at the
-start and again when the app resumes; iOS and partner web take it away the next time they read the job,
-and until then a cancel confirmed from the start on sends nothing and reads the job again. A confirmation
+(owner ruling 2026-10-25, *"Yup"*; the server sets no such limit): from the start on, a job nobody
+started is a no-show for the administrators; a job with no start time is judged without it. Android
+takes *Cancel job* away at the start and again when the app resumes; iOS and partner web take it away
+the next time they read the job, and until then a cancel confirmed from the start on sends nothing and
+reads the job again. A confirmation
 asks first: they will be taken off the job and their place goes back on the board for other cleaners, the
 customer's booking is not cancelled, and if they are its only cleaner the job has no cleaner until
 someone takes it; *Keep the job* changes nothing. After *Yes, cancel the job* the cleaner reads that they
 are off the job and their place is back on the board for others, or, when nobody is left on it, that it
 has no cleaner now and is back on the board, and the app leaves the job. It puts the seat back on the
 board and cancels nothing; a confirmed booking with nobody left goes back to *New* and is re-offered
-([ADR-0067](/decisions/adr-0067)). The company's administrators are told when the crew empties, and
-once more when the job is inside a day of its start with nobody on it. Since 2026-10-25 the customer is
-told too, when the booking goes back to *New*, that another cleaner is being looked for: *Your cleaner
-can no longer come* as a notification and in the inbox of the Android and iOS apps when they have an
-account, and the e-mail *We're finding you a new cleaner*, with an account or without, unless the
-booking is no longer *New* when it goes out (taken again or cancelled); neither names the cleaner or
-says why. When the one-off booking was reserved for a cleaner they asked for and the end of that
-reservation was never announced, as when the chosen cleaner took the job, the first five-minute run of
-the lapse sweep that finds nobody on it after the reservation ended also pushes a signed-in customer's
-Android and iOS apps that the booking is open to all cleaners (`order.preferred_offer_closed`), whoever
-left last; a drop by the chosen cleaner while the reservation runs ends it at once. Asking for cover,
-where the cleaner stays on the hook until somebody takes the seat, exists in the API (`RequestCover`)
-only; no app offers it.
-→ [Business rules — when the last cleaner leaves](/product/business-rules#crew-lost),
+([ADR-0067](/decisions/adr-0067)). The company's administrators are told when the crew empties, when a
+release leaves somebody on the job but the crew short (since the fix plan of 2026-10-25), and once more
+when the job is inside a day of its start with nobody on it. The customer is told of every release, the
+last cleaner's since 2026-10-25 and one of two since the fix plan: *A cleaner can no longer come* — the booking is offered to
+the cleaners again — as a notification and in the inbox of the Android and iOS apps when they have an
+account, and the e-mail *A cleaner can no longer come* — *Your booking still stands*, with an account or
+without, unless by the time it goes out the booking is no longer short of cleaners, or has started or
+been cancelled; none of them names the cleaner, says why or counts the cleaners. When the booking is
+taken again after going back to *New*, the e-mail says *We've found you a new cleaner*. When the one-off
+booking was reserved for a cleaner they asked for, the release notice also announces the end of a
+reservation that has ended by then, as the chosen cleaner's own drop ends it, so no *open to all
+cleaners* push follows it (since the fix plan). Asking for cover, where the cleaner stays on the hook
+until somebody takes the seat, exists in the API (`RequestCover`) only; no app offers it.
+→ [Business rules — when a cleaner leaves](/product/business-rules#crew-lost),
 [the partner web's Cancel job](/partner-app/order-management#cancel-job)
 
 **Not forgetting the job** — a count of tomorrow's jobs each evening at 18:00 in the cleaner's own local

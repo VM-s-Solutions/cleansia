@@ -65,19 +65,18 @@ class ServiceAreaProvider(
         loadCountries().orEmpty().map { it.isoCode }
 
     /**
-     * Tri-state: true/false is the server's answer for <cityName> in
-     * <countryId> (case + trim-insensitive name match; ZipPrefix unenforced
-     * in v1). NULL means the list could not be loaded — callers MUST treat
+     * Tri-state: true/false is the server's answer for an address at <cityName> and <postcode> in
+     * <countryId>, by [CityNameMatch]. NULL means the list could not be loaded — callers MUST treat
      * that as unknown and fail OPEN where a server-side re-validation exists
      * (order creation re-checks the city), never render it as "not serviced".
      */
-    suspend fun isCityServiced(countryId: String, cityName: String): Boolean? {
+    suspend fun isCityServiced(countryId: String, cityName: String, postcode: String?): Boolean? {
         val cities = loadCities(countryId) ?: return null
         // The SERVER's rule, not a second one. This compared trimmed-lowercased names for equality,
         // which is stricter than what CreateOrder now accepts — so it warned "we do not serve here"
         // for an address the server would happily book, which is the one direction this warning must
         // never get wrong. A geocoder returning "Plzen" for a serviced "Plzeň" was enough.
-        return CityNameMatch.isServiced(cities.map { it.name }, cityName)
+        return CityNameMatch.isServiced(cities, cityName, postcode)
     }
 
     /** Force re-fetch — call after sign-in or when admin pushes a config change. */

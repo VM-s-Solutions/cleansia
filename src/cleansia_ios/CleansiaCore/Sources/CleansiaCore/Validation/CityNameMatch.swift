@@ -1,82 +1,110 @@
 import Foundation
 
-/// Whether a customer's city is one of the serviced cities the server would accept.
+/// Whether an address is in one of the serviced cities, the question `CreateOrder` answers.
 ///
-/// **A port of the server's `Cleansia.Core.Domain.ServiceAreas.CityNameMatch`, and it has to stay one.**
-/// The server is the authority — it runs this rule inside `CreateOrder` and refuses the booking. This
-/// copy exists only so the customer is told at address-selection time rather than at payment, which is
-/// where they used to find out.
+/// **A port of the server's `Cleansia.Core.Domain.ServiceAreas.CityNameMatch`, and it has to stay one.** The server
+/// refuses the booking; this copy only tells the customer earlier. A copy that is STRICTER than the server tells a
+/// paying customer we do not serve them when we do, so the rule is mirrored exactly and `CityNameMatchTests` pins
+/// the case table the C#, Kotlin and TypeScript suites pin. Change a case in all four.
+/// → /product/business-rules#serviced-city
 ///
-/// **The danger of a copy is being STRICTER than the server, not looser.** A client that refuses a city
-/// the server would accept tells a paying customer we do not serve them when we do. So the rule is
-/// mirrored exactly and `CityNameMatchTests` pins the same table of cases as the C# and Kotlin suites;
-/// a divergence reddens one of the three. Being looser is survivable — the customer proceeds and the
-/// server refuses, which is exactly the behaviour that shipped before this existed.
+/// It reads Unicode scalars, as the server reads its UTF-16 characters, never `Character`s: a grapheme cluster
+/// would glue a mark to the space or dash before it and hide that space or dash from the rule.
 public enum CityNameMatch {
-    public static func matches(_ servicedCityName: String?, _ customerCity: String?) -> Bool {
+    private static let okresRings: [(city: String, ring: String)] = [
+        ("praha", "zapad"), ("praha", "vychod"), ("brno", "venkov"), ("plzen", "sever"), ("plzen", "jih")
+    ]
+
+    public static func isServiced(_ cities: [ServicedCity], city: String?, zipCode: String?) -> Bool {
+        let postcode = postcode(zipCode)
+        return cities.contains { serves($0, city: city, postcode: postcode) }
+    }
+
+    /// The name rule: a row matches the customer's city, the city less the part after its first dash, or either
+    /// less a trailing district, `Praha 8`, `Pardubice II`, `Brno-střed`, `Praha 4 - Chodov`. The five okres rings
+    /// around a city share the dashed shape and are not the city. The rule runs on the customer's string only, so a
+    /// row named for one district never claims the whole city.
+    static func matches(_ servicedCityName: String?, _ customerCity: String?) -> Bool {
         let row = fold(servicedCityName)
         let city = fold(customerCity)
         guard !row.isEmpty, !city.isEmpty else { return false }
-        return row == city || row == stripDistrict(city)
+        return candidates(city).contains(row)
     }
 
-    /// True when ANY serviced city matches — the question a screen actually asks.
-    public static func isServiced(_ servicedCityNames: [String], _ customerCity: String?) -> Bool {
-        servicedCityNames.contains { matches($0, customerCity) }
+    /// A row with a ZIP prefix is decided by the address's postcode whenever it has a valid one, whatever the city
+    /// says; with no valid postcode it falls back to the name, like a row without a prefix. The prefix is trimmed,
+    /// never compacted, so a prefix with a space inside starts no postcode.
+    private static func serves(_ row: ServicedCity, city: String?, postcode: String?) -> Bool {
+        let prefix = trimmingWhitespace(row.zipPrefix ?? "")
+        if !prefix.isEmpty, let postcode {
+            return postcode.hasPrefix(prefix)
+        }
+        return matches(row.name, city)
     }
 
-    /// Trim, strip diacritics, lowercase, collapse whitespace runs to one space.
+    /// Five ASCII digits once every whitespace character, a no-break space included, is taken out.
+    private static func postcode(_ zipCode: String?) -> String? {
+        var digits = (zipCode ?? "").unicodeScalars
+        digits.removeAll { $0.properties.isWhitespace }
+        guard digits.count == 5, digits.allSatisfy({ ("0" ... "9").contains($0) }) else { return nil }
+        return String(digits)
+    }
+
+    /// Trimmed, diacritics removed, every dash one `-`, lower case, every whitespace run one space, in the server's
+    /// order: the trim comes before the marks go, so a space that only a removed mark leaves at an edge stays.
     private static func fold(_ value: String?) -> String {
-        guard let value else { return "" }
-        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return "" }
-
-        // `folding(.diacriticInsensitive)` is the platform's own decompose-strip-recompose. Pinned to
-        // POSIX so a Turkish device does not lowercase "I" to a dotless ı and stop matching.
-        let stripped = trimmed
-            .folding(options: [.diacriticInsensitive], locale: Locale(identifier: "en_US_POSIX"))
-            .lowercased()
-
-        return stripped.split(whereSeparator: \.isWhitespace).joined(separator: " ")
-    }
-
-    /// Drop a trailing 1–2 digit district, and any quarter that follows it after a dash: `praha 8` and
-    /// `praha 4 - chodov` both reduce to `praha`.
-    ///
-    /// Written as a walk rather than a regex because `NSRegularExpression` has a throwing initialiser,
-    /// and `try!` is a SwiftLint error in this tree — rightly, since a force-try inside shared
-    /// validation crashes every caller over a typo nobody can see.
-    ///
-    /// **A dash with no district number before it is left alone.** `praha-zapad` and `brno-venkov` have
-    /// that exact shape and are *okresy* — the rural rings around those cities, not parts of them.
-    private static func stripDistrict(_ folded: String) -> String {
-        var head = folded
-
-        if let dashIndex = head.lastIndex(where: isDash) {
-            let beforeDash = String(head[head.startIndex ..< dashIndex])
-                .trimmingCharacters(in: .whitespaces)
-            // Only a quarter if a district number sits immediately before the dash.
-            guard endsWithDistrictNumber(beforeDash) else { return folded }
-            head = beforeDash
+        let unmarked = trimmingWhitespace(value ?? "").decomposedStringWithCanonicalMapping.unicodeScalars
+            .filter { $0.properties.generalCategory != .nonspacingMark }
+            .map { isDash($0) ? "-" : $0 }
+        let lowered = String(String.UnicodeScalarView(unmarked)).precomposedStringWithCanonicalMapping.lowercased()
+        var folded = String.UnicodeScalarView()
+        for scalar in lowered.unicodeScalars {
+            if !scalar.properties.isWhitespace {
+                folded.append(scalar)
+            } else if folded.last != " " {
+                folded.append(" ")
+            }
         }
+        return String(folded)
+    }
 
-        guard let lastSpace = head.lastIndex(of: " ") else { return folded }
-        let district = head[head.index(after: lastSpace)...]
-        guard !district.isEmpty, district.count <= 2, district.allSatisfy(\.isNumber) else {
-            return folded
+    private static func candidates(_ city: String) -> [String] {
+        var forms = [city]
+        if let head = head(of: city) {
+            forms.append(head)
         }
-
-        let base = String(head[head.startIndex ..< lastSpace]).trimmingCharacters(in: .whitespaces)
-        return base.isEmpty ? folded : base
+        return forms + forms.compactMap { withoutDistrict($0) }
     }
 
-    private static func endsWithDistrictNumber(_ value: String) -> Bool {
-        guard let lastSpace = value.lastIndex(of: " ") else { return false }
-        let tail = value[value.index(after: lastSpace)...]
-        return !tail.isEmpty && tail.count <= 2 && tail.allSatisfy(\.isNumber)
+    private static func head(of city: String) -> String? {
+        let scalars = city.unicodeScalars
+        guard let dash = scalars.firstIndex(of: "-") else { return nil }
+        let head = trimmingWhitespace(String(scalars[..<dash]))
+        let part = trimmingWhitespace(String(scalars[scalars.index(after: dash)...]))
+        guard !head.isEmpty, !part.isEmpty else { return nil }
+        let ring = String(part.unicodeScalars.prefix(while: { $0 != " " }))
+        return okresRings.contains { $0.city == head && $0.ring == ring } ? nil : head
     }
 
-    private static func isDash(_ character: Character) -> Bool {
-        character == "-" || character == "\u{2013}" || character == "\u{2014}"
+    private static func withoutDistrict(_ form: String) -> String? {
+        let scalars = form.unicodeScalars
+        guard let space = scalars.lastIndex(of: " "), space > scalars.startIndex else { return nil }
+        let district = scalars[scalars.index(after: space)...]
+        let isNumber = (1 ... 2).contains(district.count)
+            && district.allSatisfy { $0.properties.generalCategory == .decimalNumber }
+        let isRoman = (1 ... 6).contains(district.count) && district.allSatisfy { "ivx".unicodeScalars.contains($0) }
+        return isNumber || isRoman ? String(scalars[..<space]) : nil
+    }
+
+    private static func trimmingWhitespace(_ value: String) -> String {
+        let scalars = value.unicodeScalars
+        guard let first = scalars.firstIndex(where: { !$0.properties.isWhitespace }),
+              let last = scalars.lastIndex(where: { !$0.properties.isWhitespace })
+        else { return "" }
+        return String(scalars[first ... last])
+    }
+
+    private static func isDash(_ scalar: Unicode.Scalar) -> Bool {
+        (0x2010 ... 0x2015).contains(scalar.value) || scalar.value == 0x2212
     }
 }

@@ -230,7 +230,7 @@ class AddressSectionViewModel @Inject constructor(
                 updateForm { it.copy(serviceAreaStatus = ServiceAreaStatus.CountryNotServiced) }
                 return@launch
             }
-            val serviced = serviceAreaProvider.isCityServiced(country.id, cityName)
+            val serviced = serviceAreaProvider.isCityServiced(country.id, cityName, address.zipCode)
             updateForm {
                 it.copy(
                     serviceAreaStatus = when (serviced) {

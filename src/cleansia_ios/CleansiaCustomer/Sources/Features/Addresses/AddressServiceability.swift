@@ -22,7 +22,8 @@ enum AddressServiceability {
     static func cityServiced(
         provider: ServiceAreaProvider?,
         countryIsoCode: String,
-        city: String
+        city: String,
+        zipCode: String
     ) async -> Bool? {
         guard let provider, !city.isBlank else { return nil }
         guard let countries = await provider.loadCountries() else { return nil }
@@ -40,7 +41,7 @@ enum AddressServiceability {
             return false
         }
 
-        return await provider.isCityServiced(countryId: country.id, cityName: city)
+        return await provider.isCityServiced(countryId: country.id, cityName: city, zipCode: zipCode)
     }
 
     /// The same question for a SAVED address, which carries a country DISPLAY NAME rather than
@@ -56,10 +57,11 @@ enum AddressServiceability {
     /// still books, and the server still decides.
     static func cityServicedAnywhere(
         provider: ServiceAreaProvider?,
-        city: String
+        city: String,
+        zipCode: String
     ) async -> Bool? {
         guard let provider, !city.isBlank else { return nil }
         guard let cities = await provider.loadCities() else { return nil }
-        return CityNameMatch.isServiced(cities.map(\.name), city)
+        return CityNameMatch.isServiced(cities, city: city, zipCode: zipCode)
     }
 }

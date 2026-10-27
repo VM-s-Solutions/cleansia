@@ -7,8 +7,8 @@ import org.junit.Test
 /**
  * The register form must advertise exactly the policy the server enforces.
  *
- * Server truth is Cleansia.Core.AppServices/Common/Validators/ValidationExtensions.kt
- * `PasswordPattern = ^(?=.*[a-zA-Z])(?=.*\d).{8,}$` — a letter, a digit, eight
+ * Server truth is Cleansia.Core.AppServices/Common/Validators/ValidationExtensions.cs
+ * `PasswordPattern = ^(?=.*\p{L})(?=.*\d).{8,}$` — a letter, a digit, eight
  * characters. The form used to demand twelve, so a password the API would have
  * accepted left the Register button disabled with no way to find out why.
  */

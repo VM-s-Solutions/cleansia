@@ -8,9 +8,9 @@ namespace Cleansia.Core.AppServices.Common.Validators;
 public static class ValidationExtensions
 {
     // Single source of truth for password complexity: minimum 8 characters, at least one
-    // letter and one digit. Every auth/password feature composes ValidatePassword — there is no
-    // second copy of this regex on the backend, and the frontend constant mirrors it exactly.
-    private const string PasswordPattern = @"^(?=.*[a-zA-Z])(?=.*\d).{8,}$";
+    // letter of any script and one digit of any script (.NET's \d is Unicode). Every auth/password
+    // feature composes ValidatePassword; the web's copy is CustomValidators.password in @cleansia/services.
+    private const string PasswordPattern = @"^(?=.*\p{L})(?=.*\d).{8,}$";
 
     public const int AdminPasswordMinLength = 12;
 

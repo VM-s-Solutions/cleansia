@@ -89,8 +89,26 @@ public sealed class PlatformOrderCancellation(
 
         await loyaltyService.RevokeForCancelledOrderAsync(order.Id, cancellationToken);
 
+        // The wind-down told every live customer before it ran; an administrator's cancel tells the account
+        // now, by push unless the refund notice already went, and by e-mail.
+        var byAdministrator = cancelledBy == CancelledBy.Admin;
+        if (byAdministrator && !string.IsNullOrEmpty(order.UserId) && !refund.Initiated)
+        {
+            await notificationProducer.NotifyAsync(
+                order.UserId,
+                NotificationEventCatalog.OrderCancelled,
+                new Dictionary<string, string>
+                {
+                    ["orderId"] = order.Id,
+                    ["orderNumber"] = order.DisplayOrderNumber,
+                },
+                order.TenantId,
+                order.Id,
+                cancellationToken);
+        }
+
         await GuestCancellationEmail.EnqueueAsync(order, EmailLocale.Resolve(order.LanguageCode),
-            refund.RefundedAmount, accessTokenIssuer, pending, cancellationToken);
+            refund.RefundedAmount, accessTokenIssuer, pending, cancellationToken, alsoToAccount: byAdministrator);
 
         return new PlatformOrderCancellationResult(order.CancellationRefundAmount ?? 0m, refund);
     }

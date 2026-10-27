@@ -82,22 +82,31 @@ need backfilling.
   confirmed job with nobody left goes back to the board as a new job, and the company's administrators
   are told; since 2026-10-25 so is the customer (below). Android takes *Cancel job* away at the job's
   start; iOS and partner web take it away the next time they load the job, and a cancel confirmed after
-  the start sends nothing. (Owner defaults 2026-10-24; the limit at the job's start, since 2026-10-25;
-  ADR-0067.)
+  the start sends nothing. (Owner defaults 2026-10-24; the limit at the job's start, since 2026-10-25,
+  owner ruling 2026-10-25, *"Yup"*; ADR-0067.)
 
-- **Customer, Android, iOS and e-mail — you are told when your cleaner can no longer come.** When the
-  last cleaner on your confirmed booking leaves it — they cancel the job, or the company rejects them —
-  the booking waits for a cleaner again, and you are told that another one is being looked for. With an
-  account you get a notification and an inbox entry in the Android and iOS apps, *Your cleaner can no
-  longer come*, naming the booking; switching off booking updates silences the notification, not the
-  inbox entry. With an account or without, you get an e-mail in the booking's language, *We're finding
-  you a new cleaner*, with the link to your booking, if, when it goes out, the booking is waiting for
-  a cleaner rather than taken again or cancelled. Neither names the cleaner or says why, and both are
-  in five languages. The next cleaner to take the booking still sends the confirmation e-mail again.
-  Until 2026-10-25 the cleaner's leaving itself sent you nothing. **Operator:** deploy the Functions
-  consumer with or before the APIs that publish the new e-mail, and the updated apps before the
-  notification backend: an older build cannot render the new key. (Owner ruling 2026-10-25 on O-D2-1,
-  *"yup"*; ADR-0067.)
+- **Customer, Android, iOS and e-mail — you are told when a cleaner can no longer come.** When a cleaner
+  leaves your booking before it starts — they cancel the job, or the company rejects them — whether they
+  were its last cleaner or one of two, the booking is offered to the cleaners again and you are told.
+  With an account you get a notification and an inbox entry in the Android and iOS apps, *A cleaner can
+  no longer come*, naming the booking and saying it is offered to our cleaners again and that you will
+  hear as soon as one takes it; switching off booking updates silences the notification, not the inbox
+  entry. With an account or without, you get an e-mail in the booking's language, *A cleaner can no
+  longer come* — *Your booking still stands. We're offering it to our cleaners again.* — with the link to
+  your booking, if, when it goes out, the booking has not started and still needs a cleaner. None of it
+  names the cleaner, says why or counts the cleaners, and all of it is in five languages. When a cleaner
+  takes the booking again, the notification is the usual *Cleaner found!* and the e-mail says *We've
+  found you a new cleaner*. A booking reserved for the cleaner you asked for gets no *open to all
+  cleaners* notification after a notice that comes once that reservation has ended; that cleaner's own
+  leaving ends it at once. Until 2026-10-25 a cleaner's leaving sent you nothing; the
+  notice's first version, the same day, went only when the last cleaner left, as *Your cleaner can no
+  longer come* and an e-mail *We're finding you a new cleaner* sent only while the booking was still
+  waiting for a cleaner, and a re-take e-mailed the first take's confirmation again. **Operator:** deploy the Functions consumer
+  with or before the APIs that publish the e-mail, and the updated apps before the notification backend:
+  an older build cannot render the key, and builds before the fix plan's show the first wording. (Owner
+  ruling 2026-10-25 on O-D2-1, *"yup"*; the fix plan of the same day — the notice's words, which hold
+  when one of two cleaners leaves, *"Adapt to the current needs if needed"*; the re-take e-mail,
+  *"Confirm"*; ADR-0067.)
 
 - **Admin — told a day ahead when nobody is on a job, and a filter for such orders.** An eighteenth
   notice, in the console and by e-mail, for Support and above: once per order, when a *New* or
@@ -611,6 +620,91 @@ need backfilling.
 
 ### Changed
 
+- **Customer, cleaner, admin and operator — the fixes of 2026-10-25.** What the owner's answers of
+  2026-10-25 changed, on the gaps the partner wave left (*"Fix"*, *"Fix the wording"*) and on the fix plan
+  built from them; the release notice is under *Added*. Two parts of the plan are not built. A signed-in
+  customer cancelling a booking nobody is on from its start was to be paid as the unfilled-booking
+  cancellation pays and keep the reason they typed (*"It's important to store"*), and keeping both needs a
+  new database column, which comes in a later change; until then that cancel is still free and pays no
+  apology credit. And a stranger who registers an address once still keeps a working password if the
+  address's owner then confirms that registration by its code, until the owner resets it; closing it needs
+  the confirmation to carry the password the confirmer chooses, which comes in the same later change
+  (*"Close"*).
+  - *Customer — a cancellation reaches you by e-mail, and names the credit.* When nobody was on your
+    booking at its slot, or an administrator confirms that the cleaner did not come, the cancellation
+    e-mail comes with an account as well as without, in the booking's language, and names the apology
+    credit with its amount, written the way that language writes money (*We have added Kč250.00 credit
+    towards your next clean.*; in Czech *Přidali jsme vám kredit 250,00 Kč na příští úklid.*). An
+    administrator's cancellation tells a signed-in customer too, by e-mail and, unless the refund notice
+    already went, by a notification. Until then only a guest was e-mailed, so a customer who uses only the
+    website heard nothing.
+  - *Customer and admin — a booking nobody is on can be called off early, with the same remedy.* An
+    administrator's *Cancel as a no-show* is accepted before the start on a booking nobody is on that would
+    be cancelled at its start anyway, and pays the full refund and the apology credit; the alert for a
+    job nobody has taken and the console's no-show panel say so. The plain *Cancel order* still pays no
+    apology, because it also serves a cancellation asked for by phone, a duplicate and a test booking
+    (*"Yup"*). Until then calling such a booking off early paid the customer less than waiting.
+  - *Admin — told when a cleaner leaves a job somebody else is still on.* A drop or a rejection that
+    leaves somebody on the order, and so the crew short, raises *An order lost one of its cleaners*
+    (`admin.order.crew_short`), in the console and by e-mail, for Support and above (*"Confirm"*); a crew
+    that empties still raises the crew-lost notice.
+  - *Customer — the status e-mails come in your booking's language.* The e-mails sent when a cleaner
+    takes the booking, starts and completes it have their words and labels in English, Czech, Slovak,
+    Ukrainian and Russian; they came in English with a translated date. The first take's is retitled
+    *Cleaner found* — *A cleaner has taken your booking.*, which no longer repeats the booking e-mail's
+    *Booking confirmed* (*"Confirm"*).
+  - *Customer — the order history reads as you were told.* The Android and iOS apps list a status once,
+    however often a seat was offered again, and name the step where a booking went back to the board
+    *Offered to cleaners again*; the website's order page and the guest page no longer tick *Confirmed*
+    after the last cleaner left, and date it by the new take after one.
+  - *Customer — the refunded no-cleaner notification says what happened.* It opens *No cleaner could make it
+    to booking #…*, like its two siblings, instead of saying nobody was able to take it, which was false
+    after a cleaner took it and left.
+  - *Cleaner — a take racing a cancelled job no longer strands you on it.* A cleaner cancelling a job and
+    another taking it, two cleaners cancelling one job, and a take racing the booking's cancellation or
+    refund are decided one after the other, so a job is no longer left new with a cleaner on it who can
+    neither set off nor start. A take that loses is refused with *Another cleaner has already taken this
+    job.*, although the job may be back on the board; the next tap takes it. An administrator's placement
+    racing a cancelled job is not covered.
+  - *Cleaner — the framework agreement and the contract for work say when you can release a job.* The
+    `2026-10-27` framework agreement lets you release a job, in the app, until it is on the way or in
+    progress and no later than its start, and lets you decline a placement past that by not accepting its
+    contract for work and telling the company; the `2026-10-27` contract for work leaves the decline to the
+    agreement. Every cleaner accepts the framework agreement again before their next job, approval or
+    placement from that day; jobs already held carry on (*"Fix the wording"*, *"Approve"*).
+  - *Cleaner — your pay where it counts, and the customer's price only on a cash job.* A job reserved for
+    you on *Pending offers* shows your own pay for one seat instead of the customer's total (*"Yes"*). On a
+    job not paid in cash the job detail shows how it is paid, not the customer's total, discounts or
+    package prices, on partner web, Android and iOS; a cash job keeps the total you collect.
+  - *Cleaner and customer, Android and iOS — the phone suggests a strong password.* The sign-up, sign-in,
+    reset and Security fields tell iCloud Keychain and Google Password Manager what they hold, so the
+    phone offers a strong password and fills it back at sign-in; on iOS each app names its website for
+    it, which serves the file Apple checks. Android moves to Compose 1.8 for it (*"Confirm"*). On iOS an
+    e-mail field opens in lower case without autocorrection, and the birth-date wheel has *Cancel* and
+    *Done*, saving the date only on *Done*.
+  - *Cleaner, Android and iOS — a document can be photographed.* *Upload* and *Replace* offer the camera,
+    the photo library (gallery) or a file; a photo goes up as a JPEG, and iOS's file picker offers exactly
+    the types the server accepts — PDF, JPEG, PNG, DOC and DOCX — where it offered HEIC, which was refused.
+  - *Customer — Prague by its postcode, and city parts count.* A Prague address with a valid postcode is
+    served whatever its city is called (*Прага*, *Prague*, *Praha 8*), and any other valid postcode is not
+    a Prague address; `Brno-střed`, `Ostrava-Poruba` or `Pardubice II` count as their city, while
+    `Praha-západ`, `Praha-východ`, `Brno-venkov`, `Plzeň-sever` and `Plzeň-jih` stay refused. A recurring
+    schedule is refused at an address in a city nobody serves, as a booking is; the Android customer app
+    says *We don't currently serve this city.* instead of a raw key; and iOS looks addresses up in Czech, so
+    a Russian or Ukrainian iPhone no longer reads Prague as *Прага*. The admin console's ZIP-prefix hint
+    says what the prefix now decides (*"Confirm. But we start with Praha first, also Prague post indexes
+    are quite weird, some of them start with 1. Maybe it's better to match exactly the pattern"*).
+  - *Everyone — passwords.* A letter of any alphabet counts, on the server and the websites as in the
+    apps, so *Пароль2024* is no longer refused after every rule showed green. Registering an unconfirmed
+    address again with a different password leaves the account with none: the confirmation signs its
+    confirmer in, and *Forgot password* gives them their own (*"Add findings to the plan for the fix"*).
+  - **Operator:** deploy the APIs, the Functions app and the websites to DEV together — the Functions app
+    renders the account cancellation e-mail, the started and completed e-mails and the release e-mail's
+    new gate — and run `sql-scripts/fix-service-city-zip-prefixes.sql` on DEV before any build of these
+    changes points at it, or DEV keeps enforcing the seeded regional ZIP prefixes. Check both hosts'
+    `/.well-known/apple-app-site-association` after the deploy. The two `2026-10-27` legal folders are
+    dated for that deploy: if it is later, rename them, never to an earlier day. (ADR-0067, ADR-0068.)
+
 - **Cleaner and API consumer — a job under way can no longer be dropped.** `POST api/Order/DropOrder`
   on the partner web and partner mobile hosts takes a drop only while the job is *New* or *Confirmed*.
   A job on the way, in progress or in any other status is refused with `order.not_confirmed`, the key
@@ -945,9 +1039,10 @@ need backfilling.
   being rejected, while the hold runs ends it at once. An admin's status override can no longer set
   *Confirmed* on a booking with nobody assigned — reassign instead. Since 2026-10-25 a cleaner can no
   longer drop a booking that is on the way or in progress, so the administrators are told only of a new
-  or confirmed one (under *Changed*), and the walk-back tells the customer that another cleaner is being
-  looked for (under *Added*); the next take still sends the second confirmation e-mail. (ADR-0067; owner
-  ruling 2026-09-19.)
+  or confirmed one (under *Changed*); and since then every release tells the customer that the booking is
+  offered to cleaners again (under *Added*), a release that ends the hold, or comes after it ended, is no
+  longer followed by the *open to all cleaners* message, and a re-take e-mails *We've found you a new
+  cleaner*. (ADR-0067; owner ruling 2026-09-19.)
 
 - **Admin — the revenue report is net, by completion date.** The headline is completed and paid
   orders in the period **by completion date**, in one currency, **minus every refund on those orders** —

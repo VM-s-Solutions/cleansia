@@ -123,6 +123,15 @@ final class OrderDetailMappingTests: XCTestCase {
         XCTAssertFalse(detail.payment.isCash)
     }
 
+    func testACashJobIsCashAndAJobWithNoPaymentTypeIsNot() throws {
+        var item = makeItem()
+        item.paymentType = Code(name: "Cash", value: 1)
+        XCTAssertTrue(try OrderDetail(item).payment.isCash)
+
+        item.paymentType = nil
+        XCTAssertFalse(try OrderDetail(item).payment.isCash)
+    }
+
     func testPaymentHasNoBreakdownWhenSubtotalEqualsTotal() throws {
         var item = makeItem()
         item.originalSubtotal = 1200

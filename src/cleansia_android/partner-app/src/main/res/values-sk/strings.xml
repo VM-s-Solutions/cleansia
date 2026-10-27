@@ -279,6 +279,7 @@
     <string name="no_photos">Žiadne fotky nahrané</string>
     <string name="take_photo">Odfotiť</string>
     <string name="choose_from_gallery">Vybrať z galérie</string>
+    <string name="document_choose_file">Vybrať súbor</string>
     <string name="delete_photo">Vymazať fotku</string>
     <string name="delete_photo_confirm">Naozaj chcete vymazať túto fotku?</string>
     <string name="photos_none_recorded">Žiadne fotky neboli zaznamenané</string>

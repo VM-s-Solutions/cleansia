@@ -89,11 +89,12 @@ struct BookingAddressReviewPane: View {
             .padding(.bottom, Spacing.m)
         }
         .background(CleansiaColors.background.ignoresSafeArea())
-        .task(id: picked.city) {
+        .task(id: [picked.city, picked.zipCode]) {
             cityServiced = await AddressServiceability.cityServiced(
                 provider: serviceArea,
                 countryIsoCode: picked.countryIsoCode,
-                city: picked.city
+                city: picked.city,
+                zipCode: picked.zipCode
             )
         }
     }

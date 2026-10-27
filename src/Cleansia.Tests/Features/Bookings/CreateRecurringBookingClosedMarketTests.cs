@@ -71,6 +71,7 @@ public class CreateRecurringBookingClosedMarketTests
             _savedAddressRepository.Object,
             OrderMarketDoubles.Trading(CreateOrderTestData.DefaultCurrency()),
             countryRepository ?? OrderMarketDoubles.Servicing(OpenCountryId),
+            OrderMarketDoubles.EveryCityServiced(),
             CatalogueDoubles.Services(),
             CatalogueDoubles.Packages(),
             Cleansia.Tests.Features.Legal.CustomerConsentDoubles.Consented(),

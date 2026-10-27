@@ -129,7 +129,7 @@ class SnapSheetState internal constructor(
 
         override suspend fun onPreFling(available: Velocity): Velocity {
             val offset = draggable.offset
-            return if (available.y < 0f && !offset.isNaN() && offset > draggable.anchors.minAnchor()) {
+            return if (available.y < 0f && !offset.isNaN() && offset > draggable.anchors.minPosition()) {
                 draggable.settle(available.y)
                 available
             } else {

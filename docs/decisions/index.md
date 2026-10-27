@@ -152,7 +152,13 @@ stands. ADR-0037 carries the dated pointer; its historical body is unchanged.
 **[ADR-0067](./adr-0067) was amended in place on 2026-10-25** by two owner rulings: a cleaner may drop a
 job only while it is `New` or `Confirmed`, so a crew empties only there, and the customer is told when
 their booking goes back to `New` (O-D2-1, option (b)). The record carries a dated banner and its body is
-unchanged. It replaces no record, so there is no arrow.
+unchanged. It replaces no record, so there is no arrow. **A second dated banner, the same day's fix
+plan**, records that every release tells the customer and the administrators (`admin.order.crew_short`
+when somebody is still on the order), in words that count no cleaners; that a re-take e-mails *We've
+found you a new cleaner*; that a release announces a reservation that has ended; and that a drop locks
+the order's row and a take stamps the order, so two drops serialize while D8 stands. **[ADR-0068](./adr-0068)
+gained a dated section** the same day: the `2026-10-27` framework agreement lets a job be released only
+until it is under way, and a placement past that is declined by not accepting its contract.
 
 ## All records
 
@@ -224,8 +230,8 @@ unchanged. It replaces no record, so there is no arrow.
 | **[ADR-0064](./adr-0064)** | A company's lifecycle: deactivation, wind-down, archive (amends ADR-0061 O-3/D1 and ADR-0058 D1 by reference) | `accepted` |
 | **[ADR-0065](./adr-0065)** | Administrators are told: an in-app feed and an e-mail per event (owner ruling D5, 2026-09-19; shipped as T-0768 / T-0769 / T-0774 / T-0775) | `accepted` |
 | **[ADR-0066](./adr-0066)** | Four administrator roles: Administrator, Manager, Support, Accountant (owner ruling D8, 2026-09-19; supersedes ADR-0001 D2's admin rows; T-0748 / T-0773) | `accepted` |
-| **[ADR-0067](./adr-0067)** | Confirmed → New when the last cleaner leaves; the administrators are told (owner ruling D2, 2026-09-19; supersedes ADR-0057's open consequence; shipped as T-0770; amended 2026-10-25: a drop only before the job is under way, and the customer is told) | `accepted` |
-| **[ADR-0068](./adr-0068)** | A contract for work per job: the text the order is booked under, the cleaner's acceptance of it, what both parties can see (owner ruling 2026-09-20; amends ADR-0063 D9 by one sentence; shipped as T-0777–T-0784; amended 2026-09-27: the company sells in its own name; amended 2026-09-29: the operating company and the cleaner are the parties, under our draft texts; amended 2026-10-03: the seat is paid the reward its contract states) | `accepted` |
+| **[ADR-0067](./adr-0067)** | Confirmed → New when the last cleaner leaves; the administrators are told (owner ruling D2, 2026-09-19; supersedes ADR-0057's open consequence; shipped as T-0770; amended 2026-10-25: a drop only before the job is under way, and the customer is told; amended again by the fix plan of 2026-10-25: every release tells the customer and the administrators, the re-take e-mail says a new cleaner, a drop locks the order's row) | `accepted` |
+| **[ADR-0068](./adr-0068)** | A contract for work per job: the text the order is booked under, the cleaner's acceptance of it, what both parties can see (owner ruling 2026-09-20; amends ADR-0063 D9 by one sentence; shipped as T-0777–T-0784; amended 2026-09-27: the company sells in its own name; amended 2026-09-29: the operating company and the cleaner are the parties, under our draft texts; amended 2026-10-03: the seat is paid the reward its contract states; amended 2026-10-25: a job is released only until it is under way, in the `2026-10-27` texts) | `accepted` |
 | **[ADR-0069](./adr-0069)** | The dirtiness level prices, times, crews and pays the job, and a job's pay is split across its seats (owner rulings 2026-09-28, meeting-plan decisions 28–40; changes a premise of ADR-0037 D9, whose no-spare-seat ruling stands) | `accepted` |
 | **[ADR-0070](./adr-0070)** | A saved card guarantees cash, and what a customer owes is a receivable — paid through a pay link, charged to the card only once the terms allow it; a lockout is the customer's cancellation at the whole price; the crew shares a fee once it is collected (owner rulings 2026-09-28, meeting-plan decisions 11–13, 16–18 and 24; amended 2026-10-01: a card may be saved while paying by card, and only a ticked one is kept; amended 2026-10-04: cash needs no card and none is charged, and a confirmed lockout pays each seat its reward; amended 2026-10-06: an amount owed refuses every booking, and a door non-payment is owed) | `accepted` |
 | **[ADR-0071](./adr-0071)** | An order's two lifecycle axes, fulfilment and payment, are its concurrency tokens, so a write decided on a stale read of either is refused at commit; the payment status a refund's settle derives is read again on such a refusal (2026-10-12; changes a premise of ADR-0067 D8, whose conclusion stands) | `accepted` |

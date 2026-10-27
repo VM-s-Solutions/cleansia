@@ -83,8 +83,8 @@ class OrderDetailPreferredOfferTest {
         customerAddressApproximate = "Praha 4 · 14000",
         rooms = 2,
         bathrooms = 1,
-        totalPrice = 1200.0,
         currencyCode = "CZK",
+        estimatedCleanerPay = 600.0,
     )
 
     @Test

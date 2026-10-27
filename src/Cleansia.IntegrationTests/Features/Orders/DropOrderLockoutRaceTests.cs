@@ -28,10 +28,11 @@ namespace Cleansia.IntegrationTests.Features.Orders;
 /// <summary>
 /// A cleaner drops a two-seat order while an administrator confirms the lockout on it. The lockout pays
 /// every seat on the crew it loaded, and the pay re-reads the crew when it runs, so a seat deleted after
-/// the confirmation is refused its reward. A drop that leaves a crew changes no order column; only the
-/// order's own row carries the <c>CurrentStatus</c> concurrency token, so it is real Postgres, two
-/// connections and two commits that show whether the drop is checked against the status the lockout moved.
-/// A drop of the last seat also stages the customer's notices, and the refused commit takes them with it.
+/// the confirmation is refused its reward. The drop locks the order's row before it reads the crew, so the
+/// two are arbitrated where the drop reads: a lockout committed first gets the drop refused with
+/// <c>order.not_confirmed</c>, and a drop holding the row makes the lockout's commit wait for it and then
+/// re-check the order's status against what the drop left. Real Postgres, two connections, two commits. A
+/// drop of the last seat also stages the customer's notices; a refused drop stages none.
 /// </summary>
 [Collection("PostgresCollection")]
 public class DropOrderLockoutRaceTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
@@ -45,15 +46,9 @@ public class DropOrderLockoutRaceTests(PostgresContainerFixture fixture) : BaseI
     private const string CountryId = "country-cz-drop-lockout";
 
     [Fact]
-    public async Task A_Drop_Staged_Before_A_Confirmed_Lockout_Commits_Is_Refused_And_The_Seat_Keeps_Its_Reward()
+    public async Task A_Lockout_Committed_First_Refuses_The_Drop_And_The_Seat_Keeps_Its_Reward()
     {
         await ResetAndSeedAsync();
-
-        await using var dropContext = NewContext(UserOf(CleanerA));
-        var dropped = await DropHandler(dropContext, CleanerA)
-            .Handle(new DropOrder.Command(OrderId), CancellationToken.None);
-        Assert.True(dropped.IsSuccess, dropped.Error?.Message);
-        Assert.Equal(1, dropped.Value!.CrewRemaining);
 
         await using (var lockoutContext = NewContext(AdminId))
         {
@@ -63,8 +58,11 @@ public class DropOrderLockoutRaceTests(PostgresContainerFixture fixture) : BaseI
             await lockoutContext.CommitAsync(CancellationToken.None);
         }
 
-        await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() => dropContext.CommitAsync(CancellationToken.None));
+        await using var dropContext = NewContext(UserOf(CleanerA));
+        var dropped = await DropHandler(dropContext, CleanerA)
+            .Handle(new DropOrder.Command(OrderId), CancellationToken.None);
 
+        Assert.Equal(BusinessErrorMessage.OrderNotConfirmed, dropped.Error?.Message);
         await using var verify = NewContext(AdminId);
         var order = await LoadAsync(verify);
         Assert.Equal(OrderStatus.Cancelled, order.CurrentStatus);
@@ -75,6 +73,39 @@ public class DropOrderLockoutRaceTests(PostgresContainerFixture fixture) : BaseI
         Assert.False(await verify.EmployeeActionAudits.IgnoreQueryFilters()
             .AnyAsync(a => a.EmployeeId == CleanerA && a.Action == EmployeeAuditAction.OrderDropped));
         Assert.DoesNotContain(BusinessErrorMessage.EmployeeNotAssigned, await PayRefusalsAsync(verify, CleanerA));
+    }
+
+    /// <summary>
+    /// The drop reached the row first. The lockout read the crew before the drop committed and its commit
+    /// waits on the row; the drop leaves the order Confirmed with one cleaner, so the lockout then commits,
+    /// and the seat that left before it is not paid.
+    /// </summary>
+    [Fact]
+    public async Task A_Drop_Holding_The_Row_Makes_The_Lockout_Commit_After_It_And_Leaves_The_Dropped_Seat_Unpaid()
+    {
+        await ResetAndSeedAsync();
+
+        await using var dropContext = NewContext(UserOf(CleanerA));
+        var dropped = await DropHandler(dropContext, CleanerA)
+            .Handle(new DropOrder.Command(OrderId), CancellationToken.None);
+        Assert.True(dropped.IsSuccess, dropped.Error?.Message);
+        Assert.Equal(1, dropped.Value!.CrewRemaining);
+
+        await using var lockoutContext = NewContext(AdminId);
+        var lockout = await LockoutHandler(lockoutContext)
+            .Handle(new AdminCancelOrderAsLockout.Command(OrderId), CancellationToken.None);
+        Assert.True(lockout.IsSuccess, lockout.Error?.Message);
+        var lockoutCommit = lockoutContext.CommitAsync(CancellationToken.None);
+        await WaitUntilAWriterWaitsOnTheRowAsync();
+        await dropContext.CommitAsync(CancellationToken.None);
+        await lockoutCommit;
+
+        await using var verify = NewContext(AdminId);
+        var order = await LoadAsync(verify);
+        Assert.Equal(OrderStatus.Cancelled, order.CurrentStatus);
+        Assert.Equal(CleanerB, Assert.Single(order.AssignedEmployees).EmployeeId);
+        Assert.Contains(BusinessErrorMessage.EmployeeNotAssigned, await PayRefusalsAsync(verify, CleanerA));
+        Assert.DoesNotContain(BusinessErrorMessage.EmployeeNotAssigned, await PayRefusalsAsync(verify, CleanerB));
     }
 
     /// <summary>
@@ -110,27 +141,13 @@ public class DropOrderLockoutRaceTests(PostgresContainerFixture fixture) : BaseI
     }
 
     /// <summary>
-    /// The last seat: the drop walks the order back to New and stages the customer's push, feed row and
-    /// e-mail in its own unit of work. The lockout commits first, the stale drop is refused whole, and the
-    /// customer is told nothing about a drop that never happened.
+    /// The last seat, with the lockout committed first: the drop is refused before it changes anything, so
+    /// nothing is staged for the customer and the cleaner stays on the cancelled order.
     /// </summary>
     [Fact]
-    public async Task A_Refused_Drop_Of_The_Last_Seat_Leaves_Nothing_For_The_Customer()
+    public async Task A_Lockout_Committed_First_Refuses_The_Drop_Of_The_Last_Seat_And_Tells_The_Customer_Nothing()
     {
         await ResetAndSeedAsync(crew: [CleanerA]);
-
-        await using var dropContext = NewContext(UserOf(CleanerA));
-        var dropped = await DropHandler(dropContext, CleanerA, RealNotificationProducer(dropContext))
-            .Handle(new DropOrder.Command(OrderId), CancellationToken.None);
-        Assert.True(dropped.IsSuccess, dropped.Error?.Message);
-        Assert.Equal(0, dropped.Value!.CrewRemaining);
-        var stagedForCustomer = dropContext.ChangeTracker.Entries<OutboxMessage>()
-            .Select(entry => entry.Entity.MessageKey)
-            .Where(key => key.StartsWith("email:order-cleaner-released:", StringComparison.Ordinal)
-                || key.StartsWith($"push:{CustomerId}:{NotificationEventCatalog.OrderCleanerReleased}:", StringComparison.Ordinal))
-            .ToList();
-        Assert.Equal(2, stagedForCustomer.Count);
-        Assert.Contains(dropContext.ChangeTracker.Entries<UserNotification>(), entry => entry.Entity.UserId == CustomerId);
 
         await using (var lockoutContext = NewContext(AdminId))
         {
@@ -140,16 +157,74 @@ public class DropOrderLockoutRaceTests(PostgresContainerFixture fixture) : BaseI
             await lockoutContext.CommitAsync(CancellationToken.None);
         }
 
-        await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() => dropContext.CommitAsync(CancellationToken.None));
+        await using var dropContext = NewContext(UserOf(CleanerA));
+        var dropped = await DropHandler(dropContext, CleanerA, RealNotificationProducer(dropContext))
+            .Handle(new DropOrder.Command(OrderId), CancellationToken.None);
 
+        Assert.Equal(BusinessErrorMessage.OrderNotConfirmed, dropped.Error?.Message);
+        Assert.Empty(dropContext.ChangeTracker.Entries<OutboxMessage>());
+        Assert.Empty(dropContext.ChangeTracker.Entries<UserNotification>());
         await using var verify = NewContext(AdminId);
         var order = await LoadAsync(verify);
         Assert.Equal(OrderStatus.Cancelled, order.CurrentStatus);
         Assert.Equal(CleanerA, Assert.Single(order.AssignedEmployees).EmployeeId);
-        Assert.False(await verify.OutboxMessages.IgnoreQueryFilters()
-            .AnyAsync(message => stagedForCustomer.Contains(message.MessageKey)));
         Assert.False(await verify.Set<UserNotification>().IgnoreQueryFilters()
             .AnyAsync(row => row.UserId == CustomerId && row.EventKey == NotificationEventCatalog.OrderCleanerReleased));
+    }
+
+    /// <summary>
+    /// The last seat, with the drop holding the row: the drop walks the order back to New and tells the
+    /// customer, and the lockout that read a Confirmed order before it is refused at its commit, since there
+    /// is nobody left on the order to have been locked out.
+    /// </summary>
+    [Fact]
+    public async Task A_Drop_Of_The_Last_Seat_Holding_The_Row_Refuses_The_Lockout_At_Its_Commit()
+    {
+        await ResetAndSeedAsync(crew: [CleanerA]);
+
+        await using var dropContext = NewContext(UserOf(CleanerA));
+        var dropped = await DropHandler(dropContext, CleanerA, RealNotificationProducer(dropContext))
+            .Handle(new DropOrder.Command(OrderId), CancellationToken.None);
+        Assert.True(dropped.IsSuccess, dropped.Error?.Message);
+        Assert.Equal(0, dropped.Value!.CrewRemaining);
+
+        await using var lockoutContext = NewContext(AdminId);
+        var lockout = await LockoutHandler(lockoutContext)
+            .Handle(new AdminCancelOrderAsLockout.Command(OrderId), CancellationToken.None);
+        Assert.True(lockout.IsSuccess, lockout.Error?.Message);
+        var lockoutCommit = lockoutContext.CommitAsync(CancellationToken.None);
+        await WaitUntilAWriterWaitsOnTheRowAsync();
+        await dropContext.CommitAsync(CancellationToken.None);
+
+        await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() => lockoutCommit);
+        await using var verify = NewContext(AdminId);
+        var order = await LoadAsync(verify);
+        Assert.Equal(OrderStatus.New, order.CurrentStatus);
+        Assert.Empty(order.AssignedEmployees);
+        Assert.True(await verify.Set<UserNotification>().IgnoreQueryFilters()
+            .AnyAsync(row => row.UserId == CustomerId && row.EventKey == NotificationEventCatalog.OrderCleanerReleased));
+    }
+
+    /// <summary>The other writer has reached the order's row and is parked on its lock.</summary>
+    private async Task WaitUntilAWriterWaitsOnTheRowAsync()
+    {
+        await using var conn = new NpgsqlConnection(Fixture.GetConnectionString());
+        await conn.OpenAsync();
+        var deadline = DateTime.UtcNow.AddSeconds(15);
+        while (DateTime.UtcNow < deadline)
+        {
+            await using var waiting = new NpgsqlCommand(
+                "SELECT count(*) FROM pg_stat_activity WHERE datname = current_database() AND wait_event_type = 'Lock'",
+                conn);
+            if ((long)(await waiting.ExecuteScalarAsync())! > 0)
+            {
+                return;
+            }
+
+            await Task.Delay(50);
+        }
+
+        throw new TimeoutException("No writer came to wait on the order's row.");
     }
 
     private static string UserOf(string employeeId) => $"{employeeId}-user";

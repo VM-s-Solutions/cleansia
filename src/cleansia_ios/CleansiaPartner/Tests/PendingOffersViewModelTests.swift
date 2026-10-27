@@ -66,6 +66,7 @@ final class PendingOffersViewModelTests: XCTestCase {
         XCTAssertEqual(rendered?.customerAddressApproximate, "Praha 4 · 14000")
         XCTAssertEqual(rendered?.respondByUtc, row.respondByUtc)
         XCTAssertEqual(rendered?.displayOrderNumber, "CL-a")
+        XCTAssertEqual(rendered?.estimatedCleanerPay, 600)
         XCTAssertEqual(rendered, row)
     }
 
@@ -87,7 +88,8 @@ final class PendingOffersViewModelTests: XCTestCase {
                 "rooms",
                 "bathrooms",
                 "totalPrice",
-                "currencyCode"
+                "currencyCode",
+                "estimatedCleanerPay"
             ]
         )
     }

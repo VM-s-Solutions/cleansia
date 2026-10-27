@@ -577,7 +577,7 @@ class NotificationTemplatesTest {
         val context = mockk<Context>()
         every {
             context.getString(R.string.notification_order_no_cleaner_refunded_body, "A-1042", "250 Kč")
-        } returns "Nobody was able to take booking #A-1042, so we have refunded it in full and added 250 Kč credit towards your next clean. Sorry."
+        } returns "No cleaner could make it to booking #A-1042, so we have refunded it in full and added 250 Kč credit towards your next clean. Sorry."
 
         val body = NotificationTemplates.formatBody(
             context,
@@ -587,7 +587,7 @@ class NotificationTemplatesTest {
         )
 
         assertEquals(
-            "Nobody was able to take booking #A-1042, so we have refunded it in full and added 250 Kč credit towards your next clean. Sorry.",
+            "No cleaner could make it to booking #A-1042, so we have refunded it in full and added 250 Kč credit towards your next clean. Sorry.",
             body,
         )
     }
@@ -598,7 +598,7 @@ class NotificationTemplatesTest {
         val context = mockk<Context>()
         every {
             context.getString(R.string.notification_order_no_cleaner_refunded_body, "A-1042", "")
-        } returns "Nobody was able to take booking #A-1042, so we have refunded it in full and added  credit towards your next clean. Sorry."
+        } returns "No cleaner could make it to booking #A-1042, so we have refunded it in full and added  credit towards your next clean. Sorry."
 
         val body = NotificationTemplates.formatBody(
             context,
@@ -660,6 +660,34 @@ class NotificationTemplatesTest {
                     emptyList<String>(),
                     formatSlots(valueOf(xml, "notification_order_no_cleaner_${outcome}_title")!!),
                 )
+            }
+        }
+    }
+
+    /**
+     * A cleaner may have taken the booking and dropped it before the sweep cancelled it, and an administrator's
+     * no-show confirmation cancels one a cleaner was on, so no no-cleaner string says nobody took it.
+     */
+    private val nobodyTookStems = mapOf(
+        "values" to listOf("nobody", "took", "take"),
+        "values-cs" to listOf("nikdo", "převz"),
+        "values-sk" to listOf("nikto", "prevz"),
+        "values-uk" to listOf("ніхто", "взяв"),
+        "values-ru" to listOf("никто", "взял"),
+    )
+
+    @Test
+    fun `no no-cleaner string says nobody took the booking in any locale`() {
+        locales.forEach { locale ->
+            val xml = stringsXml(locale)
+            noCleanerKeys.forEach { key ->
+                val value = valueOf(xml, key)!!
+                nobodyTookStems.getValue(locale).forEach { stem ->
+                    assertFalse(
+                        "$locale/$key says nobody took the booking (\"$stem\"): \"$value\"",
+                        value.contains(stem, ignoreCase = true),
+                    )
+                }
             }
         }
     }
@@ -759,7 +787,7 @@ class NotificationTemplatesTest {
         val context = mockk<Context>()
         every {
             context.getString(R.string.notification_order_cleaner_released_body, "A-1042")
-        } returns "We're looking for another cleaner for booking #A-1042."
+        } returns "We're offering booking #A-1042 to our cleaners again."
 
         val body = NotificationTemplates.formatBody(
             context,
@@ -768,7 +796,7 @@ class NotificationTemplatesTest {
             mapOf("orderId" to "ord-7", "orderNumber" to "A-1042"),
         )
 
-        assertEquals("We're looking for another cleaner for booking #A-1042.", body)
+        assertEquals("We're offering booking #A-1042 to our cleaners again.", body)
     }
 
     @Test
@@ -824,6 +852,34 @@ class NotificationTemplatesTest {
                 releaseReasonStems.getValue(locale).forEach { stem ->
                     assertFalse(
                         "$locale/strings.xml tells the customer why the cleaner left in $key: \"$value\"",
+                        value.contains(stem, ignoreCase = true),
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * The same notice goes out when the last cleaner leaves and when one of two does, so it never promises a
+     * single replacement or implies the other cleaner is coming.
+     */
+    private val singleReplacementStems = mapOf(
+        "values" to listOf("another", "a new cleaner", "your cleaner"),
+        "values-cs" to listOf("jiného", "nového", "váš uklízeč"),
+        "values-sk" to listOf("iného", "nového", "váš upratovač"),
+        "values-uk" to listOf("іншого", "нового", "ваш клінер"),
+        "values-ru" to listOf("другого", "нового", "ваш клинер"),
+    )
+
+    @Test
+    fun `no cleaner-release string promises a single replacement in any locale`() {
+        locales.forEach { locale ->
+            val xml = stringsXml(locale)
+            releaseKeys.forEach { key ->
+                val value = valueOf(xml, key)!!
+                singleReplacementStems.getValue(locale).forEach { stem ->
+                    assertFalse(
+                        "$locale/$key promises a single replacement (\"$stem\"): \"$value\"",
                         value.contains(stem, ignoreCase = true),
                     )
                 }

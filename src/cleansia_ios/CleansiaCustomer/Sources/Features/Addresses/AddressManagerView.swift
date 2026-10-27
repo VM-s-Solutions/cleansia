@@ -215,7 +215,8 @@ private struct AddressListPane: View {
         for address in addresses {
             let serviced = await AddressServiceability.cityServicedAnywhere(
                 provider: serviceArea,
-                city: address.city
+                city: address.city,
+                zipCode: address.zipCode
             )
             if serviced == false {
                 unserviced.insert(address.id)
@@ -391,7 +392,7 @@ private struct AddressReviewPane: View {
         }
         .readableWidth()
         .background(CleansiaColors.background.ignoresSafeArea())
-        .task(id: picked.city) { await resolveServiceability() }
+        .task(id: [picked.city, picked.zipCode]) { await resolveServiceability() }
     }
 
     /// Advisory only — Confirm stays enabled. An address is worth keeping where the platform does not
@@ -422,7 +423,8 @@ private struct AddressReviewPane: View {
         cityServiced = await AddressServiceability.cityServiced(
             provider: serviceArea,
             countryIsoCode: picked.countryIsoCode,
-            city: picked.city
+            city: picked.city,
+            zipCode: picked.zipCode
         )
     }
 

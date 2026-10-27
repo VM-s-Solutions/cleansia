@@ -22,6 +22,7 @@ import { OrderStatus, PaymentStatus } from '@cleansia/models';
 import { OrderStatusIconPipe, OrderStatusLabelPipe } from '@cleansia/pipes';
 import { CleansiaCustomerRoute } from '@cleansia/services';
 import { formatMoney, localeFor } from '@cleansia/utils';
+import { statusReachedAt } from '../order-status-history.models';
 import { GuestOrderService } from './guest-order.service';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { takeUntil } from 'rxjs';
@@ -131,17 +132,15 @@ export class TrackOrderComponent implements OnInit {
    */
   readonly orderSteps = computed(() => {
     const order = this.manualResult();
-    const history = order?.statusHistory ?? [];
     const currentValue = order?.orderStatus?.value;
-    const reached = new Set(history.map((h) => h.status?.value));
 
     return TrackOrderComponent.ORDER_STEPS.map((step) => {
-      const entry = history.find((h) => h.status?.value === step.value);
+      const at = statusReachedAt(order?.statusHistory, step.value);
       return {
         key: step.key,
         label: this.translate.instant(`pages.track_order.step.${step.key}`),
-        when: entry ? this.formatDate(entry.createdOn) : '',
-        done: reached.has(step.value) && step.value !== currentValue,
+        when: at ? this.formatDate(at) : '',
+        done: !!at && step.value !== currentValue,
         current: step.value === currentValue,
       };
     });

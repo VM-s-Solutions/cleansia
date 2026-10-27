@@ -287,6 +287,7 @@
     <string name="order_detail_review_comment">Přidejte komentář (nepovinné)</string>
     <string name="order_detail_submit_review">Odeslat hodnocení</string>
     <string name="order_detail_timeline">Časová osa stavu</string>
+    <string name="order_detail_timeline_new_cleaner">Znovu nabídnuto uklízečům</string>
     <string name="order_detail_rebook">Rezervovat tento úklid znovu</string>
     <string name="order_detail_download_receipt">Stáhnout účtenku</string>
     <string name="order_detail_report_issue">Nahlásit problém</string>
@@ -1333,8 +1334,8 @@
     <string name="notification_order_payment_confirmed_body">Vaše rezervace #%1$s je potvrzena. Klepněte pro zobrazení detailů.</string>
     <string name="notification_cleaner_assigned_title">Uklízeč nalezen! 🎉</string>
     <string name="notification_cleaner_assigned_body">K vaší rezervaci #%1$s je přiřazen uklízeč. Klepněte pro zobrazení detailů.</string>
-    <string name="notification_order_cleaner_released_title">Váš uklízeč už nemůže přijít</string>
-    <string name="notification_order_cleaner_released_body">Hledáme jiného uklízeče pro rezervaci #%1$s a dáme vám vědět, jakmile ji někdo převezme.</string>
+    <string name="notification_order_cleaner_released_title">Uklízeč už nemůže přijít</string>
+    <string name="notification_order_cleaner_released_body">Rezervaci #%1$s znovu nabízíme našim uklízečům a dáme vám vědět, jakmile ji někdo převezme.</string>
     <string name="notification_order_starting_soon_title">Úklid brzy začíná</string>
     <string name="notification_order_starting_soon_body">Vaše rezervace #%1$s začíná přibližně za hodinu. Klepněte pro zobrazení detailů.</string>
     <string name="notification_order_preferred_offer_closed_title">Rezervace je otevřená všem uklízečům</string>
@@ -1350,7 +1351,7 @@
     <string name="notification_order_refunded_title">Vrácení peněz na cestě</string>
     <string name="notification_order_refunded_body">Vaše vrácení peněz za rezervaci #%1$s se zpracovává.</string>
     <string name="notification_order_no_cleaner_refunded_title">Žádný uklízeč nebyl k dispozici</string>
-    <string name="notification_order_no_cleaner_refunded_body">Objednávku #%1$s nikdo nestihl převzít, proto vám vracíme celou částku a přidáváme kredit %2$s na příští úklid. Omlouváme se.</string>
+    <string name="notification_order_no_cleaner_refunded_body">Na objednávku #%1$s nemohl dorazit žádný uklízeč, proto vám vracíme celou částku a přidáváme kredit %2$s na příští úklid. Omlouváme se.</string>
     <string name="notification_order_no_cleaner_refund_pending_title">Žádný uklízeč nebyl k dispozici</string>
     <string name="notification_order_no_cleaner_refund_pending_body">Na objednávku #%1$s nemohl dorazit žádný uklízeč, proto jsme ji zrušili. Vrácení peněz je na cestě a přidali jsme vám kredit %2$s na příští úklid. Omlouváme se.</string>
     <string name="notification_order_no_cleaner_nothing_charged_title">Žádný uklízeč nebyl k dispozici</string>
@@ -1436,6 +1437,7 @@
     <string name="error_country_not_existing_id">Země nenalezena</string>
     <string name="error_currency_invalid">Neplatná měna</string>
     <string name="error_country_not_serviced">V této zemi zatím nepůsobíme.</string>
+    <string name="error_city_not_serviced">V tomto městě zatím nepůsobíme.</string>
     <string name="error_tenant_not_found">Tento trh zatím neprovozuje žádná společnost Cleansia.</string>
     <string name="error_tenant_archived">Záznamy této společnosti jsou zapečetěny k archivaci; nic na nich už nelze měnit.</string>
     <string name="error_order_country_operator_mismatch">Tuto adresu obsluhuje jiná společnost Cleansia a z tohoto účtu ji nelze objednat.</string>

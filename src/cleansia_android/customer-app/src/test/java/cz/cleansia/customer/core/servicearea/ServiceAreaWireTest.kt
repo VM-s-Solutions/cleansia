@@ -121,6 +121,7 @@ class ServiceAreaWireTest {
 
         assertEquals(listOf("city-1", "city-2"), list?.map { it.id })
         assertEquals(listOf("Praha", "Brno"), list?.map { it.name })
+        assertEquals(listOf("1", "6"), list?.map { it.zipPrefix })
     }
 
     // --- the answer that must never be fabricated ---------------------------------

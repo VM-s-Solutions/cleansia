@@ -6,8 +6,8 @@ namespace Cleansia.Infra.Common.Attributes;
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter)]
 public class PasswordAttribute : ValidationAttribute
 {
-    // Requires: minimum 8 characters, at least one letter and one digit
-    private const string PasswordRegex = @"^(?=.*[a-zA-Z])(?=.*\d).{8,}$";
+    // Requires: minimum 8 characters, at least one letter of any script and one digit
+    private const string PasswordRegex = @"^(?=.*\p{L})(?=.*\d).{8,}$";
 
     protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
     {

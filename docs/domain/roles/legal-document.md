@@ -14,7 +14,9 @@ the text the customer or the cleaner read and still find it years later.
 > map them; `TypeFor` maps each document-backed consent to its type. The seeder reads
 > `Seed/Legal/employee/{framework-contract|self-billing-agreement|data-processing-agreement}/…` and
 > `Seed/Legal/customer/complaints-procedure/…`, and refuses a cleaner document placed under `customer/`.
-> No text is seeded yet, so nothing is in force and nothing is gated.
+> All four are seeded and in force since 2026-09-29, so the cleaner gates are live: `ApproveEmployee`,
+> `TakeOrder` and `AdminReassignOrder` refuse with `employee.legal_documents_not_accepted` until the
+> cleaner accepts each version in force — from 2026-10-27, the framework agreement's `2026-10-27`.
 > → [Business rules — a cleaner's own documents](/product/business-rules#cleaner-documents)
 
 > Introduced by **[ADR-0063](/decisions/adr-0063)**. `Cleansia.Core.Domain/Legal/LegalDocument.cs`

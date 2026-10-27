@@ -225,6 +225,7 @@
     <string name="no_photos">Žádné fotografie nenahrány</string>
     <string name="take_photo">Vyfotit</string>
     <string name="choose_from_gallery">Vybrat z galerie</string>
+    <string name="document_choose_file">Vybrat soubor</string>
     <string name="delete_photo">Smazat fotografii</string>
     <string name="delete_photo_confirm">Opravdu chcete smazat tuto fotografii?</string>
     <string name="photos_none_recorded">Žádné fotografie nebyly zaznamenány</string>

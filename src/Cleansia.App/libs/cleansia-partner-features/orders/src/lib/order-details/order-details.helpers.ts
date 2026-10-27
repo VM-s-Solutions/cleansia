@@ -219,6 +219,12 @@ export function canAddNoteOrIssue(
   return isActive && isEmployeeAssigned(assignedEmployees, employeeId);
 }
 
+// The customer's price is the amount a cleaner collects on a cash job; on any other job it is not
+// the cleaner's to see, and a payment type that did not arrive hides it too.
+export function showsCustomerPrice(paymentTypeValue: number | undefined): boolean {
+  return paymentTypeValue === PaymentType.Cash;
+}
+
 // A card order is refused cash unless its booking could have been paid in cash. The crew is on the
 // job sheet; whether the customer was a guest is not, so that half of the rule is the server's alone.
 // An order booked as cash stays collectable whatever its crew.

@@ -43,8 +43,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentType
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -171,6 +174,7 @@ fun SignUpScreen(
             value = email,
             onValueChange = { email = it },
             label = stringResource(R.string.register_email),
+            modifier = Modifier.semantics { contentType = ContentType.NewUsername },
             keyboardType = KeyboardType.Email,
         )
 
@@ -180,6 +184,7 @@ fun SignUpScreen(
             value = password,
             onValueChange = { password = it },
             label = stringResource(R.string.register_password),
+            modifier = Modifier.semantics { contentType = ContentType.NewPassword },
             isPassword = true,
         )
 
@@ -198,6 +203,7 @@ fun SignUpScreen(
             value = confirmPassword,
             onValueChange = { confirmPassword = it },
             label = stringResource(R.string.register_confirm_password),
+            modifier = Modifier.semantics { contentType = ContentType.NewPassword },
             isPassword = true,
         )
 

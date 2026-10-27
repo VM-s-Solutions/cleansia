@@ -26,11 +26,9 @@ public class ServiceCityEntityConfiguration : AuditableEntityConfiguration<Servi
             .HasForeignKey(c => c.CountryId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Lookup index for the customer-side city-match validator. We compare
-        // case-insensitively in SQL (Lower()), so a regular index on Name is
-        // enough — Postgres can use it for ILIKE / LOWER comparisons via the
-        // functional index pattern, but for v1 a plain composite index is fine
-        // since the matcher loads the candidate set per country (small list).
+        // The city gate (ServiceCityRepository.CityIsServicedAsync) reads one country's
+        // active rows, name and ZIP prefix, and matches them in memory with
+        // CityNameMatch.Serves, so this index serves that one read per country.
         //
         // Platform config (ADR-0001 Addendum A1): kept NON-unique. A case-sensitive
         // DB unique on (CountryId, Name) would contradict the case-insensitive dedup

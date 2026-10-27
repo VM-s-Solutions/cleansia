@@ -72,8 +72,9 @@ public class GuestOrderCancellationTests(PostgresContainerFixture fixture) : Bas
                     if (DuringStripe is not null) await DuringStripe();
                 });
             EmailService.Setup(x => x.SendOrderStatusUpdateEmailAsync(It.IsAny<string>(), It.IsAny<Order>(),
-                    "Cancelled", It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<decimal?>(), It.IsAny<string?>()))
-                .Returns((string to, Order _, string _, string _, CancellationToken _, decimal? amount, string? _) =>
+                    "Cancelled", It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<decimal?>(), It.IsAny<string?>(),
+                    It.IsAny<decimal?>()))
+                .Returns((string to, Order _, string _, string _, CancellationToken _, decimal? amount, string? _, decimal? _) =>
                 {
                     if (FailEmail) throw new HttpRequestException("recording transport unavailable");
                     DeliveredTo = to;

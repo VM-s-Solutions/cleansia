@@ -439,9 +439,22 @@ and gets the refund only.
   booking's loyalty points and **closes an open *service not provided* dispute** on the order, unless
   that dispute's own card refund is still pending (since 2026-10-06): resolving the dispute again is that
   refund's only retry, so the dispute stays open ([A dispute whose card refund is pending stays
-  open](#dispute-settlement)). It refuses before the start, on a job in progress
-  (`order.cleaner_already_started` — a cleaner who tapped Start after the report did arrive, and the
-  report stands as a dispute), and on a completed or cancelled one.
+  open](#dispute-settlement)). It refuses before the start (`order.start_time_not_reached`), on a job in
+  progress (`order.cleaner_already_started` — a cleaner who tapped Start after the report did arrive,
+  and the report stands as a dispute), and on a completed or cancelled one.
+- **An administrator may call off early a booking nobody is on** (since the fix plan of 2026-10-25,
+  owner decision *"Yup"*: the refund and the apology credit come only through *Cancel as a no-show*, now
+  allowed before the start on an unstaffed booking). Before the start the confirmation goes ahead on a
+  booking the unfilled sweep would cancel at its start (`CancelUnfilledOrders.IsUnfilled`: never
+  started, nobody on it, and offered on the board — paid, or cash and confirmed when recurring), and
+  pays its customer what the sweep would: the same body, refund and credit. Every other refusal stands,
+  and a booking with a crew is still refused before its start. The advance alert
+  (`admin.order.no_cleaner_yet`) and the console's no-show panel say so. The plain *Cancel order* still
+  pays no apology: it also serves a cancellation the customer asked for by phone, a duplicate and a test
+  booking ([When the platform cancels](#platform-cancellation)). The admin-only ledger note on the credit
+  reads *No cleaner was on the booking.* when nobody was, and *The assigned cleaner did not arrive.*
+  otherwise. Until then an administrator who called off a never-staffed booking early paid its customer
+  less than doing nothing would have: left alone, the sweep pays the apology after the start.
 - **One of two cleaners missing stays a dispute** the administrator settles at their discretion;
   crews are rare and never pay cash.
 
@@ -452,8 +465,19 @@ payment; all three carry the credit as `amount`. With no apology the plain `orde
 promises nothing: for a currency with no figure, and since 2026-10-05 for a customer whose credit sits on
 the books of a company frozen for archive, where the apology is skipped and logged rather than failing the
 cancellation's commit — the card refund is unaffected, and the applied credit is not returned onto those books either ([A company's lifecycle](#company-lifecycle)). All four render on Android and iOS and land in the
-customer's inbox. A guest gets no push; the cancellation e-mail tells them what happened to the money
-([When the platform cancels](#platform-cancellation)).
+customer's inbox. A guest gets no push.
+
+**The no-cleaner cancellation e-mails every booking** (since the fix plan of 2026-10-25, owner ruling
+*"Fix"* on the customer-message gaps), a signed-in customer's as well as a guest's, whatever their
+devices or notification settings, so a customer who uses only the web, which has no push or inbox,
+hears of the cancellation, its refund and its credit. It is the e-mail a guest already got
+([When the platform cancels](#platform-cancellation)), with its reason and its money line, and when the
+apology was issued it names it with its amount, as the push does (owner ruling 2026-09-06: the credit
+is announced explicitly): *We have added {amount} credit towards your next clean.*, in five languages, the
+figure from the credit row, never from the copy, written as the e-mail writes money — `Kč250.00` in
+English and `250,00 Kč` in Czech, where the push writes `250 Kč`. An account's e-mail is in the
+booking's language, else the account's, and carries the link to its order page; only a guest's mints a
+guest link. Until then only a guest was e-mailed.
 
 > The figure is `Currency.NoShowCredit`, authored per currency; a currency with none pays no credit
 > and the push is the plain cancellation. The home page states the figure from the market, never from
@@ -582,34 +606,40 @@ would have paid it, and paid always. That includes a cash customer who never pay
 then the crew was paid half of the fee once the company had collected it.
 → [A confirmed lockout pays the seat's reward](#lockout-pay).
 
-### When the last cleaner leaves {#crew-lost}
+### When a cleaner leaves {#crew-lost}
 
 **A confirmed booking whose last cleaner leaves goes back to `New` and is re-offered; the company's
 administrators are told** (owner ruling 2026-09-19, [ADR-0067](/decisions/adr-0067):
 *"it could go back to New since 'Confirmed' means that cleaner(s) are assigned. Also I want admin know
 about it as well."*), **and since 2026-10-25 so is its customer** (the customer paragraph below).
-Two acts can empty a crew — a cleaner **dropping** the job, and an admin
-**rejecting** a cleaner who holds future confirmed work — and both walk a `Confirmed` order back
-through one domain writer, `Order.ReturnToBoardIfUnstaffed()`. A cover request removes nobody; a
-reassign or a cover swap replaces. Three rules ride with it:
+**Since the owner's decisions of 2026-10-25 on the fix plan, both are told when one of two cleaners
+leaves too** — of every release, because an order has no spare seat (`BookingPolicy.SpareSeatsPerOrder`
+is 0), so every release leaves the job short of the cleaners it needs. Two acts release a seat — a cleaner
+**dropping** the job, and an admin **rejecting** a cleaner who holds future confirmed work — and both
+walk a `Confirmed` order whose crew they empty back through one domain writer,
+`Order.ReturnToBoardIfUnstaffed()`. A cover request removes nobody; a reassign or a cover swap replaces.
+Three rules ride with it:
 
-- **The walk-back is `Confirmed`-only; the alarm is not.** The administrators are told **whenever the
-  crew empties**, walked back or not (`admin.order.crew_lost`, with the cause — *the cleaner dropped it*
-  / *the cleaner's account was rejected* — the order number and the slot). Since 2026-10-25 a crew can
-  empty only at `New` or `Confirmed`: a drop is refused once the job is `OnTheWay` or `InProgress`
+- **The walk-back is `Confirmed`-only; the alarm is not.** The administrators are told **of every
+  release**: `admin.order.crew_lost` when nobody is left on the order, walked back or not, and
+  `admin.order.crew_short` when somebody still is (owner decision 2026-10-25, *"Confirm"*, on a new alert
+  at the moment one of two cleaners leaves), each with the cause — *the cleaner dropped it* / *the
+  cleaner's account was rejected* — the order number and the slot. Since 2026-10-25 a seat is released
+  only at `New` or `Confirmed`: a drop is refused once the job is `OnTheWay` or `InProgress`
   (owner ruling 2026-10-25: *"No, impossible for other than Confirmed. So if partner didn't start yet
   then it's possible to Drop Order"*), and a rejection releases future `Confirmed` seats only. In practice
   the crew empties on a confirmed order, which is walked back: a take or a placement moves a `New` order
   to `Confirmed` with its first cleaner. Until then an order dropped on the way or in progress kept its
   status, which no sweep selects, and the notice added *"the clean was already under way"*; that sentence
   is still in its copy, and neither writer reaches it. A two-seat job losing one of two cleaners keeps its
-  status, re-advertises the seat, and tells nobody. An order left with nobody on it that nobody takes
-  again is reported once more inside 24 h of its start (`admin.order.no_cleaner_yet`, since 2026-10-24),
-  an hour after the drop's or the rejection's status row at the earliest and only before the start.
-  Dropped at T−10 h, it raises `crew_lost` at once and `no_cleaner_yet` at about T−9 h; dropped at
-  T−30 min, `crew_lost` only, then the cancel at T+30 min; taken again and dropped again after the alert,
-  `crew_lost` again but no second `no_cleaner_yet`, which is once per order. A two-seat job with one
-  cleaner left never gets it, since someone is on it. → [Administrators are told](#admin-notifications)
+  status and re-advertises the seat; until the fix plan of 2026-10-25 it told nobody. An order left with
+  nobody on it that nobody takes again is reported once more inside 24 h of its start
+  (`admin.order.no_cleaner_yet`, since 2026-10-24), an hour after the drop's or the rejection's status row
+  at the earliest and only before the start. Dropped at T−10 h, it raises `crew_lost` at once and
+  `no_cleaner_yet` at about T−9 h; dropped at T−30 min, `crew_lost` only, then the cancel at T+30 min;
+  taken again and dropped again after the alert, `crew_lost` again but no second `no_cleaner_yet`, which
+  is once per order. A two-seat job with one cleaner left never gets it, since someone is on it.
+  → [Administrators are told](#admin-notifications)
 - **An administrator cannot set `Confirmed` on an order with no crew.** The status override refuses it
   (`order.status.confirmed_needs_crew`); an administrator who wants a cleaner on the job reassigns,
   which writes `Confirmed` itself. The other forward moves — `OnTheWay`, `InProgress`, `Completed` on an
@@ -620,8 +650,9 @@ reassign or a cover swap replaces. Three rules ride with it:
 
 **The partner apps offer the drop more narrowly than the server takes it.** Partner web, Android and
 iOS show *Cancel job* only while the cleaner is on the crew, the job is `New` or `Confirmed` and no
-lockout has been reported (owner defaults 2026-10-24) and, since 2026-10-25, its start is still ahead;
-with no start time, the other three decide. From its start, a job nobody started is a no-show for the
+lockout has been reported (owner defaults 2026-10-24) and, since 2026-10-25, its start is still ahead
+(owner ruling 2026-10-25: asked whether the apps keep closing *Cancel job* at the job's start time,
+*"Yup"*); with no start time, the other three decide. From its start, a job nobody started is a no-show for the
 administrators to confirm, and a drop would walk it back to `New` for the unfilled-order sweep to cancel
 instead. Android hides *Cancel job* at the start and again when the app resumes. iOS and partner web
 hide it the next time they read the job; until then a cancel confirmed from the start on sends nothing
@@ -633,57 +664,102 @@ lockout report and the start. A cleaner meets the refusal only when the job move
 read it, as when a crew-mate sets off first, and the app then reads the job again
 ([ADR-0067](/decisions/adr-0067)). → [Leaving a job](/product/features#cleaner-partner)
 
-**The customer is told when the booking goes back to `New`** (owner ruling 2026-10-25 on O-D2-1,
-*"should the customer be told when their job silently goes back to New?"* — *"yup"*). A customer with an
-account gets a push and an inbox entry in the Android and iOS apps, *Your cleaner can no longer come* —
-*We're looking for another cleaner for booking #… and will let you know as soon as one takes it*. It
-sits under booking updates: switching those off silences the push, never the inbox entry. Every
+**The customer is told of every release** (owner ruling 2026-10-25 on O-D2-1, *"should the customer be
+told when their job silently goes back to New?"* — *"yup"*; and the fix plan of the same day: the notice
+also goes when one of two cleaners leaves, so its words must stay true whether every cleaner or one of
+two has left — the owner's answer on that wording, *"Adapt to the current needs if needed"*). Both release
+writers call `OrderCleanerReleasedNotifier` after every release, the last cleaner's, which walks a
+`Confirmed` booking back to `New`, and one of several, which leaves it `Confirmed` and short. A customer
+with an account gets a push and an inbox entry in the Android and iOS apps, *A cleaner can no longer
+come* — *We're offering booking #… to our cleaners again and will let you know as soon as one takes it*.
+It sits under booking updates: switching those off silences the push, never the inbox entry. Every
 booking's address, a guest's included, gets an e-mail whatever the notification settings, in the
-booking's language, *We're finding you a new cleaner*, with the link to the booking; it goes out only
-if the booking is `New` when it is sent, so a take or a cancellation in between sends none unless the
-booking is back at `New` by then. Nothing names the cleaner, gives a reason, says a cleaner is on the job
-or promises a time or money, so a drop and a rejection read the same. A crew that remains, or an order
-that was not `Confirmed`, tells the customer nothing. A drop still moves no money and cancels nothing —
-*the customer has lost a cleaner, not their clean* — and the slot-time sweep is still the one place the
-customer learns nobody came. The next take is a `New → Confirmed` transition again, so it still sends a
-**second "your order is confirmed" e-mail** on top of the assignment push: a new cleaner is a new
-confirmation. Suppressing that e-mail, the question's other option, was not taken. Until 2026-10-25 the
-release sent the customer nothing.
+booking's language, *A cleaner can no longer come* — *Your booking still stands. We're offering it to
+our cleaners again.* — with the link to the booking. The e-mail drops the promise to write again,
+which it could not keep for a guest: a take of a booking that is still `Confirmed`, and an
+administrator's placement, send no e-mail. It goes out only if, when it is sent, the booking has not
+started (`New` or `Confirmed`) and is still short of the cleaners it needs, so a refilled seat or a
+cancellation in between sends none. Nothing names the cleaner, gives a reason, counts the cleaners,
+says a cleaner is on the job or promises a time or money, so a drop and a rejection, of the last
+cleaner or of one of two, read the same. A drop still moves no money and cancels nothing — *the customer
+has lost a cleaner, not their clean* — and the slot-time sweep is still the one place the customer
+learns nobody came. Until the fix plan of 2026-10-25 the notice went only when the last cleaner left a
+`Confirmed` booking, as *Your cleaner can no longer come* — *We're looking for another cleaner for
+booking #… and will let you know as soon as one takes it*, with the e-mail *We're finding you a new
+cleaner*, sent only while the booking was `New`; until 2026-10-25 a release sent the customer nothing.
 
-**One more message can follow, when the booking was reserved for a cleaner the customer asked for.** The
-five-minute lapse sweep (`NotifyLapsedPreferredOffers`) looks for a one-off order, not completed or
-cancelled and with nobody on it, whose reservation is past its deadline and was never announced, and
-pushes a signed-in customer `order.preferred_offer_closed`, *Your booking is open to all cleaners*, the
-one sentence a reservation that ended without a confirmation sends
-([why it is one sentence](/architecture/push-notifications#one-sentence)). Only the three paths that
-send that sentence mark a reservation announced: the sweep, the chosen cleaner's decline, and their
-taking another job that clashes with it. Their taking the reserved job announces nothing. So when
-somebody is on the job as the reservation ends, or takes it in the minutes before the sweep's next run,
-the sentence waits until the order is next left with nobody on it, and the next run then sends it,
-whoever left last: the chosen cleaner, who took the job, another cleaner on its crew, or a cleaner an
-administrator rejected. A drop by the chosen cleaner, or their rejection, while the reservation is
-still running ends it then and there. It is sent once per reservation, as a push only, with no inbox
-row, so the customer web shows nothing; a guest and a recurring occurrence get nothing from the sweep.
-It comes on top of what the release itself sends (the paragraph above): the release's push, inbox entry
-and e-mail first, then this push on a later run of the sweep. The pushes and the e-mail go through the
-outbox, so this push can still arrive beside or before the e-mail.
+**A take after a walk-back says that a new cleaner took the booking** (owner decision 2026-10-25,
+*"Confirm"*: keep the second *Cleaner found!* push, e-mail *We've found you a new cleaner*, and retitle the
+first take's e-mail *Cleaner found*). Every take and every placement pushes `order.cleaner_assigned`,
+*Cleaner found!*, once per assignment, which keeps the notice's promise to a customer with an account.
+A take that moves the booking from `New` to `Confirmed` also e-mails it: *Cleaner found* — *A cleaner has
+taken your booking.* on its first take, *We've found you a new cleaner* — *A new cleaner has taken your
+booking.* on a take after a walk-back. `TakeOrder` tells the two apart by the history, read before it
+adds the `Confirmed` row: the walk-back is the only `Confirmed → New` writer, so an earlier `Confirmed`
+row means a re-take. It says *new* even when the cleaner who dropped the job takes it back. Delivery
+order is not guaranteed: the release e-mail goes through the outbox and the take's is sent after the
+take commits, so one the consumer read at `New` just before a re-take committed can still arrive after
+the re-take's. Until then a re-take sent the first take's e-mail again, titled *Order Confirmed* in
+English.
 
-**A drop is checked against the order's status at commit** (since 2026-10-05). The drop touches the
-order row, so the commit compares the order's two tokens, `CurrentStatus` and `PaymentStatus` (the second
-since 2026-10-12, [ADR-0071](/decisions/adr-0071)), and a drop racing a status change —
-an administrator confirming the customer's lockout in the same instant — is refused and rolls back whole:
-the seat stays on the crew and keeps the [lockout reward](#lockout-pay), so a confirmed lockout pays
-exactly the seats on the crew when it committed. The cleaner who loses gets an unmapped error once, and a
-retry reads the cancelled order and is refused `order.not_confirmed`.
+**The apps list a status once per pass.** The Android and iOS customer apps draw the order's history
+without a row that repeats the status before it — the same-value row a seat re-advertised after one of
+two cleaners left writes, or a cover request's — and name a `New` that follows a `Confirmed`, the
+walk-back, *Offered to cleaners again* (owner decision 2026-10-25, the release notice's wording), where
+it read *New*. The customer web's order page and the guest track page read each step off the booking's
+latest pass, the rows from its last `New` on, so after a walk-back *Confirmed* is no longer ticked under
+a current *Received*, and a re-take dates it by the new take
+([Order tracking](/customer-app/order-tracking#what-the-page-draws)). The server sends every row, and
+the partner, admin and incident-file readers show them all.
 
-**No invariant is claimed.** Two releases racing on one order — two same-window drops on a two-seat
-job, a drop racing a rejection — can still leave `Confirmed` with nobody on it, because the order's two
-tokens are `CurrentStatus` and `PaymentStatus` and neither release commit changes either. Every sweep
-therefore keeps reading the
-crew: `CancelUnfilledOrders` still selects `{New, Confirmed}` with no assignee, the reminders still
-require one, the validators still authorise the caller by their assignment. The status is a summary;
-the crew is the fact. Legacy DEV rows holding `Confirmed` with no crew are harmless for the same
-reason and are not migrated. → [Order lifecycle](/domain/order-lifecycle)
+**After a reserved booking's release, no closure push follows** (since the fix plan of 2026-10-25).
+When the booking was reserved for a cleaner the customer asked for and that reservation has ended by the
+release — the chosen cleaner's own drop or rejection ends it then and there — the release notice marks
+the reservation announced (`PreferredOfferLapseNotifiedAt`, stamped in the release's own unit of work),
+so the five-minute lapse sweep (`NotifyLapsedPreferredOffers`) sends no `order.preferred_offer_closed`
+after it, and the customer gets one message, the release notice. The sweep still announces a reservation
+that ends with nobody on a one-off order and no release after its end, once, as a push only with no
+inbox row and to a signed-in customer: one nobody took, one another cleaner still held at the release
+(only an administrator's placement during it can make that), and one the customer asks for afterwards.
+Its one sentence is *Your booking is open to all cleaners*, the sentence a reservation that ended
+without a confirmation sends ([why it is one sentence](/architecture/push-notifications#one-sentence)).
+Four paths mark a reservation announced: the sweep, the chosen cleaner's decline, their taking another
+job that clashes with it, and a release after the reservation has ended. Their taking the reserved job
+announces nothing. A guest and a recurring occurrence get nothing from the sweep. Until then the sweep
+pushed *Your booking is open to all cleaners* a few minutes after the release notice, whoever left last.
+
+**A drop takes the order's row before it reads the crew, and a take touches the order** (since the fix
+plan of 2026-10-25). `DropOrder` locks the order's row (`SELECT … FOR NO KEY UPDATE`, held until its
+commit) before it loads the crew, and `TakeOrder` stamps the order when it adds a seat, so its commit
+compares the order's two tokens, `CurrentStatus` and `PaymentStatus`, against the
+values it read. A drop and a take of a two-seat job can no longer leave it `New` with a cleaner on it
+who can neither set off nor start. A take already writing is counted by the drop, which then leaves the
+job `Confirmed` and short; a take that read before the drop committed fails its token check and is
+refused `order.no_available_spots`, the shared lost-race copy (*Another cleaner has already taken this
+job.*) although the job is back on the board, and the next tap takes it. **Two drops of one job
+serialize**: the second reads the crew the first left, so the last cleaner's drop walks the job back to
+`New`, with `crew_short` from the first and `crew_lost` from the second. **A take racing a cancellation,
+a refund or the unfilled sweep is refused** instead of seating a cleaner on an order that moved. The lock
+is Postgres-only; the drop's own touch keeps the token check on any other provider.
+
+**A drop is checked against the order's status at the lock** (since the fix plan; at its commit since
+2026-10-05, the second token since 2026-10-12, [ADR-0071](/decisions/adr-0071)). A drop and an
+administrator's lockout confirmation are arbitrated when the drop reaches the order: a lockout that
+committed first refuses the drop with `order.not_confirmed`, and a drop that holds the row first commits
+first, after which the lockout commits on the seats still on the crew, or, when that drop emptied the
+crew, is refused. So a confirmed lockout still pays exactly the seats on the crew when it committed,
+each its [lockout reward](#lockout-pay). Until then a drop racing a lockout was refused at its commit
+with an unmapped error once, and only its retry read `order.not_confirmed`.
+
+**No invariant is claimed.** Two releases racing on one order can still leave `Confirmed` with nobody on
+it when one of them is an administrator's rejection, which takes no lock — a drop racing a rejection, or
+two rejections — because neither commit changes the order's two tokens. An administrator's placement
+racing a drop that empties the crew can still leave the order `New` with a cleaner on it:
+`AdminReassignOrder` neither locks nor stamps the order. Every sweep therefore keeps reading the crew:
+`CancelUnfilledOrders` still selects `{New, Confirmed}` with no assignee, the reminders still require
+one, the validators still authorise the caller by their assignment. The status is a summary; the crew is
+the fact. Legacy DEV rows holding `Confirmed` with no crew are harmless for the same reason and are not
+migrated. → [Order lifecycle](/domain/order-lifecycle)
 
 ### When the platform cancels {#platform-cancellation}
 
@@ -691,8 +767,9 @@ Four reasons exist for a cancellation nobody asked for, each a stable key the cu
 a sentence (`OrderCancellationReasons`): the card payment never completed
 (`order.cancelled.payment_not_completed` — the checkout was abandoned and the slot released), a recurring
 occurrence went unconfirmed (`order.cancelled.recurring_not_confirmed`, fee-free at the lead-time
-cut-off), nobody took the job by its slot or an administrator confirmed that the assigned cleaner did
-not come (`order.cancelled.no_cleaner_available` — the no-show above; an admin's no-show confirmation
+cut-off), nobody was on the job at its slot, an administrator confirmed that the assigned cleaner did
+not come or, since the fix plan of 2026-10-25, called off before its start a booking nobody is on
+(`order.cancelled.no_cleaner_available` — the no-show above; an admin's no-show confirmation
 exposes this key, never the administrator's own words, as the reason the customer sees), and **the operating company is
 closing** (`order.cancelled.company_wind_down`): the booking fell on or after the company's last day of
 service, so the platform cancelled it and — on a card booking — refunded it in full, absorbing the Stripe
@@ -721,6 +798,15 @@ key, never an administrator's own words) and a money line that claims only what 
 refund actually returned, *nothing was charged*, or *your refund is being processed*. Every link the
 guest held stops working; the e-mail carries the one that still opens the booking.
 → [Guest cancellation](/flows/booking-and-pricing#guest-cancellation)
+
+**An administrator's cancellation tells a signed-in customer too** (since the fix plan of 2026-10-25). On
+a booking with an account, *Cancel order* sends the same e-mail, with the order page's link, and a push
+and inbox entry, `order.cancelled` (*Booking cancelled*), unless the card refund went through and its
+own `order.refunded` notice already went. Until then such a customer was told only by that refund
+notice, so a cash booking, a refund Stripe refused and a customer who uses only the web heard nothing.
+The no-cleaner body e-mails an account as well ([above](#when-the-cleaner-cancels-or-no-shows)). The
+wind-down is unchanged: it e-mails every live customer before it runs, and its cancellation e-mails a
+guest only.
 
 ## Disputes {#disputes}
 
@@ -1649,15 +1735,16 @@ one of them is our own draft until the lawyer delivers** ([below](#legal-drafts)
 | Terms of service | customer | `2026-10-07` (`2026-10-06` until that day) | the customer's contract with the operating company of the market the home is in, concluded at booking — a card booking once its payment completes. Accepted by the tick at registration and at booking, and again before the next booking when a newer version applies ([What is recorded about a customer](#customer-record)); shown at `/terms` |
 | Privacy policy | customer | `2026-10-06` | the operating company is the controller; accepted with the terms, and again before the next booking when a newer version applies; shown at `/privacy` |
 | Complaints procedure | customer | `2026-09-29` | read, never accepted; shown at `/complaints` on the customer web and linked from its footer |
-| Framework cooperation agreement, self-billing agreement | employee | `2026-10-05` | the cleaner's agreements with the operating company of the market they work in, each accepted in the partner apps → [A cleaner's own documents](#cleaner-documents) |
+| Framework cooperation agreement | employee | `2026-10-27` (`2026-10-05` until that day) | the cleaner's agreement with the operating company of the market they work in, accepted in the partner apps → [A cleaner's own documents](#cleaner-documents) |
+| Self-billing agreement | employee | `2026-10-05` | the cleaner's second agreement with the same company, accepted the same way |
 | Data-processing agreement | employee | `2026-09-29` | the cleaner's third agreement with the same company, accepted the same way |
-| Contract for work | employee | `2026-10-05` | one per seat of a job, between the operating company and the cleaner, stamped on the order at booking and accepted at the take → [The contract for work](#work-contract) |
+| Contract for work | employee | `2026-10-27` (`2026-10-05` until that day) | one per seat of a job, between the operating company and the cleaner, stamped on the order at booking and accepted at the take → [The contract for work](#work-contract) |
 
 Earlier versions stay in the database as the texts earlier customers and orders were bound by: the
 terms `2026-09-14`, `2026-09-27`, `2026-09-29`, `2026-09-30`, `2026-10-03`, `2026-10-05` and `2026-10-06`, the
-privacy policy `2026-09-14`, `2026-09-29` and `2026-10-03`, the framework and self-billing agreements `2026-09-29`, and the contract
-for work `2026-09-29` and `2026-09-20`, the latter naming the customer and the cleaner as its
-parties. The terms `2026-09-30` differ from `2026-09-29` only where Plus is concerned: they offer the
+privacy policy `2026-09-14`, `2026-09-29` and `2026-10-03`, the framework agreement `2026-09-29` and
+`2026-10-05`, the self-billing agreement `2026-09-29`, and the contract for work `2026-10-05`,
+`2026-09-29` and `2026-09-20`, the last naming the customer and the cleaner as its parties. The terms `2026-09-30` differ from `2026-09-29` only where Plus is concerned: they offer the
 free trial, and the Plus cancellation terms follow having the Plus benefits rather than a paid
 membership ([The free trial](#plus-trial)). The terms `2026-10-03` differ from `2026-09-30` only in the
 dirtiness rates, +15 % and +30 % ([The dirtiness level](#dirtiness)).
@@ -1776,6 +1863,39 @@ day. The privacy policy is unchanged at `2026-10-06`. **This branch's code must 
 before 2026-10-07**: the booking ban and the door report act on rules only the `2026-10-07` terms state,
 and the `2026-10-06` terms promise that card bookings stay open. Like every text here it is our draft
 ([below](#legal-drafts)), with five more draft banners for the lawyer to clear before launch.
+
+**The `2026-10-27` versions carry the owner's ruling of 2026-10-25 on a cleaner's way out of a job**
+(*"Fix the wording"*, on the agreement still saying a job could be released at any time before it was
+finished; the drafted wording approved the same day, *"Approve"*, effective the day it deploys to DEV).
+They copy `2026-10-05` and differ only in these paragraphs, in all five languages:
+
+- **Framework agreement**, §6, its third and fourth paragraphs. A cleaner may release a job they took, in
+  the app, *until it is on the way or in progress — until someone on it records in the app that they
+  have set off or started — and no later than its start time*, at no cost and with no change to the jobs
+  they are offered, as early as they can; after that they can no longer release it, and a cleaner who
+  then cannot do the job tells the company without delay. That is the window the apps give *Cancel job*
+  ([When a cleaner leaves](#crew-lost)). The `2026-10-05` text allowed a release, by asking for cover or
+  dropping it, *at any time before it is finished*, while since 2026-10-25 the server refuses a drop of a
+  job under way and no app offers cover. A placement is still an offer the cleaner may decline without any
+  consequence: by releasing the job while that window allows it, and otherwise by not accepting its
+  contract for work and telling the company. The old text named the release alone, which a cleaner placed
+  on a job already under way cannot make. A cleaner who keeps a placement accepts its contract for work
+  before they start or, on a job already under way, before they complete it.
+- **Contract for work**, its *Formation* paragraph. A placement is an offer the cleaner may decline
+  without any consequence *as the Framework Cooperation Agreement says*, named in words, instead of *by
+  releasing the job*; one they keep forms the contract when they accept it, before they start or, on a
+  job already under way, before they complete it. It applies to orders booked from 2026-10-27; an order
+  booked earlier keeps its text, which says itself that *a later version does not change a contract
+  already formed*.
+
+The self-billing and data-processing agreements are unchanged, so a cleaner accepts one document again:
+the framework agreement, before their next take, their approval or a placement, from 2026-10-27. Jobs
+they already hold carry on, and the contract for work is accepted at the take as before. Nothing
+announces the new version: a cleaner meets it at their next take, which points to the documents
+([A cleaner's own documents](#cleaner-documents)). Like every text here they are our draft
+([below](#legal-drafts)). **The date is the day the change first deploys to DEV, never earlier**: a
+later deploy renames the two folders in the last commit before the merge.
+→ [ADR-0068 §Amended 2026-10-25](/decisions/adr-0068#amended-2026-10-25)
 
 ### The seller is named from the company record {#company-identity}
 
@@ -1928,12 +2048,12 @@ deleted, and an admin's placement left the same row a cleaner's own act did.
 
 | Rule | Value |
 |---|---|
-| The text an order is booked under | the **employee-audience** `WorkContract` document in force for the **address's market** on the booking day — stamped on the order once (`Orders.WorkContractDocumentId`), never changed; a booking with no text in force is **refused** (the factory throws), never booked without one. The company ↔ cleaner text is `2026-10-05`; an order booked before it keeps the text in force on its booking day, `2026-09-29` or, before that, `2026-09-20` |
+| The text an order is booked under | the **employee-audience** `WorkContract` document in force for the **address's market** on the booking day — stamped on the order once (`Orders.WorkContractDocumentId`), never changed; a booking with no text in force is **refused** (the factory throws), never booked without one. The company ↔ cleaner text is `2026-10-27`; an order booked before it keeps the text in force on its booking day, `2026-10-05`, `2026-09-29` or, before that, `2026-09-20` |
 | Who it names | the client through the company placeholders, filled from the company record of the order's operator when the text is shown ([above](#company-identity)); the cleaner as *you* |
 | What the customer is told | the confirm step's sentence, on every client and whether or not the account already consented: the booking concludes a contract for the cleaning with the operating company of the market where the home is, under its terms of service, and the cleaner carries it out as the company's subcontractor and is no party to it — a sentence, **not a checkbox**. There is no contract-for-work page, no order-detail line and no read for the customer |
 | When the acceptance forms | at the **take**: the cleaner reads the text and the job facts in the app and takes the job in one act; the take **carries the id of the exact text row** they read (`acceptedWorkContractTextId`), and a take without it is refused |
 | One contract per **seat** | a take → drop → re-take is two seats and **two** contracts; a take → drop → admin re-add of the same cleaner is a new seat with **no** contract until they accept |
-| An administrator places a cleaner | **no** acceptance is written — an admin cannot accept on a cleaner's behalf. The placement is an offer the cleaner may decline while the job is `New` or `Confirmed` ([below](#placement-is-an-offer)); a cleaner who keeps it accepts from the job detail (a banner), or is refused at **Start** and at **Complete** with `contract.acceptance_required` and accepts then; a cleaner placed on an **in-progress** job can still accept before completing |
+| An administrator places a cleaner | **no** acceptance is written — an admin cannot accept on a cleaner's behalf. The placement is an offer the cleaner may decline without consequence: by releasing the job while it is `New` or `Confirmed` and its start is ahead, and, from 2026-10-27 (the framework agreement's §6), otherwise by not accepting its contract for work and telling the company ([below](#placement-is-an-offer)); a cleaner who keeps it accepts from the job detail (a banner), or is refused at **Start** and at **Complete** with `contract.acceptance_required` and accepts then; a cleaner placed on an **in-progress** job can still accept before completing |
 | What binds | the text row (document, version, language, hash by one join) **and a frozen snapshot of the job as shown at acceptance**: order number, date and time window, **the seat's reward** and currency — the accepting cleaner's own rates for one seat, as the board quotes them, never what the customer pays — the coarse location (*"Praha · 120"*), rooms, bathrooms, services, packages, extras. Never the street, never a name. Since 2026-10-03 the seat also keeps the job figures that reward was priced from, and is paid from them ([Cleaner pay](#cleaner-pay)) |
 | A new version of the text | applies to orders **booked from its date**; an order already booked keeps its text — no re-acceptance, no "stale version" case |
 | What survives | the row outlives the seat (a drop, cover, rejection or reassignment leaves it), the order's anonymisation and the cleaner's erasure — it is books, kept with the order, **never deleted** |
@@ -1986,7 +2106,12 @@ accepts the contract for work before Start or Complete — but the placement is 
 may decline without consequence**: a drop costs nothing and feeds no metric (`DropOrder` writes only its
 audit row, which only the action timeline reads). Since 2026-10-25 a drop is refused once the job is
 under way ([above](#crew-lost)), so a cleaner placed on a job already on the way or in progress cannot
-drop it. A placement is refused while the cleaner has not
+drop it. **From 2026-10-27 the framework agreement names a second way to decline** (§6,
+[above](#legal-texts)): by releasing the job while it is `New` or `Confirmed` and its start is ahead,
+and otherwise by not accepting its contract for work and telling the company; the earlier texts named
+the release alone. Nothing in the apps records that second decline: the cleaner stays on the crew
+until an administrator takes them off, and while their contract is not accepted Start and Complete
+refuse them (`contract.acceptance_required`). A placement is refused while the cleaner has not
 accepted the cleaner documents in force ([below](#cleaner-documents)), exactly as their own take would
 be.
 
@@ -2021,8 +2146,10 @@ no text in force would gate nothing.
   ([above](#work-contract)); the cleaner is free to take no job and to work for anyone; rewards are
   settled after each 14-day pay period on an invoice the company issues in the cleaner's name, with the
   cash they hold for the company set off ([below](#cash-held)); a confirmed lockout pays the seat's full
-  reward; an administrator's placement is an offer they may decline
-  without consequence ([above](#placement-is-an-offer)); the rules of *How jobs are offered*; approval
+  reward; a job they took may be released, in the app, until it is on the way or in progress and no
+  later than its start; an administrator's placement is an offer they may decline without consequence,
+  by releasing the job while they may and otherwise by not accepting its contract for work
+  ([above](#placement-is-an-offer)); the rules of *How jobs are offered*; approval
   after a business-register check, with liability insurance recommended, not required
   ([Insurance ceiling](#money-constants)); a promise not
   to work directly for customers met through the platform, for 12 months after the last job, and **no
@@ -2032,9 +2159,11 @@ no text in force would gate nothing.
   agreement:* the cleaner processes customer data and home photos for the company, keeps no copies —
   job photos only through the app's camera — and loses access 24 hours after completion
   ([Photos](#photos-and-access)), with one penalty for intentional or grossly negligent misuse.
-  That is the framework and self-billing agreements `2026-10-05`. Their `2026-09-29` versions settled
-  monthly, required the insurance certificate for approval and paid a lockout half of the fee collected
-  ([The legal texts](#legal-texts)).
+  That is the framework agreement `2026-10-27` and the self-billing agreement `2026-10-05`. The
+  framework's `2026-10-05` version let a job be released, by asking for cover or dropping it, at any time
+  before it was finished, and named the release as the only way to decline a placement; their
+  `2026-09-29` versions settled monthly, required the insurance certificate for approval and paid a
+  lockout half of the fee collected ([The legal texts](#legal-texts)).
 
 - **Reading and accepting.** `GET Employee/GetMyLegalDocuments` (both partner hosts) lists the documents
   in force for the cleaner's work market — their address's market until they are approved — with the
@@ -2306,13 +2435,14 @@ up is somebody else's morning. → [Push notifications](/architecture/push-notif
 
 ## Administrators are told {#admin-notifications}
 
-**Eighteen things the platform can prove happened reach the company's administrators through an in-app
+**Nineteen things the platform can prove happened reach the company's administrators through an in-app
 feed and an e-mail, both** (owner ruling 2026-09-19, [ADR-0065](/decisions/adr-0065): *"both in-app and
 email"*; the not-started alert, the two refund alerts and the lockout report were added by the rulings
 of 2026-09-28, the held referral by the ruling of 2026-10-05, the door non-payment by the ruling of
 2026-10-06, and the same day a guest's refund claimed for a cancellation that never went through got an
 alert of its own; the advance alert for a job nobody has taken came with the owner defaults of
-2026-10-24). Until then nothing told an administrator anything: a failed erasure was an Error log
+2026-10-24, and the alert that an order lost one of its cleaners with the owner's decision of
+2026-10-25 on the fix plan, *"Confirm"*). Until then nothing told an administrator anything: a failed erasure was an Error log
 line, a chargeback was a dispute row nobody opened, an order that lost its crew was re-advertised to cleaners
 only. One writer, `IAdminNotifier`, turns an event into one feed row per administrator of the **named**
 company and one e-mail per recipient address, inside the same unit of work as the event — so the rows
@@ -2324,8 +2454,9 @@ an administrator may also hold cannot render these keys.
 |---|---|---|
 | `admin.order.new` | an order the company now has to serve becomes **offerable** — a cash one-off at creation, a card order on its payment, a recurring occurrence on the customer's confirm. Never an unpaid card checkout, which the stale sweep cancels within the hour, at most 500 a run; a backlog larger than 500 spreads over the following 15-minute runs | order number, amount with its currency, tender, market |
 | `admin.order.crew_lost` | a drop or an admin rejection leaves nobody on the order — since 2026-10-25 only ever a `New` or `Confirmed` one, as a drop is refused once the job is under way → [above](#crew-lost) | order number, the cause, the status at the loss, the slot |
+| `admin.order.crew_short` | a drop or an admin rejection takes one cleaner off an order that still has somebody on it (since the fix plan of 2026-10-25). Every such release raises it, as each release is its own event: the order is short, its free place is back on the board, and if nobody takes it the clean goes ahead short-staffed, so the notice says to assign a cleaner from the order. Its cause reads as `crew_lost`'s → [above](#crew-lost) | order number, the cause, the status at the loss, the slot |
 | `admin.order.cleaner_not_started` | a job with a cleaner on it is still not started 30 minutes after its start, or the customer reports that the cleaner did not arrive — **once per order**, whichever comes first → [the no-show](#when-the-cleaner-cancels-or-no-shows) | order number, the slot |
-| `admin.order.no_cleaner_yet` | a job nobody is on is inside **24 h** of its start — **once per order**, found by the five-minute reminder sweep. Nobody is on it means `New` or `Confirmed` with no assignment row: a cleaner who asked for cover still counts as on it, and a partly filled crew is not reported. It must be offerable, so never an unpaid card checkout or a recurring occurrence the customer has not confirmed; past any live preferred-cleaner hold; and quiet for **60 min**, with no status row and no customer confirmation in the last hour, so a drop's own status row starts that hour. Nothing is sent once the slot has started: from then the unfilled-order cancel at slot + 30 min owns it → [when the last cleaner leaves](#crew-lost) | order number, the slot |
+| `admin.order.no_cleaner_yet` | a job nobody is on is inside **24 h** of its start — **once per order**, found by the five-minute reminder sweep. Nobody is on it means `New` or `Confirmed` with no assignment row: a cleaner who asked for cover still counts as on it, and a partly filled crew is not reported. It must be offerable, so never an unpaid card checkout or a recurring occurrence the customer has not confirmed; past any live preferred-cleaner hold; and quiet for **60 min**, with no status row and no customer confirmation in the last hour, so a drop's own status row starts that hour. Nothing is sent once the slot has started: from then the unfilled-order cancel at slot + 30 min owns it. Since the fix plan of 2026-10-25 the notice and its feed row also say how to call the booking off before then: cancel it as a no-show from the order, and the customer gets the same refund and apology credit as the automatic cancellation → [when a cleaner leaves](#crew-lost), [the no-show](#when-the-cleaner-cancels-or-no-shows) | order number, the slot |
 | `admin.order.lockout_reported` | the assigned cleaner reports that they cannot get in, 15 minutes or more past the start, with an entrance photo; nothing moves until an administrator confirms it → [the lockout](#lockout) | order number, the slot |
 | `admin.order.cash_not_paid` | the assigned cleaner reports that the customer did not pay the cash at the door; the order is already completed, the price owed and the customer barred from booking. The console's row opens the order; a wrong report is written off, a late payment to the cleaner is recorded as cash received → [When the customer does not pay at the door](#cash-not-paid) | order number, the amount owed |
 | `admin.dispute.filed` | a customer files a dispute | order number, the reason (an enum), the dispute |
@@ -2346,7 +2477,7 @@ role is in the event's audience** — read by the company **argument**, never by
 be ambient at a webhook or a job — gets their own feed row with their own read state, so the first
 administrator who glances at the bell does not silence it for everyone. The audience is one of the
 administrator sets ([ADR-0066](/decisions/adr-0066) D8): the order, dispute and payment events, a
-lost crew, a cleaner not started, a job nobody has taken, a lockout report, a door non-payment and a held referral reach **Support and above**; a failed erasure retry reaches **Manager and above**; the three
+lost or a short crew, a cleaner not started, a job nobody has taken, a lockout report, a door non-payment and a held referral reach **Support and above**; a failed erasure retry reaches **Manager and above**; the three
 company milestones reach **Administrators only**; a **chargeback and the three refund alerts reach every role**, a
 chargeback matched to an order or not — Support answers the customer or the bank, the Accountant
 reconciles the money. The e-mail fan-out below is over the same
@@ -2479,9 +2610,19 @@ Six things that surprise people:
   crew's rows sum to the job's figures exactly; a cleaner who works a two-seat job alone is paid one
   seat. Until 2026-09-28 every assigned cleaner was paid the whole figure, so a crew of three paid its
   rates three times against one customer price.
-- **What a cleaner is shown is the seat's share.** The board, the job detail, the dashboard estimate and
-  the available-jobs preview quote `OrderPayEstimator`'s figure — one seat, raised by the level, without
-  the first seat's residue cents — and the partner web labels it *per spot*. On a job the cleaner
+- **What a cleaner is shown is the seat's share.** The board, the job detail, the dashboard estimate,
+  the available-jobs preview and, since the fix plan of 2026-10-25, a job reserved for the cleaner on
+  *Pending offers* quote `OrderPayEstimator`'s figure — one seat, raised by the level, without the first
+  seat's residue cents — and the partner web labels it *per spot* (owner decision 2026-10-25, *"Yes"*: a
+  *Reserved for you* offer shows the cleaner's own pay). The offer carries it as
+  `PendingOfferItem.EstimatedCleanerPay`, and keeps `TotalPrice`, the customer's total it led with until
+  then, for the builds installed before it. **A cleaner sees the customer's price only on a cash job**,
+  where it is the amount to collect at the door: the payment card's total with its subtotal and discount
+  lines, and each package's price. On a job not paid in cash, a job with no payment type included, the
+  Android and iOS payment card shows only how it is paid and the payment status, and the partner web's
+  payment section only the payment type and the currency (since the fix plan of 2026-10-25). It is
+  display only: the API still sends every cleaner the price, and the dialog that records cash still
+  names the amount. On a job the cleaner
   holds, the job detail, *My jobs* and the dashboard (a completed job not yet paid included) quote
   their own seat's contract reward from its frozen figures; an open job is quoted at today's rates,
   because an offer is made at them. **An open job's quote includes the extras share** (since
@@ -3512,6 +3653,92 @@ figures are optional steps. **Closing a market is a company's act**, not a count
 company's markets are not markets anywhere — not listed, not quoted, not bookable, not offered to a
 cleaner as a work country — the moment the switch is thrown → [A company's lifecycle](#company-lifecycle),
 [Platform expandability — the expansion path](/architecture/platform-expandability#expansion-path)
+
+### Serviced cities {#serviced-city}
+
+**A booking is taken only at an address in a serviced city of its market** — an active `ServiceCity` row
+of the address's country, kept on the admin console's Service area page. The server decides, and
+refuses `city.not_serviced`: a one-off booking (`OrderAddressResolver`), and since the fix plan of
+2026-10-25 a recurring schedule's creation and every edit of one, asked of its saved address
+(`CreateRecurringBooking`, `UpdateRecurringBooking`), so a schedule no longer keeps putting orders on the
+board for a city nobody cleans. A running schedule is not re-checked when its occurrences are created,
+so delisting a city cancels nothing. The server never refuses a cleaner's own address for its city:
+cleaners may live anywhere in a serviced country (`UpdateAddressInfo`, `UpdateEmployee`), and the partner
+apps only show whether it is in a serviced city. The clients ask the same question earlier, against the
+rows they load: the customer web's booking step cannot be left on an address it refuses, while the
+customer apps show a notice and let the address be saved.
+
+**A city row with a ZIP prefix answers by the postcode** (owner decision 2026-10-25: *"Confirm. But we
+start with Praha first, also Prague post indexes are quite weird, some of them start with 1. Maybe it's
+better to match exactly the pattern"*). Every Prague postcode is five digits from 100 00 to 199 99, and
+no other Czech postcode starts with 1, so every Prague row — `Praha`, `Prague`, `Praha 1`–`22`,
+`Prague 1`–`22` — carries the prefix `1`, and no other seeded row carries one. The prefixes the other
+cities were seeded with are cleared: they were whole postal regions (Brno's `6` also covers Znojmo and
+Břeclav), so enforcing them would have served the neighbours. DEV, seeded before, is moved to the same
+values by `sql-scripts/fix-service-city-zip-prefixes.sql`.
+
+- **A valid postcode** is what is left once every whitespace character is removed, a no-break space
+  included, when that is exactly five ASCII digits: `110 00`, `11000` and `110` + no-break space + `00`
+  are `11000`; `1100`, `602 000`, `110-00` and `CZ-110 00` are none.
+- **A row with a prefix and an address with a valid postcode**: the row serves the address exactly when
+  the postcode starts with the prefix, which is trimmed and never compacted. The city text is not read,
+  either way: `Прага`, `Brno` and an empty city at `110 00` are served by the Prague rows, and `Praha` at
+  `602 00` by none of them.
+- **Otherwise** — a row without a prefix, or an address without a valid postcode — the row serves the
+  address by its name, below. So nothing that booked before is refused for want of a postcode.
+
+**By name, a row matches the customer's city, the part of it before its first dash, or either without a
+trailing district.** Both names are first folded: trimmed, written without diacritics, in lower case,
+with every dash (U+2010 to U+2015, and the minus sign U+2212) written as `-` and every run of
+whitespace as one space, so `PRAHA`, `Plzen`, `Ceske Budejovice` and `Praha` + no-break space + `8`
+read as the rows `Praha`, `Plzeň`, `České Budějovice` and `Praha 8`. The candidates are then taken from
+the customer's city alone, never from the row's name:
+
+1. the city itself;
+2. the part before its first dash, when there is something on both sides of it — `Brno-střed`,
+   `Brno - Královo Pole`, `Ostrava-Poruba`, `Ústí nad Labem-Střekov` and `Ostrava 3 - Ostrava-Jih` are
+   in their city. **The five okresy around a city share that shape and are not in it**: `Praha-západ`,
+   `Praha-východ`, `Brno-venkov`, `Plzeň-sever` and `Plzeň-jih` keep the part before the dash out, judged
+   on the first word after the dash. `Praha-` and `Brno -` gain nothing;
+3. each of those without a trailing district — one or two digits, or a Roman numeral of up to six of
+   `i`, `v` and `x`: `Praha 8`, `Pardubice II`, `Liberec XIV-Ruprechtice`, `Plzeň 2-Slovany`.
+
+Because the strip runs on the customer's city only, a row named `Praha 8` serves Praha 8 and its
+quarters (`Praha 8 - Libeň`) by name, never Praha or Praha 22; the 44 `Praha N` and `Prague N` rows
+stay, harmless beside the `Praha` and `Prague` rows. **Exonyms are rows, not rules**: `Prague` is its
+own row, and `Прага`, `Prag` and `Pilsen` match no row by name — a Prague address in any spelling is
+served by its postcode when it has a valid one. The apps ask their geocoder in Czech, so a picked address carries the Czech name
+on any phone ([Shared patterns — maps](/mobile-app/patterns#maps)); the customer web's lookup goes
+through the server's address search, which names no language.
+
+| City | Postcode | Served | Why |
+|---|---|---|---|
+| `Прага` | `110 00` | yes | a valid postcode starting with `1` |
+| `Praha` | `602 00` | no | a valid postcode no Prague row takes, and no other row is `Praha` |
+| `Praha` | none, or `1100` | yes | no valid postcode: the row `Praha` by name |
+| `Praha-západ` | `252 00` | no | a postcode outside Prague, and an okres |
+| `Brno-střed` | `602 00` | yes | the row `Brno`: the part before the dash |
+| `Brno-venkov` | `664 00` | no | an okres |
+| `Pardubice II` | `530 02` | yes | the row `Pardubice`: without its district |
+| `Pilsen` | `301 00` | no | an exonym with no row |
+
+**The rule has one authority and three mirrors.** The server's `CityNameMatch` decides; the customer
+web's `city-name-match.ts`, iOS's `CityNameMatch.swift` and Android's `CityNameMatch.kt` mirror it so a
+customer is told before paying, and the four suites pin the same 119 cases, the rows above among them.
+A mirror stricter than the server would tell a customer we do not serve a city we do, and
+the web would block the step. **For the letters, digits, spaces and dashes of the markets' alphabets the
+mirrors answer as the server does.** Outside them a client's runtime reads its own Unicode tables, which
+can differ from the server's in either direction — a mark the server keeps, a character above U+FFFF,
+the final sigma — on a character no address in these languages uses.
+
+**What the rule does not do** (reported, not built). A comma after the okres word defeats the okres
+check, so `Praha-západ, Jesenice` with no valid postcode is served by the `Praha` row. A row whose own
+name has a dash, such as an added `Frýdek-Místek`, takes its districts but not its quarters
+(`Frýdek-Místek 2 - Lískovec` is refused). The admin console's ZIP-prefix field accepts any text up to 20
+characters: a prefix with a letter or an inner space serves no valid postcode, so that row serves only
+addresses without one, by name, and a prefix of five digits serves that one postcode. Only Prague is
+matched by postcode; another city's prefix is an administrator's choice to enforce.
+→ [Service area page](/admin-app/overview#service-area)
 
 ## A company's lifecycle {#company-lifecycle}
 

@@ -191,7 +191,11 @@ account cannot list is the outcome this prevents. With one company serving every
 never fires; it exists for the day a second one does, and cross-company booking on one account is the
 owner's call for that day. `country.not_serviced` (the address names a country that is not a market)
 and `tenant.not_found` (a market nobody operates) are the two refusals the scope itself can raise,
-before any other rule.
+before any other rule. `city.not_serviced` refuses an address no active service city of its country
+serves, asked with its city **and its postcode**: a Prague row answers by a valid postcode
+(since the fix plan of 2026-10-25), every other row by name. `CreateRecurringBooking` and
+`UpdateRecurringBooking` ask it of the saved address since the same day
+→ [Serviced cities](/product/business-rules#serviced-city).
 
 | `paymentType` | Value | Behavior |
 |---------------|-------|----------|

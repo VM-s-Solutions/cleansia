@@ -7,10 +7,11 @@ using Cleansia.Core.Domain.Orders;
 namespace Cleansia.Core.AppServices.Features.Orders;
 
 /// <summary>
-/// The company's administrators are told whenever a release leaves nobody on an order, whether or not
-/// the order is walked back to New. Both release writers release only at New or Confirmed: DropOrder
-/// refuses a job under way, and RejectEmployee takes back future Confirmed seats only. Shared by the
-/// two release writers so the event they raise cannot drift apart; the swaps (reassign, cover take)
+/// The company's administrators are told of every release: the crew is gone when nobody is left, and short
+/// when somebody still is. Every release leaves the job short, because an order has no spare seat
+/// (<c>BookingPolicy.SpareSeatsPerOrder</c>). Both release writers release only at New or Confirmed:
+/// DropOrder refuses a job under way, and RejectEmployee takes back future Confirmed seats only. Shared by
+/// the two release writers so the event they raise cannot drift apart; the swaps (reassign, cover take)
 /// replace rather than release and never call it.
 /// </summary>
 public static class OrderCrewLostNotifier
@@ -23,7 +24,7 @@ public static class OrderCrewLostNotifier
     /// makes the subject unique per release, so a re-take-and-re-drop is a second event and never a
     /// repeat of the first.
     /// </param>
-    /// <param name="statusAtLoss">The order's status when the crew emptied, read BEFORE any walk-back.</param>
+    /// <param name="statusAtLoss">The order's status when the cleaner left, read BEFORE any walk-back.</param>
     public static Task NotifyAsync(
         Order order,
         string releasedAssignmentId,
@@ -39,7 +40,9 @@ public static class OrderCrewLostNotifier
 
         return adminNotifier.NotifyAsync(
             new AdminEvent(
-                AdminNotificationEventCatalog.OrderCrewLost,
+                order.AssignedEmployees.Count == 0
+                    ? AdminNotificationEventCatalog.OrderCrewLost
+                    : AdminNotificationEventCatalog.OrderCrewShort,
                 order.TenantId,
                 Subject: AssignmentNotificationSubject.For(order.Id, releasedAssignmentId),
                 Args: new Dictionary<string, string>

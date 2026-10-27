@@ -209,9 +209,7 @@ struct ScopeCard: View {
                         ScopeLine(label: service.localizedName(for: locale), value: nil)
                     }
                     ForEach(order.packages, id: \.self) { pkg in
-                        ScopeLine(label: pkg.localizedName(for: locale), value: pkg.price.map {
-                            OrdersFormat.money($0, symbol: order.currencySymbol)
-                        })
+                        ScopeLine(label: pkg.localizedName(for: locale), value: price(of: pkg))
                     }
                 }
 
@@ -235,6 +233,12 @@ struct ScopeCard: View {
         Text(text)
             .font(CleansiaTypography.labelSmall)
             .foregroundColor(CleansiaColors.onSurfaceVariant)
+    }
+
+    /// A piece of the customer's price, shown like the payment card's total: on a cash job only.
+    private func price(of package: OrderDetailPackage) -> String? {
+        guard order.payment.isCash, let price = package.price else { return nil }
+        return OrdersFormat.money(price, symbol: order.currencySymbol)
     }
 }
 
@@ -291,6 +295,8 @@ struct FromCustomerNotesCard: View {
     }
 }
 
+/// The method and the status on every job; the customer's total, and its breakdown, only on a cash job, where it is
+/// the amount to collect. → /product/business-rules#cleaner-pay
 struct PaymentCard: View {
     @Environment(\.locale) private var locale
     let order: OrderDetail
@@ -302,15 +308,17 @@ struct PaymentCard: View {
     var body: some View {
         OrderSectionCard(title: L10n.Orders.paymentSectionTitle, systemImage: "creditcard") {
             VStack(alignment: .leading, spacing: Spacing.xs) {
-                if payment.hasBreakdown, let subtotal = payment.subtotal {
-                    paymentRow(L10n.Orders.paymentSubtotal, subtotal, emphasis: false)
-                    discountRow(L10n.Orders.paymentTierDiscount, payment.tierDiscount)
-                    discountRow(L10n.Orders.paymentMembershipDiscount, payment.membershipDiscount)
-                    discountRow(L10n.Orders.paymentPromoDiscount, payment.promoDiscount)
-                    Divider()
-                }
-                if let total = payment.total {
-                    paymentRow(L10n.Orders.paymentTotal, total, emphasis: true)
+                if payment.isCash {
+                    if payment.hasBreakdown, let subtotal = payment.subtotal {
+                        paymentRow(L10n.Orders.paymentSubtotal, subtotal, emphasis: false)
+                        discountRow(L10n.Orders.paymentTierDiscount, payment.tierDiscount)
+                        discountRow(L10n.Orders.paymentMembershipDiscount, payment.membershipDiscount)
+                        discountRow(L10n.Orders.paymentPromoDiscount, payment.promoDiscount)
+                        Divider()
+                    }
+                    if let total = payment.total {
+                        paymentRow(L10n.Orders.paymentTotal, total, emphasis: true)
+                    }
                 }
                 HStack {
                     Text(L10n.Orders.paymentMethod(PaymentPresentation.methodLabel(payment.typeCode)))

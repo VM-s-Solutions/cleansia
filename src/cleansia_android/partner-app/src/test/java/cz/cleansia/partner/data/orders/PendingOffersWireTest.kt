@@ -27,7 +27,7 @@ import retrofit2.converter.kotlinx.serialization.asConverterFactory
 
 /**
  * A pending offer is a job the platform has already put this cleaner's name on, and the card is the
- * only place they see its price and its deadline. `PendingOfferItem` declares no `required` array, so
+ * only place they see its pay and its deadline. `PendingOfferItem` declares no `required` array, so
  * the generator types every property optional-with-null regardless of `nullable: false` and the whole
  * contract lands in the mapper. Everything here decodes a captured payload over a socket through the
  * generated DTO and the production `Json`.
@@ -105,18 +105,21 @@ class PendingOffersWireTest {
     fun everyOfferMoneyFieldArrivesWithItsLiteralValue() = runTest {
         val offers = loaded(CAPTURED_PAYLOAD)
 
-        assertEquals(1850.50, offers.first().totalPrice, 0.0)
-        assertEquals(2640.00, offers.last().totalPrice, 0.0)
+        assertEquals(925.25, offers.first().estimatedCleanerPay)
+        assertEquals(1320.00, offers.last().estimatedCleanerPay)
     }
 
     @Test
-    fun aMissingPriceFailsTheMappingRatherThanOfferingTheJobForNothing() = runTest {
-        assertMappingFails("totalPrice", payloadWithoutFirstOfferKey("totalPrice"))
+    fun aPayTheServerCannotQuoteStaysNullRatherThanBecomingZero() = runTest {
+        val offer = loaded(payloadWithFirstOffer { it + ("estimatedCleanerPay" to JsonNull) }).first()
+
+        assertNull(offer.estimatedCleanerPay)
     }
 
+    /** The server keeps the customer's total only for the builds that still show it. */
     @Test
-    fun anExplicitNullPriceFailsTheMappingToo() = runTest {
-        assertMappingFails("totalPrice", payloadWithFirstOffer { it + ("totalPrice" to JsonNull) })
+    fun anOfferWithoutTheCustomersTotalStillMaps() = runTest {
+        assertEquals(listOf("offer-1", "offer-2"), loaded(payloadWithoutFirstOfferKey("totalPrice")).map { it.id })
     }
 
     /**
@@ -157,7 +160,7 @@ class PendingOffersWireTest {
         val offers = loaded(payloadWithFirstOffer { it - "id" })
 
         assertEquals(listOf("offer-2"), offers.map { it.id })
-        assertEquals(2640.00, offers.first().totalPrice, 0.0)
+        assertEquals(1320.00, offers.first().estimatedCleanerPay)
     }
 
     @Test
@@ -190,7 +193,8 @@ class PendingOffersWireTest {
         assertNull(offer.displayOrderNumber)
         assertNull(offer.customerAddressApproximate)
         assertNull(offer.currencyCode)
-        assertEquals(1850.50, offer.totalPrice, 0.0)
+        assertNull(offer.estimatedCleanerPay)
+        assertEquals(3, offer.rooms)
     }
 
     /**
@@ -241,7 +245,8 @@ class PendingOffersWireTest {
                 "rooms": 3,
                 "bathrooms": 2,
                 "totalPrice": 1850.50,
-                "currencyCode": "CZK"
+                "currencyCode": "CZK",
+                "estimatedCleanerPay": 925.25
               },
               {
                 "id": "offer-2",
@@ -253,7 +258,8 @@ class PendingOffersWireTest {
                 "rooms": 5,
                 "bathrooms": 3,
                 "totalPrice": 2640.00,
-                "currencyCode": "CZK"
+                "currencyCode": "CZK",
+                "estimatedCleanerPay": 1320.00
               }
             ]
         """.trimIndent()
@@ -269,6 +275,7 @@ class PendingOffersWireTest {
             "bathrooms",
             "totalPrice",
             "currencyCode",
+            "estimatedCleanerPay",
         )
 
         val OFFER_REQUIRED_NUMBERS = listOf("estimatedTime", "rooms", "bathrooms")
@@ -277,6 +284,7 @@ class PendingOffersWireTest {
             "displayOrderNumber",
             "customerAddressApproximate",
             "currencyCode",
+            "estimatedCleanerPay",
         )
     }
 }

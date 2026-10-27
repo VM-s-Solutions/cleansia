@@ -130,12 +130,13 @@ public class RejectEmployee
         /// here, and <c>DropOrder</c> refuses a drop at those statuses too.</para>
         ///
         /// <para><b>A seat whose release empties the crew walks the order back to <c>New</c></b> —
-        /// Confirmed means a cleaner took it, and nobody has it now — ends a live reservation the
-        /// rejected cleaner held (an order back on the board must be ON the board, and a hold hides it
-        /// from everyone else for up to twelve hours on behalf of someone who can no longer work), tells
-        /// its customer that another cleaner is being looked for, and tells the company's administrators,
-        /// the one who clicked included. A crew that remains keeps the status and gets the same-value
-        /// re-advertisement a drop writes, so the digest sees the freed seat either way.</para>
+        /// Confirmed means a cleaner took it, and nobody has it now. A crew that remains keeps the status
+        /// and gets the same-value re-advertisement a drop writes, so the digest sees the freed seat either
+        /// way. A live reservation the rejected cleaner held is ended (an order back on the board must be ON
+        /// the board, and a hold hides it from everyone else for up to twelve hours on behalf of someone who
+        /// can no longer work). Every released seat leaves its job short, because an order has no spare
+        /// seat, so its customer is told that a cleaner can no longer come and the company's
+        /// administrators, the one who clicked included, that the crew is short or gone.</para>
         ///
         /// <para>The cleaner is told per assignment, through the same seam the admin reassign uses; the
         /// customer is told per assignment too, through <c>OrderCleanerReleasedNotifier</c>. So the subject
@@ -170,17 +171,14 @@ public class RejectEmployee
                     order.EndPreferredHold(now);
                 }
 
-                var crewEmptied = order.AssignedEmployees.Count == 0;
                 var statusAtLoss = order.CurrentStatus;
-                if (order.ReturnToBoardIfUnstaffed())
-                {
-                    await OrderCleanerReleasedNotifier.NotifyCustomerOfReleaseAsync(
-                        order, assignmentId, notificationProducer, pendingDispatch, cancellationToken);
-                }
-                else
+                if (!order.ReturnToBoardIfUnstaffed())
                 {
                     order.AddOrderStatus(OrderStatusTrack.Create(order.CurrentStatus, order));
                 }
+
+                await OrderCleanerReleasedNotifier.NotifyCustomerOfReleaseAsync(
+                    order, assignmentId, now, notificationProducer, pendingDispatch, cancellationToken);
 
                 if (cleaner is not null)
                 {
@@ -188,16 +186,13 @@ public class RejectEmployee
                         order, cleaner, assignmentId, notificationProducer, cancellationToken);
                 }
 
-                if (crewEmptied)
-                {
-                    await OrderCrewLostNotifier.NotifyAsync(
-                        order,
-                        assignmentId,
-                        OrderCrewLostNotifier.Rejected,
-                        statusAtLoss,
-                        adminNotifier,
-                        cancellationToken);
-                }
+                await OrderCrewLostNotifier.NotifyAsync(
+                    order,
+                    assignmentId,
+                    OrderCrewLostNotifier.Rejected,
+                    statusAtLoss,
+                    adminNotifier,
+                    cancellationToken);
             }
         }
     }

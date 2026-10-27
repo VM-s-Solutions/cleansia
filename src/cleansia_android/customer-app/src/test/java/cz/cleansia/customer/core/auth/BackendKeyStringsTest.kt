@@ -106,6 +106,14 @@ class BackendKeyStringsTest {
     )
 
     /**
+     * `CreateOrder` refuses an address in a city nobody serves, and `CreateRecurringBooking` and
+     * `UpdateRecurringBooking` refuse a saved address in one.
+     */
+    private val serviceCityKeys = listOf(
+        "city.not_serviced",
+    )
+
+    /**
      * The terms gate: `Register` and `CreateOrder` refuse a call that asserts no tick — a registration
      * always, a booking unless the signed-in account already holds both legal consents. The social
      * sign-ups keep `auth.social_account_not_found` for the same absence, because there the flag is
@@ -262,6 +270,11 @@ class BackendKeyStringsTest {
     @Test
     fun `the operator mismatch CreateOrder can answer resolves to a sentence in all five locales`() {
         assertAllResolve(createOrderOperatorKeys)
+    }
+
+    @Test
+    fun `the city refusal a booking or schedule can answer resolves to a sentence in all five locales`() {
+        assertAllResolve(serviceCityKeys)
     }
 
     @Test

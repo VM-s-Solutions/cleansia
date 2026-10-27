@@ -9,6 +9,7 @@ public struct BirthDateField: View {
 
     @Environment(\.locale) private var locale
     @State private var showPicker = false
+    @State private var draft: Date?
 
     public init(
         birthDate: Binding<Date?>,
@@ -39,6 +40,7 @@ public struct BirthDateField: View {
                 .font(CleansiaTypography.labelMedium)
                 .foregroundColor(isError ? CleansiaColors.error : CleansiaColors.onSurfaceVariant)
             Button {
+                draft = birthDate
                 showPicker = true
             } label: {
                 HStack {
@@ -67,22 +69,40 @@ public struct BirthDateField: View {
             }
         }
         .sheet(isPresented: $showPicker) {
-            // Picked, shown and stored in one zone. The picker keeps the time of day it was seeded
-            // with, so a day chosen in the handset's calendar and a day decoded off the wire are
-            // otherwise different instants that encode as different days.
-            DatePicker(
-                label,
-                selection: CalendarDay.pickerBinding($birthDate),
-                in: ...Date(),
-                displayedComponents: .date
-            )
-            // Wheels, not a month grid: an adult's birth date is decades back, a few spins on a wheel
-            // and many page flips on a calendar.
-            .datePickerStyle(.wheel)
-            .labelsHidden()
-            .environment(\.calendar, CalendarDay.calendar)
-            .environment(\.timeZone, CalendarDay.calendar.timeZone)
-            .padding()
+            NavigationStack {
+                // Picked, shown and stored in one zone. The picker keeps the time of day it was seeded
+                // with, so a day chosen in the handset's calendar and a day decoded off the wire are
+                // otherwise different instants that encode as different days.
+                DatePicker(
+                    label,
+                    selection: CalendarDay.pickerBinding($draft),
+                    in: ...Date(),
+                    displayedComponents: .date
+                )
+                // Wheels, not a month grid: an adult's birth date is decades back, a few spins on a wheel
+                // and many page flips on a calendar.
+                .datePickerStyle(.wheel)
+                .labelsHidden()
+                .environment(\.calendar, CalendarDay.calendar)
+                .environment(\.timeZone, CalendarDay.calendar.timeZone)
+                .padding()
+                .navigationTitle(label)
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button(CoreL10n.localized("birth_date_field.cancel")) {
+                            showPicker = false
+                        }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button(CoreL10n.localized("birth_date_field.done")) {
+                            birthDate = CalendarDay.confirmed(draft)
+                            showPicker = false
+                        }
+                    }
+                }
+            }
+            .tint(CleansiaColors.primaryText)
             .presentationDetents([.medium])
         }
     }

@@ -11,6 +11,7 @@ using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Core.Queue.Abstractions;
+using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.Tests.Common;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -42,6 +43,7 @@ public class AdminCancelOrderAsNoShowTests
     private readonly Mock<ILiveActivityProducer> _liveActivity = new();
     private readonly Mock<IExpressWaiverConsumer> _waiver = ExpressWaiverMocks.NoConsumer();
     private readonly Mock<ILoyaltyService> _loyalty = new();
+    private readonly List<(string Queue, string Key, object Message)> _enqueued = [];
     private readonly Currency _czk;
     private CreditAccount? _account;
 
@@ -69,7 +71,7 @@ public class AdminCancelOrderAsNoShowTests
             _refundRows.Object,
             _notifications.Object,
             new GuestOrderAccessTokenIssuer(Mock.Of<IGuestOrderAccessTokenRepository>()),
-            Mock.Of<IPendingDispatch>(),
+            new RecordingDispatch(_enqueued),
             NullLogger<CleanerNoShowCancellation>.Instance),
         _notifications.Object,
         _liveActivity.Object,
@@ -81,7 +83,8 @@ public class AdminCancelOrderAsNoShowTests
         OrderStatus status = OrderStatus.Confirmed,
         double startedMinutesAgo = 40,
         PaymentType paymentType = PaymentType.Card,
-        PaymentStatus paymentStatus = PaymentStatus.Paid)
+        PaymentStatus paymentStatus = PaymentStatus.Paid,
+        bool withCrew = true)
     {
         var order = Order.Create(
             customerName: "No Show",
@@ -113,8 +116,12 @@ public class AdminCancelOrderAsNoShowTests
             stamp = stamp.AddMinutes(1);
         }
 
-        order.AddAssignedEmployee(OrderEmployee.Create(
-            order, ValidatorTestHelpers.BuildEmployee("emp-no-show", ContractStatus.Approved)));
+        if (withCrew)
+        {
+            order.AddAssignedEmployee(OrderEmployee.Create(
+                order, ValidatorTestHelpers.BuildEmployee("emp-no-show", ContractStatus.Approved)));
+        }
+
         _orders.Setup(r => r.GetQueryable()).Returns(new[] { order }.AsQueryable().BuildMock());
         return order;
     }
@@ -158,6 +165,26 @@ public class AdminCancelOrderAsNoShowTests
         _waiver.Verify(w => w.ReleaseForOrderAsync(OrderId, It.IsAny<CancellationToken>()), Times.Once);
         _liveActivity.Verify(l => l.NotifyOrderTransitionAsync(
             order, LiveActivityEventKeys.End, It.IsAny<OrderStatusTrack>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// The account's customer is e-mailed as well as pushed, so one who uses only the web hears of the
+    /// cancellation, its refund and its apology credit.
+    /// </summary>
+    [Fact]
+    public async Task Confirming_A_No_Show_Emails_The_Accounts_Customer_The_Refund_And_The_Apology()
+    {
+        ArrangeOrder();
+
+        var result = await ConfirmAsync();
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        var (queue, key, message) = Assert.Single(_enqueued);
+        Assert.Equal(QueueNames.SendEmail, queue);
+        Assert.Equal(MessageKeys.GuestOrderCancelledEmail(OrderId), key);
+        var email = Assert.IsType<QueueEnvelope<SendGuestOrderCancellationEmailMessage>>(message).Payload;
+        Assert.Equal(1000m, email.SuccessfulRefundAmount);
+        Assert.Equal(250m, email.ApologyCreditAmount);
     }
 
     /// <summary>
@@ -258,6 +285,59 @@ public class AdminCancelOrderAsNoShowTests
         var result = await ConfirmAsync();
 
         Assert.Equal(BusinessErrorMessage.OrderStartTimeNotReached, result.Error!.Message);
+    }
+
+    /// <summary>
+    /// An administrator who calls off a booking nobody has taken, three hours before its start, pays the
+    /// customer what the unfilled sweep would pay at the start: the whole refund on the sweep's key, the
+    /// apology credit, the no-cleaner outcome push and the account e-mail — instead of 250 Kč less through
+    /// a plain cancel.
+    /// </summary>
+    [Fact]
+    public async Task Before_The_Start_A_Booking_Nobody_Is_On_Is_Cancelled_With_The_Sweeps_Remedy()
+    {
+        var order = ArrangeOrder(startedMinutesAgo: -180, withCrew: false);
+
+        var result = await ConfirmAsync();
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(1000m, result.Value!.RefundedAmount);
+        Assert.Equal(250m, result.Value.ApologyCredit);
+        Assert.Equal(OrderStatus.Cancelled, order.CurrentStatus);
+        Assert.Equal(CancelledBy.Admin, order.CancelledBy);
+        Assert.Equal(OrderCancellationReasons.NoCleanerAvailable, order.CancellationReason);
+        _refunds.Verify(r => r.IssueRefundAsync(
+            It.Is<RefundRequest>(q => q.Amount == 1000m && q.Reason == RefundReason.ServiceNotRendered),
+            It.IsAny<CancellationToken>()), Times.Once);
+
+        var apology = Assert.Single(_account!.Transactions);
+        Assert.Equal($"cleaner-noshow:{OrderId}", apology.IdempotencyKey);
+        Assert.Equal("No cleaner was on the booking.", apology.Note);
+
+        _notifications.Verify(n => n.NotifyAsync(
+            CustomerId, NotificationEventCatalog.OrderNoCleanerRefunded,
+            It.Is<Dictionary<string, string>>(args => args["amount"] == "250 Kč"),
+            It.IsAny<string?>(), OrderId, It.IsAny<CancellationToken>()), Times.Once);
+        var email = Assert.IsType<QueueEnvelope<SendGuestOrderCancellationEmailMessage>>(Assert.Single(_enqueued).Message).Payload;
+        Assert.Equal(1000m, email.SuccessfulRefundAmount);
+        Assert.Equal(250m, email.ApologyCreditAmount);
+    }
+
+    /// <summary>
+    /// An unpaid card checkout was never offered to a cleaner, so the sweep does not cancel it and nobody
+    /// failed to come: before its start there is still nothing to confirm.
+    /// </summary>
+    [Fact]
+    public async Task Before_The_Start_An_Unpaid_Card_Checkout_Nobody_Is_On_Is_Still_Refused()
+    {
+        var order = ArrangeOrder(
+            status: OrderStatus.New, startedMinutesAgo: -180, paymentStatus: PaymentStatus.Pending, withCrew: false);
+
+        var result = await ConfirmAsync();
+
+        Assert.Equal(BusinessErrorMessage.OrderStartTimeNotReached, result.Error!.Message);
+        Assert.Equal(OrderStatus.New, order.CurrentStatus);
+        _refunds.Verify(r => r.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Theory]
@@ -427,5 +507,13 @@ public class AdminCancelOrderAsNoShowTests
             CustomerId, NotificationEventCatalog.OrderNoCleanerRefundPending,
             It.IsAny<Dictionary<string, string>>(), It.IsAny<string?>(), It.IsAny<string?>(),
             It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    private sealed class RecordingDispatch(List<(string Queue, string Key, object Message)> enqueued) : IPendingDispatch
+    {
+        public void Enqueue<T>(string queueName, T message, string messageKey) =>
+            enqueued.Add((queueName, messageKey, message!));
+
+        public IReadOnlyList<PendingMessage> Drain() => [];
     }
 }

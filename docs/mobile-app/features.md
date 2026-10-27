@@ -76,6 +76,16 @@ the order detail's *Read the contract*, and the customer wizards' confirm step l
 → [Partner onboarding — e-mail confirmation](/partner-app/onboarding#step-2-email-confirmation),
 [what each step checks](/partner-app/onboarding#step-checks)
 
+**The shared text field says what it holds** (since the fix plan of 2026-10-25). Every password
+field, and the e-mail field of sign-up and sign-in, passes its AutoFill type through `CleansiaTextField`
+— on iOS `textContentType` (`.username`, `.newPassword`, `.password`; the customer Sign up's e-mail
+`.emailAddress`), on Android a `contentType` semantics on its modifier (`NewUsername`, `NewPassword`,
+`Username`, `Password`) — so the phone's password manager offers a strong password on sign-up, a reset
+and Security, and fills the saved one at sign-in. Neither app declares password rules: the platforms'
+default suggestions already meet the password rule. On iOS a field with the `.emailAddress` keyboard
+also turns auto-capitalisation and autocorrection off, as Android's `KeyboardType.Email` already did.
+→ [Mobile overview — strong passwords](/mobile-app/overview#webcredentials)
+
 ::: warning One definition, not two copies
 `ApiError`/`ApiResult` and the auth spine exist **once** per platform on purpose. A second copy in an
 app module is the drift that produced "blank screen" bugs before the shared module existed. If you

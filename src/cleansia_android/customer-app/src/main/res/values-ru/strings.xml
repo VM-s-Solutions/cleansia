@@ -287,6 +287,7 @@
     <string name="order_detail_review_comment">Добавьте комментарий (необязательно)</string>
     <string name="order_detail_submit_review">Отправить отзыв</string>
     <string name="order_detail_timeline">Хронология статуса</string>
+    <string name="order_detail_timeline_new_cleaner">Снова предложено клинерам</string>
     <string name="order_detail_rebook">Заказать эту уборку снова</string>
     <string name="order_detail_download_receipt">Скачать чек</string>
     <string name="order_detail_report_issue">Сообщить о проблеме</string>
@@ -1330,8 +1331,8 @@
     <string name="notification_order_payment_confirmed_body">Заказ #%1$s подтверждён. Нажмите, чтобы посмотреть подробности.</string>
     <string name="notification_cleaner_assigned_title">Клинер найден! 🎉</string>
     <string name="notification_cleaner_assigned_body">К вашему заказу #%1$s назначен клинер. Нажмите, чтобы посмотреть подробности.</string>
-    <string name="notification_order_cleaner_released_title">Ваш клинер больше не может прийти</string>
-    <string name="notification_order_cleaner_released_body">Мы ищем другого клинера для заказа #%1$s и сообщим вам, как только кто-то его возьмёт.</string>
+    <string name="notification_order_cleaner_released_title">Клинер больше не может прийти</string>
+    <string name="notification_order_cleaner_released_body">Мы снова предлагаем заказ #%1$s нашим клинерам и сообщим вам, как только кто-то его возьмёт.</string>
     <string name="notification_order_starting_soon_title">Уборка скоро начнётся</string>
     <string name="notification_order_starting_soon_body">Ваше бронирование #%1$s начнётся примерно через час. Нажмите, чтобы посмотреть детали.</string>
     <string name="notification_order_preferred_offer_closed_title">Заказ открыт для всех клинеров</string>
@@ -1347,7 +1348,7 @@
     <string name="notification_order_refunded_title">Возврат средств</string>
     <string name="notification_order_refunded_body">Возврат за заказ #%1$s обрабатывается.</string>
     <string name="notification_order_no_cleaner_refunded_title">Свободных уборщиков не нашлось</string>
-    <string name="notification_order_no_cleaner_refunded_body">Заказ #%1$s никто не взял, поэтому мы вернули всю сумму и начислили %2$s кредита на следующую уборку. Простите.</string>
+    <string name="notification_order_no_cleaner_refunded_body">На заказ #%1$s не смог приехать ни один уборщик, поэтому мы вернули всю сумму и начислили %2$s кредита на следующую уборку. Простите.</string>
     <string name="notification_order_no_cleaner_refund_pending_title">Свободных уборщиков не нашлось</string>
     <string name="notification_order_no_cleaner_refund_pending_body">На заказ #%1$s не смог приехать ни один уборщик, поэтому мы его отменили. Возврат средств обрабатывается, а ещё мы начислили %2$s кредита на следующую уборку. Простите.</string>
     <string name="notification_order_no_cleaner_nothing_charged_title">Свободных уборщиков не нашлось</string>
@@ -1433,6 +1434,7 @@
     <string name="error_country_not_existing_id">Страна не найдена</string>
     <string name="error_currency_invalid">Недействительная валюта</string>
     <string name="error_country_not_serviced">В этой стране мы пока не работаем.</string>
+    <string name="error_city_not_serviced">Мы пока не обслуживаем этот город.</string>
     <string name="error_tenant_not_found">Этот рынок пока не обслуживает ни одна компания Cleansia.</string>
     <string name="error_tenant_archived">Записи этой компании опечатаны для архивирования; изменить в них уже ничего нельзя.</string>
     <string name="error_order_country_operator_mismatch">Этот адрес обслуживает другая компания Cleansia, и с этого аккаунта его нельзя забронировать.</string>

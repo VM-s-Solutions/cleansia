@@ -31,6 +31,8 @@ export class OrderPackagesComponent {
   // one prints a bare number instead of a confident wrong label.
   currencyCode = input<string>('');
 
+  showsPrice = input.required<boolean>();
+
   readonly rows = computed((): PackageRow[] => {
     const lang = this.lang();
     const code = this.currencyCode() || undefined;

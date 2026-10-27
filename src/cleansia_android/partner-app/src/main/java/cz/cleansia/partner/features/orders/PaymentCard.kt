@@ -33,8 +33,8 @@ import cz.cleansia.partner.ui.theme.Green800
 import cz.cleansia.partner.ui.theme.pendingInk
 
 /**
- * Payment summary. Renders a discount breakdown only when one applies, otherwise total and method, to
- * keep the card terse.
+ * Payment summary: the method and the status always; the customer's total, and its discount breakdown
+ * when one applies, only on a cash job, where it is the amount to collect.
  *
  * **The payment-status pill is colour-coded because the cleaner needs to know whether to expect cash at
  * the door** — a failed card is a real situation at the doorstep. -> /flows/pay-and-payouts
@@ -46,7 +46,7 @@ fun PaymentCard(
 ) {
     val currencyCode = order.currency?.code ?: order.currency?.symbol
     val subtotal = order.originalSubtotal
-    val total = order.totalPrice
+    val total = order.totalPrice?.takeIf { order.showsCustomerPrice() }
     val hasBreakdown = subtotal != null && total != null && subtotal != total
 
     OrderSectionCard(
@@ -98,9 +98,9 @@ fun PaymentCard(
                 value = formatOrderPrice(it, currencyCode),
                 emphasis = true,
             )
+            Spacer(Modifier.height(10.dp))
         }
 
-        Spacer(Modifier.height(10.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,

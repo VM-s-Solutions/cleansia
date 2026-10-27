@@ -995,6 +995,12 @@ internal fun OrderItem.needsCashCollection(): Boolean =
     paymentType?.value == PaymentType._1.value && paymentStatus?.value != PaymentStatus._2.value
 
 /**
+ * On a cash job the customer's price is what the cleaner collects at the door; on any other job they
+ * see their own pay only.
+ */
+internal fun OrderItem.showsCustomerPrice(): Boolean = paymentType?.value == PaymentType._1.value
+
+/**
  * Mirrors `ReportCashNotPaid`: the cleaner on a cash job in progress whose payment is still pending may
  * report that the customer paid nothing. A refunded or disputed payment is not a debt to report.
  */

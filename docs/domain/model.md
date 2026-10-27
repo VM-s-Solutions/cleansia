@@ -210,7 +210,7 @@ is one version of one text — `Audience` (Customer | Employee), `Type` (TermsOf
 PrivacyPolicy | WorkContract — the third, customer-audience, is the contract for work an order is
 booked under, ADR-0068 — and, since 2026-09-28, the cleaner's own CleanerFrameworkContract |
 SelfBillingAgreement | CleanerDataProcessingAgreement (employee audience) and the customer's
-ComplaintsProcedure, none of them seeded yet), `CountryId` (the market the copy is for; **null = the platform-wide text a market
+ComplaintsProcedure, all four in force since 2026-09-29), `CountryId` (the market the copy is for; **null = the platform-wide text a market
 without its own falls back to**), `EffectiveFrom` and `Version`, which *is* `EffectiveFrom` as
 `yyyy-MM-dd` — with one `LegalDocumentText` per language (`Language`, `Title`, `ContentMarkdown`,
 `ContentHash` SHA-256). Tenantless like `CountryConfiguration`: platform copy per market. **A document

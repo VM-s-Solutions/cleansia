@@ -2,6 +2,7 @@ using System.Text.Json;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
@@ -195,6 +196,34 @@ public sealed class NotifyLapsedPreferredOffersSweepTests : IDisposable
         var order = ReservedOrder("01HZL0000000000000000006", lapsesAt: DateTime.UtcNow.AddMinutes(-1));
         order.SetMaxEmployees(2);
         order.AddAssignedEmployee(OrderEmployee.Create(order, NewCleaner(RivalId)));
+        await SeedAsync(order);
+
+        var response = await RunSweepAsync();
+
+        Assert.Equal(0, response.NotifiedCount);
+        Assert.Empty(await ReadOutboxKeysAsync());
+    }
+
+    /// <summary>
+    /// The cleaner the customer asked for took the reserved job and dropped it, so the order walked back to
+    /// New with its reservation ended and the customer was told a cleaner can no longer come. That notice is
+    /// the reservation's one announcement: the sweep sends no "open to all cleaners" push after it (ADR-0045
+    /// AC4, "never both").
+    /// </summary>
+    [Fact]
+    public async Task A_Reservation_Ended_By_The_Chosen_Cleaners_Drop_Is_Not_Prompted_Again()
+    {
+        await EnsureSchemaAsync();
+        var order = ReservedOrder("01HZL0000000000000000011", lapsesAt: DateTime.UtcNow.AddHours(6));
+        order.AddAssignedEmployee(OrderEmployee.Create(order, NewCleaner(BeneficiaryId)));
+        var assignmentId = order.AssignedEmployees.Single().Id;
+        var releasedAt = DateTime.UtcNow;
+        order.UnassignEmployee(BeneficiaryId);
+        order.EndPreferredHold(releasedAt);
+        Assert.True(order.ReturnToBoardIfUnstaffed());
+        await OrderCleanerReleasedNotifier.NotifyCustomerOfReleaseAsync(
+            order, assignmentId, releasedAt, Mock.Of<INotificationProducer>(), Mock.Of<IPendingDispatch>(),
+            CancellationToken.None);
         await SeedAsync(order);
 
         var response = await RunSweepAsync();

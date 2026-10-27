@@ -1,5 +1,6 @@
 import CleansiaCore
 import CleansiaPartnerApi
+import UIKit
 import XCTest
 @testable import CleansiaPartner
 
@@ -88,6 +89,29 @@ final class DocumentsSectionViewModelTests: XCTestCase {
         let vm = makeVM()
         vm.showTooLarge()
         XCTAssertNotNil(snackbar.current)
+    }
+
+    /// A photo of a document, from the camera or the library, goes up as a JPEG whatever the library
+    /// holds it as, so a HEIC photo arrives in a format the server accepts.
+    func testAPhotoOfADocumentIsEncodedAsAJpeg() async throws {
+        let photo = UIGraphicsImageRenderer(size: CGSize(width: 40, height: 30)).image { context in
+            UIColor.white.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 40, height: 30))
+        }
+
+        let result = await makeVM().encodePhoto(photo)
+        let encoded = try XCTUnwrap(result)
+
+        XCTAssertEqual(encoded.contentType, "image/jpeg")
+        XCTAssertEqual(Data(base64Encoded: encoded.base64)?.prefix(3), Data([0xFF, 0xD8, 0xFF]))
+        XCTAssertNil(snackbar.current)
+    }
+
+    func testAPhotoThatCannotBeReadSaysSoAndYieldsNothing() async {
+        let encoded = await makeVM().encodePhoto(UIImage())
+
+        XCTAssertNil(encoded)
+        XCTAssertEqual(snackbar.current?.text, L10n.Profile.photoUnreadable)
     }
 
     /// The whole design in one assertion. Asking removes NOTHING, so the list is deliberately NOT

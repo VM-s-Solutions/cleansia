@@ -95,6 +95,20 @@ text is accepted before the next booking (`UserConsent.Covers`)
 `AcceptLegalDocument` → [A cleaner's own documents](/product/business-rules#cleaner-documents).
 Employee registration is not gated. → [ADR-0062](/decisions/adr-0062) D4 as amended
 
+**Registering an unconfirmed address again with another password withdraws the stored one** (since the
+fix plan of 2026-10-25, `Register` and `RegisterEmployee`): the account is left with no password, so of
+two passwords typed for one address neither signs in once it is confirmed, and the confirmer sets their
+own through the reset. The same password again is kept. → [Re-registration](/api/authentication#register)
+
+**The registration and new-password fields offer the platform's strong password.** On the web, both
+registration forms, the customer's reset step and the admin profile declare
+`autocomplete="new-password"`; the customer profile's password change and the partner web's reset step
+declare none. Since the fix plan of 2026-10-25 the Android and iOS apps declare their AutoFill types
+too, so iCloud Keychain or Google Password Manager suggests one, saves it and fills it at sign-in; on
+iOS the app's associated domain must be live on its web host
+→ [Strong passwords](/mobile-app/overview#webcredentials). The suggestion meets the password rule: at
+least 8 characters with a letter, of any alphabet, and a digit.
+
 ## The native customer apps need an account {#native-account-only}
 
 A signed-out person who opens the Android or iOS customer app goes from the splash screen to sign-in,

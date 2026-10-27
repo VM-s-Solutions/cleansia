@@ -90,6 +90,7 @@ jobs:
           fix-company-contact-placeholders.sql|rewrites the seeded DEV company record's e-mail and phone|Production's company e-mail and phone are entered in the admin console (see README.md).
           fix-plus-trial-14-days.sql|gives the two seeded DEV Cleansia Plus plans their 14-day trial back|Production's plans and their trials are entered in the admin console.
           fix-deactivate-local-dev-admin.sql|retires the published-password administrator from the shared DEV database|Production never holds that administrator: insert_local_dev_admin.sql is refused there.
+          fix-service-city-zip-prefixes.sql|moves the seeded DEV service cities to the ZIP prefixes the booking gate enforces|Production is seeded with those prefixes by prod-bootstrap.sql, and its cities are kept in the admin console.
           DEV_ONLY_SCRIPTS
           echo "Not a DEV-only script — continuing."
 

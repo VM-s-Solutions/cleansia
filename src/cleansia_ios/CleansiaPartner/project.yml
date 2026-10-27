@@ -96,8 +96,8 @@ targets:
         # The commit and branch a TestFlight build was archived from; the lanes pass both as build settings.
         CleansiaGitCommit: $(CLEANSIA_GIT_COMMIT)
         CleansiaGitBranch: $(CLEANSIA_GIT_BRANCH)
-        NSCameraUsageDescription: Cleansia uses the camera to capture before and after photos of your cleaning jobs.
-        NSPhotoLibraryUsageDescription: Cleansia needs access to your photos so you can attach before and after photos to your jobs.
+        NSCameraUsageDescription: Cleansia uses the camera to capture before and after photos of your cleaning jobs, your profile photo and photos of your documents.
+        NSPhotoLibraryUsageDescription: Cleansia needs access to your photos so you can choose your profile photo or a photo of a document.
         NSLocationWhenInUseUsageDescription: Cleansia uses your location to center the map when you set your address and to show on your job list how far each job is from you. The distance is calculated on your device only.
         UIAppFonts:
           - Poppins-Medium.ttf
@@ -113,6 +113,10 @@ targets:
         # The Notification Service Extension reads the in-app language from here (AppGroupLanguage).
         com.apple.security.application-groups:
           - group.cz.cleansia.partner
+        # Lets iCloud Keychain suggest and save the password under the partner web host, whose
+        # apple-app-site-association names this app.
+        com.apple.developer.associated-domains:
+          - webcredentials:$(WEBCREDENTIALS_HOST)
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: cz.cleansia.partner
@@ -121,6 +125,8 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         TARGETED_DEVICE_FAMILY: "1"
         API_BASE_URL: https:/$()/api-cleansia-partner-mobile-weu-dev.azurewebsites.net
+        # The lanes pass the DEV host whenever they pass an api_base_url (fastlane/Fastfile).
+        WEBCREDENTIALS_HOST: partner.dev.cleansia.cz
         # Firebase requires -ObjC for its Objective-C SDKs, Crashlytics among them, linked as Swift packages.
         OTHER_LDFLAGS: ["$(inherited)", "-ObjC"]
       configs:
@@ -132,6 +138,7 @@ targets:
         # binds to the prod Partner Mobile host.
         Release:
           API_BASE_URL: https:/$()/api-partner-mobile.cleansia.cz
+          WEBCREDENTIALS_HOST: partner.cleansia.cz
     preBuildScripts:
       - name: Verify local build configuration
         basedOnDependencyAnalysis: false

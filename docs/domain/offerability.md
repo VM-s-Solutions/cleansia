@@ -160,4 +160,8 @@ currency rule stays visible to the cleaner it was made for.
 Passing the gate is not the end. The seat itself is arbitrated by a unique index on
 `(OrderId, SeatOrdinal)` — the three in-memory capacity checks are unlocked reads, and two cleaners
 tapping the same single-seat job both pass all three. The loser's insert is rejected at commit and
-turned back into the ordinary "no available spots" refusal, so the two paths cannot disagree.
+turned back into the ordinary "no available spots" refusal, so the two paths cannot disagree. Since the
+fix plan of 2026-10-25 a take also stamps the order, so its commit compares the order's tokens and a
+take decided on a status that has since moved — a drop's walk-back, a cancellation, a refund — is refused
+the same way, and a drop locks the order's row before it reads the crew.
+→ [Business rules — when a cleaner leaves](/product/business-rules#crew-lost)

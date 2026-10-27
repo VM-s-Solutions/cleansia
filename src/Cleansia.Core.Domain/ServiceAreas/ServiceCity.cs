@@ -6,14 +6,12 @@ namespace Cleansia.Core.Domain.ServiceAreas;
 
 /// <summary>
 /// A city the company actually serves within a serviced country. Customer
-/// order creation must pick an address whose city matches a row here.
+/// order creation must pick an address a row here serves (<see cref="CityNameMatch.Serves"/>).
 /// Employee addresses do NOT have to match — cleaners can live anywhere
 /// and commute into served cities.
 ///
-/// <see cref="ZipPrefix"/> ships in the schema from v1 but is intentionally
-/// unused by the v1 validator (city-name match only). Adding the column
-/// later under load would require backfilling every production row with no
-/// downtime, so it's cheaper to ship the column unused.
+/// <see cref="ZipPrefix"/>, when set, decides by the address's postcode: a row with one serves a
+/// valid postcode that starts with it and refuses any other, whatever the city text says.
 /// </summary>
 public class ServiceCity : Auditable
 {

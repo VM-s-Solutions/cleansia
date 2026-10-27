@@ -47,6 +47,8 @@ enum PartnerNotificationDeepLink {
              // screen that carries the address.
              "order.reminder_soon",
              "order.reminder_not_started",
+             // A crew-mate's "I'm done" opens the job, where the shared Complete appears once everyone has.
+             "order.crew_mate_done",
              "dispute.reply":
             guard let orderId else { return nil }
             return .order(orderId: orderId)

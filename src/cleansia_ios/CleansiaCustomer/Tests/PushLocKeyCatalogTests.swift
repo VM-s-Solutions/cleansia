@@ -51,6 +51,7 @@ final class PushLocKeyCatalogTests: XCTestCase {
         "order.reminder_tomorrow",
         "order.reminder_soon",
         "order.reminder_not_started",
+        "order.crew_mate_done",
         "employee.weekly_limit_set",
         "employee.registration_approved",
         "employee.registration_rejected"
@@ -81,6 +82,7 @@ final class PushLocKeyCatalogTests: XCTestCase {
         "order.reminder_tomorrow",
         "order.reminder_soon",
         "order.reminder_not_started",
+        "order.crew_mate_done",
         "employee.weekly_limit_set"
     ]
 

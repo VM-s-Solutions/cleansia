@@ -20559,6 +20559,76 @@
         }
       }
     },
+    "push.order.crew_mate_done.body": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Až svou část zakázky #%1$@ označí jako hotovou všichni, může ji kdokoli z vás dokončit."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Once everyone on job #%1$@ has marked their part done, any of you can complete it."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Когда все на заказе #%1$@ отметят свою часть как выполненную, любой из вас сможет его завершить."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keď svoju časť zákazky #%1$@ označia ako hotovú všetci, môže ju ktokoľvek z vás dokončiť."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Коли всі на замовленні #%1$@ позначать свою частину як виконану, будь-хто з вас зможе його завершити."
+          }
+        }
+      }
+    },
+    "push.order.crew_mate_done.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Někdo na vaší zakázce má hotovo"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Someone on your job has finished"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кто-то на вашем заказе закончил"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niekto na vašej zákazke má hotovo"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Хтось на вашому замовленні завершив"
+          }
+        }
+      }
+    },
     "push.order.reminder_soon.body": {
       "extractionState": "manual",
       "localizations": {

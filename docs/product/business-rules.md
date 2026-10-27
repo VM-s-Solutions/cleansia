@@ -1950,11 +1950,12 @@ announces the new version: a cleaner meets it at their next take, which points t
 later deploy renames the two folders in the last commit before the merge.
 → [ADR-0068 §Amended 2026-10-25](/decisions/adr-0068#amended-2026-10-25)
 
-**The next customer terms version is provisional.** The five-language folder
-`src/Cleansia.Infra.Database/Seed/Legal/customer/terms-of-service/any/2026-10-28/` explains the
-confirmed-email guest listing and cancellation. It must be renamed, with its explicit seeder-test
-version row, to the day it first deploys to DEV after the merge, never an earlier date. It is not
-already deployed or in force; the table above retains the current deployed version.
+**The next customer terms version is dated for the planned DEV rollout.** The five-language folder
+`src/Cleansia.Infra.Database/Seed/Legal/customer/terms-of-service/any/2026-10-27/` explains the
+confirmed-email guest listing and cancellation. The folder and its explicit seeder-test version
+row name the planned first DEV deploy day, 2026-10-27. If deployment moves to a later day, rename
+both before deploying, never to an earlier date. It is not already deployed or in force; the table
+above retains the current deployed version.
 
 ### The seller is named from the company record {#company-identity}
 

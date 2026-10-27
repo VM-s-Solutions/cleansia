@@ -1111,6 +1111,7 @@
       "filter_done": "Hotové",
       "filter_cancelled": "Zrušené",
       "fixed_price": "Pevná cena",
+      "guest_booking": "Objednávka hosta",
       "track": "Sledovat",
       "detail": "Detail",
       "book_cleaning": "Objednat úklid",
@@ -1202,6 +1203,7 @@
       "action_invoice": "Stáhnout fakturu",
       "action_report": "Něco nebylo v pořádku",
       "cancellation_note": "Zrušit zdarma šlo do {{hours}} hodin před úklidem.",
+      "guest_booking_note": "Objednávka byla vytvořena bez přihlášení na váš e-mail. Můžete ji zde sledovat, ale nelze ji ohodnotit ani u ní nahlásit problém.",
       "cancellation": {
         "action": "Zrušit objednávku",
         "title": "Zrušit tuto objednávku?",

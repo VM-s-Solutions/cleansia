@@ -71,11 +71,15 @@ export class DisputesFacade extends UnsubscribeControlDirective {
    * The customer's orders, whole. Public because the dispute form needs more than a label per order:
    * once a customer picks one, the form lists the services and packages that were ON it so they can
    * point at the parts that went wrong. Every item is already here — the list endpoint returns them —
-   * so naming them costs no extra request.
+   * so naming them costs no extra request. A guest booking the account lists cannot be disputed from
+   * it, so it is left out.
    */
-  readonly orders = toSignal(this.store.select(selectCustomerOrders), {
+  private readonly listedOrders = toSignal(this.store.select(selectCustomerOrders), {
     initialValue: [] as OrderListItem[],
   });
+  readonly orders = computed(() =>
+    (this.listedOrders() || []).filter((order) => order.isGuestBooking !== true)
+  );
   readonly orderOptions = computed(() =>
     (this.orders() || []).map((o) => ({
       label: `#${o.displayOrderNumber}`,

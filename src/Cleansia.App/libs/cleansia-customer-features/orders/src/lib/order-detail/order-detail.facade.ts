@@ -137,6 +137,12 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
 
   readonly freeCancellationHours = computed(() => this.order()?.freeCancellationHours ?? null);
 
+  /**
+   * A booking made without an account under the session's e-mail, which the server lists and opens
+   * for the account and lets it cancel; everything else on it stays the booking's e-mail link's.
+   */
+  readonly isGuestBooking = computed(() => this.order()?.isGuestBooking === true);
+
   readonly canConfirmCancellation = computed(() =>
     this.canCancel() && this.cancellationOpen() && !!this.cancellationPreview() &&
     !this.previewLoading() && !this.cancelling());

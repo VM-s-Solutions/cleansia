@@ -1111,6 +1111,7 @@
       "filter_done": "Done",
       "filter_cancelled": "Cancelled",
       "fixed_price": "Fixed price",
+      "guest_booking": "Guest booking",
       "track": "Track",
       "detail": "Detail",
       "book_cleaning": "Book a clean",
@@ -1202,6 +1203,7 @@
       "action_invoice": "Download invoice",
       "action_report": "Something was wrong",
       "cancellation_note": "Free cancellation ran until {{hours}} hours before the clean.",
+      "guest_booking_note": "This booking was made without signing in, using your e-mail. You can follow it here, but you cannot rate it or report a problem with it.",
       "cancellation": {
         "action": "Cancel booking",
         "title": "Cancel this booking?",

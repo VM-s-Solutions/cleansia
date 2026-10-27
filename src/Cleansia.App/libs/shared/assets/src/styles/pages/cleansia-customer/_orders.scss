@@ -222,6 +222,18 @@
   }
 }
 
+// A booking made without an account under this account's e-mail: listed here, never attached to it.
+.order-row__guest {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px calc(0.75 * var(--cl-u));
+  border: 1px solid var(--cl-tint-strong);
+  border-radius: 999px;
+  font-size: calc(0.75 * var(--cl-u));
+  font-weight: 700;
+  color: var(--cl-body);
+}
+
 .order-row__facts {
   display: flex;
   align-items: center;

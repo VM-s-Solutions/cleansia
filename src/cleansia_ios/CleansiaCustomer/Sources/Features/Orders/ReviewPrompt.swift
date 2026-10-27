@@ -26,7 +26,7 @@ enum ReviewPrompt {
     ) -> CustomerOrderSummary? {
         orders
             .filter { OrderStatusGroup.isCompleted($0.status) }
-            .filter { !$0.hasReview }
+            .filter { !$0.hasReview && !$0.isGuestBooking }
             .filter { !alreadyPrompted.contains($0.id) }
             .max { lhs, rhs in
                 (lhs.cleaningDateTime ?? .distantPast) < (rhs.cleaningDateTime ?? .distantPast)

@@ -81,3 +81,13 @@ struct OrderStatusPill: View {
         )
     }
 }
+
+/// Marks a booking made without an account under the customer's e-mail, on its list row and its detail.
+struct GuestBookingLabel: View {
+    var body: some View {
+        Label(L10n.Orders.guestBooking, systemImage: "envelope")
+            .font(CleansiaTypography.labelMedium)
+            .foregroundColor(CleansiaColors.onSurfaceVariant)
+            .lineLimit(1)
+    }
+}

@@ -27673,6 +27673,76 @@
         }
       }
     },
+    "orders_guest_booking": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Objednávka hosta"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guest booking"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Гостевой заказ"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Objednávka hosťa"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Гостьове замовлення"
+          }
+        }
+      }
+    },
+    "order_detail_guest_booking_note": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Objednávka byla vytvořena bez přihlášení na váš e-mail. Můžete ji zde sledovat, ale nelze ji ohodnotit ani u ní nahlásit problém."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This booking was made without signing in, using your e-mail. You can follow it here, but you cannot rate it or report a problem with it."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заказ оформлен без входа в аккаунт на ваш e-mail. Здесь его можно отслеживать, но нельзя оценить или сообщить о проблеме с ним."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Objednávka bola vytvorená bez prihlásenia na váš e-mail. Môžete ju tu sledovať, ale nemožno ju ohodnotiť ani pri nej nahlásiť problém."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Замовлення оформлено без входу в акаунт на ваш e-mail. Тут його можна відстежувати, але не можна оцінити чи повідомити про проблему з ним."
+          }
+        }
+      }
+    },
     "orders_status_completed": {
       "extractionState": "stale",
       "localizations": {

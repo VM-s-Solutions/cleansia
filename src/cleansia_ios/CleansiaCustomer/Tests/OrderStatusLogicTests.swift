@@ -143,11 +143,11 @@ final class OrderDetailFooterActionsTests: XCTestCase {
     /// an accident that would silently hide both new CTAs if the dispute window
     /// ever narrowed.
     func testTheFooterRendersWheneverAnyOfItsFourActionsWould() {
-        XCTAssertTrue(OrderDetailFooterActions.showFooter(._5, authoring: .upsell))
-        XCTAssertTrue(OrderDetailFooterActions.showFooter(._2, authoring: .upsell))
-        XCTAssertTrue(OrderDetailFooterActions.showFooter(._0, authoring: .upsell))
-        XCTAssertFalse(OrderDetailFooterActions.showFooter(._6, authoring: .allowed))
-        XCTAssertFalse(OrderDetailFooterActions.showFooter(nil, authoring: .allowed))
+        XCTAssertTrue(OrderDetailFooterActions.showFooter(._5, authoring: .upsell, isGuestBooking: false))
+        XCTAssertTrue(OrderDetailFooterActions.showFooter(._2, authoring: .upsell, isGuestBooking: false))
+        XCTAssertTrue(OrderDetailFooterActions.showFooter(._0, authoring: .upsell, isGuestBooking: false))
+        XCTAssertFalse(OrderDetailFooterActions.showFooter(._6, authoring: .allowed, isGuestBooking: false))
+        XCTAssertFalse(OrderDetailFooterActions.showFooter(nil, authoring: .allowed, isGuestBooking: false))
     }
 
     /// The pure gate above is only as good as what the view hands it. Reverting the
@@ -157,7 +157,10 @@ final class OrderDetailFooterActionsTests: XCTestCase {
         let source = try readSource("CleansiaCustomer/Sources/Features/Orders/OrderDetailView.swift")
 
         XCTAssertTrue(
-            source.contains("OrderDetailFooterActions.showFooter(order.status, authoring: vm.recurringAuthoring)"),
+            source.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression).contains(
+                "OrderDetailFooterActions.showFooter( order.status, authoring: vm.recurringAuthoring, "
+                    + "isGuestBooking: order.isGuestBooking )"
+            ),
             "the footer gate no longer reads the resolved gate"
         )
         XCTAssertTrue(

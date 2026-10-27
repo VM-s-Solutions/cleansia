@@ -31,6 +31,9 @@ struct CustomerOrderSummary: Equatable {
     /// completion prompt can be decided from the warm cache — the alternative is a detail fetch per
     /// candidate every time the app opens.
     let hasReview: Bool
+    /// A booking made without an account under the signed-in customer's e-mail: listed and cancellable here,
+    /// never rated, reported or receipted.
+    var isGuestBooking = false
 
     var status: OrderStatus? {
         statusCode?.toOrderStatus()
@@ -59,5 +62,6 @@ extension CustomerOrderSummary {
         // Defaulted rather than required: an older server that omits it yields "not reviewed", which
         // costs at most one redundant prompt. Refusing would drop the whole row off the orders list.
         hasReview = item.hasReview ?? false
+        isGuestBooking = item.isGuestBooking ?? false
     }
 }

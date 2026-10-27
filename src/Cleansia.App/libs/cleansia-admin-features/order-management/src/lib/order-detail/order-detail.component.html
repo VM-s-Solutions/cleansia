@@ -347,6 +347,18 @@
           <span class="detail-grid__label">{{ 'pages.order_detail.employee_phone' | translate }}</span>
           <span class="detail-grid__value">{{ entry.employee.phoneNumber || '-' }}</span>
         </div>
+        <div class="detail-grid__item employee-card__completion">
+          <span class="detail-grid__label">{{ 'pages.order_detail.completion.label' | translate }}</span>
+          <span class="detail-grid__value">
+            @if (entry.markedDoneAt; as markedAt) {
+            {{ facade.formatDateTime(markedAt) }}
+            } @else if (entry.markPending) {
+            {{ 'pages.order_detail.completion.pending' | translate }}
+            } @else {
+            -
+            }
+          </span>
+        </div>
         <!-- A seat with no acceptance is one an admin placed; the cleaner accepts from their app. -->
         <div class="detail-grid__item detail-grid__item--wide employee-card__contract">
           <span class="detail-grid__label">{{ 'pages.order_detail.work_contract.label' | translate }}</span>

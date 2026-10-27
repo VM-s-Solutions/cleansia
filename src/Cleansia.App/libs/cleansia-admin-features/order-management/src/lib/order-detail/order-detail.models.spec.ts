@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { DirtinessLevel, OrderItem, TimelineEntryDto, TimelineSource } from '@cleansia/admin-services';
+import { DirtinessLevel, OrderItem, OrderStatus, TimelineEntryDto, TimelineSource } from '@cleansia/admin-services';
 import { buildCrewEntries, dirtinessLevelLabelKey, resolveIncidentSubject } from './order-detail.models';
 
 const ADMIN_LOCALES = ['en', 'cs', 'sk', 'uk', 'ru'] as const;
@@ -96,6 +96,47 @@ describe('buildCrewEntries', () => {
     expect(buildCrewEntries(null)).toEqual([]);
     expect(buildCrewEntries(OrderItem.fromJS({ workContractAcceptances: [{ id: 'acc-1' }] }))).toEqual([]);
   });
+
+  // Owner ruling 2026-10-26: on a crew job each cleaner marks their own part done before any of them
+  // completes it. The card says when a seat marked, and "not yet" only where a mark is still to come.
+  describe('when each seat marked its part done', () => {
+    const MARKED = '2026-10-27T10:40:00Z';
+    const order = (status: OrderStatus, seats: { employeeId: string; completionConfirmedAt?: string }[]) =>
+      OrderItem.fromJS({
+        orderStatus: { value: status },
+        assignedEmployees: seats.map((seat) => ({ id: `seat-${seat.employeeId}`, fullName: seat.employeeId, ...seat })),
+      });
+
+    it('gives a marked seat its time and an unmarked one of a crew job in progress not yet', () => {
+      const crew = buildCrewEntries(
+        order(OrderStatus.InProgress, [{ employeeId: 'emp-1', completionConfirmedAt: MARKED }, { employeeId: 'emp-2' }])
+      );
+
+      expect(crew[0].markedDoneAt?.toISOString()).toBe(new Date(MARKED).toISOString());
+      expect(crew[0].markPending).toBe(false);
+      expect(crew[1].markedDoneAt).toBeNull();
+      expect(crew[1].markPending).toBe(true);
+    });
+
+    it('expects no mark from the one cleaner of a job, who completes it outright', () => {
+      const [solo] = buildCrewEntries(order(OrderStatus.InProgress, [{ employeeId: 'emp-1' }]));
+
+      expect(solo.markedDoneAt).toBeNull();
+      expect(solo.markPending).toBe(false);
+    });
+
+    it.each([OrderStatus.Confirmed, OrderStatus.Completed, OrderStatus.Cancelled])(
+      'expects no mark on a crew job in status %s, and still shows one that was made',
+      (status) => {
+        const crew = buildCrewEntries(
+          order(status, [{ employeeId: 'emp-1', completionConfirmedAt: MARKED }, { employeeId: 'emp-2' }])
+        );
+
+        expect(crew.map((entry) => entry.markPending)).toEqual([false, false]);
+        expect(crew[0].markedDoneAt?.toISOString()).toBe(new Date(MARKED).toISOString());
+      }
+    );
+  });
 });
 
 describe('dirtinessLevelLabelKey', () => {
@@ -110,12 +151,14 @@ describe('dirtinessLevelLabelKey', () => {
     expect(dirtinessLevelLabelKey(undefined)).toBe('enums.dirtiness_level.normal');
   });
 
-  it.each(ADMIN_LOCALES)('has every level and both order detail labels in %s', (locale) => {
+  it.each(ADMIN_LOCALES)('has every level, both order detail labels and the crew card mark in %s', (locale) => {
     const bundle = JSON.parse(readFileSync(join(I18N_DIR, `${locale}.json`), 'utf8')) as unknown;
     const keys = [
       ...[DirtinessLevel.Normal, DirtinessLevel.Increased, DirtinessLevel.Heavy].map(dirtinessLevelLabelKey),
       'pages.order_detail.dirtiness_level',
       'pages.order_detail.dirtiness_surcharge',
+      'pages.order_detail.completion.label',
+      'pages.order_detail.completion.pending',
     ];
     const missing = keys.filter((key) => {
       const value = key

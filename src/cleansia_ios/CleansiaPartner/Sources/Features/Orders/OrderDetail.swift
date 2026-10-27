@@ -79,9 +79,10 @@ struct OrderDetailPackage: Equatable, Hashable {
 /// name and phone the wire also carries are not read here. `completionConfirmedAt` is when its cleaner
 /// marked their part of the job done.
 ///
-/// **Drop the row.** A seat with no id or no employee id pairs with nothing and nothing sums the
-/// crew, so a dropped entry falsifies no figure — while refusing would blank a detail the server
-/// answered correctly for every other member.
+/// **Drop the row.** A seat with no id or no employee id pairs with nothing, while refusing would blank a
+/// detail the server answered correctly for every other member. A dropped seat also leaves the crew count
+/// `crewFinish` reads, which costs nothing: the server sends both ids on every seat, and Complete stays
+/// guarded by `order.crew_not_done`.
 struct OrderSeat: Equatable {
     let id: String
     let employeeId: String

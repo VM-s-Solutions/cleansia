@@ -1,8 +1,8 @@
 import CleansiaPartnerApi
 import Foundation
 
-/// The one valid primary action for an order, resolved from status × ownership ×
-/// after-photos. The single machine shared by the detail footer, the Available
+/// The one valid primary action for an order, resolved from status × ownership × the crew's
+/// standing × after-photos × payment. The single machine shared by the detail footer, the Available
 /// Take CTA, and the Active-row swipe — mirrors
 /// `OrderPrimaryAction.kt:54-126`. Pure value type, no UI.
 enum OrderPrimaryAction: Equatable {
@@ -68,10 +68,10 @@ enum OrderPrimaryAction: Equatable {
             // is the authority; browse-detail only returns this order while a seat remains.
             return isMine ? .start : .take
         case ._4:
-            // InProgress: only the assignee completes, gated first on an
-            // after-photo, then on payment — a cash order settles only once the
-            // cleaner collects (the `OrderPrimaryAction.kt` canComplete →
-            // needsCashCollection ordering).
+            // InProgress: only the assignee finishes. On a crew job the standing comes first (their
+            // own "I'm done", then the wait); either Complete is then gated on an after-photo, then on
+            // payment — a cash order settles only once the cleaner collects (the
+            // `OrderPrimaryAction.kt` canComplete → needsCashCollection ordering).
             // Same as OnTheWay: the work has begun short-crewed and a seat is open. A late joiner
             // is worth more to the customer than an empty seat.
             guard isMine else { return .take }

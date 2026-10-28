@@ -116,6 +116,10 @@ extension L10n {
             localized("order_review_comment_placeholder")
         }
 
+        static var optionalDetails: String {
+            localized("order_review_optional_details")
+        }
+
         static var cancel: String {
             localized("order_review_cancel")
         }

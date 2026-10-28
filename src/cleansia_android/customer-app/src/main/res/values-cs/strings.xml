@@ -360,7 +360,7 @@
 
     <!-- Order review (Wave 2 Phase 3) -->
     <string name="order_review_sheet_title">Ohodnoťte úklid</string>
-    <string name="order_review_rating_hint">Ťukněte na hvězdičku</string>
+    <string name="order_review_rating_hint">Povinné je pouze hodnocení hvězdičkami.</string>
     <string name="order_review_rating_1">Hrozné</string>
     <string name="order_review_rating_2">Špatné</string>
     <string name="order_review_rating_3">V pořádku</string>

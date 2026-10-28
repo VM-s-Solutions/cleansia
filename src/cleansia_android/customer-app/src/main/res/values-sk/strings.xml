@@ -357,7 +357,7 @@
 
     <!-- Order review -->
     <string name="order_review_sheet_title">Ohodnoťte upratovanie</string>
-    <string name="order_review_rating_hint">Ťuknite na hviezdičku</string>
+    <string name="order_review_rating_hint">Povinné je iba hodnotenie hviezdičkami.</string>
     <string name="order_review_rating_1">Hrozné</string>
     <string name="order_review_rating_2">Zlé</string>
     <string name="order_review_rating_3">V poriadku</string>

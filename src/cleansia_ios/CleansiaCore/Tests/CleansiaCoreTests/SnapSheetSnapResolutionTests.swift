@@ -100,4 +100,95 @@ final class SnapSheetSnapResolutionTests: XCTestCase {
         XCTAssertEqual(SnapResolver.sheetTop(for: .mapFocus, containerHeight: height), height * 0.70, accuracy: 0.001)
         XCTAssertEqual(SnapResolver.sheetTop(for: .expanded, containerHeight: height), height * 0.05, accuracy: 0.001)
     }
+
+    func testAShortViewportKeepsTheMeasuredFixedContentVisibleAtEveryAnchor() {
+        for anchor in SnapAnchor.allCases {
+            let top = SnapResolver.sheetTop(for: anchor, containerHeight: 600, minimumSheetHeight: 360)
+            XCTAssertGreaterThanOrEqual(600 - top, 360, "\(anchor)")
+        }
+        XCTAssertEqual(
+            SnapResolver.sheetTop(for: .mapFocus, containerHeight: 600, minimumSheetHeight: 360), 240
+        )
+    }
+
+    func testATallViewportKeepsItsOriginalMapFocusWhenTheContentAlreadyFits() {
+        XCTAssertEqual(
+            SnapResolver.sheetTop(for: .mapFocus, containerHeight: 1000, minimumSheetHeight: 240), 700
+        )
+    }
+
+    func testNegativeAndOversizedMinimumsStayInsideTheViewport() {
+        for anchor in SnapAnchor.allCases {
+            XCTAssertEqual(
+                SnapResolver.sheetTop(for: anchor, containerHeight: 600, minimumSheetHeight: -100),
+                SnapResolver.sheetTop(for: anchor, containerHeight: 600)
+            )
+            XCTAssertEqual(SnapResolver.sheetTop(for: anchor, containerHeight: 600, minimumSheetHeight: 900), 0)
+            XCTAssertEqual(SnapResolver.sheetTop(for: anchor, containerHeight: 0, minimumSheetHeight: 900), 0)
+        }
+    }
+
+    func testDraggingUsesTheFlooredAnchorPositions() {
+        XCTAssertEqual(
+            SnapResolver.resolve(
+                from: .peek,
+                dragTranslation: 60,
+                predictedEndTranslation: 60,
+                containerHeight: 600,
+                minimumSheetHeight: 360
+            ),
+            .mapFocus
+        )
+    }
+
+    func testDistinctAnchorMidpointTiesKeepTheirOriginalChoiceWithTheDefaultMinimum() {
+        XCTAssertEqual(
+            SnapResolver.resolve(
+                from: .peek,
+                dragTranslation: 225,
+                predictedEndTranslation: 225,
+                containerHeight: 1000
+            ),
+            .mapFocus
+        )
+        XCTAssertEqual(
+            SnapResolver.resolve(
+                from: .expanded,
+                dragTranslation: 100,
+                predictedEndTranslation: 100,
+                containerHeight: 1000
+            ),
+            .peek
+        )
+    }
+
+    func testCoincidentMapFocusAndPeekKeepTheirCurrentAnchorWithoutMovement() {
+        for anchor in [SnapAnchor.mapFocus, .peek] {
+            XCTAssertEqual(
+                SnapResolver.resolve(
+                    from: anchor,
+                    dragTranslation: 0,
+                    predictedEndTranslation: 0,
+                    containerHeight: 400,
+                    minimumSheetHeight: 350
+                ),
+                anchor
+            )
+        }
+    }
+
+    func testCoincidentAnchorPositionsPreserveTheCurrentAnchorWithoutMovement() {
+        for anchor in SnapAnchor.allCases {
+            XCTAssertEqual(
+                SnapResolver.resolve(
+                    from: anchor,
+                    dragTranslation: 0,
+                    predictedEndTranslation: 0,
+                    containerHeight: 400,
+                    minimumSheetHeight: 500
+                ),
+                anchor
+            )
+        }
+    }
 }

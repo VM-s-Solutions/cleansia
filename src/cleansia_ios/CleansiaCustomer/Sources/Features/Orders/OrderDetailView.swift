@@ -9,6 +9,8 @@ struct OrderDetailView: View {
     @State private var showPhotos = false
     @State private var receiptURL: ReceiptFile?
     @State private var snapAnchor: SnapAnchor = .peek
+    @State private var headerHeight: CGFloat = 0
+    @State private var footerHeight: CGFloat = 0
 
     private let routeOrderId: String
     private let client: OrderClient
@@ -139,7 +141,12 @@ struct OrderDetailView: View {
     /// the seam between them — the partner order-detail topology, which is what the
     /// customer screen is being brought to parity with.
     private func loadedShell(_ order: CustomerOrderDetail) -> some View {
-        SnapSheet(anchor: $snapAnchor) {
+        SnapSheet(
+            anchor: $snapAnchor,
+            minimumSheetHeight: order.needsReview
+                ? headerHeight + footerHeight + OrderDetailReviewLayout.handleAndBodyClearance
+                : 0
+        ) {
             OrderDetailMapBackdrop(order: order, mapProvider: mapProvider)
         } ornament: {
             MascotPuck(OrderDetailMascotArt.art(for: order.status))
@@ -158,6 +165,8 @@ struct OrderDetailView: View {
 
                 footer(order)
             }
+            .onPreferenceChange(OrderDetailHeaderHeight.self) { headerHeight = $0 }
+            .onPreferenceChange(OrderDetailFooterHeight.self) { footerHeight = $0 }
         }
     }
 
@@ -181,6 +190,7 @@ struct OrderDetailView: View {
             canReportCleanerNoShow: vm.canReportCleanerNoShow
         ) {
             OrderDetailActionsFooter(
+                showReview: order.needsReview,
                 showRebook: OrderDetailFooterActions.showRebook(order.status),
                 showMakeRecurring: OrderDetailFooterActions.showMakeRecurring(
                     order.status,
@@ -193,6 +203,7 @@ struct OrderDetailView: View {
                     isGuestBooking: order.isGuestBooking
                 ),
                 cancelEnabled: !vm.cancelState.isSubmitting,
+                onReview: { showReviewSheet = true },
                 onRebook: { onRebook(orderId) },
                 onMakeRecurring: { onMakeRecurring(orderId) },
                 onCancel: { showCancelSheet = true },
@@ -380,8 +391,7 @@ enum OrderDetailFooterActions {
 /// *component*: `CleansiaDangerButton` is a `Button(role: .destructive)`, and
 /// claiming that role for a form that files a complaint would put a false
 /// promise in the accessibility tree to settle a colour question. It also stays
-/// outlined rather than filled so it cannot out-rank the primary Book again CTA
-/// above it on a completed order.
+/// outlined rather than filled so it cannot out-rank the completed order's primary action.
 ///
 /// Cancel carries the same tint, and Confirmed and OnTheWay both offer the two
 /// side by side, so on those screens the glyphs are the entire differentiator
@@ -397,17 +407,15 @@ struct OrderDetailFooterStyle {
     static let reportIssue = Self(icon: "exclamationmark.triangle", tint: CleansiaColors.error)
 }
 
-/// The order-detail footer (`ActionsFooter` in `OrderDetailScreen.kt`).
-/// Several actions overlap on one status, so they are stacked in Android's order
-/// rather than each owning its own footer: Book again (primary) on top, then
-/// Make recurring, then Cancel or — past the start — The cleaner did not arrive, then Report issue.
-private struct OrderDetailActionsFooter: View {
+struct OrderDetailActionsFooter: View {
+    let showReview: Bool
     let showRebook: Bool
     let showMakeRecurring: Bool
     let showCancel: Bool
     let showCleanerDidNotArrive: Bool
     let showReportIssue: Bool
     let cancelEnabled: Bool
+    let onReview: () -> Void
     let onRebook: () -> Void
     let onMakeRecurring: () -> Void
     let onCancel: () -> Void
@@ -416,12 +424,29 @@ private struct OrderDetailActionsFooter: View {
 
     var body: some View {
         VStack(spacing: Spacing.s) {
-            if showRebook {
+            if showReview {
                 CleansiaPrimaryButton(
-                    L10n.OrderDetail.actionRebook,
-                    leadingIcon: "arrow.clockwise",
-                    action: onRebook
+                    L10n.OrderReview.sheetTitle,
+                    leadingIcon: "star",
+                    action: onReview
                 )
+            }
+            if showRebook {
+                if showReview {
+                    CleansiaOutlinedButton(
+                        L10n.OrderDetail.actionRebook,
+                        leadingIcon: "arrow.clockwise",
+                        contentColor: CleansiaColors.primaryText,
+                        borderColor: CleansiaColors.primary,
+                        action: onRebook
+                    )
+                } else {
+                    CleansiaPrimaryButton(
+                        L10n.OrderDetail.actionRebook,
+                        leadingIcon: "arrow.clockwise",
+                        action: onRebook
+                    )
+                }
             }
             if showMakeRecurring {
                 CleansiaOutlinedButton(
@@ -462,6 +487,23 @@ private struct OrderDetailActionsFooter: View {
         .padding(.vertical, Spacing.s)
         .readableWidth()
         .background(CleansiaColors.surface.ignoresSafeArea(edges: .bottom))
+        .background {
+            GeometryReader { geometry in
+                Color.clear.preference(key: OrderDetailFooterHeight.self, value: geometry.size.height)
+            }
+        }
+    }
+}
+
+enum OrderDetailReviewLayout {
+    static let handleAndBodyClearance = Spacing.l * 2
+}
+
+struct OrderDetailFooterHeight: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
     }
 }
 

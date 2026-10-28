@@ -620,6 +620,12 @@ need backfilling.
 
 ### Changed
 
+- **Customer, Android and iOS — rating a finished cleaning is easier to find and complete.** The
+  popup leads with larger stars and clearer optional feedback, while Submit stays visible below the
+  scrolling form. If a completed booking has no review, **Rate your cleaning** leads the fixed
+  order-detail actions and **Book again** becomes secondary; saving the review restores the usual
+  priority. Existing reviews remain editable. (T-0870)
+
 - **Customer, cleaner, admin and operator — guest bookings in My orders and crew completion.**
   - A confirmed customer's web, Android and iOS My orders includes guest bookings made with their
     e-mail, even before the account existed and in other markets. A badge and note distinguish the

@@ -25995,31 +25995,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ťukněte na hvězdičku"
+            "value": "Povinné je pouze hodnocení hvězdičkami."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tap a star to rate"
+            "value": "Only your star rating is required."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Нажмите звезду для оценки"
+            "value": "Обязательна только оценка звёздами."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ťuknite na hviezdičku"
+            "value": "Povinné je iba hodnotenie hviezdičkami."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Натисніть зірку для оцінки"
+            "value": "Обов’язкова лише оцінка зірками."
           }
         }
       }
@@ -38199,6 +38199,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Уровень загрязнения"
+          }
+        }
+      }
+    },
+    "order_review_optional_details": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add details (optional)"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Přidejte podrobnosti (nepovinné)"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pridajte podrobnosti (nepovinné)"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Добавьте подробности (необязательно)"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Додайте подробиці (необов’язково)"
           }
         }
       }

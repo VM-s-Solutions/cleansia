@@ -49,6 +49,17 @@ final class SnapSheetSideBySideTests: XCTestCase {
         XCTAssertNil(probes.frames["ornament"], "the ornament rides an edge the column does not have")
     }
 
+    func testAMinimumHeightDoesNotInsetTheColumnBesideTheBackdrop() async throws {
+        let size = CGSize(width: 951, height: 669)
+        let safeArea = EdgeInsets(top: 24, leading: 0, bottom: 20, trailing: 0)
+        let probes = try await layOut(in: size, safeArea: safeArea, minimumSheetHeight: 1000)
+        let content = try XCTUnwrap(probes.frames["content"])
+
+        XCTAssertEqual(content.minY, safeArea.top, accuracy: 0.5)
+        XCTAssertEqual(content.maxY, size.height - safeArea.bottom, accuracy: 0.5)
+        XCTAssertEqual(try XCTUnwrap(probes.values["sheetTop"]), size.height - safeArea.bottom, accuracy: 0.5)
+    }
+
     /// Beside the sheet the map is uncovered, so the order's pin is at its centre rather than lifted into the
     /// strip above a sheet; over it, the pin stays lifted as before.
     func testTheMapCentresTheOrderBesideTheSheetAndLiftsItOverTheSheet() async throws {
@@ -167,10 +178,14 @@ final class SnapSheetSideBySideTests: XCTestCase {
         XCTAssertEqual(ornament.midY, safeArea.top + sheetTop, accuracy: 0.5, "\(size)", file: file, line: line)
     }
 
-    private func layOut(in size: CGSize, safeArea: EdgeInsets) async throws -> LayoutProbes {
+    private func layOut(
+        in size: CGSize,
+        safeArea: EdgeInsets,
+        minimumSheetHeight: CGFloat = 0
+    ) async throws -> LayoutProbes {
         let probes = LayoutProbes()
         let canvas = HostedCanvas(size: size, safeArea: safeArea) {
-            SnapSheet(anchor: .constant(.peek)) {
+            SnapSheet(anchor: .constant(.peek), minimumSheetHeight: minimumSheetHeight) {
                 BackdropProbe(probes: probes)
             } ornament: {
                 Color.clear.probed("ornament", in: probes)

@@ -97,7 +97,9 @@ struct OrderDetailContent: View {
                     }
 
                     if order.offersReview {
-                        OrderReviewCard(review: order.review, onLeaveReview: onLeaveReview)
+                        if let review = order.review {
+                            OrderReviewCard(review: review, onLeaveReview: onLeaveReview)
+                        }
                     }
 
                     if order.offersReceipt {
@@ -156,6 +158,19 @@ struct OrderDetailCompactHeader: View {
         }
         .padding(.horizontal, Spacing.ml)
         .padding(.bottom, Spacing.xs)
+        .background {
+            GeometryReader { geometry in
+                Color.clear.preference(key: OrderDetailHeaderHeight.self, value: geometry.size.height)
+            }
+        }
+    }
+}
+
+struct OrderDetailHeaderHeight: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
     }
 }
 

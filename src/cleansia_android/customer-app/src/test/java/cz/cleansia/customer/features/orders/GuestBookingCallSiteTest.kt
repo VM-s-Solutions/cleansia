@@ -60,19 +60,51 @@ class GuestBookingCallSiteTest {
 
         val sheet = braced(screen, "private fun OrderDetailSheetContent(")
         assertTrue(
-            "the review card must render on an account booking only",
-            sheet.contains("if (status == OrderStatus.Completed && !order.isGuestBooking) {"),
+            "the saved-review card must render on a completed account booking with a review only",
+            braced(sheet, "if (status == OrderStatus.Completed && !order.isGuestBooking && order.review != null)")
+                .contains("ReviewCard(order = order, onLeaveReview = onLeaveReview)"),
         )
         val receipt = Regex("""val showReceipt = [^\n]*""").find(sheet)?.value.orEmpty()
         assertTrue("the receipt card must render on an account booking only, got `$receipt`", receipt.contains("!order.isGuestBooking"))
     }
 
-    /** The body of the first `{ … }` that follows [marker], which must occur exactly once in [text]. */
+    @Test
+    fun `the fixed rating action uses the guest-aware eligibility gate`() {
+        val screen = source("OrderDetailScreen.kt")
+        val sheet = braced(screen, "private fun OrderDetailSheetContent(")
+        assertTrue(
+            "the pending rating must use the tested gate with the order's guest and saved-review flags",
+            sheet.contains(
+                "val showLeaveReview = customerCanLeaveReview(order.orderStatus?.value, order.isGuestBooking, order.review != null)",
+            ),
+        )
+        val footerCall = braced(sheet, "if (hasFooter)")
+        assertTrue("the footer must receive the gated pending-rating value", footerCall.contains("showLeaveReview = showLeaveReview,"))
+
+        val footer = braced(screen, "private fun ActionsFooter(")
+        val ratingAction = braced(footer.substringBefore("if (showRebook)"), "if (showLeaveReview)")
+        assertTrue("the gated action must open the rating sheet", ratingAction.contains("onClick = onLeaveReview,"))
+        assertTrue("the gated action must be the rating button", ratingAction.contains("R.string.order_review_sheet_title"))
+    }
+
+    /** Function parameter defaults may contain lambdas before the body's opening brace. */
     private fun braced(text: String, marker: String): String {
         val start = text.indexOf(marker)
         assertTrue("no `$marker` found", start >= 0)
         assertTrue("`$marker` must be unique for this extraction to mean anything", start == text.lastIndexOf(marker))
-        val open = text.indexOf('{', start + marker.length)
+        var bodyStart = start + marker.length
+        if (marker.endsWith("(")) {
+            var parameterDepth = 1
+            while (parameterDepth > 0 && bodyStart < text.length) {
+                when (text[bodyStart++]) {
+                    '(' -> parameterDepth++
+                    ')' -> parameterDepth--
+                }
+            }
+            assertTrue("unbalanced parameters after `$marker`", parameterDepth == 0)
+        }
+        val open = text.indexOf('{', bodyStart)
+        assertTrue("no body after `$marker`", open >= 0)
         var depth = 0
         for (i in open until text.length) {
             when (text[i]) {

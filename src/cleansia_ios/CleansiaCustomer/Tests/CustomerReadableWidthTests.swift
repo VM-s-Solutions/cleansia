@@ -76,7 +76,7 @@ final class CustomerReadableWidthTests: XCTestCase {
     }
 
     func testTheOrderDetailFootersHoldTheirButtonsToTheReadableWidth() throws {
-        for footer in ["privatestructConfirmRecurringFooter:View{", "privatestructOrderDetailActionsFooter:View{"] {
+        for footer in ["privatestructConfirmRecurringFooter:View{", "structOrderDetailActionsFooter:View{"] {
             let body = try compactBody(of: footer, in: "CleansiaCustomer/Sources/Features/Orders/OrderDetailView.swift")
             XCTAssertTrue(
                 body.contains(

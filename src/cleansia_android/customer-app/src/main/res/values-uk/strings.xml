@@ -357,7 +357,7 @@
 
     <!-- Order review -->
     <string name="order_review_sheet_title">Оцініть прибирання</string>
-    <string name="order_review_rating_hint">Натисніть зірку для оцінки</string>
+    <string name="order_review_rating_hint">Обов’язкова лише оцінка зірками.</string>
     <string name="order_review_rating_1">Жахливо</string>
     <string name="order_review_rating_2">Погано</string>
     <string name="order_review_rating_3">Нормально</string>

@@ -73,130 +73,186 @@ struct SubmitReviewSheet: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: Spacing.m) {
-                Text(titleOverride ?? (isEdit ? L10n.OrderReview.editTitle : L10n.OrderReview.sheetTitle))
-                    .cleansiaFont(CleansiaTypography.headlineSmall)
-                    .foregroundColor(CleansiaColors.onSurface)
-
-                StarPicker(rating: $rating, enabled: !isSubmitting)
-                    .onChange(of: rating) { next in
-                        clearTagsOnPolarityChange(from: previousRating, to: next)
-                        previousRating = next
-                    }
-
-                Text(L10n.OrderReview.ratingDescription(rating))
-                    .font(CleansiaTypography.bodyMedium)
-                    .foregroundColor(CleansiaColors.onSurfaceVariant)
-                    .frame(maxWidth: .infinity, alignment: .center)
-
-                tagSection
-
-                VStack(alignment: .leading, spacing: Spacing.xxs) {
-                    Text(L10n.OrderReview.commentLabel)
-                        .font(CleansiaTypography.labelMedium)
-                        .foregroundColor(CleansiaColors.onSurfaceVariant)
-                    TextEditor(text: $comment)
-                        .frame(minHeight: 88)
-                        .scrollContentBackground(.hidden)
-                        .padding(Spacing.xs)
-                        .background(CleansiaColors.surface)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: CornerRadius.medium)
-                                .stroke(CleansiaColors.outlineVariant, lineWidth: 1)
-                        )
-                        .disabled(isSubmitting)
-                        .onChange(of: comment) { value in
-                            let capped = value.cappedToUtf16(maxCommentUtf16Length)
-                            if capped != value { comment = capped }
-                        }
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(spacing: Spacing.l) {
+                    ratingHeader
+                    optionalFeedback
                 }
-
-                // Per-item scores, behind a disclosure and closed by default: the stars above are
-                // the required answer and a customer leaving five and going should never meet this.
-                if !lineOptions.isEmpty {
-                    Button {
-                        linesExpanded.toggle()
-                    } label: {
-                        HStack(spacing: Spacing.xxs) {
-                            Image(systemName: linesExpanded ? "chevron.down" : "chevron.right")
-                            Text(L10n.OrderReview.rateItems)
-                                .font(CleansiaTypography.labelLarge)
-                            Spacer(minLength: 0)
-                        }
-                        .foregroundColor(CleansiaColors.onSurface)
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(isSubmitting)
-
-                    if linesExpanded {
-                        Text(L10n.OrderReview.rateItemsHint)
-                            .font(CleansiaTypography.labelMedium)
-                            .foregroundColor(CleansiaColors.onSurfaceVariant)
-                        ForEach(lineOptions) { option in
-                            HStack(alignment: .center, spacing: Spacing.xs) {
-                                VStack(alignment: .leading, spacing: 1) {
-                                    Text(option.label)
-                                        .font(CleansiaTypography.bodyMedium)
-                                        .foregroundColor(CleansiaColors.onSurface)
-                                    if let packageLabel = option.packageLabel, !packageLabel.isEmpty {
-                                        Text(L10n.OrderReview.itemInPackage(packageLabel))
-                                            .font(CleansiaTypography.labelSmall)
-                                            .foregroundColor(CleansiaColors.onSurfaceVariant)
-                                    }
-                                }
-                                Spacer(minLength: 0)
-                                HStack(spacing: 0) {
-                                    ForEach(1 ... 5, id: \.self) { star in
-                                        Button {
-                                            // Pressing the star already chosen clears the row — the
-                                            // only way back to "not scored", and without it a mis-tap
-                                            // is permanent.
-                                            if lineScores[option.id] == star {
-                                                lineScores[option.id] = nil
-                                            } else {
-                                                lineScores[option.id] = star
-                                            }
-                                        } label: {
-                                            Image(systemName: star <= (lineScores[option.id] ?? 0)
-                                                ? "star.fill"
-                                                : "star")
-                                                .foregroundColor(CleansiaColors.primary)
-                                        }
-                                        .buttonStyle(.plain)
-                                        .disabled(isSubmitting)
-                                        .accessibilityLabel(
-                                            L10n.OrderReview.rateItemStar(option.label, star)
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if let errorMessage, !errorMessage.isBlank {
-                    Text(errorMessage)
-                        .font(CleansiaTypography.bodyMedium)
-                        .foregroundColor(CleansiaColors.error)
-                }
-
-                CleansiaOutlinedButton(dismissLabel, enabled: !isSubmitting, action: onDismiss)
-
-                CleansiaPrimaryButton(
-                    isEdit ? L10n.OrderReview.save : L10n.OrderReview.submit,
-                    loading: isSubmitting,
-                    enabled: canSubmit,
-                    action: submit
-                )
+                .padding(Spacing.l)
+                .readableWidth()
             }
-            .padding(Spacing.l)
+            .scrollDismissesKeyboard(.interactively)
+
+            actions
         }
         .background(CleansiaColors.surface.ignoresSafeArea())
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
         .interactiveDismissDisabled(isSubmitting)
+    }
+
+    private var ratingHeader: some View {
+        VStack(spacing: Spacing.m) {
+            Text(titleOverride ?? (isEdit ? L10n.OrderReview.editTitle : L10n.OrderReview.sheetTitle))
+                .cleansiaFont(CleansiaTypography.headlineLarge)
+                .foregroundColor(CleansiaColors.primaryText)
+                .multilineTextAlignment(.center)
+                .accessibilityAddTraits(.isHeader)
+
+            StarPicker(rating: $rating, enabled: !isSubmitting)
+                .onChange(of: rating) { next in
+                    clearTagsOnPolarityChange(from: previousRating, to: next)
+                    previousRating = next
+                }
+
+            Text(L10n.OrderReview.ratingDescription(rating))
+                .font(CleansiaTypography.bodyMedium)
+                .foregroundColor(CleansiaColors.onSurfaceVariant)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, Spacing.s)
+    }
+
+    private var optionalFeedback: some View {
+        VStack(alignment: .leading, spacing: Spacing.m) {
+            Text(L10n.OrderReview.optionalDetails)
+                .font(CleansiaTypography.titleMedium)
+                .foregroundColor(CleansiaColors.onSurface)
+                .accessibilityAddTraits(.isHeader)
+
+            tagSection
+            commentField
+            itemRatings
+        }
+        .padding(Spacing.m)
+        .background(CleansiaColors.background)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large))
+    }
+
+    private var commentField: some View {
+        VStack(alignment: .leading, spacing: Spacing.xs) {
+            Text(L10n.OrderReview.commentLabel)
+                .font(CleansiaTypography.labelLarge)
+                .foregroundColor(CleansiaColors.onSurfaceVariant)
+            ZStack(alignment: .topLeading) {
+                TextEditor(text: $comment)
+                    .font(CleansiaTypography.bodyMedium)
+                    .frame(minHeight: 100)
+                    .scrollContentBackground(.hidden)
+                    .padding(Spacing.xs)
+                    .accessibilityLabel(L10n.OrderReview.commentLabel)
+                if comment.isEmpty {
+                    Text(L10n.OrderReview.commentPlaceholder)
+                        .font(CleansiaTypography.bodyMedium)
+                        .foregroundColor(CleansiaColors.onSurfaceVariant)
+                        .padding(Spacing.m)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
+            }
+            .background(CleansiaColors.surface)
+            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
+            .overlay(
+                RoundedRectangle(cornerRadius: CornerRadius.medium)
+                    .stroke(CleansiaColors.outlineVariant, lineWidth: 1)
+            )
+            .disabled(isSubmitting)
+            .onChange(of: comment) { value in
+                let capped = value.cappedToUtf16(maxCommentUtf16Length)
+                if capped != value { comment = capped }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var itemRatings: some View {
+        if !lineOptions.isEmpty {
+            Divider()
+            Button {
+                linesExpanded.toggle()
+            } label: {
+                HStack(spacing: Spacing.xs) {
+                    Text(L10n.OrderReview.rateItems)
+                        .font(CleansiaTypography.labelLarge)
+                        .lineLimit(1)
+                    Spacer(minLength: 0)
+                    Image(systemName: linesExpanded ? "chevron.up" : "chevron.down")
+                }
+                .foregroundColor(CleansiaColors.primaryText)
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(isSubmitting)
+
+            if linesExpanded {
+                Text(L10n.OrderReview.rateItemsHint)
+                    .font(CleansiaTypography.labelMedium)
+                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+                ForEach(lineOptions) { option in
+                    itemRating(option)
+                }
+            }
+        }
+    }
+
+    private func itemRating(_ option: OrderItemLine) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.xxs) {
+            Text(option.label)
+                .font(CleansiaTypography.bodyMedium)
+                .foregroundColor(CleansiaColors.onSurface)
+            if let packageLabel = option.packageLabel, !packageLabel.isEmpty {
+                Text(L10n.OrderReview.itemInPackage(packageLabel))
+                    .font(CleansiaTypography.labelSmall)
+                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+            }
+            HStack(spacing: 0) {
+                ForEach(1 ... 5, id: \.self) { star in
+                    Button {
+                        lineScores[option.id] = lineScores[option.id] == star ? nil : star
+                    } label: {
+                        Image(systemName: star <= (lineScores[option.id] ?? 0) ? "star.fill" : "star")
+                            .font(.system(size: 24))
+                            .foregroundColor(CleansiaColors.warningStar)
+                            .frame(minWidth: 44, minHeight: 44)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(isSubmitting)
+                    .accessibilityLabel(L10n.OrderReview.rateItemStar(option.label, star))
+                    .accessibilityAddTraits(lineScores[option.id] == star ? .isSelected : [])
+                }
+            }
+        }
+    }
+
+    private var actions: some View {
+        VStack(spacing: Spacing.xs) {
+            if let errorMessage, !errorMessage.isBlank {
+                Text(errorMessage)
+                    .font(CleansiaTypography.bodyMedium)
+                    .foregroundColor(CleansiaColors.error)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            CleansiaPrimaryButton(
+                isEdit ? L10n.OrderReview.save : L10n.OrderReview.submit,
+                loading: isSubmitting,
+                enabled: canSubmit,
+                action: submit
+            )
+            CleansiaTextLink(dismissLabel, action: onDismiss)
+                .disabled(isSubmitting)
+        }
+        .padding(.horizontal, Spacing.l)
+        .padding(.top, Spacing.m)
+        .padding(.bottom, Spacing.xs)
+        .readableWidth()
+        .background(CleansiaColors.surface)
+        .overlay(alignment: .top) {
+            Divider()
+        }
     }
 
     /// Chips appear only once a rating exists, because the set they offer IS a function of it: 1-3 asks
@@ -215,7 +271,6 @@ struct SubmitReviewSheet: View {
                 )
                 .font(CleansiaTypography.titleMedium)
                 .foregroundColor(CleansiaColors.onSurface)
-                .frame(maxWidth: .infinity, alignment: .center)
 
                 ChipFlow(spacing: Spacing.xs) {
                     ForEach(offered, id: \.rawValue) { tag in
@@ -280,18 +335,21 @@ private struct StarPicker: View {
     let enabled: Bool
 
     var body: some View {
-        HStack(spacing: Spacing.xs) {
+        HStack(spacing: Spacing.xxs) {
             ForEach(1 ... 5, id: \.self) { star in
                 Button {
                     rating = star
                 } label: {
                     Image(systemName: rating >= star ? "star.fill" : "star")
-                        .font(.system(size: 32))
-                        .foregroundColor(rating >= star ? CleansiaColors.warningStar : CleansiaColors.outlineVariant)
+                        .font(.system(size: 36))
+                        .foregroundColor(rating >= star ? CleansiaColors.warningStar : CleansiaColors.onSurfaceVariant)
+                        .frame(minWidth: 44, minHeight: 52)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .disabled(!enabled)
                 .accessibilityLabel(Text(L10n.OrderReview.starContentDesc(star)))
+                .accessibilityAddTraits(rating == star ? .isSelected : [])
             }
         }
         .frame(maxWidth: .infinity, alignment: .center)

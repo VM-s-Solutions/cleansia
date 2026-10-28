@@ -97,6 +97,22 @@ comment says so) and the customer app's `ui/format/` formatters, which shadow `c
 the `:core` definition in new code.
 :::
 
+## Rating a completed cleaning {#rating-cleaning}
+
+Both customer apps put the overall star rating first in the completion popup, with larger stars
+and grouped optional feedback. Tags and comments remain optional; individual service scores
+stay behind the existing disclosure. Submit stays below the scrolling form, with a quieter Not now
+or Cancel action. Loading, errors, saved-review editing and the rating payload keep the same rules.
+
+On a completed account booking without a review, **Rate your cleaning** is the primary action in the
+fixed order-detail footer and **Book again** is secondary. After a review is saved, Book again resumes
+its normal priority and the saved review remains in the detail with Edit. Guest bookings never gain
+these rating actions. The automatic prompt still asks once per booking and skips an existing review.
+
+The customer detail measures its fixed header and footer before allowing the sheet to collapse; a
+short viewport exposes less map when the action stack needs the space. Other order states retain
+their existing minimum, and other iOS sheet callers use the default geometry.
+
 ## Guest bookings in the customer's account {#listed-guest-bookings}
 
 Both signed-in customer apps list/count guest bookings matching the confirmed session e-mail, badge

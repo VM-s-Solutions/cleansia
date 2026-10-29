@@ -383,19 +383,19 @@
 | T-0867 | Fail a tomorrow digest tick instead of saving partial staging | S | `done` | — | #331 merged26883f31c2cb; #332 precision repair merged093af7f89301; each PR CI6/6 first attempts; new master3/3 first attempts/no reruns; original master failure retained; completed local/object gates and residuals in Work records |
 | T-0868 | File the deferred repository-wide bypass roster gate | M | `draft` | T-0837 | [#330](https://github.com/VM-s-Solutions/cleansia/pull/330), merged2026-10-13 (`6c396f013`); exact-headCI9/9, first attempts; local full gates and preserved limits in Work record; no phase deploy/reset; filing/citation merged; FILE/CITE only, construction remains draft/deferred, no current gate |
 | T-0870 | Customer Android and iOS: rating popup redesign and visible completed-order rating action | M | `in_progress` | — | — |
-| T-0871 | Keep mobile verification controls and password AutoFill readable | S | `in_review` | — | — |
-| T-0872 | Compact customer order details and conceal access instructions | M | `in_review` | — | — |
-| T-0873 | Separate cleaning photo phases without losing evidence | M | `in_review` | — | — |
-| T-0874 | Show estimated cleaning progress inside the fourth status phase | M | `in_review` | — | — |
-| T-0875 | Keep status mascots consistently sized and clear of expanded panels | M | `in_review` | — | — |
-| T-0876 | Show home carousel rotation time in the active dot | S | `in_review` | — | — |
-| T-0877 | Align booking summaries and simplify booking confirmation | M | `in_review` | — | — |
-| T-0878 | Use public order references and compact dispute forms | S | `in_review` | — | — |
-| T-0879 | Compact partner order headers and improve eligible actions | M | `in_review` | — | — |
-| T-0880 | Show and recover pending native saved-card capture | M | `in_review` | — | — |
-| T-0881 | Distinguish invoice PDF availability and preserve invoice ownership | M | `in_review` | — | — |
-| T-0882 | Route Live Activity tokens by their signing environment | M | `in_review` | — | — |
-| T-0883 | Recover Live Activity registration and foreground tracking safely | M | `in_review` | — | — |
+| T-0871 | Keep mobile verification controls and password AutoFill readable | S | `done` | — | — |
+| T-0872 | Compact customer order details and conceal access instructions | M | `done` | — | — |
+| T-0873 | Separate cleaning photo phases without losing evidence | M | `done` | — | — |
+| T-0874 | Show estimated cleaning progress inside the fourth status phase | M | `done` | — | — |
+| T-0875 | Keep status mascots consistently sized and clear of expanded panels | M | `done` | — | — |
+| T-0876 | Show home carousel rotation time in the active dot | S | `done` | — | — |
+| T-0877 | Align booking summaries and simplify booking confirmation | M | `done` | — | — |
+| T-0878 | Use public order references and compact dispute forms | S | `done` | — | — |
+| T-0879 | Compact partner order headers and improve eligible actions | M | `done` | — | — |
+| T-0880 | Show and recover pending native saved-card capture | M | `done` | — | — |
+| T-0881 | Distinguish invoice PDF availability and preserve invoice ownership | M | `done` | — | — |
+| T-0882 | Route Live Activity tokens by their signing environment | M | `done` | — | — |
+| T-0883 | Recover Live Activity registration and foreground tracking safely | M | `done` | — | — |
 
 > **T-0785–T-0799 filed 2026-09-20** — the UI-polish and dead-code batch, on the owner's ruling of
 > that day (*"I want to polish alignments in admin app a bit on all of the overview/detail pages.

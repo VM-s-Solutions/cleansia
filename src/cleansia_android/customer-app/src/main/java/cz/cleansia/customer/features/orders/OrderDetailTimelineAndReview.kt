@@ -3,6 +3,7 @@ package cz.cleansia.customer.features.orders
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -22,6 +23,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -114,6 +117,7 @@ private fun TimelineRow(entry: OrderStatusTrackDto, returnedToBoard: Boolean, is
 
 /* ── Review ── */
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 internal fun ReviewCard(
     order: OrderDetailDto,
@@ -124,14 +128,20 @@ internal fun ReviewCard(
         Spacer(Modifier.height(8.dp))
         val review = order.review
         if (review != null) {
-            Row {
-                repeat(5) { idx ->
-                    Icon(
-                        Icons.Outlined.Star,
-                        contentDescription = null,
-                        tint = if (idx < review.rating) WarningStar else MaterialTheme.colorScheme.outlineVariant,
-                        modifier = Modifier.size(22.dp),
-                    )
+            androidx.compose.foundation.layout.FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                val ratingLabel = stringResource(R.string.order_review_stars_accessibility, review.rating)
+                Row(Modifier.align(Alignment.CenterVertically).semantics { contentDescription = ratingLabel }) {
+                    repeat(5) { idx ->
+                        Icon(Icons.Outlined.Star, contentDescription = null,
+                            tint = if (idx < review.rating) WarningStar else MaterialTheme.colorScheme.outlineVariant,
+                            modifier = Modifier.size(22.dp))
+                    }
+                }
+                cz.cleansia.core.ui.components.CleansiaTextButton(
+                    onClick = onLeaveReview,
+                    modifier = Modifier.align(Alignment.CenterVertically),
+                ) {
+                    Text(stringResource(R.string.order_review_edit_action), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                 }
             }
             review.comment?.takeIf { it.isNotBlank() }?.let { comment ->
@@ -140,23 +150,6 @@ internal fun ReviewCard(
                     text = "“$comment”",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Spacer(Modifier.height(10.dp))
-            // Wave 3 Phase R2 — "Edit review" CTA. Reuses the same sheet via the
-            // shared onLeaveReview callback; the parent wires existingReview so
-            // the sheet enters edit mode.
-            OutlinedButton(
-                onClick = onLeaveReview,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(44.dp),
-                shape = CircleShape,
-            ) {
-                Text(
-                    text = stringResource(R.string.order_review_edit_action),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = primaryText(),
                 )
             }
         } else {

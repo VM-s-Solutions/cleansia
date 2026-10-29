@@ -6,6 +6,8 @@ struct FullscreenPager: View {
     let photos: [GetOrderPhotosOrderPhotoDto]
     let startIndex: Int
     let zoom: Namespace.ID
+    let zoomPrefix: String
+    let collectionTitle: String?
     let onClose: () -> Void
 
     @State private var selection: Int
@@ -14,11 +16,15 @@ struct FullscreenPager: View {
         photos: [GetOrderPhotosOrderPhotoDto],
         startIndex: Int,
         zoom: Namespace.ID,
+        zoomPrefix: String = "",
+        collectionTitle: String? = nil,
         onClose: @escaping () -> Void
     ) {
         self.photos = photos
         self.startIndex = startIndex
         self.zoom = zoom
+        self.zoomPrefix = zoomPrefix
+        self.collectionTitle = collectionTitle
         self.onClose = onClose
         _selection = State(initialValue: startIndex)
     }
@@ -40,11 +46,19 @@ struct FullscreenPager: View {
             .tabViewStyle(.page(indexDisplayMode: .always))
             .ignoresSafeArea()
 
-            MediaCloseButton(action: onClose)
-                .padding(Spacing.m)
+            HStack {
+                if let collectionTitle {
+                    Text("\(collectionTitle) · \(selection + 1)/\(photos.count)")
+                        .font(CleansiaTypography.labelLarge)
+                        .foregroundColor(.white)
+                }
+                Spacer()
+                MediaCloseButton(action: onClose)
+            }
+            .padding(Spacing.m)
         }
         // Keyed on the page on screen, not the one opened: a dismiss after paging shrinks into the
         // thumbnail of the photo being looked at.
-        .zoomDestination(id: selection, in: zoom)
+        .zoomDestination(id: "\(zoomPrefix)\(selection)", in: zoom)
     }
 }

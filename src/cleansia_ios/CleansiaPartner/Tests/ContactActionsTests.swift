@@ -12,6 +12,23 @@ import XCTest
 /// corrupts the maps query. Anyone who "simplifies" the allowed set back to
 /// `.urlQueryAllowed` fails that test.
 final class ContactActionsTests: XCTestCase {
+    func testGoogleMapsUsesSameCoordinatesAndBrowserFallback() throws {
+        let url = try XCTUnwrap(ContactActions.googleMapsURL(
+            coordinate: Coordinate(latitude: 50.0755, longitude: 14.4378),
+            address: "King & Queen #3"
+        ))
+        XCTAssertEqual(url.scheme, "https")
+        XCTAssertEqual(url.host, "www.google.com")
+        XCTAssertEqual(queryValue(url, "destination"), "50.0755,14.4378")
+    }
+
+    func testGoogleMapsEscapesAddressWhenThereIsNoCoordinate() throws {
+        let address = "King & Queen #3 + courtyard"
+        let url = try XCTUnwrap(ContactActions.googleMapsURL(coordinate: nil, address: address))
+        XCTAssertEqual(queryValue(url, "destination"), address)
+        XCTAssertNil(ContactActions.googleMapsURL(coordinate: nil, address: " "))
+    }
+
     // MARK: - Call / SMS
 
     func testCallURLStripsVisualFormattingAndUsesTheTelScheme() {

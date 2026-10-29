@@ -235,28 +235,40 @@ struct OrderHeroFactsStrip: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.xxs) {
+        ViewThatFits(in: .horizontal) {
             HStack(alignment: .firstTextBaseline, spacing: Spacing.xs) {
+                discountChips
                 Spacer(minLength: Spacing.xs)
-                Text(OrdersFormat.price(facts.total, currencyCode: facts.currencyCode))
-                    .font(CleansiaTypography.titleMedium)
-                    .foregroundColor(CleansiaColors.primaryText)
-                if let struck = facts.struckSubtotal {
-                    Text(OrdersFormat.price(struck, currencyCode: facts.currencyCode))
-                        .font(CleansiaTypography.labelSmall)
-                        .strikethrough()
-                        .foregroundColor(CleansiaColors.onSurfaceVariant)
-                }
+                prices
             }
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                prices
+                discountChips
+            }
+        }
+    }
 
-            // What the struck-through price is explained by. The breakdown card further down names each
-            // source with its amount, but that is several screens of scrolling away from the number it
-            // accounts for — the chip answers "why is this cheaper" where the question is asked.
-            if facts.struckSubtotal != nil, !facts.discountChips.isEmpty {
-                HStack(spacing: Spacing.xs) {
-                    ForEach(facts.discountChips, id: \.self) { source in
-                        OrderDiscountChip(label: L10n.OrderDetail.discountLabel(source))
-                    }
+    private var prices: some View {
+        VStack(alignment: .trailing, spacing: Spacing.hair) {
+            Text(OrdersFormat.price(facts.total, currencyCode: facts.currencyCode))
+                .font(CleansiaTypography.titleMedium)
+                .foregroundColor(CleansiaColors.primaryText)
+            if let struck = facts.struckSubtotal {
+                Text(OrdersFormat.price(struck, currencyCode: facts.currencyCode))
+                    .font(CleansiaTypography.labelSmall)
+                    .strikethrough()
+                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+            }
+        }
+        .fixedSize(horizontal: true, vertical: false)
+    }
+
+    @ViewBuilder
+    private var discountChips: some View {
+        if facts.struckSubtotal != nil, !facts.discountChips.isEmpty {
+            HStack(spacing: Spacing.xs) {
+                ForEach(facts.discountChips, id: \.self) { source in
+                    OrderDiscountChip(label: L10n.OrderDetail.discountLabel(source))
                 }
             }
         }

@@ -81,6 +81,17 @@ public sealed class LiveActivityTokenModelMetadataTests
         Assert.True(property!.IsNullable);
     }
 
+    [Fact]
+    public void Environment_Is_Nullable_And_The_Raw_Token_Limit_Is_Unchanged()
+    {
+        var entity = GetEntityType();
+        var environment = entity.FindProperty(nameof(LiveActivityToken.UseSandbox));
+        Assert.NotNull(environment);
+        Assert.True(environment.IsNullable);
+        Assert.Equal(typeof(bool?), environment.ClrType);
+        Assert.Equal(512, entity.FindProperty(nameof(LiveActivityToken.Token))!.GetMaxLength());
+    }
+
     [Theory]
     [InlineData(nameof(LiveActivityToken.UserId))]
     [InlineData(nameof(LiveActivityToken.DeviceId))]

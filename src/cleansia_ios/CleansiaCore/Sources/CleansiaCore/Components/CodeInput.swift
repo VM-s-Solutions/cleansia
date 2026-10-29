@@ -4,11 +4,13 @@ import UIKit
 public struct CodeInput: View {
     @Binding private var code: String
     private let length: Int
+    private let showsPasteAction: Bool
     @State private var focused = false
 
-    public init(code: Binding<String>, length: Int = 6) {
+    public init(code: Binding<String>, length: Int = 6, showsPasteAction: Bool = true) {
         _code = code
         self.length = length
+        self.showsPasteAction = showsPasteAction
     }
 
     /// The field is the control and the boxes only draw it, so a tap focuses the field and a long press opens
@@ -28,18 +30,16 @@ public struct CodeInput: View {
                     .frame(maxWidth: .infinity)
                     .frame(height: 56)
             }
-            // The iPhone keyboard has no clipboard key. The system's own paste control reads the clipboard
-            // without the prompt a read from code raises, and its icon needs no words in any language.
-            PasteButton(payloadType: String.self) { pasted in
-                guard let text = pasted.first else { return }
-                Task { @MainActor in code = Self.pasting(text, onto: code, length: length) }
+            if showsPasteAction {
+                PasteButton(payloadType: String.self) { pasted in
+                    guard let text = pasted.first else { return }
+                    Task { @MainActor in code = Self.pasting(text, onto: code, length: length) }
+                }
+                .labelStyle(.iconOnly)
+                .buttonBorderShape(.capsule)
+                .tint(CleansiaColors.primary)
+                .dynamicTypeSize(DynamicTypeSize.accessibility1...)
             }
-            .labelStyle(.iconOnly)
-            .buttonBorderShape(.capsule)
-            .tint(CleansiaColors.primary)
-            // It ignores frames and control sizes and grows only with the text size; the first accessibility
-            // size is the smallest that makes it a 44-point target, on iOS 16 and 26 alike.
-            .dynamicTypeSize(DynamicTypeSize.accessibility1...)
         }
         .frame(maxWidth: .infinity)
         .onAppear { focused = true }

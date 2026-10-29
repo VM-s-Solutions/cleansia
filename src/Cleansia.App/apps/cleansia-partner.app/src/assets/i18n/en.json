@@ -1074,6 +1074,8 @@
         "already_exists": "Invoice already exists",
         "already_paid": "This invoice is already paid and cannot be re-rendered",
         "pdf_generation_failed": "Failed to generate PDF",
+        "pdf_not_ready": "The invoice PDF is not ready yet. Try again later.",
+        "pdf_unavailable": "The invoice PDF is unavailable. Please contact support.",
         "cannot_cancel_paid": "Cannot cancel a paid invoice",
         "already_cancelled": "Invoice has already been cancelled"
       },

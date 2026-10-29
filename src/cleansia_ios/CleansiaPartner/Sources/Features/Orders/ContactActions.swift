@@ -1,13 +1,6 @@
 import CleansiaCore
 import Foundation
 
-/// Pure URL builders behind the customer card's Call / SMS / Navigate chips.
-///
-/// Kept free of SwiftUI so the escaping rules are unit-testable — the chips
-/// themselves are plain `Link`s (see `OrderDetailCards.swift`). `Link` routes
-/// through `openURL` and never calls `canOpenURL`, so none of these schemes
-/// need an `LSApplicationQueriesSchemes` entry and no Info.plist change is
-/// involved.
 enum ContactActions {
     /// RFC 3966 lets a `tel:` number carry the visual separators `-.()` next to
     /// digits and a leading `+`. Anything else (spaces, letters, an "ext."
@@ -55,6 +48,15 @@ enum ContactActions {
 
         guard let encoded else { return nil }
         return URL(string: "https://maps.apple.com/?q=\(encoded)")
+    }
+
+    static func googleMapsURL(coordinate: Coordinate?, address: String?) -> URL? {
+        let destination = coordinate.map { "\($0.latitude),\($0.longitude)" }
+            ?? address?.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let destination, !destination.isEmpty else { return nil }
+        var url = URLComponents(string: "https://www.google.com/maps/dir/")
+        url?.queryItems = [URLQueryItem(name: "api", value: "1"), URLQueryItem(name: "destination", value: destination)]
+        return url?.url
     }
 
     private static func dialable(_ phone: String?) -> String? {

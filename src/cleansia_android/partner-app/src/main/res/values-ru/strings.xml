@@ -1455,4 +1455,11 @@
     <string name="job_photos_camera_only">Фото к заказу можно сделать только камерой, выбрать их из галереи нельзя. Чтобы добавить их, воспользуйтесь телефоном с камерой.</string>
     <string name="notification_recurring_paused_title">Расписание регулярных уборок приостановлено</string>
     <string name="notification_recurring_paused_body">Ваше расписание регулярных уборок приостановлено, поскольку Plus неактивен. Продлите Plus, чтобы возобновить планирование уборок.</string>
+    <string name="invoice_pdf_pending">PDF ещё не готов. Обновите, чтобы проверить снова.</string>
+    <string name="invoice_pdf_failed">Не удалось создать PDF счёта. Обновите, чтобы проверить состояние.</string>
+    <string name="invoice_pdf_previous_available">Не удалось обновить PDF. Предыдущий документ по-прежнему можно открыть.</string>
+    <string name="invoice_pdf_refresh">Обновить состояние</string>
+    <string name="error_payroll_invoice_pdf_not_ready">PDF счёта ещё не готов. Обновите состояние.</string>
+    <string name="error_payroll_invoice_pdf_unavailable">PDF этого счёта недоступен. Обновите состояние или обратитесь в поддержку.</string>
+    <string name="error_payroll_invoice_pdf_generation_failed">Не удалось создать PDF счёта. Обновите состояние или обратитесь в поддержку.</string>
 </resources>

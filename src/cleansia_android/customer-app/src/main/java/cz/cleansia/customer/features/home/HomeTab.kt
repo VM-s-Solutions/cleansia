@@ -1,6 +1,13 @@
 package cz.cleansia.customer.features.home
 
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.platform.LocalView
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -949,25 +956,30 @@ private fun SmartUpsellCarousel(
         }
     }
 
-    // Auto-advance every 6s, always forward. It stops for the rest of this Home visit once the
-    // customer swipes or taps (WCAG 2.2.2: moving content they can stop), and never runs under
-    // TalkBack or with animations removed. One long-lived loop keyed on n alone: every input it
-    // reads is a snapshot read inside it, so a state arrival does not cancel the pending delay.
     var userInteracted by remember { mutableStateOf(false) }
     val dragged by pagerState.interactionSource.collectIsDraggedAsState()
     androidx.compose.runtime.LaunchedEffect(dragged) {
         if (dragged) userInteracted = true
     }
     val context = androidx.compose.ui.platform.LocalContext.current
-    val autoRotateMs = 6_000L
-    androidx.compose.runtime.LaunchedEffect(slideCount) {
-        if (slideCount <= 1) return@LaunchedEffect
-        while (true) {
-            kotlinx.coroutines.delay(autoRotateMs)
-            if (userInteracted) return@LaunchedEffect
-            if (!pagerState.isScrollInProgress && upsellAutoAdvanceAllowed(context)) {
-                pagerState.animateScrollToPage(pagerState.currentPage + 1)
-            }
+    val view = LocalView.current
+    var inForeground by remember { mutableStateOf(false) }
+    var inViewport by remember { mutableStateOf(false) }
+    var motionAllowed by remember { mutableStateOf(upsellAutoAdvanceAllowed(context)) }
+    LifecycleResumeEffect(Unit) {
+        inForeground = true
+        motionAllowed = upsellAutoAdvanceAllowed(context)
+        onPauseOrDispose { inForeground = false }
+    }
+    val rotationProgress = remember { Animatable(0f) }
+    val autoplay = slideCount > 1 && inForeground && inViewport && motionAllowed && !userInteracted
+    androidx.compose.runtime.LaunchedEffect(slideCount, kinds, autoplay) {
+        rotationProgress.snapTo(0f)
+        if (!autoplay) return@LaunchedEffect
+        while (upsellAutoAdvanceAllowed(context)) {
+            rotationProgress.animateTo(1f, tween(6_000, easing = LinearEasing))
+            if (!pagerState.isScrollInProgress) pagerState.animateScrollToPage(pagerState.currentPage + 1)
+            rotationProgress.snapTo(0f)
         }
     }
     val goToPage: (Int) -> Unit = { page ->
@@ -980,7 +992,10 @@ private fun SmartUpsellCarousel(
     var quickRooms by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(1) }
     var quickBathrooms by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(1) }
 
-    Column {
+    Column(Modifier.onGloballyPositioned { coordinates ->
+        val bounds = coordinates.boundsInWindow()
+        inViewport = bounds.width > 0 && bounds.height > 0 && bounds.bottom > 0 && bounds.top < view.height && bounds.right > 0 && bounds.left < view.width
+    }) {
         // No contentPadding here — earlier version used 20dp peek-ahead so
         // the previous/next slides showed at the edges, which read as a
         // rendering bug rather than a discoverability hint. Slides now snap
@@ -1035,7 +1050,7 @@ private fun SmartUpsellCarousel(
                 )
             }
         }
-        // Dot indicator — active segment grows wider, no fill animation.
+        // The active capsule shares the actual rotation clock.
         // Hidden when there's only one slide (no swipe affordance needed). Silent to TalkBack: the
         // card states its own position.
         if (slides.size > 1) {
@@ -1053,15 +1068,14 @@ private fun SmartUpsellCarousel(
                         label = "upsell-dot-$idx",
                     )
                     Box(
-                        modifier = Modifier
-                            .padding(horizontal = 3.dp)
-                            .size(width = width, height = 8.dp)
-                            .clip(RoundedCornerShape(999.dp))
-                            .background(
-                                if (selected) MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.outlineVariant,
-                            ),
-                    )
+                        Modifier.padding(horizontal = 3.dp).size(width = width, height = 8.dp)
+                            .clip(RoundedCornerShape(999.dp)).background(MaterialTheme.colorScheme.outlineVariant),
+                    ) {
+                        if (selected) {
+                            Box(Modifier.fillMaxHeight().fillMaxWidth(if (autoplay) rotationProgress.value else 1f)
+                                .background(MaterialTheme.colorScheme.primary))
+                        }
+                    }
                 }
             }
         }
@@ -2121,4 +2135,22 @@ private fun SkeletonBlock(
 @Composable
 private fun HomeTabPreview() {
     CleansiaTheme { HomeTab() }
+}
+
+@Preview(name = "Home timed carousel", widthDp = 360, heightDp = 740)
+@Composable
+private fun PolishHomeCarouselPreview() {
+    val activity = androidx.compose.ui.platform.LocalContext.current as? android.app.Activity
+    androidx.compose.runtime.SideEffect { activity?.actionBar?.hide() }
+    CleansiaTheme {
+        Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(top = 24.dp)) {
+            SmartUpsellCarousel(
+                isPlus = false, plusTrialDays = 7, plusDiscountPercent = 10, memberCancellationHours = 0,
+                showSetupRecurring = true, notificationsOff = false, credit = null, creditShare = 0.0,
+                expressRemaining = 0, referralCode = null, referralCredit = null,
+                onTurnOnNotifications = {}, onSubscribePlus = {}, onBookCleaning = {}, onOpenReferral = {},
+                onShareReferral = {}, onSetupRecurring = {}, onBookSize = { _, _ -> },
+            )
+        }
+    }
 }

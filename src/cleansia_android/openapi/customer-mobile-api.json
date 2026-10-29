@@ -12206,6 +12206,10 @@
           "orderId": {
             "type": "string",
             "nullable": true
+          },
+          "useSandbox": {
+            "type": "boolean",
+            "nullable": true
           }
         },
         "additionalProperties": false

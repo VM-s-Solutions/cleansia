@@ -39,7 +39,7 @@ struct OrderSectionCard<Content: View>: View {
         // Vertical only. The scroll view already insets every section by Spacing.m, the same as the
         // pinned header, so a further 16pt here started the section text 16pt to the right of the order
         // number it belongs under.
-        .padding(.vertical, Spacing.m)
+        .padding(.vertical, Spacing.xs)
         // Flat: a surface-coloured block with no border and no shadow, matching `OrderSectionCard.kt`.
         // The 1pt outline this used to carry drew a hard edge around every section, so a sheet of six
         // read as six boxes stacked on a page rather than one panel — and it was the reason iOS still
@@ -79,6 +79,8 @@ struct AccessCard: View {
 /// than no button.
 struct CustomerCard: View {
     @Environment(\.locale) private var locale
+    @Environment(\.openURL) private var openURL
+    @State private var showsMapChoice = false
     let order: OrderDetail
 
     var body: some View {
@@ -105,6 +107,17 @@ struct CustomerCard: View {
             }
         }
         .id(locale.identifier)
+        .confirmationDialog(L10n.Orders.actionNavigate, isPresented: $showsMapChoice, titleVisibility: .visible) {
+            if let target = order.location.navigationTarget {
+                if let url = ContactActions.mapsURL(coordinate: target.coordinate, address: target.line) {
+                    Button(L10n.Orders.appleMaps) { openURL(url) }
+                }
+                if let url = ContactActions.googleMapsURL(coordinate: target.coordinate, address: target.line) {
+                    Button(L10n.Orders.googleMaps) { openURL(url) }
+                }
+            }
+            Button(L10n.cancel, role: .cancel) {}
+        }
     }
 
     @ViewBuilder
@@ -124,15 +137,11 @@ struct CustomerCard: View {
                         destination: ContactActions.smsURL(phone: order.customerPhone)
                     )
                 }
-                if let navigateTo {
-                    ContactChip(
-                        icon: "map",
-                        label: L10n.Orders.actionNavigate,
-                        destination: ContactActions.mapsURL(
-                            coordinate: navigateTo.coordinate,
-                            address: navigateTo.line
-                        )
-                    )
+                if navigateTo != nil {
+                    Button { showsMapChoice = true } label: {
+                        ContactChipFace(icon: "map", label: L10n.Orders.actionNavigate)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
             .padding(.top, Spacing.xxs)
@@ -156,18 +165,27 @@ private struct ContactChip: View {
         // is deliberate — a chip that looks tappable and is not is exactly the
         // bug this replaces.
         if let destination {
-            Link(destination: destination) { chip }
+            Link(destination: destination) { ContactChipFace(icon: icon, label: label) }
         }
     }
+}
 
-    private var chip: some View {
+private struct ContactChipFace: View {
+    let icon: String
+    let label: String
+
+    var body: some View {
         Label(label, systemImage: icon)
             .font(CleansiaTypography.labelLarge)
             .foregroundColor(CleansiaColors.primaryText)
+            .lineLimit(1)
+            .truncationMode(.tail)
             .padding(.horizontal, Spacing.s)
             .padding(.vertical, Spacing.xs)
             .frame(maxWidth: .infinity)
+            .frame(minHeight: 44)
             .background(CleansiaColors.primary.opacity(0.1), in: Capsule())
+            .accessibilityLabel(label)
     }
 }
 

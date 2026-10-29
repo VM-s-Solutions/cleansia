@@ -14,7 +14,7 @@ struct OrderCardSurface<Content: View>: View {
         // pinned header, so a further 16pt here started every section's text 16pt to the right of the
         // order number it belongs under. With the card flat there is no container edge for an inset to
         // hold away from anyway.
-        .padding(.vertical, Spacing.m)
+        .padding(.vertical, Spacing.xs)
         // A SQUARE, full-bleed fill — no border, no shadow, and deliberately no corner radius. Removing
         // the 1pt outline was not enough on its own: a rounded white rectangle still reads as a card
         // floating over whatever is behind it, which is what kept looking like a drop shadow. Square

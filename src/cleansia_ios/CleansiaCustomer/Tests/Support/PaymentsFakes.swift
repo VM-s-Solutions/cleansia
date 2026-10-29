@@ -6,6 +6,8 @@ final class FakeSavedCardClient: SavedCardClient, @unchecked Sendable {
     /// Answered in order; the last one keeps answering.
     var reads: [ApiResult<[SavedCard]>]
     var captureResult: ApiResult<SavedCardSetup>
+    var beforeRead: (() async -> Void)?
+    var beforeCapture: (() async -> Void)?
     var removeResult: ApiResult<Void>
     private(set) var readCount = 0
     private(set) var captureConsents: [Bool] = []
@@ -25,12 +27,14 @@ final class FakeSavedCardClient: SavedCardClient, @unchecked Sendable {
     func myCards() async -> ApiResult<[SavedCard]> {
         let answer = reads[min(readCount, reads.count - 1)]
         readCount += 1
+        await beforeRead?()
         return answer
     }
 
     func startCapture(consentAccepted: Bool, countryId: String?) async -> ApiResult<SavedCardSetup> {
         captureConsents.append(consentAccepted)
         captureCountryIds.append(countryId)
+        await beforeCapture?()
         return captureResult
     }
 

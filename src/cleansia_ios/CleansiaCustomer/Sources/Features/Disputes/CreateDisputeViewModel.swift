@@ -5,6 +5,7 @@ import Foundation
 @MainActor
 final class CreateDisputeViewModel: ViewModel {
     @Published private(set) var submitState: ActionState = .idle
+    @Published private(set) var displayOrderNumber: String?
 
     let created = PassthroughSubject<String, Never>()
 
@@ -55,6 +56,7 @@ final class CreateDisputeViewModel: ViewModel {
         guard let orderId, lineOptions.isEmpty else { return }
         if case let .success(order) = await orderClient.getById(orderId: orderId) {
             lineOptions = OrderItemLine.lines(of: order)
+            displayOrderNumber = order.displayOrderNumber.flatMap { $0.isBlank ? nil : $0 }
         }
     }
 

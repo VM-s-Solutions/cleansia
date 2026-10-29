@@ -98,7 +98,7 @@ fun OrderTimerCard(
                 // bottom so the timer text sits flush against the
                 // segmented progress bar that's rendered directly
                 // below it in the parent column.
-                .padding(PaddingValues(start = 4.dp, end = 4.dp, top = 12.dp, bottom = 0.dp))
+                .padding(PaddingValues(start = 0.dp, end = 0.dp, top = 4.dp, bottom = 0.dp))
                 .animateContentSize(),
             verticalArrangement = Arrangement.Center,
         ) {

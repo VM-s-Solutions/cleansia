@@ -243,50 +243,6 @@ final class OrderDetailFooterActionsTests: XCTestCase {
     }
 }
 
-final class LiveProgressLogicTests: XCTestCase {
-    func testActiveStepMapsEachOfSevenStates() {
-        XCTAssertEqual(LiveProgress.activeStep(for: ._0), .booked)
-        XCTAssertEqual(LiveProgress.activeStep(for: ._1), .booked)
-        XCTAssertEqual(LiveProgress.activeStep(for: ._2), .accepted)
-        XCTAssertEqual(LiveProgress.activeStep(for: ._3), .onTheWay)
-        XCTAssertEqual(LiveProgress.activeStep(for: ._4), .started)
-        XCTAssertEqual(LiveProgress.activeStep(for: ._5), .finished)
-        XCTAssertNil(LiveProgress.activeStep(for: ._6))
-        XCTAssertNil(LiveProgress.activeStep(for: nil))
-    }
-
-    func testOnTheWayIsADistinctStepNotFoldedIntoInProgress() {
-        XCTAssertEqual(LiveProgress.activeStep(for: ._3), .onTheWay)
-        XCTAssertNotEqual(LiveProgress.activeStep(for: ._3), LiveProgress.activeStep(for: ._4))
-        XCTAssertEqual(LiveProgressStep.allCases.count, 5)
-    }
-
-    func testInProgressFractionFromStartedEntry() {
-        let started = Date(timeIntervalSince1970: 1000)
-        let now = started.addingTimeInterval(30 * 60)
-        let history = [OrderFixtures.track(statusValue: 4, createdOn: started)]
-        let fraction = LiveProgress.inProgressFraction(history: history, estimatedMinutes: 60, now: now)
-        XCTAssertEqual(fraction ?? 0, 0.5, accuracy: 0.001)
-    }
-
-    func testInProgressFractionCapsAtNinetySeven() {
-        let started = Date(timeIntervalSince1970: 1000)
-        let now = started.addingTimeInterval(10 * 60 * 60)
-        let history = [OrderFixtures.track(statusValue: 4, createdOn: started)]
-        let fraction = LiveProgress.inProgressFraction(history: history, estimatedMinutes: 60, now: now)
-        XCTAssertEqual(fraction ?? 0, 0.97, accuracy: 0.001)
-    }
-
-    func testInProgressFractionNilWithoutAnchors() {
-        XCTAssertNil(LiveProgress.inProgressFraction(history: [], estimatedMinutes: 60, now: Date()))
-        XCTAssertNil(LiveProgress.inProgressFraction(
-            history: [OrderFixtures.track(statusValue: 4, createdOn: Date())],
-            estimatedMinutes: 0,
-            now: Date()
-        ))
-    }
-}
-
 /// The cancellation schedule is the server's and only the server's. What stood here (T-0527) pinned a
 /// client-side ladder that charged **50%** where the backend charges 25% and told the customer *"no
 /// refund is available"* where it refunds half — a green suite holding a money defect in place. The two

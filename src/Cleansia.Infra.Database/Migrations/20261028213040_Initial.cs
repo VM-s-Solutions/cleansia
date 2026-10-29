@@ -1353,6 +1353,7 @@ namespace Cleansia.Infra.Database.Migrations
                     DeviceId = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
                     OrderId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     Token = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: false),
+                    UseSandbox = table.Column<bool>(type: "boolean", nullable: true),
                     LastUpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),

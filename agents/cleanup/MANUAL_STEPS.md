@@ -131,7 +131,9 @@ Vault (`deploy/AZURE-DEV-RUNBOOK.md:281`), then delete the four `MANUAL_STEP` co
 
 ### MS-2 — Drop the DEV database with the next deploy — **deferred by decision**
 
-**Current disposition — 2026-10-27: OWED, for `20261027013728`.** Phase 2 regenerated `Initial` (the last bullet of the chronology below), which renews the drop discharged on 2026-10-16 for `20261013160545`, so MS-2 is back under Open until the phase-2 deploy's one DEV wipe and re-seed takes it (owner ruling 2026-10-26, "Recommended").
+**Current disposition — 2026-10-28: NEW FUTURE APPROVAL REQUIRED, for `20261028213040`.** The phase-2 DEV reset, deployment and four seeds completed at `595e8524`; that obligation is discharged and must not be repeated. Mobile functional repairs now regenerate Initial for only nullable `LiveActivityTokens.UseSandbox` (ADR-0078). A future deployment of this new source change needs separate explicit approval for a DEV reset/deployment/reseed. None is authorized or executed now. The checkpoints below preserve their original chronology.
+
+**Historical disposition — 2026-10-27: OWED, for `20261027013728`.** Phase 2 regenerated `Initial`, which renewed the drop discharged on 2026-10-16 for `20261013160545`; the subsequent phase-2 rollout at `595e8524` discharged it.
 
 **2026-10-16 UTC: DISCHARGED** (for `20261013160545`). The retained "deferred by decision" heading and all earlier Open, unrun, pending and promo statements are historical checkpoints; that wave's reset/reseed/final-readiness obligation is complete. T-0636 remains open for Mike's separate unresolved startup goal.
 
@@ -323,10 +325,17 @@ what is named against the id before it:
   `migrations has-pending-model-changes` (none) from `src/`, with `Cleansia.Web.Partner` as startup
   project; nothing ran against DEV. The drop it owes is the one DEV wipe and re-seed of the phase-2 deploy
   (owner ruling 2026-10-26, "Recommended": add the column, wipe DEV once, with the phase-2 deploy).
+- **`20261028213040`** (2026-10-28, mobile functional repairs): normally regenerated Initial from
+  `20261027013728` for only nullable `LiveActivityTokens.UseSandbox`, preserving raw token storage,
+  all indexes, seed data and tenant keys (ADR-0078). Standard EF remove/add commands generated the
+  migration, Designer and snapshot; the normalized structural audit confirms that sole column delta.
+  This source change creates a new future DEV rollout prerequisite. The preceding phase-2 reset at
+  `595e8524` is already complete; a new reset/deployment/reseed requires separate explicit approval,
+  and none has run or is authorized for this batch.
 
-**The one owed drop belongs to `20261027013728`** (it renews the one discharged on 2026-10-16 for
+**Historical phase-2 checkpoint: the one owed drop belonged to `20261027013728`** (it renewed the one discharged on 2026-10-16 for
 `20261013160545`). The owner ruled on 2026-10-26 ("Recommended"): add the column, and wipe DEV once, with
-the phase-2 deploy. It runs immediately before that deploy, and whoever runs the deploy takes it: the DEV
+the phase-2 deploy. That rollout completed at `595e8524`. The recorded procedure was to run it immediately before that deploy, with whoever ran the deploy taking it: the DEV
 drop is no longer owner-only (`CLAUDE.md`). A DEV database whose `__EFMigrationsHistory` records any
 earlier id replays the whole create script against tables that already exist. The legal texts need no extra step — every host seeds
 them at start, and since `b34dff07` a fresh Development database is seeded once more in the boot that

@@ -6,6 +6,34 @@
 > **ADR-0010/0023** (idempotency — push consumer is **Mode A**, claim-before-act),
 > **ADR-0025** (**accepted** 2026-07-15, panel consensus — per-platform APNs alert with loc-keys).
 
+## Live Activity recipient routing (ADR-0078, 2026-10-28)
+
+Direct ActivityKit pushes are separate from the FCM display path below. The authenticated registration
+adds optional nullable `useSandbox`, persisted on each `LiveActivityToken`. The dispatch consumer passes
+that recipient override to the fixed-endpoint APNs adapter; null preserves `APNS:UseSandbox` for legacy
+registrations. Token rotation replaces both fields, while the raw token, 512-character limit,
+user/device/order uniqueness and every session/device/GDPR retirement predicate stay unchanged.
+
+The design review selected a typed nullable column over a versioned Token envelope and rejected
+alternate-endpoint probing after `BadDeviceToken`, which Apple documents as nonretryable. Source:
+`RegisterLiveActivityToken.cs`, `LiveActivityToken.cs`, `ApnsLiveActivityClient.cs` and
+`SendLiveActivityUpdateHandler.cs`. [ADR-0078](../../../docs/decisions/adr-0078.md) preserves the
+alternatives and Challenge/Defense/Verdict trail. The new Initial identifier requires an explicitly
+approved DEV reset before a future rollout; no reset or environment operation is authorized now.
+
+Native registration retries retain only the latest pending token/authenticated session, using at most
+three attempts with 2/4-second pauses. Accepted tokens only deduplicate repeated emissions; 4xx
+refusals stop, while 429 waits at least 30 seconds before a foreground retry. Token rotation and
+session wipe cancel stale work. The public build marker is checked against the exported artifact's
+signed entitlement before future customer uploads, never inferred from its API host.
+
+Foreground recovery observes the existing loaded order cache, filters eligible orders before a
+20-detail-read budget, and cleans up terminal cards only when tracked. Local and adopted cards share
+in-memory session/order dismissal suppression, cleared on terminal/wipe. This covers the tracked
+process lifecycle; process-death dismissal persistence is unverified and no durable registry is
+introduced. The background adoption resolver still assumes a recent page-0 order. Neither recovery
+nor routing changes shared dispatch claim ordering, global timers or the OS delivery budget.
+
 ## Current shape (as of ADR-0025, accepted 2026-07-15)
 
 ```

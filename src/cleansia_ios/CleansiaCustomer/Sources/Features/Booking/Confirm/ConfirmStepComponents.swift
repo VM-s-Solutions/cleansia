@@ -267,10 +267,11 @@ private struct LabeledInfoRow: View {
     let value: String
 
     var body: some View {
-        HStack(spacing: Spacing.xs) {
+        HStack(alignment: .top, spacing: Spacing.xs) {
             Image(systemName: systemImage)
                 .font(.system(size: 14))
                 .foregroundColor(CleansiaColors.onSurfaceVariant)
+                .frame(width: 20, height: 20)
             Text(label)
                 .font(CleansiaTypography.labelMedium)
                 .foregroundColor(CleansiaColors.onSurfaceVariant)
@@ -278,8 +279,9 @@ private struct LabeledInfoRow: View {
             Text(value)
                 .font(CleansiaTypography.bodyMedium)
                 .foregroundColor(CleansiaColors.onSurface)
-                .lineLimit(2)
-            Spacer()
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .multilineTextAlignment(.trailing)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.vertical, 2)
     }

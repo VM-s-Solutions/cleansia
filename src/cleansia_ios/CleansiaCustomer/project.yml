@@ -103,6 +103,8 @@ targets:
         # The commit and branch a TestFlight build was archived from; the lanes pass both as build settings.
         CleansiaGitCommit: $(CLEANSIA_GIT_COMMIT)
         CleansiaGitBranch: $(CLEANSIA_GIT_BRANCH)
+        # Public routing metadata; the exported artifact guard checks it against signed aps-environment.
+        CleansiaAPNSEnvironment: $(CLEANSIA_APNS_ENVIRONMENT)
         GIDClientID: $(GID_CLIENT_ID)
         GIDServerClientID: $(GID_SERVER_CLIENT_ID)
         STRIPE_PUBLISHABLE_KEY: $(STRIPE_PUBLISHABLE_KEY)
@@ -146,6 +148,8 @@ targets:
         GID_SERVER_CLIENT_ID: "834394881207-3r8mue033iimtrkn5u1ko9d5m5p7oh25.apps.googleusercontent.com"
         GID_REVERSED_CLIENT_ID: "com.googleusercontent.apps.834394881207-4um0ikpfpavpl0usplaqpul413d8mvqq"
       configs:
+        Debug:
+          CLEANSIA_APNS_ENVIRONMENT: development
         # The production custom domain, matching the Android release build. The TestFlight lanes
         # archive Release, so this is also the host a TestFlight upload calls by default (a lane's
         # api_base_url: overrides it for one build — fastlane/README.md). Owner step
@@ -153,6 +157,7 @@ targets:
         # then an `api-customer-mobile` key in weu.prod.bicepparam's customDomains, which main.bicep
         # binds to the prod Customer Mobile host.
         Release:
+          CLEANSIA_APNS_ENVIRONMENT: production
           API_BASE_URL: https:/$()/api-customer-mobile.cleansia.cz
           WEBCREDENTIALS_HOST: cleansia.cz
     preBuildScripts:

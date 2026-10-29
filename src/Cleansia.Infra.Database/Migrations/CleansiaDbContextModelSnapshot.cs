@@ -2759,6 +2759,9 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<DateTimeOffset?>("UpdatedOn")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<bool?>("UseSandbox")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasMaxLength(26)

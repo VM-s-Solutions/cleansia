@@ -201,6 +201,7 @@ public struct SnapSheet<Background: View, Ornament: View, Content: View>: View {
                 if !beside {
                     ornament
                         .frame(width: ornamentSize, height: ornamentSize)
+                        .opacity(Double(max(0, min(1, (currentTop - ornamentSize / 2) / (ornamentSize / 2)))))
                         .offset(y: SnapSheetOrnament.offsetY(sheetTop: currentTop, size: ornamentSize))
                         .allowsHitTesting(false)
                         .padding(.trailing, Spacing.m)

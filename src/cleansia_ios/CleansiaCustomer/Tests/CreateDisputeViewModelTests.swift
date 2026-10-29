@@ -5,6 +5,25 @@ import XCTest
 
 @MainActor
 final class CreateDisputeViewModelTests: XCTestCase {
+    func testOrderContextUsesPublicNumberAndKeepsInternalIdOnlyForSubmission() async {
+        let client = FakeDisputeClient()
+        let orderClient = FakeOrderClient()
+        orderClient.detailResults = [.success(OrderFixtures.detail(
+            id: "opaque-order-id",
+            displayOrderNumber: "ORD-1042"
+        ))]
+        let vm = CreateDisputeViewModel(
+            orderId: "opaque-order-id",
+            repository: DisputeRepository(client: client, pageSize: 1),
+            orderClient: orderClient,
+            snackbar: SnackbarController()
+        )
+        await vm.loadLineOptions()
+        XCTAssertEqual(vm.displayOrderNumber, "ORD-1042")
+        await vm.submit(reason: 3, description: "The cleaner skipped the kitchen")
+        XCTAssertEqual(client.lastCreate?.orderId, "opaque-order-id")
+    }
+
     private let validDescription = "Cleaner skipped the kitchen entirely"
     private var cancellables: Set<AnyCancellable> = []
 

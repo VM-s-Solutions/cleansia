@@ -15,6 +15,20 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
+import kotlinx.coroutines.delay
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -264,35 +278,46 @@ internal fun PackagesCard(packages: List<OrderPackageDetailsDto>) {
 
 @Composable
 internal fun InstructionsCard(order: OrderDetailDto) {
-    val blocks = listOfNotNull(
-        order.specialInstructions?.takeIf { it.isNotBlank() }
-            ?.let { stringResource(R.string.order_detail_special_instructions) to it },
-        order.accessInstructions?.takeIf { it.isNotBlank() }
-            ?.let { stringResource(R.string.order_detail_access_instructions) to it },
-        order.notes?.takeIf { it.isNotBlank() }
-            ?.let { stringResource(R.string.order_detail_notes) to it },
-    )
+    var accessRevealed by remember(order.id) { mutableStateOf(false) }
+    LifecycleEventEffect(Lifecycle.Event.ON_PAUSE) { accessRevealed = false }
+    LaunchedEffect(accessRevealed) {
+        if (accessRevealed) {
+            delay(60_000L)
+            accessRevealed = false
+        }
+    }
     Card {
         SectionHeader(title = stringResource(R.string.order_detail_instructions))
-        Spacer(Modifier.height(6.dp))
-        blocks.forEachIndexed { idx, (label, text) ->
-            if (idx > 0) {
-                Spacer(Modifier.height(8.dp))
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                Spacer(Modifier.height(8.dp))
-            }
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(Modifier.height(2.dp))
-            Text(
-                text = text,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
+        val blocks = listOfNotNull(
+            order.specialInstructions?.takeIf { it.isNotBlank() }?.let { stringResource(R.string.order_detail_special_instructions) to it },
+            order.notes?.takeIf { it.isNotBlank() }?.let { stringResource(R.string.order_detail_notes) to it },
+        )
+        blocks.forEach { (label, text) ->
+            InstructionText(label, text)
         }
+        order.accessInstructions?.takeIf { it.isNotBlank() }?.let { access ->
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.order_detail_access_instructions),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f))
+                cz.cleansia.core.ui.components.CleansiaTextButton(onClick = { accessRevealed = !accessRevealed }) {
+                    Text(stringResource(if (accessRevealed) R.string.order_detail_hide_access else R.string.order_detail_show_access))
+                }
+            }
+            if (accessRevealed) {
+                Text(access, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+            }
+        }
+    }
+}
+
+@Composable
+private fun InstructionText(label: String, value: String) {
+    Column(Modifier.padding(vertical = 6.dp)) {
+        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.height(2.dp))
+        Text(value, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
     }
 }
 
@@ -303,63 +328,28 @@ internal fun AssignedCleanersCard(employees: List<AssignedEmployeeDto>) {
     val context = LocalContext.current
     Card {
         SectionHeader(title = stringResource(R.string.order_detail_cleaners))
-        Spacer(Modifier.height(8.dp))
-        employees.forEachIndexed { idx, emp ->
-            if (idx > 0) Spacer(Modifier.height(10.dp))
-            val displayName = emp.fullName?.takeIf { it.isNotBlank() }
-                ?: stringResource(R.string.order_detail_cleaner_fallback)
-            val initial = displayName.firstOrNull()?.uppercaseChar()?.toString().orEmpty()
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = initial,
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.primaryTextOnContainer,
-                    )
-                }
-                Spacer(Modifier.width(12.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        text = displayName,
-                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    emp.phoneNumber?.takeIf { it.isNotBlank() }?.let { phone ->
-                        Text(
-                            text = phone,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            itemsIndexed(employees) { _, emp ->
+                val displayName = emp.fullName?.takeIf { it.isNotBlank() } ?: stringResource(R.string.order_detail_cleaner_fallback)
+                val callLabel = stringResource(R.string.order_detail_call_cleaner, displayName)
+                Row(if (employees.size > 1) Modifier.width(230.dp) else Modifier.fillParentMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(40.dp).background(MaterialTheme.colorScheme.primaryContainer, CircleShape), contentAlignment = Alignment.Center) {
+                        Text(displayName.firstOrNull()?.uppercaseChar()?.toString().orEmpty(),
+                            style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primaryTextOnContainer)
                     }
-                }
-                emp.phoneNumber?.takeIf { it.isNotBlank() }?.let { phone ->
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primaryContainer)
-                            .clickable {
-                                val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phone"))
-                                // Wrap in try/catch — some devices (e.g. tablets without a dialer)
-                                // can throw ActivityNotFoundException. We silently no-op on failure
-                                // since this is a Wave 1 convenience tap; Wave 2 may surface a snackbar.
-                                runCatching {
-                                    ContextCompat.startActivity(context, intent, null)
-                                }
-                            },
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            Icons.Outlined.Phone,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primaryIconOnContainer,
-                            modifier = Modifier.size(18.dp),
-                        )
+                    Spacer(Modifier.width(10.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(displayName, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        emp.phoneNumber?.takeIf { it.isNotBlank() }?.let { phone ->
+                            Text(phone, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                        }
+                    }
+                    emp.phoneNumber?.takeIf { it.isNotBlank() }?.let { phone ->
+                        androidx.compose.material3.IconButton(onClick = {
+                            runCatching { ContextCompat.startActivity(context, Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phone")), null) }
+                        }, modifier = Modifier.size(48.dp)) {
+                            Icon(Icons.Outlined.Phone, contentDescription = callLabel, tint = MaterialTheme.colorScheme.primaryIconOnContainer, modifier = Modifier.size(20.dp))
+                        }
                     }
                 }
             }

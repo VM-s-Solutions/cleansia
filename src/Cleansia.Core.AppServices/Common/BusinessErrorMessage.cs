@@ -385,6 +385,8 @@ public static class BusinessErrorMessage
     public const string NoCollectedFee = "payroll.no_collected_fee";
     public const string EmployeeNotAssigned = "payroll.employee_not_assigned";
     public const string PdfGenerationFailed = "payroll.invoice.pdf_generation_failed";
+    public const string InvoicePdfNotReady = "payroll.invoice.pdf_not_ready";
+    public const string InvoicePdfUnavailable = "payroll.invoice.pdf_unavailable";
     public const string CannotCancelPaidInvoice = "payroll.invoice.cannot_cancel_paid";
     public const string InvoiceAlreadyCancelled = "payroll.invoice.already_cancelled";
     public const string InvoiceAlreadyPaid = "payroll.invoice.already_paid";

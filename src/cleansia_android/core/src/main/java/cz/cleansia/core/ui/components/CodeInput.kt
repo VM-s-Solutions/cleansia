@@ -58,6 +58,7 @@ fun CodeInput(
     onCodeChange: (String) -> Unit,
     length: Int = 6,
     modifier: Modifier = Modifier,
+    showPasteAction: Boolean = true,
 ) {
     val focusRequester = remember { FocusRequester() }
     val clipboard = LocalClipboardManager.current
@@ -70,7 +71,7 @@ fun CodeInput(
     // so it raises no "pasted from your clipboard" notice; getText() on the tap does, which is the paste itself.
     LaunchedEffect(windowInfo, clipboard) {
         snapshotFlow { windowInfo.isWindowFocused }.collect { focused ->
-            if (focused) clipboardHasText = clipboard.hasText()
+            if (showPasteAction && focused) clipboardHasText = clipboard.hasText()
         }
     }
 
@@ -99,7 +100,7 @@ fun CodeInput(
             )
         }
 
-        if (clipboardHasText) {
+        if (showPasteAction && clipboardHasText) {
             CleansiaTextButton(
                 onClick = {
                     val pasted = pasteOneTimeCode(clipboard.getText()?.text.orEmpty(), code, length)

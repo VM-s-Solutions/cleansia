@@ -120,7 +120,7 @@ object Routes {
     data class OrderDetail(val orderId: String, val openReview: Boolean = false)
 
     @Serializable
-    data class OrderPhotos(val orderId: String)
+    data class OrderPhotos(val orderId: String, val phase: Int = 1, val photoId: String? = null)
 
     // ── Loyalty ──
     @Serializable

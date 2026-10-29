@@ -2,6 +2,8 @@ package cz.cleansia.customer.features.payments
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -66,6 +68,11 @@ import cz.cleansia.core.ui.theme.primaryIconOnContainer
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.payments.Receivable
 import cz.cleansia.customer.core.payments.SavedCard
+import cz.cleansia.customer.core.payments.SavedCardCapture
+import cz.cleansia.customer.core.payments.presentSavedCardSetup
+import cz.cleansia.customer.ui.components.CardSavingConsent
+import com.stripe.android.paymentsheet.PaymentSheetResult
+import com.stripe.android.paymentsheet.rememberPaymentSheet
 import cz.cleansia.customer.ui.theme.CleansiaTheme
 import java.util.Locale
 import kotlinx.datetime.Instant
@@ -78,12 +85,26 @@ fun PaymentsScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val removeState by viewModel.removeState.collectAsStateWithLifecycle()
     val payState by viewModel.payState.collectAsStateWithLifecycle()
+    val capture by viewModel.capture.collectAsStateWithLifecycle()
+    val consent by viewModel.consent.collectAsStateWithLifecycle()
+    val offersCardCapture by viewModel.offersCardCapture.collectAsStateWithLifecycle()
+    var restartRequested by remember { mutableStateOf(false) }
+    val paymentSheet = rememberPaymentSheet { result ->
+        viewModel.onPresentedCaptureResult(result is PaymentSheetResult.Completed, result is PaymentSheetResult.Failed)
+    }
     var cardToRemove by remember { mutableStateOf<SavedCard?>(null) }
     // The card a confirmed removal is running for, so its row can show the spinner the dialog used to.
     var removingCardId by remember { mutableStateOf<String?>(null) }
     val uriHandler = LocalUriHandler.current
 
     LaunchedEffect(viewModel) { viewModel.payLinks.collect { uriHandler.openUri(it) } }
+    LaunchedEffect(viewModel) {
+        viewModel.capturePresentation.collect { presentation ->
+            val setup = viewModel.claimCapturePresentation(presentation) ?: return@collect
+            runCatching { paymentSheet.presentSavedCardSetup(setup, presentation.market.currencyCode) }
+                .onFailure { viewModel.onPresentedCaptureResult(completed = false, failed = true) }
+        }
+    }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.onResumed() }
 
     PaymentsScreenContent(
@@ -94,7 +115,31 @@ fun PaymentsScreen(
         onRetry = viewModel::load,
         onPay = viewModel::pay,
         onRemoveRequested = { cardToRemove = it },
+        capture = capture,
+        consent = consent,
+        cardSavingAvailable = offersCardCapture,
+        onConsentChange = viewModel::setConsent,
+        onSaveCard = viewModel::saveCard,
+        onContinueCapture = viewModel::continueCapture,
+        onVerifyCapture = viewModel::verifyPending,
+        onRestartCapture = { restartRequested = true },
     )
+
+    if (restartRequested) {
+        AlertDialog(
+            onDismissRequest = { restartRequested = false },
+            title = { Text(stringResource(R.string.payments_card_restart)) },
+            text = { Text(stringResource(R.string.payments_card_restart_message)) },
+            confirmButton = {
+                CleansiaTextButton(onClick = { restartRequested = false; viewModel.restartCapture() }) {
+                    Text(stringResource(R.string.payments_card_restart))
+                }
+            },
+            dismissButton = {
+                CleansiaTextButton(onClick = { restartRequested = false }) { Text(stringResource(R.string.common_cancel)) }
+            },
+        )
+    }
 
     // The system confirm closes on the tap; the row shows the removal running and a refusal is the
     // snackbar's, so nothing holds a dialog open over a request.
@@ -130,6 +175,14 @@ fun PaymentsScreenContent(
     onRetry: () -> Unit = {},
     onPay: (Receivable) -> Unit = {},
     onRemoveRequested: (SavedCard) -> Unit = {},
+    capture: SavedCardCapture? = null,
+    consent: Boolean = false,
+    cardSavingAvailable: Boolean = false,
+    onConsentChange: (Boolean) -> Unit = {},
+    onSaveCard: () -> Unit = {},
+    onContinueCapture: () -> Unit = {},
+    onVerifyCapture: () -> Unit = {},
+    onRestartCapture: () -> Unit = {},
 ) {
     Column(
         modifier = Modifier
@@ -158,7 +211,18 @@ fun PaymentsScreenContent(
             PaymentsUiState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             }
-            PaymentsUiState.Error -> ErrorState(onRetry = onRetry)
+            PaymentsUiState.Error -> if (capture == null) {
+                ErrorState(onRetry = onRetry)
+            } else {
+                Column(
+                    Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Text(stringResource(R.string.payments_error_message), style = MaterialTheme.typography.bodyMedium)
+                    SavedCardCapturePanel(capture, consent, onConsentChange, onSaveCard, onContinueCapture, onVerifyCapture, onRestartCapture)
+                    CleansiaOutlinedButton(text = stringResource(R.string.payments_error_retry), onClick = onRetry)
+                }
+            }
             is PaymentsUiState.Loaded -> LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(20.dp),
@@ -186,8 +250,69 @@ fun PaymentsScreenContent(
                         )
                     }
                 }
+                if (cardSavingAvailable || capture != null) {
+                    item(key = "card-capture") {
+                        SavedCardCapturePanel(capture, consent, onConsentChange, onSaveCard, onContinueCapture, onVerifyCapture, onRestartCapture)
+                    }
+                }
             }
         }
+    }
+}
+
+@Composable
+internal fun SavedCardCapturePanel(
+    capture: SavedCardCapture?,
+    consent: Boolean,
+    onConsentChange: (Boolean) -> Unit,
+    onSave: () -> Unit,
+    onContinue: () -> Unit,
+    onVerify: () -> Unit,
+    onRestart: () -> Unit,
+) {
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surface).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        when (capture) {
+            null, is SavedCardCapture.Starting -> {
+                Text(stringResource(R.string.payments_card_no_charge), style = MaterialTheme.typography.bodyMedium)
+                if (capture == null) CardSavingConsent(consent, onConsentChange)
+                CleansiaPrimaryButton(
+                    text = stringResource(R.string.payments_card_save),
+                    onClick = onSave,
+                    enabled = consent && capture == null,
+                    loading = capture is SavedCardCapture.Starting,
+                )
+            }
+            is SavedCardCapture.Sheet -> {
+                Text(stringResource(R.string.payments_card_setup_incomplete), style = MaterialTheme.typography.bodyMedium)
+                CleansiaPrimaryButton(text = stringResource(R.string.payments_card_continue), onClick = onContinue)
+                CleansiaTextButton(onClick = onRestart) { Text(stringResource(R.string.payments_card_restart)) }
+            }
+            is SavedCardCapture.Pending -> {
+                Text(stringResource(R.string.payments_card_pending_title), style = MaterialTheme.typography.titleSmall)
+                Text(stringResource(R.string.payments_card_pending_message), style = MaterialTheme.typography.bodyMedium)
+                CleansiaPrimaryButton(
+                    text = stringResource(R.string.payments_card_verify), onClick = onVerify,
+                    enabled = !capture.verifying, loading = capture.verifying,
+                )
+                CleansiaTextButton(onClick = onRestart) { Text(stringResource(R.string.payments_card_restart)) }
+            }
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun PolishCardPendingPreview() {
+    val activity = androidx.compose.ui.platform.LocalContext.current as? android.app.Activity
+    androidx.compose.runtime.SideEffect { activity?.actionBar?.hide() }
+    CleansiaTheme {
+        PaymentsScreenContent(
+            state = PaymentsUiState.Loaded(emptyList(), emptyList()), removingCardId = null, paying = false,
+            cardSavingAvailable = true, capture = SavedCardCapture.Pending(1, "synthetic-card", verifying = false),
+        )
     }
 }
 

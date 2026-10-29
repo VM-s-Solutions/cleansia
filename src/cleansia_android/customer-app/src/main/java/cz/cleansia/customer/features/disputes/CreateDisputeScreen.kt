@@ -91,13 +91,8 @@ fun CreateDisputeScreen(
     onCreated: (disputeId: String) -> Unit = {},
     viewModel: CreateDisputeViewModel = hiltViewModel(),
 ) {
+    val displayOrderNumber by viewModel.displayOrderNumber.collectAsStateWithLifecycle()
     val submitState by viewModel.submitState.collectAsStateWithLifecycle()
-    val submitting = submitState is ActionState.Submitting
-    val error = (submitState as? ActionState.Error)?.message
-
-    var reasonValue by remember { mutableStateOf(viewModel.presetReason) }
-    var description by remember { mutableStateOf("") }
-
     // What was on the order, and which parts the customer has ticked. Both empty until the order
     // loads — and on the FAB flow, which arrives with no order, empty forever. The section below
     // renders nothing in either case rather than an empty box.
@@ -115,6 +110,41 @@ fun CreateDisputeScreen(
     LaunchedEffect(viewModel) {
         viewModel.createdDisputeId.collect { id -> onCreated(id) }
     }
+
+    CreateDisputeContent(
+        hasOrder = viewModel.orderId != null, displayOrderNumber = displayOrderNumber,
+        presetReason = viewModel.presetReason, submitState = submitState,
+        lineOptions = lineOptions, pickedLineKeys = pickedLineKeys, pickedEvidence = pickedEvidence,
+        settlement = settlement, onBack = onBack, onSubmit = viewModel::submit,
+        onClearError = viewModel::clearError, onToggleLine = viewModel::toggleLine,
+        onPickEvidence = { pickFiles.launch("*/*") }, onRemoveEvidence = viewModel::removeEvidence,
+        onSelectSettlement = viewModel::selectSettlement,
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CreateDisputeContent(
+    hasOrder: Boolean,
+    displayOrderNumber: String?,
+    presetReason: Int?,
+    submitState: ActionState,
+    lineOptions: List<DisputeLineOption>,
+    pickedLineKeys: Set<String>,
+    pickedEvidence: List<PickedEvidence>,
+    settlement: DisputeSettlement,
+    onBack: () -> Unit,
+    onSubmit: (Int, String) -> Unit,
+    onClearError: () -> Unit,
+    onToggleLine: (String) -> Unit,
+    onPickEvidence: () -> Unit,
+    onRemoveEvidence: (String) -> Unit,
+    onSelectSettlement: (DisputeSettlement) -> Unit,
+) {
+    val submitting = submitState is ActionState.Submitting
+    val error = (submitState as? ActionState.Error)?.message
+    var reasonValue by remember { mutableStateOf(presetReason) }
+    var description by remember { mutableStateOf("") }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -143,12 +173,12 @@ fun CreateDisputeScreen(
             SubmitFooter(
                 enabled = reasonValue != null &&
                     description.length in DisputeFormConstants.DESCRIPTION_MIN_LENGTH..DisputeFormConstants.DESCRIPTION_MAX_LENGTH &&
-                    viewModel.orderId != null &&
+                    hasOrder &&
                     !submitting,
                 submitting = submitting,
                 onClick = {
                     val r = reasonValue ?: return@SubmitFooter
-                    viewModel.submit(r, description)
+                    onSubmit(r, description)
                 },
             )
         },
@@ -158,16 +188,15 @@ fun CreateDisputeScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 12.dp),
+                .padding(horizontal = 20.dp, vertical = 8.dp),
         ) {
             // ── Order context / missing-order banner ──
-            val contextOrderId = viewModel.orderId
-            if (contextOrderId == null) {
+            if (!hasOrder) {
                 MissingOrderBanner()
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(12.dp))
             } else {
-                OrderContextCard(orderId = contextOrderId)
-                Spacer(Modifier.height(16.dp))
+                OrderContextCard(displayOrderNumber = displayOrderNumber)
+                Spacer(Modifier.height(12.dp))
             }
 
             // ── Reason ──
@@ -179,13 +208,13 @@ fun CreateDisputeScreen(
             Spacer(Modifier.height(6.dp))
             ReasonDropdown(
                 selectedValue = reasonValue,
-                enabled = !submitting && viewModel.orderId != null,
+                enabled = !submitting && hasOrder,
                 onSelect = {
                     reasonValue = it
-                    if (!error.isNullOrBlank()) viewModel.clearError()
+                    if (!error.isNullOrBlank()) onClearError()
                 },
             )
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(12.dp))
 
             // ── Description ──
             Text(
@@ -203,11 +232,11 @@ fun CreateDisputeScreen(
                         next
                     }
                     description = clipped
-                    if (!error.isNullOrBlank()) viewModel.clearError()
+                    if (!error.isNullOrBlank()) onClearError()
                 },
-                enabled = !submitting && viewModel.orderId != null,
+                enabled = !submitting && hasOrder,
                 placeholder = { Text(stringResource(R.string.dispute_create_description_placeholder)) },
-                minLines = 4,
+                minLines = 3,
                 maxLines = 8,
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth(),
@@ -232,7 +261,7 @@ fun CreateDisputeScreen(
             // reason chips above: that row is pick-one and looks it, and repeating the shape here
             // would teach the wrong gesture for a multi-select.
             if (lineOptions.isNotEmpty()) {
-                Spacer(Modifier.height(20.dp))
+                Spacer(Modifier.height(12.dp))
                 Text(
                     text = stringResource(R.string.dispute_create_which_items),
                     style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
@@ -249,14 +278,14 @@ fun CreateDisputeScreen(
                     DisputeLineRow(
                         option = option,
                         checked = option.key in pickedLineKeys,
-                        onToggle = { viewModel.toggleLine(option.key) },
+                        onToggle = { onToggleLine(option.key) },
                     )
                 }
             }
 
             // ── Evidence ──
-            if (viewModel.orderId != null) {
-                Spacer(Modifier.height(20.dp))
+            if (hasOrder) {
+                Spacer(Modifier.height(12.dp))
                 Text(
                     text = stringResource(R.string.dispute_evidence_section_title),
                     style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
@@ -273,19 +302,19 @@ fun CreateDisputeScreen(
                     PickedEvidenceRow(
                         file = file,
                         removable = !submitting,
-                        onRemove = { viewModel.removeEvidence(file.key) },
+                        onRemove = { onRemoveEvidence(file.key) },
                     )
                     Spacer(Modifier.height(8.dp))
                 }
                 AddEvidenceButton(
-                    onClick = { pickFiles.launch("*/*") },
+                    onClick = { onPickEvidence() },
                     enabled = !submitting,
                 )
             }
 
             // ── Settlement ──
-            if (viewModel.orderId != null) {
-                Spacer(Modifier.height(20.dp))
+            if (hasOrder) {
+                Spacer(Modifier.height(12.dp))
                 Text(
                     text = stringResource(R.string.dispute_create_settlement_title),
                     style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
@@ -303,7 +332,7 @@ fun CreateDisputeScreen(
                         settlement = option,
                         selected = option == settlement,
                         enabled = !submitting,
-                        onSelect = { viewModel.selectSettlement(option) },
+                        onSelect = { onSelectSettlement(option) },
                     )
                     Spacer(Modifier.height(8.dp))
                 }
@@ -320,7 +349,7 @@ fun CreateDisputeScreen(
                 )
             }
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(12.dp))
         }
     }
 }
@@ -517,7 +546,7 @@ private fun PickedEvidenceRow(
 /* ── Order context card ── */
 
 @Composable
-private fun OrderContextCard(orderId: String) {
+private fun OrderContextCard(displayOrderNumber: String?) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -533,11 +562,8 @@ private fun OrderContextCard(orderId: String) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(Modifier.height(2.dp))
-            // We only have the orderId here, not the display number — shown
-            // as-is. The user navigated from that order's detail so they
-            // already know the context; this card just confirms it.
             Text(
-                text = orderId,
+                text = displayOrderNumber?.let { "#$it" } ?: stringResource(R.string.dispute_create_order_context_pending),
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                 color = MaterialTheme.colorScheme.onSurface,
             )
@@ -699,5 +725,28 @@ private fun SubmitFooter(
                 }
             }
         }
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview
+@Composable
+private fun PolishDisputePreview() = DisputePreviewContent("ORD-10427")
+
+@androidx.compose.ui.tooling.preview.Preview
+@Composable
+private fun PolishDisputeFallbackPreview() = DisputePreviewContent(null)
+
+@Composable
+private fun DisputePreviewContent(displayNumber: String?) {
+    val activity = androidx.compose.ui.platform.LocalContext.current as? android.app.Activity
+    androidx.compose.runtime.SideEffect { activity?.actionBar?.hide() }
+    cz.cleansia.customer.ui.theme.CleansiaTheme {
+        CreateDisputeContent(
+            hasOrder = true, displayOrderNumber = displayNumber, presetReason = null, submitState = ActionState.Idle,
+            lineOptions = listOf(DisputeLineOption("synthetic-service", null, "Kuchyně", null)),
+            pickedLineKeys = emptySet(), pickedEvidence = emptyList(), settlement = DisputeSettlement.CardRefund,
+            onBack = {}, onSubmit = { _, _ -> }, onClearError = {}, onToggleLine = {},
+            onPickEvidence = {}, onRemoveEvidence = {}, onSelectSettlement = {},
+        )
     }
 }

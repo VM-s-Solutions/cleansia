@@ -620,6 +620,19 @@ need backfilling.
 
 ### Changed
 
+- **Customer and cleaner, Android and iOS — clearer booking and order details, with payment recovery.**
+  Customer details group review actions, prices, cleaners and instructions more compactly; photos
+  stay in labelled phases, estimated overruns are explicit, expanded panels hide the mascot, and
+  Home indicators show the six-second rotation. Booking confirmation and issue reporting use clearer
+  layouts and public order references. Pending saved-card setup stays visible and can be checked or
+  explicitly restarted with fresh consent. Partner actions are compact, eligible cancellation is
+  red, iOS offers Apple/Google navigation, and invoices distinguish pending/unavailable PDFs while
+  retaining an older document after failed regeneration. Live Activity registration distinguishes
+  signing environments and recovers through bounded retries and foreground order refresh; device
+  delivery timing remains governed by iOS.
+  **Operator:** the per-token environment field regenerates Initial; the next DEV rollout needs an
+  explicitly approved DEV reset and reseed. This change does not perform a reset, deployment or upload.
+
 - **Customer, Android and iOS — rating a finished cleaning is easier to find and complete.** The
   popup leads with larger stars and clearer optional feedback, while Submit stays visible below the
   scrolling form. If a completed booking has no review, **Rate your cleaning** leads the fixed

@@ -8,6 +8,8 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -52,6 +54,7 @@ fun FloatingMascot(
 
     val density = LocalDensity.current
     val sizePx = with(density) { size.toPx() }
+    val safeTop = WindowInsets.statusBars.getTop(density).toFloat()
     // Gone by the time the cleaner has scrolled past the mascot's own overlap with the sheet — half its
     // height, the part that was ever over content in the first place.
     val fadeDistancePx = sizePx / 2f
@@ -70,7 +73,8 @@ fun FloatingMascot(
                 IntOffset(x = 0, y = (restingY - contentScrollPx()).roundToInt())
             }
             .graphicsLayer {
-                alpha = (1f - contentScrollPx() / fadeDistancePx).coerceIn(0f, 1f)
+                val top = runCatching { sheetState.requireOffset() }.getOrDefault(0f) - sizePx / 2f - contentScrollPx()
+                alpha = minOf(1f - contentScrollPx() / fadeDistancePx, (top - safeTop) / fadeDistancePx).coerceIn(0f, 1f)
             }
             .size(size),
     ) {
@@ -113,7 +117,7 @@ private fun CleaningWebpMascot(size: Dp) {
     AsyncImage(
         model = request,
         contentDescription = null,
-        modifier = Modifier.size(size),
+        modifier = Modifier.size(size).scale(1.04839f),
     )
 }
 
@@ -128,27 +132,12 @@ private fun StaticPngMascot(drawableRes: Int, size: Dp) {
     )
 }
 
-/**
- * How much each character has to be blown up for all of them to be drawn the same size.
- *
- * **The box was never the problem — the artwork is.** Every asset is a square canvas the character
- * only partly fills, and it fills it by a different amount each time, so an identical box still
- * renders characters of visibly different sizes. Measured as the alpha bounding box's width over the
- * canvas width: `thumbs_up` 0.57, `spray_and_cloth` 0.57, `leaning` 0.65, `waving_friendly` 0.77,
- * `ready` 0.82 — a 44% spread between the smallest and the largest, at one shared 128dp box.
- *
- * Each factor is `0.82 / fill`, i.e. normalised against the fullest asset, so nothing is ever drawn
- * smaller than it is today. Re-cutting the PNGs would be the real fix; this is the one that does not
- * touch binary assets. To remeasure after an asset changes, take the alpha bounding box of the PNG
- * and divide its width by the canvas width. [CleaningWebpMascot] is not in the table — an animated
- * WebP is cropped to its own frame and was never measured — and anything unlisted draws unscaled.
- */
 private val mascotArtScale: Map<Int, Float> = mapOf(
-    R.drawable.mascot_ready to 1.00f,
-    R.drawable.mascot_waving_friendly to 1.06f,
-    R.drawable.mascot_leaning to 1.26f,
-    R.drawable.mascot_thumbs_up to 1.44f,
-    R.drawable.mascot_spray_and_cloth to 1.45f,
+    R.drawable.mascot_ready to 0.85773f,
+    R.drawable.mascot_waving_friendly to 0.95f,
+    R.drawable.mascot_leaning to 0.89752f,
+    R.drawable.mascot_thumbs_up to 0.98229f,
+    R.drawable.mascot_spray_and_cloth to 1.11915f,
 )
 
 /**

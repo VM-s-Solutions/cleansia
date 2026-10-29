@@ -40,7 +40,7 @@ final class OrderDetailSummaryBindingTests: XCTestCase {
     /// for the three live statuses.
     func testTheTrackerRendersForEveryStatus() throws {
         let source = try read(Self.content)
-        XCTAssertTrue(source.contains("CustomerOrderTrackerHero(status: status)"))
+        XCTAssertTrue(source.contains("CustomerOrderTrackerHero(order: order)"))
     }
 
     func testTheSummarySpellsNoLabelItself() throws {

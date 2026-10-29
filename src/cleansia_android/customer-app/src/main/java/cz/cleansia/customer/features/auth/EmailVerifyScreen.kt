@@ -128,6 +128,7 @@ fun EmailVerifyScreen(
 
             CodeInput(
                 code = code,
+                showPasteAction = false,
                 onCodeChange = { new -> code = new.filter(Char::isDigit).take(CODE_LENGTH) },
             )
 

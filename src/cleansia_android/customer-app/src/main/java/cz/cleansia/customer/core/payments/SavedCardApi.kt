@@ -30,6 +30,9 @@ fun SavedCard.isUsableIn(month: YearMonth): Boolean =
 fun List<SavedCard>.usableIn(currencyCode: String, month: YearMonth = YearMonth.now(ZoneOffset.UTC)): SavedCard? =
     firstOrNull { it.currencyCode.equals(currencyCode, ignoreCase = true) && it.isUsableIn(month) }
 
+fun List<SavedCard>.needsCapture(currencyCode: String?, month: YearMonth = YearMonth.now(ZoneOffset.UTC)): Boolean =
+    none { it.isUsableIn(month) && (currencyCode == null || it.currencyCode.equals(currencyCode, ignoreCase = true)) }
+
 /** What PaymentSheet needs in setup mode. */
 data class SavedCardSetup(
     val savedCardId: String,

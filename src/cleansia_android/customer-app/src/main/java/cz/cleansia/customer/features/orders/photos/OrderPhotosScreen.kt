@@ -3,6 +3,9 @@ package cz.cleansia.customer.features.orders.photos
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -49,6 +52,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import cz.cleansia.customer.R
+import cz.cleansia.customer.features.orders.groupOrderPhotos
+import cz.cleansia.customer.features.orders.photoPhaseTitle
+import androidx.compose.material3.ScrollableTabRow
 import cz.cleansia.customer.core.orders.OrderPhotoDto
 import cz.cleansia.customer.core.orders.OrderPhotosResponse
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
@@ -100,7 +106,7 @@ fun OrderPhotosScreen(
             when (val s = state) {
                 OrderPhotosViewModel.UiState.Loading -> LoadingView()
                 OrderPhotosViewModel.UiState.Error -> ErrorView(onRetry = viewModel::refresh)
-                is OrderPhotosViewModel.UiState.Loaded -> GalleryContent(response = s.response)
+                is OrderPhotosViewModel.UiState.Loaded -> GalleryContent(s.response, viewModel.initialPhase, viewModel.initialPhotoId)
             }
         }
     }
@@ -147,44 +153,24 @@ private fun ErrorView(onRetry: () -> Unit, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun GalleryContent(response: OrderPhotosResponse) {
-    // Backend enum is numeric — 1 = Before, 2 = After. Everything else (including
-    // null) falls into the Before bucket so it stays visible.
-    val before = remember(response) {
-        response.photos.filter { it.photoType != 2 }
-    }
-    val after = remember(response) {
-        response.photos.filter { it.photoType == 2 }
-    }
-
-    var tabIndex by remember { mutableIntStateOf(0) }
-    var previewIndex by remember { mutableStateOf<Int?>(null) }
-
+private fun GalleryContent(response: OrderPhotosResponse, initialPhase: Int, initialPhotoId: String?) {
+    val groups = remember(response) { groupOrderPhotos(response.photos) }
+    var tabIndex by remember { mutableIntStateOf(groups.indexOfFirst { it.phase == initialPhase }.coerceAtLeast(0)) }
+    var previewIndex by remember { mutableStateOf(groups[tabIndex].indexOfPhoto(initialPhotoId)) }
+    val selectedIndex = tabIndex.coerceIn(groups.indices)
+    val current = groups[selectedIndex]
     Column(Modifier.fillMaxSize()) {
-        TabRow(selectedTabIndex = tabIndex) {
-            Tab(
-                selected = tabIndex == 0,
-                onClick = { tabIndex = 0; previewIndex = null },
-                text = {
-                    Text(
-                        "${stringResource(R.string.order_photos_tab_before)} (${before.size})",
-                    )
-                },
-            )
-            Tab(
-                selected = tabIndex == 1,
-                onClick = { tabIndex = 1; previewIndex = null },
-                text = {
-                    Text(
-                        "${stringResource(R.string.order_photos_tab_after)} (${after.size})",
-                    )
-                },
-            )
+        ScrollableTabRow(selectedTabIndex = selectedIndex, edgePadding = 0.dp) {
+            groups.forEachIndexed { index, group ->
+                Tab(
+                    selected = selectedIndex == index,
+                    onClick = { tabIndex = index; previewIndex = null },
+                    text = { Text(stringResource(R.string.order_photos_phase_count, photoPhaseTitle(group.phase), group.photos.size), maxLines = 1) },
+                )
+            }
         }
-
-        val currentTab = if (tabIndex == 0) before else after
-        if (currentTab.isEmpty()) {
-            EmptyTabState(isBefore = tabIndex == 0)
+        if (current.photos.isEmpty()) {
+            EmptyTabState(isBefore = current.phase == 1)
         } else {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(3),
@@ -193,24 +179,12 @@ private fun GalleryContent(response: OrderPhotosResponse) {
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxSize(),
             ) {
-                itemsIndexed(currentTab) { index, photo ->
-                    GalleryThumb(
-                        photo = photo,
-                        onClick = { previewIndex = index },
-                    )
-                }
+                itemsIndexed(current.photos) { index, photo -> GalleryThumb(photo) { previewIndex = index } }
             }
         }
     }
-
-    val idx = previewIndex
-    val photos = if (tabIndex == 0) before else after
-    if (idx != null && photos.isNotEmpty()) {
-        FullscreenPager(
-            photos = photos,
-            startIndex = idx,
-            onClose = { previewIndex = null },
-        )
+    previewIndex?.takeIf { current.photos.isNotEmpty() }?.let { index ->
+        FullscreenPager(photos = current.photos, startIndex = index.coerceIn(current.photos.indices), onClose = { previewIndex = null })
     }
 }
 
@@ -260,3 +234,25 @@ private fun EmptyTabState(isBefore: Boolean) {
     }
 }
 
+
+@androidx.compose.ui.tooling.preview.Preview
+@Composable
+private fun PolishGalleryPreview() {
+    val activity = androidx.compose.ui.platform.LocalContext.current as? android.app.Activity
+    androidx.compose.runtime.SideEffect { activity?.actionBar?.hide() }
+    cz.cleansia.customer.ui.theme.CleansiaTheme {
+        androidx.compose.material3.Surface(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars)) {
+            GalleryContent(
+                response = OrderPhotosResponse(
+                    photos = listOf(
+                        1 to R.drawable.mascot_ready, 2 to R.drawable.mascot_thumbs_up,
+                        3 to R.drawable.mascot_leaning, 99 to R.drawable.mascot_spray_and_cloth,
+                    ).map { (phase, image) -> OrderPhotoDto(
+                        id = "fixture-$phase", photoType = phase,
+                        blobUrl = "android.resource://cz.cleansia.customer.debug/$image",
+                    ) }, beforePhotoCount = 1, afterPhotoCount = 1,
+                ), initialPhase = 1, initialPhotoId = null,
+            )
+        }
+    }
+}

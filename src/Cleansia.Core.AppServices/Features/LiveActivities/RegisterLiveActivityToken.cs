@@ -19,7 +19,8 @@ public static class RegisterLiveActivityToken
     public record Command(
         string DeviceId,
         string Token,
-        string? OrderId) : ICommand<Response>;
+        string? OrderId,
+        bool? UseSandbox = null) : ICommand<Response>;
 
     internal class Validator : AbstractValidator<Command>
     {
@@ -97,11 +98,11 @@ public static class RegisterLiveActivityToken
 
             if (existing is not null)
             {
-                existing.Refresh(command.Token);
+                existing.Refresh(command.Token, command.UseSandbox);
                 return BusinessResult.Success(new Response(existing.Id));
             }
 
-            var token = LiveActivityToken.Create(userId, command.DeviceId, orderId, command.Token, tenantId: null);
+            var token = LiveActivityToken.Create(userId, command.DeviceId, orderId, command.Token, tenantId: null, command.UseSandbox);
             liveActivityTokenRepository.Add(token);
 
             return BusinessResult.Success(new Response(token.Id));

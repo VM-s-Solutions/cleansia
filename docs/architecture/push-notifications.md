@@ -111,8 +111,44 @@ with the `.p8` and POST to `api.push.apple.com` (and `api.sandbox.push.apple.com
 with a bogus device token the answer separates the cases: `403 InvalidProviderToken` = the key or
 identity is wrong; `400 BadDeviceToken` = **the key is fine** and the problem is elsewhere.
 
-**Not to be confused with `APNS__UseSandbox` in `main.bicep`** — that steers the direct-APNs
-**Live Activity** client, a separate path that never involves FCM.
+**Not to be confused with `APNS__UseSandbox` in `main.bicep`** — that is the legacy default for the
+direct-APNs **Live Activity** client, a separate path that never involves FCM. Since
+[ADR-0078](../decisions/adr-0078), each newly registered activity token can carry nullable
+`useSandbox`: `true` selects Apple's sandbox endpoint, `false` selects Apple's production endpoint,
+and omitted/null metadata uses the global default. This lets Xcode sandbox builds and TestFlight
+production-signed builds both use DEV APIs. The API URL does not determine the token environment.
+
+The app's public build marker must match its signed `aps-environment`; verify both in the release
+artifact. The adapter sends to the selected endpoint once and never probes another endpoint after
+`BadDeviceToken`. Raw tokens, the user/device/order registration key, ownership and retirement rules
+stay unchanged. A successful APNs response confirms acceptance, not receipt on a physical device.
+
+The customer app exposes `CleansiaAPNSEnvironment`: supported Debug/Xcode builds say `development`,
+and Release/TestFlight builds say `production`. Missing or unknown values stop remote token
+registration without affecting the local card. `scripts/check-live-activity-environment.py` reads
+only a supplied `.app` or exported IPA and compares the marker with its actual signed entitlement.
+The customer TestFlight lane runs it after export and before uploads, requiring production signing.
+A custom development-signed Release build needs an aligned marker and artifact verification.
+
+Registration retains only the latest token per push-to-start/order scope. Transport/5xx failures get
+at most three attempts, immediately then after 2 and 4 seconds; a foreground resume can retry a
+still-pending token. Accepted tokens only deduplicate emissions. Other 4xx refusals stop until token
+or session changes; 429 waits at least 30 seconds before a foreground retry. Rotation/wipe cancels
+stale work. ActivityKit's [token update sequence](https://developer.apple.com/documentation/activitykit/activity/pushtokenupdates-swift.property)
+continues observing new tokens while registration retries run independently.
+
+The existing order repository drives foreground recovery on Home as well as order detail. It filters
+eligible non-guest OnTheWay/InProgress orders from the loaded cache before limiting detail reads to
+20, and ends known tracked cards from terminal summaries. No timer or extra list paging is added.
+Local and adopted cards share in-memory session/order dismissal suppression, retired on terminal
+state or wipe. It covers the tracked process lifecycle; no durable dismissal history after process
+death is claimed. Background adoption still resolves numbers from the recent page only; a very old
+order outside that page remains a residual until another foreground read identifies it.
+
+The nullable token field changes the single `Initial` migration. Its regeneration and local
+Postgres verification are source work; the next DEV rollout needs an explicitly approved database
+reset/reseed. No reset, deployment or PRO access is implied by that source change. Shared outbox
+and queue intervals remain unchanged; routing repair does not promise instantaneous delivery.
 
 ### §0b-2 — no FCM error code: Google refused the service account
 

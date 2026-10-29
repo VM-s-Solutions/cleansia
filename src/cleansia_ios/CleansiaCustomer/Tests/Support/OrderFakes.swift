@@ -10,6 +10,8 @@ final class FakeOrderClient: OrderClient, @unchecked Sendable {
 
     var detailResults: [ApiResult<CustomerOrderDetail>] = []
     private(set) var detailCallCount = 0
+    var holdDetails = false
+    private var heldDetail: CheckedContinuation<ApiResult<CustomerOrderDetail>, Never>?
 
     var cancelResult: ApiResult<OrderCancellation> = .success(
         OrderCancellation(refundAmount: 0, refundInitiated: false, actualRefundAmount: nil)
@@ -63,11 +65,21 @@ final class FakeOrderClient: OrderClient, @unchecked Sendable {
         heldPages.removeValue(forKey: call)?.resume(returning: result)
     }
 
+    @MainActor
     func getById(orderId _: String) async -> ApiResult<CustomerOrderDetail> {
         defer { detailCallCount += 1 }
+        if holdDetails {
+            return await withCheckedContinuation { heldDetail = $0 }
+        }
         let index = min(detailCallCount, detailResults.count - 1)
         guard index >= 0 else { return .failure(ApiError(httpStatus: 500)) }
         return detailResults[index]
+    }
+
+    @MainActor
+    func releaseDetail(_ result: ApiResult<CustomerOrderDetail>) {
+        heldDetail?.resume(returning: result)
+        heldDetail = nil
     }
 
     func cancel(orderId _: String, reason: String?) async -> ApiResult<OrderCancellation> {

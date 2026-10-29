@@ -9,6 +9,8 @@ final class FakePayrollClient: PartnerPayrollClient {
     var invoicesResult: ApiResult<[Invoice]> = .success([])
     var invoiceResult: ApiResult<InvoiceDetail> = .success(.stub())
     var downloadResult: ApiResult<URL> = .success(URL(fileURLWithPath: "/tmp/invoice.pdf"))
+    var beforeInvoice: (() async -> Void)?
+    var beforeDownload: (() async -> Void)?
     var cashHeldResult: ApiResult<[CashHeld]> = .success([])
 
     private(set) var employeeIdCallCount = 0
@@ -50,12 +52,14 @@ final class FakePayrollClient: PartnerPayrollClient {
     func getInvoice(id: String) async -> ApiResult<InvoiceDetail> {
         invoiceCallCount += 1
         lastInvoiceId = id
+        await beforeInvoice?()
         return invoiceResult
     }
 
     func downloadInvoicePdf(id: String) async -> ApiResult<URL> {
         downloadCallCount += 1
         lastDownloadId = id
+        await beforeDownload?()
         return downloadResult
     }
 

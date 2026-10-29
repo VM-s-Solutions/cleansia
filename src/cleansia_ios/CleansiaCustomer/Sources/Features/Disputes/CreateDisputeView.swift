@@ -41,7 +41,7 @@ struct CreateDisputeView: View {
     var body: some View {
         VStack(spacing: 0) {
             ScrollView {
-                VStack(alignment: .leading, spacing: Spacing.m) {
+                VStack(alignment: .leading, spacing: Spacing.s) {
                     contextBanner
                     reasonField
                     itemsField
@@ -55,7 +55,7 @@ struct CreateDisputeView: View {
                     }
                 }
                 .padding(.horizontal, Spacing.ml)
-                .padding(.vertical, Spacing.m)
+                .padding(.vertical, Spacing.s)
             }
             submitFooter
         }
@@ -71,17 +71,19 @@ struct CreateDisputeView: View {
 
     @ViewBuilder
     private var contextBanner: some View {
-        if let orderId = vm.orderId {
+        if vm.orderId != nil {
             VStack(alignment: .leading, spacing: Spacing.xxs) {
                 Text(L10n.Disputes.createOrderLabel)
                     .font(CleansiaTypography.labelSmall)
                     .foregroundColor(CleansiaColors.onSurfaceVariant)
-                Text(verbatim: orderId)
-                    .font(CleansiaTypography.titleMedium)
-                    .foregroundColor(CleansiaColors.onSurface)
+                if let number = vm.displayOrderNumber {
+                    Text(verbatim: "#\(number)")
+                        .font(CleansiaTypography.titleMedium)
+                        .foregroundColor(CleansiaColors.onSurface)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(Spacing.m)
+            .padding(Spacing.s)
             .background(CleansiaColors.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: CornerRadius.medium))
         } else {
             HStack(alignment: .top, spacing: Spacing.s) {
@@ -186,7 +188,7 @@ struct CreateDisputeView: View {
                     .font(CleansiaTypography.bodyLarge)
                     .foregroundColor(CleansiaColors.onSurface)
                     .scrollContentBackground(.hidden)
-                    .frame(minHeight: 120)
+                    .frame(minHeight: 96)
                     .padding(.horizontal, Spacing.s)
                     .padding(.vertical, 6)
                     .disabled(!vm.hasOrderContext || vm.submitState.isSubmitting)

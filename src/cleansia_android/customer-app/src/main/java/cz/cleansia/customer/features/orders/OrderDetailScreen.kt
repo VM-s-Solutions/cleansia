@@ -69,6 +69,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.annotation.StringRes
@@ -129,7 +130,7 @@ fun OrderDetailScreen(
      */
     onMakeRecurring: (orderId: String) -> Unit = {},
     @Suppress("UNUSED_PARAMETER") onDownloadReceipt: () -> Unit = {},
-    onViewPhotos: () -> Unit = {},
+    onViewPhotos: (Int, String?) -> Unit = { _, _ -> },
     onOpenPayments: () -> Unit = {},
     /**
      * Raise the review sheet as soon as the order resolves — the completion prompt's landing.
@@ -438,7 +439,7 @@ private fun OrderDetailMapLayout(
     onMakeRecurring: () -> Unit,
     onLeaveReview: () -> Unit,
     onDownloadReceipt: () -> Unit,
-    onViewPhotos: () -> Unit,
+    onViewPhotos: (Int, String?) -> Unit,
     onConfirmRecurring: () -> Unit,
     onSaveCardChange: (Boolean) -> Unit,
     onTermsAcceptedChange: (Boolean) -> Unit,
@@ -448,6 +449,7 @@ private fun OrderDetailMapLayout(
     val density = LocalDensity.current
     var pinnedHeaderHeight by remember { mutableStateOf(0.dp) }
     var footerHeight by remember { mutableStateOf(0.dp) }
+    var controlsBottomPx by remember { mutableStateOf(0f) }
     val showLeaveReview = customerCanLeaveReview(order.orderStatus?.value, order.isGuestBooking, order.review != null)
     val minimumHeight = if (showLeaveReview) {
         maxOf(SnapSheetDefaults.MinSheetHeight, pinnedHeaderHeight + footerHeight + 48.dp)
@@ -488,6 +490,7 @@ private fun OrderDetailMapLayout(
             // button survives the sheet being dragged over the map entirely.
             Row(
                 modifier = Modifier
+                    .onSizeChanged { controlsBottomPx = it.height.toFloat() }
                     .windowInsetsPadding(WindowInsets.statusBars)
                     .padding(start = Spacing.M, top = Spacing.S)
                     .align(Alignment.TopStart),
@@ -544,6 +547,12 @@ private fun OrderDetailMapLayout(
             onTermsAcceptedChange = onTermsAcceptedChange,
             onHeaderHeightChanged = { pinnedHeaderHeight = with(density) { it.toDp() } },
             onFooterHeightChanged = { footerHeight = with(density) { it.toDp() } },
+            // The grabber already occupies 20dp. Add only the remaining space needed
+            // when the expanded sheet reaches the persistent back/map controls.
+            headerTopClearance = with(density) {
+                (controlsBottomPx + Spacing.S.toPx() - sheetState.sheetTopPx - 20.dp.toPx())
+                    .coerceAtLeast(0f).toDp()
+            },
         )
     }
 }
@@ -594,14 +603,16 @@ private fun OrderDetailSheetContent(
     onMakeRecurring: () -> Unit,
     onLeaveReview: () -> Unit,
     onDownloadReceipt: () -> Unit,
-    onViewPhotos: () -> Unit,
+    onViewPhotos: (Int, String?) -> Unit,
     onConfirmRecurring: () -> Unit,
     onSaveCardChange: (Boolean) -> Unit,
     onTermsAcceptedChange: (Boolean) -> Unit,
     onHeaderHeightChanged: (Int) -> Unit = {},
     onFooterHeightChanged: (Int) -> Unit = {},
+    headerTopClearance: Dp = 0.dp,
 ) {
     val payByCard = order.paymentType?.value == 2
+    val density = LocalDensity.current
     // Without a Stripe key a card occurrence is not offered: its confirm spends credit for a sheet that cannot open.
     val showConfirmRecurringCta = order.needsConfirmation && (cardPaymentAvailable || !payByCard)
     val showLeaveReview = customerCanLeaveReview(order.orderStatus?.value, order.isGuestBooking, order.review != null)
@@ -641,8 +652,13 @@ private fun OrderDetailSheetContent(
             .fillMaxHeight()
             .nestedScroll(sheetGuard),
     ) {
-        Column(Modifier.onSizeChanged { onHeaderHeightChanged(it.height) }) {
+        Column(Modifier.onSizeChanged {
+            // Overlay clearance changes during a drag; exclude it from the minimum-height
+            // measurement so rememberSnapSheetState keeps the current anchor.
+            onHeaderHeightChanged(it.height - with(density) { headerTopClearance.roundToPx() })
+        }) {
             SheetGrabber()
+            Spacer(Modifier.height(headerTopClearance))
             OrderDetailCompactHeader(order = order)
         }
 
@@ -669,7 +685,7 @@ private fun OrderDetailSheetContent(
             // read as one group — and the inner Column is why it overrides the parent's spacedBy.
             Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
                 OrderStatusHero(order = order, status = status)
-                OrderTrackerBar(status = status)
+                OrderTrackerBar(status = status, order = order)
 
                 // Why, not just that. The cancellation push tells the customer to tap for the reason
                 // and the screen they land on had none, so a failed payment had to be inferred from
@@ -1131,7 +1147,7 @@ internal fun Card(content: @Composable () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surface)
-            .padding(vertical = 16.dp),
+            .padding(vertical = 8.dp),
     ) { content() }
 }
 
@@ -1168,11 +1184,15 @@ internal fun InfoRow(label: String, value: String) {
             text = label,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f),
         )
+        Spacer(Modifier.width(12.dp))
         Text(
             text = value,
             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
             color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f),
+            textAlign = androidx.compose.ui.text.style.TextAlign.End,
         )
     }
 }
@@ -1217,14 +1237,16 @@ private val previewOrder = OrderDetailDto(
 )
 
 @Composable
-private fun PreviewSheet() {
+private fun PreviewSheet(order: OrderDetailDto = previewOrder, photoState: PhotosUiState = PhotosUiState.Idle) {
+    val activity = androidx.compose.ui.platform.LocalContext.current as? android.app.Activity
+    androidx.compose.runtime.SideEffect { activity?.actionBar?.hide() }
     CleansiaTheme {
-        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
+        Surface(modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars), color = MaterialTheme.colorScheme.surface) {
             OrderDetailSheetContent(
-                order = previewOrder,
-                status = OrderStatus.InProgress,
+                order = order,
+                status = orderStatusFromValue(order.orderStatus?.value),
                 scrollState = rememberScrollState(),
-                photosState = PhotosUiState.Idle,
+                photosState = photoState,
                 showCancel = false,
                 showCleanerNoShow = false,
                 showReportIssue = true,
@@ -1246,7 +1268,7 @@ private fun PreviewSheet() {
                 onMakeRecurring = {},
                 onLeaveReview = {},
                 onDownloadReceipt = {},
-                onViewPhotos = {},
+                onViewPhotos = { _, _ -> },
                 onConfirmRecurring = {},
                 onSaveCardChange = {},
                 onTermsAcceptedChange = {},
@@ -1373,10 +1395,92 @@ fun CompletedUnratedDetailPreview() {
             onMakeRecurring = {},
             onLeaveReview = {},
             onDownloadReceipt = {},
-            onViewPhotos = {},
+            onViewPhotos = { _, _ -> },
             onConfirmRecurring = {},
             onSaveCardChange = {},
             onTermsAcceptedChange = {},
+        )
+    }
+}
+
+@Preview(name = "Customer detail polish", widthDp = 360, heightDp = 740)
+@Composable
+private fun PolishCustomerDetailsPreview() {
+    PreviewSheet(
+        previewOrder.copy(
+            displayOrderNumber = "ORD-10427",
+            totalPrice = 4838.57, originalSubtotal = 5692.44, appliedDiscountSource = 3,
+            membershipDiscountAmount = null, promoDiscountAmount = 853.87,
+            address = OrderAddressDto(street = "Ukázková 12", city = "Praha 3", zipCode = "130 00", country = "Česká republika"),
+            specialInstructions = "Prosím věnujte pozornost kuchyni.",
+            accessInstructions = "SYNTHETIC-ACCESS-4821",
+            assignedEmployees = listOf(
+                cz.cleansia.customer.core.orders.AssignedEmployeeDto(fullName = "Anna", phoneNumber = "+420000000001"),
+                cz.cleansia.customer.core.orders.AssignedEmployeeDto(fullName = "Olena", phoneNumber = "+420000000002"),
+            ),
+            orderStatus = CodeDto(type = "OrderStatus", name = "Completed", value = 5),
+            review = cz.cleansia.customer.core.orders.OrderReviewDto(rating = 3, comment = "Služba proběhla v pořádku."),
+        ),
+        PhotosUiState.Loaded(cz.cleansia.customer.core.orders.OrderPhotosResponse(
+            photos = listOf(
+                1 to R.drawable.mascot_ready, 2 to R.drawable.mascot_thumbs_up,
+                3 to R.drawable.mascot_leaning, 99 to R.drawable.mascot_spray_and_cloth,
+            ).map { (phase, image) ->
+                cz.cleansia.customer.core.orders.OrderPhotoDto(id = "preview-$phase", photoType = phase,
+                    blobUrl = "android.resource://cz.cleansia.customer.debug/$image")
+            }, beforePhotoCount = 1, afterPhotoCount = 1,
+        )),
+    )
+}
+
+@Preview(name = "Customer estimate overrun", widthDp = 360, heightDp = 740)
+@Composable
+private fun PolishCustomerOverduePreview() {
+    PreviewSheet(previewOrder.copy(statusHistory = listOf(OrderStatusTrackDto(
+        status = CodeDto("OrderStatus", "InProgress", 4),
+        createdOn = java.time.Instant.now().minusSeconds(182 * 60L).toString(),
+    ))))
+}
+
+@Preview(name = "Customer sheet and mascot", widthDp = 360, heightDp = 740)
+@Composable
+private fun PolishCustomerShellPreview() = CustomerShellPreview(5)
+
+@Preview
+@Composable
+private fun PolishCustomerReadyShellPreview() = CustomerShellPreview(0)
+
+@Preview
+@Composable
+private fun PolishCustomerMovingShellPreview() = CustomerShellPreview(3)
+
+@Preview
+@Composable
+private fun PolishCustomerCleaningShellPreview() = CustomerShellPreview(4)
+
+@Preview
+@Composable
+private fun PolishCustomerUnknownProgressPreview() = PreviewSheet(previewOrder.copy(statusHistory = emptyList()))
+
+@Composable
+private fun CustomerShellPreview(status: Int) {
+    val activity = androidx.compose.ui.platform.LocalContext.current as? android.app.Activity
+    androidx.compose.runtime.SideEffect { activity?.actionBar?.hide() }
+    CleansiaTheme {
+        OrderDetailMapLayout(
+            order = previewOrder.copy(
+                orderStatus = CodeDto("OrderStatus", "", status),
+                address = previewOrder.address?.copy(latitude = null, longitude = null),
+                statusHistory = emptyList(),
+            ),
+            markets = MarketState.Unavailable, photosState = PhotosUiState.Idle,
+            showCancel = false, showCleanerNoShow = false, showReportIssue = true, showRebook = true,
+            showMakeRecurring = false, cancelEnabled = true, confirmingRecurring = false,
+            cardPaymentAvailable = false, offersCardSaving = false, saveCard = false,
+            termsAsked = false, termsAccepted = false, canConfirmRecurring = false, isDownloadingReceipt = false,
+            onBack = {}, onCancel = {}, onReportCleanerNoShow = {}, onReportIssue = {}, onRebook = {},
+            onMakeRecurring = {}, onLeaveReview = {}, onDownloadReceipt = {}, onViewPhotos = { _, _ -> },
+            onConfirmRecurring = {}, onSaveCardChange = {}, onTermsAcceptedChange = {},
         )
     }
 }

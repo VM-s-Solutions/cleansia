@@ -142,6 +142,18 @@ extension L10n {
     }
 
     enum Invoices {
+        static var pdfPending: String {
+            localized("invoice_pdf_pending")
+        }
+
+        static var pdfUnavailable: String {
+            localized("invoice_pdf_unavailable")
+        }
+
+        static var pdfPreviousWarning: String {
+            localized("invoice_pdf_previous_warning")
+        }
+
         static var title: String {
             localized("invoices")
         }

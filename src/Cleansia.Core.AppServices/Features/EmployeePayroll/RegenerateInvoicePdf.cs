@@ -96,7 +96,9 @@ public class RegenerateInvoicePdf
 
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
-            var invoice = await employeeInvoiceRepository.GetByIdAsync(command.InvoiceId, cancellationToken);
+            var invoice = await employeeInvoiceRepository.GetAll()
+                .Include(i => i.PayPeriod)
+                .FirstOrDefaultAsync(i => i.Id == command.InvoiceId, cancellationToken);
             if (invoice is null)
             {
                 return BusinessResult.Failure<Response>(new Error(

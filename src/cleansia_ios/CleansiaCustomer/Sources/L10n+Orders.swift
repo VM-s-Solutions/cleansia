@@ -91,6 +91,18 @@ extension L10n {
     }
 
     enum OrderDetail {
+        static func callCleaner(_ name: String) -> String {
+            String(format: localized("order_detail_call_cleaner"), locale: .current, name)
+        }
+
+        static func estimateOverrun(_ minutes: Int) -> String {
+            String(format: localized("order_detail_estimate_overrun"), locale: .current, minutes)
+        }
+
+        static func estimateRemaining(_ minutes: Int) -> String {
+            String(format: localized("order_detail_estimate_remaining"), locale: .current, minutes)
+        }
+
         static var guestBookingNote: String {
             localized("order_detail_guest_booking_note")
         }
@@ -195,6 +207,10 @@ extension L10n {
 
         static var cleaners: String {
             localized("order_detail_cleaners")
+        }
+
+        static var cleanersPlural: String {
+            localized("order_detail_cleaners_plural")
         }
 
         static var cleanerFallback: String {

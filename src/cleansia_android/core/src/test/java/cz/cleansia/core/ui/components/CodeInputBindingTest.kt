@@ -78,13 +78,14 @@ class CodeInputBindingTest {
     fun `the paste button is offered off the clip description and re-checked when the window regains focus`() {
         assertTrue(source.contains("val windowInfo = LocalWindowInfo.current"))
         assertTrue(
-            Regex("""snapshotFlow\s*\{\s*windowInfo\.isWindowFocused\s*\}\s*\.collect\s*\{\s*focused\s*->\s*if \(focused\) clipboardHasText = clipboard\.hasText\(\)\s*\}""")
+            Regex("""snapshotFlow\s*\{\s*windowInfo\.isWindowFocused\s*\}\s*\.collect\s*\{\s*focused\s*->\s*if \(showPasteAction && focused\) clipboardHasText = clipboard\.hasText\(\)\s*\}""")
                 .containsMatchIn(source),
         )
         assertFalse(
             "a lifecycle event comes before the window has focus back, so the check must not hang off one",
             source.contains("androidx.lifecycle"),
         )
-        assertTrue(source.contains("if (clipboardHasText) {"))
+        assertTrue(source.contains("if (showPasteAction && clipboardHasText) {"))
+        assertTrue(source.contains("showPasteAction: Boolean = true"))
     }
 }

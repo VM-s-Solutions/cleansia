@@ -88,6 +88,8 @@ public class InvoiceDocumentLanguageTests
         _invoiceRepository
             .Setup(r => r.GetByIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(_existingInvoice);
+        _invoiceRepository.Setup(r => r.GetAll())
+            .Returns(() => new[] { _existingInvoice }.AsQueryable().BuildMock());
         _invoiceRepository
             .Setup(r => r.Add(It.IsAny<EmployeeInvoice>()))
             .Callback<EmployeeInvoice>(invoice =>

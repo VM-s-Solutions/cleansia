@@ -9373,6 +9373,111 @@
           }
         }
       }
+    },
+    "error.payroll.invoice.pdf_generation_failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The invoice PDF could not be created. Please contact support."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF faktury se nepodařilo vytvořit. Kontaktujte podporu."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF faktúry sa nepodarilo vytvoriť. Kontaktujte podporu."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не вдалося створити PDF рахунку. Зверніться до підтримки."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось создать PDF счёта. Обратитесь в поддержку."
+          }
+        }
+      }
+    },
+    "error.payroll.invoice.pdf_not_ready": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The invoice PDF is not ready yet."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF faktury zatím není připraveno."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF faktúry zatiaľ nie je pripravené."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF рахунку ще не готовий."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF счёта ещё не готов."
+          }
+        }
+      }
+    },
+    "error.payroll.invoice.pdf_unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The invoice PDF is unavailable. Please contact support."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF faktury není dostupné. Kontaktujte podporu."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF faktúry nie je dostupné. Kontaktujte podporu."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF рахунку недоступний. Зверніться до підтримки."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF счёта недоступен. Обратитесь в поддержку."
+          }
+        }
+      }
     }
   },
   "version": "1.1"

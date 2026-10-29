@@ -116,3 +116,23 @@ final class SavedCardTests: XCTestCase {
         return try XCTUnwrap(Bundle(path: resolved), "\(tag).lproj at \(resolved) is not a bundle")
     }
 }
+
+extension PaymentsViewModelTests {
+    func finish(_ vm: PaymentsViewModel, _ outcome: PaymentSheetOutcome) async {
+        guard let attempt = vm.cardCapture?.attempt else { return XCTFail("no current capture") }
+        _ = vm.claimCardSheet(attempt)
+        await vm.cardSheetFinished(outcome, attempt: attempt)
+    }
+
+    func testEveryKindTheServerSendsHasItsOwnLabelAndANewOneReadsAsAmountDue() {
+        XCTAssertEqual(Receivable.Kind(wireValue: 1), .cancellationFee)
+        XCTAssertEqual(Receivable.Kind(wireValue: 2), .lockout)
+        XCTAssertEqual(Receivable.Kind(wireValue: 3), .unpaidCash)
+        XCTAssertEqual(Receivable.Kind(wireValue: 4), .topUp)
+        XCTAssertEqual(Receivable.Kind(wireValue: 9), .other)
+
+        let labels = [Receivable.Kind.cancellationFee, .lockout, .unpaidCash, .topUp, .other].map(L10n.Payments.kind)
+        XCTAssertEqual(Set(labels).count, labels.count, "two kinds read the same")
+        XCTAssertFalse(labels.contains { $0.hasPrefix("receivable_kind_") }, "a kind shows its raw key")
+    }
+}

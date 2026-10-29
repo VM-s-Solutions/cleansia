@@ -14,6 +14,7 @@ using Cleansia.TestUtilities.MockDataFactories.Currencies;
 using Cleansia.TestUtilities.MockDataFactories.EmployeePayroll;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using MockQueryable;
 
 namespace Cleansia.Tests.Features.EmployeePayroll;
 
@@ -56,6 +57,7 @@ public class RegenerateInvoicePdfFailureRecordingTests
         _invoiceRepository
             .Setup(r => r.GetByIdAsync(_invoice.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(_invoice);
+        _invoiceRepository.Setup(r => r.GetAll()).Returns(() => new[] { _invoice }.AsQueryable().BuildMock());
         _employeeRepository
             .Setup(r => r.GetByIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Cleaner());

@@ -38,6 +38,9 @@ class OrderPhotosViewModel @Inject constructor(
     }
 
     /** Captured once — the nav arg never changes for a given screen instance. */
+    val initialPhase: Int = savedStateHandle.get<Int>("phase") ?: 1
+    val initialPhotoId: String? = savedStateHandle.get<String>("photoId")
+
     private val orderId: String? = savedStateHandle.get<String>("orderId")
 
     private val _state = MutableStateFlow<UiState>(UiState.Loading)

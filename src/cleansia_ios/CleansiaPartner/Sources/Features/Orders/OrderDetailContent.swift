@@ -90,14 +90,14 @@ struct OrderDetailContent: View {
         VStack(spacing: 0) {
             OrderDetailCompactHeader(order: order, locale: locale)
             ScrollView {
-                VStack(spacing: Spacing.m) {
-                    // Zero spacing: the timer text and the segmented bar are one
-                    // hero block, not two stacked sections.
-                    VStack(alignment: .leading, spacing: 0) {
-                        OrderTimerCard(order: order, locale: locale)
-                        OrderTrackerHero(status: order.status)
+                VStack(spacing: Spacing.xs) {
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
+                        OrderTimerCard(order: order, locale: locale, showsStepCounter: true)
+                        OrderTrackerHero(
+                            status: order.status,
+                            showsStepCounter: OrderTimer.phase(for: order, now: Date()) == nil
+                        )
                     }
-                    OrderMetadataRow(order: order, locale: locale)
                     if order.showsAccessCard, let access = order.accessInstructions {
                         AccessCard(instructions: access)
                     }
@@ -168,23 +168,30 @@ struct OrderDetailContent: View {
 /// Always-visible header at the top of the sheet (never scrolls) — order #,
 /// status pill, date, pay (the compact-header parity).
 ///
-/// **All three lines left-aligned, and the trailing half deliberately empty.** The mascot puck rides
+/// At ordinary text sizes, the trailing edge stays clear for the mascot. At accessibility sizes the
+/// ornament is omitted, so the public reference can wrap across the header's full width. The puck rides
 /// the sheet's top edge at `.trailing` (see `SnapSheet`'s ornament), so its lower half lands on exactly
 /// this row — and while the pay sat in the trailing slot, the character painted over the one number the
 /// cleaner opens this screen for. The customer sheet moved its date off the right half for the same
 /// reason.
 private struct OrderDetailCompactHeader: View {
+    @Environment(\.dynamicTypeSize) private var textSize
     let order: OrderDetail
     let locale: Locale
 
     var body: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: Spacing.xs) {
-                    Text("#\(order.orderNumber)")
-                        .font(CleansiaTypography.titleMedium)
-                        .foregroundColor(CleansiaColors.onSurface)
-                    OrderStatusPill(status: order.status)
+                if textSize.isAccessibilitySize {
+                    VStack(alignment: .leading, spacing: Spacing.xxs) {
+                        orderNumber
+                        OrderStatusPill(status: order.status)
+                    }
+                } else {
+                    HStack(spacing: Spacing.xs) {
+                        orderNumber
+                        OrderStatusPill(status: order.status)
+                    }
                 }
                 Text(OrdersFormat.relativeDateTime(order.cleaningDateTime, locale: locale))
                     .font(CleansiaTypography.bodyMedium)
@@ -199,10 +206,22 @@ private struct OrderDetailCompactHeader: View {
                         .minimumScaleFactor(0.8)
                 }
             }
-            Spacer(minLength: mascotClearance)
+            if !textSize.isAccessibilitySize {
+                Spacer(minLength: mascotClearance)
+            }
         }
         .padding(.horizontal, Spacing.m)
-        .padding(.bottom, Spacing.s)
+        .padding(.bottom, Spacing.xxs)
+    }
+
+    private var orderNumber: some View {
+        Text("#\(order.orderNumber)")
+            .font(CleansiaTypography.titleMedium)
+            .foregroundColor(CleansiaColors.onSurface)
+            .lineLimit(textSize.isAccessibilitySize ? nil : 1)
+            .minimumScaleFactor(textSize.isAccessibilitySize ? 1 : 0.8)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: textSize.isAccessibilitySize ? .infinity : nil, alignment: .leading)
     }
 }
 
@@ -274,28 +293,15 @@ enum OrderTrackerProgress {
 struct OrderTrackerHero: View {
     @Environment(\.locale) private var locale
     let status: OrderStatus?
+    var showsStepCounter = true
 
     var body: some View {
         OrderTrackerBar(
             state: OrderTrackerProgress.state(for: status),
             cancelledLabel: L10n.Orders.statusLabel(._6),
-            stepCounterLabel: { step, total in L10n.Orders.trackerStepCounter(step, total) }
+            stepCounterLabel: showsStepCounter ? { step, total in L10n.Orders.trackerStepCounter(step, total) } : nil
         )
         .id(locale.identifier)
-    }
-}
-
-private struct OrderMetadataRow: View {
-    let order: OrderDetail
-    let locale: Locale
-
-    var body: some View {
-        HStack {
-            Label(OrdersFormat.relativeDateTime(order.cleaningDateTime, locale: locale), systemImage: "calendar")
-                .font(CleansiaTypography.bodyMedium)
-                .foregroundColor(CleansiaColors.onSurfaceVariant)
-            Spacer()
-        }
     }
 }
 

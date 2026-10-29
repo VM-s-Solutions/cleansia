@@ -677,7 +677,7 @@ fun CleansiaNavHost(
                     navController.navigate(Routes.CreateRecurringBooking(id))
                 },
                 onDownloadReceipt = { /* Phase 4 handles this internally via the VM */ },
-                onViewPhotos = { navController.navigate(Routes.OrderPhotos(args.orderId)) },
+                onViewPhotos = { phase, id -> navController.navigate(Routes.OrderPhotos(args.orderId, phase, id)) },
                 onOpenPayments = { navController.navigate(Routes.Payments) },
                 openReviewOnLoad = args.openReview,
             )

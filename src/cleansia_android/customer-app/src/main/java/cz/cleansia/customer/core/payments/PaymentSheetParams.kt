@@ -25,7 +25,21 @@ fun CreatePaymentIntentResponse.toPaymentSheetParams(saveCard: Boolean, currency
         currencyCode = currencyCode,
     )
 
-fun PaymentSheetParams.toConfiguration(): PaymentSheet.Configuration =
+fun SavedCardSetup.toPaymentSheetParams(currencyCode: String?) = PaymentSheetParams(
+    clientSecret = setupIntentClientSecret,
+    ephemeralKey = ephemeralKey,
+    customerId = stripeCustomerId,
+    currencyCode = currencyCode,
+)
+
+fun PaymentSheet.presentSavedCardSetup(setup: SavedCardSetup, currencyCode: String?) {
+    presentWithSetupIntent(
+        setup.setupIntentClientSecret,
+        setup.toPaymentSheetParams(currencyCode).toConfiguration(includeGooglePay = !currencyCode.isNullOrBlank()),
+    )
+}
+
+fun PaymentSheetParams.toConfiguration(includeGooglePay: Boolean = true): PaymentSheet.Configuration =
     PaymentSheet.Configuration.Builder(merchantDisplayName = "Cleansia")
         .customer(
             customerId?.let { id ->
@@ -33,7 +47,7 @@ fun PaymentSheetParams.toConfiguration(): PaymentSheet.Configuration =
             },
         )
         .googlePay(
-            PaymentSheet.GooglePayConfiguration(
+            if (includeGooglePay) PaymentSheet.GooglePayConfiguration(
                 // Follows the Stripe key, not the build type — a release build on a pk_test_ key must still ask
                 // Google Pay for Test, or the sheet fails after the user has committed. Derived in
                 // build.gradle.kts from the key prefix so the two cannot desync.
@@ -46,7 +60,7 @@ fun PaymentSheetParams.toConfiguration(): PaymentSheet.Configuration =
                 // account, not the order.
                 countryCode = "CZ",
                 currencyCode = currencyCode,
-            ),
+            ) else null,
         )
         .allowsDelayedPaymentMethods(false)
         // Never Horizontal: Stripe 21.2.0 draws saved cards there through a Compose member 1.8 removed, which

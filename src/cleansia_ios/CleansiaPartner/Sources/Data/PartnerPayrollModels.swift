@@ -46,9 +46,6 @@ extension Invoice {
 /// figure, and the detail carries no line collection on iOS (`InvoiceDetailContent` never reads
 /// `orderPays`), so nothing here is a sum over anything.
 ///
-/// `pdfGenerationFailed` is refused rather than defaulted: it is the only durable signal that a
-/// render failed, and `false` reports a healthy document that may not exist — the "Open invoice PDF"
-/// button would then be offered against nothing.
 struct InvoiceDetail: Equatable, Identifiable {
     let id: String
     let invoiceNumber: String?
@@ -67,6 +64,7 @@ struct InvoiceDetail: Equatable, Identifiable {
     let currencyId: String?
     let status: EmployeeInvoiceStatus
     let pdfGenerationFailed: Bool
+    let pdfBlobName: String?
     let generatedAt: Date?
     let approvedAt: Date?
     let paidAt: Date?
@@ -91,6 +89,7 @@ extension InvoiceDetail {
         currencyId = dto.currencyId
         status = try dto.status.require("status")
         pdfGenerationFailed = try dto.pdfGenerationFailed.require("pdfGenerationFailed")
+        pdfBlobName = dto.pdfBlobName
         generatedAt = dto.generatedAt
         approvedAt = dto.approvedAt
         paidAt = dto.paidAt

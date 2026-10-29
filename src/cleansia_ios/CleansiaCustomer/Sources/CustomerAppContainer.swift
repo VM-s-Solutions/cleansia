@@ -81,6 +81,8 @@ final class CustomerAppContainer: AppContainer {
     let orderClient: OrderClient
     let orderEventBus = OrderEventBus()
     let orderRepository: OrderRepository
+    let liveActivityRecovery: CustomerLiveActivityRecovery
+    let savedCardCaptures: SavedCardCaptureStore
 
     let loyaltyRepository: LoyaltyRepository
     let referralRepository: RewardsReferralRepository
@@ -125,6 +127,7 @@ final class CustomerAppContainer: AppContainer {
         let settings = UserDefaultsAppSettingsStore()
         let marketStore = MarketStore(client: LiveMarketClient(), preference: settings)
         self.marketStore = marketStore
+        savedCardCaptures = SavedCardCaptureStore(market: marketStore.statePublisher)
         let authStack = CustomerAuthSpine.make(
             apiBaseURL: apiBaseURL,
             sessionScopedCaches: sessionScopedCaches
@@ -134,6 +137,7 @@ final class CustomerAppContainer: AppContainer {
         let orderRepository = OrderRepository(client: orderClient)
         self.orderClient = orderClient
         self.orderRepository = orderRepository
+        liveActivityRecovery = CustomerLiveActivityRecovery(client: orderClient, repository: orderRepository)
         let loyaltyRepository = LoyaltyRepository(client: LiveLoyaltyClient())
         let referralRepository = RewardsReferralRepository(client: LiveRewardsReferralClient())
         self.loyaltyRepository = loyaltyRepository
@@ -186,6 +190,8 @@ final class CustomerAppContainer: AppContainer {
             registry.register(LiveActivityCoordinator.shared)
         }
         registry.register(orderRepository)
+        registry.register(liveActivityRecovery)
+        registry.register(savedCardCaptures)
         registry.register(loyaltyRepository)
         registry.register(referralRepository)
         registry.register(membershipRepository)
@@ -212,6 +218,7 @@ final class CustomerAppContainer: AppContainer {
 
     func updatePushSession(hasSession: Bool) {
         hasSessionSubject.send(hasSession)
+        liveActivityRecovery.setSessionActive(hasSession)
         if #available(iOS 16.2, *) {
             LiveActivityCoordinator.shared.setSessionActive(hasSession)
         }
@@ -250,6 +257,7 @@ final class CustomerAppContainer: AppContainer {
             // scene's `.task`, because a push-to-start launches the app in the BACKGROUND with no scene
             // connected, so a scene-scoped task never runs on the one launch that needs this most.
             LiveActivityCoordinator.shared.setSessionActive(hasValidSession)
+            liveActivityRecovery.setSessionActive(hasValidSession)
         }
     }
 }

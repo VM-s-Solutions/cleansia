@@ -21,7 +21,7 @@ Mike approved the bounded customer/partner mobile scope on 2026-10-28 with “OK
 
 - [x] **AC1** — Both apps offer Open PDF only for an existing path; a failed regeneration can retain an existing PDF with an honest warning. Missing/failed PDF states offer useful refresh feedback.
 - [x] **AC2** — Backend distinguishes owned invoice PDF readiness/storage absence from a missing or foreign invoice without weakening ownership, tenant or path handling.
-- [ ] **AC3** — Trace the reported invoice with permitted read-only DEV evidence and state the actual evidential limit; no shared generation/backfill occurs.
+- [x] **AC3** — Trace the reported invoice with permitted read-only DEV evidence and state the actual evidential limit; no shared generation/backfill occurs.
 
 ## Out of scope
 
@@ -41,7 +41,9 @@ Use existing backend and native architecture. Lock generated contract before dep
 
 Source/conventions and relevant security/optimizer rechecks accepted the bounded implementation. Independent evidence and resolved findings are retained in concurrent-review.md, final-independent-qa.md and the stack-specific security reports under the evidence directory named above.
 
-AC1–AC2: both native invoice suites preserve prior readable PDFs after failed regeneration and block missing-path/duplicate downloads; source/security review confirms ownership before readiness/storage. Backend postcommit rendering uses isolated per-invoice scopes and loaded PayPeriod navigation. Bypassing rendering executed 7 tests with 5 expected failures; exact GenerateInvoice.cs restoration was followed by 7 passing tests and the final full backend gate. AC3 remains pending the explicitly scoped read-only DEV diagnostic of INV-2026-000001; no backfill or rollout is authorized.
+AC1–AC2: both native invoice suites preserve prior readable PDFs after failed regeneration and block missing-path/duplicate downloads; source/security review confirms ownership before readiness/storage. Backend postcommit rendering uses isolated per-invoice scopes and loaded PayPeriod navigation. Bypassing rendering executed 7 tests with 5 expected failures; exact GenerateInvoice.cs restoration was followed by 7 passing tests and the final full backend gate.
+
+AC3: [DEV diagnostic run 40839056060](https://github.com/VM-s-Solutions/cleansia/actions/runs/40839056060) succeeded at source commit 701d6a7cee37ba9767c94be233dfc34e26b94b47. At 2026-10-29 08:00:46 UTC, the tenant-bounded query found one INV-2026-000001 row for cleansia-cz: PdfGenerationFailed=false, HasPdfPath=false, PdfPathShape=absent, CreatedOn=2026-10-28 17:35:17.288608 UTC, UpdatedOn=null. The transaction was read-only with a five-second statement timeout and ended in ROLLBACK; the PRO job was skipped. This establishes an absent stored PDF path at observation, not the historical reason: seed origin, an uninvoked writer, pending work or interruption remain unverified. Blob existence, screenshot-session ownership and installed-device behavior were not tested. No generation, backfill or rollout occurred. Exact receipt and DEV-job log: invoice-dev-diagnostic.json and logs/invoice-dev-execute.log in the evidence directory.
 
 ### Combined-tree verification
 

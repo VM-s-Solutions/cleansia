@@ -235,6 +235,12 @@ def ship(key, options = {})
   unless shipped["CleansiaGitCommit"] == source[:stamp]
     UI.user_error!("The archive's Info.plist names commit #{shipped["CleansiaGitCommit"].inspect}, not #{source[:stamp]}")
   end
+  if key == :customer
+    # Export may re-sign an archive. Check the exported IPA's actual entitlement before any upload,
+    # so a build cannot register production ActivityKit tokens as sandbox tokens (or the reverse).
+    sh("python3", File.join(IOS_ROOT, "scripts", "check-live-activity-environment.py"),
+       "--ipa", lane_context[SharedValues::IPA_OUTPUT_PATH], "--expected", "production", log: false)
+  end
   UI.user_error!("The archive left no #{symbols}, so no crash report of build ##{build_number} could be symbolicated") unless File.file?(symbols)
 
   # 6. Symbols for Crashlytics, authenticated by the app's own plist. upload_symbols_to_crashlytics reports success

@@ -53,8 +53,7 @@ fun OrderMetadataRow(
 
     Column(
         modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 4.dp),
+            .fillMaxWidth(),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -67,7 +66,7 @@ fun OrderMetadataRow(
                 modifier = Modifier.weight(1f, fill = false),
             ) {
                 Text(
-                    text = "#${order.displayOrderNumber ?: order.id?.take(8) ?: "—"}",
+                    text = order.displayOrderNumber?.takeIf { it.isNotBlank() }?.let { "#$it" } ?: "—",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface,
                 )

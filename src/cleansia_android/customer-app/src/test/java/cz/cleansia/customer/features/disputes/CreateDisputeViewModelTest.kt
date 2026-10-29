@@ -70,6 +70,27 @@ class CreateDisputeViewModelTest {
     private val validDescription = "Cleaner skipped the kitchen entirely"
 
     @Test
+    fun `report context resolves public order number without changing internal routing identity`() = runTest {
+        val order = cz.cleansia.customer.core.orders.OrderDetailDto(
+            id = "order-1", displayOrderNumber = "ORD-10427", totalPrice = 1.0,
+            originalSubtotal = 1.0, appliedDiscountSource = 0,
+        )
+        coEvery { orderRepository.getById("order-1") } returns ApiResult.Success(order)
+        val vm = viewModel()
+        advanceUntilIdle()
+        assertEquals("ORD-10427", vm.displayOrderNumber.value)
+        assertEquals("order-1", vm.orderId)
+    }
+
+    @Test
+    fun `unavailable public order number never falls back to the internal identifier`() = runTest {
+        coEvery { orderRepository.getById("order-1") } returns ApiResult.Error(ApiError.Network("offline"))
+        val vm = viewModel()
+        advanceUntilIdle()
+        assertEquals(null, vm.displayOrderNumber.value)
+    }
+
+    @Test
     fun `starts Idle`() = runTest {
         assertEquals(ActionState.Idle, viewModel().submitState.value)
     }

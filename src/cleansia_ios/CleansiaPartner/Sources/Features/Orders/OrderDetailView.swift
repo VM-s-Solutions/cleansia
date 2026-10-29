@@ -107,7 +107,7 @@ struct OrderDetailView: View {
         SnapSheet(anchor: $snapAnchor) {
             mapBackdrop(order)
         } ornament: {
-            MascotPuck(OrderDetailMascotArt.art(for: order.status))
+            OrderDetailOrnament(order: order)
         } content: {
             OrderDetailContent(
                 order: order,
@@ -142,6 +142,18 @@ struct OrderDetailView: View {
                 zone: order.location.line,
                 customerDetailsClosed: order.customerDetailsClosedNote != nil
             )
+        }
+    }
+}
+
+/// Decorative detail art yields its space to job information at accessibility text sizes.
+struct OrderDetailOrnament: View {
+    @Environment(\.dynamicTypeSize) private var textSize
+    let order: OrderDetail
+
+    var body: some View {
+        if !textSize.isAccessibilitySize {
+            MascotPuck(OrderDetailMascotArt.art(for: order.status))
         }
     }
 }

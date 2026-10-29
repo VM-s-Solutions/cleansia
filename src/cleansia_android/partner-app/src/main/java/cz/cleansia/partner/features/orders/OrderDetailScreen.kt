@@ -6,12 +6,15 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.WindowInsets
@@ -413,7 +416,11 @@ private fun OrderDetailBottomSheetLayout(
     //   2. FloatingMascot drawn on top of both, anchored to the sheet's
     //      top edge so half of it sits over the map and half over the
     //      sheet (Wolt/Foodora overlay pattern).
-    Box(modifier = Modifier.fillMaxSize()) {
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        // Keep this sheet below the persistent map/back region when fully expanded.
+        // Its 20dp grabber is measured separately by BottomSheetScaffold.
+        val expandedContentHeight = (maxHeight - WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+            - Spacing.S - 40.dp - Spacing.S - 20.dp).coerceAtLeast(0.dp)
         BottomSheetScaffold(
             scaffoldState = scaffoldState,
             sheetPeekHeight = sheetPeekHeight,
@@ -426,33 +433,35 @@ private fun OrderDetailBottomSheetLayout(
             },
             containerColor = MaterialTheme.colorScheme.background,
             sheetContent = {
-                OrderDetailSheetContent(
-                    order = order,
-                    status = status,
-                    contentScroll = contentScroll,
-                    location = location,
-                    customerDetailsClosedNote = customerDetailsClosedNote,
-                    isMine = isMine,
-                    isInProgress = isInProgress,
-                    inFlight = inFlight,
-                    preferredOffer = preferredOffer,
-                    contractStanding = contractStanding,
-                    completionStep = completionStep,
-                    checkedIds = checkedIds,
-                    onToggleChecklistItem = onToggleChecklistItem,
-                    onTake = onTake,
-                    onOpenContract = onOpenContract,
-                    onStart = onStart,
-                    onNotifyOnTheWay = onNotifyOnTheWay,
-                    onCompleteClick = onCompleteClick,
-                    onMarkMyPartDone = onMarkMyPartDone,
-                    onCashConfirmRequested = onCashConfirmRequested,
-                    onCashNotPaidRequested = onCashNotPaidRequested,
-                    onDeclineOffer = onDeclineOffer,
-                    onDropRequested = onDropRequested,
-                    onPhotosChanged = onPhotosChanged,
-                    onReportLockout = onReportLockout,
-                )
+                Box(Modifier.heightIn(max = expandedContentHeight)) {
+                    OrderDetailSheetContent(
+                        order = order,
+                        status = status,
+                        contentScroll = contentScroll,
+                        location = location,
+                        customerDetailsClosedNote = customerDetailsClosedNote,
+                        isMine = isMine,
+                        isInProgress = isInProgress,
+                        inFlight = inFlight,
+                        preferredOffer = preferredOffer,
+                        contractStanding = contractStanding,
+                        completionStep = completionStep,
+                        checkedIds = checkedIds,
+                        onToggleChecklistItem = onToggleChecklistItem,
+                        onTake = onTake,
+                        onOpenContract = onOpenContract,
+                        onStart = onStart,
+                        onNotifyOnTheWay = onNotifyOnTheWay,
+                        onCompleteClick = onCompleteClick,
+                        onMarkMyPartDone = onMarkMyPartDone,
+                        onCashConfirmRequested = onCashConfirmRequested,
+                        onCashNotPaidRequested = onCashNotPaidRequested,
+                        onDeclineOffer = onDeclineOffer,
+                        onDropRequested = onDropRequested,
+                        onPhotosChanged = onPhotosChanged,
+                        onReportLockout = onReportLockout,
+                    )
+                }
             },
         ) { _ ->
             Box(modifier = Modifier.fillMaxSize()) {
@@ -750,7 +759,7 @@ private fun OrderDetailSheetContent(
                 .weight(1f, fill = true)
                 .verticalScroll(scrollState)
                 .padding(horizontal = Spacing.M),
-            verticalArrangement = Arrangement.spacedBy(Spacing.M),
+            verticalArrangement = Arrangement.spacedBy(Spacing.S),
         ) {
             // Hero block: timer text directly above the segmented
             // progress bar with no whitespace between them. The two
@@ -968,7 +977,11 @@ private fun StickyActionFooter(
                             strokeWidth = 2.dp,
                         )
                     } else {
-                        CleansiaTextButton(onClick = onDropRequested, enabled = inFlight == null) {
+                        androidx.compose.material3.TextButton(
+                            onClick = onDropRequested,
+                            enabled = inFlight == null,
+                            colors = androidx.compose.material3.ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                        ) {
                             Text(stringResource(R.string.order_drop_action))
                         }
                     }
@@ -1048,5 +1061,77 @@ internal fun OrderItem.droppable(now: Instant): Boolean {
     return when (orderStatus.toOrderStatus()) {
         OrderStatus._0, OrderStatus._2 -> true
         else -> false
+    }
+}
+
+private val polishPartnerOrder = OrderItem(
+    id = "preview-order", displayOrderNumber = "ORD-10427", customerName = "Anna Nováková", customerPhone = "+420000000001",
+    cleaningDateTime = "2026-10-28T10:00:00Z", estimatedCleanerPay = 1200.0, totalPrice = 2500.0,
+    paymentType = cz.cleansia.partner.api.model.Code(value = 2), paymentStatus = cz.cleansia.partner.api.model.Code(value = 2),
+    orderStatus = cz.cleansia.partner.api.model.Code(value = 5), rooms = 2, bathrooms = 1,
+    specialInstructions = "Prosím věnujte pozornost kuchyni.",
+)
+
+@androidx.compose.ui.tooling.preview.Preview
+@Composable
+private fun PolishPartnerDetailsPreview() = PartnerDetailsPreview(polishPartnerOrder)
+
+@androidx.compose.ui.tooling.preview.Preview
+@Composable
+private fun PolishPartnerEligibleCancelPreview() = PartnerDetailsPreview(polishPartnerOrder.copy(
+    orderStatus = cz.cleansia.partner.api.model.Code(value = 0), isAssignedToCurrentUser = true,
+    cleaningDateTime = Instant.now().plusSeconds(3600).toString(),
+))
+
+@androidx.compose.ui.tooling.preview.Preview
+@Composable
+private fun PolishPartnerClosedCancelPreview() = PartnerDetailsPreview(polishPartnerOrder.copy(
+    orderStatus = cz.cleansia.partner.api.model.Code(value = 0), isAssignedToCurrentUser = true,
+    cleaningDateTime = Instant.now().minusSeconds(3600).toString(),
+))
+
+@Composable
+private fun PartnerDetailsPreview(order: OrderItem) {
+    val activity = androidx.compose.ui.platform.LocalContext.current as? android.app.Activity
+    androidx.compose.runtime.SideEffect { activity?.actionBar?.hide() }
+    cz.cleansia.partner.ui.theme.CleansiaPartnerTheme {
+        androidx.compose.material3.Surface(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars), color = MaterialTheme.colorScheme.surface) {
+            OrderDetailSheetContent(
+                order = order, status = order.orderStatus.toOrderStatus(), contentScroll = rememberScrollState(),
+                location = OrderLocation.Precise("Ukázková 12, Praha 3", null, null), customerDetailsClosedNote = null,
+                isMine = order.isAssignedToCurrentUser == true, isInProgress = false, inFlight = null, preferredOffer = null,
+                contractStanding = WorkContractStanding.None, completionStep = CompletionStep.Complete,
+                checkedIds = emptySet(), onToggleChecklistItem = { _, _ -> }, onTake = {}, onOpenContract = {},
+                onStart = {}, onNotifyOnTheWay = {}, onCompleteClick = {}, onMarkMyPartDone = {},
+                onCashConfirmRequested = {}, onCashNotPaidRequested = {}, onDeclineOffer = {}, onDropRequested = {},
+                onPhotosChanged = {}, onReportLockout = {},
+            )
+        }
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview
+@Composable
+private fun PolishPartnerShellPreview() = PartnerShellPreview(polishPartnerOrder)
+
+@androidx.compose.ui.tooling.preview.Preview
+@Composable
+private fun PolishPartnerConfirmedShellPreview() = PartnerShellPreview(polishPartnerOrder.copy(
+    orderStatus = cz.cleansia.partner.api.model.Code(value = 2),
+))
+
+@Composable
+private fun PartnerShellPreview(order: OrderItem) {
+    val activity = androidx.compose.ui.platform.LocalContext.current as? android.app.Activity
+    androidx.compose.runtime.SideEffect { activity?.actionBar?.hide() }
+    cz.cleansia.partner.ui.theme.CleansiaPartnerTheme {
+        OrderDetailBottomSheetLayout(
+            order = order, inFlight = null, preferredOffer = null,
+            contractStanding = WorkContractStanding.None, completionStep = CompletionStep.Complete,
+            checkedIds = emptySet(), onToggleChecklistItem = { _, _ -> }, onTake = {}, onOpenContract = {},
+            onStart = {}, onNotifyOnTheWay = {}, onCompleteClick = {}, onMarkMyPartDone = {},
+            onCashConfirmRequested = {}, onCashNotPaidRequested = {}, onDeclineOffer = {}, onDropRequested = {},
+            onPhotosChanged = {}, onReportLockout = {}, onNavigateBack = {},
+        )
     }
 }

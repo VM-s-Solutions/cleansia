@@ -179,17 +179,13 @@ struct OrderInstructionsCard: View {
                     }
                 }
                 if let secret = OrderInstructions.secret(order) {
-                    CleansiaRevealPanel(title: L10n.OrderDetail.accessInstructions) {
+                    CleansiaRevealPanel(title: L10n.OrderDetail.accessInstructions, inline: true) {
                         Text(secret)
                             .font(CleansiaTypography.bodyMedium)
                             .foregroundColor(CleansiaColors.onSurface)
                             .textSelection(.enabled)
                     }
-                    // The tinted panel is its own section, not one more block in the run above it.
-                    // The card's uniform Spacing.xs reads as "next paragraph"; this needs to read as
-                    // "different thing", so the break is widened locally rather than by loosening the
-                    // card for every other section on the screen.
-                    .padding(.top, Spacing.m)
+                    .id(order.id)
                 }
             }
         }
@@ -201,9 +197,16 @@ struct AssignedCleanersCard: View {
 
     var body: some View {
         OrderCardSurface {
-            OrderSectionHeaderRow(title: L10n.OrderDetail.cleaners)
-            ForEach(Array(employees.enumerated()), id: \.offset) { _, employee in
-                CleanerRow(employee: employee)
+            OrderSectionHeaderRow(
+                title: employees.count > 1 ? L10n.OrderDetail.cleanersPlural : L10n.OrderDetail.cleaners
+            )
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: Spacing.s) {
+                    ForEach(Array(employees.enumerated()), id: \.offset) { _, employee in
+                        CleanerRow(employee: employee)
+                            .frame(minWidth: 140, maxWidth: 230)
+                    }
+                }
             }
         }
     }
@@ -243,9 +246,10 @@ private struct CleanerRow: View {
                     Image(systemName: "phone.fill")
                         .font(.system(size: 16))
                         .foregroundColor(CleansiaColors.primaryIconOnContainer)
-                        .frame(width: 36, height: 36)
+                        .frame(width: 44, height: 44)
                         .background(CleansiaColors.primaryContainer, in: Circle())
                 }
+                .accessibilityLabel(L10n.OrderDetail.callCleaner(displayName))
             }
         }
     }

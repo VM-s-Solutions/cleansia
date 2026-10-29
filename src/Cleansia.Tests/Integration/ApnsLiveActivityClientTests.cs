@@ -60,7 +60,7 @@ public class ApnsLiveActivityClientTests
         var handler = new StubHandler();
         var client = CreateClient(config, handler);
 
-        var result = await client.SendAsync("TOKEN", SamplePush(), CancellationToken.None);
+        var result = await client.SendAsync("TOKEN", SamplePush(), null, CancellationToken.None);
 
         Assert.True(result.Skipped);
         Assert.Equal(0, handler.CallCount);
@@ -74,7 +74,7 @@ public class ApnsLiveActivityClientTests
         var handler = new StubHandler();
         var client = CreateClient(config, handler);
 
-        var result = await client.SendAsync("TOKEN", SamplePush(), CancellationToken.None);
+        var result = await client.SendAsync("TOKEN", SamplePush(), null, CancellationToken.None);
 
         Assert.True(result.Skipped);
         Assert.Equal(0, handler.CallCount);
@@ -96,7 +96,7 @@ public class ApnsLiveActivityClientTests
             config, new ApnsJwtProvider(config, TimeProvider.System),
             new StubHttpClientFactory(handler), logger);
 
-        var result = await client.SendAsync("TOKEN", SamplePush(), CancellationToken.None);
+        var result = await client.SendAsync("TOKEN", SamplePush(), null, CancellationToken.None);
 
         Assert.True(result.Skipped);
         Assert.Equal(0, handler.CallCount);
@@ -110,7 +110,7 @@ public class ApnsLiveActivityClientTests
         var handler = new StubHandler(_ => new HttpResponseMessage(HttpStatusCode.OK));
         var client = CreateClient(EnabledConfig(), handler);
 
-        var result = await client.SendAsync("TOKEN-9", SamplePush(), CancellationToken.None);
+        var result = await client.SendAsync("TOKEN-9", SamplePush(), null, CancellationToken.None);
 
         Assert.True(result.Delivered);
         var request = Assert.Single(handler.Requests);
@@ -131,7 +131,7 @@ public class ApnsLiveActivityClientTests
         var handler = new StubHandler(_ => new HttpResponseMessage(HttpStatusCode.OK));
         var client = CreateClient(EnabledConfig(), handler);
 
-        await client.SendAsync("T", SampleStartPush(), CancellationToken.None);
+        await client.SendAsync("T", SampleStartPush(), null, CancellationToken.None);
 
         using var body = JsonDocument.Parse(Assert.Single(handler.Requests).Body);
         var alert = body.RootElement.GetProperty("aps").GetProperty("alert");
@@ -150,7 +150,7 @@ public class ApnsLiveActivityClientTests
         var handler = new StubHandler(_ => new HttpResponseMessage(HttpStatusCode.OK));
         var client = CreateClient(EnabledConfig(), handler);
 
-        await client.SendAsync("T", SamplePush(), CancellationToken.None);
+        await client.SendAsync("T", SamplePush(), null, CancellationToken.None);
 
         using var body = JsonDocument.Parse(Assert.Single(handler.Requests).Body);
         Assert.False(body.RootElement.GetProperty("aps").TryGetProperty("alert", out _));
@@ -164,9 +164,55 @@ public class ApnsLiveActivityClientTests
         var handler = new StubHandler(_ => new HttpResponseMessage(HttpStatusCode.OK));
         var client = CreateClient(config, handler);
 
-        await client.SendAsync("T", SamplePush(), CancellationToken.None);
+        await client.SendAsync("T", SamplePush(), null, CancellationToken.None);
 
         Assert.StartsWith("https://api.push.apple.com/3/device/", handler.Requests[0].Uri);
+    }
+
+    [Theory]
+    [InlineData(true, false, "api.push.apple.com")]
+    [InlineData(false, true, "api.sandbox.push.apple.com")]
+    [InlineData(true, null, "api.sandbox.push.apple.com")]
+    [InlineData(false, null, "api.push.apple.com")]
+    public async Task Recipient_Environment_Overrides_Only_The_Default_Host(bool defaultSandbox, bool? tokenSandbox, string host)
+    {
+        var config = EnabledConfig();
+        config.UseSandbox = defaultSandbox;
+        var handler = new StubHandler(_ => new HttpResponseMessage(HttpStatusCode.OK));
+        var client = CreateClient(config, handler);
+
+        var result = await client.SendAsync("EXACT-TOKEN", SamplePush(), tokenSandbox, CancellationToken.None);
+
+        Assert.True(result.Delivered);
+        var request = Assert.Single(handler.Requests);
+        Assert.Equal($"https://{host}/3/device/EXACT-TOKEN", request.Uri);
+        Assert.Equal("cz.cleansia.customer.push-type.liveactivity", request.Topic);
+    }
+
+    [Fact]
+    public async Task Bad_Device_Token_Is_Never_Retried_Against_Another_Environment()
+    {
+        var handler = new StubHandler(_ => Reason(HttpStatusCode.BadRequest, "BadDeviceToken"));
+        var client = CreateClient(EnabledConfig(), handler);
+
+        var result = await client.SendAsync("INVALID", SamplePush(), false, CancellationToken.None);
+
+        Assert.True(result.TokenInvalid);
+        Assert.Equal("https://api.push.apple.com/3/device/INVALID", Assert.Single(handler.Requests).Uri);
+    }
+
+    [Fact]
+    public async Task Cancellation_Does_Not_Retry_Or_Change_The_Recipients_Environment()
+    {
+        var handler = new StubHandler(_ => throw new OperationCanceledException());
+        var jwt = new FakeJwtProvider();
+        var client = CreateClient(EnabledConfig(), handler, jwt);
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => client.SendAsync("TOKEN", SamplePush(), false, CancellationToken.None));
+
+        Assert.Equal(0, jwt.InvalidateCount);
+        Assert.Equal("https://api.push.apple.com/3/device/TOKEN", Assert.Single(handler.Requests).Uri);
     }
 
     [Fact]
@@ -175,7 +221,7 @@ public class ApnsLiveActivityClientTests
         var handler = new StubHandler(_ => Reason(HttpStatusCode.Gone, "Unregistered"));
         var client = CreateClient(EnabledConfig(), handler);
 
-        var result = await client.SendAsync("DEAD", SamplePush(), CancellationToken.None);
+        var result = await client.SendAsync("DEAD", SamplePush(), null, CancellationToken.None);
 
         Assert.True(result.TokenInvalid);
     }
@@ -186,7 +232,7 @@ public class ApnsLiveActivityClientTests
         var handler = new StubHandler(_ => Reason(HttpStatusCode.BadRequest, "BadDeviceToken"));
         var client = CreateClient(EnabledConfig(), handler);
 
-        var result = await client.SendAsync("DEAD", SamplePush(), CancellationToken.None);
+        var result = await client.SendAsync("DEAD", SamplePush(), null, CancellationToken.None);
 
         Assert.True(result.TokenInvalid);
     }
@@ -197,7 +243,7 @@ public class ApnsLiveActivityClientTests
         var handler = new StubHandler(_ => Reason(HttpStatusCode.BadRequest, "BadTopic"));
         var client = CreateClient(EnabledConfig(), handler);
 
-        var result = await client.SendAsync("T", SamplePush(), CancellationToken.None);
+        var result = await client.SendAsync("T", SamplePush(), null, CancellationToken.None);
 
         Assert.False(result.TokenInvalid);
         Assert.False(result.Delivered);
@@ -215,7 +261,7 @@ public class ApnsLiveActivityClientTests
         var jwt = new FakeJwtProvider();
         var client = CreateClient(EnabledConfig(), handler, jwt);
 
-        var result = await client.SendAsync("T", SamplePush(), CancellationToken.None);
+        var result = await client.SendAsync("T", SamplePush(), null, CancellationToken.None);
 
         Assert.True(result.Delivered);
         Assert.Equal(1, jwt.InvalidateCount);
@@ -230,7 +276,7 @@ public class ApnsLiveActivityClientTests
         var client = CreateClient(EnabledConfig(), handler, jwt);
 
         await Assert.ThrowsAsync<HttpRequestException>(
-            () => client.SendAsync("T", SamplePush(), CancellationToken.None));
+            () => client.SendAsync("T", SamplePush(), null, CancellationToken.None));
 
         Assert.Equal(1, jwt.InvalidateCount);
         Assert.Equal(2, handler.CallCount);
@@ -246,7 +292,7 @@ public class ApnsLiveActivityClientTests
         var client = CreateClient(EnabledConfig(), handler);
 
         await Assert.ThrowsAsync<HttpRequestException>(
-            () => client.SendAsync("T", SamplePush(), CancellationToken.None));
+            () => client.SendAsync("T", SamplePush(), null, CancellationToken.None));
     }
 
     [Fact]
@@ -256,7 +302,7 @@ public class ApnsLiveActivityClientTests
         var client = CreateClient(EnabledConfig(), handler);
 
         var ex = await Assert.ThrowsAsync<HttpRequestException>(
-            () => client.SendAsync("T", SamplePush(), CancellationToken.None));
+            () => client.SendAsync("T", SamplePush(), null, CancellationToken.None));
 
         Assert.DoesNotContain("JWT-STUB", ex.Message);
     }

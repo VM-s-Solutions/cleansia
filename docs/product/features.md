@@ -68,6 +68,26 @@ push access through it. → [The precise rule](/product/business-rules#listed-gu
 **Tracking** — see the order move through on-the-way, in progress and completed, with push
 notifications and a Live Activity on iOS.
 
+The customer mobile detail groups the saved stars with **Edit review**, keeps discount labels beside
+the price, and shows cleaners across a row. Photos remain in clearly labelled Before, After,
+Entrance and Other collections. Access instructions start concealed; revealing them does not
+change the alignment of the instruction rows. The fourth phase of the segmented tracker carries
+the cleaning-time estimate. Passing that estimate shows an overrun message; completion still comes
+from the actual order status. Missing timing never invents a percentage. Mascots use a consistent
+visible size and fade out as the sheet expands.
+
+Booking review and confirmation use aligned, compact details. **Report an issue** names the public
+order number. Customer e-mail verification keeps native paste and AutoFill without a separate paste
+button.
+
+**Saving a card in Payments** — consent opens the native card setup sheet. Finishing that sheet
+starts verification; the card is saved only once the account lists the returned card. An inline
+pending panel survives leaving Payments and offers **Check saved card**. Checks are bounded and
+can resume later. **Start again** stops checking the previous setup, asks for fresh consent and
+does not cancel Stripe's already completed setup; that card can still finish saving later.
+Pending state stays within the authenticated session and capture market/currency, and is erased
+on session wipe.
+
 **Tracking without an account** — a guest opens their booking from **the link in their e-mail**, and
 cancels it from there under the same policy a signed-in customer gets. The link carries a per-order
 access token, and opening it *is* the lookup — nothing to type, no reference number to remember.
@@ -122,7 +142,9 @@ trialing member's membership screen says *Free trial until* the day of the first
 
 **The Home carousel** (Android and iOS) — a row of five offer cards at the top of Home. It loops: a
 swipe past the last card lands on the first, and a swipe back past the first lands on the last. It
-moves on by itself every 6 seconds, always forward. Once the customer swipes, taps or changes card with
+moves on by itself every 6 seconds, always forward, with the active indicator filling over the same
+interval. Automatic progress pauses while Home is inactive or the carousel is offscreen and starts
+a fresh interval when it returns. Once the customer swipes, taps or changes card with
 a screen reader, it stops for the rest of that visit to Home. It never moves by itself while VoiceOver
 or TalkBack is on, or while Reduce Motion (iOS) or Remove animations (Android) is set. A screen reader
 announces each card's place, *Offer 2 of 5*. On iOS a swipe up or down changes the card, and on Android
@@ -303,6 +325,15 @@ without all marks, an after photo or settled payment it stays in progress.
 
 Entry instructions and the full address become visible on assignment. A job cannot be started more than an
 hour before it is booked for.
+
+The partner mobile header groups the job facts and timer more compactly. Quick actions stay on one
+line with full accessible labels, and an eligible **Cancel job** action is red. Eligibility and the
+existing card/cash price rules stay the same. iOS navigation offers Apple Maps or Google Maps; the
+Google option opens its app when available and otherwise its web directions.
+
+An invoice with no PDF explains whether it is pending or unavailable and offers refresh. A previous
+PDF remains available with a warning if regeneration failed; a missing stored document is reported
+as unavailable rather than as an absent invoice.
 
 **Accepting the contract for work** — every take passes through the contract: the app shows the job
 facts (number, window, price, coarse location, scope) and the contract text the order was booked

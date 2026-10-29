@@ -1450,4 +1450,11 @@
     <string name="job_photos_camera_only">Fotografie k zákazke sa dajú urobiť len fotoaparátom, nedajú sa vybrať z galérie. Na ich pridanie použite telefón s fotoaparátom.</string>
     <string name="notification_recurring_paused_title">Plán opakovaných upratovaní pozastavený</string>
     <string name="notification_recurring_paused_body">Váš plán opakovaných upratovaní je pozastavený, pretože Plus nie je aktívne. Obnovte Plus a plánovanie upratovaní bude pokračovať.</string>
+    <string name="invoice_pdf_pending">PDF zatiaľ nie je pripravené. Obnovte stránku a overte stav.</string>
+    <string name="invoice_pdf_failed">PDF faktúry sa nepodarilo vytvoriť. Obnovte stránku a overte stav.</string>
+    <string name="invoice_pdf_previous_available">Aktualizácia PDF sa nepodarila. Predchádzajúci dokument môžete stále otvoriť.</string>
+    <string name="invoice_pdf_refresh">Obnoviť stav</string>
+    <string name="error_payroll_invoice_pdf_not_ready">PDF faktúry zatiaľ nie je pripravené. Obnovte stav.</string>
+    <string name="error_payroll_invoice_pdf_unavailable">PDF tejto faktúry nie je dostupné. Obnovte stav alebo kontaktujte podporu.</string>
+    <string name="error_payroll_invoice_pdf_generation_failed">PDF faktúry sa nepodarilo vytvoriť. Obnovte stav alebo kontaktujte podporu.</string>
 </resources>

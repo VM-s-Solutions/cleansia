@@ -49,7 +49,7 @@ fun OrderSectionCard(
         // metadata row and the footer button all sat at 16dp — a card that reads as indented rather
         // than as a section. The divider below the title is what separates sections now, and it
         // gains from running the full width instead of stopping short at both ends.
-        Column(modifier = Modifier.padding(vertical = 16.dp)) {
+        Column(modifier = Modifier.padding(vertical = 8.dp)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),

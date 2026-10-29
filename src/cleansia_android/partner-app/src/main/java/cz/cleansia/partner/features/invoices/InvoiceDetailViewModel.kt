@@ -12,6 +12,7 @@ import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.data.invoices.InvoiceDetail
 import cz.cleansia.partner.data.invoices.InvoicesRepository
+import cz.cleansia.partner.data.invoices.pdfState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -79,14 +80,16 @@ class InvoiceDetailViewModel @Inject constructor(
      * viewer handles save/share from there.
      */
     fun download() {
+        val invoice = (_uiState.value as? InvoiceDetailUiState.Loaded)?.invoice ?: return
+        if (!invoice.pdfState.canOpen || _downloadState.value != DownloadState.Idle) return
+        _downloadState.value = DownloadState.Downloading
         viewModelScope.launch {
-            _downloadState.value = DownloadState.Downloading
             when (val result = invoicesRepository.downloadPdf(invoiceId)) {
                 is ApiResult.Success -> {
                     val uri = withContext(Dispatchers.IO) {
                         val pdfDir = File(appContext.cacheDir, "invoices").apply { mkdirs() }
                         val number = (_uiState.value as? InvoiceDetailUiState.Loaded)
-                            ?.invoice?.invoiceNumber ?: invoiceId
+                            ?.invoice?.invoiceNumber?.takeIf { it.isNotBlank() } ?: "document"
                         val file = File(pdfDir, "invoice-$number.pdf")
                         result.data.byteStream().use { input ->
                             file.outputStream().use { output -> input.copyTo(output) }

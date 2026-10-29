@@ -54,25 +54,10 @@ internal fun AddressCard(address: OrderAddressDto) {
             },
             title = stringResource(R.string.order_detail_address),
         )
-        Spacer(Modifier.height(6.dp))
-        Text(
-            text = address.street ?: "—",
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-        if (cityZip.isNotBlank()) {
-            Text(
-                text = cityZip,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        address.country?.takeIf { it.isNotBlank() }?.let {
-            Text(
-                text = it,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+        Text(address.street ?: "—", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
+        val locality = listOfNotNull(cityZip.takeIf { it.isNotBlank() }, address.country?.takeIf { it.isNotBlank() }).joinToString(" · ")
+        if (locality.isNotBlank()) {
+            Text(locality, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

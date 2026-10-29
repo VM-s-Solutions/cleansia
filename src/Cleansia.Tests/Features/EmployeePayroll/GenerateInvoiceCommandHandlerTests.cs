@@ -7,6 +7,9 @@ using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.TestUtilities.MockDataFactories.EmployeePayroll;
+using MediatR;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.DependencyInjection;
 using Moq;
 
 namespace Cleansia.Tests.Features.EmployeePayroll;
@@ -26,6 +29,8 @@ public class GenerateInvoiceCommandHandlerTests
     private readonly Mock<IOrderEmployeePayRepository> _orderPayRepository = new();
     private readonly Mock<IPayoutReferenceAllocator> _payoutReferenceAllocator = new();
     private readonly Mock<ICashLedgerRepository> _cashLedger = new();
+    private readonly Mock<IMediator> _mediator = new();
+    private readonly Mock<IServiceScopeFactory> _scopeFactory = new();
 
     public GenerateInvoiceCommandHandlerTests()
     {
@@ -35,18 +40,46 @@ public class GenerateInvoiceCommandHandlerTests
         _payoutReferenceAllocator
             .Setup(a => a.AllocateInvoiceNumberAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(BusinessResult.Success(PayrollMockFactory.TestInvoiceNumber));
+        _mediator.Setup(m => m.Send(It.IsAny<RegenerateInvoicePdf.Command>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResult.Success(new RegenerateInvoicePdf.Response("invoice.pdf")));
+        var services = new Mock<IServiceProvider>();
+        services.Setup(s => s.GetService(typeof(IMediator))).Returns(_mediator.Object);
+        services.Setup(s => s.GetService(typeof(ITenantProvider))).Returns(new Mock<ITenantProvider>().Object);
+        _scopeFactory.Setup(f => f.CreateScope()).Returns(() =>
+        {
+            var scope = new Mock<IServiceScope>();
+            scope.SetupGet(s => s.ServiceProvider).Returns(services.Object);
+            return scope.Object;
+        });
     }
 
     private GenerateInvoice.Handler CreateHandler() => new(
         _invoiceRepository.Object,
         _orderPayRepository.Object,
         _payoutReferenceAllocator.Object,
-        _cashLedger.Object);
+        _cashLedger.Object,
+        _scopeFactory.Object,
+        NullLogger<GenerateInvoice.Handler>.Instance);
 
     private void ArrangeOrderPays(params OrderEmployeePay[] pays) =>
         _orderPayRepository
             .Setup(r => r.GetUnassignedForEmployeePeriodAsync(EmployeeId, PayPeriodId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(pays);
+
+    [Fact]
+    public async Task Cancellation_After_Financial_Commit_Stops_Document_Work()
+    {
+        ArrangeOrderPays(PayrollMockFactory.OrderPay(currencyId: "currency-1"),
+            PayrollMockFactory.OrderPay(currencyId: "currency-2"));
+        _mediator.Setup(m => m.Send(It.IsAny<RegenerateInvoicePdf.Command>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new OperationCanceledException());
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => CreateHandler().Handle(
+            new GenerateInvoice.Command(EmployeeId, PayPeriodId), CancellationToken.None));
+
+        _invoiceRepository.Verify(r => r.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _mediator.Verify(m => m.Send(It.IsAny<RegenerateInvoicePdf.Command>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
 
     [Fact]
     public async Task Sums_Order_Pays_Into_Invoice_Exactly()
@@ -207,6 +240,17 @@ public class GenerateInvoiceCommandHandlerTests
         Assert.Equal(0m, added!.CashSetOffAmount);
         Assert.Equal(400m, added.TransferAmount);
         _cashLedger.Verify(r => r.Add(It.IsAny<CashLedgerEntry>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task A_Refused_Generation_Does_Not_Attempt_To_Render_A_Document()
+    {
+        ArrangeOrderPays();
+
+        var result = await CreateHandler().Handle(new GenerateInvoice.Command(EmployeeId, PayPeriodId), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        _mediator.Verify(m => m.Send(It.IsAny<RegenerateInvoicePdf.Command>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     // PayrollMockFactory derives TotalPay from the components, so a pay where the min/max clamp

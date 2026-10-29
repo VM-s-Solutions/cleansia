@@ -1,5 +1,6 @@
 import CleansiaCore
 import SwiftUI
+import UIKit
 
 /// Every slide is this tall, so the pager never changes height between slides — 196 rather than 180 so
 /// the quick-size steppers fit. The skeleton matches.
@@ -16,6 +17,7 @@ struct UpsellCarousel: View {
     @Environment(\.locale) private var locale
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
     let inputs: UpsellSlide.Inputs
     let onAction: (UpsellSlide.Action) -> Void
 
@@ -29,8 +31,9 @@ struct UpsellCarousel: View {
     @State private var programmaticPage: Int?
     /// Set by the first swipe, tap or VoiceOver page action; auto-advance then stops for this visit.
     @State private var userInteracted = false
+    @State private var rotationStarted: Date?
+    @State private var isVisible = false
 
-    private static let autoRotateSeconds: UInt64 = 6
     /// Long enough for the page to finish settling before a clone is swapped for its real slide.
     private static let reanchorDelayNanoseconds: UInt64 = 350_000_000
 
@@ -73,6 +76,14 @@ struct UpsellCarousel: View {
             }
         }
         .id(locale.identifier)
+        .background {
+            GeometryReader { geometry in
+                let frame = geometry.frame(in: .global)
+                Color.clear
+                    .onAppear { updateVisibility(frame) }
+                    .onChange(of: frame) { updateVisibility($0) }
+            }
+        }
         .onChange(of: slides.map(\.kind)) { kinds in
             let target = UpsellSlide.page(afterChangeFrom: page, old: anchoredKinds, new: kinds)
             anchoredKinds = kinds
@@ -86,14 +97,22 @@ struct UpsellCarousel: View {
             }
             scheduleReanchor(from: newPage, count: count)
         }
-        .onDisappear { userInteracted = false }
+        .onDisappear {
+            userInteracted = false
+            isVisible = false
+            rotationStarted = nil
+        }
         .task(id: AutoRotateKey(
             count: count,
             page: page,
-            stopped: userInteracted || voiceOverEnabled || reduceMotion
+            stopped: rotationStopped
         )) {
             await autoAdvance(count: count)
         }
+    }
+
+    private func updateVisibility(_ frame: CGRect) {
+        isVisible = !frame.isEmpty && frame.intersects(UIScreen.main.bounds)
     }
 
     /// The quick-size card holds its own steppers; the referral card is the share sheet once the code
@@ -142,16 +161,35 @@ struct UpsellCarousel: View {
     }
 
     private func dotRow(count: Int, selected: Int) -> some View {
-        HStack(spacing: 0) {
-            ForEach(0 ..< count, id: \.self) { index in
-                Capsule()
-                    .fill(index == selected ? CleansiaColors.primary : CleansiaColors.outlineVariant)
-                    .frame(width: index == selected ? 24 : 8, height: 8)
-                    .padding(.horizontal, 3)
+        TimelineView(.animation(
+            minimumInterval: 1.0 / 30,
+            paused: rotationStarted == nil || rotationStopped
+        )) { context in
+            HStack(spacing: 0) {
+                ForEach(0 ..< count, id: \.self) { index in
+                    Capsule()
+                        .fill(index == selected ? CleansiaColors.primary.opacity(0.2) : CleansiaColors.outlineVariant)
+                        .overlay(alignment: .leading) {
+                            if index == selected {
+                                let fraction = rotationStarted.map { UpsellSlide.rotationFraction(
+                                    startedAt: $0,
+                                    now: context.date
+                                ) } ?? 1
+                                Capsule().fill(CleansiaColors.primary)
+                                    .frame(width: 24 * fraction)
+                            }
+                        }
+                        .frame(width: index == selected ? 24 : 8, height: 8)
+                        .padding(.horizontal, 3)
+                }
             }
+            .frame(maxWidth: .infinity)
+            .animation(.default, value: selected)
         }
-        .frame(maxWidth: .infinity)
-        .animation(.default, value: selected)
+    }
+
+    private var rotationStopped: Bool {
+        userInteracted || voiceOverEnabled || reduceMotion || scenePhase != .active || !isVisible
     }
 
     /// The 6 s auto-advance, always forward: past the last slide it lands on the first slide's clone,
@@ -159,9 +197,12 @@ struct UpsellCarousel: View {
     /// for the rest of the visit once the customer swipes or taps (WCAG 2.2.2) and never runs under
     /// VoiceOver or Reduce Motion. Keying the task on the page restarts the countdown after any change.
     private func autoAdvance(count: Int) async {
-        guard count > 1, !userInteracted, !voiceOverEnabled, !reduceMotion else { return }
-        try? await Task.sleep(nanoseconds: Self.autoRotateSeconds * 1_000_000_000)
-        guard !Task.isCancelled, UpsellSlide.reanchor(page: page, count: count) == nil else { return }
+        rotationStarted = nil
+        guard count > 1, !rotationStopped else { return }
+        rotationStarted = Date()
+        try? await Task.sleep(nanoseconds: UInt64(UpsellSlide.rotationSeconds * 1_000_000_000))
+        guard !Task.isCancelled, !rotationStopped, UpsellSlide.reanchor(page: page, count: count) == nil else { return }
+        rotationStarted = nil
         programmaticPage = page + 1
         withAnimation { page += 1 }
     }

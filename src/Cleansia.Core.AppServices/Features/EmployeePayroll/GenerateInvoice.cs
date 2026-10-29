@@ -7,6 +7,9 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using MediatR;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Core.AppServices.Features.EmployeePayroll;
 
@@ -75,7 +78,9 @@ public class GenerateInvoice
         IEmployeeInvoiceRepository invoiceRepository,
         IOrderEmployeePayRepository orderEmployeePayRepository,
         IPayoutReferenceAllocator payoutReferenceAllocator,
-        ICashLedgerRepository cashLedgerRepository)
+        ICashLedgerRepository cashLedgerRepository,
+        IServiceScopeFactory serviceScopeFactory,
+        ILogger<Handler> logger)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -186,6 +191,35 @@ public class GenerateInvoice
                 return BusinessResult.Failure<Response>(new Error(
                     nameof(EmployeeInvoice.VariableSymbol),
                     BusinessErrorMessage.InvoiceReferenceUnavailable));
+            }
+
+            foreach (var invoice in invoices)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                try
+                {
+                    // Financial creation is already committed. A failed document commit must discard
+                    // its whole unit of work before the next currency is attempted (ADR-0072 D2).
+                    await using var scope = serviceScopeFactory.CreateAsyncScope();
+                    if (!string.IsNullOrEmpty(invoice.TenantId))
+                    {
+                        scope.ServiceProvider.GetRequiredService<ITenantProvider>().SetTenantOverride(invoice.TenantId);
+                    }
+
+                    var document = await scope.ServiceProvider.GetRequiredService<IMediator>().Send(
+                        new RegenerateInvoicePdf.Command(invoice.Id, Constants.Language.English), cancellationToken);
+                    if (document.IsFailure)
+                    {
+                        logger.LogWarning("Invoice {InvoiceId} was created but its PDF is unavailable ({Error})",
+                            invoice.Id, document.Error?.Message);
+                    }
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    // Keep the committed financial result: an admin can retry the existing PDF repair
+                    // action, and other currencies still get their own clean rendering scope.
+                    logger.LogError(ex, "Invoice {InvoiceId} was created but its PDF could not be persisted", invoice.Id);
+                }
             }
 
             return BusinessResult.Success(new Response(invoices.Select(i => i.Id).ToList()));

@@ -40,7 +40,7 @@ public class DownloadInvoice
         {
             var invoice = await invoiceRepository.GetByIdAsync(request.InvoiceId, cancellationToken);
 
-            if (invoice == null || string.IsNullOrEmpty(invoice.PdfBlobUrl))
+            if (invoice == null)
             {
                 return BusinessResult.Failure<Response>(
                     new Error(nameof(request.InvoiceId), BusinessErrorMessage.InvoiceNotFound));
@@ -57,8 +57,22 @@ public class DownloadInvoice
                 }
             }
 
+            if (string.IsNullOrWhiteSpace(invoice.PdfBlobUrl))
+            {
+                return BusinessResult.Failure<Response>(new Error(nameof(request.InvoiceId),
+                    invoice.PdfGenerationFailed
+                        ? BusinessErrorMessage.PdfGenerationFailed
+                        : BusinessErrorMessage.InvoicePdfNotReady));
+            }
+
             var blobClient = clientFactory.GetBlobContainerClient(Constants.BlobContainers.GeneratedInvoices);
-            var blobDownload = await blobClient.DownloadAsync(BlobNameOf(invoice.PdfBlobUrl), cancellationToken);
+            var blobName = BlobNameOf(invoice.PdfBlobUrl);
+            if (!await blobClient.ExistsAsync(blobName, cancellationToken))
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(request.InvoiceId), BusinessErrorMessage.InvoicePdfUnavailable));
+            }
+            var blobDownload = await blobClient.DownloadAsync(blobName, cancellationToken);
 
             using var memoryStream = new MemoryStream();
             await blobDownload.Content.CopyToAsync(memoryStream, cancellationToken);

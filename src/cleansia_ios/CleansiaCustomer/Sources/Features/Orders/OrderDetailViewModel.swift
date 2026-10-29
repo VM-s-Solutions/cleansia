@@ -234,27 +234,7 @@ final class OrderDetailViewModel: ViewModel {
     /// `estimatedTime` minutes) and the actual phase timestamps off the status history, so the card's ETA
     /// counts against what really happened.
     private func syncLiveActivity(for order: CustomerOrderDetail) {
-        // The server refuses a guest booking's registration and no push would ever update its card.
-        guard !order.isGuestBooking, let orderId = order.id, !orderId.isBlank else { return }
-        let status = order.status
-        let orderNumber = order.displayOrderNumber ?? ""
-        if let wireStatus = OrderStatusGroup.liveActivityStatus(status) {
-            guard let window = EtaWindow.forOrder(order) else { return }
-            // start is idempotent (creates the activity once, with the current status); update rewrites a
-            // running activity so an OnTheWay → InProgress transition flips the card to "Cleaning in progress".
-            liveActivity.start(orderId: orderId, orderNumber: orderNumber, status: wireStatus, window: window)
-            liveActivity.update(orderId: orderId, orderNumber: orderNumber, status: wireStatus, window: window)
-        } else if let terminal = terminalLiveActivityStatus(status) {
-            // The terminal status travels with the end: it is what the card is left showing, and what
-            // decides whether the card lingers for a last glance or leaves at once.
-            liveActivity.end(orderId: orderId, orderNumber: orderNumber, status: terminal)
-        }
-    }
-
-    private func terminalLiveActivityStatus(_ status: OrderStatus?) -> LiveActivityTerminalStatus? {
-        if OrderStatusGroup.isCompleted(status) { return .completed }
-        if OrderStatusGroup.isCancelled(status) { return .cancelled }
-        return nil
+        liveActivity.synchronize(order)
     }
 
     private func shouldStopPolling() -> Bool {

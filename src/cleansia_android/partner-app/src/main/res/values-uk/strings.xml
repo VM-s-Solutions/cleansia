@@ -1455,4 +1455,11 @@
     <string name="job_photos_camera_only">Фото до замовлення можна зробити лише камерою, вибрати їх із галереї не можна. Щоб додати їх, скористайтеся телефоном із камерою.</string>
     <string name="notification_recurring_paused_title">Розклад регулярних прибирань призупинено</string>
     <string name="notification_recurring_paused_body">Ваш розклад регулярних прибирань призупинено, оскільки Plus неактивний. Поновіть Plus, щоб відновити планування прибирань.</string>
+    <string name="invoice_pdf_pending">PDF ще не готовий. Оновіть, щоб перевірити знову.</string>
+    <string name="invoice_pdf_failed">Не вдалося створити PDF рахунку. Оновіть, щоб перевірити стан.</string>
+    <string name="invoice_pdf_previous_available">Не вдалося оновити PDF. Попередній документ усе ще можна відкрити.</string>
+    <string name="invoice_pdf_refresh">Оновити стан</string>
+    <string name="error_payroll_invoice_pdf_not_ready">PDF рахунку ще не готовий. Оновіть стан.</string>
+    <string name="error_payroll_invoice_pdf_unavailable">PDF цього рахунку недоступний. Оновіть стан або зверніться до підтримки.</string>
+    <string name="error_payroll_invoice_pdf_generation_failed">Не вдалося створити PDF рахунку. Оновіть стан або зверніться до підтримки.</string>
 </resources>

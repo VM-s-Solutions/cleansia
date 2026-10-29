@@ -17,13 +17,9 @@ struct OrderAddressCard: View {
             Text(address.street ?? "—")
                 .font(CleansiaTypography.bodyLarge)
                 .foregroundColor(CleansiaColors.onSurface)
-            if !cityZip.isBlank {
-                Text(cityZip)
-                    .font(CleansiaTypography.bodyMedium)
-                    .foregroundColor(CleansiaColors.onSurfaceVariant)
-            }
-            if let country = address.country, !country.isBlank {
-                Text(country)
+            let locality = [cityZip, address.country ?? ""].filter { !$0.isBlank }.joined(separator: " · ")
+            if !locality.isBlank {
+                Text(locality)
                     .font(CleansiaTypography.bodyMedium)
                     .foregroundColor(CleansiaColors.onSurfaceVariant)
             }

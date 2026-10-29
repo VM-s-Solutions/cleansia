@@ -102,6 +102,18 @@ data class InvoiceDetail(
     val orderPays: List<OrderPayLine>,
 )
 
+enum class InvoicePdfState(val canOpen: Boolean) {
+    Ready(true), RetainedAfterFailure(true), Pending(false), Failed(false),
+}
+
+val InvoiceDetail.pdfState: InvoicePdfState
+    get() = when {
+        !pdfBlobName.isNullOrBlank() && pdfGenerationFailed -> InvoicePdfState.RetainedAfterFailure
+        !pdfBlobName.isNullOrBlank() -> InvoicePdfState.Ready
+        pdfGenerationFailed -> InvoicePdfState.Failed
+        else -> InvoicePdfState.Pending
+    }
+
 @Singleton
 class InvoicesRepositoryImpl @Inject constructor(
     private val payrollApi: EmployeePayrollApi,

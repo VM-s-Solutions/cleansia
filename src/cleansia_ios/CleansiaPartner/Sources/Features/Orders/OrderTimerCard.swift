@@ -11,6 +11,7 @@ import SwiftUI
 struct OrderTimerCard: View {
     let order: OrderDetail
     let locale: Locale
+    var showsStepCounter = false
 
     /// Phase-aware ticking, matching Android: 1 Hz while the job runs so the
     /// clock does not lurch, once a minute for the countdown, and no timeline at
@@ -39,16 +40,32 @@ struct OrderTimerCard: View {
     private func content(now: Date) -> some View {
         if let phase = OrderTimer.phase(for: order, now: now) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(headline(phase))
-                    .font(CleansiaTypography.labelSmall)
-                    .foregroundColor(CleansiaColors.onSurfaceVariant)
-                // The brand face has no monospaced digits, so the 1 Hz clock
-                // shifts width a little as digits change; Android accepted the
-                // same jitter rather than dropping to a system mono font.
-                Text(primary(phase))
-                    .cleansiaFont(CleansiaTypography.headlineMedium)
-                    .foregroundColor(CleansiaColors.onSurface)
-                    .lineLimit(1)
+                if showsStepCounter {
+                    ViewThatFits(in: .horizontal) {
+                        HStack(alignment: .firstTextBaseline, spacing: Spacing.xs) {
+                            phaseLabel(phase)
+                            timeLabel(phase)
+                            Spacer(minLength: Spacing.xxs)
+                            counterLabel
+                        }
+                        VStack(alignment: .leading, spacing: Spacing.xxs) {
+                            phaseLabel(phase)
+                            timeLabel(phase)
+                            counterLabel
+                        }
+                    }
+                } else {
+                    Text(headline(phase))
+                        .font(CleansiaTypography.labelSmall)
+                        .foregroundColor(CleansiaColors.onSurfaceVariant)
+                    // The brand face has no monospaced digits, so the 1 Hz clock
+                    // shifts width a little as digits change; Android accepted the
+                    // same jitter rather than dropping to a system mono font.
+                    Text(primary(phase))
+                        .cleansiaFont(CleansiaTypography.headlineMedium)
+                        .foregroundColor(CleansiaColors.onSurface)
+                        .lineLimit(1)
+                }
                 if let finishedAt = finishedAtSubline(phase) {
                     Text(L10n.Orders.trackerFinishedAt(OrdersFormat.relativeDateTime(finishedAt, locale: locale)))
                         .font(CleansiaTypography.labelMedium)
@@ -59,6 +76,29 @@ struct OrderTimerCard: View {
             // zero-spacing stack so the two read as one hero block.
             .frame(maxWidth: .infinity, alignment: .leading)
             .id(locale.identifier)
+        }
+    }
+
+    private func phaseLabel(_ phase: OrderTimerPhase) -> some View {
+        Text(headline(phase))
+            .font(CleansiaTypography.labelSmall)
+            .foregroundColor(CleansiaColors.onSurfaceVariant)
+    }
+
+    private func timeLabel(_ phase: OrderTimerPhase) -> some View {
+        Text(primary(phase))
+            .cleansiaFont(CleansiaTypography.headlineMedium)
+            .foregroundColor(CleansiaColors.onSurface)
+            .fixedSize()
+    }
+
+    @ViewBuilder
+    private var counterLabel: some View {
+        if case let .steps(_, step) = OrderTrackerProgress.state(for: order.status) {
+            Text(L10n.Orders.trackerStepCounter(step, OrderTrackerProgress.stepCount))
+                .font(CleansiaTypography.labelSmall)
+                .foregroundColor(CleansiaColors.onSurfaceVariant)
+                .fixedSize()
         }
     }
 

@@ -25,22 +25,28 @@ struct GeneratedLiveActivityApi: LiveActivityApi {
 /// Live `LiveActivityRegistering`: hands ActivityKit push tokens to the backend so it can drive the
 /// in-progress-clean Live Activity (ADR-0029 LA-5). `deviceId` is the same keychain id used for
 /// Device/Register. A non-nil `orderId` is a per-activity update token; nil is the per-install
-/// push-to-start token. Every call swallows failure — a registration that never lands must never crash;
-/// the local activity keeps running, unpushed.
+/// push-to-start token. Registration returns a typed result to the bounded retry queue; failure never
+/// affects the local card. Routing metadata comes from the artifact-verified public build marker.
 struct CustomerLiveActivityRegistrar: LiveActivityRegistering {
     private let api: LiveActivityApi
     private let deviceIdProvider: DeviceIdProviding
+    private let useSandbox: Bool?
 
-    init(deviceIdProvider: DeviceIdProviding, api: LiveActivityApi = GeneratedLiveActivityApi()) {
+    init(
+        deviceIdProvider: DeviceIdProviding,
+        api: LiveActivityApi = GeneratedLiveActivityApi(),
+        useSandbox: Bool? = LiveActivityAPNSEnvironment(bundle: .main)?.useSandbox
+    ) {
         self.deviceIdProvider = deviceIdProvider
         self.api = api
+        self.useSandbox = useSandbox
     }
 
-    func register(orderId: String, orderNumber _: String, token: String) async {
+    func register(orderId: String, orderNumber _: String, token: String) async -> ApiResult<Void> {
         await send(orderId: orderId, token: token)
     }
 
-    func registerPushToStart(token: String) async {
+    func registerPushToStart(token: String) async -> ApiResult<Void> {
         await send(orderId: nil, token: token)
     }
 
@@ -50,13 +56,31 @@ struct CustomerLiveActivityRegistrar: LiveActivityRegistering {
         }
     }
 
-    private func send(orderId: String?, token: String) async {
-        _ = await apiResult(mapError: ApiError.fromGenerated) {
+    private func send(orderId: String?, token: String) async -> ApiResult<Void> {
+        guard let useSandbox else {
+            return .failure(ApiError(code: "live_activity.environment_unconfigured", httpStatus: 400))
+        }
+        return await apiResult(mapError: ApiError.fromGenerated) {
             try await api.register(RegisterLiveActivityTokenCommand(
                 deviceId: deviceIdProvider.deviceId,
                 token: token,
-                orderId: orderId
+                orderId: orderId,
+                useSandbox: useSandbox
             ))
         }
+    }
+}
+
+enum LiveActivityAPNSEnvironment: String {
+    case development
+    case production
+
+    init?(bundle: Bundle) {
+        guard let marker = bundle.object(forInfoDictionaryKey: "CleansiaAPNSEnvironment") as? String else { return nil }
+        self.init(rawValue: marker)
+    }
+
+    var useSandbox: Bool {
+        self == .development
     }
 }

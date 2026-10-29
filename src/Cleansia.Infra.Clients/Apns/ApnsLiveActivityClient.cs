@@ -42,7 +42,7 @@ public sealed class ApnsLiveActivityClient(
         DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
     };
 
-    public async Task<LiveActivityPushResult> SendAsync(string activityToken, LiveActivityPush push, CancellationToken cancellationToken)
+    public async Task<LiveActivityPushResult> SendAsync(string activityToken, LiveActivityPush push, bool? useSandbox, CancellationToken cancellationToken)
     {
         // INERT ship: disabled or keyless never opens a socket (ADR-0029 D1). Same Skipped-ack no-op the
         // FCM path implements for an unconfigured provider.
@@ -79,7 +79,7 @@ public sealed class ApnsLiveActivityClient(
         // One re-mint retry on an expired/invalid provider token (403), then classify transient.
         for (var attempt = 0; ; attempt++)
         {
-            var response = await SendOnceAsync(activityToken, push, body, cancellationToken);
+            using var response = await SendOnceAsync(activityToken, push, body, useSandbox ?? config.UseSandbox, cancellationToken);
 
             if (response.IsSuccessStatusCode)
             {
@@ -121,10 +121,10 @@ public sealed class ApnsLiveActivityClient(
     }
 
     private async Task<HttpResponseMessage> SendOnceAsync(
-        string activityToken, LiveActivityPush push, string body, CancellationToken cancellationToken)
+        string activityToken, LiveActivityPush push, string body, bool useSandbox, CancellationToken cancellationToken)
     {
-        var host = config.UseSandbox ? SandboxHost : ProductionHost;
-        var request = new HttpRequestMessage(HttpMethod.Post, $"{host}/3/device/{activityToken}")
+        var host = useSandbox ? SandboxHost : ProductionHost;
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"{host}/3/device/{activityToken}")
         {
             Version = HttpVersion.Version20,
             VersionPolicy = HttpVersionPolicy.RequestVersionOrHigher,

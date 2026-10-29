@@ -7,6 +7,7 @@ struct OrderDetailView: View {
     @State private var showCancelSheet = false
     @State private var showReviewSheet = false
     @State private var showPhotos = false
+    @State private var photoSelection: OrderPhotoSelection?
     @State private var receiptURL: ReceiptFile?
     @State private var snapAnchor: SnapAnchor = .peek
     @State private var headerHeight: CGFloat = 0
@@ -98,7 +99,12 @@ struct OrderDetailView: View {
                 }
             }
             .navigationDestination(isPresented: $showPhotos) {
-                OrderPhotosScreen(orderId: orderId, client: client, snackbar: snackbar)
+                OrderPhotosScreen(
+                    orderId: orderId,
+                    client: client,
+                    snackbar: snackbar,
+                    initialSelection: photoSelection
+                )
             }
             .sheet(isPresented: $showCancelSheet) { cancelSheet }
             .sheet(isPresented: $showReviewSheet) { reviewSheet }
@@ -159,7 +165,14 @@ struct OrderDetailView: View {
                     isDownloadingReceipt: vm.receiptState.isSubmitting,
                     onLeaveReview: { showReviewSheet = true },
                     onDownloadReceipt: { Task { await vm.downloadReceipt() } },
-                    onViewPhotos: { showPhotos = true }
+                    onViewPhotos: {
+                        photoSelection = nil
+                        showPhotos = true
+                    },
+                    onPreviewPhoto: { phase, id in
+                        photoSelection = OrderPhotoSelection(phase: phase, photoID: id)
+                        showPhotos = true
+                    }
                 )
                 .task(id: order.id) { await vm.ensurePhotosLoaded() }
 

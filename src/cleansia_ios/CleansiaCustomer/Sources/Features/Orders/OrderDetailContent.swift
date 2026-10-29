@@ -11,6 +11,7 @@ struct OrderDetailContent: View {
     let onLeaveReview: () -> Void
     let onDownloadReceipt: () -> Void
     let onViewPhotos: () -> Void
+    var onPreviewPhoto: ((OrderPhotoPhase, String?) -> Void)?
 
     private var status: OrderStatus? {
         order.status
@@ -20,13 +21,13 @@ struct OrderDetailContent: View {
         VStack(spacing: 0) {
             OrderDetailCompactHeader(order: order)
             ScrollView {
-                VStack(alignment: .leading, spacing: Spacing.s) {
+                VStack(alignment: .leading, spacing: Spacing.xs) {
                     // One hero block — the headline names the phase and the bar draws it — but not
                     // touching: at zero the label sat ON the bar. Spacing.xs is the smallest gap that
                     // reads as "these belong together" rather than "these are one control".
                     VStack(alignment: .leading, spacing: Spacing.xs) {
                         OrderStatusHero(order: order)
-                        CustomerOrderTrackerHero(status: status)
+                        CustomerOrderTrackerHero(order: order)
 
                         // Why, not just that. The cancellation push tells the customer to tap for the
                         // reason, and until now the screen they landed on had none — a failed payment
@@ -50,8 +51,6 @@ struct OrderDetailContent: View {
                         }
                     }
                     OrderHeroFactsStrip(order: order)
-                        // The bar is a thin 4pt rule; the parent's Spacing.s alone left the facts row
-                        // crowding it from below.
                         .padding(.top, Spacing.xxs)
                     Text(OrderMarketLabel.text(
                         countryId: order.countryId,
@@ -83,7 +82,7 @@ struct OrderDetailContent: View {
                     OrderInstructionsCard(order: order)
 
                     if let gallery = photos.loadedResponse, !gallery.photos.isEmpty {
-                        OrderPhotosSection(gallery: gallery, onViewPhotos: onViewPhotos)
+                        OrderPhotosSection(gallery: gallery, onViewPhotos: onViewPhotos, onPreviewPhoto: onPreviewPhoto)
                     }
 
                     if !order.assignedEmployees.isEmpty {
@@ -186,17 +185,44 @@ private let mascotClearance: CGFloat = 80
 /// rather than a second mapping being written beside it — it already answers exactly this question.
 struct CustomerOrderTrackerHero: View {
     @Environment(\.locale) private var locale
-    let status: OrderStatus?
+    let order: CustomerOrderDetail
+
+    private var status: OrderStatus? {
+        order.status
+    }
 
     var body: some View {
-        OrderTrackerBar(
-            state: OrderTrackerRule.state(
-                step: LiveProgress.activeStep(for: status)?.rawValue ?? 0,
-                cancelled: status == ._6,
-                completed: status == ._5
-            ),
-            cancelledLabel: OrderStatusPresentation.label(Code(value: 6))
-        )
+        TimelineView(.periodic(from: .now, by: 30)) { context in
+            let progress = status == ._4 ? LiveProgress.estimateProgress(
+                history: order.statusHistory, estimatedMinutes: order.estimatedMinutes, now: context.date
+            ) : nil
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                OrderTrackerBar(
+                    state: OrderTrackerRule.state(
+                        step: LiveProgress.activeStep(for: status)?.rawValue ?? 0,
+                        cancelled: status == ._6,
+                        completed: status == ._5
+                    ),
+                    cancelledLabel: OrderStatusPresentation.label(Code(value: 6)),
+                    currentFraction: progress?.fraction,
+                    isOverEstimate: (progress?.overrunMinutes ?? 0) > 0
+                )
+                if let progress {
+                    if progress.overrunMinutes > 0 {
+                        Label(
+                            L10n.OrderDetail.estimateOverrun(progress.overrunMinutes),
+                            systemImage: "clock.badge.exclamationmark"
+                        )
+                        .font(CleansiaTypography.labelMedium)
+                        .foregroundColor(CleansiaColors.pendingInk)
+                    } else {
+                        Text(L10n.OrderDetail.estimateRemaining(progress.remainingMinutes))
+                            .font(CleansiaTypography.labelMedium)
+                            .foregroundColor(CleansiaColors.onSurfaceVariant)
+                    }
+                }
+            }
+        }
         .id(locale.identifier)
     }
 }

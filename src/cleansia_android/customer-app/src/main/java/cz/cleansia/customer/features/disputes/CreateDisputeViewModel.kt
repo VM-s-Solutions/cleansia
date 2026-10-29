@@ -71,6 +71,9 @@ class CreateDisputeViewModel @Inject constructor(
      * dispute names no items by default, and failing to load them must not stop someone filing one.
      * This is the whole reason the load is silent — no spinner, no error, no retry.</p>
      */
+    private val _displayOrderNumber = MutableStateFlow<String?>(null)
+    val displayOrderNumber: StateFlow<String?> = _displayOrderNumber.asStateFlow()
+
     private val _lineOptions = MutableStateFlow<List<DisputeLineOption>>(emptyList())
     val lineOptions: StateFlow<List<DisputeLineOption>> = _lineOptions.asStateFlow()
 
@@ -96,6 +99,7 @@ class CreateDisputeViewModel @Inject constructor(
             viewModelScope.launch {
                 val result = orderRepository.getById(id)
                 if (result is ApiResult.Success) {
+                    _displayOrderNumber.value = result.data.displayOrderNumber?.takeIf { it.isNotBlank() }
                     _lineOptions.value = buildDisputeLineOptions(result.data)
                 }
             }

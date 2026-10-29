@@ -31,7 +31,20 @@ public struct MascotPuck: View {
                 EmptyView()
             }
         }
+        .scaleEffect(artScale)
         .accessibilityHidden(true)
+    }
+
+    private var artScale: CGFloat {
+        switch art {
+        case .still(.leaning), .still(.ready): 0.903
+        case .still(.waving): 1.009
+        case .still(.sprayAndCloth): 1.119
+        case .still(.thumbsUp): 0.979
+        case .animated(.welcoming, _, _): 1.147
+        case .animated(.cleaningInProgress, _, _): 1.048
+        default: 1
+        }
     }
 }
 

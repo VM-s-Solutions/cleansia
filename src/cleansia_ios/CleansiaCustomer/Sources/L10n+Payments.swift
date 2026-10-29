@@ -2,6 +2,26 @@ import Foundation
 
 extension L10n {
     enum Payments {
+        static var cardPendingTitle: String {
+            localized("payments_card_pending_title")
+        }
+
+        static var cardCheckAction: String {
+            localized("payments_card_check_action")
+        }
+
+        static var cardRestartAction: String {
+            localized("payments_card_restart_action")
+        }
+
+        static var cardRestartTitle: String {
+            localized("payments_card_restart_title")
+        }
+
+        static var cardRestartMessage: String {
+            localized("payments_card_restart_message")
+        }
+
         static var profileRow: String {
             localized("profile_row_payments")
         }

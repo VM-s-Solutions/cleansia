@@ -3,6 +3,15 @@ import XCTest
 @testable import CleansiaCustomer
 
 final class UpsellSlideTests: XCTestCase {
+    func testCarouselDotShowsTheSameSixSecondIntervalAsRotation() {
+        let start = Date(timeIntervalSince1970: 1000)
+        XCTAssertEqual(UpsellSlide.rotationFraction(startedAt: start, now: start), 0)
+        XCTAssertEqual(UpsellSlide.rotationFraction(startedAt: start, now: start.addingTimeInterval(3)), 0.5)
+        XCTAssertEqual(UpsellSlide.rotationFraction(startedAt: start, now: start.addingTimeInterval(6)), 1)
+        XCTAssertEqual(UpsellSlide.rotationFraction(startedAt: start, now: start.addingTimeInterval(20)), 1)
+        XCTAssertEqual(UpsellSlide.rotationFraction(startedAt: start, now: start.addingTimeInterval(-1)), 0)
+    }
+
     private typealias Inputs = UpsellSlide.Inputs
 
     private let heldCredit = CustomerCredit.Balance(amount: 250, currencyCode: "CZK", expiresOn: nil)

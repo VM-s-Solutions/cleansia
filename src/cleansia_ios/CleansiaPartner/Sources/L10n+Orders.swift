@@ -3,6 +3,14 @@ import Foundation
 
 extension L10n {
     enum Orders {
+        static var appleMaps: String {
+            localized("orders_maps_apple")
+        }
+
+        static var googleMaps: String {
+            localized("orders_maps_google")
+        }
+
         static var title: String {
             localized("orders")
         }

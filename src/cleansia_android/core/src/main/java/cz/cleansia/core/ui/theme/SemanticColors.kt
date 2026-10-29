@@ -1,6 +1,8 @@
 package cz.cleansia.core.ui.theme
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.material3.ColorScheme
 
 /**
  * Semantic success/error tokens for `:core` widgets, independent of the Material scheme.
@@ -10,3 +12,6 @@ import androidx.compose.ui.graphics.Color
  */
 val SuccessText = Color(0xFF15803D) // green-700
 val ErrorText = Color(0xFFB91C1C)   // red-700
+
+val ColorScheme.warningText: Color
+    get() = if (surface.luminance() < 0.5f) Color(0xFFFCD34D) else Color(0xFF92400E)

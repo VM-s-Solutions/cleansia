@@ -31,6 +31,8 @@
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>CleansiaAPNSEnvironment</key>
+	<string>$(CLEANSIA_APNS_ENVIRONMENT)</string>
 	<key>CleansiaGitBranch</key>
 	<string>$(CLEANSIA_GIT_BRANCH)</string>
 	<key>CleansiaGitCommit</key>

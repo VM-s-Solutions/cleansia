@@ -28,15 +28,12 @@ struct BookingSuccessView: View {
         ))
     }
 
-    /// Android's compact rhythm (`BookingSuccessScreen.kt`): no mascot — at 220 pt it pushed the
-    /// sequence into a scroll — but a 48 pt check, the at-a-glance success cue in a fifth of the height,
-    /// and the tighter section gaps, so the whole confirmation fits a 6.1" phone without scrolling.
     var body: some View {
         bounceOnlyWhenScrolling(ScrollView {
             VStack(spacing: Spacing.s) {
                 // Decorative: the title under it says the same thing.
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 48))
+                    .font(.system(size: 40))
                     .foregroundColor(CleansiaColors.successText)
                     .cleansiaBounceOnAppear()
                     .accessibilityHidden(true)
@@ -50,10 +47,12 @@ struct BookingSuccessView: View {
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
                         .multilineTextAlignment(.center)
                 }
-                if !confirmationCode.isBlank {
-                    confirmationCard(confirmationCode)
+                VStack(spacing: Spacing.xs) {
+                    if !confirmationCode.isBlank {
+                        confirmationCard(confirmationCode)
+                    }
+                    enrichment
                 }
-                enrichment
                 timelineCard
                 Text(L10n.Booking.successWhatsNext)
                     .font(CleansiaTypography.labelMedium)
@@ -98,10 +97,13 @@ struct BookingSuccessView: View {
                 .foregroundColor(CleansiaColors.primaryText)
                 .textSelection(.enabled)
         }
-        .padding(.vertical, 10)
-        .padding(.horizontal, Spacing.m)
+        .padding(.vertical, Spacing.xs)
+        .padding(.horizontal, Spacing.s)
         .frame(maxWidth: .infinity)
-        .successCard()
+        .background(
+            CleansiaColors.primaryContainer.opacity(0.4),
+            in: RoundedRectangle(cornerRadius: CornerRadius.medium)
+        )
     }
 
     /// The Android enrichment block: a small spinner while the order loads, the
@@ -179,7 +181,8 @@ struct BookingSuccessView: View {
                 }
             }
         }
-        .padding(Spacing.s)
+        .padding(.horizontal, Spacing.s)
+        .padding(.vertical, Spacing.xs)
         .frame(maxWidth: .infinity, alignment: .leading)
         .successCard()
     }

@@ -55,8 +55,10 @@ the order detail's *Read the contract*, and the customer wizards' confirm step l
 - **The one-time-code entry** (`ui/components/CodeInput.kt`, `Components/CodeInput.swift`), behind the
   partner app's e-mail confirmation and the customer app's e-mail verification, is one real text field
   drawn as six boxes: a tap anywhere on them focuses it, and a long press opens its edit menu with
-  Paste. iOS adds the system's Paste button under the boxes, an icon alone, which reads the clipboard
-  without the prompt a read from code raises; Android adds a *Paste* text button, shown while the
+  Paste. Customer e-mail verification hides the separate paste action while retaining that edit menu
+  and native code AutoFill. Partner confirmation keeps the standalone action: iOS uses the system's
+  Paste button, which reads the clipboard without the prompt a read from code raises; Android uses
+  a *Paste* text button, shown while the
   clipboard holds text, checked whenever the window regains focus, because Android 10 and later let
   only the focused app read the clipboard. The Paste button replaces what was typed with the
   clipboard's code (`CodeInput.pasting`, `pasteOneTimeCode`), so a fragment shows as itself and is
@@ -112,6 +114,51 @@ these rating actions. The automatic prompt still asks once per booking and skips
 The customer detail measures its fixed header and footer before allowing the sheet to collapse; a
 short viewport exposes less map when the action stack needs the space. Other order states retain
 their existing minimum, and other iOS sheet callers use the default geometry.
+
+## Compact detail and payment recovery {#detail-payment-recovery}
+
+Both customer details keep saved stars and Edit together at ordinary text sizes, with wrapping at
+accessibility sizes. Photo classification is strict: Before is type 1, After type 2, Entrance type 3;
+an absent or null phase remains in Other. A thumbnail carries its phase and stable photo identity to the fresh
+gallery read; a removed image opens the collection without selecting a different photo. Fullscreen
+paging stays within the selected collection. Access notes are absent from accessibility while
+concealed, conceal again after 60 seconds, on inactive/background transitions and on order changes.
+
+The cleaning estimate occupies phase four of the bordered status tracker. A valid latest
+InProgress timestamp and positive estimate produce elapsed fill and remaining/overrun wording.
+Invalid or future timing leaves an active outline without invented elapsed fill; reaching an estimate
+does not advance the real lifecycle. Mascot sizing uses visible artwork bounds, including animation
+frames, and the expanded sheet hides the ornament before it can be clipped. Since 2026-10-29,
+partner iOS accessibility text sizes omit that decorative ornament and its header reserve so the
+public order reference can use the available width and wrap; ordinary text sizes keep the mascot.
+
+The six-second Home indicator and automatic advance use the same clock. User interaction,
+screen-reader/reduced-motion settings, app inactivity and an offscreen carousel pause automatic
+progress. Booking review uses aligned label/value rows; confirmation retains the real booking
+summary and progress timeline. Dispute context displays the public order number while internal
+identifiers remain routing/submission values.
+
+Saved-card capture retains its setup identity in app-owned session state, keyed by country and
+currency. The existing wipe registry erases it and cancels verification. Sheet completion starts at
+most eight card reads, spaced 1.5 seconds apart; pending state remains available for load/resume or
+manual verification, and simultaneous requests share one cycle. Only the returned savedCardId confirms
+success; when the capture currency is known, it must also match. The existing nil-currency fallback
+still requires that exact card identity. Restart requires fresh consent and does not cancel an old Stripe
+setup or prevent a late webhook. Every sheet callback carries the original attempt and session
+generation, so it cannot complete a replacement setup.
+
+Partner invoice readiness uses both PDF-path presence and generation failure. A nonblank path keeps
+Open available, including a previous PDF after failed regeneration; no-path states show a message
+and refresh. Neither the stored path nor internal invoice ID is rendered. Download ownership and
+storage checks remain server-owned. Partner quick actions retain single-line text with full
+accessible labels, cancellation styling preserves its existing eligibility, and iOS offers native
+Apple/Google navigation choices without changing price visibility rules.
+
+iOS Live Activity registration uses an explicit public signing-environment marker and bounded
+transient retries, with foreground recovery through existing order refresh. User-dismissed
+activities remain suppressed for that session/order lifecycle. OS delivery timing and native strong
+password rendering still require physical-device observation; source and simulator checks do not
+establish instant delivery or reproduce a faint system password suggestion.
 
 ## Guest bookings in the customer's account {#listed-guest-bookings}
 

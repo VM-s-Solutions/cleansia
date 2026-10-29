@@ -119,7 +119,7 @@ public class SendLiveActivityUpdateHandler(
             var skipped = false;
             foreach (var token in tokens)
             {
-                var result = await liveActivityPushClient.SendAsync(token.Token, push, ct);
+                var result = await liveActivityPushClient.SendAsync(token.Token, push, token.UseSandbox, ct);
 
                 if (result.Skipped)
                 {

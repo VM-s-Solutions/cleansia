@@ -18,5 +18,5 @@ public interface ILiveActivityPushClient
     /// Deliver <paramref name="push"/> to <paramref name="activityToken"/>. Returns the terminal,
     /// non-throwing outcome; THROWS on a transient failure so the caller lets the queue redeliver.
     /// </summary>
-    Task<LiveActivityPushResult> SendAsync(string activityToken, LiveActivityPush push, CancellationToken cancellationToken);
+    Task<LiveActivityPushResult> SendAsync(string activityToken, LiveActivityPush push, bool? useSandbox, CancellationToken cancellationToken);
 }

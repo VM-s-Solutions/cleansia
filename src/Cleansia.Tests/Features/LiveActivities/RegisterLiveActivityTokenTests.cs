@@ -62,7 +62,7 @@ public class RegisterLiveActivityTokenTests
     {
         ArrangeOrder(OtherUserId, OrderStatus.Confirmed);
 
-        var result = await CreateValidator().ValidateAsync(new RegisterLiveActivityToken.Command(DeviceId, Token, OrderId));
+        var result = await CreateValidator().ValidateAsync(new RegisterLiveActivityToken.Command(DeviceId, Token, OrderId, false));
 
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.OrderNotFound);
@@ -163,6 +163,46 @@ public class RegisterLiveActivityTokenTests
         Assert.Equal(CallerUserId, added!.UserId);
         Assert.Equal(OrderId, added.OrderId);
         Assert.Equal(Token, added.Token);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    [InlineData(null)]
+    public async Task Registration_Preserves_The_Tokens_Environment(bool? useSandbox)
+    {
+        LiveActivityToken? added = null;
+        _tokenRepository.Setup(r => r.Add(It.IsAny<LiveActivityToken>()))
+            .Callback<LiveActivityToken>(t => added = t);
+
+        var result = await InvokeHandler(new RegisterLiveActivityToken.Command(DeviceId, Token, null, useSandbox));
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(added);
+        Assert.Equal(useSandbox, added.UseSandbox);
+        Assert.Equal(Token, added.Token);
+        Assert.Equal(DeviceId, added.DeviceId);
+    }
+
+    [Fact]
+    public async Task Rotation_Replaces_The_Environment_And_Legacy_Registration_Clears_It()
+    {
+        var existing = LiveActivityToken.Create(CallerUserId, DeviceId, OrderId, "old-token", "tenant-a", true);
+        _tokenRepository
+            .Setup(r => r.GetByUserDeviceOrderAsync(CallerUserId, DeviceId, OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        await InvokeHandler(new RegisterLiveActivityToken.Command(DeviceId, "production-token", OrderId, false));
+
+        Assert.False(existing.UseSandbox);
+        Assert.Equal("production-token", existing.Token);
+        Assert.Equal("tenant-a", existing.TenantId);
+
+        await InvokeHandler(new RegisterLiveActivityToken.Command(DeviceId, "legacy-token", OrderId));
+
+        Assert.Null(existing.UseSandbox);
+        Assert.Equal("legacy-token", existing.Token);
+        _tokenRepository.Verify(r => r.Add(It.IsAny<LiveActivityToken>()), Times.Never);
     }
 
     [Fact]

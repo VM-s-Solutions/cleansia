@@ -24,6 +24,7 @@ final class InvoiceDetailViewModel: ViewModel {
     private let invoiceId: String
     private let client: PartnerPayrollClient
     private let snackbar: SnackbarController
+    private var isLoading = false
 
     init(invoiceId: String, client: PartnerPayrollClient, snackbar: SnackbarController) {
         self.invoiceId = invoiceId
@@ -31,14 +32,23 @@ final class InvoiceDetailViewModel: ViewModel {
         self.snackbar = snackbar
     }
 
-    /// True only when the backend produced a PDF for this invoice. Guards the
-    /// "Open invoice PDF" affordance — a failed generation has nothing to open.
     var canOpenPdf: Bool {
         guard let invoice = state.loadedValue else { return false }
-        return !invoice.pdfGenerationFailed
+        return invoice.pdfBlobName?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
+    }
+
+    var pdfMessage: String? {
+        guard let invoice = state.loadedValue else { return nil }
+        if invoice.pdfGenerationFailed {
+            return canOpenPdf ? L10n.Invoices.pdfPreviousWarning : L10n.Invoices.pdfUnavailable
+        }
+        return canOpenPdf ? nil : L10n.Invoices.pdfPending
     }
 
     func load() async {
+        guard !isLoading else { return }
+        isLoading = true
+        defer { isLoading = false }
         if state.loadedValue == nil {
             state = .loading
         }
@@ -54,7 +64,7 @@ final class InvoiceDetailViewModel: ViewModel {
     }
 
     func openPdf() async {
-        guard pdfState == .idle else { return }
+        guard canOpenPdf, pdfState == .idle else { return }
         pdfState = .downloading
         // E3: download only THIS invoice's id — the one the VM was constructed
         // with from the caller's own list/detail; never a synthesized id.

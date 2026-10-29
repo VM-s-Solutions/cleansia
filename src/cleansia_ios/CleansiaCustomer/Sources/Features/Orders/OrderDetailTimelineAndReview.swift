@@ -92,14 +92,28 @@ struct OrderReviewCard: View {
     var body: some View {
         OrderCardSurface {
             OrderSectionHeaderRow(title: L10n.OrderDetail.yourReview)
-            StarsRow(rating: review.rating)
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: Spacing.s) {
+                    StarsRow(rating: review.rating)
+                    Spacer(minLength: Spacing.s)
+                    editButton.fixedSize()
+                }
+                VStack(alignment: .leading, spacing: Spacing.xs) {
+                    StarsRow(rating: review.rating)
+                    editButton
+                }
+            }
             if let comment = review.comment, !comment.isBlank {
                 Text(verbatim: "“\(comment)”")
                     .font(CleansiaTypography.bodyMedium)
                     .foregroundColor(CleansiaColors.onSurfaceVariant)
             }
-            CleansiaOutlinedButton(L10n.OrderDetail.editReview, action: onLeaveReview)
         }
+    }
+
+    private var editButton: some View {
+        CleansiaOutlinedButton(L10n.OrderDetail.editReview, size: .small, action: onLeaveReview)
+            .frame(minHeight: 44)
     }
 }
 

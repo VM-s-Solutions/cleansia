@@ -99,6 +99,21 @@ invoice per group and flushes them together, so a period is invoiced whole or no
 already-exists guard is per currency too — a late pay row in a currency the period has already invoiced
 is refused; one in a currency still open is not.
 
+After that financial commit, the shared command invokes the existing PDF generation command for each
+created invoice in a fresh scope, bound to that committed invoice's tenant. A failed document commit
+discards its scope before another currency is attempted; it cannot contaminate the next render or undo
+financial creation. Cancellation still stops the remaining document work. This covers the manual and
+queue callers. PDF generation explicitly reads the invoice's
+pay period before formatting the document and its blob path. A failed render records document failure;
+it does not undo an invoice that was already created. The existing administrator regeneration action is
+the recovery path if rendering fails or a process stops between the financial commit and rendering.
+
+Document readiness is separate from invoice existence. An owned invoice with no PDF path reports that
+the document is not ready, or the recorded generation failure. A stored path whose object is missing
+reports an unavailable document. Foreign or nonexistent invoices retain the same not-found response.
+A failed regeneration may leave the previous readable PDF in place, so its failure warning does not
+remove access to that document.
+
 The reconciliation sweep (ADR-0002 D3.4) matches pay rows against invoices on
 `(PayPeriodId, EmployeeId, CurrencyId)`, so a pair whose CZK pay is invoiced and whose EUR pay is not is
 still a candidate. The message key stays per pair — `invoice:{payPeriodId}:{employeeId}` — and one

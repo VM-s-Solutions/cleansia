@@ -20,6 +20,12 @@ enum LiveProgressStep: Int, CaseIterable {
 }
 
 enum LiveProgress {
+    struct EstimateProgress: Equatable {
+        let fraction: Double
+        let remainingMinutes: Int
+        let overrunMinutes: Int
+    }
+
     /// Active step index for the five-dot indicator, mirroring `StepIndicator`
     /// in `OrderDetailHeader.kt`. New/Pending → Booked, Confirmed →
     /// Accepted, OnTheWay → On the way, InProgress → Started, Completed →
@@ -35,22 +41,31 @@ enum LiveProgress {
         }
     }
 
-    /// Progress fraction (0…0.97) since the InProgress entry was recorded vs the
-    /// estimated duration. Returns nil when either anchor is missing — never a
-    /// guess (`computeInProgressProgress` in `OrderDetailHeader.kt`).
     static func inProgressFraction(
         history: [OrderStatusTrackDto]?,
         estimatedMinutes: Int,
         now: Date
     ) -> Double? {
+        estimateProgress(history: history, estimatedMinutes: estimatedMinutes, now: now)?.fraction
+    }
+
+    static func estimateProgress(
+        history: [OrderStatusTrackDto]?,
+        estimatedMinutes: Int,
+        now: Date
+    ) -> EstimateProgress? {
         guard estimatedMinutes > 0 else { return nil }
         guard let startedAt = history?
-            .first(where: { $0.statusEnum == ._4 })?
-            .createdOn
+            .filter({ $0.statusEnum == ._4 })
+            .compactMap(\.createdOn)
+            .max(), startedAt <= now
         else { return nil }
         let totalSeconds = Double(estimatedMinutes) * 60
-        guard totalSeconds > 0 else { return nil }
-        let elapsed = max(0, now.timeIntervalSince(startedAt))
-        return min(0.97, max(0, elapsed / totalSeconds))
+        let elapsed = now.timeIntervalSince(startedAt)
+        return EstimateProgress(
+            fraction: min(1, elapsed / totalSeconds),
+            remainingMinutes: max(0, Int(ceil((totalSeconds - elapsed) / 60))),
+            overrunMinutes: max(0, Int(ceil((elapsed - totalSeconds) / 60)))
+        )
     }
 }

@@ -72,9 +72,12 @@ struct InvoiceDetailView: View {
                 isDownloading: vm.pdfState.isDownloading,
                 onOpenPeriodPay: onOpenPeriodPay,
                 onOpenPdf: { Task { await vm.openPdf() } },
-                onCopy: copyToClipboard
+                onCopy: copyToClipboard,
+                pdfMessage: vm.pdfMessage,
+                onRefresh: { Task { await vm.load() } }
             )
             .background(CleansiaColors.background.ignoresSafeArea())
+            .refreshable { await vm.load() }
         }
     }
 
@@ -139,6 +142,7 @@ private struct InvoiceDetailErrorView: View {
                 currencyId: "cur-czk",
                 status: ._3,
                 pdfGenerationFailed: false,
+                pdfBlobName: "generated-invoices/sample.pdf",
                 generatedAt: Date(),
                 approvedAt: Date(),
                 paidAt: Date(),

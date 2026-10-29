@@ -37,6 +37,7 @@ class PaymentsViewModelTest {
     private lateinit var receivables: ReceivableRepository
     private lateinit var snackbar: SnackbarController
     private lateinit var appContext: Context
+    private lateinit var marketRepository: cz.cleansia.customer.core.market.MarketRepository
 
     private val card = SavedCard(id = "card-1", brand = "visa", last4 = "4242", expMonth = 4, expYear = 2029, currencyCode = "CZK")
     private val fee = Receivable(
@@ -53,6 +54,11 @@ class PaymentsViewModelTest {
     @Before
     fun setUp() {
         savedCards = mockk()
+        every { savedCards.sessionEpoch } returns 0L
+        marketRepository = mockk()
+        every { marketRepository.state } returns kotlinx.coroutines.flow.MutableStateFlow(cz.cleansia.customer.core.market.MarketState.Unavailable)
+        every { savedCards.cards } returns kotlinx.coroutines.flow.MutableStateFlow(null)
+        every { savedCards.captures } returns kotlinx.coroutines.flow.MutableStateFlow(emptyMap())
         receivables = mockk()
         snackbar = mockk(relaxed = true)
         appContext = mockk(relaxed = true)
@@ -66,7 +72,7 @@ class PaymentsViewModelTest {
         coEvery { receivables.getMine() } returns ApiResult.Success(listOf(fee))
     }
 
-    private fun viewModel() = PaymentsViewModel(savedCards, receivables, snackbar, appContext)
+    private fun viewModel() = PaymentsViewModel(savedCards, receivables, snackbar, appContext, marketRepository, cz.cleansia.customer.core.payments.StripeConfig("pk_test_fixture"))
 
     @Test
     fun `load shows what is owed beside the saved card`() = runTest {

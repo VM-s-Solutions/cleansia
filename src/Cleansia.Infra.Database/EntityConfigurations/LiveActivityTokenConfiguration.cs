@@ -17,6 +17,7 @@ public class LiveActivityTokenConfiguration : TenantAuditableEntityConfiguration
         builder.Property(t => t.DeviceId).IsRequired().HasMaxLength(256);
         builder.Property(t => t.OrderId).HasMaxLength(26);
         builder.Property(t => t.Token).IsRequired().HasMaxLength(512);
+        builder.Property(t => t.UseSandbox);
         builder.Property(t => t.LastUpdatedAt).IsRequired();
 
         // Registration upserts on this key (ActivityKit rotates tokens mid-activity and across

@@ -3486,6 +3486,8 @@
         "payout_currency_mismatch": "Výplatní účet uklízeče není nastaven pro příjem měny této faktury. Požádejte ho, aby před schválením aktualizoval své výplatní údaje.",
         "payout_details_missing": "Uklízeč nemá uložené použitelné výplatní údaje, takže platbu za tuto fakturu není kam poslat. Požádejte ho, aby před schválením doplnil své výplatní údaje.",
         "pdf_generation_failed": "Nepodařilo se vygenerovat PDF",
+        "pdf_not_ready": "PDF faktury zatím není připravené. Zkuste to později.",
+        "pdf_unavailable": "PDF faktury není dostupné. Kontaktujte podporu.",
         "reference_already_assigned": "Tato faktura již variabilní symbol má.",
         "reference_capacity_exhausted": "Variabilní symboly pro letošní rok jsou vyčerpány. Kontaktujte podporu.",
         "reference_missing": "Před zaznamenáním platby přiřaďte variabilní symbol.",

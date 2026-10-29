@@ -105,7 +105,8 @@ extension InvoiceDetail {
         id: String = "inv-1",
         totalAmount: Double = 0,
         currencyId: String? = "cur-czk",
-        pdfGenerationFailed: Bool = false
+        pdfGenerationFailed: Bool = false,
+        pdfBlobName: String? = "generated-invoices/test.pdf"
     ) -> InvoiceDetail {
         InvoiceDetail(
             id: id,
@@ -123,6 +124,7 @@ extension InvoiceDetail {
             currencyId: currencyId,
             status: ._1,
             pdfGenerationFailed: pdfGenerationFailed,
+            pdfBlobName: pdfBlobName,
             generatedAt: nil,
             approvedAt: nil,
             paidAt: nil,

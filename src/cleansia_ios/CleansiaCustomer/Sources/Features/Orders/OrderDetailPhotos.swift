@@ -5,44 +5,61 @@ import SwiftUI
 struct OrderPhotosSection: View {
     let gallery: OrderPhotos
     let onViewPhotos: () -> Void
-
-    private var previewThumbs: [GetOrderPhotosOrderPhotoDto] {
-        // A few previews that fit the card width without a horizontal scroll — the whole card is a
-        // button into the full gallery, so the row is just a teaser, not a scroller.
-        Array(gallery.photos.prefix(4))
-    }
+    var onPreviewPhoto: ((OrderPhotoPhase, String?) -> Void)?
 
     var body: some View {
-        Button(action: onViewPhotos) {
-            OrderCardSurface {
-                HStack {
-                    Text(L10n.OrderPhotos.sectionTitle)
-                        .font(CleansiaTypography.titleMedium)
-                        .foregroundColor(CleansiaColors.onBackground)
-                    Spacer()
-                    Text(L10n.OrderPhotos.viewButton)
-                        .font(CleansiaTypography.labelLarge)
-                        .foregroundColor(CleansiaColors.primaryText)
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(CleansiaColors.primaryText)
-                }
-                HStack(spacing: Spacing.xs) {
-                    PhotoCountPill(text: L10n.OrderPhotos.summaryBefore(gallery.beforeCount))
-                    PhotoCountPill(text: L10n.OrderPhotos.summaryAfter(gallery.afterCount))
-                }
-                // Plain, non-scrolling row (clipped) — a horizontal ScrollView here captured the
-                // pan gesture and broke the edge-swipe-back on completed orders.
-                HStack(spacing: Spacing.xs) {
-                    ForEach(Array(previewThumbs.enumerated()), id: \.offset) { _, photo in
-                        PhotoThumb(urlString: photo.blobUrl, size: 72)
+        OrderCardSurface {
+            HStack {
+                Text(L10n.OrderPhotos.sectionTitle)
+                    .font(CleansiaTypography.titleMedium)
+                    .foregroundColor(CleansiaColors.onBackground)
+                Spacer()
+                Button(action: onViewPhotos) {
+                    HStack(spacing: Spacing.xs) {
+                        Text(L10n.OrderPhotos.viewButton)
+                            .font(CleansiaTypography.labelLarge)
+                            .foregroundColor(CleansiaColors.primaryText)
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(CleansiaColors.primaryText)
                     }
+                    .frame(minHeight: 44)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .clipped()
+                .buttonStyle(.plain)
+            }
+            HStack(alignment: .top, spacing: Spacing.xs) {
+                ForEach(gallery.phases) { phase in
+                    let photos = gallery.photos(for: phase)
+                    VStack(alignment: .leading, spacing: Spacing.xxs) {
+                        PhotoCountPill(text: "\(phase.label) · \(photos.count)")
+                        if photos.isEmpty {
+                            Text(L10n.OrderPhotos.empty)
+                                .font(CleansiaTypography.labelMedium)
+                                .foregroundColor(CleansiaColors.onSurfaceVariant)
+                        } else {
+                            HStack(spacing: Spacing.xs) {
+                                ForEach(Array(photos.prefix(1).enumerated()), id: \.offset) { _, photo in
+                                    Button {
+                                        if let onPreviewPhoto {
+                                            onPreviewPhoto(phase, photo.id)
+                                        } else {
+                                            onViewPhotos()
+                                        }
+                                    } label: {
+                                        PhotoThumb(urlString: photo.blobUrl, size: 64)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .accessibilityLabel(phase.label)
+                                }
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .clipped()
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
             }
         }
-        .buttonStyle(.plain)
     }
 }
 

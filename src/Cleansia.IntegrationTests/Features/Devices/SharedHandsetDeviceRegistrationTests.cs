@@ -255,9 +255,9 @@ public class SharedHandsetDeviceRegistrationTests(PostgresContainerFixture fixtu
     private static void AddActivityTokens(
         CleansiaDbContext context, string userId, string tenantId, string deviceId, string pushToStartToken)
     {
-        context.LiveActivityTokens.Add(LiveActivityToken.Create(userId, deviceId, orderId: null, pushToStartToken, tenantId));
+        context.LiveActivityTokens.Add(LiveActivityToken.Create(userId, deviceId, orderId: null, pushToStartToken, tenantId, false));
         context.LiveActivityTokens.Add(
-            LiveActivityToken.Create(userId, deviceId, OrderOf(userId), UpdateTokenOf(userId, deviceId), tenantId));
+            LiveActivityToken.Create(userId, deviceId, OrderOf(userId), UpdateTokenOf(userId, deviceId), tenantId, true));
     }
 
     private sealed class Harness
@@ -283,8 +283,8 @@ public class SharedHandsetDeviceRegistrationTests(PostgresContainerFixture fixtu
                 .ReturnsAsync(new PushDispatchResult(1, 0, []));
             services.Replace(ServiceDescriptor.Singleton(_dispatcher.Object));
             _activityPushClient
-                .Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<LiveActivityPush>(), It.IsAny<CancellationToken>()))
-                .Callback((string token, LiveActivityPush _, CancellationToken _) => ActivityPushes.Add(token))
+                .Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<LiveActivityPush>(), It.IsAny<bool?>(), It.IsAny<CancellationToken>()))
+                .Callback((string token, LiveActivityPush _, bool? _, CancellationToken _) => ActivityPushes.Add(token))
                 .ReturnsAsync(LiveActivityPushResult.Sent());
             services.Replace(ServiceDescriptor.Singleton(_activityPushClient.Object));
             return Task.CompletedTask;

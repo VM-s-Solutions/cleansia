@@ -8,6 +8,8 @@ import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.partner.data.invoices.InvoiceDetail
 import cz.cleansia.partner.data.invoices.InvoicesRepository
+import cz.cleansia.partner.data.invoices.InvoicePdfState
+import cz.cleansia.partner.data.invoices.pdfState
 import cz.cleansia.partner.testing.MainDispatcherRule
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -15,8 +17,10 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.runCurrent
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -44,6 +48,8 @@ class InvoiceDetailViewModelTest {
         snackbar = mockk(relaxed = true)
         appContext = mockk(relaxed = true)
         every { errorTranslator.translate(any()) } returns "translated error"
+        every { invoice.pdfBlobName } returns "existing.pdf"
+        every { invoice.pdfGenerationFailed } returns false
     }
 
     private fun viewModel() = InvoiceDetailViewModel(
@@ -119,5 +125,56 @@ class InvoiceDetailViewModelTest {
         vm.clearDownloadedUri()
         assertEquals(DownloadState.Idle, vm.downloadState.value)
         coVerify(exactly = 0) { invoicesRepository.downloadPdf(any()) }
+    }
+
+    @Test
+    fun `PDF readiness distinguishes pending failed ready and retained document`() {
+        for ((path, failed, expected) in listOf(
+            Triple(null, false, InvoicePdfState.Pending),
+            Triple("  ", true, InvoicePdfState.Failed),
+            Triple("existing.pdf", false, InvoicePdfState.Ready),
+            Triple("existing.pdf", true, InvoicePdfState.RetainedAfterFailure),
+        )) {
+            every { invoice.pdfBlobName } returns path
+            every { invoice.pdfGenerationFailed } returns failed
+            assertEquals(expected, invoice.pdfState)
+        }
+    }
+
+    @Test
+    fun `unready invoice cannot download and refresh can make it ready`() = runTest {
+        every { invoice.pdfBlobName } returns null
+        coEvery { invoicesRepository.getById(invoiceId) } returns ApiResult.Success(invoice)
+        coEvery { invoicesRepository.downloadPdf(invoiceId) } returns ApiResult.Error(ApiError.Network("offline"))
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.download()
+        advanceUntilIdle()
+        coVerify(exactly = 0) { invoicesRepository.downloadPdf(any()) }
+
+        every { invoice.pdfBlobName } returns "now-ready.pdf"
+        vm.refresh()
+        advanceUntilIdle()
+        coEvery { invoicesRepository.downloadPdf(invoiceId) } returns ApiResult.Error(ApiError.Network("offline"))
+        vm.download()
+        advanceUntilIdle()
+        coVerify(exactly = 1) { invoicesRepository.downloadPdf(invoiceId) }
+    }
+
+    @Test
+    fun `retained PDF remains downloadable and duplicate taps start one request`() = runTest {
+        every { invoice.pdfGenerationFailed } returns true
+        coEvery { invoicesRepository.getById(invoiceId) } returns ApiResult.Success(invoice)
+        val gate = CompletableDeferred<ApiResult<okhttp3.ResponseBody>>()
+        coEvery { invoicesRepository.downloadPdf(invoiceId) } coAnswers { gate.await() }
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.download()
+        vm.download()
+        runCurrent()
+        assertEquals(DownloadState.Downloading, vm.downloadState.value)
+        coVerify(exactly = 1) { invoicesRepository.downloadPdf(invoiceId) }
+        gate.complete(ApiResult.Error(ApiError.Network("offline")))
+        advanceUntilIdle()
     }
 }

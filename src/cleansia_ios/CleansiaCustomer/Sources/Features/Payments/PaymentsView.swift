@@ -4,6 +4,7 @@ import SwiftUI
 struct PaymentsView: View {
     @StateObject private var vm: PaymentsViewModel
     @State private var cardToRemove: SavedCard?
+    @State private var restartingCardSetup = false
     /// The card a confirmed removal is running for, so its row can show the spinner the dialog used to.
     @State private var removingCardId: String?
     @Environment(\.openURL) private var openURL
@@ -15,14 +16,16 @@ struct PaymentsView: View {
         receivableClient: ReceivableClient,
         snackbar: SnackbarController,
         paymentSheet: PaymentSheetPresenting,
-        market: Market?
+        market: Market?,
+        pendingCards: SavedCardCaptureStore
     ) {
         _vm = StateObject(wrappedValue: PaymentsViewModel(
             savedCardClient: savedCardClient,
             receivableClient: receivableClient,
             snackbar: snackbar,
             countryId: market?.countryId,
-            currencyCode: market?.currencyCode
+            currencyCode: market?.currencyCode,
+            pendingCards: pendingCards
         ))
         self.paymentSheet = paymentSheet
     }
@@ -35,11 +38,15 @@ struct PaymentsView: View {
             offersCardCapture: vm.offersCardCapture,
             cardConsentAccepted: vm.cardConsentAccepted,
             addingCard: vm.addCardState.isSubmitting,
+            cardCapture: vm.cardCapture,
             onRetry: { Task { await vm.load() } },
             onPay: { receivable in Task { await vm.pay(receivable) } },
             onRemoveRequested: { cardToRemove = $0 },
             onCardConsentChanged: vm.setCardConsentAccepted,
-            onAddCard: { Task { await vm.addCard() } }
+            onAddCard: { Task { await vm.addCard() } },
+            onCheckCard: { Task { await vm.checkSavedCard() } },
+            onContinueCard: vm.continueCardSetup,
+            onRestartCard: { restartingCardSetup = true }
         )
         .navigationTitle(L10n.Payments.title)
         .navigationBarTitleDisplayMode(.inline)
@@ -58,12 +65,19 @@ struct PaymentsView: View {
         } message: { _ in
             Text(L10n.Payments.cardRemoveMessage)
         }
+        .alert(L10n.Payments.cardRestartTitle, isPresented: $restartingCardSetup) {
+            Button(L10n.Payments.cardRestartAction, role: .destructive) { vm.restartCardSetup() }
+            Button(L10n.cancel, role: .cancel) {}
+        } message: {
+            Text(L10n.Payments.cardRestartMessage)
+        }
         .task { await vm.load() }
         .onReceive(vm.payLinks) { openURL($0) }
-        .onReceive(vm.cardSetups) { presentation in
-            Task {
-                let outcome = await paymentSheet.present(presentation)
-                await vm.cardSheetFinished(outcome)
+        .onReceive(vm.cardSetups) { request in
+            Task { @MainActor in
+                guard vm.claimCardSheet(request.attempt) else { return }
+                let outcome = await paymentSheet.present(request.presentation)
+                await vm.cardSheetFinished(outcome, attempt: request.attempt)
             }
         }
         .onChange(of: scenePhase) { phase in
@@ -74,18 +88,22 @@ struct PaymentsView: View {
     }
 }
 
-private struct PaymentsContent: View {
+struct PaymentsContent: View {
     let state: UiState<PaymentsSnapshot>
     let removingCardId: String?
     let paying: Bool
     let offersCardCapture: Bool
     let cardConsentAccepted: Bool
     let addingCard: Bool
+    let cardCapture: SavedCardCapture?
     let onRetry: () -> Void
     let onPay: (Receivable) -> Void
     let onRemoveRequested: (SavedCard) -> Void
     let onCardConsentChanged: (Bool) -> Void
     let onAddCard: () -> Void
+    let onCheckCard: () -> Void
+    let onContinueCard: () -> Void
+    let onRestartCard: () -> Void
 
     var body: some View {
         ZStack {
@@ -98,10 +116,15 @@ private struct PaymentsContent: View {
     private var content: some View {
         switch state {
         case .loading:
-            ProgressView()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            VStack(spacing: Spacing.m) {
+                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+                captureBlock.padding(Spacing.ml)
+            }
         case .error:
-            PaymentsErrorState(onRetry: onRetry)
+            VStack(spacing: Spacing.m) {
+                PaymentsErrorState(onRetry: onRetry)
+                captureBlock.padding(Spacing.ml)
+            }
         case let .loaded(snapshot):
             ScrollView {
                 VStack(alignment: .leading, spacing: Spacing.s) {
@@ -127,6 +150,7 @@ private struct PaymentsContent: View {
                             )
                         }
                     }
+                    captureBlock
                     if offersCardCapture {
                         AddCardBlock(
                             consentAccepted: cardConsentAccepted,
@@ -139,6 +163,96 @@ private struct PaymentsContent: View {
                 .padding(Spacing.ml)
             }
         }
+    }
+
+    @ViewBuilder
+    private var captureBlock: some View {
+        if let cardCapture {
+            PendingCardBlock(
+                capture: cardCapture, onCheck: onCheckCard,
+                onContinue: onContinueCard, onRestart: onRestartCard
+            )
+        }
+    }
+}
+
+private struct PendingCardBlock: View {
+    let capture: SavedCardCapture
+    let onCheck: () -> Void
+    let onContinue: () -> Void
+    let onRestart: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.s) {
+            Label(L10n.Payments.cardPendingTitle, systemImage: "creditcard")
+                .font(CleansiaTypography.titleMedium)
+                .foregroundColor(CleansiaColors.onSurface)
+            Text(L10n.Payments.cardAddPending)
+                .font(CleansiaTypography.bodyMedium)
+                .foregroundColor(CleansiaColors.onSurfaceVariant)
+                .fixedSize(horizontal: false, vertical: true)
+            switch capture.stage {
+            case .starting, .presentingSheet:
+                ProgressView().tint(CleansiaColors.primary)
+            case .awaitingSheet:
+                PendingCardButton(title: L10n.Booking.continueAction, primary: true, action: onContinue)
+            case .pending, .verifying:
+                PendingCardButton(
+                    title: L10n.Payments.cardCheckAction, primary: true,
+                    loading: capture.stage.isBusy,
+                    enabled: !capture.stage.isBusy,
+                    action: onCheck
+                )
+            }
+            if capture.stage != .starting {
+                PendingCardButton(title: L10n.Payments.cardRestartAction, primary: false, action: onRestart)
+            }
+        }
+        .padding(Spacing.m)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(CleansiaColors.surface, in: RoundedRectangle(cornerRadius: CornerRadius.large))
+        .overlay(RoundedRectangle(cornerRadius: CornerRadius.large).stroke(CleansiaColors.outlineVariant, lineWidth: 1))
+    }
+}
+
+private struct PendingCardButton: View {
+    @Environment(\.dynamicTypeSize) private var textSize
+    let title: String
+    let primary: Bool
+    var loading = false
+    var enabled = true
+    let action: () -> Void
+
+    var body: some View {
+        Group {
+            if textSize.isAccessibilitySize {
+                Button(action: action) {
+                    Group {
+                        if loading {
+                            ProgressView().tint(primary ? CleansiaColors.onPrimary : CleansiaColors.onSurface)
+                        } else {
+                            Text(title)
+                                .font(CleansiaTypography.titleMedium)
+                                .multilineTextAlignment(.center)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 56)
+                    .padding(.horizontal, Spacing.m)
+                    .padding(.vertical, Spacing.xs)
+                    .foregroundColor(primary ? CleansiaColors.onPrimary : CleansiaColors.onSurface)
+                    .background(primary ? CleansiaColors.primary : CleansiaColors.surface)
+                    .clipShape(Capsule())
+                    .overlay(Capsule().stroke(primary ? Color.clear : CleansiaColors.outline, lineWidth: 1))
+                }
+                .disabled(!enabled || loading)
+            } else if primary {
+                CleansiaPrimaryButton(title, loading: loading, enabled: enabled, action: action)
+            } else {
+                CleansiaOutlinedButton(title, enabled: enabled, action: action)
+            }
+        }
+        .accessibilityLabel(title)
     }
 }
 
@@ -332,11 +446,15 @@ private struct PaymentsErrorState: View {
                 offersCardCapture: true,
                 cardConsentAccepted: false,
                 addingCard: false,
+                cardCapture: nil,
                 onRetry: {},
                 onPay: { _ in },
                 onRemoveRequested: { _ in },
                 onCardConsentChanged: { _ in },
-                onAddCard: {}
+                onAddCard: {},
+                onCheckCard: {},
+                onContinueCard: {},
+                onRestartCard: {}
             )
         }
     }

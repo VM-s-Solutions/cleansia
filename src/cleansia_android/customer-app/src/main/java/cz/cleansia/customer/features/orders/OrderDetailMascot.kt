@@ -99,11 +99,13 @@ internal fun OrderFloatingMascot(
                 OrderStatus.InProgress -> MascotAnimation(
                     resId = R.raw.mascot_cleaning_in_progress,
                     size = size,
+                    modifier = Modifier.scale(1.04839f),
                 )
                 OrderStatus.Confirmed, OrderStatus.OnTheWay -> MascotAnimation(
                     resId = R.raw.mascot_welcoming,
                     size = size,
                     loop = false,
+                    modifier = Modifier.scale(1.14706f),
                 )
                 else -> {
                     val art = staticMascotFor(current)
@@ -131,24 +133,9 @@ internal fun OrderFloatingMascot(
 private fun mascotTopPx(sheetTopPx: () -> Float, contentScrollPx: () -> Float, sizePx: Float): Float =
     sheetTopPx() - sizePx / 2f - contentScrollPx()
 
-/**
- * How much each character has to be blown up for all of them to be drawn the same size.
- *
- * **The box was never the problem — the artwork is.** Every asset is a square canvas the character
- * only partly fills, and it fills it by a different amount each time, so an identical box still
- * renders characters of visibly different sizes. Measured as the alpha bounding box's width over the
- * canvas width, the whole family reads: `thumbs_up` 0.57, `spray_and_cloth` 0.57, `leaning` 0.65,
- * `waving` 0.77, `ready` 0.82 — a 44% spread between the smallest and the largest.
- *
- * Each factor is `0.82 / fill`, i.e. normalised against the fullest asset, so nothing is ever drawn
- * smaller than it is today. Re-cutting the PNGs would be the real fix; this is the one that does not
- * touch binary assets. To remeasure after an asset changes, take the alpha bounding box of the PNG
- * and divide its width by the canvas width. The animated WebPs are not in the table — they are a
- * different set, cropped differently again — and anything unlisted simply draws unscaled.
- */
 private val mascotArtScale: Map<Int, Float> = mapOf(
-    R.drawable.mascot_ready to 1.00f,
-    R.drawable.mascot_leaning to 1.26f,
+    R.drawable.mascot_ready to 0.85773f,
+    R.drawable.mascot_leaning to 0.89752f,
 )
 
 /**

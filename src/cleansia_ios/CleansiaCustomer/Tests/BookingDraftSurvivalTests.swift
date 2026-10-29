@@ -461,8 +461,8 @@ final class BookingDraftSurvivalTests: XCTestCase {
         )
         XCTAssertTrue(
             view.contains(
-                ".onChange(of: scenePhase) { phase in " +
-                    "if phase == .active, model.isBookingPresented { recheckOpenBooking() } }"
+                ".onChange(of: scenePhase) { phase in guard phase == .active else { return } " +
+                    "if model.isBookingPresented { recheckOpenBooking() } Task {"
             ),
             "a return to the foreground no longer re-checks the open sheet"
         )

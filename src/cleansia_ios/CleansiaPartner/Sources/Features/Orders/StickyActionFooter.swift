@@ -140,11 +140,11 @@ struct StickyActionFooter: View {
     }
 
     private var dropLink: some View {
-        FooterTextLink(
+        CleansiaDangerButton(
             L10n.Orders.dropAction,
-            isBusy: isBusy(.drop),
+            loading: isBusy(.drop),
             enabled: inFlightAction == nil,
-            onTap: onDropRequested
+            action: onDropRequested
         )
     }
 

@@ -4,6 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -200,26 +203,7 @@ fun ConfirmStep(
             }
             HorizontalDivider(Modifier.padding(vertical = 10.dp))
 
-            // Booking details with explicit labels — easier to scan than bare icons.
-            Text(
-                stringResource(R.string.booking_summary_details_label),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(Modifier.height(4.dp))
-            LabeledInfoRow(Icons.Outlined.LocationOn, stringResource(R.string.booking_summary_address), state.street.ifBlank { "—" })
-            LabeledInfoRow(
-                Icons.Outlined.Home,
-                stringResource(R.string.booking_summary_property),
-                roomsAndBathrooms(state.rooms, state.bathrooms),
-            )
-            LabeledInfoRow(
-                Icons.Outlined.CleaningServices,
-                stringResource(R.string.dirtiness_level_label),
-                state.dirtinessLevel?.let { stringResource(it.titleRes()) } ?: "—",
-            )
-            LabeledInfoRow(Icons.Outlined.CalendarToday, stringResource(R.string.booking_summary_date), state.selectedDate.ifBlank { "—" })
-            LabeledInfoRow(Icons.Outlined.AccessTime, stringResource(R.string.booking_summary_time), state.selectedTime.ifBlank { "—" })
+            BookingSummaryDetails(state)
 
             HorizontalDivider(Modifier.padding(vertical = 10.dp))
 
@@ -911,21 +895,21 @@ private fun ExtrasCard(
  */
 @Composable
 private fun LabeledInfoRow(icon: ImageVector, label: String, value: String) {
-    Row(Modifier.padding(vertical = 4.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.padding(vertical = 4.dp).fillMaxWidth(), verticalAlignment = Alignment.Top) {
         Icon(icon, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.width(8.dp))
         Text(
             label,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.width(72.dp),
+            modifier = Modifier.weight(0.36f),
         )
         Text(
             value,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 2,
-            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+            modifier = Modifier.weight(0.64f),
+            textAlign = androidx.compose.ui.text.style.TextAlign.End,
         )
     }
 }
@@ -1093,6 +1077,48 @@ private fun CodeEntryRow(
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(20.dp),
             )
+        }
+    }
+}
+
+@Composable
+private fun BookingSummaryDetails(state: BookingState) {
+    // Booking details with explicit labels — easier to scan than bare icons.
+    Text(
+        stringResource(R.string.booking_summary_details_label),
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    Spacer(Modifier.height(4.dp))
+    LabeledInfoRow(Icons.Outlined.LocationOn, stringResource(R.string.booking_summary_address), state.street.ifBlank { "—" })
+    LabeledInfoRow(
+        Icons.Outlined.Home,
+        stringResource(R.string.booking_summary_property),
+        roomsAndBathrooms(state.rooms, state.bathrooms),
+    )
+    LabeledInfoRow(
+        Icons.Outlined.CleaningServices,
+        stringResource(R.string.dirtiness_level_label),
+        state.dirtinessLevel?.let { stringResource(it.titleRes()) } ?: "—",
+    )
+    LabeledInfoRow(Icons.Outlined.CalendarToday, stringResource(R.string.booking_summary_date), state.selectedDate.ifBlank { "—" })
+    LabeledInfoRow(Icons.Outlined.AccessTime, stringResource(R.string.booking_summary_time), state.selectedTime.ifBlank { "—" })
+
+}
+
+@Preview
+@Composable
+private fun PolishBookingDetailsPreview() {
+    val activity = androidx.compose.ui.platform.LocalContext.current as? android.app.Activity
+    androidx.compose.runtime.SideEffect { activity?.actionBar?.hide() }
+    cz.cleansia.customer.ui.theme.CleansiaTheme {
+        androidx.compose.material3.Surface(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars)) {
+            Column(Modifier.padding(20.dp)) {
+                BookingSummaryDetails(BookingState(
+                    street = "Ukázková 12, 130 00 Praha 3, Česká republika", rooms = 2, bathrooms = 1,
+                    selectedDate = "29. 10. 2026", selectedTime = "12:15–12:25",
+                ))
+            }
         }
     }
 }

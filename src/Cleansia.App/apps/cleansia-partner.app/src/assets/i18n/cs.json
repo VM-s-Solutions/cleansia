@@ -1074,6 +1074,8 @@
         "already_exists": "Faktura již existuje",
         "already_paid": "Tato faktura je již zaplacena a nelze ji znovu vygenerovat",
         "pdf_generation_failed": "Nepodařilo se vygenerovat PDF",
+        "pdf_not_ready": "PDF faktury zatím není připravené. Zkuste to později.",
+        "pdf_unavailable": "PDF faktury není dostupné. Kontaktujte podporu.",
         "cannot_cancel_paid": "Nelze zrušit zaplacenou fakturu",
         "already_cancelled": "Faktura již byla zrušena"
       },

@@ -28,11 +28,13 @@ public class LiveActivityToken : TenantAuditable
 
     public string Token { get; private set; } = default!;
 
+    public bool? UseSandbox { get; private set; }
+
     public DateTimeOffset LastUpdatedAt { get; private set; }
 
     private LiveActivityToken() { }
 
-    public static LiveActivityToken Create(string userId, string deviceId, string? orderId, string token, string? tenantId)
+    public static LiveActivityToken Create(string userId, string deviceId, string? orderId, string token, string? tenantId, bool? useSandbox = null)
     {
         return new LiveActivityToken
         {
@@ -40,6 +42,7 @@ public class LiveActivityToken : TenantAuditable
             DeviceId = deviceId,
             OrderId = orderId,
             Token = token,
+            UseSandbox = useSandbox,
             TenantId = tenantId,
             LastUpdatedAt = DateTimeOffset.UtcNow,
         };
@@ -47,9 +50,10 @@ public class LiveActivityToken : TenantAuditable
 
     // ActivityKit rotates update tokens mid-activity and push-to-start tokens across installs, so
     // registration upserts on (UserId, DeviceId, OrderId) — last write wins.
-    public void Refresh(string token)
+    public void Refresh(string token, bool? useSandbox = null)
     {
         Token = token;
+        UseSandbox = useSandbox;
         LastUpdatedAt = DateTimeOffset.UtcNow;
     }
 }

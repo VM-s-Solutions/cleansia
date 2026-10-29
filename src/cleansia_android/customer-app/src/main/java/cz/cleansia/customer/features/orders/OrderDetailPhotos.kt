@@ -33,66 +33,59 @@ import coil3.compose.AsyncImage
 import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.orders.OrderPhotosResponse
+import cz.cleansia.customer.core.orders.OrderPhotoDto
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.text.style.TextOverflow
 
-/* ── Photos (Wave 2 Phase 5) ── */
+internal data class OrderPhotoGroup(val phase: Int, val photos: List<OrderPhotoDto>) {
+    fun indexOfPhoto(id: String?): Int? = id?.takeIf { it.isNotBlank() }
+        ?.let { selected -> photos.indexOfFirst { it.id == selected }.takeIf { it >= 0 } }
+}
 
-/**
- * Summary card rendered on the detail screen when the order has photos.
- * Shows a Before/After count pill row and up to 6 thumbnail previews; the
- * entire card is tappable and delegates navigation to [onViewPhotos].
- *
- * `photoType` is serialized as an Int (1 = Before, 2 = After); anything
- * null/unknown is bucketed under Before on the gallery itself, but here we
- * trust the backend's `beforePhotoCount` / `afterPhotoCount` fields which
- * mirror that convention.
- */
+internal fun groupOrderPhotos(photos: List<OrderPhotoDto>): List<OrderPhotoGroup> =
+    listOf(1, 2, 3, 0).map { phase ->
+        OrderPhotoGroup(phase, photos.filter { photo ->
+            if (phase == 0) photo.photoType !in listOf(1, 2, 3) else photo.photoType == phase
+        })
+    }.filter { it.phase in 1..2 || it.photos.isNotEmpty() }
+
 @Composable
-internal fun PhotosSection(
-    response: OrderPhotosResponse,
-    onViewPhotos: () -> Unit,
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .clickable(onClick = onViewPhotos),
-    ) {
-        Card {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = stringResource(R.string.order_photos_section_title),
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.weight(1f),
-                )
-                Text(
-                    text = stringResource(R.string.order_photos_view_button),
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                    color = primaryText(),
-                )
-                Spacer(Modifier.width(4.dp))
-                Icon(
-                    Icons.AutoMirrored.Outlined.ArrowForward,
-                    contentDescription = null,
-                    tint = primaryText(),
-                    modifier = Modifier.size(16.dp),
-                )
+internal fun photoPhaseTitle(phase: Int): String = stringResource(when (phase) {
+    1 -> R.string.order_photos_tab_before
+    2 -> R.string.order_photos_tab_after
+    3 -> R.string.order_photos_tab_entrance
+    else -> R.string.order_photos_tab_other
+})
+
+@Composable
+internal fun PhotosSection(response: OrderPhotosResponse, onViewPhotos: (Int, String?) -> Unit) {
+    Card {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = stringResource(R.string.order_photos_section_title),
+                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.weight(1f),
+            )
+            cz.cleansia.core.ui.components.CleansiaTextButton(onClick = { onViewPhotos(1, null) }) {
+                Text(stringResource(R.string.order_photos_view_button), maxLines = 1)
             }
-            Spacer(Modifier.height(10.dp))
-            Row {
-                PhotoCountPill(
-                    text = stringResource(R.string.order_photos_summary_before, response.beforePhotoCount),
-                )
-                Spacer(Modifier.width(8.dp))
-                PhotoCountPill(
-                    text = stringResource(R.string.order_photos_summary_after, response.afterPhotoCount),
-                )
-            }
-            Spacer(Modifier.height(12.dp))
-            val previewThumbs = response.photos.take(6)
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(previewThumbs) { photo ->
-                    PhotoThumb(url = photo.blobUrl, size = 72.dp)
+        }
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            items(groupOrderPhotos(response.photos).filter { it.photos.isNotEmpty() }) { group ->
+                val phaseTitle = photoPhaseTitle(group.phase)
+                val photo = group.photos.first()
+                Column(Modifier.width(88.dp)) {
+                    Text(
+                        text = "$phaseTitle · ${group.photos.size}",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.heightIn(min = 36.dp).padding(bottom = 6.dp),
+                    )
+                    PhotoThumb(photo.blobUrl, 88.dp, phaseTitle) { onViewPhotos(group.phase, photo.id) }
                 }
             }
         }
@@ -100,33 +93,11 @@ internal fun PhotosSection(
 }
 
 @Composable
-private fun PhotoCountPill(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier
-            .background(
-                MaterialTheme.colorScheme.surfaceVariant,
-                RoundedCornerShape(999.dp),
-            )
-            .padding(horizontal = 10.dp, vertical = 4.dp),
-    )
-}
-
-@Composable
-private fun PhotoThumb(url: String?, size: Dp) {
+private fun PhotoThumb(url: String?, size: Dp, phaseTitle: String, onClick: () -> Unit) {
     Box(
-        modifier = Modifier
-            .size(size)
-            .clip(RoundedCornerShape(8.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant),
+        modifier = Modifier.size(size).clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant).clickable(onClick = onClick),
     ) {
-        AsyncImage(
-            model = url,
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize(),
-        )
+        AsyncImage(model = url, contentDescription = phaseTitle, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
     }
 }

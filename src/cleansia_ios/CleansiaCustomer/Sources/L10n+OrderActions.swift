@@ -224,6 +224,26 @@ extension L10n {
     }
 
     enum OrderPhotos {
+        static var before: String {
+            localized("order_photos_phase_before")
+        }
+
+        static var after: String {
+            localized("order_photos_phase_after")
+        }
+
+        static var entrance: String {
+            localized("order_photos_phase_entrance")
+        }
+
+        static var other: String {
+            localized("order_photos_phase_other")
+        }
+
+        static var empty: String {
+            localized("order_photos_phase_empty")
+        }
+
         static var sectionTitle: String {
             localized("order_photos_section_title")
         }

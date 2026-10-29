@@ -28,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -43,11 +44,13 @@ import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.core.ui.components.OrderTrackerBar as CoreOrderTrackerBar
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.core.ui.theme.primaryText
+import cz.cleansia.core.ui.theme.warningText
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.orders.OrderDetailDto
 import cz.cleansia.customer.ui.format.orderStatusColor
 import kotlinx.coroutines.delay
 import java.time.Instant
+import androidx.lifecycle.compose.LifecycleResumeEffect
 
 /**
  * The sheet header, in four parts: a pinned identity row, then a headline, the five-phase tracker glued
@@ -152,16 +155,6 @@ internal fun OrderStatusHero(
 ) {
     if (status == OrderStatus.Cancelled) return
 
-    // Only the in-progress bar needs a clock, and only while the clean is running.
-    var nowMillis by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(status) {
-        if (status != OrderStatus.InProgress) return@LaunchedEffect
-        while (true) {
-            nowMillis = System.currentTimeMillis()
-            delay(30_000L)
-        }
-    }
-
     val cleanerName = order.assignedEmployees
         ?.firstOrNull()
         ?.fullName
@@ -211,11 +204,7 @@ internal fun OrderStatusHero(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        // Elapsed over estimated. A different question from the phase tracker below — "how far through
-        // THIS clean are we" rather than "which phase is it in" — so it stays.
-        if (status == OrderStatus.InProgress) {
-            InProgressBar(order = order, nowMillis = nowMillis)
-        }
+
     }
 }
 
@@ -252,36 +241,6 @@ private fun subheadFor(status: OrderStatus?, estimatedMinutes: Int): String? = w
     else -> null
 }
 
-@Composable
-private fun InProgressBar(order: OrderDetailDto, nowMillis: Long) {
-    val progress = computeInProgressProgress(
-        statusHistory = order.statusHistory,
-        estimatedMinutes = order.estimatedTime,
-        nowEpoch = nowMillis / 1_000L,
-    ) ?: return
-
-    Spacer(Modifier.height(10.dp))
-    LinearProgressIndicator(
-        progress = { progress },
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(6.dp)
-            .clip(RoundedCornerShape(3.dp)),
-        color = MaterialTheme.colorScheme.primary,
-        trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f),
-        strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
-    )
-    Spacer(Modifier.height(4.dp))
-    Text(
-        text = stringResource(
-            R.string.order_detail_progress_percent,
-            (progress * 100).toInt().coerceIn(0, 100),
-        ),
-        style = MaterialTheme.typography.labelSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-}
-
 /* ── 3. Tracker ── */
 
 /**
@@ -291,19 +250,45 @@ private fun InProgressBar(order: OrderDetailDto, nowMillis: Long) {
  * finished showed no phase indicator at all, and the customer had no way to see where in the run it sat.
  */
 @Composable
-internal fun OrderTrackerBar(status: OrderStatus?, modifier: Modifier = Modifier) {
-    val isCompleted = status == OrderStatus.Completed
-
-    CoreOrderTrackerBar(
-        currentStep = if (isCompleted) TotalSteps else trackerStep(status),
-        // Null: the counter is drawn on the headline's line by [OrderStatusHero], so the bar is bars
-        // only and sits flush under the phase it describes.
-        stepCounterLabel = null,
-        modifier = modifier,
-        totalSteps = TotalSteps,
-        cancelled = status == OrderStatus.Cancelled,
-        cancelledLabel = stringResource(R.string.orders_status_cancelled),
-    )
+internal fun OrderTrackerBar(status: OrderStatus?, modifier: Modifier = Modifier, order: OrderDetailDto? = null) {
+    var nowEpoch by remember { mutableLongStateOf(Instant.now().epochSecond) }
+    var inForeground by remember { mutableStateOf(false) }
+    LifecycleResumeEffect(Unit) {
+        inForeground = true
+        nowEpoch = Instant.now().epochSecond
+        onPauseOrDispose { inForeground = false }
+    }
+    LaunchedEffect(status, inForeground) {
+        if (status != OrderStatus.InProgress || !inForeground) return@LaunchedEffect
+        while (true) {
+            nowEpoch = Instant.now().epochSecond
+            delay(1_000L)
+        }
+    }
+    val progress = if (status == OrderStatus.InProgress && order != null) {
+        cleaningEstimateProgress(order.statusHistory, order.estimatedTime, nowEpoch)
+    } else null
+    Column(modifier) {
+        CoreOrderTrackerBar(
+            currentStep = if (status == OrderStatus.Completed) TotalSteps else trackerStep(status),
+            stepCounterLabel = null,
+            totalSteps = TotalSteps,
+            cancelled = status == OrderStatus.Cancelled,
+            cancelledLabel = stringResource(R.string.orders_status_cancelled),
+            currentFraction = progress?.fraction,
+            overdue = progress?.overrunMinutes?.let { it > 0 } == true,
+        )
+        if (progress != null) {
+            val overdue = progress.overrunMinutes > 0
+            Text(
+                text = if (overdue) stringResource(R.string.order_detail_estimate_overrun, progress.overrunMinutes)
+                    else stringResource(R.string.order_detail_estimate_remaining, progress.remainingMinutes),
+                color = if (overdue) MaterialTheme.colorScheme.warningText else MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.labelMedium,
+                modifier = Modifier.padding(top = 6.dp),
+            )
+        }
+    }
 }
 
 private fun trackerStep(status: OrderStatus?): Int = when (status) {
@@ -327,6 +312,7 @@ private fun stepCounterLabel(status: OrderStatus?): String {
 /* ── 4. Facts ── */
 
 /** `1 660 Kč` — the fact the pinned header has no room for. */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 internal fun OrderFactsStrip(
     order: OrderDetailDto,
@@ -336,42 +322,26 @@ internal fun OrderFactsStrip(
     val hasDiscount = order.appliedDiscountSource != 0 &&
         order.originalSubtotal > order.totalPrice
 
-    Column(modifier = modifier.fillMaxWidth()) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.End,
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
+    Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
+        androidx.compose.foundation.layout.FlowRow(
+            modifier = Modifier.weight(1f),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            if (hasDiscount) {
-                Text(
-                    text = formatOrderPrice(order.originalSubtotal, currencyCode),
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        textDecoration = TextDecoration.LineThrough,
-                    ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+            if (hasDiscount) discountLabelsFor(order.appliedDiscountSource).forEach { DiscountChip(it) }
+        }
+        Column(horizontalAlignment = Alignment.End) {
             Text(
                 text = formatOrderPrice(order.totalPrice, currencyCode),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 color = primaryText(),
             )
-        }
-    }
-        // What the struck-through price is explained by. The breakdown card further down names each
-        // source with its amount, but that is several screens of scrolling away from the number it
-        // accounts for — the chip answers "why is this cheaper" where the question is asked.
-        if (hasDiscount) {
-            Spacer(Modifier.height(6.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                discountLabelsFor(order.appliedDiscountSource).forEach { DiscountChip(it) }
+            if (hasDiscount) {
+                Text(
+                    text = formatOrderPrice(order.originalSubtotal, currencyCode),
+                    style = MaterialTheme.typography.labelSmall.copy(textDecoration = TextDecoration.LineThrough),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }
@@ -396,10 +366,10 @@ private fun DiscountChip(label: String) {
         text = label,
         modifier = Modifier
             .clip(RoundedCornerShape(999.dp))
-            .background(MaterialTheme.colorScheme.tertiaryContainer)
+            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f))
             .padding(horizontal = 10.dp, vertical = 4.dp),
         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-        color = MaterialTheme.colorScheme.onTertiaryContainer,
+        color = primaryText(),
     )
 }
 
@@ -422,28 +392,23 @@ private fun StatusPill(label: String, color: Color) {
 
 /* ── Format helpers ── */
 
-/**
- * Progress as a 0..1 fraction of elapsed-since-`InProgress` over the cleaner's estimate.
- *
- * Returns null when either anchor is missing — never render a guess. Caps at 0.97 so the bar cannot
- * visually complete before the cleaner marks the order done; that flip should be the customer's "it's
- * finished" moment, not a passive timer reaching the end.
- */
-private fun computeInProgressProgress(
+internal data class CleaningEstimateProgress(val fraction: Float, val remainingMinutes: Long, val overrunMinutes: Long)
+
+internal fun cleaningEstimateProgress(
     statusHistory: List<cz.cleansia.customer.core.orders.OrderStatusTrackDto>?,
     estimatedMinutes: Int,
     nowEpoch: Long,
-): Float? {
+): CleaningEstimateProgress? {
     if (estimatedMinutes <= 0) return null
-    val startedIso = statusHistory
-        ?.firstOrNull { orderStatusFromValue(it.status?.value) == OrderStatus.InProgress }
-        ?.createdOn
-        ?: return null
-    val startedEpoch = runCatching { Instant.parse(startedIso).epochSecond }.getOrNull() ?: return null
-
-    val totalSec = estimatedMinutes * 60L
-    if (totalSec <= 0L) return null
-    val elapsedSec = (nowEpoch - startedEpoch).coerceAtLeast(0L)
-
-    return (elapsedSec.toFloat() / totalSec.toFloat()).coerceIn(0f, 0.97f)
+    val start = statusHistory.orEmpty().filter { it.status?.value == 4 }
+        .mapNotNull { it.createdOn?.let { value -> runCatching { Instant.parse(value).epochSecond }.getOrNull() } }
+        .maxOrNull() ?: return null
+    if (start > nowEpoch) return null
+    val estimate = estimatedMinutes * 60L
+    val elapsed = nowEpoch - start
+    return CleaningEstimateProgress(
+        fraction = (elapsed.toFloat() / estimate).coerceIn(0f, 1f),
+        remainingMinutes = ((estimate - elapsed).coerceAtLeast(0) + 59) / 60,
+        overrunMinutes = ((elapsed - estimate).coerceAtLeast(0) + 59) / 60,
+    )
 }

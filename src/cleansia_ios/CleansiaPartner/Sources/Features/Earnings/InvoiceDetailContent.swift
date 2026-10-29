@@ -16,6 +16,8 @@ struct InvoiceDetailContent: View {
     let onOpenPeriodPay: OpenPeriodPay?
     let onOpenPdf: () -> Void
     let onCopy: (String) -> Void
+    var pdfMessage: String?
+    var onRefresh: () -> Void = {}
 
     var body: some View {
         ScrollView {
@@ -25,6 +27,18 @@ struct InvoiceDetailContent: View {
                 PeriodCard(invoice: invoice, onOpenPeriodPay: onOpenPeriodPay)
                 ReferencesCard(invoice: invoice, onCopy: onCopy)
                 NotesCard(invoice: invoice)
+                if let pdfMessage {
+                    VStack(alignment: .leading, spacing: Spacing.s) {
+                        Text(pdfMessage)
+                            .font(CleansiaTypography.bodyMedium)
+                            .foregroundColor(CleansiaColors.onSurfaceVariant)
+                            .fixedSize(horizontal: false, vertical: true)
+                        if !canOpenPdf {
+                            CleansiaOutlinedButton(L10n.retry, size: .medium, action: onRefresh)
+                        }
+                    }
+                    .cardPadding()
+                }
                 if canOpenPdf {
                     CleansiaPrimaryButton(
                         L10n.Invoices.openPdf,

@@ -241,6 +241,7 @@ until it is under way, and a placement past that is declined by not accepting it
 | **[ADR-0075](./adr-0075)** | The mobile contract states a query sort the way the server binds it (T-0832: the two mobile hosts describe `DataRangeRequest.Sort` as `Sort[0].Field` and `Sort[0].Direction`) | `accepted` |
 | **[ADR-0076](./adr-0076)** | An open cleaning seat stops being offered and takeable when its booked slot ends (owner ruling 2026-10-13; partially supersedes ADR-0037 D1) | `accepted` |
 | **[ADR-0077](./adr-0077)** | Every cleaner marks done before a crew uses shared Complete; automatic completion waits two hours after the last mark and retains after-photo/payment checks (owner rulings 2026-10-26 and 2026-10-27) | `accepted` |
+| **[ADR-0078](./adr-0078)** | Each Live Activity token carries nullable APNs environment metadata, preserving mixed Xcode/TestFlight use of DEV APIs without endpoint guessing (design review 2026-10-28) | `accepted` |
 
 ⟲ = superseded in whole or in part by a later record.
 

@@ -1471,4 +1471,11 @@
     <string name="job_photos_camera_only">Fotografie k zakázce lze pořídit jen fotoaparátem, nelze je vybrat z galerie. K jejich přidání použijte telefon s fotoaparátem.</string>
     <string name="notification_recurring_paused_title">Plán opakovaných úklidů pozastaven</string>
     <string name="notification_recurring_paused_body">Váš plán opakovaných úklidů je pozastaven, protože Plus není aktivní. Obnovte Plus a plánování úklidů bude pokračovat.</string>
+    <string name="invoice_pdf_pending">PDF zatím není připravené. Obnovte stránku a ověřte stav.</string>
+    <string name="invoice_pdf_failed">PDF faktury se nepodařilo vytvořit. Obnovte stránku a ověřte stav.</string>
+    <string name="invoice_pdf_previous_available">Aktualizace PDF se nezdařila. Předchozí dokument můžete stále otevřít.</string>
+    <string name="invoice_pdf_refresh">Obnovit stav</string>
+    <string name="error_payroll_invoice_pdf_not_ready">PDF faktury zatím není připravené. Obnovte stav.</string>
+    <string name="error_payroll_invoice_pdf_unavailable">PDF této faktury není dostupné. Obnovte stav nebo kontaktujte podporu.</string>
+    <string name="error_payroll_invoice_pdf_generation_failed">PDF faktury se nepodařilo vytvořit. Obnovte stav nebo kontaktujte podporu.</string>
 </resources>

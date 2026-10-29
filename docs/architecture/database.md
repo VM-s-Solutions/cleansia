@@ -487,15 +487,19 @@ changes are folded back into it rather than stacked on top, so the shipped set s
 Regenerating it (`dotnet ef migrations remove --force` then `add Initial`, startup project a web host)
 is ordinary work for whoever changes the model, proven by the integration suite — owner rulings
 2026-08-15, 2026-08-25 and 2026-09-07. The shared DEV reset still requires explicit approval. Mike's
-2026-10-13 approval schedules this wave's one reset with its final fresh deployment, after every PR
-has merged green; it does not run during branch work.
+2026-10-13 approval covered that earlier wave's one reset with its final fresh deployment, after every PR
+merged green; it did not authorize a new reset during later branch work.
 
-Today that file is **`20261027013728_Initial`**, regenerated on 2026-10-27 with
-`Orders.CustomerCancellationReason` (nullable, 500 characters) and
-`OrderEmployees.CompletionConfirmedAt` (nullable timestamptz). It retains the shared-install
+Today that file is **`20261028213040_Initial`**, regenerated on 2026-10-28 with only the nullable
+`LiveActivityTokens.UseSandbox` recipient-routing column added to `20261027013728_Initial`
+([ADR-0078](/decisions/adr-0078)). The previous file added `Orders.CustomerCancellationReason`
+(nullable, 500 characters) and `OrderEmployees.CompletionConfirmedAt` (nullable timestamptz).
+It retains the shared-install
 `Devices(DeviceId, DeviceToken)` index from the 2026-10-13 regeneration and the two order
 concurrency tokens, `CurrentStatus` and `PaymentStatus` ([ADR-0071](/decisions/adr-0071)).
-The one DEV wipe/re-seed belongs to this migration at the phase-2 deploy after merge; it has not run.
+The phase-2 DEV reset, deployment and four seeds completed at `595e8524`; do not repeat that rollout.
+Deploying the new migration requires separate approval for a future DEV reset/deployment/reseed.
+No reset or deployment of this 2026-10-28 change is authorized or executed.
 **89 tables**, 53 of them stamped with a `Tenants` foreign key
 (`TenantId` NOT NULL on 51; `OutboxMessages` and `DeadLetters` nullable). The chain of regenerations before
 it — the per-currency schema of 2026-09-12, the customer audit and legal documents, the tenant FK, the

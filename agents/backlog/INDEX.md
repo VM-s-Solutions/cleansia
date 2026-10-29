@@ -383,6 +383,19 @@
 | T-0867 | Fail a tomorrow digest tick instead of saving partial staging | S | `done` | — | #331 merged26883f31c2cb; #332 precision repair merged093af7f89301; each PR CI6/6 first attempts; new master3/3 first attempts/no reruns; original master failure retained; completed local/object gates and residuals in Work records |
 | T-0868 | File the deferred repository-wide bypass roster gate | M | `draft` | T-0837 | [#330](https://github.com/VM-s-Solutions/cleansia/pull/330), merged2026-10-13 (`6c396f013`); exact-headCI9/9, first attempts; local full gates and preserved limits in Work record; no phase deploy/reset; filing/citation merged; FILE/CITE only, construction remains draft/deferred, no current gate |
 | T-0870 | Customer Android and iOS: rating popup redesign and visible completed-order rating action | M | `in_progress` | — | — |
+| T-0871 | Keep mobile verification controls and password AutoFill readable | S | `in_review` | — | — |
+| T-0872 | Compact customer order details and conceal access instructions | M | `in_review` | — | — |
+| T-0873 | Separate cleaning photo phases without losing evidence | M | `in_review` | — | — |
+| T-0874 | Show estimated cleaning progress inside the fourth status phase | M | `in_review` | — | — |
+| T-0875 | Keep status mascots consistently sized and clear of expanded panels | M | `in_review` | — | — |
+| T-0876 | Show home carousel rotation time in the active dot | S | `in_review` | — | — |
+| T-0877 | Align booking summaries and simplify booking confirmation | M | `in_review` | — | — |
+| T-0878 | Use public order references and compact dispute forms | S | `in_review` | — | — |
+| T-0879 | Compact partner order headers and improve eligible actions | M | `in_review` | — | — |
+| T-0880 | Show and recover pending native saved-card capture | M | `in_review` | — | — |
+| T-0881 | Distinguish invoice PDF availability and preserve invoice ownership | M | `in_review` | — | — |
+| T-0882 | Route Live Activity tokens by their signing environment | M | `in_review` | — | — |
+| T-0883 | Recover Live Activity registration and foreground tracking safely | M | `in_review` | — | — |
 
 > **T-0785–T-0799 filed 2026-09-20** — the UI-polish and dead-code batch, on the owner's ruling of
 > that day (*"I want to polish alignments in admin app a bit on all of the overview/detail pages.
@@ -427,7 +440,7 @@
 > reported not absorbed. Owed: the DEV drop at the next DEV deploy (MS-2 / A1, `20260920204705`);
 > the merge order is #255 then #260. Open rows: none.
 
-*Next id: **T-0869**.*
+*Next id: **T-0884**.*
 
 
 Current startup checkpoint — 2026-10-16 UTC: PR #344 merged C12 `70d9c8b1ea82` as M5 `a8d308126dc4`; C12 local8, PR5 workflows/7 checks and M5 4/5 passed, all attempt 1/no reruns, with guarded manual skips and prior application limits retained. First read-only observation `38947741183/a1` failed before its baseline with a generic validation error; one POST, GET-only discovery, final artifact saved once, no resize/restart/B3 trial. T-0636 remains `in_progress`; safe diagnostic correction and the temporary comparison remain pending. The ticket's dated PR #344 closure and `pr344-closure-preparation001/CLAIMS-AND-PINS001.json` carry the bounds.

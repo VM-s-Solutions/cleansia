@@ -5,6 +5,12 @@ import Foundation
 /// Pure data — the view maps `action` onto the HomeTab callbacks, so the predicate/order/content logic
 /// stays unit-testable. → /product/features
 struct UpsellSlide: Equatable, Identifiable {
+    static let rotationSeconds: TimeInterval = 6
+
+    static func rotationFraction(startedAt: Date, now: Date) -> Double {
+        min(1, max(0, now.timeIntervalSince(startedAt) / rotationSeconds))
+    }
+
     enum Kind: Equatable, CaseIterable {
         case notifications
         case credit

@@ -63,26 +63,31 @@ private final class SpyLiveActivitySync: OrderLiveActivitySyncing, @unchecked Se
 final class LiveActivityRegistrarTests: XCTestCase {
     private func makeSUT(deviceId: String = "device-1") -> (CustomerLiveActivityRegistrar, SpyLiveActivityApi) {
         let api = SpyLiveActivityApi()
-        let sut = CustomerLiveActivityRegistrar(deviceIdProvider: StubDeviceIdProvider(deviceId: deviceId), api: api)
+        let sut = CustomerLiveActivityRegistrar(
+            deviceIdProvider: StubDeviceIdProvider(deviceId: deviceId),
+            api: api,
+            useSandbox: true
+        )
         return (sut, api)
     }
 
     func testRegisterMapsDeviceTokenAndOrderId() async throws {
         let (sut, api) = makeSUT()
 
-        await sut.register(orderId: "order-9", orderNumber: "1042", token: "abc123")
+        _ = await sut.register(orderId: "order-9", orderNumber: "1042", token: "abc123")
 
         let command = try XCTUnwrap(api.registered.first)
         XCTAssertEqual(api.registered.count, 1)
         XCTAssertEqual(command.deviceId, "device-1")
         XCTAssertEqual(command.token, "abc123")
         XCTAssertEqual(command.orderId, "order-9")
+        XCTAssertEqual(command.useSandbox, true)
     }
 
     func testRegisterPushToStartSendsNilOrderId() async throws {
         let (sut, api) = makeSUT()
 
-        await sut.registerPushToStart(token: "start-token")
+        _ = await sut.registerPushToStart(token: "start-token")
 
         let command = try XCTUnwrap(api.registered.first)
         XCTAssertNil(command.orderId)
@@ -100,13 +105,37 @@ final class LiveActivityRegistrarTests: XCTestCase {
         XCTAssertEqual(call.deviceId, "device-1")
     }
 
-    func testFailedRegistrationIsSwallowed() async {
+    func testFailedRegistrationReturnsTypedRefusalToRetryQueue() async {
         let (sut, api) = makeSUT()
         api.registerError = ApiError(httpStatus: 409)
 
-        await sut.register(orderId: "o", orderNumber: "n", token: "t")
+        let result = await sut.register(orderId: "o", orderNumber: "n", token: "t")
 
         XCTAssertEqual(api.registered.count, 1)
+        XCTAssertEqual(result.apiErrorOrNil?.httpStatus, 409)
+    }
+
+    func testProductionSigningMetadataIsExplicitEvenWhenCallingDevApi() async throws {
+        let api = SpyLiveActivityApi()
+        let sut = CustomerLiveActivityRegistrar(
+            deviceIdProvider: StubDeviceIdProvider(deviceId: "d"),
+            api: api,
+            useSandbox: false
+        )
+        _ = await sut.registerPushToStart(token: "token")
+        XCTAssertEqual(try XCTUnwrap(api.registered.first).useSandbox, false)
+    }
+
+    func testUnknownBuildMarkerRefusesRemoteRegistrationWithoutGuessing() async {
+        let api = SpyLiveActivityApi()
+        let sut = CustomerLiveActivityRegistrar(
+            deviceIdProvider: StubDeviceIdProvider(deviceId: "d"),
+            api: api,
+            useSandbox: nil
+        )
+        let result = await sut.registerPushToStart(token: "token")
+        XCTAssertEqual(result.apiErrorOrNil?.code, "live_activity.environment_unconfigured")
+        XCTAssertTrue(api.registered.isEmpty)
     }
 }
 

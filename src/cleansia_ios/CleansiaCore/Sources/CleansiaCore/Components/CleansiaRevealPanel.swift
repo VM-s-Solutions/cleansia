@@ -47,10 +47,12 @@ public struct CleansiaRevealPanel<Secret: View>: View {
     @AccessibilityFocusState private var secretFocused: Bool
 
     private let title: String
+    private let inline: Bool
     private let secret: () -> Secret
 
-    public init(title: String, @ViewBuilder secret: @escaping () -> Secret) {
+    public init(title: String, inline: Bool = false, @ViewBuilder secret: @escaping () -> Secret) {
         self.title = title
+        self.inline = inline
         self.secret = secret
     }
 
@@ -67,16 +69,19 @@ public struct CleansiaRevealPanel<Secret: View>: View {
                             removal: .opacity
                         )
                     )
-            } else {
+            } else if !inline {
                 RedactedLines()
                     .accessibilityHidden(true)
             }
         }
-        .padding(Spacing.s)
-        .background(CleansiaColors.surfaceVariant.opacity(0.6), in: RoundedRectangle(cornerRadius: CornerRadius.medium))
+        .padding(inline ? 0 : Spacing.s)
+        .background(
+            inline ? Color.clear : CleansiaColors.surfaceVariant.opacity(0.6),
+            in: RoundedRectangle(cornerRadius: CornerRadius.medium)
+        )
         .overlay(
             RoundedRectangle(cornerRadius: CornerRadius.medium)
-                .stroke(CleansiaColors.outlineVariant, lineWidth: 1)
+                .stroke(inline ? Color.clear : CleansiaColors.outlineVariant, lineWidth: 1)
         )
         .onChange(of: scenePhase) { phase in
             state = SecretRevealPolicy.onScenePhaseChange(to: phase, current: state)
@@ -98,9 +103,11 @@ public struct CleansiaRevealPanel<Secret: View>: View {
             }
         } label: {
             HStack(spacing: Spacing.xs) {
-                Image(systemName: state.composesSecret ? "lock.open.fill" : "lock.fill")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(CleansiaColors.primaryText)
+                if !inline {
+                    Image(systemName: state.composesSecret ? "lock.open.fill" : "lock.fill")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(CleansiaColors.primaryText)
+                }
                 Text(title)
                     .font(CleansiaTypography.labelMedium)
                     .foregroundColor(CleansiaColors.onSurfaceVariant)

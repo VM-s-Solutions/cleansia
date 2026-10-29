@@ -119,6 +119,16 @@ fun BookingSuccessScreen(
 ) {
     val uiState by viewModel.state.collectAsStateWithLifecycle()
 
+    BookingSuccessContent(confirmationCode, uiState, onViewOrders, onGoHome)
+}
+
+@Composable
+internal fun BookingSuccessContent(
+    confirmationCode: String,
+    uiState: BookingSuccessUiState,
+    onViewOrders: () -> Unit,
+    onGoHome: () -> Unit,
+) {
     // The code comes from the create response and from nowhere else: the order detail stopped
     // carrying it when it stopped being a credential.
     val loadedOrder = (uiState as? BookingSuccessUiState.Loaded)?.order
@@ -153,7 +163,7 @@ fun BookingSuccessScreen(
             imageVector = Icons.Filled.CheckCircle,
             contentDescription = null,
             tint = SuccessText,
-            modifier = Modifier.size(48.dp),
+            modifier = Modifier.size(40.dp),
         )
         Spacer(Modifier.height(8.dp))
 
@@ -172,14 +182,13 @@ fun BookingSuccessScreen(
         )
 
         if (confirmationCode.isNotBlank()) {
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(10.dp))
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(14.dp))
                     .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f))
-                    .border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(14.dp))
-                    .padding(vertical = 10.dp, horizontal = 16.dp),
+                    .padding(vertical = 8.dp, horizontal = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
@@ -211,13 +220,13 @@ fun BookingSuccessScreen(
                 )
             }
             is BookingSuccessUiState.Loaded -> {
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(8.dp))
                 OrderSummaryCard(order = s.order)
             }
             is BookingSuccessUiState.Error -> Unit
         }
 
-        Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(10.dp))
 
         // Timeline tracking — vertical with connected dots, current step pulsing
         Column(
@@ -249,7 +258,7 @@ fun BookingSuccessScreen(
             textAlign = TextAlign.Center,
         )
 
-        Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(10.dp))
 
         CleansiaPrimaryButton(
             text = stringResource(R.string.booking_success_view_orders),
@@ -286,7 +295,7 @@ private fun OrderSummaryCard(order: OrderDetailDto) {
             .clip(RoundedCornerShape(14.dp))
             .background(MaterialTheme.colorScheme.surface)
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(14.dp))
-            .padding(12.dp),
+            .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         if (arrival != null) {
@@ -340,6 +349,7 @@ private fun SummaryRow(label: String, value: String) {
             label,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(0.35f),
         )
         Spacer(Modifier.width(12.dp))
         Text(
@@ -347,6 +357,7 @@ private fun SummaryRow(label: String, value: String) {
             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.End,
+            modifier = Modifier.weight(0.65f),
         )
     }
 }
@@ -429,6 +440,24 @@ private fun BookingSuccessPreview() {
         BookingSuccessScreen(
             confirmationCode = "ABC-123-XYZ",
             orderId = "00000000-0000-0000-0000-000000000000",
+        )
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(name = "Booking received polish", widthDp = 360, heightDp = 740)
+@Composable
+private fun PolishBookingSuccessPreview() {
+    val activity = androidx.compose.ui.platform.LocalContext.current as? android.app.Activity
+    androidx.compose.runtime.SideEffect { activity?.actionBar?.hide() }
+    cz.cleansia.customer.ui.theme.CleansiaTheme {
+        BookingSuccessContent(
+            confirmationCode = "DEMO42",
+            uiState = BookingSuccessUiState.Loaded(OrderDetailDto(
+                id = "preview-order", totalPrice = 4838.57, originalSubtotal = 5692.44, appliedDiscountSource = 3,
+                cleaningDateTime = "2026-10-29T10:15:00Z",
+                address = OrderAddressDto(street = "Ukázková 12", city = "Praha 3"),
+                currency = OrderCurrencyDetailDto(code = "CZK", symbol = "Kč"),
+            )), onViewOrders = {}, onGoHome = {},
         )
     }
 }

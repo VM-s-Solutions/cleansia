@@ -65,9 +65,9 @@ fun CustomerCard(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 1.dp,
+        tonalElevation = 0.dp,
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(vertical = 8.dp)) {
             if (!customerName.isNullOrBlank()) {
                 CustomerRow(
                     icon = Icons.Outlined.Person,
@@ -97,9 +97,9 @@ fun CustomerCard(
             val navigateTo = location.navigationTarget()
 
             if (showContact || navigateTo != null) {
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(8.dp))
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(8.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -178,8 +178,8 @@ private fun ActionChip(
 ) {
     Box(
         modifier = modifier
-            .height(40.dp)
-            .clip(RoundedCornerShape(20.dp))
+            .height(48.dp)
+            .clip(RoundedCornerShape(24.dp))
             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.10f))
             .clickable { onClick() }
             .padding(horizontal = 12.dp),

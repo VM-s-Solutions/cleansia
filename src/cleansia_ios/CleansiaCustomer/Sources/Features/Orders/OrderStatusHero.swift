@@ -2,9 +2,6 @@ import CleansiaCore
 import CleansiaCustomerApi
 import SwiftUI
 
-/// What is happening to the booking, in a sentence — plus a subhead and, while the clean is running, an
-/// elapsed-over-estimated bar.
-///
 /// It carries no date and no price. Both are already on screen: the date in `OrderDetailCompactHeader`
 /// above, the price in `OrderHeroFactsStrip` below.
 ///
@@ -52,33 +49,11 @@ struct OrderStatusHero: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-
-            if status == ._4 {
-                progressBar
-            }
         }
         // No bottom padding: the headline sits directly on the tracker bar, the way the partner sheet's
         // timer text does. The gap that used to be here read as a break between two unrelated things
         // when they are one block — the phase, said in words and then drawn.
         .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private var progressBar: some View {
-        TimelineView(.periodic(from: .now, by: 30)) { context in
-            if let fraction = LiveProgress.inProgressFraction(
-                history: order.statusHistory,
-                estimatedMinutes: order.estimatedMinutes,
-                now: context.date
-            ) {
-                VStack(alignment: .leading, spacing: Spacing.xxs) {
-                    ProgressView(value: fraction)
-                        .tint(CleansiaColors.primary)
-                    Text(L10n.OrderDetail.progressPercent(Int((fraction * 100).rounded())))
-                        .font(CleansiaTypography.labelSmall)
-                        .foregroundColor(CleansiaColors.onSurfaceVariant)
-                }
-            }
-        }
     }
 
     private var headline: String {

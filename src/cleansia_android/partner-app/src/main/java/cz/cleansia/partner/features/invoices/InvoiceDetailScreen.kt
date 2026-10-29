@@ -57,11 +57,14 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.money.CurrencySymbols
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
+import cz.cleansia.core.ui.components.CleansiaOutlinedButton
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.core.ui.theme.primaryIconOnContainer
 import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.R
 import cz.cleansia.partner.data.invoices.InvoiceDetail
+import cz.cleansia.partner.data.invoices.InvoicePdfState
+import cz.cleansia.partner.data.invoices.pdfState
 import java.time.LocalDate
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -175,15 +178,68 @@ fun InvoiceDetailScreen(
 
                     Spacer(Modifier.height(Spacing.XS))
 
-                    val isDownloading = downloadState is DownloadState.Downloading
-                    CleansiaPrimaryButton(
-                        text = stringResource(R.string.open_invoice_pdf),
-                        onClick = { viewModel.download() },
-                        loading = isDownloading,
-                        enabled = !isDownloading,
-                        trailingIcon = Icons.Outlined.PictureAsPdf,
+                    InvoicePdfActions(
+                        state = invoice.pdfState,
+                        downloading = downloadState is DownloadState.Downloading,
+                        onDownload = viewModel::download,
+                        onRefresh = viewModel::refresh,
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+internal fun InvoicePdfActions(
+    state: InvoicePdfState,
+    downloading: Boolean,
+    onDownload: () -> Unit,
+    onRefresh: () -> Unit,
+) {
+    val message = when (state) {
+        InvoicePdfState.Ready -> null
+        InvoicePdfState.RetainedAfterFailure -> R.string.invoice_pdf_previous_available
+        InvoicePdfState.Pending -> R.string.invoice_pdf_pending
+        InvoicePdfState.Failed -> R.string.invoice_pdf_failed
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.S)) {
+        message?.let {
+            Text(
+                stringResource(it),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        if (state.canOpen) {
+            CleansiaPrimaryButton(
+                text = stringResource(R.string.open_invoice_pdf),
+                onClick = onDownload,
+                loading = downloading,
+                enabled = !downloading,
+                trailingIcon = Icons.Outlined.PictureAsPdf,
+            )
+        }
+        if (state != InvoicePdfState.Ready) {
+            CleansiaOutlinedButton(text = stringResource(R.string.invoice_pdf_refresh), onClick = onRefresh)
+        }
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview
+@Composable
+private fun PolishInvoiceReadinessPreview() {
+    val activity = LocalContext.current as? android.app.Activity
+    androidx.compose.runtime.SideEffect { activity?.actionBar?.hide() }
+    cz.cleansia.partner.ui.theme.CleansiaPartnerTheme {
+        Column(
+            Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
+                .padding(top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding())
+                .verticalScroll(rememberScrollState()).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp),
+        ) {
+            InvoicePdfState.entries.forEach { state ->
+                InvoicePdfActions(state, downloading = false, onDownload = {}, onRefresh = {})
             }
         }
     }

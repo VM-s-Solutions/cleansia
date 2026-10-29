@@ -56,14 +56,32 @@ public class SendLiveActivityUpdateHandlerTests
     public async Task Update_Delivers_To_The_Order_Token_Once()
     {
         SetupOrderTokens(OrderToken());
-        _client.Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<LiveActivityPush>(), It.IsAny<CancellationToken>()))
+        _client.Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<LiveActivityPush>(), It.IsAny<bool?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(LiveActivityPushResult.Sent());
 
         await CreateHandler().HandleAsync(Envelope(Message(LiveActivityEventKeys.Update)), CancellationToken.None);
 
-        _client.Verify(c => c.SendAsync("APNS-TOKEN", It.IsAny<LiveActivityPush>(), It.IsAny<CancellationToken>()), Times.Once);
+        _client.Verify(c => c.SendAsync("APNS-TOKEN", It.IsAny<LiveActivityPush>(), It.IsAny<bool?>(), It.IsAny<CancellationToken>()), Times.Once);
         _tokens.Verify(r => r.Remove(It.IsAny<LiveActivityToken>()), Times.Never);
         _tokens.Verify(r => r.RemoveRange(It.IsAny<IEnumerable<LiveActivityToken>>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Each_Device_Receives_Its_Own_Environment_Without_Changing_The_Shared_Payload()
+    {
+        SetupOrderTokens(
+            LiveActivityToken.Create("USER-1", "DEV-XCODE", "ORDER-1", "SANDBOX-TOKEN", "TENANT-A", true),
+            LiveActivityToken.Create("USER-1", "DEV-TESTFLIGHT", "ORDER-1", "PRODUCTION-TOKEN", "TENANT-A", false),
+            OrderToken());
+        _client.Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<LiveActivityPush>(), It.IsAny<bool?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(LiveActivityPushResult.Sent());
+
+        await CreateHandler().HandleAsync(Envelope(Message(LiveActivityEventKeys.Update)), CancellationToken.None);
+
+        _client.Verify(c => c.SendAsync("SANDBOX-TOKEN", It.IsAny<LiveActivityPush>(), true, It.IsAny<CancellationToken>()), Times.Once);
+        _client.Verify(c => c.SendAsync("PRODUCTION-TOKEN", It.IsAny<LiveActivityPush>(), false, It.IsAny<CancellationToken>()), Times.Once);
+        _client.Verify(c => c.SendAsync("APNS-TOKEN", It.IsAny<LiveActivityPush>(), null, It.IsAny<CancellationToken>()), Times.Once);
+        _tokens.Verify(r => r.Remove(It.IsAny<LiveActivityToken>()), Times.Never);
     }
 
     [Fact]
@@ -71,12 +89,12 @@ public class SendLiveActivityUpdateHandlerTests
     {
         _tokens.Setup(r => r.GetPushToStartTokensAsync("USER-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<LiveActivityToken> { LiveActivityToken.Create("USER-1", "DEV-1", null, "PTS-TOKEN", "TENANT-A") });
-        _client.Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<LiveActivityPush>(), It.IsAny<CancellationToken>()))
+        _client.Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<LiveActivityPush>(), It.IsAny<bool?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(LiveActivityPushResult.Sent());
 
         await CreateHandler().HandleAsync(Envelope(Message(LiveActivityEventKeys.Start)), CancellationToken.None);
 
-        _client.Verify(c => c.SendAsync("PTS-TOKEN", It.IsAny<LiveActivityPush>(), It.IsAny<CancellationToken>()), Times.Once);
+        _client.Verify(c => c.SendAsync("PTS-TOKEN", It.IsAny<LiveActivityPush>(), It.IsAny<bool?>(), It.IsAny<CancellationToken>()), Times.Once);
         _tokens.Verify(r => r.GetByUserAndOrderAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -86,7 +104,7 @@ public class SendLiveActivityUpdateHandlerTests
     public async Task Provider_Disabled_Acks_Without_Throwing_Or_Deleting()
     {
         SetupOrderTokens(OrderToken());
-        _client.Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<LiveActivityPush>(), It.IsAny<CancellationToken>()))
+        _client.Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<LiveActivityPush>(), It.IsAny<bool?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(LiveActivityPushResult.SkippedResult());
 
         var ex = await Record.ExceptionAsync(
@@ -107,7 +125,7 @@ public class SendLiveActivityUpdateHandlerTests
             () => CreateHandler().HandleAsync(Envelope(Message(LiveActivityEventKeys.Update)), CancellationToken.None));
 
         Assert.Null(ex);
-        _client.Verify(c => c.SendAsync(It.IsAny<string>(), It.IsAny<LiveActivityPush>(), It.IsAny<CancellationToken>()), Times.Never);
+        _client.Verify(c => c.SendAsync(It.IsAny<string>(), It.IsAny<LiveActivityPush>(), It.IsAny<bool?>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     // ── idempotency (guard-first) ──────────────────────────────────────────────────────
@@ -116,7 +134,7 @@ public class SendLiveActivityUpdateHandlerTests
     public async Task Same_Envelope_Twice_Sends_Exactly_Once()
     {
         SetupOrderTokens(OrderToken());
-        _client.Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<LiveActivityPush>(), It.IsAny<CancellationToken>()))
+        _client.Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<LiveActivityPush>(), It.IsAny<bool?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(LiveActivityPushResult.Sent());
         var handler = CreateHandler();
         var body = Envelope(Message(LiveActivityEventKeys.Update));
@@ -124,21 +142,21 @@ public class SendLiveActivityUpdateHandlerTests
         await handler.HandleAsync(body, CancellationToken.None);
         await handler.HandleAsync(body, CancellationToken.None);
 
-        _client.Verify(c => c.SendAsync(It.IsAny<string>(), It.IsAny<LiveActivityPush>(), It.IsAny<CancellationToken>()), Times.Once);
+        _client.Verify(c => c.SendAsync(It.IsAny<string>(), It.IsAny<LiveActivityPush>(), It.IsAny<bool?>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task Distinct_Sequences_Are_Distinct_Claims_And_Both_Send()
     {
         SetupOrderTokens(OrderToken());
-        _client.Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<LiveActivityPush>(), It.IsAny<CancellationToken>()))
+        _client.Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<LiveActivityPush>(), It.IsAny<bool?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(LiveActivityPushResult.Sent());
         var handler = CreateHandler();
 
         await handler.HandleAsync(Envelope(Message(LiveActivityEventKeys.Update), sequence: 4), CancellationToken.None);
         await handler.HandleAsync(Envelope(Message(LiveActivityEventKeys.Update), sequence: 5), CancellationToken.None);
 
-        _client.Verify(c => c.SendAsync(It.IsAny<string>(), It.IsAny<LiveActivityPush>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+        _client.Verify(c => c.SendAsync(It.IsAny<string>(), It.IsAny<LiveActivityPush>(), It.IsAny<bool?>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
     }
 
     // ── dead-token prune ───────────────────────────────────────────────────────────────
@@ -148,7 +166,7 @@ public class SendLiveActivityUpdateHandlerTests
     {
         var token = OrderToken();
         SetupOrderTokens(token);
-        _client.Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<LiveActivityPush>(), It.IsAny<CancellationToken>()))
+        _client.Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<LiveActivityPush>(), It.IsAny<bool?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(LiveActivityPushResult.InvalidToken());
 
         await CreateHandler().HandleAsync(Envelope(Message(LiveActivityEventKeys.Update)), CancellationToken.None);
@@ -164,7 +182,7 @@ public class SendLiveActivityUpdateHandlerTests
     {
         var tokens = new[] { OrderToken(), OrderToken() };
         SetupOrderTokens(tokens);
-        _client.Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<LiveActivityPush>(), It.IsAny<CancellationToken>()))
+        _client.Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<LiveActivityPush>(), It.IsAny<bool?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(LiveActivityPushResult.Sent());
 
         await CreateHandler().HandleAsync(Envelope(Message(LiveActivityEventKeys.End)), CancellationToken.None);
@@ -178,7 +196,7 @@ public class SendLiveActivityUpdateHandlerTests
     public async Task Update_Does_Not_Fetch_The_Order()
     {
         SetupOrderTokens(OrderToken());
-        _client.Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<LiveActivityPush>(), It.IsAny<CancellationToken>()))
+        _client.Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<LiveActivityPush>(), It.IsAny<bool?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(LiveActivityPushResult.Sent());
 
         await CreateHandler().HandleAsync(Envelope(Message(LiveActivityEventKeys.Update)), CancellationToken.None);
@@ -195,7 +213,7 @@ public class SendLiveActivityUpdateHandlerTests
             () => CreateHandler().HandleAsync("}{ not json", CancellationToken.None));
 
         Assert.Null(ex);
-        _client.Verify(c => c.SendAsync(It.IsAny<string>(), It.IsAny<LiveActivityPush>(), It.IsAny<CancellationToken>()), Times.Never);
+        _client.Verify(c => c.SendAsync(It.IsAny<string>(), It.IsAny<LiveActivityPush>(), It.IsAny<bool?>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     private sealed class FakeIdempotencyGuard : IIdempotencyGuard

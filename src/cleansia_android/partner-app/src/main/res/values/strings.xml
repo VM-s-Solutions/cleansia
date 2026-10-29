@@ -1485,4 +1485,11 @@
     <string name="job_photos_camera_only">Job photos can only be taken with the camera, not chosen from the gallery. Use a phone with a camera to add them.</string>
     <string name="notification_recurring_paused_title">Recurring schedule paused</string>
     <string name="notification_recurring_paused_body">Your recurring schedule is paused because Plus is not active. Renew Plus to resume scheduling.</string>
+    <string name="invoice_pdf_pending">The PDF is not ready yet. Refresh to check again.</string>
+    <string name="invoice_pdf_failed">The invoice PDF could not be generated. Refresh to check its status.</string>
+    <string name="invoice_pdf_previous_available">The latest PDF update failed. You can still open the previous document.</string>
+    <string name="invoice_pdf_refresh">Refresh status</string>
+    <string name="error_payroll_invoice_pdf_not_ready">The invoice PDF is not ready yet. Refresh its status.</string>
+    <string name="error_payroll_invoice_pdf_unavailable">This invoice PDF is unavailable. Refresh its status or contact support.</string>
+    <string name="error_payroll_invoice_pdf_generation_failed">The invoice PDF could not be generated. Refresh its status or contact support.</string>
 </resources>

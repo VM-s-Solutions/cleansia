@@ -121,18 +121,15 @@ struct CustomerShellView: View {
             )
             .snackbarHost(snackbar, bottomInset: Spacing.m)
         }
-        // The text ink, not the primary: the tint draws the selected tab's icon and label together, the back
-        // buttons and the toolbar's text buttons, all of them text (sky-600 is 4.10:1 on white). Fills that
-        // take a tint (the toggles, the progress bars) name the primary themselves. Applied AFTER the sheets:
-        // a sheet takes its environment from where `.sheet` is attached, so a tint set before it never reaches
-        // the booking sheet or the address manager, and their text buttons (the preferred-cleaner Back) were
-        // drawn in iOS's own blue, 4.0:1 on white.
+        // Apply accessible text tint after the sheets so their toolbar buttons inherit it too.
         .tint(CleansiaColors.primaryText)
         .onChange(of: model.selection) { _ in
             if model.resolveSelection() { openBooking() }
         }
         .onChange(of: scenePhase) { phase in
-            if phase == .active, model.isBookingPresented { recheckOpenBooking() }
+            guard phase == .active else { return }
+            if model.isBookingPresented { recheckOpenBooking() }
+            Task { await container.liveActivityRecovery.refreshForForeground() }
         }
         .onChange(of: pushNavigation.pendingDestination) { destination in
             guard let destination else { return }
@@ -165,6 +162,7 @@ struct CustomerShellView: View {
         // per shell entry, on the fresh server snapshot, never a stale cache).
         async let needsOnboarding = profileVM.needsOnboarding()
         _ = await (orders, loyalty, referrals, membership, addresses, recurring, marketReaders)
+        await container.liveActivityRecovery.resume(afterRefresh: orders)
         // The order-detail hero's 63-frame cleaning mascot is the app's costliest decode. Warm it here, at shell
         // entry — seconds to minutes ahead of any tap into a detail, from the list, Home or a push deep
         // link — whenever the customer has a clean in flight to open.
@@ -423,8 +421,13 @@ extension CustomerShellView {
                 receivableClient: LiveReceivableClient(),
                 snackbar: snackbar,
                 paymentSheet: StripePaymentController(),
-                market: container.marketStore.selected
+                market: container.marketStore.selected,
+                pendingCards: container.savedCardCaptures
             )
+            .id(SavedCardCaptureScope(
+                countryId: container.marketStore.selected?.countryId,
+                currencyCode: container.marketStore.selected?.currencyCode
+            ))
         case .devices:
             CustomerDevicesView(
                 client: container.devicesClient,

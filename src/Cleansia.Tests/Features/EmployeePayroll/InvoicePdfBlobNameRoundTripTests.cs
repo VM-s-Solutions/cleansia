@@ -1,6 +1,8 @@
 using System.Reflection;
 using System.Security.Claims;
 using Cleansia.Core.AppServices.Authentication;
+using Cleansia.Core.AppServices.Behaviors;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Features.EmployeePayroll;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Blobs.Abstractions.Extensions;
@@ -9,15 +11,21 @@ using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
+using Cleansia.Infra.Database;
 using Cleansia.Infra.Services.Pdf;
 using Cleansia.Infra.Services.Pdf.Models;
 using Cleansia.TestUtilities;
 using Cleansia.TestUtilities.MockDataFactories.Currencies;
 using Cleansia.TestUtilities.MockDataFactories.EmployeePayroll;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Http;
+using MediatR;
 using Moq;
+using MockQueryable;
 using Constants = Cleansia.Core.AppServices.Common.Constants;
 
 namespace Cleansia.Tests.Features.EmployeePayroll;
@@ -36,7 +44,7 @@ public class InvoicePdfBlobNameRoundTripTests
     private readonly Mock<IBlobContainerClient> _blobContainerClient = new();
     private readonly Mock<IBlobContainerClientFactory> _blobContainerClientFactory = new();
     private readonly Mock<IEmployeeInvoiceRepository> _invoiceRepository = new();
-    private readonly EmployeeInvoice _invoice = PayrollMockFactory.Invoice(payPeriod: PayrollMockFactory.OpenPeriod());
+    private EmployeeInvoice _invoice = PayrollMockFactory.Invoice(payPeriod: PayrollMockFactory.OpenPeriod());
     private readonly List<string> _uploadedNames = [];
     private readonly List<string> _downloadedNames = [];
 
@@ -54,12 +62,16 @@ public class InvoicePdfBlobNameRoundTripTests
             .Setup(c => c.GetBlobUri(It.IsAny<string>()))
             .Returns<string>(name => new Uri($"{ContainerAddress}/{string.Join('/', name.Split('/').Select(Uri.EscapeDataString))}"));
         _blobContainerClient
+            .Setup(c => c.ExistsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        _blobContainerClient
             .Setup(c => c.DownloadAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Callback<string, CancellationToken>((name, _) => _downloadedNames.Add(name))
             .ReturnsAsync(() => new BlobFile(new MemoryStream([1, 2, 3]), "application/pdf"));
         _invoiceRepository
             .Setup(r => r.GetByIdAsync(_invoice.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(_invoice);
+        _invoiceRepository.Setup(r => r.GetAll()).Returns(() => new[] { _invoice }.AsQueryable().BuildMock());
     }
 
     [Fact]
@@ -89,12 +101,197 @@ public class InvoicePdfBlobNameRoundTripTests
         Assert.Equal("Jan 01 - Jan 14, 2026/emp-1/INV-2026-000001.pdf", Assert.Single(_downloadedNames));
     }
 
-    private Task<BusinessResult<RegenerateInvoicePdf.Response>> RegenerateAsync()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_New_Invoice_Renders_After_Commit_And_Preserves_Financial_Success_When_Rendering_Fails(bool emptyRender)
+    {
+        var commits = new List<(string? Pdf, bool Failed)>();
+        _invoiceRepository.Setup(r => r.Add(It.IsAny<EmployeeInvoice>())).Callback<EmployeeInvoice>(invoice => _invoice = invoice);
+        _invoiceRepository.Setup(r => r.GetByIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => _invoice);
+        _invoiceRepository.Setup(r => r.GetAll()).Returns(() =>
+        {
+            typeof(EmployeeInvoice).GetProperty(nameof(EmployeeInvoice.PayPeriod))!
+                .SetValue(_invoice, PayrollMockFactory.OpenPeriod());
+            return new[] { _invoice }.AsQueryable().BuildMock();
+        });
+        _invoiceRepository.Setup(r => r.CommitAsync(It.IsAny<CancellationToken>()))
+            .Callback(() => commits.Add((_invoice.PdfBlobUrl, _invoice.PdfGenerationFailed)))
+            .Returns(Task.CompletedTask);
+        var pays = new Mock<IOrderEmployeePayRepository>();
+        var pay = PayrollMockFactory.OrderPay(basePay: 100m);
+        pays.Setup(r => r.GetUnassignedForEmployeePeriodAsync(pay.EmployeeId, pay.PayPeriodId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([pay]);
+        var allocator = new Mock<IPayoutReferenceAllocator>();
+        allocator.Setup(a => a.AllocateAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResult.Success(PayrollMockFactory.TestVariableSymbol));
+        allocator.Setup(a => a.AllocateInvoiceNumberAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResult.Success(PayrollMockFactory.TestInvoiceNumber));
+        var unitOfWork = new Mock<IUnitOfWork>();
+        unitOfWork.Setup(u => u.CommitAsync(It.IsAny<CancellationToken>()))
+            .Returns<CancellationToken>(ct => _invoiceRepository.Object.CommitAsync(ct));
+        var mediator = new Mock<IMediator>();
+        mediator.Setup(m => m.Send(It.IsAny<RegenerateInvoicePdf.Command>(), It.IsAny<CancellationToken>()))
+            .Returns<RegenerateInvoicePdf.Command, CancellationToken>((command, ct) =>
+            {
+                Assert.Single(commits);
+                Assert.Null(commits[0].Pdf);
+                Assert.Equal(_invoice.Id, command.InvoiceId);
+                Assert.Equal(_invoice.Id, pay.EmployeeInvoiceId);
+                var pipeline = new UnitOfWorkPipelineBehavior<RegenerateInvoicePdf.Command, BusinessResult<RegenerateInvoicePdf.Response>>(unitOfWork.Object);
+                return pipeline.Handle(command, _ => RegenerateAsync(emptyRender), ct);
+            });
+        var services = new ServiceCollection();
+        services.AddSingleton(mediator.Object);
+        services.AddScoped<ITenantProvider>(_ => new Mock<ITenantProvider>().Object);
+        await using var root = services.BuildServiceProvider();
+        var handler = new GenerateInvoice.Handler(_invoiceRepository.Object, pays.Object, allocator.Object,
+            new Mock<ICashLedgerRepository>().Object, root.GetRequiredService<IServiceScopeFactory>(), NullLogger<GenerateInvoice.Handler>.Instance);
+
+        var created = await handler.Handle(new GenerateInvoice.Command(pay.EmployeeId, pay.PayPeriodId), CancellationToken.None);
+        var downloaded = await DownloadAsync();
+
+        Assert.True(created.IsSuccess);
+        Assert.Equal(_invoice.Id, Assert.Single(created.Value.InvoiceIds));
+        Assert.Equal(100m, _invoice.TotalAmount);
+        Assert.Equal(2, commits.Count);
+        Assert.Equal(emptyRender, commits[1].Failed);
+        if (emptyRender)
+        {
+            Assert.Null(commits[1].Pdf);
+            Assert.True(downloaded.IsFailure);
+            Assert.Equal(Cleansia.Core.AppServices.Common.BusinessErrorMessage.PdfGenerationFailed, downloaded.Error!.Message);
+        }
+        else
+        {
+            Assert.NotNull(commits[1].Pdf);
+            Assert.True(downloaded.IsSuccess);
+            Assert.Equal(Assert.Single(_uploadedNames), Assert.Single(_downloadedNames));
+        }
+    }
+
+    [Theory]
+    [InlineData(true, true)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    public async Task Each_Currency_Renders_In_A_Fresh_Tenant_Scope_After_A_Failed_Commit(bool firstRenderEmpty, bool adminRequest)
+    {
+        const string tenant = "tenant-approved";
+        var invoices = new List<EmployeeInvoice>();
+        var financiallyCommitted = false;
+        _invoiceRepository.Setup(r => r.Add(It.IsAny<EmployeeInvoice>())).Callback<EmployeeInvoice>(invoices.Add);
+        _invoiceRepository.Setup(r => r.CommitAsync(It.IsAny<CancellationToken>())).Callback(() =>
+        {
+            foreach (var invoice in invoices) invoice.TenantId = tenant;
+            financiallyCommitted = true;
+        }).Returns(Task.CompletedTask);
+        var pays = new Mock<IOrderEmployeePayRepository>();
+        var first = PayrollMockFactory.OrderPay(currencyId: "currency-1");
+        var second = PayrollMockFactory.OrderPay(currencyId: "currency-2");
+        pays.Setup(r => r.GetUnassignedForEmployeePeriodAsync(first.EmployeeId, first.PayPeriodId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([first, second]);
+        var allocator = new Mock<IPayoutReferenceAllocator>();
+        allocator.Setup(a => a.AllocateAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => BusinessResult.Success(PayrollMockFactory.NextTestVariableSymbol()));
+        allocator.Setup(a => a.AllocateInvoiceNumberAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => BusinessResult.Success(PayrollMockFactory.NextTestInvoiceNumber()));
+        var scopeOrdinals = new Dictionary<IEmployeeInvoiceRepository, int>();
+        var rollbacks = new List<int>();
+        var rendered = new List<(int Scope, bool Success)>();
+        var units = new List<Mock<IUnitOfWork>>();
+        var services = new ServiceCollection();
+        services.AddSingleton<IHttpContextAccessor>(new HttpContextAccessor
+        {
+            HttpContext = adminRequest ? new DefaultHttpContext
+            {
+                User = new ClaimsPrincipal(new ClaimsIdentity([
+                    new Claim(ClaimTypes.NameIdentifier, "admin-actor"),
+                    new Claim(TenantProvider.TenantClaimType, "wrong-default-tenant")
+                ]))
+            } : null
+        });
+        services.AddScoped<IUserSessionProvider, UserSessionProvider>();
+        services.AddScoped<ITenantProvider, TenantProvider>();
+        services.AddScoped<IEmployeeInvoiceRepository>(provider =>
+        {
+            var repository = new Mock<IEmployeeInvoiceRepository>();
+            var ordinal = scopeOrdinals.Count + 1;
+            scopeOrdinals.Add(repository.Object, ordinal);
+            repository.Setup(r => r.GetAll()).Returns(() =>
+            {
+                Assert.Equal(tenant, provider.GetRequiredService<ITenantProvider>().GetCurrentTenantId());
+                foreach (var invoice in invoices)
+                    typeof(EmployeeInvoice).GetProperty(nameof(EmployeeInvoice.PayPeriod))!
+                        .SetValue(invoice, PayrollMockFactory.OpenPeriod());
+                return invoices.AsQueryable().BuildMock();
+            });
+            if (ordinal == 1)
+                repository.Setup(r => r.CommitAsync(It.IsAny<CancellationToken>()))
+                    .ThrowsAsync(new IOException("failure-state persistence unavailable"));
+            else
+                repository.Setup(r => r.CommitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            return repository.Object;
+        });
+        services.AddScoped<IUnitOfWork>(provider =>
+        {
+            var repository = provider.GetRequiredService<IEmployeeInvoiceRepository>();
+            var unit = new Mock<IUnitOfWork>();
+            unit.Setup(u => u.CommitAsync(It.IsAny<CancellationToken>()))
+                .Returns<CancellationToken>(repository.CommitAsync);
+            unit.Setup(u => u.Rollback()).Callback(() => rollbacks.Add(scopeOrdinals[repository]));
+            units.Add(unit);
+            return unit.Object;
+        });
+        services.AddScoped<IMediator>(provider =>
+        {
+            var repository = provider.GetRequiredService<IEmployeeInvoiceRepository>();
+            var ordinal = scopeOrdinals[repository];
+            var mediator = new Mock<IMediator>();
+            mediator.Setup(m => m.Send(It.IsAny<RegenerateInvoicePdf.Command>(), It.IsAny<CancellationToken>()))
+                .Returns<RegenerateInvoicePdf.Command, CancellationToken>(async (command, ct) =>
+                {
+                    Assert.True(financiallyCommitted);
+                    Assert.Equal(adminRequest ? "admin-actor" : null, provider.GetRequiredService<IUserSessionProvider>().GetUserId());
+                    _invoice = invoices.Single(i => i.Id == command.InvoiceId);
+                    var pipeline = new UnitOfWorkPipelineBehavior<RegenerateInvoicePdf.Command, BusinessResult<RegenerateInvoicePdf.Response>>(
+                        provider.GetRequiredService<IUnitOfWork>());
+                    try
+                    {
+                        var result = await pipeline.Handle(command, _ => RegenerateAsync(ordinal == 1 && firstRenderEmpty, repository), ct);
+                        rendered.Add((ordinal, result.IsSuccess));
+                        return result;
+                    }
+                    catch (IOException)
+                    {
+                        rendered.Add((ordinal, false));
+                        throw;
+                    }
+                });
+            return mediator.Object;
+        });
+        await using var root = services.BuildServiceProvider();
+        var handler = new GenerateInvoice.Handler(_invoiceRepository.Object, pays.Object, allocator.Object,
+            new Mock<ICashLedgerRepository>().Object, root.GetRequiredService<IServiceScopeFactory>(),
+            NullLogger<GenerateInvoice.Handler>.Instance);
+
+        var result = await handler.Handle(new GenerateInvoice.Command(first.EmployeeId, first.PayPeriodId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(2, result.Value.InvoiceIds.Count);
+        Assert.Equal(new[] { (1, false), (2, true) }, rendered);
+        Assert.Equal(new[] { 1 }, rollbacks);
+        Assert.Equal(firstRenderEmpty, invoices[0].PdfBlobUrl is null);
+        Assert.NotNull(invoices[1].PdfBlobUrl);
+        Assert.All(units, unit => unit.Verify(u => u.Dispose(), Times.Once));
+    }
+
+    private Task<BusinessResult<RegenerateInvoicePdf.Response>> RegenerateAsync(bool emptyRender = false, IEmployeeInvoiceRepository? repository = null)
     {
         var pdfService = new Mock<IPdfService>();
         pdfService
             .Setup(s => s.GenerateInvoicePdf(It.IsAny<InvoicePdfData>(), It.IsAny<CountryInvoiceContext?>(), It.IsAny<string?>()))
-            .Returns([1, 2, 3]);
+            .Returns(emptyRender ? [] : [1, 2, 3]);
         var currencyRepository = new Mock<ICurrencyRepository>();
         currencyRepository
             .Setup(r => r.GetByIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -121,7 +318,7 @@ public class InvoicePdfBlobNameRoundTripTests
             employeeRepository.Object,
             companyInfoRepository.Object,
             _blobContainerClientFactory.Object,
-            _invoiceRepository.Object,
+            repository ?? _invoiceRepository.Object,
             new Mock<IEmployeePayoutDetailsRepository>().Object,
             orderPayRepository.Object,
             new Mock<ICountryInvoiceConfigRepository>().Object,

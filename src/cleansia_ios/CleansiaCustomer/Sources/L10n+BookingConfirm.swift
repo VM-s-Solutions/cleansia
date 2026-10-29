@@ -87,6 +87,8 @@ extension L10n.Booking {
         case .available: nil
         case .needsAccount: L10n.localized("booking_cash_needs_account")
         case let .needsCard(requiredCleaners): L10n.format("booking_cash_needs_card", requiredCleaners)
+        case .needsSavedCard: L10n.localized("booking_cash_needs_saved_card")
+        case .cardCheckFailed: L10n.localized("booking_cash_card_check_failed")
         case .pending: L10n.localized("booking_cash_pending")
         }
     }

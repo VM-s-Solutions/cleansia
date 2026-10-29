@@ -96,7 +96,7 @@ class BookingSheetDraftTest {
         assertTrue(
             "a return while an order is in flight or being paid re-checks its time",
             onStart.contains(
-                "if (stopped && visible && !placing && pendingCardOrder == null) bookingVm.revalidateResumedTime()",
+                "if (stopped && visible && !placing && pendingCardOrder == null) { bookingVm.revalidateResumedTime()",
             ),
         )
     }

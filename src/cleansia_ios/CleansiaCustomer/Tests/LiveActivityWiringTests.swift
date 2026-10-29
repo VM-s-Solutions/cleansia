@@ -386,7 +386,7 @@ final class LiveActivitySessionCleanupTests: XCTestCase {
             let activity = try makeOSOnlyActivity()
 
             let started = Date()
-            let outcome = await refresher.refresh(triggeredBy: "token-1")
+            let outcome = await refresher.refresh(triggeredBy: tokens.current()?.accessToken)
 
             XCTAssertEqual(outcome, .signedOut)
             XCTAssertNil(tokens.current())

@@ -37,7 +37,7 @@ namespace Cleansia.IntegrationTests.Features.Orders;
 /// booking e-mail and no benefit reservation.
 ///
 /// <para>Owner ruling 2026-09-28 on top: the customer holds at most two cash bookings that are open and not
-/// yet paid. Owner ruling 2026-10-04: no saved card is asked for, so no customer here has one. Owner ruling
+/// yet paid. A usable captured card in the booking currency is required. Owner ruling
 /// 2026-10-06: a customer owing any operating company an open receivable makes no new booking at all, cash
 /// or card; a guest booking under the same e-mail is not matched to the account.</para>
 /// </summary>
@@ -154,8 +154,55 @@ public class CreateOrderCashEligibilityTests(PostgresContainerFixture fixture) :
             transactional: false);
     }
 
+    [Theory]
+    [InlineData("absent")]
+    [InlineData("pending")]
+    [InlineData("expired")]
+    [InlineData("removed")]
+    [InlineData("other-owner")]
+    [InlineData("other-currency")]
+    public async Task Cash_Without_A_Usable_Captured_Card_Of_This_Account_And_Currency_Is_Refused_And_Writes_No_Booking(string state)
+    {
+        await TestMethod(
+            setup: AccountSession,
+            arrange: async context =>
+            {
+                await SeedAsync(context);
+                var seeded = await context.SavedCards.IgnoreQueryFilters().SingleAsync();
+                context.SavedCards.Remove(seeded);
+                if (state != "absent")
+                {
+                    var owner = CustomerUserId;
+                    var currency = Czk;
+                    if (state == "other-owner")
+                    {
+                        var other = User.CreateWithPassword("other-cash-rule@cleansia.test", "12345678Test!", "Other", "Owner");
+                        context.Users.Add(other);
+                        owner = other.Id;
+                    }
+                    if (state == "other-currency")
+                    {
+                        var eur = Currency.Create("EUR", "€", "Euro");
+                        context.Currencies.Add(eur);
+                        currency = eur.Id;
+                    }
+                    var card = SavedCard.Start(owner, currency, "cus_invalid_cash_rule", null, null);
+                    if (state != "pending") card.Capture("pm_invalid_cash_rule", "visa", "4242", 12, state == "expired" ? 2020 : 2035);
+                    if (state == "removed") card.IsActive = false;
+                    context.SavedCards.Add(card);
+                }
+                StampUnstampedAdded(context, TestTenants.Default);
+                await context.CommitAsync(CancellationToken.None);
+            },
+            act: async provider => await provider.GetRequiredService<IMediator>()
+                .Send(Command(PaymentType.Cash, OneCleaner, OneCleanerPrice)),
+            assert: (CleansiaDbContext context, BusinessResult<CreateOrder.Response> result) =>
+                AssertRefusedWithNothingWritten(context, result, BusinessErrorMessage.OrderCashRequiresSavedCard),
+            transactional: false);
+    }
+
     [Fact]
-    public async Task A_Signed_In_Customer_With_No_Saved_Card_Books_Cash()
+    public async Task A_Signed_In_Customer_With_A_Usable_Captured_Card_Books_Cash_Without_Charging_It()
     {
         await TestMethod(
             setup: AccountSession,
@@ -165,10 +212,10 @@ public class CreateOrderCashEligibilityTests(PostgresContainerFixture fixture) :
             assert: async (CleansiaDbContext context, BusinessResult<CreateOrder.Response> result) =>
             {
                 Assert.True(result.IsSuccess, Describe(result));
-                Assert.Empty(await context.SavedCards.IgnoreQueryFilters().ToListAsync());
                 var order = await context.Orders.IgnoreQueryFilters().SingleAsync(o => o.Id == result.Value.Id);
                 Assert.Equal(PaymentType.Cash, order.PaymentType);
                 Assert.Equal(PaymentStatus.Pending, order.PaymentStatus);
+                Assert.Null(order.StripePaymentIntentId);
             },
             transactional: false);
     }
@@ -550,6 +597,9 @@ public class CreateOrderCashEligibilityTests(PostgresContainerFixture fixture) :
         user.Id = CustomerUserId;
         user.ConfirmEmail();
         context.Add(user);
+        var card = SavedCard.Start(CustomerUserId, Czk, "cus_cash_rule", null, null);
+        card.Capture("pm_cash_rule", "visa", "4242", 12, 2035);
+        context.SavedCards.Add(card);
 
         StampUnstampedAdded(context, TestTenants.Default);
         await context.CommitAsync(CancellationToken.None);

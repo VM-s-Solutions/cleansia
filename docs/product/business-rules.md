@@ -1322,17 +1322,19 @@ order, the quote and the cash rule below all call it: 120 booked minutes is one 
 
 ## Paying in cash {#cash}
 
-**Cash is taken only from a signed-in customer on a job one cleaner does alone** (owner ruling
-2026-09-24). A guest pays by card; a booking whose **required** crew is two or more pays by card.
+**Cash is taken only from a signed-in customer with a usable saved card, on a job one cleaner does
+alone** (crew ruling 2026-09-24; saved-card condition restored by owner request 2026-10-29). A guest
+pays by card; a booking whose **required** crew is two or more pays by card.
 
 ```
 AllowsCash = signedIn && RequiredEmployees == 1        # BookingPolicy.AllowsCash
+CashStanding = usableSavedCardInBookingCurrency && openUnpaidCashBookings < 2
 ```
 
 Beyond that rule, the customer's own standing decides: at most two cash bookings not yet paid, the one
 being made included (owner ruling 2026-09-28). A customer who owes any amount makes no booking at all,
-cash or card (owner ruling 2026-10-06 → [What a customer owes](#receivables)). **No saved card is asked
-for, and no card is charged** (owner ruling 2026-10-04) → [Cash needs no card](#card-guarantee).
+cash or card (owner ruling 2026-10-06 → [What a customer owes](#receivables)). **A usable saved card is
+required; it is not charged for choosing cash** → [Saved-card requirement](#card-guarantee).
 
 - **The crew is the server's, from the duration.** `RequiredEmployees` is computed from the selected
   services and packages, the home's size and the [dirtiness level](#dirtiness) exactly as the order will
@@ -1346,26 +1348,35 @@ for, and no card is charged** (owner ruling 2026-10-04) → [Cash needs no card]
   referral and dispatched no payment. `CreateRecurringBooking` and `UpdateRecurringBooking` refuse a cash
   template whose selection needs more than one cleaner, judged on the live catalogue; `OrderFactory`
   throws as the backstop for any caller that skips a validator.
+- **The card must already be verified and usable.** An active captured card with a nonblank Stripe
+  payment-method id, an expiry month that has not ended in UTC and the booking's currency qualifies.
+  A setup still pending, a removed or expired card, and another currency's card do not. Missing one
+  answers `order.cash_requires_saved_card` before booking side effects. The query is pinned to the
+  authenticated customer or the authorized stored booking owner, including a booking in another
+  operating company's market; the cleaner's own cards never satisfy it.
 - **Nothing already booked is converted** (owner ruling 2026-09-24). A confirmed booking keeps its
   payment type. A cash recurring template the rule now refuses is neither switched to card nor charged
   to a saved card: the materialiser **skips it** — no new occurrence — until the customer moves it to
-  card or to a selection one cleaner can do, and the customer's schedule list marks it
+  card, saves a usable card or moves to a selection one cleaner can do, and the customer's schedule list marks it
   (`requiresPaymentMethodChange`). An unconfirmed cash occurrence the rule refuses cannot be confirmed;
   the customer cancels it — free while nobody has taken it — and corrects the template.
   → [Recurring bookings](/flows/booking-and-pricing#recurring-bookings)
 - **Cash at the door follows it on a card order.** A cleaner recording cash on an order in progress
-  (`MarkCashCollected`) may do so on a cash order whatever the rule says today — that booking chose cash
-  when it was allowed. On a **card** order the cleaner may take cash only where the booking itself could
-  have chosen it (signed-in customer, one cleaner); otherwise `order.cash_not_allowed_on_card_order`,
+  (`MarkCashCollected`) may still collect a cash booking if its saved card was later removed or expired.
+  More than one assigned cleaner refuses collection for every tender, including a legacy cash booking.
+  On a **card** order the cleaner may take cash only where the booking itself could
+  have chosen it (signed-in customer, one required cleaner and no more than one assigned cleaner),
+  with a usable saved card in the order's currency. An ineligible crew answers
+  `order.cash_not_allowed_on_card_order`, a missing card `order.cash_requires_saved_card`,
   checked after the Stripe repair (a card payment Stripe already settled still becomes `Paid`) and before
   any open card intent is cancelled. Either way cash is recorded only while money is still owed —
   payment `Pending` or `Failed`: a paid order answers `order.cash_already_collected`, and a refunded,
   part-refunded or disputed one `order.payment_not_outstanding`. The partner apps offer the action only in
   that window.
 
-The customer web, Android and iOS apps ask the quote for `requiredEmployees` and read the live
-sign-in: cash is disabled with the reason — not signed in, the number of cleaners the booking needs, or
-no quote yet for the selection on screen — a cash choice that stops being allowed is taken away and
+The customer web, Android and iOS apps ask the quote for `requiredEmployees`, read the live sign-in and
+load the customer's saved cards. Cash is disabled with the reason — not signed in, too many cleaners,
+no usable card in this currency, or eligibility still being checked. A cash choice that stops being allowed is taken away and
 never replaced by card, and an ineligible cash booking is never sent. The *not signed in* reason shows
 only on the web: both mobile booking flows run inside a signed-in session, so the mobile apps keep that
 branch for parity but never reach it.
@@ -1487,7 +1498,7 @@ when it is recorded, and such a booking earns no loyalty points or referral cred
 - A cleaner can keep the cash and report non-payment. The customer is told at once, the administrators are
   alerted, and a write-off reverses the debt.
 
-### Cash needs no card {#card-guarantee}
+### A usable saved card is required for cash {#card-guarantee}
 
 **Owner rulings 2026-09-28 (decision 24), 2026-10-04 and 2026-10-06.** After the one-cleaner rule, a
 signed-in customer books cash only while they hold fewer than **2** cash bookings not yet paid
@@ -1520,22 +1531,24 @@ booking, cash or card, with `order.unpaid_receivable`, and it is asked before an
   `check-booking-policy-parity.mjs` does not pin `MaxOpenUnpaidCashBookings`, and a written *two* would be
   an unguarded copy of it in fifteen strings.
 
-**No saved card is asked for, and no card is charged** (owner ruling 2026-10-04). Until then a third
-condition asked for a usable card saved in the booking's currency (`order.cash_requires_saved_card`).
-The card was captured at the first cash booking, under a consent that a late-cancellation fee, a
-lockout fee, unpaid cash and an approved top-up could be charged to it (decisions 16 and 17). The
-condition, `CustomerCashStanding.HoldsUsableCardAsync` and the error key are gone from the server and
-from every client's translations and parity lists. So is every client's capture step on the cash path:
+**Owner request 2026-10-29 restores the saved-card condition**, superseding the 2026-10-04 no-card
+ruling. `CustomerCashStanding.HoldsUsableCardAsync` and `order.cash_requires_saved_card` enforce it on
+one-off creation, recurring creation/editing/confirmation and card-to-cash fallback. A cash recurring
+template without a usable card creates no new occurrence and its list flag asks for a payment-method
+change. Existing cash bookings keep their agreed tender if the card is later removed. Cash orders have
+one effective crew seat, including legacy rows with spare capacity.
 
-- **The customer web** no longer opens a card-capture step from the order wizard or the schedule form,
-  and no longer parks a booking or a schedule to bring the customer back after Stripe.
-- **Android** no longer shows the guarantee tick on the review step, reads the saved cards when cash is
-  chosen, opens a setup sheet or waits for a saved card to land.
-- **iOS** no longer reads the saved cards before it books, shows the guarantee box or captures a card.
+The clients read the authenticated customer's verified saved-card list and require a matching currency
+and current expiry. An unread or failed list is not proof of eligibility. They refresh before submit,
+clear an invalid cash choice and leave the customer to choose; they never silently select card. There
+is no new capture sheet in the cash booking flow: the customer first saves a card through an existing
+supported route. Pending setup does not count as registration of a usable card.
 
-A cash slide now books at once. What a cash booking leaves owing is a receivable, paid through its pay
-link or written off ([What a customer owes](#receivables)). The off-session charge that could have taken
-it from a saved card stays switched off.
+This restores an eligibility condition only. It adds no guarantee-consent checkbox and authorizes no
+automatic charge. The versioned saved-card consent remains unchanged. What a cash booking leaves owing
+is a receivable paid through its pay link or written off ([What a customer owes](#receivables)); the
+off-session charge stays switched off. The published terms remain at their existing version; the new
+card precondition must be reconciled with their cash wording before a deployment of this change.
 
 **Saved cards stay** (owner ruling 2026-10-04). A signed-in customer still keeps a card by ticking *Save
 this card for my next bookings* on a card payment ([below](#save-card)), lists it and can remove it
@@ -1560,7 +1573,7 @@ is the only way a card payment keeps a card:
   saved to the account, never charged unless the customer pays with it, and can be removed at any time.
   Until then it was `card-guarantee-draft-2026-09-28`, which said the company may charge the card for a
   cash booking's fees and unpaid cash; a card saved under it keeps that version on its row, and nothing
-  charges it either ([Cash needs no card](#card-guarantee), [below](#legal-texts-lag)). The web sends
+  charges it either ([Saved-card requirement](#card-guarantee), [below](#legal-texts-lag)). The web sends
   the tick as `CreateOrder`'s `saveCard`, `true` only for an offered, ticked box; the apps send it as
   `CreatePaymentIntent`'s `saveCard` (`POST api/Payment/CreatePaymentIntent`), because a mobile booking
   has no charge surface until then. Both default to `false`.
@@ -1604,7 +1617,8 @@ under **Saved cards** on `/profile`, Android and iOS under Profile → Payments
 *Remove*. A card saved either way is listed once Stripe confirms it; one still awaiting that
 confirmation is not.
 
-**No client's copy ties a card to cash** (since 2026-10-04). The customer web introduces the cards as
+**Cash eligibility copy names the saved-card requirement again from 2026-10-29.** Card-saving consent
+continues to promise no automatic charge. The customer web introduces the cards as
 *Cards saved to your account*, says *No card saved.* when there is none, and *Remove* asks only to
 confirm; its capture dialog and texts are gone. Android and iOS introduce the card word for word as *The
 card saved to your account. It is never charged unless you pay with it, and you can remove it at any
@@ -1811,7 +1825,7 @@ they replace only there:
   then *The saved card for cash bookings*, is *Amounts you owe*: a cash booking's cancellation fee or
   lockout price is owed and paid through its pay link in the app or on the website, cash is refused
   while it is owed but card is not, and no card is ever charged for it
-  ([Cash needs no card](#card-guarantee)). §9 names the referral reward as a source of credit: the
+  ([Saved-card requirement](#card-guarantee)). §9 names the referral reward as a source of credit: the
   friend enters the code when creating their account or later on a booking, and when their first
   booking to be completed is completed within 90 days of the code being accepted, both sides receive
   the referral credit set for that booking's currency, under the section's credit rules. The company may
@@ -1892,7 +1906,7 @@ They copy `2026-10-06` and differ only in §7 and §8, in all five languages (`d
 - **§7** counts the cash cap as bookings, not defaults: at most two cash bookings not yet paid at a time,
   counting the one being made, which in practice are the upcoming ones, because cash is paid after the
   cleaning. A cash booking, like any other, cannot be made while an amount is owed (§8)
-  ([Cash needs no card](#card-guarantee)). The `2026-10-06` wording, *no more than two unpaid cash
+  ([Saved-card requirement](#card-guarantee)). The `2026-10-06` wording, *no more than two unpaid cash
   bookings at a time*, read to the owner and the lawyer as a tolerance for two non-payments.
 - **§8** adds the price of a cash booking not paid to the cleaner after the cleaning to the amounts owed.
   The cleaner records it, the booking is completed, the customer is told, and the booking earns no
@@ -2085,7 +2099,7 @@ printed with *Save this card* on the clients, carries them since its own 2026-10
 It was reworded as a new wording key on the web, Android and iOS plus a bump of
 `SavedCard.ConsentTextVersionInForce` ([above](#legal-drafts)); the old key is gone from all three. A
 card saved under the old version keeps it on its row, and nothing charges it
-→ [Cash needs no card](#card-guarantee).
+→ [Saved-card requirement](#card-guarantee).
 
 ## The contract for work {#work-contract}
 
@@ -4246,7 +4260,8 @@ the only marketing channel.**
   accepted version and date, and the promo push preference as the marketing consent. Two more acts sit
   beside them, recorded on what they govern rather than as consent rows: the request to start within
   the withdrawal period, on every booking ([below](#early-performance)), and the saved-card consent,
-  on the saved card ([The saved cards](#saved-cards)), which since 2026-10-04 no cash booking asks for.
+  on the saved card ([The saved cards](#saved-cards)). Cash requires an already usable saved card again
+  from 2026-10-29, without asking for another consent or authorizing automatic charges.
 - **Necessary cookies only.** The customer, partner and admin web apps show a necessary-only cookie
   notice — no accept, no decline, no categories — and the customer banner no longer writes consent
   rows.

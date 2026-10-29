@@ -111,12 +111,12 @@
     <string name="dashboard">Панель керування</string>
     <string name="dashboard_subtitle">Ось огляд Вашої активності</string>
     <string name="dash_available_now_count">%1$d вільних замовлень</string>
-    <string name="dash_available_now_subtitle">Натисніть, щоб переглянути та взяти</string>
+    <string name="dash_available_now_subtitle">Замовлення, які можна взяти</string>
     <string name="dash_no_jobs_yet_title">Поки що немає замовлень</string>
     <string name="dash_no_jobs_yet_subtitle">Перегляньте доступні замовлення або оновіть доступність</string>
     <string name="dash_todays_schedule">Сьогодні</string>
     <string name="dash_current_period">Поточний період</string>
-    <string name="dash_tap_for_invoices">Натисніть для рахунків</string>
+    <string name="dash_tap_for_invoices">Рахунки</string>
     <string name="dash_completed_this_month">Цього місяця</string>
     <string name="dash_avg_rating">Рейтинг</string>
     <string name="dash_vs_last_month">vs минулого місяця</string>
@@ -128,7 +128,7 @@
     <string name="dash_on_the_way">У дорозі</string>
     <string name="dash_browse_jobs">Переглянути замовлення</string>
     <string name="dash_available_work_label">Доступні замовлення</string>
-    <string name="dash_browse_jobs_subtitle">Натисніть, щоб переглянути</string>
+    <string name="dash_browse_jobs_subtitle">Знайдіть наступне замовлення</string>
     <string name="dash_open">Відкрити</string>
     <string name="dash_continue">Продовжити</string>
     <string name="dash_earn_up_to">Заробите до %1$s</string>
@@ -282,7 +282,7 @@
     <string name="choose_from_gallery">Вибрати з галереї</string>
     <string name="document_choose_file">Вибрати файл</string>
     <string name="delete_photo">Видалити фото</string>
-    <string name="delete_photo_confirm">Ви впевнені, що хочете видалити це фото?</string>
+    <string name="delete_photo_confirm">Видалити це фото?</string>
     <string name="photos_none_recorded">Фотографій не записано</string>
     <string name="estimated_time">Орієнтовний час</string>
     <string name="completion_notes">Нотатки до завершення (необов\'язково)</string>
@@ -1281,7 +1281,7 @@
     <string name="notification_channel_new_jobs_name">Нові доступні замовлення</string>
     <string name="notification_channel_new_jobs_desc">Періодичний дайджест нових замовлень, доступних у вашому регіоні.</string>
     <string name="notification_new_jobs_title">Нові доступні замовлення</string>
-    <string name="notification_new_jobs_body">Поруч з вами доступно %1$d нових замовлень. Торкніться, щоб переглянути.</string>
+    <string name="notification_new_jobs_body">Поруч з вами доступно %1$d нових замовлень.</string>
     <string name="notification_reminder_tomorrow_title">Завтрашні замовлення</string>
     <string name="notification_reminder_tomorrow_body">Замовлень на завтра: %1$d. Торкніться, щоб переглянути.</string>
     <string name="notification_reminder_soon_title">Замовлення скоро починається</string>
@@ -1304,7 +1304,7 @@
     <string name="notification_employee_registration_rejected_title">Заявку відхилено</string>
     <string name="notification_employee_registration_rejected_body">Вашу заявку відхилено. Відкрийте застосунок, щоб дізнатися причину, або зверніться до підтримки.</string>
     <string name="notification_payroll_invoice_paid_title">Вам виплачено</string>
-    <string name="notification_payroll_invoice_paid_body">Ваш рахунок за останній розрахунковий період оплачено. Торкніться, щоб переглянути.</string>
+    <string name="notification_payroll_invoice_paid_body">Ваш рахунок за останній розрахунковий період оплачено.</string>
     <string name="notification_preferred_offer_title">Клієнт попросив саме вас</string>
     <string name="notification_preferred_offer_body">Замовлення %1$s — вас попросив хтось, у кого ви вже прибирали. Відкрийте, щоб узяти замовлення.</string>
     <!-- ── Ваші пристрої ── -->
@@ -1462,4 +1462,7 @@
     <string name="error_payroll_invoice_pdf_not_ready">PDF рахунку ще не готовий. Оновіть стан.</string>
     <string name="error_payroll_invoice_pdf_unavailable">PDF цього рахунку недоступний. Оновіть стан або зверніться до підтримки.</string>
     <string name="error_payroll_invoice_pdf_generation_failed">Не вдалося створити PDF рахунку. Оновіть стан або зверніться до підтримки.</string>
+    <string name="tracker_estimate_overrun">На %1$d хв довше за орієнтовний час</string>
+    <string name="tracker_estimate_remaining">Залишилося приблизно %1$d хв</string>
+    <string name="error_order_cash_requires_saved_card">Для оплати готівкою потрібна дійсна збережена картка у валюті замовлення.</string>
 </resources>

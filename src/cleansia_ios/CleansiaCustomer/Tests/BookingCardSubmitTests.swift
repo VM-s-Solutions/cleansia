@@ -24,7 +24,8 @@ final class BookingCardSubmitTests: XCTestCase {
             tokenStore: tokenStore,
             isCardPaymentAvailable: cardAvailable,
             quoteDebounce: .milliseconds(400),
-            scheduler: TestScheduler.dispatch.eraseToAnyScheduler()
+            scheduler: TestScheduler.dispatch.eraseToAnyScheduler(),
+            savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])])
         )
     }
 
@@ -240,7 +241,8 @@ final class BookingCardSubmitTests: XCTestCase {
             paymentIntentClient: FakePaymentIntentClient(),
             countryResolver: FakeCountryResolver(),
             tokenStore: FakeTokenStore.signedIn(),
-            scheduler: TestScheduler.dispatch.eraseToAnyScheduler()
+            scheduler: TestScheduler.dispatch.eraseToAnyScheduler(),
+            savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])])
         )
         XCTAssertEqual(vm.isCardPaymentAvailable, StripeConfig.isCardPaymentAvailable)
     }

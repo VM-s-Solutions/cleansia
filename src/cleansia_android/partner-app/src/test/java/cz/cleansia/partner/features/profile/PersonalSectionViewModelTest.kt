@@ -214,10 +214,10 @@ class PersonalSectionViewModelTest {
         coVerify(exactly = 1) { repository.updatePersonalInfo(any(), any(), any(), any(), phone = "+420123456789") }
     }
 
-    /** `UpdatePersonalInfo` files both refusals under Phone. */
+    /** `UpdatePersonalInfo` files phone refusals under Phone. */
     @Test
     fun `the server's refusal of the phone is named under the phone and clears as it is edited`() = runTest {
-        listOf("validation.invalid_phone_number", "common.required").forEach { key ->
+        listOf("validation.invalid_phone_number", "common.required", "user.existing_phone_number").forEach { key ->
             coEvery { repository.getCurrentEmployee() } returns ApiResult.Success(employee)
             coEvery { repository.updatePersonalInfo(any(), any(), any(), any(), any()) } returns
                 ApiResult.Error(refusal(field = "Phone", key = key))

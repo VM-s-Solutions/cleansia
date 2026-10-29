@@ -97,17 +97,19 @@ public struct OrderStatusBadge: View {
 /// step is an empty outline. The old points differed only in fill, which is why the current step never
 /// read as current at a glance.
 ///
-/// Deliberately quiet: no pulse, no shadow, no animation. This sits on screen for the length of a job.
+/// Only the current point breathes; Reduce Motion and an inactive app keep it still.
 ///
 /// It reuses `OrderTrackerSegment` rather than declaring a second past/current/future enum — same three
 /// states, same two apps.
 public struct OrderTimelinePoint: View {
     private let segment: OrderTrackerSegment
     private let tint: Color
+    private let pulses: Bool
 
-    public init(segment: OrderTrackerSegment, tint: Color = CleansiaColors.primary) {
+    public init(segment: OrderTrackerSegment, tint: Color = CleansiaColors.primary, pulses: Bool = false) {
         self.segment = segment
         self.tint = tint
+        self.pulses = pulses
     }
 
     public var body: some View {
@@ -145,9 +147,28 @@ public struct OrderTimelinePoint: View {
                         .fill(tint)
                         .frame(width: StatusMarkMetrics.pointCore, height: StatusMarkMetrics.pointCore)
                 )
+                .modifier(OrderPhasePulse(active: pulses))
         case .future:
             Circle()
                 .stroke(CleansiaColors.outlineVariant, lineWidth: StatusMarkMetrics.hollowWidth)
+        }
+    }
+}
+
+/// Shared by the current timeline point and tracker segment, with no persistent repeating animation
+/// to restart when a live clock updates the surrounding view.
+struct OrderPhasePulse: ViewModifier {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
+    var active = true
+
+    func body(content: Content) -> some View {
+        TimelineView(.animation(
+            minimumInterval: 1.0 / 30,
+            paused: !active || reduceMotion || scenePhase != .active
+        )) { context in
+            let phase = context.date.timeIntervalSinceReferenceDate * .pi
+            content.opacity(!active || reduceMotion || scenePhase != .active ? 1 : 0.88 + 0.12 * cos(phase))
         }
     }
 }

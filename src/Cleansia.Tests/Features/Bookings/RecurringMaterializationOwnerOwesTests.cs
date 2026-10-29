@@ -113,7 +113,7 @@ public sealed class RecurringMaterializationOwnerOwesTests
                 Mock.Of<ITenantProvider>(),
                 _unitOfWork.Object,
                 NullLogger<MaterializeRecurringBookingTemplate.Handler>.Instance,
-                Mock.Of<INotificationProducer>())
+                Mock.Of<INotificationProducer>(), Cleansia.Tests.Common.SavedCardTestData.Repository())
             .Handle(new MaterializeRecurringBookingTemplate.Command(TemplateId, DateTime.UtcNow, HorizonDays: 7), CancellationToken.None);
     }
 

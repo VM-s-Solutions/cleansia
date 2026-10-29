@@ -98,7 +98,7 @@ private struct ConfirmEmailContent: View {
 
                     Spacer().frame(height: Spacing.xl)
 
-                    CodeInput(code: codeBinding, length: confirmCodeLength)
+                    CodeInput(code: codeBinding, length: confirmCodeLength, showsPasteAction: false)
 
                     if let passwordForm {
                         Spacer().frame(height: Spacing.l)

@@ -430,6 +430,13 @@ Keep the two regexes **separate**. They redact identically but they do not free 
 merging them makes `RedactionUnmaskedFreeTextGuardTests` report every string member of every DTO as
 unmasked — a guard that has stopped saying anything.
 
+**Order detail with cleaner portraits suppresses its whole body** (2026-10-29). The optional nested
+`AssignedEmployeeDto.profilePhoto.blobUrl` is already a redacted credential, but shortening its signed
+URL can pull later household or collector free text into the logged window. All five middleware copies
+therefore suppress `/Order/GetById` and `/AdminOrder/details/`, including their versioned prefixes.
+Route metadata remains; response bodies do not. The existing surface guard and actual middleware tests
+with a real detail DTO, signed URL and trailing free text cover this boundary.
+
 **What makes a denylist admissible at all is the guard, not the list.** `RequestLogPiiSurfaceGuardTests`,
 `RequestLogPayoutPathSuppressionTests` and `RequestLogCredentialShapeGuardTests` walk every wire DTO
 reachable from a controller action on the five hosts (shared walk: `WireSurface`), read the token list

@@ -111,12 +111,12 @@
     <string name="dashboard">Панель управления</string>
     <string name="dashboard_subtitle">Вот обзор вашей активности</string>
     <string name="dash_available_now_count">%1$d свободных заказов</string>
-    <string name="dash_available_now_subtitle">Нажмите, чтобы посмотреть и взять</string>
+    <string name="dash_available_now_subtitle">Заказы, которые можно взять</string>
     <string name="dash_no_jobs_yet_title">Пока нет заказов</string>
     <string name="dash_no_jobs_yet_subtitle">Проверьте доступные заказы или обновите расписание</string>
     <string name="dash_todays_schedule">Сегодня</string>
     <string name="dash_current_period">Текущий период</string>
-    <string name="dash_tap_for_invoices">Нажмите для счетов</string>
+    <string name="dash_tap_for_invoices">Счета</string>
     <string name="dash_completed_this_month">В этом месяце</string>
     <string name="dash_avg_rating">Рейтинг</string>
     <string name="dash_vs_last_month">vs прошлого месяца</string>
@@ -128,7 +128,7 @@
     <string name="dash_on_the_way">В пути</string>
     <string name="dash_browse_jobs">Просмотр заказов</string>
     <string name="dash_available_work_label">Доступные заказы</string>
-    <string name="dash_browse_jobs_subtitle">Нажмите, чтобы открыть</string>
+    <string name="dash_browse_jobs_subtitle">Найдите следующий заказ</string>
     <string name="dash_open">Открыть</string>
     <string name="dash_continue">Продолжить</string>
     <string name="dash_earn_up_to">Заработаете до %1$s</string>
@@ -282,7 +282,7 @@
     <string name="choose_from_gallery">Выбрать из галереи</string>
     <string name="document_choose_file">Выбрать файл</string>
     <string name="delete_photo">Удалить фото</string>
-    <string name="delete_photo_confirm">Вы уверены, что хотите удалить это фото?</string>
+    <string name="delete_photo_confirm">Удалить это фото?</string>
     <string name="photos_none_recorded">Фотографии не записаны</string>
     <string name="estimated_time">Ориентировочное время</string>
     <string name="completion_notes">Заметки к завершению (необязательно)</string>
@@ -1281,7 +1281,7 @@
     <string name="notification_channel_new_jobs_name">Новые доступные заказы</string>
     <string name="notification_channel_new_jobs_desc">Периодический дайджест новых доступных заказов в вашем регионе.</string>
     <string name="notification_new_jobs_title">Новые доступные заказы</string>
-    <string name="notification_new_jobs_body">Рядом доступно %1$d новых заказов. Нажмите, чтобы посмотреть.</string>
+    <string name="notification_new_jobs_body">Рядом доступно %1$d новых заказов.</string>
     <string name="notification_reminder_tomorrow_title">Завтрашние заказы</string>
     <string name="notification_reminder_tomorrow_body">Заказов на завтра: %1$d. Нажмите, чтобы посмотреть.</string>
     <string name="notification_reminder_soon_title">Заказ скоро начинается</string>
@@ -1304,7 +1304,7 @@
     <string name="notification_employee_registration_rejected_title">Заявка отклонена</string>
     <string name="notification_employee_registration_rejected_body">Ваша заявка отклонена. Откройте приложение, чтобы узнать причину, или обратитесь в поддержку.</string>
     <string name="notification_payroll_invoice_paid_title">Вам выплачено</string>
-    <string name="notification_payroll_invoice_paid_body">Ваш счёт за последний расчётный период оплачен. Нажмите, чтобы посмотреть.</string>
+    <string name="notification_payroll_invoice_paid_body">Ваш счёт за последний расчётный период оплачен.</string>
     <string name="notification_preferred_offer_title">Клиент попросил именно вас</string>
     <string name="notification_preferred_offer_body">Заказ %1$s — вас попросил кто-то, у кого вы уже убирали. Откройте, чтобы взять заказ.</string>
     <!-- ── Ваши устройства ── -->
@@ -1462,4 +1462,7 @@
     <string name="error_payroll_invoice_pdf_not_ready">PDF счёта ещё не готов. Обновите состояние.</string>
     <string name="error_payroll_invoice_pdf_unavailable">PDF этого счёта недоступен. Обновите состояние или обратитесь в поддержку.</string>
     <string name="error_payroll_invoice_pdf_generation_failed">Не удалось создать PDF счёта. Обновите состояние или обратитесь в поддержку.</string>
+    <string name="tracker_estimate_overrun">На %1$d мин дольше расчётного времени</string>
+    <string name="tracker_estimate_remaining">Осталось примерно %1$d мин</string>
+    <string name="error_order_cash_requires_saved_card">Для оплаты наличными нужна действующая сохранённая карта в валюте заказа.</string>
 </resources>

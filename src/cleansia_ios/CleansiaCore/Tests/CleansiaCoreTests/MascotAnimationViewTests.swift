@@ -8,13 +8,13 @@ import XCTest
 /// and does not outlive the view.
 ///
 /// Every tick is a literal timestamp handed to `step(now:)`, so each expected frame sequence is
-/// arithmetic and cannot be perturbed by how loaded the machine is. The two intervals are exact binary
-/// fractions (1/4 and 5/16) so no `elapsed >= delay` comparison lands on a floating-point knife edge:
+/// arithmetic and cannot be perturbed by how loaded the machine is. Both intervals are the exact binary
+/// fraction 1/4 so no `elapsed >= delay` comparison lands on a floating-point knife edge:
 /// with the obvious 0.05 s frame, three delays sum to 0.15000000000000002 and a tick placed on that
 /// boundary becomes a coin flip.
 final class MascotAnimationViewTests: XCTestCase {
     private static let frameDelay: TimeInterval = 0.25
-    private static let tickInterval: TimeInterval = 0.3125
+    private static let tickInterval: TimeInterval = 0.25
 
     private var window: UIWindow?
     private var clock = TestClock()

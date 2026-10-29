@@ -3,6 +3,7 @@ package cz.cleansia.customer.ui.components
 import androidx.annotation.RawRes
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -40,13 +41,15 @@ fun MascotAnimation(
     loop: Boolean = true,
 ) {
     val context = LocalContext.current
-    val request = ImageRequest.Builder(context)
-        .data(resId)
-        .size(MASCOT_CANVAS_PX)
-        .memoryCacheKey("mascot:$resId:${BuildConfig.VERSION_CODE}")
-        .diskCachePolicy(CachePolicy.DISABLED)
-        .repeatCount(if (loop) -1 else 0)
-        .build()
+    val request = remember(context, resId, loop) {
+        ImageRequest.Builder(context)
+            .data(resId)
+            .size(MASCOT_CANVAS_PX)
+            .memoryCacheKey("mascot:$resId:${BuildConfig.VERSION_CODE}:$loop")
+            .diskCachePolicy(CachePolicy.DISABLED)
+            .repeatCount(if (loop) -1 else 0)
+            .build()
+    }
 
     AsyncImage(
         model = request,

@@ -93,7 +93,7 @@ public class OrderPayCoverageGateTests
         WorkContractResolvers.Resolver().Object,
         _notificationProducer.Object,
         Mock.Of<IAdminNotifier>(),
-        NullLogger<OrderFactory>.Instance);
+        NullLogger<OrderFactory>.Instance, Cleansia.Tests.Common.SavedCardTestData.Repository());
 
     private Task<Cleansia.Core.Domain.Orders.Order> CreateOrderAsync(
         IEnumerable<string>? serviceIds = null, IEnumerable<string>? packageIds = null) =>
@@ -254,7 +254,7 @@ public class CreateOrderPayCoverageValidatorTests
         CreateOrderTestData.Speaking(Constants.Language.English),
         Mock.Of<ICountryConfigurationRepository>(),
         Mock.Of<ILegalDocumentResolver>(),
-        Mock.Of<IReceivableRepository>());
+        Mock.Of<IReceivableRepository>(), Cleansia.Tests.Common.SavedCardTestData.Repository());
 
     [Fact]
     public async Task An_Unconfigured_Service_Fails_InvalidSelectedServices()

@@ -76,6 +76,32 @@ final class OrderTimerLogicTests: XCTestCase {
         XCTAssertEqual(OrderTimer.startedAt(history), anchor.addingTimeInterval(120))
     }
 
+    func testEstimateProgressUsesActualStartAndHighlightsOnlyPastTheEstimate() throws {
+        var detail = try order(status: 4, history: [(4, 0.0)])
+        detail.estimatedMinutes = 120
+        XCTAssertEqual(
+            OrderTimer.estimateProgress(for: detail, now: anchor.addingTimeInterval(3600)),
+            .init(fraction: 0.5, remainingMinutes: 60, overrunMinutes: 0)
+        )
+        XCTAssertEqual(
+            OrderTimer.estimateProgress(for: detail, now: anchor.addingTimeInterval(7200)),
+            .init(fraction: 1, remainingMinutes: 0, overrunMinutes: 0)
+        )
+        XCTAssertEqual(
+            OrderTimer.estimateProgress(for: detail, now: anchor.addingTimeInterval(7260)),
+            .init(fraction: 1, remainingMinutes: 0, overrunMinutes: 1)
+        )
+    }
+
+    func testUnknownEstimateOrFutureStartDrawsNoTimedProgress() throws {
+        var detail = try order(status: 4, history: [(4, 0.0)])
+        XCTAssertNil(OrderTimer.estimateProgress(for: detail, now: anchor))
+        detail.estimatedMinutes = 0
+        XCTAssertNil(OrderTimer.estimateProgress(for: detail, now: anchor))
+        detail.estimatedMinutes = 120
+        XCTAssertNil(OrderTimer.estimateProgress(for: detail, now: anchor.addingTimeInterval(-1)))
+    }
+
     // MARK: - Live phases
 
     func testElapsedCountsFromTheStartStamp() throws {

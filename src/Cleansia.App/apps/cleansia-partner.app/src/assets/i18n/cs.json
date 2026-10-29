@@ -1029,7 +1029,8 @@
       "photo": {
         "window_closed": "Tuto fotografii teď nelze přidat: fotografie před úklidem od převzetí zakázky do jejího dokončení, fotografie po úklidu během práce.",
         "locked": "Po dokončení nebo zrušení objednávky nelze fotografie smazat."
-      }
+      },
+      "cash_requires_saved_card": "Platba hotově vyžaduje platnou uloženou kartu v měně objednávky."
     },
     "user": {
       "email_confirmed": "E-mail je již potvrzen",

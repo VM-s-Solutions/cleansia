@@ -138,7 +138,7 @@ public class RecurringMaterializationRequiresPaidMembershipTests
             _tenantProvider.Object,
             _unitOfWork.Object,
             NullLogger<MaterializeRecurringBookingTemplate.Handler>.Instance,
-            Mock.Of<INotificationProducer>());
+            Mock.Of<INotificationProducer>(), Cleansia.Tests.Common.SavedCardTestData.Repository());
     }
 
     /// <summary>Arrange the owner as a paid member, which is what the entitlement read answers.</summary>

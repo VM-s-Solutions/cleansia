@@ -27,6 +27,24 @@ enum OrderTimerPhase: Equatable {
 /// so the number is stable no matter when the order is re-opened. (Android needs
 /// the same fix; it is deliberately not made in this branch.)
 enum OrderTimer {
+    struct EstimateProgress: Equatable {
+        let fraction: Double
+        let remainingMinutes: Int
+        let overrunMinutes: Int
+    }
+
+    static func estimateProgress(for order: OrderDetail, now: Date) -> EstimateProgress? {
+        guard order.status == ._4, let minutes = order.estimatedMinutes, minutes > 0,
+              let started = startedAt(order.statusHistory), started <= now else { return nil }
+        let estimated = Double(minutes) * 60
+        let elapsed = now.timeIntervalSince(started)
+        return EstimateProgress(
+            fraction: min(1, elapsed / estimated),
+            remainingMinutes: max(0, Int(ceil((estimated - elapsed) / 60))),
+            overrunMinutes: max(0, Int(ceil((elapsed - estimated) / 60)))
+        )
+    }
+
     /// Confirmed splits into a "heading out soon" headline inside the last half
     /// hour before the scheduled start (Android `tracker_headline_confirmed_soon`).
     static let headingOutSoonThreshold = 30 * 60

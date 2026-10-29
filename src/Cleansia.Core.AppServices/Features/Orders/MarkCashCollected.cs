@@ -135,13 +135,15 @@ public class MarkCashCollected
         IOrderAccessService orderAccessService,
         IStripeClient stripeClient,
         ICashLedgerRepository cashLedgerRepository,
-        ILogger<Handler> logger)
+        ILogger<Handler> logger,
+        ISavedCardRepository savedCardRepository)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var order = await orderRepository
                 .GetQueryable()
+                .Include(o => o.AssignedEmployees)
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
             if (order is null)
@@ -184,14 +186,23 @@ public class MarkCashCollected
             // Here and not in the validator: it must follow the Stripe repair above, or a settled card
             // order the rule refuses could never reach Paid; and it must precede the cancel below, or a
             // refusal would leave the customer's card intent closed and the order payable by nothing.
-            if (order.PaymentType != PaymentType.Cash
-                && !BookingPolicy.AllowsCash(!string.IsNullOrEmpty(order.UserId), order.RequiredEmployees))
+            if (order.AssignedEmployees.Count > 1
+                || (order.PaymentType != PaymentType.Cash
+                    && !BookingPolicy.AllowsCash(!string.IsNullOrEmpty(order.UserId), order.RequiredEmployees)))
             {
                 logger.LogWarning(
                     "Refusing cash collection on card order {OrderId}: its booking could not have been paid in cash",
                     order.Id);
                 return BusinessResult.Failure<Response>(new Error(
                     nameof(order.PaymentType), BusinessErrorMessage.OrderCashNotAllowedOnCardOrder));
+            }
+
+            if (order.PaymentType != PaymentType.Cash
+                && !await CustomerCashStanding.HoldsUsableCardAsync(
+                    savedCardRepository, order.UserId!, order.CurrencyId, DateTimeOffset.UtcNow, cancellationToken))
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(order.PaymentType), BusinessErrorMessage.OrderCashRequiresSavedCard));
             }
 
             if (!string.IsNullOrEmpty(outstandingIntentId))

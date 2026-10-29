@@ -199,7 +199,7 @@ serves, asked with its city **and its postcode**: a Prague row answers by a vali
 
 | `paymentType` | Value | Behavior |
 |---------------|-------|----------|
-| `Cash` | `1` | **Only for a signed-in caller whose selection needs one cleaner** — `requiredEmployees == 1` on the server's own duration; otherwise `order.cash_not_available` ([the cash rule](/product/business-rules#cash)). The informational booking e-mail is queued — no receipt, which is issued at completion once the cash is recorded. The order stays `New` + `PaymentStatus.Pending` and becomes offerable immediately; the cleaner's take is what writes `Confirmed` |
+| `Cash` | `1` | **Only for a signed-in caller whose selection needs one cleaner and who holds a usable saved card in the booking's currency** — `requiredEmployees == 1` on the server's own duration; otherwise `order.cash_not_available`, or `order.cash_requires_saved_card` for a missing usable card ([the cash rule](/product/business-rules#cash)). Choosing cash charges no card. The informational booking e-mail is queued — no receipt, which is issued at completion once the cash is recorded. The order stays `New` + `PaymentStatus.Pending` and becomes offerable immediately; the cleaner's take is what writes `Confirmed` |
 | `Card` | `2` | Web: a Stripe Checkout Session is created. Mobile: no session — the client drives a PaymentSheet against the PaymentIntent. Either way the order stays `New` + `PaymentStatus.Pending` and is **not** offerable until the webhook writes `Paid`; the status stays `New` until a cleaner takes it (ADR-0057) |
 
 ::: warning A cash order is never paid before the cash is in hand
@@ -258,6 +258,7 @@ failure is reported:
 | A membership express waiver the client assumed is still available | `membership.express_waiver.no_longer_available` |
 | Server-recalculated price equals the submitted `totalPrice` | `order.total_price.not_match` |
 | `paymentType` Cash only from a signed-in caller on a selection whose required crew — `max(1, ceil(minutes / 120))`, `OrderDuration.RequiredEmployees` on the same calculator run — is exactly one | `order.cash_not_available` — error code `PaymentType` |
+| Cash requires the authenticated customer's active, captured, unexpired saved card in the booking's currency, with a verified payment method | `order.cash_requires_saved_card` — error code `PaymentType` |
 | A `promoCode`, if any, is sent by a signed-in customer | `promo.requires_account` — error code `PromoCode` |
 | The `promoCode`, if any, would be honoured — previewed again in the address currency on the pre-surcharge subtotal | the preview's own reason: `promo.currency_mismatch`, `promo.expired`, `promo.global_limit_reached`, `promo.per_user_limit_reached`, `promo.below_minimum_order_amount`, `promo.not_found`, `promo.inactive`, `promo.not_yet_valid` — error code `PromoCode` |
 
@@ -396,7 +397,7 @@ subtotal. `QuotePlusSavings` takes the same two fields and resolves them the sam
 | `expressSurchargeWaivedByMembership` | Disambiguates `expressSurchargeApplied: false`. Without it, "waived" and "not an express slot at all" look identical |
 | `expressUpgradesRemaining` | Waivers left **this calendar month, before this booking** — server-computed. Null when the caller has no membership. A client that counts its own orders disagrees with the server the first time a cancellation releases a slot |
 | `tierDiscountMinOrderAmount` | The tier-discount floor the quote judged the order against, so a client can state the same rule. Null when no floor applied — the floor is a platform-default-currency number and is enforced only on an order in that currency |
-| `estimatedDurationMinutes` / `requiredEmployees` | The selection's booked duration and the crew it needs — `OrderDuration.RequiredEmployees`, the same function that staffs the order. The customer web, Android and iOS clients offer cash only when `requiredEmployees` is 1 and the customer is signed in; `CreateOrder` re-decides it server-side |
+| `estimatedDurationMinutes` / `requiredEmployees` | The selection's booked duration and the crew it needs — `OrderDuration.RequiredEmployees`, the same function that staffs the order. The customer web, Android and iOS clients combine `requiredEmployees == 1` with sign-in and a current usable matching-currency saved card; `CreateOrder` re-decides it server-side |
 | `currencyId` / `currencyCode` | The currency the quote was priced in — the one named on the request, else the request's `countryId`'s, else (no country named) the platform default. A named country without a configured currency throws rather than defaulting. There is no exchange rate on the wire; nothing converts |
 
 Promo codes are **not** priced here — they are entered at checkout and applied at create time.

@@ -26,7 +26,8 @@ final class CreateRecurringTermsTests: XCTestCase {
             consentClient: consent,
             snackbar: SnackbarController(),
             isCardPaymentAvailable: true,
-            scheduler: TestScheduler.dispatch.eraseToAnyScheduler()
+            scheduler: TestScheduler.dispatch.eraseToAnyScheduler(),
+            savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])])
         )
     }
 

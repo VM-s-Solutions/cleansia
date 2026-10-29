@@ -127,10 +127,15 @@ final class AnimatedMascotPlaybackTests: XCTestCase {
         XCTAssertFalse(next.isFinished)
     }
 
-    func testAdvanceStepsOnlyOneFrameEvenWhenTwoAreDue() {
+    func testAMissedDisplayCallbackSelectsTheFrameDueNow() {
         let next = step(AnimatedMascotPlayback.Playhead(index: 0, frameStart: 0, isFinished: false), now: 0.09)
-        XCTAssertEqual(next.index, 1)
-        XCTAssertEqual(next.frameStart, 0.04, accuracy: 0.0001, "a small backlog is caught up one tick at a time")
+        XCTAssertEqual(next.index, 2)
+        XCTAssertEqual(
+            next.frameStart,
+            0.08,
+            accuracy: 0.0001,
+            "a late intermediate frame is not replayed on the next tick"
+        )
     }
 
     func testAdvanceIgnoresAnEmptyBuffer() {

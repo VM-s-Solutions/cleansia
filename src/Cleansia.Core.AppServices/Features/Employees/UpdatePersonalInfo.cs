@@ -15,13 +15,16 @@ public class UpdatePersonalInfo
     {
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IUserSessionProvider _userSessionProvider;
+        private readonly IUserRepository _userRepository;
 
         public Validator(
             IEmployeeRepository employeeRepository,
-            IUserSessionProvider userSessionProvider)
+            IUserSessionProvider userSessionProvider,
+            IUserRepository userRepository)
         {
             _employeeRepository = employeeRepository ?? throw new ArgumentNullException(nameof(employeeRepository));
             _userSessionProvider = userSessionProvider ?? throw new ArgumentNullException(nameof(userSessionProvider));
+            _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
 
             RuleFor(c => c)
                 .MustAsync(CallerIsAnEmployee)
@@ -42,7 +45,16 @@ public class UpdatePersonalInfo
                 .Cascade(CascadeMode.Stop)
                 .ValidatePhoneNumber()
                 .Must(phone => new PhoneNumberAttribute().IsValid(phone))
-                .WithMessage(BusinessErrorMessage.InvalidPhoneNumber);
+                .WithMessage(BusinessErrorMessage.InvalidPhoneNumber)
+                .MustAsync(PhoneIsAvailableAsync)
+                .WithMessage(BusinessErrorMessage.ExistingPhoneNumber)
+                .WithErrorCode(nameof(Command.Phone));
+        }
+
+        private async Task<bool> PhoneIsAvailableAsync(string? phone, CancellationToken cancellationToken)
+        {
+            var user = await _userRepository.GetByPhoneNumberAsync(phone!, cancellationToken);
+            return user is null || user.Id == _userSessionProvider.GetUserId();
         }
 
         // Not an ownership comparison — the subject is server-resolved, so there is nothing for a client

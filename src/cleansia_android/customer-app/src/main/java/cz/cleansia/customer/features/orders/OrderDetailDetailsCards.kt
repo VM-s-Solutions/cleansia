@@ -58,6 +58,8 @@ import cz.cleansia.customer.core.orders.OrderServiceDetailsDto
 import cz.cleansia.customer.features.booking.localizedDescription
 import cz.cleansia.customer.features.booking.localizedName
 import cz.cleansia.customer.features.booking.titleRes
+import cz.cleansia.customer.features.profile.AvatarPhoto
+import cz.cleansia.customer.features.profile.ProfileAvatarContent
 
 /* ── Cleaning details ── */
 
@@ -334,8 +336,12 @@ internal fun AssignedCleanersCard(employees: List<AssignedEmployeeDto>) {
                 val callLabel = stringResource(R.string.order_detail_call_cleaner, displayName)
                 Row(if (employees.size > 1) Modifier.width(230.dp) else Modifier.fillParentMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(40.dp).background(MaterialTheme.colorScheme.primaryContainer, CircleShape), contentAlignment = Alignment.Center) {
-                        Text(displayName.firstOrNull()?.uppercaseChar()?.toString().orEmpty(),
-                            style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primaryTextOnContainer)
+                        ProfileAvatarContent(
+                            initials = cleanerInitials(emp.fullName),
+                            initialsStyle = MaterialTheme.typography.titleMedium,
+                            initialsColor = MaterialTheme.colorScheme.primaryTextOnContainer,
+                            photo = emp.avatarUrl?.let { AvatarPhoto.Remote(it, emp.avatarFileName) },
+                        )
                     }
                     Spacer(Modifier.width(10.dp))
                     Column(Modifier.weight(1f)) {
@@ -355,4 +361,11 @@ internal fun AssignedCleanersCard(employees: List<AssignedEmployeeDto>) {
             }
         }
     }
+}
+
+internal fun cleanerInitials(visibleName: String?): String {
+    val parts = visibleName.orEmpty().trim().split(Regex("\\s+")).filter { it.isNotBlank() }
+    val ends = if (parts.size > 1) listOf(parts.first(), parts.last()) else parts
+    return ends.mapNotNull { it.firstOrNull()?.takeIf(Char::isLetter)?.uppercaseChar() }
+        .joinToString("").ifBlank { "?" }
 }

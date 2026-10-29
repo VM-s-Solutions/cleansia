@@ -33,9 +33,10 @@ export const OUTSIDE_BOOKING_WINDOW = 'order.cleaning_date.outside_booking_windo
 /** How CreateOrder refuses any booking, card or cash, while the customer owes an amount from an earlier one. */
 export const UNPAID_RECEIVABLE = 'order.unpaid_receivable';
 
-/** How CreateOrder refuses cash that the customer cannot fix on this booking except by paying by card. */
+/** Cash refusals that return the customer to their payment choice. */
 export const CASH_REFUSALS: readonly string[] = [
   'order.cash_not_available',
+  'order.cash_requires_saved_card',
   'order.cash_open_bookings_limit_reached',
 ];
 
@@ -48,6 +49,8 @@ export function cashReasonCopy(
       return { key: 'pages.order.cash_needs_account', params: {} };
     case 'needs_card':
       return { key: 'pages.order.cash_needs_card', params: { count: eligibility.requiredCleaners } };
+    case 'needs_saved_card':
+      return { key: 'pages.order.cash_needs_saved_card', params: {} };
     case 'pending':
       return { key: 'pages.order.cash_pending', params: {} };
     default:

@@ -139,6 +139,13 @@ fun CreateRecurringScreen(
     val submitting = submitState is ActionState.Submitting
     val isEditing = viewModel.isEditing
 
+    var wasStopped by remember { mutableStateOf(false) }
+    androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_STOP) { wasStopped = true }
+    androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_START) {
+        if (wasStopped && !submitting) viewModel.refreshCashEligibility()
+        wasStopped = false
+    }
+
     var addressSheetOpen by remember { mutableStateOf(false) }
 
     BackHandler(enabled = canStepBack) { viewModel.previousStep() }
@@ -665,6 +672,7 @@ private fun WhereAndPayStep(
         is CashEligibility.NeedsCard ->
             stringResource(R.string.recurring_cash_needs_card, cashEligibility.requiredCleaners)
         CashEligibility.Pending -> stringResource(R.string.recurring_cash_pending)
+        CashEligibility.NeedsSavedCard -> stringResource(R.string.booking_cash_needs_saved_card)
         CashEligibility.NeedsAccount, CashEligibility.Available -> null
     }
     if (cashReason != null) {

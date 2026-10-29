@@ -323,6 +323,18 @@ extension L10n {
             localized("delete_photo")
         }
 
+        static var deletePhotoConfirmation: String {
+            localized("delete_photo_confirmation")
+        }
+
+        static func estimateRemaining(_ minutes: Int) -> String {
+            format("order_estimate_remaining", minutes)
+        }
+
+        static func estimateOverrun(_ minutes: Int) -> String {
+            format("order_estimate_overrun", minutes)
+        }
+
         static var cameraUnavailable: String {
             localized("camera_unavailable")
         }

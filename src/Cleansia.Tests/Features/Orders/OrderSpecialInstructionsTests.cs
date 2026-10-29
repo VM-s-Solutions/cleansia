@@ -59,7 +59,7 @@ public class OrderSpecialInstructionsTests
             WorkContractResolvers.Resolver().Object,
             Mock.Of<INotificationProducer>(),
             Mock.Of<IAdminNotifier>(),
-            NullLogger<OrderFactory>.Instance);
+            NullLogger<OrderFactory>.Instance, Cleansia.Tests.Common.SavedCardTestData.Repository());
 
     /// <summary>
     /// Anonymous (no user id) keeps the factory off the loyalty/membership

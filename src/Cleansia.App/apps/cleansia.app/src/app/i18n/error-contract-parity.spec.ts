@@ -516,6 +516,7 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   // Cash only for a signed-in customer whose booking needs one cleaner (owner ruling 2026-09-24):
   // CreateOrder, CreateRecurringBooking, UpdateRecurringBooking and ConfirmRecurringOrder.
   'order.cash_not_available',
+  'order.cash_requires_saved_card',
   // At most two cash bookings not yet paid (owner ruling 2026-09-28): the same four commands.
   'order.cash_open_bookings_limit_reached',
   // No booking of any tender while a receivable is open with any company (owner ruling 2026-10-06):

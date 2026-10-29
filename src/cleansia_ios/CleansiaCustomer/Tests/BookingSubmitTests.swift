@@ -28,7 +28,8 @@ final class BookingSubmitTests: XCTestCase {
             languageTag: { [unowned self] in languageTag },
             isCardPaymentAvailable: cardAvailable,
             quoteDebounce: .milliseconds(400),
-            scheduler: TestScheduler.dispatch.eraseToAnyScheduler()
+            scheduler: TestScheduler.dispatch.eraseToAnyScheduler(),
+            savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])])
         )
     }
 

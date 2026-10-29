@@ -26,6 +26,7 @@ import androidx.compose.material.icons.outlined.BrokenImage
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -53,6 +54,7 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.core.ui.theme.primaryText
+import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.partner.BuildConfig
 import cz.cleansia.partner.R
 import cz.cleansia.partner.features.media.rememberPhotoSourcePicker
@@ -156,6 +158,24 @@ internal fun PhotoRail(
     isReadOnly: Boolean,
 ) {
     var pickingForType by remember { mutableStateOf<PhotoType?>(null) }
+    var pendingDeleteId by remember { mutableStateOf<String?>(null) }
+
+    pendingDeleteId?.let { photoId ->
+        AlertDialog(
+            onDismissRequest = { pendingDeleteId = null },
+            title = { Text(stringResource(R.string.delete_photo)) },
+            text = { Text(stringResource(R.string.delete_photo_confirm)) },
+            confirmButton = {
+                CleansiaTextButton(onClick = {
+                    pendingDeleteId = null
+                    if (!isReadOnly && deletingId == null && photos.any { it.id == photoId }) onDelete(photoId)
+                }) { Text(stringResource(R.string.delete_photo), color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                CleansiaTextButton(onClick = { pendingDeleteId = null }) { Text(stringResource(R.string.cancel)) }
+            },
+        )
+    }
 
     // Hands the Uri straight to the ViewModel and does no work itself. The
     // ActivityResultRegistry dispatches this callback on the MAIN thread, so
@@ -216,7 +236,7 @@ internal fun PhotoRail(
             PhotoTile(
                 photo = photo,
                 isDeleting = deletingId == photo.id,
-                onDelete = { photo.id?.let(onDelete) },
+                onDelete = { pendingDeleteId = photo.id },
                 isReadOnly = isReadOnly,
             )
         }

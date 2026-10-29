@@ -1,5 +1,6 @@
 package cz.cleansia.customer.features.booking
 import cz.cleansia.core.auth.TokenStore
+import cz.cleansia.core.auth.JwtDecoder
 
 import android.content.Context
 import app.cash.turbine.test
@@ -25,6 +26,8 @@ import cz.cleansia.customer.core.memberships.ExpressWaiverStatus
 import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
 import cz.cleansia.customer.core.memberships.MembershipRepository
 import cz.cleansia.customer.core.payments.CreatePaymentIntentResponse
+import cz.cleansia.customer.core.payments.SavedCard
+import cz.cleansia.customer.core.payments.SavedCardRepository
 import cz.cleansia.customer.core.payments.PaymentRepository
 import cz.cleansia.customer.core.promo.PromoCodeApi
 import cz.cleansia.customer.core.promo.PromoCodeError
@@ -47,6 +50,8 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkObject
+import io.mockk.unmockkObject
 import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.CompletableDeferred
@@ -91,6 +96,11 @@ class BookingViewModelTest {
     private lateinit var promoCodeApi: PromoCodeApi
     private lateinit var referralRepository: ReferralRepository
     private lateinit var paymentRepository: PaymentRepository
+    private lateinit var savedCardRepository: SavedCardRepository
+    private val cardsFlow = MutableStateFlow<List<SavedCard>?>(listOf(
+        SavedCard("card-czk", "visa", "4242", 12, 2099, "CZK"),
+        SavedCard("card-eur", "visa", "4242", 12, 2099, "EUR"),
+    ))
     private lateinit var tokenStore: cz.cleansia.core.auth.TokenStore
     private lateinit var snackbar: SnackbarController
     private lateinit var serviceAreaProvider: cz.cleansia.core.servicearea.ServiceAreaProvider
@@ -129,6 +139,9 @@ class BookingViewModelTest {
         promoCodeApi = mockk()
         referralRepository = mockk(relaxed = true)
         paymentRepository = mockk(relaxed = true)
+        savedCardRepository = mockk()
+        every { savedCardRepository.cards } returns cardsFlow
+        coEvery { savedCardRepository.refresh() } coAnswers { ApiResult.Success(cardsFlow.value.orEmpty()) }
         tokenStore = mockk(relaxed = true)
         snackbar = mockk(relaxed = true)
         serviceAreaProvider = mockk()
@@ -184,6 +197,7 @@ class BookingViewModelTest {
         promoCodeApi = promoCodeApi,
         referralRepository = referralRepository,
         paymentRepository = paymentRepository,
+        savedCardRepository = savedCardRepository,
         tokenStore = tokenStore,
         snackbar = snackbar,
         serviceAreaProvider = serviceAreaProvider,
@@ -1985,7 +1999,7 @@ class BookingViewModelTest {
     @Test
     fun canPlaceOrder_whenTheBoxIsShownAndTicked_isTrue() = runTest {
         val vm = newViewModel()
-        vm.readyToPlace(termsAccepted = true)
+        vm.readyToPlace(termsAccepted = true, paymentMethod = BookingViewModel.PAYMENT_CARD)
         advanceUntilIdle()
 
         assertEquals(true, vm.canPlaceOrder.value)
@@ -1996,7 +2010,7 @@ class BookingViewModelTest {
         bothConsentsOnRecord()
 
         val vm = newViewModel()
-        vm.readyToPlace(termsAccepted = false)
+        vm.readyToPlace(termsAccepted = false, paymentMethod = BookingViewModel.PAYMENT_CARD)
         advanceUntilIdle()
 
         assertEquals(true, vm.canPlaceOrder.value)
@@ -2312,7 +2326,6 @@ class BookingViewModelTest {
         coVerify(exactly = 0) { bookingApi.create(any()) }
     }
 
-    // ── cash needs no saved card (owner ruling 2026-10-04): the server asks for none, so the review step asks for none ──
 
     private suspend fun kotlinx.coroutines.test.TestScope.cashReady(): BookingViewModel {
         currentUserFlow.value = completeUser()
@@ -2329,7 +2342,7 @@ class BookingViewModelTest {
     )
 
     @Test
-    fun cashWithNoSavedCard_theSlideWaitsOnlyForTheBookingsOwnTicks() = runTest {
+    fun cashWithAUsableSavedCard_theSlideWaitsForTheBookingsOwnTicks() = runTest {
         bothConsentsOnRecord()
 
         val vm = cashReady()
@@ -2338,7 +2351,7 @@ class BookingViewModelTest {
     }
 
     @Test
-    fun submit_cashWithNoSavedCard_booksTheCashOrderAtOnce() = runTest {
+    fun submit_cashWithAUsableSavedCard_booksTheCashOrderAtOnce() = runTest {
         val vm = cashReady()
         val sent = slot<CreateOrderCommand>()
         coEvery { bookingApi.create(capture(sent)) } returns Response.success(CreateOrderResponse(id = "o-1", confirmationCode = "ABC123"))
@@ -2350,6 +2363,116 @@ class BookingViewModelTest {
         coVerify(exactly = 1) { bookingApi.create(any()) }
     }
 
+    @Test
+    fun cash_withoutACardOrWithAnExpiredOrForeignCard_isUnavailable() = runTest {
+        listOf(
+            emptyList(),
+            listOf(SavedCard("expired", "visa", "4242", 1, 2020, "CZK")),
+            listOf(SavedCard("foreign", "visa", "4242", 12, 2099, "USD")),
+        ).forEach { cards ->
+            cardsFlow.value = cards
+            val vm = quotedFor(requiredEmployees = 1)
+            assertEquals(CashEligibility.NeedsSavedCard, vm.cashEligibility.value)
+            vm.selectPaymentMethod(BookingViewModel.PAYMENT_CASH)
+            advanceUntilIdle()
+            assertEquals("", vm.state.value.paymentMethod)
+            assertEquals(false, vm.canPlaceOrder.value)
+        }
+    }
+
+    @Test
+    fun cash_aFailedCardRead_cannotUseAPreviouslyCachedCard() = runTest {
+        coEvery { savedCardRepository.refresh() } returns ApiResult.Error(ApiError.Network("offline"))
+        val vm = quotedFor(requiredEmployees = 1)
+        assertEquals(CashEligibility.Pending, vm.cashEligibility.value)
+        vm.selectPaymentMethod(BookingViewModel.PAYMENT_CASH)
+        assertEquals("", vm.state.value.paymentMethod)
+    }
+
+    @Test
+    fun cash_anOlderSuccessfulReadCannotReplaceANewerFailedRead() = runTest {
+        val older = CompletableDeferred<ApiResult<List<SavedCard>>>()
+        var reads = 0
+        coEvery { savedCardRepository.refresh() } coAnswers {
+            if (reads++ == 0) older.await() else ApiResult.Error(ApiError.Network("offline"))
+        }
+        val vm = quotedFor(requiredEmployees = 1)
+        vm.refreshCashEligibility()
+        advanceUntilIdle()
+        older.complete(ApiResult.Success(cardsFlow.value.orEmpty()))
+        advanceUntilIdle()
+        assertEquals(CashEligibility.Pending, vm.cashEligibility.value)
+    }
+
+    @Test
+    fun submit_aNormalTokenRotationDuringTheCashReadKeepsItsSuccessfulRetry() = runTest {
+        mockkObject(JwtDecoder)
+        try {
+            every { JwtDecoder.extractUserId(any()) } returns "same-customer"
+            val vm = cashReady()
+            val retriedRead = CompletableDeferred<ApiResult<List<SavedCard>>>()
+            coEvery { savedCardRepository.refresh() } coAnswers { retriedRead.await() }
+
+            val submit = async { vm.submit() }
+            runCurrent()
+            tokensFlow.value = TokenStore.Tokens("rotated-access", Long.MAX_VALUE, "rotated-refresh", Long.MAX_VALUE)
+            runCurrent()
+            retriedRead.complete(ApiResult.Success(cardsFlow.value.orEmpty()))
+            advanceUntilIdle()
+
+            assertTrue(submit.await() is BookingSubmitOutcome.Success)
+            coVerify(exactly = 2) { savedCardRepository.refresh() }
+            coVerify(exactly = 1) { bookingApi.create(any()) }
+            verify(exactly = 0) { snackbar.showError(networkMessage) }
+        } finally {
+            unmockkObject(JwtDecoder)
+        }
+    }
+
+    @Test
+    fun cash_switchingAccountsInvalidatesTheFormerAccountsCards() = runTest {
+        mockkObject(JwtDecoder)
+        try {
+            every { JwtDecoder.extractUserId("access") } returns "first-customer"
+            every { JwtDecoder.extractUserId("other-access") } returns "other-customer"
+            val vm = cashReady()
+            coEvery { savedCardRepository.refresh() } returns ApiResult.Success(emptyList())
+
+            tokensFlow.value = TokenStore.Tokens("other-access", Long.MAX_VALUE, "other-refresh", Long.MAX_VALUE)
+            advanceUntilIdle()
+
+            assertEquals(CashEligibility.NeedsSavedCard, vm.cashEligibility.value)
+            assertEquals("", vm.state.value.paymentMethod)
+            assertEquals(false, vm.canPlaceOrder.value)
+            coVerify(exactly = 2) { savedCardRepository.refresh() }
+        } finally {
+            unmockkObject(JwtDecoder)
+        }
+    }
+
+    @Test
+    fun submit_cashRechecksTheCardAndRefusesOneRemovedAfterSelection() = runTest {
+        val vm = cashReady()
+        coEvery { savedCardRepository.refresh() } returns ApiResult.Success(emptyList())
+        val outcome = vm.submit()
+        advanceUntilIdle()
+        assertEquals(BookingSubmitOutcome.Failed, outcome)
+        coVerify(exactly = 2) { savedCardRepository.refresh() }
+        coVerify(exactly = 0) { bookingApi.create(any()) }
+        assertEquals("", vm.state.value.paymentMethod)
+    }
+
+    @Test
+    fun submit_cashCannotCreateWhenTheFreshCardReadFails() = runTest {
+        val vm = cashReady()
+        coEvery { savedCardRepository.refresh() } returns ApiResult.Error(ApiError.Network("offline"))
+        val outcome = vm.submit()
+        advanceUntilIdle()
+        assertEquals(BookingSubmitOutcome.Failed, outcome)
+        assertEquals(false, vm.canPlaceOrder.value)
+        coVerify(exactly = 0) { bookingApi.create(any()) }
+    }
+
     /** The open-bookings limit still refuses cash; the refusal is shown as it reads. */
     @Test
     fun submit_cashRefusedForTheOpenBookingsLimit_showsTheRefusal() = runTest {
@@ -2359,6 +2482,31 @@ class BookingViewModelTest {
 
         assertEquals(BookingSubmitOutcome.Failed, vm.submit())
         verify(exactly = 1) { snackbar.showError(key) }
+    }
+
+    @Test
+    fun submit_aCashPostRefusalClearsTheChoiceAndInvalidatesTheVerifiedRead() = runTest {
+        listOf("order.cash_requires_saved_card", "order.cash_not_available", "order.cash_open_bookings_limit_reached").forEach { key ->
+            coEvery { savedCardRepository.refresh() } returns ApiResult.Success(cardsFlow.value.orEmpty())
+            val vm = cashReady()
+            val recovery = CompletableDeferred<ApiResult<List<SavedCard>>>()
+            coEvery { bookingApi.create(any()) } coAnswers {
+                coEvery { savedCardRepository.refresh() } coAnswers { recovery.await() }
+                createRefusedWithErrors("""{"Other":"common.required","PaymentType":["common.required","$key"]}""")
+            }
+
+            assertEquals(BookingSubmitOutcome.Failed, vm.submit())
+            runCurrent()
+            assertEquals(key, "", vm.state.value.paymentMethod)
+            assertEquals(key, CashEligibility.Pending, vm.cashEligibility.value)
+            assertEquals(key, false, vm.canPlaceOrder.value)
+
+            recovery.complete(ApiResult.Success(emptyList()))
+            advanceUntilIdle()
+            assertEquals(key, CashEligibility.NeedsSavedCard, vm.cashEligibility.value)
+            assertEquals(key, "", vm.state.value.paymentMethod)
+        }
+        verify(exactly = 0) { snackbar.showInfoKey(R.string.booking_cash_cleared) }
     }
 
     private fun createRefusedWithErrors(errors: String): Response<CreateOrderResponse> = Response.error(

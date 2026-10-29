@@ -23,7 +23,7 @@ sequenceDiagram
   API->>V: validate
   V->>P: RE-price, server-side
   V-->>API: refuse if the totals disagree
-  V-->>API: refuse cash unless signed in AND one cleaner is required
+  V-->>API: refuse cash unless signed in, one cleaner is required and a usable saved card exists
   API->>F: create
   F-->>API: New + PaymentStatus.Pending
   alt Card
@@ -105,40 +105,40 @@ the order and fixed there: the on-site top-up that would change it is approved i
 built. → [Business rules — the dirtiness level](/product/business-rules#dirtiness),
 [ADR-0069](/decisions/adr-0069)
 
-## Cash is for a signed-in customer's one-cleaner job {#cash-eligibility}
+## Cash requires a saved card and a one-cleaner job {#cash-eligibility}
 
-A booking may be paid in cash only when the caller is signed in **and** the server's crew for the
-selection is exactly one (`BookingPolicy.AllowsCash`, owner ruling 2026-09-24); a guest, or a booking
+A booking may be paid in cash only when the caller is signed in, holds a usable verified saved card in
+the booking's currency (owner request 2026-10-29) **and** the server's crew for the selection is exactly
+one (`BookingPolicy.AllowsCash`, crew ruling 2026-09-24); a guest, or a booking
 whose duration needs two cleaners or more, pays by card. The crew is not something the command carries:
 the validator reads it off the same calculator run that re-priced the order
 (`OrderDuration.RequiredEmployees`, one cleaner per started 120 minutes of a duration that already
 includes the [dirtiness level](#dirtiness-level) and the home's size), so a forged request cannot make
 a two-cleaner job cash-eligible. The rule sits in the price chain after the price match and ahead
-of the promo rules, and a refusal is `order.cash_not_available` before any side effect — no express
+of the promo rules, and a crew or sign-in refusal is `order.cash_not_available` before any side effect — no express
 waiver reserved, no credit debited, no referral accepted, nothing dispatched. `OrderFactory` refuses
 the same combination as a backstop for callers that never run the validator.
 
 **What the clients do.** The quote already returns `requiredEmployees` for the selection on screen. The
-customer web wizard and the Android and iOS booking flows combine it with the live sign-in state: cash is
-offered only when both allow it; otherwise it is disabled with the reason — cash needs a signed-in
-customer, this booking needs N cleaners, or (while no quote describes the current selection) it is
-confirmed once the price is ready. The mobile booking flows run inside a signed-in session, so only the
+customer web wizard and the Android and iOS booking flows combine it with the live sign-in state and
+current saved-card list. Cash is disabled while the quote or cards are unread, or with the reason —
+sign in, this booking needs N cleaners, or save a usable card in the booking's currency. The mobile booking flows run inside a signed-in session, so only the
 web ever shows the first reason. A cash choice that stops being allowed — a sign-out, a bigger selection,
-a higher dirtiness level — is **taken away, not switched to card**: the payment choice is cleared and the
+a higher dirtiness level, a removed/expired card or a currency change — is **taken away, not switched to card**: the payment choice is cleared and the
 customer is told to choose again. Both mobile apps re-check cash against the quote the booking is
-submitted with and clear it there rather than send it. If the server still refuses, the web and iOS clear
-the choice (the web wizard returns to the payment step); Android shows the refusal and leaves the choice
-for the customer to change. → [Business rules — paying in cash](/product/business-rules#cash)
+submitted with, refresh the saved cards and clear an invalid choice rather than send it. A server refusal
+also clears cash so the customer can choose again; no card payment is selected automatically.
+→ [Business rules — paying in cash](/product/business-rules#cash)
 
-**Beyond the crew, the customer's standing decides, and no card is asked for.** A signed-in customer
+**Beyond the crew, the customer's standing decides.** A signed-in customer
 holding two cash bookings not yet paid — in practice their upcoming cash bookings — is refused
 `order.cash_open_bookings_limit_reached`; `CreateRecurringBooking`, `UpdateRecurringBooking` and
 `ConfirmRecurringOrder` ask the same. The cap of two is kept (owner ruling 2026-10-06), and it counts
-bookings in flight, not non-payments. Since 2026-10-04 (owner ruling) a cash booking needs no saved
-card and no card is charged: `order.cash_requires_saved_card` is gone, and so is every client's card
-step on the cash path — the web wizard's and schedule form's card capture, Android's guarantee tick
-and setup sheet, and iOS's capture before booking. A cash slide or submit books at once.
-→ [Business rules — cash needs no card](/product/business-rules#card-guarantee)
+bookings in flight, not non-payments. The 2026-10-29 requirement restores
+`order.cash_requires_saved_card`: active, captured, unexpired and matching-currency cards qualify;
+pending, removed or unverified cards do not. The check also guards recurring materialization and
+card-to-cash settlement before intent cancellation. It introduces no automatic charge or consent change.
+→ [Business rules — saved-card requirement](/product/business-rules#card-guarantee)
 
 ## A customer who owes an amount books nothing {#owes-nothing}
 

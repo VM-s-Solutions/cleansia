@@ -270,6 +270,9 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
                pathValue.Contains("/adminauth/") ||
                pathValue.Contains("/login") ||
                pathValue.Contains("password") ||
+               // Crew avatars add a signed URL beside household and collector free text.
+               pathValue.Contains("/order/getbyid") ||
+               pathValue.Contains("/adminorder/details/") ||
                pathValue.Contains("/order/lookup") ||
                pathValue.Contains("/order/cancelguest") ||
                pathValue.Contains("/order/guestcancellationpreview") ||

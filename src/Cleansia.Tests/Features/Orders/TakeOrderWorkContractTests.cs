@@ -177,7 +177,7 @@ public sealed class TakeOrderWorkContractTests
     [Fact]
     public async Task A_Won_Seat_Is_Staged_With_Its_Acceptance_Before_The_Commit()
     {
-        var order = ValidatorTestHelpers.BuildOrder(OrderId, OrderStatus.New, OtherEmployeeId, maxEmployees: 2);
+        var order = ValidatorTestHelpers.BuildOrder(OrderId, OrderStatus.New, OtherEmployeeId, paymentType: PaymentType.Card, paymentStatus: PaymentStatus.Paid, maxEmployees: 2);
         ArrangeTakeable(order);
         var calls = new List<string>();
         _workContractAcceptor

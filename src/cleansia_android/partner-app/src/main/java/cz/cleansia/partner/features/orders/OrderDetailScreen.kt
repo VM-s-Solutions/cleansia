@@ -705,9 +705,9 @@ private fun OrderDetailSheetContent(
     // Resolved here for the in-sheet OrderTimerCard's live timer.
     val startedAtMillis = remember(order.statusHistory) {
         order.statusHistory.orEmpty()
-            .firstOrNull { it.status?.value == OrderStatus._4.value }
-            ?.createdOn
-            ?.let { runCatching { java.time.Instant.parse(it).toEpochMilli() }.getOrNull() }
+            .filter { it.status?.value == OrderStatus._4.value }
+            .mapNotNull { it.createdOn?.let { value -> runCatching { java.time.Instant.parse(value).toEpochMilli() }.getOrNull() } }
+            .maxOrNull()
     }
 
     // fillMaxHeight() on the outer Column makes it claim the full sheet
@@ -774,7 +774,11 @@ private fun OrderDetailSheetContent(
                     status = status,
                     startedAtEpochMillis = startedAtMillis,
                 )
-                OrderTrackerHero(status = status)
+                OrderTrackerHero(
+                    status = status,
+                    startedAtEpochMillis = startedAtMillis,
+                    estimatedMinutes = order.estimatedTime ?: 0,
+                )
             }
 
             // Order metadata: order # + date + price chip. Inline

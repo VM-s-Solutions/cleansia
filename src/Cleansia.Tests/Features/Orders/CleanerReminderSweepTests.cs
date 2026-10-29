@@ -44,7 +44,7 @@ public class CleanerReminderSweepTests
     private Order ArrangeOrder(int minutesOut, int crew, OrderStatus status = OrderStatus.Confirmed)
     {
         var order = ValidatorTestHelpers.BuildEmptyOrder(
-            "order-1", status, maxEmployees: crew,
+            "order-1", status, paymentType: PaymentType.Card, paymentStatus: PaymentStatus.Paid, maxEmployees: crew,
             cleaningDateTime: DateTime.UtcNow.AddMinutes(minutesOut));
 
         for (var i = 1; i <= crew; i++)

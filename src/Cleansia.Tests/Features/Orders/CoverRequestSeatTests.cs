@@ -22,7 +22,7 @@ public class CoverRequestSeatTests
     private const string OrderId = "order-cover-1";
 
     private static Order TwoSeatOrder() =>
-        ValidatorTestHelpers.BuildEmptyOrder(OrderId, OrderStatus.Confirmed, maxEmployees: 2);
+        ValidatorTestHelpers.BuildEmptyOrder(OrderId, OrderStatus.Confirmed, paymentType: PaymentType.Card, paymentStatus: PaymentStatus.Paid, maxEmployees: 2);
 
     private static int _seq;
 

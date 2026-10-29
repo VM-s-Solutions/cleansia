@@ -29,6 +29,7 @@ public class OrderFactoryCashBackstopTests
     private readonly Mock<IServiceRepository> _serviceRepository = new();
     private readonly Mock<IAdminNotifier> _adminNotifier = new();
     private readonly Mock<ILoyaltyService> _loyaltyService = new();
+    private readonly ISavedCardRepository _savedCards = Cleansia.Tests.Common.SavedCardTestData.Repository();
 
     public OrderFactoryCashBackstopTests()
     {
@@ -70,6 +71,21 @@ public class OrderFactoryCashBackstopTests
         _orderRepository.Verify(r => r.Add(order), Times.Once);
     }
 
+    [Fact]
+    public async Task A_Direct_Construction_With_No_Usable_Card_Cannot_Add_Or_Announce_A_Cash_Order()
+    {
+        SeedService(120);
+        Mock.Get(_savedCards).Setup(r => r.GetCapturedForUserInCurrencyAsync(UserId, Czk.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+
+        var failure = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => CreateFactory().CreateAsync(Input(UserId, PaymentType.Cash), CancellationToken.None));
+
+        Assert.Contains("usable saved card", failure.Message);
+        _orderRepository.Verify(r => r.Add(It.IsAny<Order>()), Times.Never);
+        _adminNotifier.VerifyNoOtherCalls();
+    }
+
     private void SeedService(int minutes)
     {
         var service = Service.Create("category-cash-backstop", "Service", "Under test", minutes);
@@ -103,7 +119,7 @@ public class OrderFactoryCashBackstopTests
             WorkContractResolvers.Resolver().Object,
             Mock.Of<INotificationProducer>(),
             _adminNotifier.Object,
-            NullLogger<OrderFactory>.Instance);
+            NullLogger<OrderFactory>.Instance, _savedCards);
     }
 
     private static CreateOrderInput Input(string? userId, PaymentType paymentType) =>

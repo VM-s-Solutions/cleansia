@@ -396,6 +396,19 @@
 | T-0881 | Distinguish invoice PDF availability and preserve invoice ownership | M | `done` | — | — |
 | T-0882 | Route Live Activity tokens by their signing environment | M | `done` | — | — |
 | T-0883 | Recover Live Activity registration and foreground tracking safely | M | `done` | — | — |
+| T-0884 | Clean obsolete local builds and document fresh Xcode runs | M | `in_review` | — | — |
+| T-0885 | Keep registration AutoFill isolated and readable | M | `in_review` | — | — |
+| T-0886 | Require a usable saved card for single-cleaner cash bookings | M | `in_review` | — | — |
+| T-0887 | Restore active status pulse and align overrun feedback | M | `in_review` | — | — |
+| T-0888 | Show assigned cleaner photos with initials fallback | M | `in_review` | — | — |
+| T-0889 | Smooth cleaning mascot playback | M | `in_review` | — | — |
+| T-0890 | Refine order creation and completion success marks | M | `in_review` | — | — |
+| T-0891 | Keep Home gallery progress visible after swiping | M | `in_review` | — | — |
+| T-0892 | Remove Partner confirmation code accessory icon | M | `in_review` | — | — |
+| T-0893 | Validate duplicate phones during Partner onboarding | M | `in_review` | — | — |
+| T-0894 | Save Partner profile photo through the bottom action | M | `in_review` | — | — |
+| T-0895 | Confirm cleaning evidence photo deletion | M | `in_review` | — | — |
+| T-0896 | Use concise mobile translations | M | `in_review` | — | — |
 
 > **T-0785–T-0799 filed 2026-09-20** — the UI-polish and dead-code batch, on the owner's ruling of
 > that day (*"I want to polish alignments in admin app a bit on all of the overview/detail pages.
@@ -440,7 +453,7 @@
 > reported not absorbed. Owed: the DEV drop at the next DEV deploy (MS-2 / A1, `20260920204705`);
 > the merge order is #255 then #260. Open rows: none.
 
-*Next id: **T-0884**.*
+*Next id: **T-0897**.*
 
 
 Current startup checkpoint — 2026-10-16 UTC: PR #344 merged C12 `70d9c8b1ea82` as M5 `a8d308126dc4`; C12 local8, PR5 workflows/7 checks and M5 4/5 passed, all attempt 1/no reruns, with guarded manual skips and prior application limits retained. First read-only observation `38947741183/a1` failed before its baseline with a generic validation error; one POST, GET-only discovery, final artifact saved once, no resize/restart/B3 trial. T-0636 remains `in_progress`; safe diagnostic correction and the temporary comparison remain pending. The ticket's dated PR #344 closure and `pr344-closure-preparation001/CLAIMS-AND-PINS001.json` carry the bounds.

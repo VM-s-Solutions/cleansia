@@ -216,6 +216,48 @@ final class PersonalSectionViewModelTests: XCTestCase {
 
     // MARK: Every rule the server applies is checked on the device first
 
+    func testInvalidPersonalDataNeverSavesThePhoto() async {
+        let vm = await loadValidForm()
+        vm.form.phone = ""
+        var photoWrites = 0
+        await vm.save(photo: { photoWrites += 1
+            return true
+        })
+        XCTAssertEqual(photoWrites, 0)
+        XCTAssertNil(client.personalCommand)
+    }
+
+    func testDuplicatePhoneKeepsThePhotoDraftAndDoesNotAdvance() async {
+        let vm = await loadValidForm()
+        client.personalUpdateResult = .failure(ApiError(code: "user.existing_phone_number", httpStatus: 400))
+        var photoWrites = 0
+        var advanced = false
+        let observation = vm.saved.sink { advanced = true }
+        defer { observation.cancel() }
+        await vm.save(photo: { photoWrites += 1
+            return true
+        })
+        XCTAssertEqual(photoWrites, 0)
+        XCTAssertFalse(advanced)
+        XCTAssertNotNil(vm.form.phoneError)
+    }
+
+    func testBottomSaveWaitsForThePhotoAndStaysOnTheFormIfItFails() async {
+        let vm = await loadValidForm()
+        var advanced = false
+        let observation = vm.saved.sink { advanced = true }
+        defer { observation.cancel() }
+        await vm.save(photo: {
+            XCTAssertNotNil(self.client.personalCommand)
+            XCTAssertTrue(vm.action.isSubmitting)
+            return false
+        })
+        XCTAssertFalse(advanced)
+        XCTAssertEqual(vm.action, .idle)
+        await vm.save(photo: { true })
+        XCTAssertTrue(advanced)
+    }
+
     private func loadValidForm() async -> PersonalSectionViewModel {
         client.employeeResult = .success(EmployeeItem(
             id: "emp-1",
@@ -281,7 +323,7 @@ final class PersonalSectionViewModelTests: XCTestCase {
 
     /// The server's refusals of the phone are named under it, in their own words, and clear as it is edited.
     func testTheServersPhoneRefusalIsNamedUnderThePhone() async {
-        for key in ["validation.invalid_phone_number", "common.required"] {
+        for key in ["validation.invalid_phone_number", "user.existing_phone_number", "common.required"] {
             client.personalUpdateResult = .failure(ApiError(code: key, httpStatus: 400, keys: [key]))
             let vm = await loadValidForm()
 

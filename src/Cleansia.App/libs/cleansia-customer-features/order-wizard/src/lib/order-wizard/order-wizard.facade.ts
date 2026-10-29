@@ -20,6 +20,7 @@ import {
   PackageListItem,
   PaymentType,
   QuoteOrderResponse,
+  SavedCardDto,
   ServiceListItem,
   QuotePlusSavingsQuery,
 } from '@cleansia/customer-services';
@@ -44,11 +45,11 @@ import {
   marketCountryOptions,
   SnackbarService,
 } from '@cleansia/services';
-import { CashEligibility, cashIsRefused, resolveCashEligibility } from '@cleansia/models';
+import { CashEligibility, cashIsRefused, hasUsableCashCard, resolveCashEligibility } from '@cleansia/models';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { catchError, finalize, map, of, takeUntil } from 'rxjs';
+import { catchError, finalize, firstValueFrom, map, of, takeUntil } from 'rxjs';
 import { OrderMembershipFacade } from './order-membership.facade';
 import { OrderPreferredCleanerFacade } from './order-preferred-cleaner.facade';
 import { OrderPricingFacade } from './order-pricing.facade';
@@ -245,16 +246,16 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   readonly membershipDiscount = this.pricing.membershipDiscount;
   readonly effectiveDiscount = this.pricing.effectiveDiscount;
 
-  /**
-   * Whether this booking may be paid in cash, from the live session and the crew the server quoted
-   * for the selection on screen. A quote for an earlier selection says nothing about this one.
-   */
+  private readonly cashCards = signal<SavedCardDto[] | null>(null);
+  private cashCardReadSequence = 0;
+
   readonly cashEligibility = computed<CashEligibility>(() =>
     resolveCashEligibility(
       this.authService.isLoggedIn(),
       this.pricing.cachedQuoteMatchesCurrentState()
         ? (this.quote()?.requiredEmployees ?? null)
         : null,
+      hasUsableCashCard(this.cashCards(), this.quote()?.currencyCode ?? null),
     ),
   );
   readonly cashSelectable = computed(() => this.cashEligibility().kind === 'available');
@@ -349,6 +350,25 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
         untracked(() => this.dropCash(true));
       }
     });
+    effect(() => {
+      const signedIn = this.authService.isLoggedIn();
+      untracked(() => {
+        this.cashCardReadSequence++;
+        this.cashCards.set(null);
+        if (signedIn) void this.refreshCashCards();
+      });
+    });
+  }
+
+  async refreshCashCards(): Promise<void> {
+    const sequence = ++this.cashCardReadSequence;
+    this.cashCards.set(null);
+    if (!this.authService.isLoggedIn()) return;
+    const cards = await firstValueFrom(this.customerClient.savedCardClient.getMine().pipe(
+      takeUntil(this.destroyed$),
+      catchError(() => of(null)),
+    ), { defaultValue: null });
+    if (sequence === this.cashCardReadSequence && this.authService.isLoggedIn()) this.cashCards.set(cards);
   }
 
   selectPaymentType(type: PaymentType): void {
@@ -377,8 +397,12 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   }
 
   /** Delegates to the pricing engine — see OrderPricingFacade.refreshQuoteNow. */
-  refreshQuoteNow(): Promise<QuoteOrderResponse | null> {
-    return this.pricing.refreshQuoteNow();
+  async refreshQuoteNow(): Promise<QuoteOrderResponse | null> {
+    const cards = this.authService.isLoggedIn() && this.cashCards() === null
+      ? this.refreshCashCards() : Promise.resolve();
+    const quoted = await this.pricing.refreshQuoteNow();
+    await cards;
+    return quoted;
   }
 
   // ─── Promo code validation ───────────────────────────────────
@@ -939,7 +963,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
       case PAYMENT_STEP:
         if (
           data.paymentType === null ||
-          (data.paymentType === PaymentType.Cash && cashIsRefused(this.cashEligibility()))
+          (data.paymentType === PaymentType.Cash && !this.cashSelectable())
         ) {
           reasons.push('pages.order.missing.payment');
         }
@@ -1038,6 +1062,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     }
 
     const paymentType = this.formData().paymentType;
+    if (paymentType === PaymentType.Cash) await this.refreshCashCards();
     if (
       paymentType === null ||
       (paymentType === PaymentType.Cash && !this.cashSelectable())
@@ -1202,7 +1227,10 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
       return;
     }
     if (code && CASH_REFUSALS.includes(code)) {
+      this.cashCardReadSequence++;
+      this.cashCards.set(null);
       this.dropCash(false);
+      void this.refreshCashCards();
       this.goToPaymentStep();
       return;
     }

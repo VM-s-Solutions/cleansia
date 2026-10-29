@@ -39,12 +39,23 @@ struct StatusTimelineView: View {
         StatusTimelineFormat.entries(from: history)
     }
 
+    private var hasActiveStatus: Bool {
+        let dated = history.compactMap { track -> (Int, Date)? in
+            guard let status = track.status?.value, let date = track.createdOn else { return nil }
+            return (status, date)
+        }
+        return dated.max { $0.1 < $1.1 }.map { (0 ... 4).contains($0.0) } ?? false
+    }
+
     var body: some View {
         if !entries.isEmpty {
             OrderSectionCard(title: L10n.Orders.statusTimelineSectionTitle, systemImage: "clock.arrow.circlepath") {
                 VStack(alignment: .leading, spacing: 0) {
                     ForEach(Array(entries.enumerated()), id: \.offset) { index, entry in
-                        TimelineRow(entry: entry, isLast: index == entries.count - 1, locale: locale)
+                        TimelineRow(
+                            entry: entry, isLast: index == entries.count - 1, locale: locale,
+                            pulses: entry.isCurrent && hasActiveStatus
+                        )
                     }
                 }
             }
@@ -57,6 +68,7 @@ private struct TimelineRow: View {
     let entry: StatusTimelineEntry
     let isLast: Bool
     let locale: Locale
+    let pulses: Bool
 
     var body: some View {
         HStack(alignment: .top, spacing: Spacing.s) {
@@ -65,7 +77,8 @@ private struct TimelineRow: View {
                     segment: entry.isCurrent ? .current : .past,
                     // Keeps the green the sheet already used for a step that is behind us; the SHAPE,
                     // not the fill, is now what separates it from the step we are on.
-                    tint: entry.isCurrent ? CleansiaColors.primary : CleansiaColors.successText
+                    tint: entry.isCurrent ? CleansiaColors.primary : CleansiaColors.successText,
+                    pulses: pulses
                 )
                 if !isLast {
                     Rectangle()

@@ -102,10 +102,10 @@ public class OrderSeatCapacityTests
             rooms: 1,
             bathrooms: 1,
             cleaningDateTime: DateTime.UtcNow.AddDays(1),
-            paymentType: PaymentType.Cash,
+            paymentType: PaymentType.Card,
             totalPrice: 1000m,
             currencyId: "czk",
-            paymentStatus: PaymentStatus.Pending,
+            paymentStatus: PaymentStatus.Paid,
             cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
 
         order.Id = OrderId;

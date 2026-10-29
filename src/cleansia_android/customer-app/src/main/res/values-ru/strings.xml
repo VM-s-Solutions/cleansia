@@ -95,7 +95,7 @@
 
     <!-- Home — upcoming order -->
     <string name="home_upcoming_empty_title">Нет запланированных уборок</string>
-    <string name="home_upcoming_empty_subtitle">Нажмите, чтобы заказать первую уборку.</string>
+    <string name="home_upcoming_empty_subtitle">Закажите первую уборку.</string>
 
     <!-- Home — reorder -->
     <string name="home_reorder_title">Заказать снова</string>
@@ -168,7 +168,7 @@
 
     <!-- Home — popular packages -->
     <string name="home_popular_packages_title">Популярные пакеты</string>
-    <string name="home_popular_packages_add_cta">Нажмите для заказа</string>
+    <string name="home_popular_packages_add_cta">Заказать</string>
 
     <!-- Home — Order again quick action -->
     <string name="home_order_again_title">ЗАКАЗАТЬ СНОВА</string>
@@ -827,11 +827,11 @@
     <string name="booking_pay_card">Картой</string>
     <string name="booking_pay_card_desc">Безопасно через Stripe</string>
     <string name="booking_pay_cash">Наличными</string>
-    <string name="booking_pay_cash_desc">Оплата при доставке</string>
-    <string name="booking_cash_needs_account">Наличными могут платить только клиенты, вошедшие в аккаунт. Войдите, чтобы платить наличными, или оплатите картой.</string>
-    <string name="booking_cash_needs_card">Количество уборщиков для этого заказа: %1$d. Наличными можно платить только за заказы, с которыми справится один уборщик, поэтому этот заказ оплачивается картой.</string>
-    <string name="booking_cash_pending">Можно ли платить наличными, мы подтвердим, как только будет известна цена.</string>
-    <string name="booking_cash_cleared">Оплата наличными для этого заказа больше недоступна, поэтому способ оплаты не выбран. Выберите, как вы хотите платить.</string>
+    <string name="booking_pay_cash_desc">Заплатите клинеру после уборки.</string>
+    <string name="booking_cash_needs_account">Для оплаты наличными войдите в аккаунт и сохраните карту.</string>
+    <string name="booking_cash_needs_card">Для этого заказа нужно %1$d клинеров. Оплатите картой.</string>
+    <string name="booking_cash_pending">Проверяем команду и сохранённую карту.</string>
+    <string name="booking_cash_cleared">Оплата наличными недоступна. Выберите другой способ оплаты.</string>
     <string name="booking_draft_time_changed">Выбранное время больше недоступно или изменилась его цена. Пожалуйста, выберите время снова.</string>
     <string name="consent_saved_card_draft_2026_10_05">Я соглашаюсь, что Cleansia сохранит эту карту в моём аккаунте. Деньги с неё списываются, только когда я ею плачу, и я могу удалить её в любой момент.</string>
     <string name="booking_save_card_label">Сохранить эту карту для моих следующих заказов</string>
@@ -868,7 +868,7 @@
     <string name="onboarding_phone_label">Номер телефона</string>
     <string name="onboarding_phone_helper">Укажите код страны (напр. +420). Используем только для связи по вашим бронированиям.</string>
     <string name="onboarding_birthdate_label">Дата рождения</string>
-    <string name="onboarding_birthdate_placeholder">Нажмите, чтобы выбрать</string>
+    <string name="onboarding_birthdate_placeholder">Выберите дату</string>
     <string name="onboarding_birthdate_helper">По желанию — для бонусов ко дню рождения.</string>
     <string name="onboarding_save">Сохранить и продолжить</string>
     <string name="onboarding_skip">Пропустить</string>
@@ -1052,7 +1052,7 @@
     <string name="recurring_create_pay_cash">Наличными</string>
     <string name="recurring_create_pay_card">Картой</string>
     <string name="recurring_cash_needs_card">Количество уборщиков для каждой уборки: %1$d. Наличными можно платить только за уборки, с которыми справится один уборщик, поэтому это расписание оплачивается картой.</string>
-    <string name="recurring_cash_pending">Можно ли оплачивать это расписание наличными, мы подтвердим, как только будет известна цена.</string>
+    <string name="recurring_cash_pending">Проверяем команду и сохранённую карту.</string>
     <string name="recurring_cash_cleared">Оплата наличными для этого расписания больше недоступна, поэтому способ оплаты не выбран. Выберите, как вы хотите платить.</string>
     <string name="recurring_cash_unchecked">Не удалось проверить, можно ли оплачивать это расписание наличными. Сохраните его ещё раз через минуту или выберите карту.</string>
     <string name="recurring_create_payment_missing">Выберите, как будет оплачиваться расписание.</string>
@@ -1377,7 +1377,7 @@
     <string name="notification_order_assignment_cancelled_title">Заказ отменён</string>
     <string name="notification_order_assignment_cancelled_body">Заказ, который вы приняли, отменён: #%1$s. Нажмите, чтобы посмотреть детали.</string>
     <string name="notification_payroll_invoice_paid_title">Вам выплачено</string>
-    <string name="notification_payroll_invoice_paid_body">Ваш счёт за последний расчётный период оплачен. Нажмите, чтобы посмотреть.</string>
+    <string name="notification_payroll_invoice_paid_body">Ваш счёт за последний расчётный период оплачен.</string>
     <!-- ── Payments ── -->
     <string name="profile_row_payments">Платежи</string>
     <string name="payments_title">Платежи</string>
@@ -1592,4 +1592,6 @@
     <string name="payments_card_setup_failed">Не удалось настроить карту. Попробуйте снова.</string>
     <string name="payments_card_saved">Карта сохранена</string>
     <string name="order_photos_phase_count">%1$s · %2$d</string>
+    <string name="booking_cash_needs_saved_card">Для оплаты наличными сохраните действующую карту в валюте заказа.</string>
+    <string name="error_order_cash_requires_saved_card">Для оплаты наличными нужна действующая сохранённая карта в валюте заказа.</string>
 </resources>

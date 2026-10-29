@@ -95,7 +95,7 @@
 
     <!-- Home — upcoming order -->
     <string name="home_upcoming_empty_title">Žiadne plánované upratovanie</string>
-    <string name="home_upcoming_empty_subtitle">Klepnite na rezerváciu prvého upratovania.</string>
+    <string name="home_upcoming_empty_subtitle">Objednajte si prvé upratovanie.</string>
 
     <!-- Home — reorder -->
     <string name="home_reorder_title">Objednať znova</string>
@@ -168,7 +168,7 @@
 
     <!-- Home — popular packages -->
     <string name="home_popular_packages_title">Obľúbené balíky</string>
-    <string name="home_popular_packages_add_cta">Klepnúť na objednanie</string>
+    <string name="home_popular_packages_add_cta">Objednať</string>
 
     <!-- Home — Order again quick action -->
     <string name="home_order_again_title">OBJEDNAŤ ZNOVA</string>
@@ -827,11 +827,11 @@
     <string name="booking_pay_card">Kartou</string>
     <string name="booking_pay_card_desc">Bezpečne cez Stripe</string>
     <string name="booking_pay_cash">Hotovosťou</string>
-    <string name="booking_pay_cash_desc">Platba pri dodaní</string>
-    <string name="booking_cash_needs_account">V hotovosti môžu platiť len prihlásení zákazníci. Prihláste sa, ak chcete platiť v hotovosti, alebo zaplaťte kartou.</string>
-    <string name="booking_cash_needs_card">Počet upratovačov potrebných pre túto objednávku: %1$d. V hotovosti sa dá platiť len za objednávky, ktoré zvládne jeden upratovač, túto preto zaplatíte kartou.</string>
-    <string name="booking_cash_pending">Či môžete platiť v hotovosti, potvrdíme, keď bude známa cena.</string>
-    <string name="booking_cash_cleared">Platba v hotovosti už pre túto objednávku nie je možná, preto nie je vybraný žiadny spôsob platby. Zvoľte, ako chcete platiť.</string>
+    <string name="booking_pay_cash_desc">Zaplaťte upratovačovi po upratovaní.</string>
+    <string name="booking_cash_needs_account">Pre platbu v hotovosti sa prihláste a uložte kartu.</string>
+    <string name="booking_cash_needs_card">Táto objednávka vyžaduje %1$d upratovačov. Zaplaťte kartou.</string>
+    <string name="booking_cash_pending">Overujeme počet upratovačov a uloženú kartu.</string>
+    <string name="booking_cash_cleared">Platba v hotovosti nie je dostupná. Vyberte iný spôsob platby.</string>
     <string name="booking_draft_time_changed">Vybraný čas už nie je dostupný alebo sa zmenila jeho cena. Vyberte si, prosím, čas znova.</string>
     <string name="consent_saved_card_draft_2026_10_05">Súhlasím, že Cleansia uloží túto kartu do môjho účtu. Nič z nej nestrhne, ak ňou nezaplatím, a kartu môžem kedykoľvek odstrániť.</string>
     <string name="booking_save_card_label">Uložiť túto kartu pre moje ďalšie objednávky</string>
@@ -868,7 +868,7 @@
     <string name="onboarding_phone_label">Telefónne číslo</string>
     <string name="onboarding_phone_helper">Uveďte predvoľbu (napr. +420). Použijeme ho iba na to, aby sme vás kontaktovali ohľadom vašich rezervácií.</string>
     <string name="onboarding_birthdate_label">Dátum narodenia</string>
-    <string name="onboarding_birthdate_placeholder">Ťuknite pre výber</string>
+    <string name="onboarding_birthdate_placeholder">Vyberte dátum</string>
     <string name="onboarding_birthdate_helper">Voliteľné — pre narodeninové výhody.</string>
     <string name="onboarding_save">Uložiť a pokračovať</string>
     <string name="onboarding_skip">Preskočiť</string>
@@ -1052,7 +1052,7 @@
     <string name="recurring_create_pay_cash">Hotovosťou</string>
     <string name="recurring_create_pay_card">Kartou</string>
     <string name="recurring_cash_needs_card">Počet upratovačov potrebných na každé upratovanie: %1$d. V hotovosti sa dá platiť len za upratovania, ktoré zvládne jeden upratovač, tento rozvrh preto platíte kartou.</string>
-    <string name="recurring_cash_pending">Či sa dá tento rozvrh platiť v hotovosti, potvrdíme, keď bude známa cena.</string>
+    <string name="recurring_cash_pending">Overujeme počet upratovačov a uloženú kartu.</string>
     <string name="recurring_cash_cleared">Platba v hotovosti už pre tento rozvrh nie je možná, preto nie je vybraný žiadny spôsob platby. Zvoľte, ako chcete platiť.</string>
     <string name="recurring_cash_unchecked">Nepodarilo sa overiť, či sa dá tento rozvrh platiť v hotovosti. Uložte ho o chvíľu znova alebo zvoľte kartu.</string>
     <string name="recurring_create_payment_missing">Zvoľte, ako sa bude rozvrh platiť.</string>
@@ -1377,7 +1377,7 @@
     <string name="notification_order_assignment_cancelled_title">Zákazka zrušená</string>
     <string name="notification_order_assignment_cancelled_body">Zákazka, ktorú ste prijali, bola zrušená: #%1$s. Ťuknutím zobrazíte detaily.</string>
     <string name="notification_payroll_invoice_paid_title">Boli ste vyplatení</string>
-    <string name="notification_payroll_invoice_paid_body">Vaša faktúra za posledné výplatné obdobie bola uhradená. Ťuknutím zobrazíte.</string>
+    <string name="notification_payroll_invoice_paid_body">Vaša faktúra za posledné výplatné obdobie bola uhradená.</string>
     <!-- ── Payments ── -->
     <string name="profile_row_payments">Platby</string>
     <string name="payments_title">Platby</string>
@@ -1592,4 +1592,6 @@
     <string name="payments_card_setup_failed">Kartu sa nepodarilo nastaviť. Skúste to znova.</string>
     <string name="payments_card_saved">Karta bola uložená</string>
     <string name="order_photos_phase_count">%1$s · %2$d</string>
+    <string name="booking_cash_needs_saved_card">Pre platbu v hotovosti uložte platnú kartu v mene objednávky.</string>
+    <string name="error_order_cash_requires_saved_card">Platba v hotovosti vyžaduje platnú uloženú kartu v mene objednávky.</string>
 </resources>

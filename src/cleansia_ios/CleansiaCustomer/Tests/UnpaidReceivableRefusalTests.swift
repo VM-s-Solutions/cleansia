@@ -33,7 +33,8 @@ final class UnpaidReceivableRefusalTests: XCTestCase {
             tokenStore: FakeTokenStore.signedIn(),
             isCardPaymentAvailable: true,
             quoteDebounce: .milliseconds(400),
-            scheduler: scheduler.eraseToAnyScheduler()
+            scheduler: scheduler.eraseToAnyScheduler(),
+            savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])])
         )
     }
 
@@ -103,7 +104,8 @@ final class UnpaidReceivableRefusalTests: XCTestCase {
             snackbar: snackbar,
             isCardPaymentAvailable: true,
             quoteDebounce: .milliseconds(400),
-            scheduler: scheduler.eraseToAnyScheduler()
+            scheduler: scheduler.eraseToAnyScheduler(),
+            savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])])
         )
     }
 

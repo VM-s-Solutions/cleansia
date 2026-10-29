@@ -277,6 +277,7 @@ internal fun OrderTrackerBar(status: OrderStatus?, modifier: Modifier = Modifier
             cancelledLabel = stringResource(R.string.orders_status_cancelled),
             currentFraction = progress?.fraction,
             overdue = progress?.overrunMinutes?.let { it > 0 } == true,
+            pulseCurrent = status == OrderStatus.InProgress,
         )
         if (progress != null) {
             val overdue = progress.overrunMinutes > 0
@@ -392,23 +393,13 @@ private fun StatusPill(label: String, color: Color) {
 
 /* ── Format helpers ── */
 
-internal data class CleaningEstimateProgress(val fraction: Float, val remainingMinutes: Long, val overrunMinutes: Long)
-
 internal fun cleaningEstimateProgress(
     statusHistory: List<cz.cleansia.customer.core.orders.OrderStatusTrackDto>?,
     estimatedMinutes: Int,
     nowEpoch: Long,
-): CleaningEstimateProgress? {
-    if (estimatedMinutes <= 0) return null
+): cz.cleansia.core.format.CleaningEstimateProgress? {
     val start = statusHistory.orEmpty().filter { it.status?.value == 4 }
         .mapNotNull { it.createdOn?.let { value -> runCatching { Instant.parse(value).epochSecond }.getOrNull() } }
-        .maxOrNull() ?: return null
-    if (start > nowEpoch) return null
-    val estimate = estimatedMinutes * 60L
-    val elapsed = nowEpoch - start
-    return CleaningEstimateProgress(
-        fraction = (elapsed.toFloat() / estimate).coerceIn(0f, 1f),
-        remainingMinutes = ((estimate - elapsed).coerceAtLeast(0) + 59) / 60,
-        overrunMinutes = ((elapsed - estimate).coerceAtLeast(0) + 59) / 60,
-    )
+        .maxOrNull()
+    return cz.cleansia.core.format.cleaningEstimateProgress(start, estimatedMinutes, nowEpoch)
 }

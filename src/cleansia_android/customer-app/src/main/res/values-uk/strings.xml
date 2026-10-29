@@ -95,7 +95,7 @@
 
     <!-- Home — upcoming order -->
     <string name="home_upcoming_empty_title">Немає запланованих прибирань</string>
-    <string name="home_upcoming_empty_subtitle">Натисніть, щоб замовити перше прибирання.</string>
+    <string name="home_upcoming_empty_subtitle">Замовте перше прибирання.</string>
 
     <!-- Home — reorder -->
     <string name="home_reorder_title">Замовити знову</string>
@@ -168,7 +168,7 @@
 
     <!-- Home — popular packages -->
     <string name="home_popular_packages_title">Популярні пакети</string>
-    <string name="home_popular_packages_add_cta">Натисніть для замовлення</string>
+    <string name="home_popular_packages_add_cta">Замовити</string>
 
     <!-- Home — Order again quick action -->
     <string name="home_order_again_title">ЗАМОВИТИ ЗНОВУ</string>
@@ -827,11 +827,11 @@
     <string name="booking_pay_card">Карткою</string>
     <string name="booking_pay_card_desc">Безпечно через Stripe</string>
     <string name="booking_pay_cash">Готівкою</string>
-    <string name="booking_pay_cash_desc">Оплата при доставці</string>
-    <string name="booking_cash_needs_account">Готівкою можуть платити лише клієнти, які увійшли в акаунт. Увійдіть, щоб платити готівкою, або сплатіть карткою.</string>
-    <string name="booking_cash_needs_card">Кількість прибиральників для цього замовлення: %1$d. Готівкою можна платити лише за замовлення, з якими впорається один прибиральник, тож це замовлення сплачується карткою.</string>
-    <string name="booking_cash_pending">Чи можна платити готівкою, ми підтвердимо, щойно буде відома ціна.</string>
-    <string name="booking_cash_cleared">Оплата готівкою для цього замовлення більше недоступна, тому спосіб оплати не обрано. Оберіть, як ви хочете платити.</string>
+    <string name="booking_pay_cash_desc">Сплатіть клінеру після прибирання.</string>
+    <string name="booking_cash_needs_account">Для оплати готівкою увійдіть в акаунт і збережіть картку.</string>
+    <string name="booking_cash_needs_card">Для цього замовлення потрібно %1$d клінерів. Сплатіть карткою.</string>
+    <string name="booking_cash_pending">Перевіряємо команду та збережену картку.</string>
+    <string name="booking_cash_cleared">Оплата готівкою недоступна. Оберіть інший спосіб оплати.</string>
     <string name="booking_draft_time_changed">Обраний час більше недоступний або змінив ціну. Будь ласка, оберіть час знову.</string>
     <string name="consent_saved_card_draft_2026_10_05">Я погоджуюся, що Cleansia збереже цю картку в моєму акаунті. Кошти з неї списуються лише тоді, коли я нею плачу, і я можу будь-коли її видалити.</string>
     <string name="booking_save_card_label">Зберегти цю картку для моїх наступних замовлень</string>
@@ -868,7 +868,7 @@
     <string name="onboarding_phone_label">Номер телефону</string>
     <string name="onboarding_phone_helper">Вкажіть код країни (напр. +420). Використовуватимемо лише для зв’язку щодо ваших бронювань.</string>
     <string name="onboarding_birthdate_label">Дата народження</string>
-    <string name="onboarding_birthdate_placeholder">Натисніть, щоб вибрати</string>
+    <string name="onboarding_birthdate_placeholder">Оберіть дату</string>
     <string name="onboarding_birthdate_helper">За бажанням — для бонусів до дня народження.</string>
     <string name="onboarding_save">Зберегти і продовжити</string>
     <string name="onboarding_skip">Пропустити</string>
@@ -1052,7 +1052,7 @@
     <string name="recurring_create_pay_cash">Готівкою</string>
     <string name="recurring_create_pay_card">Карткою</string>
     <string name="recurring_cash_needs_card">Кількість прибиральників для кожного прибирання: %1$d. Готівкою можна платити лише за прибирання, з якими впорається один прибиральник, тож цей розклад сплачується карткою.</string>
-    <string name="recurring_cash_pending">Чи можна платити за цей розклад готівкою, ми підтвердимо, щойно буде відома ціна.</string>
+    <string name="recurring_cash_pending">Перевіряємо команду та збережену картку.</string>
     <string name="recurring_cash_cleared">Оплата готівкою для цього розкладу більше недоступна, тому спосіб оплати не обрано. Оберіть, як ви хочете платити.</string>
     <string name="recurring_cash_unchecked">Не вдалося перевірити, чи можна платити за цей розклад готівкою. Збережіть його ще раз за хвилину або оберіть картку.</string>
     <string name="recurring_create_payment_missing">Оберіть, як оплачуватиметься розклад.</string>
@@ -1377,7 +1377,7 @@
     <string name="notification_order_assignment_cancelled_title">Замовлення скасовано</string>
     <string name="notification_order_assignment_cancelled_body">Замовлення, яке ви прийняли, скасовано: #%1$s. Торкніться, щоб переглянути деталі.</string>
     <string name="notification_payroll_invoice_paid_title">Вам виплачено</string>
-    <string name="notification_payroll_invoice_paid_body">Ваш рахунок за останній розрахунковий період оплачено. Торкніться, щоб переглянути.</string>
+    <string name="notification_payroll_invoice_paid_body">Ваш рахунок за останній розрахунковий період оплачено.</string>
     <!-- ── Payments ── -->
     <string name="profile_row_payments">Платежі</string>
     <string name="payments_title">Платежі</string>
@@ -1592,4 +1592,6 @@
     <string name="payments_card_setup_failed">Не вдалося налаштувати картку. Спробуйте знову.</string>
     <string name="payments_card_saved">Картку збережено</string>
     <string name="order_photos_phase_count">%1$s · %2$d</string>
+    <string name="booking_cash_needs_saved_card">Для оплати готівкою збережіть дійсну картку у валюті замовлення.</string>
+    <string name="error_order_cash_requires_saved_card">Для оплати готівкою потрібна дійсна збережена картка у валюті замовлення.</string>
 </resources>

@@ -124,7 +124,7 @@ public sealed class CreateOrderTermsTickValidatorTests
             CreateOrderTestData.Speaking(Constants.Language.English),
             Mock.Of<ICountryConfigurationRepository>(),
             _legalDocuments.Object,
-            Mock.Of<IReceivableRepository>());
+            Mock.Of<IReceivableRepository>(), Cleansia.Tests.Common.SavedCardTestData.Repository());
     }
 
     private static CreateOrder.Command Booking(bool? termsAccepted) =>

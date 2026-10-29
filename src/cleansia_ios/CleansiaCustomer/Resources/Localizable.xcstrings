@@ -2249,31 +2249,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Platba hotově už pro tuto objednávku není možná, a proto není vybrán žádný způsob platby. Zvolte, jak chcete platit."
+            "value": "Hotovost není dostupná. Zvolte způsob platby."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cash is no longer available for this booking, so no payment method is selected. Choose how you want to pay."
+            "value": "Cash is unavailable. Choose a payment method."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Оплата наличными для этого заказа больше недоступна, поэтому способ оплаты не выбран. Выберите, как вы хотите платить."
+            "value": "Наличные недоступны. Выберите способ оплаты."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Platba v hotovosti už pre túto objednávku nie je možná, preto nie je vybraný žiadny spôsob platby. Zvoľte, ako chcete platiť."
+            "value": "Hotovosť nie je dostupná. Zvoľte spôsob platby."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Оплата готівкою для цього замовлення більше недоступна, тому спосіб оплати не обрано. Оберіть, як ви хочете платити."
+            "value": "Готівка недоступна. Оберіть спосіб оплати."
           }
         }
       }
@@ -3337,31 +3337,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zda můžete platit hotově, potvrdíme, jakmile bude známa cena."
+            "value": "Ověřujeme možnost platby hotově…"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Whether you can pay in cash is confirmed once the price is ready."
+            "value": "Checking cash payment availability…"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Можно ли платить наличными, мы подтвердим, как только будет известна цена."
+            "value": "Проверяем возможность оплаты наличными…"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Či môžete platiť v hotovosti, potvrdíme, keď bude známa cena."
+            "value": "Overujeme možnosť platby v hotovosti…"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Чи можна платити готівкою, ми підтвердимо, щойно буде відома ціна."
+            "value": "Перевіряємо можливість оплати готівкою…"
           }
         }
       }
@@ -13388,31 +13388,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Klepnout pro objednání"
+            "value": "Objednat"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tap to book"
+            "value": "Book"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Нажмите для заказа"
+            "value": "Заказать"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Klepnúť na objednanie"
+            "value": "Objednať"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Натисніть для замовлення"
+            "value": "Замовити"
           }
         }
       }
@@ -21515,31 +21515,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Klepnutím vyberte"
+            "value": "Vybrat datum"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tap to pick"
+            "value": "Choose date"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Нажмите, чтобы выбрать"
+            "value": "Выбрать дату"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ťuknutím vyberte"
+            "value": "Vybrať dátum"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Торкніться, щоб обрати"
+            "value": "Обрати дату"
           }
         }
       }
@@ -29954,31 +29954,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Z karet uložených ve vašem účtu nic nestrhneme, pokud jimi sami nezaplatíte, a kartu můžete kdykoli odebrat."
+            "value": "Pro platbu hotově potřebujete uloženou kartu. Strhneme z ní peníze pouze při vaší platbě kartou."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cards saved to your account are never charged unless you pay with them, and you can remove one at any time."
+            "value": "Cash bookings require a saved card. We charge it only when you pay by card."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "С карт, сохранённых в вашем аккаунте, деньги списываются, только когда вы сами ими платите, и карту можно удалить в любой момент."
+            "value": "Для оплаты наличными нужна сохранённая карта. Мы списываем с неё деньги, только когда вы платите картой."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Z kariet uložených vo vašom účte nič nestrhneme, ak nimi sami nezaplatíte, a kartu môžete kedykoľvek odstrániť."
+            "value": "Na platbu v hotovosti potrebujete uloženú kartu. Peniaze z nej strhneme iba pri vašej platbe kartou."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "З карток, збережених у вашому акаунті, кошти списуються лише тоді, коли ви самі ними платите, і картку можна будь-коли видалити."
+            "value": "Для оплати готівкою потрібна збережена картка. Ми списуємо з неї кошти лише тоді, коли ви платите карткою."
           }
         }
       }
@@ -30059,31 +30059,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nemáte uloženou kartu. Uložit ji můžete při příští platbě kartou."
+            "value": "Nemáte uloženou kartu. Přidejte ji pro platby hotově."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No card saved. You can save one the next time you pay by card."
+            "value": "No saved card. Add one for cash bookings."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Карта не сохранена. Её можно сохранить при следующей оплате картой."
+            "value": "Нет сохранённой карты. Добавьте её для оплаты наличными."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nemáte uloženú kartu. Uložiť ju môžete pri ďalšej platbe kartou."
+            "value": "Nemáte uloženú kartu. Pridajte ju na platby v hotovosti."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Картку не збережено. Її можна зберегти під час наступної оплати карткою."
+            "value": "Немає збереженої картки. Додайте її для оплати готівкою."
           }
         }
       }
@@ -30339,31 +30339,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Kartu můžete znovu uložit při příští platbě kartou."
+            "value": "Pro platbu hotově potřebujete uloženou kartu. Kartu můžete kdykoli znovu přidat."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You can save a card again the next time you pay by card."
+            "value": "Cash bookings require a saved card. You can add one again at any time."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Карту можно снова сохранить при следующей оплате картой."
+            "value": "Для оплаты наличными нужна сохранённая карта. Её можно добавить снова в любой момент."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Kartu môžete znova uložiť pri ďalšej platbe kartou."
+            "value": "Na platbu v hotovosti potrebujete uloženú kartu. Kartu môžete kedykoľvek znova pridať."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Картку можна знову зберегти під час наступної оплати карткою."
+            "value": "Для оплати готівкою потрібна збережена картка. Її можна знову додати будь-коли."
           }
         }
       }
@@ -31144,31 +31144,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Máte novou zprávu k vaší reklamaci. Klepněte pro přečtení."
+            "value": "Máte novou zprávu k vaší reklamaci."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You have a new message about your dispute. Tap to read."
+            "value": "You have a new message about your dispute."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "У вас новое сообщение по вашей жалобе. Нажмите, чтобы прочитать."
+            "value": "У вас новое сообщение по вашей жалобе."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Máte novú správu k vašej reklamácii. Ťuknutím si ju prečítate."
+            "value": "Máte novú správu k vašej reklamácii."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "У вас нове повідомлення щодо вашої скарги. Натисніть, щоб прочитати."
+            "value": "У вас нове повідомлення щодо вашої скарги."
           }
         }
       }
@@ -31354,7 +31354,7 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nyní si můžete vzít nejvýše %1$@ zakázek týdně. Klepnutím zobrazíte podrobnosti."
+            "value": "Nyní si můžete vzít nejvýše %1$@ zakázek týdně."
           }
         },
         "en": {
@@ -31366,19 +31366,19 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Теперь вы можете брать не более %1$@ заказов в неделю. Нажмите, чтобы посмотреть."
+            "value": "Теперь вы можете брать не более %1$@ заказов в неделю."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Teraz si môžete vziať najviac %1$@ zakáziek týždenne. Ťuknutím zobrazíte podrobnosti."
+            "value": "Teraz si môžete vziať najviac %1$@ zakáziek týždenne."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Тепер ви можете брати щонайбільше %1$@ замовлень на тиждень. Торкніться, щоб переглянути."
+            "value": "Тепер ви можете брати щонайбільше %1$@ замовлень на тиждень."
           }
         }
       }
@@ -31704,31 +31704,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Byla vám přiřazena zakázka č. %1$@. Klepnutím zobrazíte podrobnosti."
+            "value": "Byla vám přiřazena zakázka č. %1$@."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You've been assigned job #%1$@. Tap to see the details."
+            "value": "You've been assigned job #%1$@."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Вам назначен заказ №%1$@. Нажмите, чтобы посмотреть детали."
+            "value": "Вам назначен заказ №%1$@."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Bola vám priradená zákazka č. %1$@. Ťuknutím zobrazíte podrobnosti."
+            "value": "Bola vám priradená zákazka č. %1$@."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Вам призначено замовлення №%1$@. Торкніться, щоб переглянути деталі."
+            "value": "Вам призначено замовлення №%1$@."
           }
         }
       }
@@ -31774,7 +31774,7 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zakázka, kterou jste přijali, byla zrušena: #%1$@. Klepnutím zobrazíte detaily."
+            "value": "Zakázka, kterou jste přijali, byla zrušena: #%1$@."
           }
         },
         "en": {
@@ -31786,19 +31786,19 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Заказ, который вы приняли, отменён: #%1$@. Нажмите, чтобы посмотреть детали."
+            "value": "Заказ, который вы приняли, отменён: #%1$@."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zákazka, ktorú ste prijali, bola zrušená: #%1$@. Ťuknutím zobrazíte detaily."
+            "value": "Zákazka, ktorú ste prijali, bola zrušená: #%1$@."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Замовлення, яке ви прийняли, скасовано: #%1$@. Торкніться, щоб переглянути деталі."
+            "value": "Замовлення, яке ви прийняли, скасовано: #%1$@."
           }
         }
       }
@@ -31844,7 +31844,7 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zakázka č. %1$@ byla přeřazena a už není ve vašem rozvrhu. Klepnutím zobrazíte podrobnosti."
+            "value": "Zakázka č. %1$@ byla přeřazena a už není ve vašem rozvrhu."
           }
         },
         "en": {
@@ -31856,19 +31856,19 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Заказ №%1$@ переназначен, его больше нет в вашем графике. Нажмите, чтобы посмотреть детали."
+            "value": "Заказ №%1$@ переназначен, его больше нет в вашем графике."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zákazka č. %1$@ bola preradená a už nie je vo vašom rozvrhu. Ťuknutím zobrazíte podrobnosti."
+            "value": "Zákazka č. %1$@ bola preradená a už nie je vo vašom rozvrhu."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Замовлення №%1$@ перепризначено, його більше немає у вашому графіку. Торкніться, щоб переглянути деталі."
+            "value": "Замовлення №%1$@ перепризначено, його більше немає у вашому графіку."
           }
         }
       }
@@ -31914,31 +31914,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Rezervace #%1$@ byla zrušena. Klepněte pro detaily."
+            "value": "Rezervace #%1$@ byla zrušena."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Booking #%1$@ was cancelled. Tap to see what happened."
+            "value": "Booking #%1$@ was cancelled."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Заказ #%1$@ был отменён. Нажмите для деталей."
+            "value": "Заказ #%1$@ был отменён."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Rezervácia #%1$@ bola zrušená. Ťuknutím zobrazíte detaily."
+            "value": "Rezervácia #%1$@ bola zrušená."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Замовлення #%1$@ було скасовано. Натисніть для деталей."
+            "value": "Замовлення #%1$@ було скасовано."
           }
         }
       }
@@ -32054,31 +32054,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "K vaší rezervaci #%1$@ je přiřazen uklízeč. Klepněte pro zobrazení detailů."
+            "value": "K vaší rezervaci #%1$@ je přiřazen uklízeč."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "A cleaner is assigned to your booking #%1$@. Tap to see the details."
+            "value": "A cleaner is assigned to your booking #%1$@."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "К вашему заказу #%1$@ назначен клинер. Нажмите, чтобы посмотреть подробности."
+            "value": "К вашему заказу #%1$@ назначен клинер."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "K vašej rezervácii #%1$@ je priradený upratovač. Ťuknutím zobrazíte detaily."
+            "value": "K vašej rezervácii #%1$@ je priradený upratovač."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "До вашого замовлення #%1$@ призначено клінера. Натисніть, щоб переглянути деталі."
+            "value": "До вашого замовлення #%1$@ призначено клінера."
           }
         }
       }
@@ -32264,31 +32264,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vaše rezervace #%1$@ je potvrzena. Klepněte pro zobrazení detailů."
+            "value": "Vaše rezervace #%1$@ je potvrzena."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your booking #%1$@ is confirmed. Tap to see the details."
+            "value": "Your booking #%1$@ is confirmed."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Заказ #%1$@ подтверждён. Нажмите, чтобы посмотреть подробности."
+            "value": "Заказ #%1$@ подтверждён."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vaša rezervácia #%1$@ je potvrdená. Ťuknutím zobrazíte detaily."
+            "value": "Vaša rezervácia #%1$@ je potvrdená."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Замовлення #%1$@ підтверджено. Натисніть, щоб переглянути деталі."
+            "value": "Замовлення #%1$@ підтверджено."
           }
         }
       }
@@ -32334,31 +32334,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Váš uklízeč pracuje na rezervaci #%1$@. Klepněte pro sledování."
+            "value": "Váš uklízeč pracuje na rezervaci #%1$@."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your cleaner is on it for booking #%1$@. Tap to follow along."
+            "value": "Your cleaner is on it for booking #%1$@."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Клинер работает над заказом #%1$@. Нажмите, чтобы следить."
+            "value": "Клинер работает над заказом #%1$@."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Váš upratovač pracuje na rezervácii #%1$@. Ťuknutím sledujte priebeh."
+            "value": "Váš upratovač pracuje na rezervácii #%1$@."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Клінер працює над замовленням #%1$@. Натисніть, щоб стежити."
+            "value": "Клінер працює над замовленням #%1$@."
           }
         }
       }
@@ -32404,31 +32404,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nové zakázky ve vašem okolí: %1$@. Klepnutím je zobrazíte."
+            "value": "Nové zakázky ve vašem okolí: %1$@."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "New jobs near you: %1$@. Tap to view."
+            "value": "New jobs near you: %1$@."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Новые заказы рядом с вами: %1$@. Нажмите, чтобы посмотреть."
+            "value": "Новые заказы рядом с вами: %1$@."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nové zákazky vo vašom okolí: %1$@. Ťuknutím ich zobrazíte."
+            "value": "Nové zákazky vo vašom okolí: %1$@."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Нові замовлення поруч із вами: %1$@. Торкніться, щоб переглянути."
+            "value": "Нові замовлення поруч із вами: %1$@."
           }
         }
       }
@@ -32822,31 +32822,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Rezervace #%1$@ už není vyhrazena uklízeči, kterého jste si vyžádali. Teď je otevřená celému našemu týmu — klepněte pro zobrazení detailů."
+            "value": "Rezervace #%1$@ už není vyhrazena uklízeči, kterého jste si vyžádali. Teď je otevřená celému našemu týmu."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Booking #%1$@ is no longer held for the cleaner you asked for. It's now open to our whole team — tap to see the details."
+            "value": "Booking #%1$@ is no longer held for the cleaner you asked for. It's now open to our whole team."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Заказ #%1$@ больше не закреплён за клинером, которого вы выбрали. Теперь он открыт для всей нашей команды — нажмите, чтобы посмотреть детали."
+            "value": "Заказ #%1$@ больше не закреплён за клинером, которого вы выбрали. Теперь он открыт для всей нашей команды."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Rezervácia #%1$@ už nie je vyhradená upratovačovi, ktorého ste si vyžiadali. Teraz je otvorená celému nášmu tímu — ťuknite pre zobrazenie detailov."
+            "value": "Rezervácia #%1$@ už nie je vyhradená upratovačovi, ktorého ste si vyžiadali. Teraz je otvorená celému nášmu tímu."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Замовлення #%1$@ більше не зарезервоване для клінера, якого ви обрали. Тепер воно відкрите для всієї нашої команди — натисніть, щоб переглянути деталі."
+            "value": "Замовлення #%1$@ більше не зарезервоване для клінера, якого ви обрали. Тепер воно відкрите для всієї нашої команди."
           }
         }
       }
@@ -33172,31 +33172,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zakázky na zítra: %1$@. Klepnutím je zobrazíte."
+            "value": "Zakázky na zítra: %1$@."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Jobs tomorrow: %1$@. Tap to see them."
+            "value": "Jobs tomorrow: %1$@."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Заказов на завтра: %1$@. Нажмите, чтобы посмотреть."
+            "value": "Заказов на завтра: %1$@."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zákazky na zajtra: %1$@. Klepnutím ich zobrazíte."
+            "value": "Zákazky na zajtra: %1$@."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Замовлень на завтра: %1$@. Торкніться, щоб переглянути."
+            "value": "Замовлень на завтра: %1$@."
           }
         }
       }
@@ -33310,31 +33310,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vaše rezervace #%1$@ začíná přibližně za hodinu. Klepněte pro zobrazení detailů."
+            "value": "Vaše rezervace #%1$@ začíná přibližně za hodinu."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your booking #%1$@ starts in about an hour. Tap to see the details."
+            "value": "Your booking #%1$@ starts in about an hour."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ваше бронирование #%1$@ начнётся примерно через час. Нажмите, чтобы посмотреть детали."
+            "value": "Ваше бронирование #%1$@ начнётся примерно через час."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vaša rezervácia #%1$@ začína približne o hodinu. Ťuknite pre zobrazenie podrobností."
+            "value": "Vaša rezervácia #%1$@ začína približne o hodinu."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ваше замовлення #%1$@ почнеться приблизно за годину. Натисніть, щоб переглянути деталі."
+            "value": "Ваше замовлення #%1$@ почнеться приблизно за годину."
           }
         }
       }
@@ -33380,31 +33380,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vaše faktura za poslední výplatní období byla proplacena. Klepnutím zobrazíte."
+            "value": "Vaše faktura za poslední výplatní období byla proplacena."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your invoice for the latest pay period has been paid. Tap to view."
+            "value": "Your invoice for the latest pay period has been paid."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ваш счёт за последний расчётный период оплачен. Нажмите, чтобы посмотреть."
+            "value": "Ваш счёт за последний расчётный период оплачен."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vaša faktúra za posledné výplatné obdobie bola uhradená. Ťuknutím zobrazíte."
+            "value": "Vaša faktúra za posledné výplatné obdobie bola uhradená."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ваш рахунок за останній розрахунковий період оплачено. Торкніться, щоб переглянути."
+            "value": "Ваш рахунок за останній розрахунковий період оплачено."
           }
         }
       }
@@ -38724,6 +38724,76 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ваші прибиральники"
+          }
+        }
+      }
+    },
+    "booking_cash_card_check_failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uloženou kartu se nepodařilo ověřit. Zkuste to znovu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn’t check your saved card. Try again."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось проверить сохранённую карту. Повторите попытку."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uloženú kartu sa nepodarilo overiť. Skúste to znova."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не вдалося перевірити збережену картку. Спробуйте ще раз."
+          }
+        }
+      }
+    },
+    "booking_cash_needs_saved_card": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hotovost vyžaduje uloženou platnou kartu v této měně."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cash requires a saved, unexpired card in this currency."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Для оплаты наличными нужна сохранённая карта в этой валюте с действующим сроком."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hotovosť vyžaduje uloženú platnú kartu v tejto mene."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Для оплати готівкою потрібна збережена картка в цій валюті з чинним строком дії."
           }
         }
       }

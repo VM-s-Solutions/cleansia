@@ -175,7 +175,8 @@ final class TwiceBookedPickTests: XCTestCase {
         let vm = BookingViewModel(
             catalogClient: FakeCatalogClient(result: .success(catalog)),
             quoteClient: FakeQuoteClient(),
-            scheduler: TestScheduler.dispatch.eraseToAnyScheduler()
+            scheduler: TestScheduler.dispatch.eraseToAnyScheduler(),
+            savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])])
         )
         await vm.loadCatalog()
         return vm
@@ -346,7 +347,8 @@ final class TwiceBookedPickTests: XCTestCase {
             consentClient: FakeConsentStatusClient(granted: [.termsOfService, .privacyPolicy]),
             snackbar: SnackbarController(),
             isCardPaymentAvailable: true,
-            scheduler: TestScheduler.dispatch.eraseToAnyScheduler()
+            scheduler: TestScheduler.dispatch.eraseToAnyScheduler(),
+            savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])])
         )
         await vm.load()
         return vm

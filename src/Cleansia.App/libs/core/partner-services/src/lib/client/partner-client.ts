@@ -6809,6 +6809,7 @@ export class AssignedEmployeeDto implements IAssignedEmployeeDto {
     fullName!: string | undefined;
     phoneNumber!: string | undefined;
     completionConfirmedAt!: Date | undefined;
+    profilePhoto!: BlobFileDto;
 
     constructor(data?: IAssignedEmployeeDto) {
         if (data) {
@@ -6826,6 +6827,7 @@ export class AssignedEmployeeDto implements IAssignedEmployeeDto {
             this.fullName = Data["fullName"];
             this.phoneNumber = Data["phoneNumber"];
             this.completionConfirmedAt = Data["completionConfirmedAt"] ? new Date(Data["completionConfirmedAt"].toString()) : undefined as any;
+            this.profilePhoto = Data["profilePhoto"] ? BlobFileDto.fromJS(Data["profilePhoto"]) : undefined as any;
         }
     }
 
@@ -6843,6 +6845,7 @@ export class AssignedEmployeeDto implements IAssignedEmployeeDto {
         data["fullName"] = this.fullName;
         data["phoneNumber"] = this.phoneNumber;
         data["completionConfirmedAt"] = this.completionConfirmedAt ? this.completionConfirmedAt.toISOString() : undefined as any;
+        data["profilePhoto"] = this.profilePhoto ? this.profilePhoto.toJSON() : undefined as any;
         return data;
     }
 }
@@ -6853,6 +6856,7 @@ export interface IAssignedEmployeeDto {
     fullName: string | undefined;
     phoneNumber: string | undefined;
     completionConfirmedAt: Date | undefined;
+    profilePhoto: BlobFileDto;
 }
 
 export class BlobFileDto implements IBlobFileDto {

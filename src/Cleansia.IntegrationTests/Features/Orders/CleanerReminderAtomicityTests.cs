@@ -158,7 +158,7 @@ public sealed class CleanerReminderAtomicityTests(PostgresContainerFixture fixtu
                 seed.Users.Add(customer);
                 order = Order.Create("Customer Notice", customer.Email, "+420000000000",
                     Address.Create("Test St 1", "Brno", "60200", country.Id), 1, 1, _now.AddMinutes(minutes),
-                    PaymentType.Cash, 1000m, currency.Id, PaymentStatus.Pending, userId: customer.Id,
+                    PaymentType.Card, 1000m, currency.Id, PaymentStatus.Paid, userId: customer.Id,
                     cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
                 order.Id = $"cleaner-notice-order-{index/2}";
                 order.TenantId = tenant;

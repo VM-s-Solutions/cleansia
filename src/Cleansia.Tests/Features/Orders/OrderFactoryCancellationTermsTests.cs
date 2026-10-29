@@ -79,7 +79,7 @@ public class OrderFactoryCancellationTermsTests
             WorkContractResolvers.Resolver().Object,
             Mock.Of<INotificationProducer>(),
             Mock.Of<IAdminNotifier>(),
-            NullLogger<OrderFactory>.Instance);
+            NullLogger<OrderFactory>.Instance, Cleansia.Tests.Common.SavedCardTestData.Repository());
     }
 
     private static CreateOrderInput Input(string? recurringTemplateId) =>

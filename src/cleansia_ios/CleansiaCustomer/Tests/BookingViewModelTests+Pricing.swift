@@ -250,7 +250,11 @@ extension BookingViewModelTests {
         let membership = FakeMembershipClient(result: .success(
             MembershipSnapshot(hasMembership: true, freeCancellationWindowHours: 48)
         ))
-        let vm = BookingViewModel(membershipClient: membership, tokenStore: FakeTokenStore.guest)
+        let vm = BookingViewModel(
+            membershipClient: membership,
+            tokenStore: FakeTokenStore.guest,
+            savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])])
+        )
 
         let snapshot = await vm.loadMembership()
 
@@ -271,7 +275,11 @@ extension BookingViewModelTests {
                 expressUpgradesRemaining: 1
             )
         ))
-        let vm = BookingViewModel(membershipClient: membership, tokenStore: FakeTokenStore.signedIn())
+        let vm = BookingViewModel(
+            membershipClient: membership,
+            tokenStore: FakeTokenStore.signedIn(),
+            savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])])
+        )
 
         async let first = vm.loadMembership()
         async let second = vm.loadMembership()
@@ -285,7 +293,11 @@ extension BookingViewModelTests {
 
     func testAFailedMembershipReadDegradesToSilence() async {
         let membership = FakeMembershipClient(result: .failure(ApiError(httpStatus: 500)))
-        let vm = BookingViewModel(membershipClient: membership, tokenStore: FakeTokenStore.signedIn())
+        let vm = BookingViewModel(
+            membershipClient: membership,
+            tokenStore: FakeTokenStore.signedIn(),
+            savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])])
+        )
 
         await vm.loadMembership()
 
@@ -304,7 +316,11 @@ extension BookingViewModelTests {
                 expressUpgradesRemaining: 3
             )
         ))
-        let vm = BookingViewModel(membershipClient: membership, tokenStore: FakeTokenStore.signedIn())
+        let vm = BookingViewModel(
+            membershipClient: membership,
+            tokenStore: FakeTokenStore.signedIn(),
+            savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])])
+        )
 
         await vm.loadMembership()
 
@@ -320,7 +336,11 @@ extension BookingViewModelTests {
                 expressUpgradesRemaining: 1
             )
         ))
-        let vm = BookingViewModel(membershipClient: membership, tokenStore: FakeTokenStore.signedIn())
+        let vm = BookingViewModel(
+            membershipClient: membership,
+            tokenStore: FakeTokenStore.signedIn(),
+            savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])])
+        )
 
         await vm.loadMembership()
         vm.reset()
@@ -354,7 +374,12 @@ extension BookingViewModelTests {
     }
 
     func testEffectiveDiscountIsZeroWithoutAQuote() {
-        XCTAssertEqual(BookingViewModel().effectiveDiscount, 0, accuracy: 0.0001)
+        XCTAssertEqual(
+            BookingViewModel(savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])]))
+                .effectiveDiscount,
+            0,
+            accuracy: 0.0001
+        )
     }
 
     /// The fake quote runs off the main actor, so a fixed number of yields can finish before it answers

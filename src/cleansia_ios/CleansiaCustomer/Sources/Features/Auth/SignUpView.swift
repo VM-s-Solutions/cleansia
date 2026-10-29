@@ -114,7 +114,7 @@ private struct SignUpContent: View {
                     label: L10n.Auth.email,
                     errorText: form.emailError,
                     keyboardType: .emailAddress,
-                    textContentType: .emailAddress,
+                    textContentType: .username,
                     enabled: !formDisabled
                 )
 

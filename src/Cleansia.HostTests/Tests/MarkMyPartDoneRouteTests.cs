@@ -40,7 +40,8 @@ public sealed class MarkMyPartDoneRouteTests(HostTestPostgresFixture db) : Authz
             var outsider = Cleaner("mark-outsider@hosttests.local", HostTestTenants.A);
             var otherTenant = Cleaner("mark-other-company@hosttests.local", HostTestTenants.B);
             var order = DomainSeed.NewOrder(customer.Id, customer.Email, HostTestTenants.A,
-                cleaningDateTime: DateTime.UtcNow.AddMinutes(-30));
+                cleaningDateTime: DateTime.UtcNow.AddMinutes(-30),
+                paymentType: PaymentType.Card, paymentStatus: PaymentStatus.Paid);
             order.SetMaxEmployees(2);
             DomainSeed.ConfirmAndAssign(order, assignee);
             order.AddAssignedEmployee(OrderEmployee.Create(order, crewmate));

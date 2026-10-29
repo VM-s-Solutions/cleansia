@@ -73,7 +73,7 @@ final class PersonalSectionViewModel: ViewModel {
         }
     }
 
-    func save() async {
+    func save(photo: (() async -> Bool)? = nil) async {
         guard case .loaded = state, !action.isSubmitting else { return }
         form.firstNameError = Self.nameProblem(form.firstName, ifBlank: L10n.Profile.errorFirstNameRequired)
         form.lastNameError = Self.nameProblem(form.lastName, ifBlank: L10n.Profile.errorLastNameRequired)
@@ -97,6 +97,10 @@ final class PersonalSectionViewModel: ViewModel {
         )
         switch await client.updatePersonalInfo(command) {
         case .success:
+            if let photo, await !photo() {
+                action = .idle
+                return
+            }
             action = .idle
             saved.send()
         case let .failure(error):
@@ -112,7 +116,9 @@ final class PersonalSectionViewModel: ViewModel {
 
     /// Read by key, since the response's field names are not kept: the names are the only other fields this
     /// command can refuse as required, and the device never sends one blank.
-    private static let phoneRefusals = ["validation.invalid_phone_number", "common.required"]
+    private static let phoneRefusals = [
+        "validation.invalid_phone_number", "user.existing_phone_number", "common.required"
+    ]
 
     /// The server's age bounds, in Gregorian years as its `DateOnly.AddYears` counts them, on the day in
     /// Greenwich that the birth date travels as: born at least 18 and at most 120 years before today.

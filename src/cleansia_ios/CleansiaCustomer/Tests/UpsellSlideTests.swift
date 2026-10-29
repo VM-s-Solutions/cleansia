@@ -12,6 +12,18 @@ final class UpsellSlideTests: XCTestCase {
         XCTAssertEqual(UpsellSlide.rotationFraction(startedAt: start, now: start.addingTimeInterval(-1)), 0)
     }
 
+    func testSelectedIndicatorRemainsVisibleBeforeRotationAndAfterManualControl() {
+        let now = Date(timeIntervalSince1970: 1000)
+        XCTAssertEqual(UpsellSlide.indicatorFraction(startedAt: nil, now: now), 1)
+        XCTAssertEqual(UpsellSlide.indicatorFraction(startedAt: now, now: now), 0.08)
+        XCTAssertEqual(UpsellSlide.indicatorFraction(startedAt: now, now: now.addingTimeInterval(3)), 0.5)
+    }
+
+    func testSentinelReanchorWaitsForThePageTransitionToFinish() {
+        XCTAssertGreaterThan(UpsellSlide.reanchorDelaySeconds, UpsellSlide.pageTransitionSeconds)
+        XCTAssertGreaterThanOrEqual(UpsellSlide.reanchorDelaySeconds - UpsellSlide.pageTransitionSeconds, 1.0 / 30)
+    }
+
     private typealias Inputs = UpsellSlide.Inputs
 
     private let heldCredit = CustomerCredit.Balance(amount: 250, currencyCode: "CZK", expiresOn: nil)

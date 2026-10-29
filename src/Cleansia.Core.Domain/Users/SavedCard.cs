@@ -66,10 +66,14 @@ public class SavedCard : TenantAuditable
     public bool IsCaptured => CapturedOn is not null;
 
     /// <summary>Captured, not removed, and not past the end of its expiry month at <paramref name="moment"/>.</summary>
-    public bool IsUsableOn(DateTimeOffset moment) =>
-        IsActive
-        && IsCaptured
-        && (ExpYear > moment.Year || (ExpYear == moment.Year && ExpMonth >= moment.Month));
+    public bool IsUsableOn(DateTimeOffset moment)
+    {
+        var utc = moment.UtcDateTime;
+        return IsActive
+            && IsCaptured
+            && !string.IsNullOrWhiteSpace(StripePaymentMethodId)
+            && (ExpYear > utc.Year || (ExpYear == utc.Year && ExpMonth >= utc.Month));
+    }
 
     public static SavedCard Start(
         string userId,

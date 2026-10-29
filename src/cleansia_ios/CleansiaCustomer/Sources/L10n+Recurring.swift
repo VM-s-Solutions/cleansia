@@ -208,6 +208,8 @@ extension L10n {
             switch eligibility {
             case .available, .needsAccount: nil
             case let .needsCard(requiredCleaners): format("recurring_cash_needs_card", requiredCleaners)
+            case .needsSavedCard: localized("booking_cash_needs_saved_card")
+            case .cardCheckFailed: localized("booking_cash_card_check_failed")
             case .pending: localized("recurring_cash_pending")
             }
         }

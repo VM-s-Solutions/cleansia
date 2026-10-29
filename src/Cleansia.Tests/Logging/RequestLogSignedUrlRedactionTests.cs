@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Http;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Disputes;
 using Cleansia.Core.AppServices.Features.Users;
+using Cleansia.Core.AppServices.Features.Orders.DTOs;
+using Cleansia.TestUtilities.MockDataFactories.Orders;
 using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.AppServices.Shared.DTOs.Files;
 using Cleansia.Core.Domain.Repositories;
@@ -191,6 +193,38 @@ public class RequestLogSignedUrlRedactionTests
             .Where(parts => parts[0] == "sig")
             .Select(parts => parts[1])
             .Single();
+
+    [Theory]
+    [InlineData("/api/Order/GetById")]
+    [InlineData("/api/v1/Order/GetById")]
+    [InlineData("/api/AdminOrder/details/order-1")]
+    [InlineData("/api/v1/AdminOrder/details/order-1")]
+    public async Task Order_Detail_Avatars_And_Following_Private_Text_Are_Suppressed_On_Every_Host(string route)
+    {
+        var sas = RealSasUri();
+        var detail = OrderMockFactory.Generate().MapToDetail() with
+        {
+            AssignedEmployees = [new AssignedEmployeeDto("seat-1", "employee-1", "Petra", null,
+                ProfilePhoto: new BlobFileDto(BlobName, null, null, sas.ToString()))],
+            CashCollectedByName = "Private collector name",
+        };
+        var json = JsonSerializer.Serialize(detail, RequestLoggingHarness.WireOptions);
+        Assert.Contains("\"blobUrl\":", json);
+        Assert.Contains("Private collector name", json);
+
+        foreach (var middlewareType in RequestLoggingHarness.AllHostMiddleware)
+        {
+            var logged = await RequestLoggingHarness.RunAsync(middlewareType, route, responseJson: json);
+            Assert.NotEmpty(logged);
+            Assert.Contains(logged, message => message.Contains("[suppressed: sensitive endpoint]"));
+            Assert.All(logged, message =>
+            {
+                Assert.DoesNotContain(SignatureOf(sas), message);
+                Assert.DoesNotContain("Private collector name", message);
+                Assert.DoesNotContain("profilePhoto", message);
+            });
+        }
+    }
 
     private static (string Json, string Signature) RealProfileResponse()
     {

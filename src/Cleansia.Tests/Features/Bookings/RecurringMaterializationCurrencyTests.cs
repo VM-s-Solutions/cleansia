@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Features.Bookings;
+using Cleansia.Tests.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Bookings;
@@ -46,6 +47,7 @@ public class RecurringMaterializationCurrencyTests
     private readonly Mock<ITenantProvider> _tenantProvider = new();
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
     private readonly List<CreateOrderInput> _inputs = [];
+    private readonly ISavedCardRepository _savedCards = SavedCardTestData.Repository();
 
     public RecurringMaterializationCurrencyTests()
     {
@@ -136,10 +138,34 @@ public class RecurringMaterializationCurrencyTests
             _tenantProvider.Object,
             _unitOfWork.Object,
             NullLogger<MaterializeRecurringBookingTemplate.Handler>.Instance,
-            Mock.Of<INotificationProducer>());
+            Mock.Of<INotificationProducer>(), _savedCards);
 
     private static MaterializeRecurringBookingTemplate.Command SweepCommand() =>
         new(TemplateId, DateTime.UtcNow, HorizonDays: 7);
+
+    [Theory]
+    [InlineData("absent")]
+    [InlineData("pending")]
+    [InlineData("expired")]
+    [InlineData("removed")]
+    public async Task A_Cash_Sweep_With_No_Usable_Card_Creates_No_Occurrences_And_Preserves_The_Schedule(string state)
+    {
+        ArrangeTemplateAt(Slovakia);
+        var card = SavedCardTestData.Captured(UserId, Eur.Id);
+        if (state == "pending") card = SavedCard.Start(UserId, Eur.Id, "cus_pending", null, null);
+        if (state == "expired") card = SavedCardTestData.Captured(UserId, Eur.Id, expYear: 2020);
+        if (state == "removed") card.IsActive = false;
+        Mock.Get(_savedCards).Setup(r => r.GetCapturedForUserInCurrencyAsync(UserId, Eur.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(state == "absent" ? [] : [card]);
+
+        var result = await CreateHandler().Handle(SweepCommand(), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(0, result.Value.OrdersCreated);
+        Assert.Empty(_inputs);
+        _orderFactory.Verify(f => f.CreateAsync(It.IsAny<CreateOrderInput>(), It.IsAny<CancellationToken>()), Times.Never);
+        _templateRepository.Verify(r => r.Remove(It.IsAny<RecurringBookingTemplate>()), Times.Never);
+    }
 
     [Fact]
     public async Task A_Template_On_A_Slovak_Address_Materialises_Euro_Orders()

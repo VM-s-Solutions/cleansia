@@ -19,7 +19,10 @@ public class SavedCardRepository(CleansiaDbContext context)
     public async Task<IReadOnlyList<SavedCard>> GetCapturedForUserInCurrencyAsync(
         string userId, string currencyId, CancellationToken cancellationToken)
     {
+        // The owner is pinned by a JWT or an authorized persisted order; their account can belong to
+        // another operator than the booking or the cleaner recording its cash.
         return await GetDbSet()
+            .IgnoreQueryFilters()
             .Where(c => c.UserId == userId && c.CurrencyId == currencyId && c.IsActive && c.CapturedOn != null)
             .ToListAsync(cancellationToken);
     }

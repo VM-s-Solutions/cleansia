@@ -243,6 +243,7 @@ public sealed class RecurringSweepPerTemplateIsolationTests : IDisposable
         services.AddScoped(_ => EntitledMemberships());
         services.AddScoped<INotificationProducer>(_ => Mock.Of<INotificationProducer>());
         services.AddScoped<IReceivableRepository>(_ => Mock.Of<IReceivableRepository>());
+        services.AddSingleton(Cleansia.Tests.Common.SavedCardTestData.Repository());
         services.AddScoped<MaterializeRecurringBookingTemplate.Handler>();
 
         services.AddScoped<IMediator>(sp =>
@@ -318,7 +319,7 @@ public sealed class RecurringSweepPerTemplateIsolationTests : IDisposable
             WorkContractResolvers.Resolver().Object,
             new Mock<INotificationProducer>().Object,
             Mock.Of<IAdminNotifier>(),
-            NullLogger<OrderFactory>.Instance);
+            NullLogger<OrderFactory>.Instance, Cleansia.Tests.Common.SavedCardTestData.Repository());
     }
 
     private static IOrderPricingCalculator PricingCalculator()

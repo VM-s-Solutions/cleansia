@@ -18,6 +18,7 @@ import cz.cleansia.partner.api.model.OrderStatus
 fun ContinuousProgressBar(
     status: OrderStatus?,
     modifier: Modifier = Modifier,
+    progress: cz.cleansia.core.format.CleaningEstimateProgress? = null,
 ) {
     val currentStep = when (status) {
         OrderStatus._2 -> 1
@@ -40,6 +41,9 @@ fun ContinuousProgressBar(
         totalSteps = TotalSteps,
         cancelled = status == OrderStatus._6,
         cancelledLabel = stringResource(R.string.status_cancelled),
+        currentFraction = progress?.fraction,
+        overdue = progress?.overrunMinutes?.let { it > 0 } == true,
+        pulseCurrent = status == OrderStatus._4,
     )
 }
 

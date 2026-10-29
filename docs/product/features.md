@@ -26,8 +26,10 @@ Android and iOS alike
 Paying by card, a signed-in customer on web, Android or iOS may tick *Save this card for my next
 bookings*, unticked by default; only a ticked card is kept, under the saved-card consent, and it
 is listed with the customer's saved cards, where it can be removed
-([the saved cards](/product/business-rules#saved-cards)). A cash booking asks for no card, and no card
-is ever charged (since 2026-10-04 → [cash needs no card](/product/business-rules#card-guarantee)). On
+([the saved cards](/product/business-rules#saved-cards)). Cash requires a signed-in customer, an existing
+usable saved card in the booking's currency and one server-required cleaner (owner request 2026-10-29).
+The cash flow adds no card-capture step or guarantee consent and never automatically charges that card
+→ [saved-card requirement](/product/business-rules#card-guarantee). On
 the web, book as a guest with no account,
 paying by card; the Android and iOS apps book for a signed-in customer only. Get a live price quote
 before committing, including whether an

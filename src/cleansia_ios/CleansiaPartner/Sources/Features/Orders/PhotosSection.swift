@@ -215,6 +215,7 @@ private struct PhotoTile: View {
     let onDelete: () -> Void
 
     @State private var loadFailed = false
+    @State private var confirmsDeletion = false
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -222,6 +223,15 @@ private struct PhotoTile: View {
             if !isReadOnly {
                 deleteButton
             }
+        }
+        .alert(L10n.Orders.deletePhoto, isPresented: $confirmsDeletion) {
+            Button(L10n.Orders.deletePhoto, role: .destructive) {
+                guard !isReadOnly, !isDeleting else { return }
+                onDelete()
+            }
+            Button(L10n.cancel, role: .cancel) {}
+        } message: {
+            Text(L10n.Orders.deletePhotoConfirmation)
         }
     }
 
@@ -265,7 +275,7 @@ private struct PhotoTile: View {
     }
 
     private var deleteButton: some View {
-        Button(action: onDelete) {
+        Button { confirmsDeletion = true } label: {
             ZStack {
                 Circle().fill(CleansiaColors.surface)
                 if isDeleting {

@@ -1,3 +1,4 @@
+using Cleansia.Core.Blobs.Abstractions;
 using System.Security.Claims;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Orders;
@@ -328,7 +329,7 @@ public class PreferredOfferDisclosureTests
             rooms: 2,
             bathrooms: 1,
             cleaningDateTime: nowUtc.AddHours(48),
-            paymentType: paymentType,
+            paymentType: PaymentType.Card,
             totalPrice: 1500m,
             currencyId: "czk",
             paymentStatus: paymentStatus,
@@ -380,6 +381,8 @@ public class PreferredOfferDisclosureTests
                 break;
         }
 
+        // Rehydrate legacy cash crews so the state-space still covers orders predating the seat cap.
+        typeof(Order).GetProperty(nameof(Order.PaymentType))!.GetSetMethod(true)!.Invoke(order, [paymentType]);
         return order;
     }
 
@@ -412,7 +415,9 @@ public class PreferredOfferDisclosureTests
             WorkContractTestData.AcceptanceRepository().Object,
             Mock.Of<IEmployeeActionAuditRepository>(),
             new Cleansia.Core.AppServices.Services.CancellationPolicyResolver(Mock.Of<IUserMembershipRepository>(), Mock.Of<IOrderRepository>()),
-            Mock.Of<IAppConfigurationProvider>());
+            Mock.Of<IAppConfigurationProvider>(),
+            Mock.Of<IBlobContainerClientFactory>(),
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<GetOrderDetails.Handler>.Instance);
 
     private static Employee NewCleaner(string employeeId)
     {

@@ -8,6 +8,15 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 class OrderReadingTest {
+    @Test
+    fun `cleaner initials use only the name actually disclosed`() {
+        assertEquals("J", cleanerInitials("Jana"))
+        assertEquals("JN", cleanerInitials(" Jana  Nováková "))
+        assertEquals("JN", cleanerInitials("Jana Marie Nováková"))
+        assertEquals("?", cleanerInitials(null))
+        assertEquals("?", cleanerInitials(" "))
+    }
+
     private fun start(at: String) = OrderStatusTrackDto(
         status = CodeDto(type = "OrderStatus", name = "InProgress", value = 4),
         createdOn = at,

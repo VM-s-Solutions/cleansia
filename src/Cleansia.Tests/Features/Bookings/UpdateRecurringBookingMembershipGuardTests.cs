@@ -265,7 +265,7 @@ public class UpdateRecurringBookingMembershipGuardTests
             OrderMarketDoubles.Trading(CreateOrderTestData.DefaultCurrency()), OrderMarketDoubles.Servicing("country-cz"),
             OrderMarketDoubles.EveryCityServiced(),
             services ?? CatalogueDoubles.Services(), packages ?? CatalogueDoubles.Packages(),
-            Mock.Of<IReceivableRepository>());
+            Mock.Of<IReceivableRepository>(), Cleansia.Tests.Common.SavedCardTestData.Repository());
 
     private void ArrangeActiveMembership(string ownerUserId = UserId)
     {

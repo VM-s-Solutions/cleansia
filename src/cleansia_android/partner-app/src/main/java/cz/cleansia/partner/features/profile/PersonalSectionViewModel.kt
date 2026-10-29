@@ -36,7 +36,7 @@ private const val OldestAge = 120L
 
 /** What `UpdatePersonalInfo` refuses about the phone, filed under its Phone field. */
 private const val PhoneField = "Phone"
-private val PhoneRefusals = listOf("validation.invalid_phone_number", "common.required")
+private val PhoneRefusals = listOf("validation.invalid_phone_number", "common.required", "user.existing_phone_number")
 
 /**
  * The resource naming what the server would refuse about [birthDate] on [today], the server's own day

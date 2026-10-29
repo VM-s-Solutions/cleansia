@@ -74,7 +74,7 @@ public class TakeOrderSeatRaceTests
     public async Task A_Free_Seat_Still_Assigns_The_Cleaner()
     {
         var order = Arrange(ValidatorTestHelpers.BuildOrder(
-            OrderId, OrderStatus.New, OtherEmployeeId, maxEmployees: 2));
+            OrderId, OrderStatus.New, OtherEmployeeId, paymentType: PaymentType.Card, paymentStatus: PaymentStatus.Paid, maxEmployees: 2));
 
         var result = await CreateHandler().Handle(new TakeOrder.Command(OrderId, WorkContractTestData.TextIdEn), CancellationToken.None);
 
@@ -92,7 +92,7 @@ public class TakeOrderSeatRaceTests
     public async Task A_Take_Of_A_Confirmed_Order_Stamps_It_So_Its_Status_Is_Checked_At_Commit()
     {
         var order = Arrange(ValidatorTestHelpers.BuildOrder(
-            OrderId, OrderStatus.Confirmed, OtherEmployeeId, maxEmployees: 2));
+            OrderId, OrderStatus.Confirmed, OtherEmployeeId, paymentType: PaymentType.Card, paymentStatus: PaymentStatus.Paid, maxEmployees: 2));
 
         var result = await CreateHandler().Handle(new TakeOrder.Command(OrderId, WorkContractTestData.TextIdEn), CancellationToken.None);
 

@@ -7,6 +7,7 @@ using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Services;
+using Cleansia.Core.Domain.Users;
 using Cleansia.Tests.Features.Orders;
 using Moq;
 
@@ -158,12 +159,17 @@ public class RecurringCashEligibilityTests
         var paused = Template(PaymentType.Cash, [TwoHoursAndAMinute.Id], [], "tpl-paused").Pause();
         var roomsTipIt = Template(PaymentType.Cash, [OverTwoHoursWithTheRooms.Id], [], "tpl-cash-rooms");
         var levelTipsIt = Template(PaymentType.Cash, [TwoHours.Id], [], "tpl-cash-120-increased", DirtinessLevel.Increased);
+        var address = Address.Create("Dlouha 1", "Praha", "11000", "cz");
+        var saved = SavedAddress.Create(UserId, address.Id, "Home", true);
+        saved.Id = "saved-1";
+        typeof(SavedAddress).GetProperty(nameof(SavedAddress.Address))!.GetSetMethod(true)!.Invoke(saved, [address]);
+        _savedAddressRepository.Setup(r => r.GetByUserAsync(UserId, It.IsAny<CancellationToken>())).ReturnsAsync([saved]);
         _templateRepository
             .Setup(r => r.GetByUserIgnoringTenantAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync([needsChange, packaged, eligible, card, paused, roomsTipIt, levelTipsIt]);
 
         var result = await new GetMyRecurringBookings.Handler(
-                _templateRepository.Object, _savedAddressRepository.Object, _session.Object, Services(), Packages(), Mock.Of<ICountryConfigurationRepository>())
+                _templateRepository.Object, _savedAddressRepository.Object, _session.Object, Services(), Packages(), Mock.Of<ICountryConfigurationRepository>(), Cleansia.Tests.Common.SavedCardTestData.Repository(), Cleansia.Tests.Features.Orders.OrderMarketDoubles.Trading(Cleansia.Tests.Features.Orders.CreateOrderTestData.DefaultCurrency()))
             .Handle(new GetMyRecurringBookings.Query(), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
@@ -177,6 +183,31 @@ public class RecurringCashEligibilityTests
         Assert.True(flags["tpl-cash-120-increased"]);
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_One_Cleaner_Cash_Template_Marks_Payment_For_Change_When_Its_Card_Is_Missing_Or_In_Another_Currency(bool otherCurrency)
+    {
+        var address = Address.Create("Dlouha 1", "Praha", "11000", "cz");
+        var saved = SavedAddress.Create(UserId, address.Id, "Home", true);
+        saved.Id = "saved-1";
+        typeof(SavedAddress).GetProperty(nameof(SavedAddress.Address))!.GetSetMethod(true)!.Invoke(saved, [address]);
+        _savedAddressRepository.Setup(r => r.GetByUserAsync(UserId, It.IsAny<CancellationToken>())).ReturnsAsync([saved]);
+        _templateRepository.Setup(r => r.GetByUserIgnoringTenantAsync(UserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([Template(PaymentType.Cash, [TwoHours.Id], [])]);
+        var cards = new Mock<ISavedCardRepository>();
+        cards.Setup(r => r.GetCapturedForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(otherCurrency ? [Cleansia.Tests.Common.SavedCardTestData.Captured(UserId, "eur")] : []);
+
+        var result = await new GetMyRecurringBookings.Handler(
+                _templateRepository.Object, _savedAddressRepository.Object, _session.Object,
+                Services(), Packages(), Mock.Of<ICountryConfigurationRepository>(), cards.Object,
+                OrderMarketDoubles.Trading(CreateOrderTestData.DefaultCurrency()))
+            .Handle(new GetMyRecurringBookings.Query(), CancellationToken.None);
+
+        Assert.True(Assert.Single(result.Value!).RequiresPaymentMethodChange);
+    }
+
     [Fact]
     public async Task A_List_Of_Card_Templates_Reads_No_Catalogue()
     {
@@ -187,7 +218,7 @@ public class RecurringCashEligibilityTests
             .ReturnsAsync([Template(PaymentType.Card, [TwoHoursAndAMinute.Id], [])]);
 
         var result = await new GetMyRecurringBookings.Handler(
-                _templateRepository.Object, _savedAddressRepository.Object, _session.Object, services.Object, packages.Object, Mock.Of<ICountryConfigurationRepository>())
+                _templateRepository.Object, _savedAddressRepository.Object, _session.Object, services.Object, packages.Object, Mock.Of<ICountryConfigurationRepository>(), Cleansia.Tests.Common.SavedCardTestData.Repository(), Cleansia.Tests.Features.Orders.OrderMarketDoubles.Trading(Cleansia.Tests.Features.Orders.CreateOrderTestData.DefaultCurrency()))
             .Handle(new GetMyRecurringBookings.Query(), CancellationToken.None);
 
         Assert.False(Assert.Single(result.Value!).RequiresPaymentMethodChange);
@@ -224,7 +255,7 @@ public class RecurringCashEligibilityTests
             Packages(),
             Cleansia.Tests.Features.Legal.CustomerConsentDoubles.Consented(),
             Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.ILegalDocumentResolver>(),
-            Mock.Of<IReceivableRepository>());
+            Mock.Of<IReceivableRepository>(), Cleansia.Tests.Common.SavedCardTestData.Repository());
 
     private UpdateRecurringBooking.Validator UpdateValidator() =>
         new(
@@ -238,7 +269,7 @@ public class RecurringCashEligibilityTests
             OrderMarketDoubles.EveryCityServiced(),
             Services(),
             Packages(),
-            Mock.Of<IReceivableRepository>());
+            Mock.Of<IReceivableRepository>(), Cleansia.Tests.Common.SavedCardTestData.Repository());
 
     private static CreateRecurringBooking.Command CreateCommand(
         PaymentType paymentType, IReadOnlyList<string> serviceIds, IReadOnlyList<string> packageIds) =>

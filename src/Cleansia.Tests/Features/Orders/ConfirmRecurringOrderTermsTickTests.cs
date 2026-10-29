@@ -195,7 +195,7 @@ public sealed class ConfirmRecurringOrderTermsTickTests
         new(
             OrderAccessDoubles.Over(_orderRepository, _session),
             _orderRepository.Object,
-            Mock.Of<ISavedCardRepository>(), Mock.Of<IReceivableRepository>(),
+            Cleansia.Tests.Common.SavedCardTestData.Repository(), Mock.Of<IReceivableRepository>(),
             Mock.Of<ICreditAccountRepository>(),
             Mock.Of<IUserRepository>(),
             _session.Object,

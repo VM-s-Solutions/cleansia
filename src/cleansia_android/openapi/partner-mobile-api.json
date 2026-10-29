@@ -8050,6 +8050,9 @@
             "type": "string",
             "format": "date-time",
             "nullable": true
+          },
+          "profilePhoto": {
+            "$ref": "#/components/schemas/BlobFileDto"
           }
         },
         "additionalProperties": false

@@ -10,10 +10,10 @@ struct CustomerShellView: View {
     @ObservedObject private var preferences: CustomerPreferencesModel
     @EnvironmentObject private var pushNavigation: PushNavigationModel
     @Namespace private var bookZoom
-    /// Whether the open booking came from the FAB, the one entry it zooms out of.
+    /// Whether the open booking came from the FAB, its zoom entry.
     @State private var bookingFromFab = false
     @Environment(\.snackbarController) var snackbar
-    /// The shell's, not the booking sheet's: inside a sheet `scenePhase` stops updating on iOS 16.
+    /// Own the scene phase in the shell: it stops updating inside an iOS 16 sheet.
     @Environment(\.scenePhase) private var scenePhase
     let container: CustomerAppContainer
     private let onSignedOut: () -> Void
@@ -29,7 +29,10 @@ struct CustomerShellView: View {
         self.preferences = preferences
         self.onSignedOut = onSignedOut
         self.onNeedsOnboarding = onNeedsOnboarding
-        let bookingVM = BookingViewModel(market: container.marketStore.statePublisher)
+        let bookingVM = BookingViewModel(
+            market: container.marketStore.statePublisher,
+            cashSessionGeneration: { container.savedCardCaptures.generation }
+        )
         _bookingVM = StateObject(wrappedValue: bookingVM)
         _membershipVM = StateObject(wrappedValue: MembershipViewModel(
             repository: container.membershipRepository,
@@ -326,8 +329,7 @@ struct CustomerShellView: View {
 }
 
 private extension View {
-    /// The tab bar insets each tab root by its own height only; the Book FAB rises above it by half its
-    /// size, so every tab root reserves that overhang too or its last item ends under the disc.
+    /// Reserve the Book FAB's half-height overhang above the tab bar so it cannot cover the last item.
     func bookFabClearance() -> some View {
         safeAreaInset(edge: .bottom, spacing: 0) {
             Color.clear
@@ -519,9 +521,8 @@ extension CustomerShellView {
         )
     }
 
-    /// One deduped destination for both the Home banner and the Profile card.
-    /// On subscribe, Success REPLACES the paywall so back never lands on it —
-    /// the `CleansiaNavHost.kt:540-546` popUpTo-inclusive parity.
+    /// Home and Profile share this destination. Success replaces the paywall so Back never returns to it
+    /// (`CleansiaNavHost.kt:540-546` popUpTo-inclusive parity).
     private var subscribePlus: some View {
         SubscribePlusScreen(
             repository: container.membershipRepository,
@@ -576,8 +577,7 @@ extension CustomerShellView {
         )
     }
 
-    /// The route carries the id, not the template: a `NavigationPath` entry is `Codable` and outlives the
-    /// list it came from, so the form re-reads the live row from the repository cache on push.
+    /// Codable paths outlive lists, so the route carries an id and reads the cached template on push.
     @ViewBuilder
     private func editRecurring(_ templateId: String) -> some View {
         if let template = container.recurringRepository.templates.first(where: { $0.id == templateId }) {

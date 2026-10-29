@@ -20,6 +20,7 @@ import {
   QuoteOrderCommand,
   QuoteOrderResponse,
   RecurringBookingTemplateDto,
+  SavedCardDto,
   ServiceClient,
   ServiceListItem,
   SetRecurringBookingActiveCommand,
@@ -27,7 +28,7 @@ import {
   UpdateRecurringBookingCommand,
   UserConsentDto,
 } from '@cleansia/customer-services';
-import { CashEligibility, cashIsRefused, resolveCashEligibility } from '@cleansia/models';
+import { CashEligibility, cashIsRefused, hasUsableCashCard, resolveCashEligibility } from '@cleansia/models';
 import {
   DialogService,
   errorToastSuppressingHttpClient,
@@ -76,9 +77,10 @@ interface ListedIds {
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
-/** Cash refusals the customer answers on this form by paying by card. */
+/** Cash refusals that return the customer to their payment choice. */
 const CASH_REFUSALS: readonly string[] = [
   'order.cash_not_available',
+  'order.cash_requires_saved_card',
   'order.cash_open_bookings_limit_reached',
 ];
 
@@ -195,9 +197,15 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
       : null;
   });
 
-  // A schedule is always an account's, so only the crew decides.
+  private readonly cashCards = signal<SavedCardDto[] | null>(null);
+  private cashCardReadSequence = 0;
+
   readonly cashEligibility = computed<CashEligibility>(() =>
-    resolveCashEligibility(true, this.formRequiredEmployees()),
+    resolveCashEligibility(
+      true,
+      this.formRequiredEmployees(),
+      hasUsableCashCard(this.cashCards(), this.formPrice()?.currency ?? null),
+    ),
   );
   readonly cashSelectable = computed(() => this.cashEligibility().kind === 'available');
   readonly cashReason = computed(() => scheduleCashReason(this.cashEligibility()));
@@ -354,7 +362,9 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
 
   // ─── Computed derivations for the template ─────────────────────────
   readonly canAdvance = computed(() => canAdvance(this.activeStep(), this.formData()));
-  readonly canSubmit = computed(() => canSubmit(this.formData()));
+  readonly canSubmit = computed(() => canSubmit(this.formData()) &&
+    (this.formData().paymentType !== PaymentType.Cash || this.cashSelectable()),
+  );
 
   /**
    * Set the first time the customer presses save. Until then the form says
@@ -532,10 +542,22 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
       selection.countryId,
     );
     if (sequence !== this.formQuoteSequence) return;
+    if (quoted && this.cashCards() === null) await this.refreshCashCards();
+    if (sequence !== this.formQuoteSequence) return;
     this.formPrice.set(quoted ? priceOf(quoted) : null);
     const requiredEmployees = quoted?.requiredEmployees ?? null;
     this.formCrew.set(requiredEmployees === null ? null : { selection, requiredEmployees });
     this.quoting.set(false);
+  }
+
+  async refreshCashCards(): Promise<void> {
+    const sequence = ++this.cashCardReadSequence;
+    this.cashCards.set(null);
+    const cards = await firstValueFrom(this.customerClient.savedCardClient.getMine().pipe(
+      takeUntil(this.destroyed$),
+      catchError(() => of(null)),
+    ), { defaultValue: null });
+    if (sequence === this.cashCardReadSequence) this.cashCards.set(cards);
   }
 
   /** The country of a saved address, which decides the currency a schedule is priced in. */
@@ -1021,7 +1043,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
   }
 
   private async save(withoutPreferredCleaner: boolean): Promise<boolean> {
-    if (this.submitting() || !this.canSubmit()) return false;
+    if (this.submitting() || !canSubmit(this.formData())) return false;
     const d = this.formData();
     const paymentType = d.paymentType;
     const dirtinessLevel = d.dirtinessLevel;
@@ -1075,7 +1097,10 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
         return false;
       }
       if (code && CASH_REFUSALS.includes(code)) {
+        this.cashCardReadSequence++;
+        this.cashCards.set(null);
         this.dropCash(false);
+        void this.refreshCashCards();
         return false;
       }
       if (code === 'order.preferred_employee.not_eligible') {
@@ -1099,9 +1124,10 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     }
   }
 
-  /** Cash goes out only on a fresh quote for the form that says one cleaner does it. */
+  /** Cash needs a fresh one-cleaner quote and a current usable saved card in its currency. */
   private async cashConfirmedForForm(): Promise<boolean> {
     await this.quoteForm();
+    await this.refreshCashCards();
     if (this.cashSelectable()) return true;
     if (cashIsRefused(this.cashEligibility())) {
       this.dropCash(true);

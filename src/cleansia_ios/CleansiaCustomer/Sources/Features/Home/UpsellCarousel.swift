@@ -34,9 +34,6 @@ struct UpsellCarousel: View {
     @State private var rotationStarted: Date?
     @State private var isVisible = false
 
-    /// Long enough for the page to finish settling before a clone is swapped for its real slide.
-    private static let reanchorDelayNanoseconds: UInt64 = 350_000_000
-
     init(inputs: UpsellSlide.Inputs, onAction: @escaping (UpsellSlide.Action) -> Void) {
         self.inputs = inputs
         self.onAction = onAction
@@ -160,32 +157,40 @@ struct UpsellCarousel: View {
         }
     }
 
+    @ViewBuilder
     private func dotRow(count: Int, selected: Int) -> some View {
-        TimelineView(.animation(
-            minimumInterval: 1.0 / 30,
-            paused: rotationStarted == nil || rotationStopped
-        )) { context in
-            HStack(spacing: 0) {
-                ForEach(0 ..< count, id: \.self) { index in
-                    Capsule()
-                        .fill(index == selected ? CleansiaColors.primary.opacity(0.2) : CleansiaColors.outlineVariant)
-                        .overlay(alignment: .leading) {
-                            if index == selected {
-                                let fraction = rotationStarted.map { UpsellSlide.rotationFraction(
-                                    startedAt: $0,
-                                    now: context.date
-                                ) } ?? 1
-                                Capsule().fill(CleansiaColors.primary)
-                                    .frame(width: 24 * fraction)
-                            }
-                        }
-                        .frame(width: index == selected ? 24 : 8, height: 8)
-                        .padding(.horizontal, 3)
-                }
+        if rotationStopped {
+            indicators(count: count, selected: selected, fraction: 1)
+        } else {
+            TimelineView(.animation(minimumInterval: 1.0 / 60)) { context in
+                indicators(count: count, selected: selected, fraction: UpsellSlide.indicatorFraction(
+                    startedAt: rotationStarted, now: context.date
+                ))
             }
-            .frame(maxWidth: .infinity)
-            .animation(.default, value: selected)
         }
+    }
+
+    private func indicators(count: Int, selected: Int, fraction: Double) -> some View {
+        HStack(spacing: 6) {
+            ForEach(0 ..< count, id: \.self) { index in
+                Capsule()
+                    .fill(index == selected ? CleansiaColors.primary.opacity(0.16) : CleansiaColors.surfaceVariant)
+                    .overlay(alignment: .leading) {
+                        if index == selected {
+                            Capsule().fill(CleansiaColors.primary)
+                                .frame(width: 30 * fraction)
+                        }
+                    }
+                    .clipShape(Capsule())
+                    .overlay(Capsule().strokeBorder(
+                        index == selected ? CleansiaColors.primaryText : CleansiaColors.outline,
+                        lineWidth: 0.75
+                    ))
+                    .frame(width: index == selected ? 30 : 6, height: 6)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.22), value: selected)
     }
 
     private var rotationStopped: Bool {
@@ -204,20 +209,20 @@ struct UpsellCarousel: View {
         guard !Task.isCancelled, !rotationStopped, UpsellSlide.reanchor(page: page, count: count) == nil else { return }
         rotationStarted = nil
         programmaticPage = page + 1
-        withAnimation { page += 1 }
+        withAnimation(.easeInOut(duration: UpsellSlide.pageTransitionSeconds)) { page += 1 }
     }
 
     private func show(page target: Int) {
         let pages = UpsellSlide.pageCount(slides: anchoredKinds.count)
         guard (0 ..< pages).contains(target) else { return }
-        withAnimation { page = target }
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: UpsellSlide.pageTransitionSeconds)) { page = target }
     }
 
     /// A clone stands in for its real slide only until the page has settled on it.
     private func scheduleReanchor(from settled: Int, count: Int) {
         guard let target = UpsellSlide.reanchor(page: settled, count: count) else { return }
         Task { @MainActor in
-            try? await Task.sleep(nanoseconds: Self.reanchorDelayNanoseconds)
+            try? await Task.sleep(nanoseconds: UInt64(UpsellSlide.reanchorDelaySeconds * 1_000_000_000))
             guard page == settled else { return }
             jump(to: target)
         }
@@ -282,6 +287,7 @@ private struct UpsellSlideFace: View {
         .padding(Spacing.ml)
         .frame(height: upsellCardHeight)
         .background(slide.gradient.linearGradient, in: RoundedRectangle(cornerRadius: 22))
+        .overlay(RoundedRectangle(cornerRadius: 22).strokeBorder(.white.opacity(0.28), lineWidth: 1))
         .padding(.horizontal, Spacing.ml)
     }
 
@@ -440,6 +446,7 @@ private struct QuickSizeSlideCard: View {
         .padding(Spacing.ml)
         .frame(height: upsellCardHeight)
         .background(slide.gradient.linearGradient, in: RoundedRectangle(cornerRadius: 22))
+        .overlay(RoundedRectangle(cornerRadius: 22).strokeBorder(.white.opacity(0.28), lineWidth: 1))
         .padding(.horizontal, Spacing.ml)
     }
 }

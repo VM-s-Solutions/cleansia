@@ -364,7 +364,10 @@ private fun SheetContent(
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) { stopped = true }
     LifecycleEventEffect(Lifecycle.Event.ON_START) {
         val placing = bookingVm.submitState.value is cz.cleansia.customer.ui.state.ActionState.Submitting
-        if (stopped && visible && !placing && pendingCardOrder == null) bookingVm.revalidateResumedTime()
+        if (stopped && visible && !placing && pendingCardOrder == null) {
+            bookingVm.revalidateResumedTime()
+            bookingVm.refreshCashEligibility()
+        }
         stopped = false
     }
 

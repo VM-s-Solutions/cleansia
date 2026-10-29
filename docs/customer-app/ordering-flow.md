@@ -263,26 +263,29 @@ The customer selects between:
 | Method | Value | Description |
 |---|---|---|
 | Card | `PaymentType.Card` | Redirects to Stripe Checkout |
-| Cash | `PaymentType.Cash` | Paid to the cleaner at the job — **only** for a signed-in customer whose booking needs one cleaner |
+| Cash | `PaymentType.Cash` | Paid to the cleaner at the job — **only** for a signed-in customer with a usable saved card in the booking's currency whose booking needs one cleaner |
 
 Default: `PaymentType.Card`
 
 **Cash is decided by the server's rule, read on screen.** `OrderWizardFacade.cashEligibility` feeds
-`resolveCashEligibility` (`libs/shared/models`, the web copy of `BookingPolicy.AllowsCash`) with the
-live sign-in state and the quote's `requiredEmployees` — but only while the cached quote matches the
-current selection. The verdict is one of four:
+`resolveCashEligibility` (`libs/shared/models`, the shared cash-eligibility helper) with the
+live sign-in state, the quote's `requiredEmployees` and the current saved-card list in the quote's
+currency — but only while the cached quote matches the current selection. The verdict is one of five:
 
 | Verdict | When | What the step shows |
 |---|---|---|
-| `available` | signed in, and the quote says one cleaner | cash selectable |
+| `available` | signed in, the quote says one cleaner, and a usable saved card matches its currency | cash selectable |
 | `needs_account` | a guest | cash disabled — *Cash is only for signed-in customers* (`pages.order.cash_needs_account`) |
 | `needs_card` | the quote says two cleaners or more, signed in or not | cash disabled — *Cleaners needed for this booking: N* (`pages.order.cash_needs_card`) |
-| `pending` | signed in, no quote for this selection yet | cash disabled until the quote lands (`pages.order.cash_pending`) |
+| `needs_saved_card` | signed in with a one-cleaner quote, but no current usable card in its currency | cash disabled — save a usable card first (`pages.order.cash_needs_saved_card`) |
+| `pending` | signed in, but the quote or saved cards have not been successfully read for this selection | cash disabled until eligibility is known (`pages.order.cash_pending`) |
 
-A cash choice that becomes refused — a sign-out, a selection that grows to two cleaners — is **taken
+A cash choice that becomes refused — a sign-out, a selection that grows to two cleaners, a removed or
+expired card, or a different currency — is **taken
 away, never switched to card**: `paymentType` becomes `null`, the step says *Cash is no longer
 available for this booking…* (`pages.order.cash_cleared`) and the customer chooses again. Submit never
-sends refused cash; if the server still answers `order.cash_not_available`, the choice is cleared and
+sends refused cash and refreshes the saved cards before submission; if the server still answers
+`order.cash_not_available` or `order.cash_requires_saved_card`, the choice is cleared and
 the wizard returns to the payment step. → [Paying in cash](/product/business-rules#cash)
 
 **Saving the card.** A signed-in customer who chooses card is offered an unticked *Save this card for
@@ -292,10 +295,12 @@ on the card (`SavedCard.ConsentTextVersionInForce`). A guest or a cash booking n
 when the payment succeeds and is listed under **Saved cards** on `/profile`, where it can be removed;
 unticked, Stripe keeps nothing. → [The saved cards](/product/business-rules#saved-cards)
 
-**A cash booking asks for no card** (since 2026-10-04). The wizard no longer opens a card-capture step
-when the server refuses cash, because the server no longer asks for a saved card: `CardCaptureFacade`,
-the parked booking and the return through the profile are gone.
-→ [Cash needs no card](/product/business-rules#card-guarantee)
+**Cash needs an existing usable saved card, without a new capture step** (owner request 2026-10-29).
+The signed-in customer must already hold an active, captured, unexpired card in the booking's currency,
+and the server-required crew must be one. Pending setup does not qualify. The wizard does not reopen
+the old `CardCaptureFacade`, park a cash booking for card capture or add a guarantee-consent checkbox.
+The customer saves a card through an existing supported route first; choosing cash never charges it.
+→ [Saved-card requirement](/product/business-rules#card-guarantee)
 
 **When the server refuses the booking for an amount owed** (since 2026-10-06). A customer who owes any
 company an amount is refused every booking, card or cash, with `order.unpaid_receivable`, which replaced
@@ -304,8 +309,8 @@ the payment step, which says the booking cannot be made yet, by card or in cash
 (`pages.order.unpaid_owed`), and lists everything owed with *Pay now* (`cleansia-customer-amount-due`);
 leaving to pay parks the booking, which is waiting on the next visit
 → [What a customer owes](/product/business-rules#receivables). The wizard reads the key whatever field
-it arrives under. Cash is taken away only for `order.cash_not_available` and
-`order.cash_open_bookings_limit_reached`; the latter's copy says the customer already has as many cash
+it arrives under. Cash is taken away only for `order.cash_not_available`,
+`order.cash_requires_saved_card` and `order.cash_open_bookings_limit_reached`; the latter's copy says the customer already has as many cash
 bookings not yet paid as allowed — in practice their upcoming ones — and names no number. The schedule
 form and the order page's visit confirmation show the same list of what is owed when they are refused;
 the schedule form is not saved when the customer leaves it to pay.

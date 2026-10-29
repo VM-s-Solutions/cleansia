@@ -90,7 +90,7 @@ public sealed class OrderEmployeeSeatOrdinalIndexTests
     {
         // BuildOrder seats "emp-a" itself, at ordinal 0.
         var order = ValidatorTestHelpers.BuildOrder(
-            "order-seat-1", OrderStatus.Confirmed, "emp-a", maxEmployees: 2);
+            "order-seat-1", OrderStatus.Confirmed, "emp-a", paymentType: PaymentType.Card, paymentStatus: PaymentStatus.Paid, maxEmployees: 2);
 
         order.AddAssignedEmployee(OrderEmployee.Create(order, NewEmployee("emp-b")));
         Assert.Equal([0, 1], order.AssignedEmployees.Select(oe => oe.SeatOrdinal).OrderBy(o => o));

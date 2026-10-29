@@ -50,7 +50,7 @@ public class BookingSizeBoundsTests
                     Bookings.CatalogueDoubles.Services(), Bookings.CatalogueDoubles.Packages(),
                     Cleansia.Tests.Features.Legal.CustomerConsentDoubles.Consented(),
                     Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.ILegalDocumentResolver>(),
-                    Mock.Of<IReceivableRepository>()),
+                    Mock.Of<IReceivableRepository>(), Cleansia.Tests.Common.SavedCardTestData.Repository()),
                 new CreateRecurringBooking.Command(1, 1, "10:00", rooms, bathrooms, "address", [], [], 1, DateTime.UtcNow)),
             "recurring-update" => await ValidateSize(new UpdateRecurringBooking.Validator(
                     Mock.Of<IRecurringBookingTemplateRepository>(), Mock.Of<IUserMembershipRepository>(),
@@ -58,7 +58,7 @@ public class BookingSizeBoundsTests
                     Mock.Of<ICurrencyResolutionService>(), Mock.Of<ICountryRepository>(),
                     OrderMarketDoubles.EveryCityServiced(),
                     Bookings.CatalogueDoubles.Services(), Bookings.CatalogueDoubles.Packages(),
-                    Mock.Of<IReceivableRepository>()),
+                    Mock.Of<IReceivableRepository>(), Cleansia.Tests.Common.SavedCardTestData.Repository()),
                 new UpdateRecurringBooking.Command("template", 1, 1, "10:00", rooms, bathrooms,
                     "address", [], [], 1, DateTime.UtcNow)),
             _ => throw new ArgumentOutOfRangeException(nameof(endpoint)),
@@ -97,7 +97,7 @@ public class BookingSizeBoundsTests
         Mock.Of<IPromoCodeService>(), Mock.Of<IOperatorTenantResolver>(), Mock.Of<ITenantProvider>(),
         Mock.Of<IUserConsentRepository>(), Mock.Of<ILanguageRepository>(),
         Mock.Of<ICountryConfigurationRepository>(), Mock.Of<ILegalDocumentResolver>(),
-        Mock.Of<IReceivableRepository>());
+        Mock.Of<IReceivableRepository>(), Cleansia.Tests.Common.SavedCardTestData.Repository());
 
     private static Task<ValidationResult> ValidateSize<T>(IValidator<T> validator, T request) =>
         validator.ValidateAsync(request, options => options.IncludeProperties("Rooms", "Bathrooms"));

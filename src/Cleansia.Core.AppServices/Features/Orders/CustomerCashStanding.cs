@@ -9,11 +9,16 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// A signed-in customer's standing to book. Owing any receivable refuses every new booking, cash or card,
 /// and stops their schedules from creating visits (owner ruling 2026-10-06). A cash booking also needs
 /// room under <see cref="BookingPolicy.MaxOpenUnpaidCashBookings"/> (owner ruling 2026-09-28), beside the
-/// one-cleaner rule of <see cref="BookingPolicy.AllowsCash"/>. No saved card is asked for (owner ruling
-/// 2026-10-04).
+/// one-cleaner rule of <see cref="BookingPolicy.AllowsCash"/>. A usable captured card in the booking currency is also required.
 /// </summary>
 internal static class CustomerCashStanding
 {
+    public static async Task<bool> HoldsUsableCardAsync(
+        ISavedCardRepository savedCardRepository, string userId, string currencyId,
+        DateTimeOffset now, CancellationToken cancellationToken)
+        => (await savedCardRepository.GetCapturedForUserInCurrencyAsync(userId, currencyId, cancellationToken))
+            .Any(card => card.IsUsableOn(now));
+
     /// <summary>Owed to any operating company but a frozen one, which can no longer be paid.</summary>
     public static async Task<bool> OwesNothingAsync(
         IReceivableRepository receivableRepository, string userId, CancellationToken cancellationToken)

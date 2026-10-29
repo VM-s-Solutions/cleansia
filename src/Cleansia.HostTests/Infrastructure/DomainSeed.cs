@@ -260,7 +260,8 @@ public static class DomainSeed
     /// </param>
     public static Order NewOrder(
         string ownerUserId, string customerEmail, string? tenantId = null,
-        DateTime? cleaningDateTime = null, LegalDocument? workContract = null)
+        DateTime? cleaningDateTime = null, LegalDocument? workContract = null,
+        PaymentType paymentType = PaymentType.Cash, PaymentStatus paymentStatus = PaymentStatus.Pending)
     {
         var address = Address.Create("Order St 9", "Brno", "60200", CountryId);
         var order = Order.Create(
@@ -271,10 +272,10 @@ public static class DomainSeed
             rooms: 2,
             bathrooms: 1,
             cleaningDateTime: cleaningDateTime ?? DateTime.UtcNow.AddDays(3),
-            paymentType: PaymentType.Cash,
+            paymentType: paymentType,
             totalPrice: 1500m,
             currencyId: CurrencyId,
-            paymentStatus: PaymentStatus.Pending,
+            paymentStatus: paymentStatus,
             userId: ownerUserId,
             cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         var newTrack = OrderStatusTrack.Create(OrderStatus.New, order);

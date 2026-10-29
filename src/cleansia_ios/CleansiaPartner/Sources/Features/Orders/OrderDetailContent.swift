@@ -95,7 +95,8 @@ struct OrderDetailContent: View {
                         OrderTimerCard(order: order, locale: locale, showsStepCounter: true)
                         OrderTrackerHero(
                             status: order.status,
-                            showsStepCounter: OrderTimer.phase(for: order, now: Date()) == nil
+                            showsStepCounter: OrderTimer.phase(for: order, now: Date()) == nil,
+                            order: order
                         )
                     }
                     if order.showsAccessCard, let access = order.accessInstructions {
@@ -294,13 +295,44 @@ struct OrderTrackerHero: View {
     @Environment(\.locale) private var locale
     let status: OrderStatus?
     var showsStepCounter = true
+    var order: OrderDetail?
 
     var body: some View {
-        OrderTrackerBar(
-            state: OrderTrackerProgress.state(for: status),
-            cancelledLabel: L10n.Orders.statusLabel(._6),
-            stepCounterLabel: showsStepCounter ? { step, total in L10n.Orders.trackerStepCounter(step, total) } : nil
-        )
+        if status == ._4 {
+            TimelineView(.periodic(from: .now, by: 30)) { context in
+                content(now: context.date)
+            }
+        } else {
+            content(now: Date())
+        }
+    }
+
+    private func content(now: Date) -> some View {
+        let progress = order.flatMap { OrderTimer.estimateProgress(for: $0, now: now) }
+        return VStack(alignment: .leading, spacing: Spacing.xs) {
+            OrderTrackerBar(
+                state: OrderTrackerProgress.state(for: status),
+                cancelledLabel: L10n.Orders.statusLabel(._6),
+                stepCounterLabel: showsStepCounter ? { step, total in L10n.Orders.trackerStepCounter(step, total) } :
+                    nil,
+                currentFraction: progress?.fraction,
+                isOverEstimate: (progress?.overrunMinutes ?? 0) > 0
+            )
+            if let progress {
+                if progress.overrunMinutes > 0 {
+                    Label(
+                        L10n.Orders.estimateOverrun(progress.overrunMinutes),
+                        systemImage: "clock.badge.exclamationmark"
+                    )
+                    .font(CleansiaTypography.labelMedium)
+                    .foregroundColor(CleansiaColors.pendingInk)
+                } else {
+                    Text(L10n.Orders.estimateRemaining(progress.remainingMinutes))
+                        .font(CleansiaTypography.labelMedium)
+                        .foregroundColor(CleansiaColors.onSurfaceVariant)
+                }
+            }
+        }
         .id(locale.identifier)
     }
 }

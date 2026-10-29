@@ -74,7 +74,7 @@ public class CreateOrderExpressWaiverValidatorTests
             CreateOrderTestData.Speaking(Constants.Language.English),
             Mock.Of<ICountryConfigurationRepository>(),
             Mock.Of<ILegalDocumentResolver>(),
-            Mock.Of<IReceivableRepository>());
+            Mock.Of<IReceivableRepository>(), Cleansia.Tests.Common.SavedCardTestData.Repository());
 
     private void ArrangePricing(OrderPricingResult result)
         => _pricingCalculator

@@ -109,12 +109,12 @@
     <string name="dashboard">Nástěnka</string>
     <string name="dashboard_subtitle">Přehled vaší aktivity</string>
     <string name="dash_available_now_count">%1$d volných zakázek</string>
-    <string name="dash_available_now_subtitle">Klepněte pro prohlížení a převzetí</string>
+    <string name="dash_available_now_subtitle">Zakázky k převzetí</string>
     <string name="dash_no_jobs_yet_title">Zatím žádné zakázky</string>
     <string name="dash_no_jobs_yet_subtitle">Zkontrolujte volné zakázky nebo upravte dostupnost</string>
     <string name="dash_todays_schedule">Dnes</string>
     <string name="dash_current_period">Aktuální období</string>
-    <string name="dash_tap_for_invoices">Klepněte pro faktury</string>
+    <string name="dash_tap_for_invoices">Faktury</string>
     <string name="dash_completed_this_month">Tento měsíc</string>
     <string name="dash_avg_rating">Hodnocení</string>
     <string name="dash_vs_last_month">vs minulý měsíc</string>
@@ -126,7 +126,7 @@
     <string name="dash_on_the_way">Na cestě</string>
     <string name="dash_browse_jobs">Procházet zakázky</string>
     <string name="dash_available_work_label">Dostupné zakázky</string>
-    <string name="dash_browse_jobs_subtitle">Klepněte pro přehled</string>
+    <string name="dash_browse_jobs_subtitle">Najděte si další zakázku</string>
     <string name="dash_open">Otevřít</string>
     <string name="dash_continue">Pokračovat</string>
     <string name="dash_earn_up_to">Vyděláte až %1$s</string>
@@ -228,7 +228,7 @@
     <string name="choose_from_gallery">Vybrat z galerie</string>
     <string name="document_choose_file">Vybrat soubor</string>
     <string name="delete_photo">Smazat fotografii</string>
-    <string name="delete_photo_confirm">Opravdu chcete smazat tuto fotografii?</string>
+    <string name="delete_photo_confirm">Smazat tuto fotografii?</string>
     <string name="photos_none_recorded">Žádné fotografie nebyly zaznamenány</string>
     <string name="estimated_time">Odhadovaný čas</string>
     <string name="completion_notes">Poznámky k dokončení (volitelné)</string>
@@ -1297,7 +1297,7 @@
     <string name="notification_channel_new_jobs_name">Nové dostupné zakázky</string>
     <string name="notification_channel_new_jobs_desc">Pravidelný souhrn nových zakázek dostupných ve vaší oblasti.</string>
     <string name="notification_new_jobs_title">Nové dostupné zakázky</string>
-    <string name="notification_new_jobs_body">Ve vašem okolí je %1$d nových zakázek. Klepnutím je zobrazíte.</string>
+    <string name="notification_new_jobs_body">Ve vašem okolí je %1$d nových zakázek.</string>
     <string name="notification_reminder_tomorrow_title">Zítřejší zakázky</string>
     <string name="notification_reminder_tomorrow_body">Zakázky na zítra: %1$d. Klepnutím je zobrazíte.</string>
     <string name="notification_reminder_soon_title">Zakázka brzy začíná</string>
@@ -1320,7 +1320,7 @@
     <string name="notification_employee_registration_rejected_title">Žádost zamítnuta</string>
     <string name="notification_employee_registration_rejected_body">Vaše žádost byla zamítnuta. Otevřete aplikaci a zjistěte proč, nebo kontaktujte podporu.</string>
     <string name="notification_payroll_invoice_paid_title">Byli jste vyplaceni</string>
-    <string name="notification_payroll_invoice_paid_body">Vaše faktura za poslední výplatní období byla proplacena. Klepnutím zobrazíte.</string>
+    <string name="notification_payroll_invoice_paid_body">Vaše faktura za poslední výplatní období byla proplacena.</string>
     <string name="notification_preferred_offer_title">Zákazník si vás vyžádal</string>
     <string name="notification_preferred_offer_body">Zakázka %1$s — vyžádal si vás někdo, komu jste už uklízeli. Otevřete ji a vezměte si ji.</string>
     <!-- ── Vaše zařízení ── -->
@@ -1478,4 +1478,7 @@
     <string name="error_payroll_invoice_pdf_not_ready">PDF faktury zatím není připravené. Obnovte stav.</string>
     <string name="error_payroll_invoice_pdf_unavailable">PDF této faktury není dostupné. Obnovte stav nebo kontaktujte podporu.</string>
     <string name="error_payroll_invoice_pdf_generation_failed">PDF faktury se nepodařilo vytvořit. Obnovte stav nebo kontaktujte podporu.</string>
+    <string name="tracker_estimate_overrun">%1$d min nad odhad</string>
+    <string name="tracker_estimate_remaining">Zbývá přibližně %1$d min</string>
+    <string name="error_order_cash_requires_saved_card">Platba hotově vyžaduje platnou uloženou kartu v měně objednávky.</string>
 </resources>

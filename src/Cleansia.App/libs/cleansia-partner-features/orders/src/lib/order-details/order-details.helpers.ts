@@ -1,5 +1,4 @@
 import { TranslateService } from '@ngx-translate/core';
-import { cashIsRefused, resolveCashEligibility } from '@cleansia/models';
 import { formatDate as formatSharedDate, formatMoney, localeFor, toSnakeCase } from '@cleansia/utils';
 import {
   AssignedEmployeeDto,
@@ -268,7 +267,7 @@ export function showsCustomerPrice(paymentTypeValue: number | undefined): boolea
 }
 
 // A card order is refused cash unless its booking could have been paid in cash. The crew is on the
-// job sheet; whether the customer was a guest is not, so that half of the rule is the server's alone.
+// job sheet; the customer's account and usable saved card are checked only by the server.
 // An order booked as cash stays collectable whatever its crew.
 export function cashRefusedOnCardOrder(
   paymentTypeValue: number | undefined,
@@ -276,7 +275,7 @@ export function cashRefusedOnCardOrder(
 ): boolean {
   return (
     paymentTypeValue !== PaymentType.Cash &&
-    cashIsRefused(resolveCashEligibility(true, requiredEmployees ?? null))
+    requiredEmployees !== undefined && requiredEmployees > 1
   );
 }
 

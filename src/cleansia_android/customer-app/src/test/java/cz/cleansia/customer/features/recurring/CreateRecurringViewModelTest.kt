@@ -1,5 +1,7 @@
 package cz.cleansia.customer.features.recurring
 
+import cz.cleansia.customer.core.payments.SavedCard
+import cz.cleansia.customer.core.payments.SavedCardRepository
 import cz.cleansia.customer.core.payments.StripeConfig
 import android.content.Context
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -84,6 +86,8 @@ class CreateRecurringViewModelTest {
     private lateinit var addressRepo: AddressRepository
     private lateinit var marketRepo: MarketRepository
     private lateinit var bookingApi: BookingApi
+    private lateinit var savedCardRepository: SavedCardRepository
+    private val cardsFlow = MutableStateFlow<List<SavedCard>?>(listOf(SavedCard("card", "visa", "4242", 12, 2099, "CZK")))
     private lateinit var consentClient: GdprConsentClient
     private lateinit var snackbar: SnackbarController
     private lateinit var appContext: Context
@@ -104,6 +108,9 @@ class CreateRecurringViewModelTest {
         addressRepo = mockk(relaxed = true)
         marketRepo = mockk(relaxed = true)
         bookingApi = mockk()
+        savedCardRepository = mockk()
+        every { savedCardRepository.cards } returns cardsFlow
+        coEvery { savedCardRepository.refresh() } coAnswers { ApiResult.Success(cardsFlow.value.orEmpty()) }
         coEvery { bookingApi.quote(any()) } returns Response.success(crewQuote(1))
         consentClient = mockk()
         coEvery { consentClient.grantedTypes() } returns
@@ -144,6 +151,7 @@ class CreateRecurringViewModelTest {
             addressRepo = addressRepo,
             marketRepo = marketRepo,
             bookingApi = bookingApi,
+            savedCardRepository = savedCardRepository,
             consentClient = consentClient,
             snackbar = snackbar,
             appContext = appContext,
@@ -1676,6 +1684,63 @@ class CreateRecurringViewModelTest {
 
         assertEquals(CashEligibility.Available, vm.cashEligibility.value)
         assertEquals(CreateRecurringViewModel.PAYMENT_CASH, vm.state.value.paymentType)
+    }
+
+    @Test
+    fun `cash needs a usable saved card in the quote currency`() = runTest {
+        cardsFlow.value = listOf(SavedCard("foreign", "visa", "4242", 12, 2099, "USD"))
+        val vm = filledForm(requiredEmployees = 1)
+        assertEquals(CashEligibility.NeedsSavedCard, vm.cashEligibility.value)
+        vm.setPaymentType(CreateRecurringViewModel.PAYMENT_CASH)
+        assertEquals(CreateRecurringViewModel.PAYMENT_CARD, vm.state.value.paymentType)
+    }
+
+    @Test
+    fun `cash cannot use a cached card after its current read fails`() = runTest {
+        coEvery { savedCardRepository.refresh() } returns ApiResult.Error(ApiError.Network("offline"))
+        val vm = filledForm(requiredEmployees = 1)
+        assertEquals(CashEligibility.Pending, vm.cashEligibility.value)
+        vm.setPaymentType(CreateRecurringViewModel.PAYMENT_CASH)
+        assertEquals(CreateRecurringViewModel.PAYMENT_CARD, vm.state.value.paymentType)
+    }
+
+    @Test
+    fun `cash submission refreshes the card and refuses a removal`() = runTest {
+        val vm = filledForm(requiredEmployees = 1)
+        vm.setPaymentType(CreateRecurringViewModel.PAYMENT_CASH)
+        coEvery { savedCardRepository.refresh() } returns ApiResult.Success(emptyList())
+        vm.submit()
+        advanceUntilIdle()
+        coVerify(exactly = 2) { savedCardRepository.refresh() }
+        coVerify(exactly = 0) { recurringRepo.create(any()) }
+        assertNull(vm.state.value.paymentType)
+    }
+
+    @Test
+    fun `a cash post refusal clears the choice and invalidates the successful card read`() = runTest {
+        listOf("order.cash_requires_saved_card", "order.cash_not_available", "order.cash_open_bookings_limit_reached").forEach { key ->
+            coEvery { savedCardRepository.refresh() } returns ApiResult.Success(cardsFlow.value.orEmpty())
+            val vm = filledForm(requiredEmployees = 1)
+            vm.setPaymentType(CreateRecurringViewModel.PAYMENT_CASH)
+            val recovery = CompletableDeferred<ApiResult<List<SavedCard>>>()
+            coEvery { recurringRepo.create(any()) } coAnswers {
+                coEvery { savedCardRepository.refresh() } coAnswers { recovery.await() }
+                ApiResult.Error(ApiError.BadRequest(message = "Refused", errorKey = "common.required",
+                    validationErrors = mapOf("PaymentType" to listOf("common.required", key))))
+            }
+
+            vm.submit()
+            runCurrent()
+            assertNull(key, vm.state.value.paymentType)
+            assertEquals(key, CashEligibility.Pending, vm.cashEligibility.value)
+            assertEquals(key, false, vm.isValid.value)
+
+            recovery.complete(ApiResult.Success(emptyList()))
+            advanceUntilIdle()
+            assertEquals(key, CashEligibility.NeedsSavedCard, vm.cashEligibility.value)
+            assertNull(key, vm.state.value.paymentType)
+        }
+        verify(exactly = 0) { snackbar.showInfoKey(R.string.recurring_cash_cleared) }
     }
 
     @Test

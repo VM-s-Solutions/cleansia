@@ -62,7 +62,7 @@ public class EmployeeSelfUpdateIdInertTests
         validator.ValidateAsync(command, CancellationToken.None);
 
     private Task<ValidationResult> ValidatePersonalInfoAsync(string? employeeId) => ValidateAsync(
-        new UpdatePersonalInfo.Validator(_employees.Object, _session.Object),
+        new UpdatePersonalInfo.Validator(_employees.Object, _session.Object, Mock.Of<IUserRepository>()),
         new UpdatePersonalInfo.Command(employeeId, "First", "Last", new DateOnly(1990, 1, 1), "+420777123456"));
 
     private Task<ValidationResult> ValidateAddressInfoAsync(string? employeeId) => ValidateAsync(

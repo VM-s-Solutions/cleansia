@@ -492,7 +492,7 @@ public sealed class CatalogActiveVisibilityTests : IDisposable
             WorkContractResolvers.Resolver().Object,
             Mock.Of<INotificationProducer>(),
             Mock.Of<IAdminNotifier>(),
-            NullLogger<OrderFactory>.Instance);
+            NullLogger<OrderFactory>.Instance, Cleansia.Tests.Common.SavedCardTestData.Repository());
 
     /// <summary>
     /// The real catalogue behind a schedule's validator. No session and a card payment keep every other
@@ -510,7 +510,7 @@ public sealed class CatalogActiveVisibilityTests : IDisposable
             new PackageRepository(ctx),
             Mock.Of<IUserConsentRepository>(),
             Mock.Of<ILegalDocumentResolver>(),
-            Mock.Of<IReceivableRepository>());
+            Mock.Of<IReceivableRepository>(), Cleansia.Tests.Common.SavedCardTestData.Repository());
 
     private static CreateRecurringBooking.Command Schedule(
         IReadOnlyList<string> serviceIds, IReadOnlyList<string> packageIds) =>
@@ -591,7 +591,7 @@ public sealed class CatalogActiveVisibilityTests : IDisposable
             OrderMarketDoubles.EveryCityServiced(),
             new ServiceRepository(ctx),
             new PackageRepository(ctx),
-            Mock.Of<IReceivableRepository>());
+            Mock.Of<IReceivableRepository>(), Cleansia.Tests.Common.SavedCardTestData.Repository());
     }
 
     private static RecurringBookingTemplate HeldTemplate(

@@ -89,7 +89,8 @@ public class MaterializeRecurringBookingTemplate
         ITenantProvider tenantProvider,
         IUnitOfWork unitOfWork,
         ILogger<Handler> logger,
-        INotificationProducer notificationProducer) : ICommandHandler<Command, Response>
+        INotificationProducer notificationProducer,
+        ISavedCardRepository savedCardRepository) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
@@ -290,6 +291,15 @@ public class MaterializeRecurringBookingTemplate
                     "Template {TemplateId} skipped: it pays cash for a job needing {RequiredEmployees} cleaners. "
                     + "The schedule is preserved and resumes once its owner moves it to card or a one-cleaner selection",
                     template.Id, requiredEmployees);
+                return BusinessResult.Success(new Response(0));
+            }
+
+            if (template.PaymentType == PaymentType.Cash
+                && !await CustomerCashStanding.HoldsUsableCardAsync(
+                    savedCardRepository, template.UserId, currency.Id,
+                    new DateTimeOffset(DateTime.SpecifyKind(now, DateTimeKind.Utc)), cancellationToken))
+            {
+                logger.LogInformation("Template {TemplateId} skipped: its owner has no usable saved card in the booking currency", template.Id);
                 return BusinessResult.Success(new Response(0));
             }
 

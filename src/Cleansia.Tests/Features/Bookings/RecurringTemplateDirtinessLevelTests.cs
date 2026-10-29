@@ -121,7 +121,7 @@ public class RecurringTemplateDirtinessLevelTests
 
         var result = await new GetMyRecurringBookings.Handler(
                 _templateRepository.Object, _savedAddressRepository.Object, _session.Object,
-                Mock.Of<IServiceRepository>(), Mock.Of<IPackageRepository>(), Mock.Of<ICountryConfigurationRepository>())
+                Mock.Of<IServiceRepository>(), Mock.Of<IPackageRepository>(), Mock.Of<ICountryConfigurationRepository>(), Cleansia.Tests.Common.SavedCardTestData.Repository(), Cleansia.Tests.Features.Orders.OrderMarketDoubles.Trading(Cleansia.Tests.Features.Orders.CreateOrderTestData.DefaultCurrency()))
             .Handle(new GetMyRecurringBookings.Query(), CancellationToken.None);
 
         Assert.Equal(DirtinessLevel.Heavy, Assert.Single(result.Value!).DirtinessLevel);
@@ -179,7 +179,7 @@ public class RecurringTemplateDirtinessLevelTests
                 Mock.Of<ITenantProvider>(),
                 Mock.Of<IUnitOfWork>(),
                 NullLogger<MaterializeRecurringBookingTemplate.Handler>.Instance,
-                Mock.Of<INotificationProducer>())
+                Mock.Of<INotificationProducer>(), Cleansia.Tests.Common.SavedCardTestData.Repository())
             .Handle(new MaterializeRecurringBookingTemplate.Command(TemplateId, DateTime.UtcNow, HorizonDays: 7), CancellationToken.None);
 
         Assert.True(result.IsSuccess, result.Error?.Message);

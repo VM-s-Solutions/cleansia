@@ -1029,7 +1029,8 @@
       "photo": {
         "window_closed": "Túto fotografiu teraz nemožno pridať: fotografie pred upratovaním od prevzatia zákazky do jej dokončenia, fotografie po upratovaní počas práce.",
         "locked": "Po dokončení alebo zrušení objednávky nemožno fotografie vymazať."
-      }
+      },
+      "cash_requires_saved_card": "Platba v hotovosti vyžaduje platnú uloženú kartu v mene objednávky."
     },
     "user": {
       "email_confirmed": "E-mail je už potvrdený",

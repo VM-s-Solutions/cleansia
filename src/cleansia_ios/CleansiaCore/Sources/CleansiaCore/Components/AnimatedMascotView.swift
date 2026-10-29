@@ -98,7 +98,9 @@ enum AnimatedMascotPlayback {
         delay.isFinite && delay > 0 ? delay : fallbackFrameDelay
     }
 
-    /// Step the playhead by AT MOST one frame, over the frames decoded so far.
+    /// Select the frame due at this display deadline. A missed display callback skips the overdue
+    /// intermediate frame rather than showing it late and making the next callback race to catch up.
+    /// Long stalls still restart the clock, and an incomplete decode still holds its newest frame.
     static func advance(
         _ playhead: Playhead,
         now: TimeInterval,
@@ -110,24 +112,26 @@ enum AnimatedMascotPlayback {
         guard playhead.index < delays.count else {
             return Playhead(index: delays.count - 1, frameStart: now)
         }
-        let delay = normalizedDelay(delays[playhead.index])
-        let elapsed = now - playhead.frameStart
-        guard elapsed >= delay else { return playhead }
-
-        let nextStart = elapsed > delay * overdueRebaseFrames ? now : playhead.frameStart + delay
-        let next = playhead.index + 1
-        if next < delays.count {
-            return Playhead(index: next, frameStart: nextStart)
+        let initialDelay = normalizedDelay(delays[playhead.index])
+        let rebasing = now - playhead.frameStart > initialDelay * overdueRebaseFrames
+        var head = playhead
+        for _ in 0 ..< delays.count {
+            let delay = normalizedDelay(delays[head.index])
+            guard now - head.frameStart >= delay else { return head }
+            let nextStart = rebasing ? now : head.frameStart + delay
+            let next = head.index + 1
+            if next < delays.count {
+                head = Playhead(index: next, frameStart: nextStart)
+            } else if !isComplete {
+                return Playhead(index: head.index, frameStart: now)
+            } else if !loop {
+                return Playhead(index: head.index, frameStart: head.frameStart, isFinished: true)
+            } else {
+                head = Playhead(index: 0, frameStart: nextStart)
+            }
+            if rebasing { return head }
         }
-        guard isComplete else {
-            // The decoder is behind the playhead: hold the newest frame and restart its clock, so the
-            // frame that lands next gets a full delay instead of flashing past.
-            return Playhead(index: playhead.index, frameStart: now)
-        }
-        guard loop else {
-            return Playhead(index: playhead.index, frameStart: playhead.frameStart, isFinished: true)
-        }
-        return Playhead(index: 0, frameStart: nextStart)
+        return head
     }
 
     /// How many frames to decode before playback can start.
@@ -428,6 +432,6 @@ private final class DisplayLinkProxy {
     }
 
     @objc func tick(_ link: CADisplayLink) {
-        view?.step(now: link.timestamp)
+        view?.step(now: link.targetTimestamp)
     }
 }

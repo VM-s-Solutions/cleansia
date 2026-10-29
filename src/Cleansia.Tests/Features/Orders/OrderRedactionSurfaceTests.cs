@@ -1,7 +1,8 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Reflection;
 using Cleansia.Core.AppServices.Features.Currencies.DTOs;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Shared.DTOs.Files;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.AppServices.Shared.DTOs.Enums;
@@ -320,6 +321,7 @@ public class OrderRedactionSurfaceTests
         Assert.Equal("employee-1", crewMember.EmployeeId);
         Assert.Equal("Petra", crewMember.FullName);
         Assert.Null(crewMember.PhoneNumber);
+        Assert.Null(crewMember.ProfilePhoto);
     }
 
     [Fact]
@@ -393,6 +395,7 @@ public class OrderRedactionSurfaceTests
         var crewMember = Assert.Single(listed.AssignedEmployees);
         Assert.Equal("Petra", crewMember.FullName);
         Assert.Null(crewMember.PhoneNumber);
+        Assert.Null(crewMember.ProfilePhoto);
         var asBrowsing = typeof(OrderItem).GetProperties(BindingFlags.Public | BindingFlags.Instance)
             .Where(p => p.Name != "EqualityContract" && p.Name != nameof(OrderItem.IsGuestBooking) && !putBack.Contains(p.Name));
         Assert.All(asBrowsing, p => Assert.Equal(
@@ -491,7 +494,8 @@ public class OrderRedactionSurfaceTests
             [
                 new AssignedEmployeeDto(
                     "assignment-1", "employee-1", "Petra Svobodova", "+420602987654",
-                    new DateTime(2026, 8, 20, 11, 50, 0, DateTimeKind.Utc)),
+                    new DateTime(2026, 8, 20, 11, 50, 0, DateTimeKind.Utc),
+                    new BlobFileDto("cleaner-photo.jpg", null, null, "https://images.example.test/cleaner-photo.jpg?sig=test")),
             ],
             RequiredEmployees: RequiredEmployees,
             MaxEmployees: MaxEmployees,

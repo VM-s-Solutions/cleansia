@@ -57,11 +57,7 @@ struct PersonalSectionView: View {
                 // Above the name, because the photo is the first of the person's own details and not an
                 // afterthought under the save button.
                 if let avatar, let avatarCache {
-                    ProfileAvatarField(
-                        avatar: avatar,
-                        cache: avatarCache,
-                        showsPendingBar: !onboarding
-                    )
+                    ProfileAvatarField(avatar: avatar, cache: avatarCache)
                 }
                 CleansiaTextField(
                     value: $vm.form.firstName,
@@ -96,10 +92,10 @@ struct PersonalSectionView: View {
                     isSubmitting: vm.action.isSubmitting,
                     action: {
                         Task {
-                            // On the chain the photo has no Save of its own, so this button
-                            // owns both writes. save() is a no-op when nothing was picked.
-                            if onboarding { await avatar?.save() }
-                            await vm.save()
+                            await vm.save(photo: {
+                                guard let avatar else { return true }
+                                return await avatar.save()
+                            })
                         }
                     }
                 )

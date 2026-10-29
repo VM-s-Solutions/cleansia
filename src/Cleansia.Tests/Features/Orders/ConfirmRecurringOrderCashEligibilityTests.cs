@@ -48,7 +48,7 @@ public sealed class ConfirmRecurringOrderCashEligibilityTests
     private ConfirmRecurringOrder.Handler Handler() => new(
         OrderAccessDoubles.Over(_orderRepository, _session),
         _orderRepository.Object,
-        Mock.Of<ISavedCardRepository>(), Mock.Of<IReceivableRepository>(),
+        Cleansia.Tests.Common.SavedCardTestData.Repository(), Mock.Of<IReceivableRepository>(),
         _creditAccounts.Object,
         _users.Object,
         _session.Object,

@@ -63,7 +63,8 @@ private struct TimelineRow: View {
                 // draws. Nothing here is a future step: this card lists what has already happened.
                 OrderTimelinePoint(
                     segment: isLast ? .current : .past,
-                    tint: OrderStatusPresentation.color(entry.status)
+                    tint: OrderStatusPresentation.color(entry.status),
+                    pulses: isLast && (0 ... 4).contains(entry.status?.value ?? -1)
                 )
                 if !isLast {
                     Rectangle()

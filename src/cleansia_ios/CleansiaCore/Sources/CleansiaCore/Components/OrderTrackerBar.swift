@@ -113,6 +113,7 @@ private struct TrackerSegment: View {
                 ))
             }
             .frame(height: TrackerMetrics.barHeight)
+            .modifier(OrderPhasePulse())
         }
     }
 

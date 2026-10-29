@@ -11,6 +11,7 @@ import {
   PackageListItem,
   PaymentType,
   ServiceListItem,
+  SavedCardDto,
 } from '@cleansia/customer-services';
 import {
   loadCustomerCurrencies,
@@ -51,6 +52,7 @@ describe('OrderWizardFacade', () => {
   let store: MockStore;
   let orderClient: { quote: jest.Mock; createOrder: jest.Mock };
   let paymentClient: { createOrder: jest.Mock };
+  let savedCardClient: { getMine: jest.Mock };
   let promoCodeClient: { validate: jest.Mock };
   let gdprClient: { consentsGet: jest.Mock };
   let extraClient: { getOverview: jest.Mock };
@@ -96,6 +98,10 @@ describe('OrderWizardFacade', () => {
     promoCodeClient = {
       validate: jest.fn().mockReturnValue(of({ isValid: true, discountAmount: 100 })),
     };
+    savedCardClient = { getMine: jest.fn().mockReturnValue(of([
+      SavedCardDto.fromJS({ id: 'card-czk', currencyCode: 'CZK', expMonth: 12, expYear: 2099 }),
+      SavedCardDto.fromJS({ id: 'card-eur', currencyCode: 'EUR', expMonth: 12, expYear: 2099 }),
+    ])) };
     gdprClient = { consentsGet: jest.fn().mockReturnValue(of([])) };
     extraClient = { getOverview: jest.fn().mockReturnValue(of([])) };
     userClient = { getCurrent: jest.fn().mockReturnValue(of({})) };
@@ -137,6 +143,7 @@ describe('OrderWizardFacade', () => {
           useValue: {
             orderClient,
             paymentClient,
+            savedCardClient,
             promoCodeClient,
             gdprClient,
             extraClient,
@@ -1103,6 +1110,16 @@ describe('OrderWizardFacade', () => {
   });
 
   describe('submitOrder', () => {
+    // Cash can only reach confirm once the current crew and saved-card read have settled.
+    // These command/error tests choose it directly, so establish that real payment-step state.
+    async function settleCashEligibility(): Promise<void> {
+      if (facade.formData().paymentType !== PaymentType.Cash) return;
+      TestBed.flushEffects();
+      await facade.refreshQuoteNow();
+      TestBed.flushEffects();
+      expect(facade.cashEligibility()).toEqual({ kind: 'available' });
+    }
+
     // A COMPLETE order, not the minimum that used to reach the network. Submit now refuses an
     // incomplete one — that is the whole point of the gate — and the single-letter names and absent
     // address this set up would be rejected by the step rules the wizard already had, which is
@@ -1248,6 +1265,7 @@ describe('OrderWizardFacade', () => {
           orderClient.createOrder.mockReturnValue(owing());
 
           expect(facade.owesUnpaidAmount()).toBe(false);
+          await settleCashEligibility();
           await facade.submitOrder();
 
           expect(facade.owesUnpaidAmount()).toBe(true);
@@ -1265,6 +1283,7 @@ describe('OrderWizardFacade', () => {
           facade.updateFormData({ paymentType: PaymentType.Cash });
           orderClient.createOrder.mockReturnValue(throwError(() => ({ errors: { PaymentType: code } })));
 
+          await settleCashEligibility();
           await facade.submitOrder();
 
           expect(facade.owesUnpaidAmount()).toBe(false);
@@ -1292,6 +1311,7 @@ describe('OrderWizardFacade', () => {
     it('routes through the order client on a cash order', async () => {
       facade.updateFormData({ paymentType: PaymentType.Cash });
 
+      await settleCashEligibility();
       await facade.submitOrder();
 
       expect(orderClient.createOrder).toHaveBeenCalledTimes(1);
@@ -1323,6 +1343,7 @@ describe('OrderWizardFacade', () => {
         facade.updateFormData({ paymentType });
         paymentClient.createOrder.mockReturnValue(of({ id: 'order-1', stripeSessionId: '' }));
 
+        await settleCashEligibility();
         await facade.submitOrder();
 
         expect(guestOrderService.save).not.toHaveBeenCalled();
@@ -1338,6 +1359,7 @@ describe('OrderWizardFacade', () => {
         specialInstructions: '  Gate code 1234, dog is friendly  ',
       });
 
+      await settleCashEligibility();
       await facade.submitOrder();
 
       const command = orderClient.createOrder.mock.calls[0][0];
@@ -1347,12 +1369,15 @@ describe('OrderWizardFacade', () => {
     it('asserts the terms tick on the command only when the box was ticked', async () => {
       facade.updateFormData({ paymentType: PaymentType.Cash });
 
+      await settleCashEligibility();
       await facade.submitOrder(null, true);
       expect(orderClient.createOrder.mock.calls[0][0].termsAccepted).toBe(true);
 
+      await settleCashEligibility();
       await facade.submitOrder(null, false);
       expect(orderClient.createOrder.mock.calls[1][0].termsAccepted).toBeUndefined();
 
+      await settleCashEligibility();
       await facade.submitOrder();
       expect(orderClient.createOrder.mock.calls[2][0].termsAccepted).toBeUndefined();
     });
@@ -1415,6 +1440,7 @@ describe('OrderWizardFacade', () => {
         facade.setSaveCard(true);
         facade.updateFormData({ paymentType: PaymentType.Cash });
 
+        await settleCashEligibility();
         await facade.submitOrder();
 
         expect(orderClient.createOrder.mock.calls[0][0].saveCard).toBe(false);
@@ -1424,13 +1450,16 @@ describe('OrderWizardFacade', () => {
     it('asserts the request to start within the withdrawal period only when it was ticked', async () => {
       facade.updateFormData({ paymentType: PaymentType.Cash });
 
+      await settleCashEligibility();
       await facade.submitOrder(null, false, true);
       expect(orderClient.createOrder.mock.calls[0][0].earlyPerformanceRequested).toBe(true);
       expect(orderClient.createOrder.mock.calls[0][0].termsAccepted).toBeUndefined();
 
+      await settleCashEligibility();
       await facade.submitOrder(null, true, false);
       expect(orderClient.createOrder.mock.calls[1][0].earlyPerformanceRequested).toBeUndefined();
 
+      await settleCashEligibility();
       await facade.submitOrder();
       expect(orderClient.createOrder.mock.calls[2][0].earlyPerformanceRequested).toBeUndefined();
     });
@@ -1441,6 +1470,7 @@ describe('OrderWizardFacade', () => {
         specialInstructions: '   ',
       });
 
+      await settleCashEligibility();
       await facade.submitOrder();
 
       const command = orderClient.createOrder.mock.calls[0][0];
@@ -1453,6 +1483,7 @@ describe('OrderWizardFacade', () => {
         entryInstructions: '  Key under the mat, ring twice  ',
       });
 
+      await settleCashEligibility();
       await facade.submitOrder();
 
       const command = orderClient.createOrder.mock.calls[0][0];
@@ -1465,6 +1496,7 @@ describe('OrderWizardFacade', () => {
         entryInstructions: '   ',
       });
 
+      await settleCashEligibility();
       await facade.submitOrder();
 
       const command = orderClient.createOrder.mock.calls[0][0];
@@ -1479,6 +1511,7 @@ describe('OrderWizardFacade', () => {
         preferredEmployeeId: 'emp-1',
       });
 
+      await settleCashEligibility();
       await facade.submitOrder();
 
       const body = JSON.parse(JSON.stringify(orderClient.createOrder.mock.calls[0][0]));
@@ -1488,6 +1521,7 @@ describe('OrderWizardFacade', () => {
     it('leaves the preference off the body when the customer asked for nobody', async () => {
       facade.updateFormData({ paymentType: PaymentType.Cash });
 
+      await settleCashEligibility();
       await facade.submitOrder();
 
       const body = JSON.parse(JSON.stringify(orderClient.createOrder.mock.calls[0][0]));
@@ -1498,6 +1532,7 @@ describe('OrderWizardFacade', () => {
       facade.updateFormData({ paymentType: PaymentType.Cash });
       orderClient.createOrder.mockReturnValue(throwError(() => new Error('boom')));
 
+      await settleCashEligibility();
       await facade.submitOrder();
 
       expect(snackbar.showError).toHaveBeenCalledWith('pages.order.submit_error');
@@ -1519,6 +1554,7 @@ describe('OrderWizardFacade', () => {
         facade.updateFormData({ paymentType: PaymentType.Cash });
         orderClient.createOrder.mockReturnValue(refusal('promo.currency_mismatch'));
 
+        await settleCashEligibility();
         await facade.submitOrder();
 
         expect(snackbar.showError).not.toHaveBeenCalled();
@@ -1543,6 +1579,7 @@ describe('OrderWizardFacade', () => {
           throwError(() => ({ errors: { CurrencyId: 'currency.invalid' } })),
         );
 
+        await settleCashEligibility();
         await facade.submitOrder();
 
         expect(snackbar.showError).toHaveBeenCalledWith('pages.order.submit_error');
@@ -1553,6 +1590,7 @@ describe('OrderWizardFacade', () => {
     it('sends customerAddress and no savedAddressId for a custom address', async () => {
       facade.updateFormData({ paymentType: PaymentType.Cash });
 
+      await settleCashEligibility();
       await facade.submitOrder();
 
       const command = orderClient.createOrder.mock.calls[0][0];
@@ -1565,6 +1603,7 @@ describe('OrderWizardFacade', () => {
       facade.selectSavedAddress('addr-1');
       facade.updateFormData({ paymentType: PaymentType.Cash });
 
+      await settleCashEligibility();
       await facade.submitOrder();
 
       const command = orderClient.createOrder.mock.calls[0][0];
@@ -1582,6 +1621,7 @@ describe('OrderWizardFacade', () => {
       });
       facade.updateFormData({ paymentType: PaymentType.Cash });
 
+      await settleCashEligibility();
       await facade.submitOrder({ label: 'Home' });
 
       expect(savedAddressStore.add).toHaveBeenCalledTimes(1);
@@ -1629,6 +1669,34 @@ describe('OrderWizardFacade', () => {
       expect(facade.cashEligibility()).toEqual({ kind: 'available' });
     });
 
+    it('requires a saved card matching the quote currency and expiry', async () => {
+      signedIn.set(true);
+      savedCardClient.getMine.mockReturnValue(of([]));
+      await quoted();
+      expect(facade.cashEligibility()).toEqual({ kind: 'needs_saved_card' });
+      facade.selectPaymentType(PaymentType.Cash);
+      expect(facade.formData().paymentType).toBe(PaymentType.Card);
+    });
+
+    it('does not reuse cached cards after a current card read fails', async () => {
+      signedIn.set(true);
+      await quoted();
+      savedCardClient.getMine.mockReturnValue(throwError(() => new Error('offline')));
+      await facade.refreshCashCards();
+      expect(facade.cashEligibility()).toEqual({ kind: 'pending' });
+    });
+
+    it('rechecks the saved card before submitting a cash booking', async () => {
+      signedIn.set(true);
+      completeOrder();
+      await quoted();
+      facade.selectPaymentType(PaymentType.Cash);
+      savedCardClient.getMine.mockReturnValue(of([]));
+      await facade.submitOrder();
+      expect(orderClient.createOrder).not.toHaveBeenCalled();
+      expect(facade.formData().paymentType).toBeNull();
+    });
+
     it('is refused to a guest, who is asked to sign in', async () => {
       await quoted();
 
@@ -1656,6 +1724,7 @@ describe('OrderWizardFacade', () => {
       expect(facade.cashEligibility().kind).toBe('needs_account');
 
       signedIn.set(true);
+      await facade.refreshCashCards();
       expect(facade.cashEligibility().kind).toBe('available');
 
       signedIn.set(false);
@@ -1776,19 +1845,40 @@ describe('OrderWizardFacade', () => {
       expect(facade.cashReason()).toBeNull();
     });
 
-    it('is never submitted when the quote fetched at submit refuses it', async () => {
+    it('is never submitted once the current selection is quoted as needing two cleaners', async () => {
       signedIn.set(true);
       completeOrder();
       await quoted();
       facade.selectPaymentType(PaymentType.Cash);
       orderClient.quote.mockReturnValue(of(TWO_CLEANER_QUOTE));
       facade.updateFormData({ selectedServiceIds: ['s1', 's2'] });
+      await facade.refreshQuoteNow();
+      TestBed.flushEffects();
 
       await facade.submitOrder();
 
       expect(orderClient.createOrder).not.toHaveBeenCalled();
       expect(paymentClient.createOrder).not.toHaveBeenCalled();
       expect(facade.formData().paymentType).toBeNull();
+      expect(facade.activeStep()).toBe(4);
+      expect(facade.submitting()).toBe(false);
+    });
+
+    it('holds cash without posting while the changed selection has not been checked', async () => {
+      signedIn.set(true);
+      completeOrder();
+      await quoted();
+      facade.selectPaymentType(PaymentType.Cash);
+      facade.updateFormData({ selectedServiceIds: ['s1', 's2'] });
+      const quoteCallsBeforeSubmit = orderClient.quote.mock.calls.length;
+
+      await facade.submitOrder();
+
+      expect(orderClient.createOrder).not.toHaveBeenCalled();
+      expect(paymentClient.createOrder).not.toHaveBeenCalled();
+      expect(orderClient.quote).toHaveBeenCalledTimes(quoteCallsBeforeSubmit);
+      expect(facade.cashEligibility()).toEqual({ kind: 'pending' });
+      expect(facade.formData().paymentType).toBe(PaymentType.Cash);
       expect(facade.activeStep()).toBe(4);
       expect(facade.submitting()).toBe(false);
     });
@@ -1818,6 +1908,8 @@ describe('OrderWizardFacade', () => {
 
       expect(snackbar.showError).not.toHaveBeenCalled();
       expect(facade.formData().paymentType).toBeNull();
+      expect(facade.cashEligibility()).toEqual({ kind: 'available' });
+      expect(facade.cashSelectable()).toBe(true);
       expect(facade.activeStep()).toBe(4);
     });
 
@@ -1834,8 +1926,36 @@ describe('OrderWizardFacade', () => {
 
       expect(snackbar.showError).not.toHaveBeenCalled();
       expect(facade.formData().paymentType).toBeNull();
+      expect(facade.cashEligibility()).toEqual({ kind: 'available' });
+      expect(facade.cashSelectable()).toBe(true);
       expect(facade.activeStep()).toBe(4);
     });
+    it('invalidates the successful card read then resolves the POST removal with one new read', async () => {
+      const recovery = new Subject<SavedCardDto[]>();
+      signedIn.set(true);
+      completeOrder();
+      await quoted();
+      facade.selectPaymentType(PaymentType.Cash);
+      orderClient.createOrder.mockImplementation(() => {
+        savedCardClient.getMine.mockReturnValue(recovery);
+        return throwError(() => ({ errors: { PaymentType: 'order.cash_requires_saved_card' } }));
+      });
+
+      await facade.submitOrder();
+      expect(orderClient.createOrder).toHaveBeenCalledTimes(1);
+      expect(facade.formData().paymentType).toBeNull();
+      expect(facade.cashEligibility()).toEqual({ kind: 'pending' });
+      expect(facade.cashSelectable()).toBe(false);
+      expect(facade.activeStep()).toBe(4);
+
+      recovery.next([]);
+      recovery.complete();
+      await Promise.resolve();
+      expect(facade.cashEligibility()).toEqual({ kind: 'needs_saved_card' });
+      expect(facade.formData().paymentType).toBeNull();
+      expect(snackbar.showError).not.toHaveBeenCalled();
+    });
+
   });
 
   // The address country picker lists the market directory (ADR-0058 D1) and shows the chosen

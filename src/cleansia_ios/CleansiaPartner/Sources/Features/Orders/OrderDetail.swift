@@ -44,6 +44,8 @@ struct OrderDetail: Equatable {
     let orderNotes: [OrderNoteDto]
     let orderIssues: [OrderIssueDto]
     let statusHistory: [OrderStatusTrackDto]
+    /// Missing or nonpositive estimates draw no timed progress.
+    var estimatedMinutes: Int?
 }
 
 /// Name + the stable backend id: the checklist persists ticks under id-based keys
@@ -283,6 +285,7 @@ extension OrderDetail {
         status = item.status
         cleaningDateTime = item.cleaningDateTime
         completedAt = item.completedAt
+        estimatedMinutes = item.estimatedTime.flatMap { $0 > 0 ? $0 : nil }
         pay = item.estimatedCleanerPay
         currencyCode = item.currency?.code ?? item.currency?.symbol
         currencySymbol = item.currency?.symbol

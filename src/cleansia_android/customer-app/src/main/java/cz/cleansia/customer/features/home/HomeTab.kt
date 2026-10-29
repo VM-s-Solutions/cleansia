@@ -978,13 +978,15 @@ private fun SmartUpsellCarousel(
         if (!autoplay) return@LaunchedEffect
         while (upsellAutoAdvanceAllowed(context)) {
             rotationProgress.animateTo(1f, tween(6_000, easing = LinearEasing))
-            if (!pagerState.isScrollInProgress) pagerState.animateScrollToPage(pagerState.currentPage + 1)
+            if (!pagerState.isScrollInProgress) {
+                pagerState.animateScrollToPage(pagerState.currentPage + 1, animationSpec = tween(600))
+            }
             rotationProgress.snapTo(0f)
         }
     }
     val goToPage: (Int) -> Unit = { page ->
         userInteracted = true
-        pagerScope.launch { pagerState.animateScrollToPage(page) }
+        pagerScope.launch { pagerState.animateScrollToPage(page, animationSpec = tween(600)) }
     }
 
     // The quick-size slide's own steppers. Starting where the booking wizard starts, and bounded by
@@ -1064,15 +1066,18 @@ private fun SmartUpsellCarousel(
                 repeat(slides.size) { idx ->
                     val selected = upsellLogical(pagerState.currentPage, slideCount) == idx
                     val width by animateDpAsState(
-                        targetValue = if (selected) 24.dp else 8.dp,
+                        targetValue = if (selected) 28.dp else 12.dp,
+                        animationSpec = tween(240),
                         label = "upsell-dot-$idx",
                     )
                     Box(
-                        Modifier.padding(horizontal = 3.dp).size(width = width, height = 8.dp)
-                            .clip(RoundedCornerShape(999.dp)).background(MaterialTheme.colorScheme.outlineVariant),
+                        Modifier.padding(horizontal = 3.dp).size(width = width, height = 5.dp)
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                            .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(999.dp)),
                     ) {
                         if (selected) {
-                            Box(Modifier.fillMaxHeight().fillMaxWidth(if (autoplay) rotationProgress.value else 1f)
+                            Box(Modifier.fillMaxHeight().fillMaxWidth(if (autoplay) rotationProgress.value.coerceAtLeast(0.12f) else 1f)
                                 .background(MaterialTheme.colorScheme.primary))
                         }
                     }
@@ -1139,8 +1144,9 @@ private fun UpsellSlideCard(slide: UpsellSlide, modifier: Modifier = Modifier) {
             .fillMaxWidth()
             .padding(horizontal = 20.dp)
             .height(UpsellCardHeight)
-            .clip(RoundedCornerShape(22.dp))
+            .clip(RoundedCornerShape(24.dp))
             .background(Brush.linearGradient(slide.gradient))
+            .border(1.dp, Color.White.copy(alpha = 0.22f), RoundedCornerShape(24.dp))
             .clickable(onClick = slide.onClick)
             .padding(20.dp),
     ) {
@@ -1269,8 +1275,9 @@ private fun QuickSizeSlideCard(
             .fillMaxWidth()
             .padding(horizontal = 20.dp)
             .height(UpsellCardHeight)
-            .clip(RoundedCornerShape(22.dp))
+            .clip(RoundedCornerShape(24.dp))
             .background(Brush.linearGradient(slide.gradient))
+            .border(1.dp, Color.White.copy(alpha = 0.22f), RoundedCornerShape(24.dp))
             .padding(20.dp),
     ) {
         Image(

@@ -111,12 +111,12 @@
     <string name="dashboard">Dashboard</string>
     <string name="dashboard_subtitle">Here\'s your activity overview</string>
     <string name="dash_available_now_count">%1$d jobs available</string>
-    <string name="dash_available_now_subtitle">Tap to browse and take one</string>
+    <string name="dash_available_now_subtitle">Jobs ready to take</string>
     <string name="dash_no_jobs_yet_title">No jobs yet</string>
     <string name="dash_no_jobs_yet_subtitle">Check available work or update your availability</string>
     <string name="dash_todays_schedule">Today</string>
     <string name="dash_current_period">This pay period</string>
-    <string name="dash_tap_for_invoices">Tap to open invoices</string>
+    <string name="dash_tap_for_invoices">Invoices</string>
     <string name="dash_completed_this_month">This month</string>
     <string name="dash_avg_rating">Rating</string>
     <string name="dash_vs_last_month">vs last month</string>
@@ -128,7 +128,7 @@
     <string name="dash_on_the_way">On the way</string>
     <string name="dash_browse_jobs">Browse jobs</string>
     <string name="dash_available_work_label">Available work</string>
-    <string name="dash_browse_jobs_subtitle">Tap to see what\'s open</string>
+    <string name="dash_browse_jobs_subtitle">Find your next job</string>
     <string name="dash_open">Open</string>
     <string name="dash_continue">Continue</string>
     <string name="dash_earn_up_to">Earn up to %1$s</string>
@@ -282,7 +282,7 @@
     <string name="choose_from_gallery">Choose from Gallery</string>
     <string name="document_choose_file">Choose File</string>
     <string name="delete_photo">Delete Photo</string>
-    <string name="delete_photo_confirm">Are you sure you want to delete this photo?</string>
+    <string name="delete_photo_confirm">Delete this photo?</string>
     <string name="photos_none_recorded">No photos recorded</string>
     <string name="estimated_time">Estimated Time</string>
     <string name="completion_notes">Completion notes (optional)</string>
@@ -1311,7 +1311,7 @@
     <string name="notification_channel_new_jobs_name">New jobs available</string>
     <string name="notification_channel_new_jobs_desc">Periodic digest of new jobs you can take in your work area.</string>
     <string name="notification_new_jobs_title">New jobs available</string>
-    <string name="notification_new_jobs_body">%1$d new jobs available near you. Tap to view.</string>
+    <string name="notification_new_jobs_body">%1$d new jobs available near you.</string>
     <string name="notification_reminder_tomorrow_title">Tomorrow\'s jobs</string>
     <string name="notification_reminder_tomorrow_body">Jobs tomorrow: %1$d. Tap to see them.</string>
     <string name="notification_reminder_soon_title">Job starting soon</string>
@@ -1334,7 +1334,7 @@
     <string name="notification_employee_registration_rejected_title">Application rejected</string>
     <string name="notification_employee_registration_rejected_body">Your application was rejected. Open the app to see why, or contact support.</string>
     <string name="notification_payroll_invoice_paid_title">You\'ve been paid</string>
-    <string name="notification_payroll_invoice_paid_body">Your invoice for the latest pay period has been paid. Tap to view.</string>
+    <string name="notification_payroll_invoice_paid_body">Your invoice for the latest pay period has been paid.</string>
     <string name="notification_preferred_offer_title">A customer asked for you</string>
     <string name="notification_preferred_offer_body">Order %1$s — someone you\'ve cleaned for before requested you. Open it to take the job.</string>
     <!-- ── Your devices ── -->
@@ -1492,4 +1492,7 @@
     <string name="error_payroll_invoice_pdf_not_ready">The invoice PDF is not ready yet. Refresh its status.</string>
     <string name="error_payroll_invoice_pdf_unavailable">This invoice PDF is unavailable. Refresh its status or contact support.</string>
     <string name="error_payroll_invoice_pdf_generation_failed">The invoice PDF could not be generated. Refresh its status or contact support.</string>
+    <string name="tracker_estimate_overrun">%1$d min over the estimate</string>
+    <string name="tracker_estimate_remaining">About %1$d min remaining</string>
+    <string name="error_order_cash_requires_saved_card">Cash requires a valid saved card in the booking currency.</string>
 </resources>

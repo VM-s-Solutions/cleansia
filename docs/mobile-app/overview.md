@@ -28,6 +28,32 @@ The web hosts authenticate with an HttpOnly cookie plus a CSRF token, which a na
 read — so the mobile hosts return the tokens in the JSON body instead. See
 [API Integration](/mobile-app/api-integration) for the full contract.
 
+## Shared booking and order interactions
+
+Customer cash eligibility combines the current quote's single-cleaner requirement with the signed-in
+account's usable saved cards in that currency. Pending setup, expired cards and failed or unread card
+lists cannot enable cash. Submit refreshes the cards; older asynchronous reads cannot overwrite a
+newer result. The server repeats the decision on every writer
+→ [Cash eligibility](/flows/booking-and-pricing#cash-eligibility).
+
+Assigned cleaner portraits use the existing memory-only avatar cache, with initials derived from the
+name the customer already sees. The optional `AssignedEmployeeDto.profilePhoto` is supplied only on
+authorized order detail, after guest/browsing/past-job redaction, and uses a short-lived single-blob
+read URL. A missing photo or failed image load falls back to initials.
+
+The current cleaning phase pulses only while active, honoring reduced-motion settings and app
+lifecycle. Partner progress uses the cleaning's actual start and estimate, with a labelled warning
+after the estimate. Replacement layouts remain concepts until the owner selects one. Home galleries
+keep the active indicator fully visible after a manual page change, preserving the existing pause of
+automatic paging for the rest of that visit. Untouched autoplay resumes through its existing lifecycle
+rules; smoother transitions and small borders do not change the slides' actions.
+
+Partner before/after photo deletion opens a native confirmation before calling delete. Both profile
+flows save a staged portrait from the bottom action; iOS first validates and saves personal details,
+then the photo, and stays on the form if either step fails. Duplicate-phone validation runs on the
+onboarding save through the same repository rule as profile save, excluding the caller's own number.
+It retains existing phone-format and tenant scope rather than claiming new global uniqueness.
+
 ---
 
 ## Android
@@ -200,8 +226,9 @@ possible.** Booking hides the card option and its saving consent, and the recurr
 hides its card option. A card occurrence of a recurring booking shows no confirm, because confirming
 it would spend the customer's credit for a payment sheet that cannot open. A new schedule, one made
 from a card order and an edit of a card schedule all start with no way to pay chosen, as a booking
-does, and say so; an edit of a cash schedule keeps cash. Cash needs a signed-in customer and a booking
-one cleaner does alone, so a guest booking, or a booking or schedule that needs two cleaners, has no
+does, and say so; an edit of a cash schedule keeps cash only while eligible. Cash needs a signed-in
+customer, a usable verified saved card in the booking's currency and a booking one cleaner does alone,
+so a guest booking, one without a usable card, or a booking or schedule that needs two cleaners has no
 way to pay at all. On both apps, the notes that refuse cash to a booking or schedule needing two
 cleaners still end with *paid by card*: they state the production rule, and no customer can reach a
 keyless build. **A release packaging task refuses an empty key**, which would ship the app with card
@@ -543,20 +570,21 @@ Release build offers nothing until the same two files answer on `cleansia.cz` an
 
 **The fields say what they hold.** Partner Register declares `.username` on the e-mail and
 `.newPassword` on both password fields, and partner Sign in `.username` and `.password`, so the saved
-password fills back; the customer app's sign-up, reset and Security fields already declared theirs, and
-its Sign up keeps `.emailAddress`. No `passwordRules` are declared: iOS's default strong password, twenty
+password fills back. Customer Sign up also uses `.username` for its e-mail from 2026-10-29, alongside
+the e-mail keyboard; both new-password fields retain `.newPassword`. The UIKit bridge applies changed
+traits and colours once rather than reapplying them over the system's active generated-password
+presentation. Programmatic AutoFill writes update their own field bindings even without focus. These
+traits and binding behavior are simulator-testable; the actual Keychain suggestion and yellow highlight
+still require a physical device check. No `passwordRules` are declared: iOS's default strong password, twenty
 characters of letters and a digit in groups joined by hyphens, already meets the platform's password rule.
 An e-mail keyboard opens in lower case with autocorrection off, on every field that asks for the
 `.emailAddress` keyboard (`CleansiaTextField`). Android declares the same hints through Compose's content
 types, which need Compose 1.8 ([above](#compose-1-8)).
 
-The partner rewrite is verified by static config tests; a live HTTP 200, JSON content type and
-no-redirect check is still owed after the phase-2 DEV deploy. Phase 1 (#359) merged on 2026-10-27
-as `709d77868` and DEV plus the Prague postcode correction completed. TestFlight partner 17 and
-customer 16 from that commit failed at archive: Xcode has no signed-in account and both App IDs lack
-Associated Domains. Mike must sign back in and enable that capability before a new archive.
-No TestFlight release is claimed; crew-push copy in merged source still has a client-release
-dependency. E-mail buttons opening installed apps remain next-wave work.
+The 2026-10-27 archive failures are historical. The fresh 2026-10-29 DEV rollout from merged
+`1acb9c721` and Partner/Customer `1.0.0 (18)` TestFlight uploads completed, including symbols and
+internal distribution. This verifies the release pipeline; it does not prove that a physical device
+accepted a particular Keychain suggestion. E-mail buttons opening installed apps remain next-wave work.
 
 ### The Xcode projects and `Info.plist` are generated — do not edit them
 
@@ -633,7 +661,7 @@ builds:
 
 | Missing | Simulator / Debug | Device / Release |
 |---|---|---|
-| `STRIPE_PUBLISHABLE_KEY` | warning — card payment hidden, cash only (fail-closed): booking and the recurring-schedule form offer no card; a new schedule, one made from a card order and an edit of a card schedule start with no way to pay chosen, and say so; a card occurrence shows no confirm and refuses it; Payments → Add card is hidden and refused. Cash itself needs a signed-in customer and a one-cleaner booking. | build **error** on Release |
+| `STRIPE_PUBLISHABLE_KEY` | warning — card payment hidden, cash only (fail-closed): booking and the recurring-schedule form offer no card; a new schedule, one made from a card order and an edit of a card schedule start with no way to pay chosen, and say so; a card occurrence shows no confirm and refuses it; Payments → Add card is hidden and refused. Cash itself needs a signed-in customer, a usable saved card in this currency and a one-cleaner booking. | build **error** on Release |
 | `DEVELOPMENT_TEAM` | no diagnostic (the simulator needs no signing) | build **error** |
 
 A key that does not start with `pk_`, a secret `sk_…` key above all, is always a build error. The

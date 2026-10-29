@@ -53,6 +53,7 @@ public class CreateRecurringBooking
         private readonly IUserConsentRepository _userConsentRepository;
         private readonly ILegalDocumentResolver _legalDocumentResolver;
         private readonly IReceivableRepository _receivableRepository;
+        private readonly ISavedCardRepository _savedCardRepository;
 
         public Validator(
             IOrderRepository orderRepository,
@@ -65,7 +66,8 @@ public class CreateRecurringBooking
             IPackageRepository packageRepository,
             IUserConsentRepository userConsentRepository,
             ILegalDocumentResolver legalDocumentResolver,
-            IReceivableRepository receivableRepository)
+            IReceivableRepository receivableRepository,
+            ISavedCardRepository savedCardRepository)
         {
             _orderRepository = orderRepository;
             _userSessionProvider = userSessionProvider;
@@ -78,6 +80,7 @@ public class CreateRecurringBooking
             _userConsentRepository = userConsentRepository;
             _legalDocumentResolver = legalDocumentResolver;
             _receivableRepository = receivableRepository;
+            _savedCardRepository = savedCardRepository;
 
             RuleFor(x => x.TermsAccepted)
                 .MustAsync((command, termsAccepted, cancellationToken) =>
@@ -133,7 +136,9 @@ public class CreateRecurringBooking
                 .WithMessage(BusinessErrorMessage.OrderCashNotAvailable)
                 .When(x => Enum.IsDefined(x.DirtinessLevel), ApplyConditionTo.CurrentValidator)
                 .MustAsync(CashLeavesRoomForAnotherOpenBookingAsync)
-                .WithMessage(BusinessErrorMessage.OrderCashOpenBookingsLimitReached);
+                .WithMessage(BusinessErrorMessage.OrderCashOpenBookingsLimitReached)
+                .MustAsync(CashHasUsableCardAsync)
+                .WithMessage(BusinessErrorMessage.OrderCashRequiresSavedCard);
 
             RuleFor(x => x)
                 .MustAsync(OwesNothingAsync)
@@ -282,6 +287,18 @@ public class CreateRecurringBooking
                        command.SelectedServiceIds, command.SelectedPackageIds, cancellationToken))
                    .Allows(command.SelectedServiceIds, command.SelectedPackageIds,
                        command.Rooms, command.Bathrooms, command.DirtinessLevel);
+
+        private async Task<bool> CashHasUsableCardAsync(Command command, int paymentType, CancellationToken cancellationToken)
+        {
+            if (paymentType != (int)PaymentType.Cash) return true;
+            var userId = _userSessionProvider.GetUserId();
+            if (string.IsNullOrEmpty(userId)) return true;
+            var address = await FindSavedAddressAsync(userId, command.SavedAddressId, cancellationToken);
+            if (address is null) return true;
+            var currency = await _currencyResolutionService.ResolveCurrencyForCountryAsync(address.CountryId, cancellationToken);
+            return await CustomerCashStanding.HoldsUsableCardAsync(
+                _savedCardRepository, userId, currency.Id, DateTimeOffset.UtcNow, cancellationToken);
+        }
 
         private async Task<bool> OwesNothingAsync(Command command, CancellationToken cancellationToken)
         {

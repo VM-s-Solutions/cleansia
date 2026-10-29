@@ -16,6 +16,7 @@ class CashCopyStringsTest {
     private val keys = listOf(
         "booking_cash_needs_account",
         "booking_cash_needs_card",
+        "booking_cash_needs_saved_card",
         "booking_cash_pending",
         "booking_cash_cleared",
         "recurring_cash_needs_card",

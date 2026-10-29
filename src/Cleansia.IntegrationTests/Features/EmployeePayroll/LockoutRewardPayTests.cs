@@ -168,7 +168,7 @@ public class LockoutRewardPayTests(PostgresContainerFixture fixture) : BaseInteg
             rooms: 3,
             bathrooms: 0,
             cleaningDateTime: DateTime.UtcNow.AddHours(-1),
-            paymentType: paymentType,
+            paymentType: paymentType == PaymentType.Cash && seats > 1 ? PaymentType.Card : paymentType,
             totalPrice: 2600m,
             currencyId: CurrencyId,
             paymentStatus: paymentStatus,
@@ -187,6 +187,9 @@ public class LockoutRewardPayTests(PostgresContainerFixture fixture) : BaseInteg
             order.AddAssignedEmployee(OrderEmployee.Create(order, second));
             _secondSeatEmployeeId = second.Id;
         }
+
+        // A persisted crew from before cash was limited to one cleaner.
+        typeof(Order).GetProperty(nameof(Order.PaymentType))!.GetSetMethod(true)!.Invoke(order, [paymentType]);
 
         if (frozen)
         {

@@ -6,9 +6,17 @@ import Foundation
 /// stays unit-testable. → /product/features
 struct UpsellSlide: Equatable, Identifiable {
     static let rotationSeconds: TimeInterval = 6
+    static let pageTransitionSeconds: TimeInterval = 0.45
+    /// The sentinel swap must wait for the longest page transition plus one short settling margin.
+    static let reanchorDelaySeconds = pageTransitionSeconds + 0.08
 
     static func rotationFraction(startedAt: Date, now: Date) -> Double {
         min(1, max(0, now.timeIntervalSince(startedAt) / rotationSeconds))
+    }
+
+    /// A selected page remains a visible mark even before its clock starts or after manual control.
+    static func indicatorFraction(startedAt: Date?, now: Date) -> Double {
+        startedAt.map { max(0.08, rotationFraction(startedAt: $0, now: now)) } ?? 1
     }
 
     enum Kind: Equatable, CaseIterable {

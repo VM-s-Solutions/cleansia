@@ -95,7 +95,7 @@
 
     <!-- Home — upcoming order -->
     <string name="home_upcoming_empty_title">No upcoming cleaning</string>
-    <string name="home_upcoming_empty_subtitle">Tap to book your first session.</string>
+    <string name="home_upcoming_empty_subtitle">Book your first clean.</string>
 
     <!-- Home — reorder -->
     <string name="home_reorder_title">Order again</string>
@@ -166,7 +166,7 @@
 
     <!-- Home — popular packages (tap-to-book) -->
     <string name="home_popular_packages_title">Popular packages</string>
-    <string name="home_popular_packages_add_cta">Tap to book</string>
+    <string name="home_popular_packages_add_cta">Book</string>
 
     <!-- Home — Order again quick action -->
     <string name="home_order_again_title">ORDER AGAIN</string>
@@ -834,11 +834,11 @@
     <string name="booking_pay_card">Card</string>
     <string name="booking_pay_card_desc">Pay securely via Stripe</string>
     <string name="booking_pay_cash">Cash</string>
-    <string name="booking_pay_cash_desc">Pay on delivery</string>
-    <string name="booking_cash_needs_account">Cash is only for signed-in customers. Sign in to pay in cash, or pay by card.</string>
-    <string name="booking_cash_needs_card">Cleaners needed for this booking: %1$d. Cash is only for bookings one cleaner handles alone, so this one is paid by card.</string>
-    <string name="booking_cash_pending">Whether you can pay in cash is confirmed once the price is ready.</string>
-    <string name="booking_cash_cleared">Cash is no longer available for this booking, so no payment method is selected. Choose how you want to pay.</string>
+    <string name="booking_pay_cash_desc">Pay your cleaner after the visit.</string>
+    <string name="booking_cash_needs_account">Sign in and save a card to pay in cash.</string>
+    <string name="booking_cash_needs_card">This booking needs %1$d cleaners. Pay by card.</string>
+    <string name="booking_cash_pending">Checking the cleaning team and saved card.</string>
+    <string name="booking_cash_cleared">Cash is unavailable. Choose another payment method.</string>
     <string name="booking_draft_time_changed">The time you picked is no longer available or its price has changed. Please pick a time again.</string>
     <string name="consent_saved_card_draft_2026_10_05">I agree that Cleansia saves this card to my account. It is never charged unless I pay with it, and I can remove it at any time.</string>
     <string name="booking_save_card_label">Save this card for my next bookings</string>
@@ -875,7 +875,7 @@
     <string name="onboarding_phone_label">Phone number</string>
     <string name="onboarding_phone_helper">Include your country code (e.g. +420). We\'ll only use this to reach you about your bookings.</string>
     <string name="onboarding_birthdate_label">Birth date</string>
-    <string name="onboarding_birthdate_placeholder">Tap to pick</string>
+    <string name="onboarding_birthdate_placeholder">Choose date</string>
     <string name="onboarding_birthdate_helper">Optional — for birthday perks.</string>
     <string name="onboarding_save">Save and continue</string>
     <string name="onboarding_skip">Skip for now</string>
@@ -1062,7 +1062,7 @@
     <string name="recurring_create_pay_cash">Cash</string>
     <string name="recurring_create_pay_card">Card</string>
     <string name="recurring_cash_needs_card">Cleaners needed for each clean: %1$d. Cash is only for cleans one cleaner handles alone, so this schedule is paid by card.</string>
-    <string name="recurring_cash_pending">Whether this schedule can be paid in cash is confirmed once the price is ready.</string>
+    <string name="recurring_cash_pending">Checking the cleaning team and saved card.</string>
     <string name="recurring_cash_cleared">Cash is no longer available for this schedule, so no payment method is selected. Choose how you want to pay.</string>
     <string name="recurring_cash_unchecked">We couldn\'t confirm whether this schedule can be paid in cash. Save it again in a moment, or choose card.</string>
     <string name="recurring_create_payment_missing">Choose how the schedule is paid.</string>
@@ -1399,7 +1399,7 @@
     <string name="notification_order_assignment_cancelled_title">Job cancelled</string>
     <string name="notification_order_assignment_cancelled_body">A job you accepted was cancelled: #%1$s. Tap for details.</string>
     <string name="notification_payroll_invoice_paid_title">You\'ve been paid</string>
-    <string name="notification_payroll_invoice_paid_body">Your invoice for the latest pay period has been paid. Tap to view.</string>
+    <string name="notification_payroll_invoice_paid_body">Your invoice for the latest pay period has been paid.</string>
     <!-- ── Payments ── -->
     <string name="profile_row_payments">Payments</string>
     <string name="payments_title">Payments</string>
@@ -1598,4 +1598,6 @@
     <string name="payments_card_setup_failed">Card setup failed. Please try again.</string>
     <string name="payments_card_saved">Card saved</string>
     <string name="order_photos_phase_count">%1$s · %2$d</string>
+    <string name="booking_cash_needs_saved_card">Save a valid card for this currency to pay in cash.</string>
+    <string name="error_order_cash_requires_saved_card">Cash requires a valid saved card in the booking currency.</string>
 </resources>

@@ -1,4 +1,4 @@
-﻿#nullable enable
+#nullable enable
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
 
 namespace Cleansia.Core.AppServices.Features.Orders;
@@ -136,6 +136,7 @@ public static class OrderPiiRedaction
             FullName = GivenNameOnly(employee.FullName),
             PhoneNumber = null,
             CompletionConfirmedAt = null,
+            ProfilePhoto = null,
         };
 
     private static string GivenNameOnly(string fullName)

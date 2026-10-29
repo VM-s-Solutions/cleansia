@@ -11,6 +11,7 @@ final class FakeRecurringBookingClient: RecurringBookingClient, @unchecked Senda
 
     var updateResult: ApiResult<RecurringTemplate> = .success(RecurringFixtures.template())
     private(set) var updateInputs: [UpdateRecurringInput] = []
+    var beforeUpdate: (() async -> Void)?
 
     var setActiveResult: ApiResult<Void> = .success(())
     private(set) var setActiveCalls: [(id: String, active: Bool)] = []
@@ -50,6 +51,7 @@ final class FakeRecurringBookingClient: RecurringBookingClient, @unchecked Senda
 
     func update(_ input: UpdateRecurringInput) async -> ApiResult<RecurringTemplate> {
         updateInputs.append(input)
+        await beforeUpdate?()
         return updateResult
     }
 

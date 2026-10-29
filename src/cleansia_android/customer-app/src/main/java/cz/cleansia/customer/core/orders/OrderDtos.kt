@@ -209,6 +209,8 @@ data class AssignedEmployeeDto(
     val fullName: String? = null,
     val phoneNumber: String? = null,
     val email: String? = null,
+    val avatarFileName: String? = null,
+    val avatarUrl: String? = null,
 )
 
 /**

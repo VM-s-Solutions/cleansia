@@ -268,6 +268,8 @@ private fun GenAssignedEmployeeDto.toAppDto(): AssignedEmployeeDto = AssignedEmp
     fullName = fullName,
     phoneNumber = phoneNumber,
     email = null, // not on generated DTO
+    avatarFileName = profilePhoto?.fileName?.takeIf { it.isNotBlank() },
+    avatarUrl = profilePhoto?.takeIf { !it.fileName.isNullOrBlank() }?.blobUrl?.takeIf { it.isNotBlank() },
 )
 
 private fun GenOrderReviewDto?.toAppDto(): OrderReviewDto {

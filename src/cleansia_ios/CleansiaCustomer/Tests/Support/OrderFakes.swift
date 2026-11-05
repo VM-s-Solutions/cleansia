@@ -208,7 +208,8 @@ enum OrderFixtures {
         statusHistory: [OrderStatusTrackDto] = [],
         review: CustomerOrderReview? = nil,
         preferredOffer: PreferredOfferDetails? = nil,
-        systemCancellationReason: String? = nil
+        systemCancellationReason: String? = nil,
+        freeCancellationHours: Int? = nil
     ) -> CustomerOrderDetail {
         CustomerOrderDetail(
             id: id,
@@ -247,7 +248,8 @@ enum OrderFixtures {
             assignedEmployees: assignedEmployees,
             statusHistory: statusHistory,
             review: review,
-            preferredOffer: preferredOffer
+            preferredOffer: preferredOffer,
+            freeCancellationHours: freeCancellationHours
         )
     }
 

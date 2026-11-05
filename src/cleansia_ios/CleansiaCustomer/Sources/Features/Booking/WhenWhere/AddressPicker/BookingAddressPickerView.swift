@@ -188,25 +188,6 @@ struct BookingAddressPickerView: View {
     }
 }
 
-private struct FloatingCircleButton: View {
-    let systemIcon: String
-    let accessibilityLabel: String
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Image(systemName: systemIcon)
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundColor(CleansiaColors.onSurface)
-                .frame(width: 44, height: 44)
-                .background(CleansiaColors.surface)
-                .clipShape(Circle())
-                .shadow(color: .black.opacity(0.15), radius: 6, y: 2)
-        }
-        .accessibilityLabel(accessibilityLabel)
-    }
-}
-
 private struct SearchField: View {
     let query: String
     @FocusState.Binding var focused: Bool

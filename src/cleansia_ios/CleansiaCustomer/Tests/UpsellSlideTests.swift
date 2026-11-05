@@ -12,11 +12,24 @@ final class UpsellSlideTests: XCTestCase {
         XCTAssertEqual(UpsellSlide.rotationFraction(startedAt: start, now: start.addingTimeInterval(-1)), 0)
     }
 
-    func testSelectedIndicatorRemainsVisibleBeforeRotationAndAfterManualControl() {
+    func testSelectedIndicatorRemainsVisibleWhileTheRotationClockIsPaused() {
         let now = Date(timeIntervalSince1970: 1000)
-        XCTAssertEqual(UpsellSlide.indicatorFraction(startedAt: nil, now: now), 1)
+        XCTAssertEqual(UpsellSlide.indicatorFraction(startedAt: nil, now: now), 0.08)
         XCTAssertEqual(UpsellSlide.indicatorFraction(startedAt: now, now: now), 0.08)
         XCTAssertEqual(UpsellSlide.indicatorFraction(startedAt: now, now: now.addingTimeInterval(3)), 0.5)
+    }
+
+    func testManualSelectionGetsAFreshSixSecondIndicatorClock() {
+        let first = Date(timeIntervalSince1970: 1000)
+        let manuallySettled = first.addingTimeInterval(5)
+        XCTAssertEqual(UpsellSlide.indicatorFraction(startedAt: nil, now: manuallySettled), 0.08)
+        XCTAssertEqual(UpsellSlide.indicatorFraction(startedAt: manuallySettled, now: manuallySettled), 0.08)
+        XCTAssertEqual(
+            UpsellSlide.indicatorFraction(startedAt: manuallySettled, now: manuallySettled.addingTimeInterval(3)), 0.5
+        )
+        XCTAssertEqual(
+            UpsellSlide.indicatorFraction(startedAt: manuallySettled, now: manuallySettled.addingTimeInterval(6)), 1
+        )
     }
 
     func testSentinelReanchorWaitsForThePageTransitionToFinish() {

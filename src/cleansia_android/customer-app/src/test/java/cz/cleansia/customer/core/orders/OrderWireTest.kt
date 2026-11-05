@@ -394,6 +394,15 @@ class OrderWireTest {
         assertEquals(false, confirmed.needsConfirmation)
     }
 
+    /** The confirmation's deadline is the order's own window; a missing one is never read as 24. */
+    @Test
+    fun theFreeCancellationWindowArrivesFromTheOrderAndIsNeverDefaulted() = runTest {
+        assertEquals(4, detailed(withKey(CAPTURED_ORDER, "freeCancellationHours", JsonPrimitive(4))).freeCancellationHours)
+        assertEquals(24, detailed(withKey(CAPTURED_ORDER, "freeCancellationHours", JsonPrimitive(24))).freeCancellationHours)
+        assertNull(detailed(withoutKey(CAPTURED_ORDER, "freeCancellationHours")).freeCancellationHours)
+        assertNull(detailed(withKey(CAPTURED_ORDER, "freeCancellationHours", JsonNull)).freeCancellationHours)
+    }
+
     @Test
     fun anOrderWithoutTheConfirmationFlagNeedsNoConfirmation() = runTest {
         assertEquals(false, detailed(withoutKey(CAPTURED_ORDER, "needsConfirmation")).needsConfirmation)
@@ -750,6 +759,7 @@ class OrderWireTest {
             "dirtinessLevel",
             "dirtinessSurchargeAmount",
             "isGuestBooking",
+            "homeDistanceBand",
         )
 
         val CURRENCY_SPEC_PROPERTIES = setOf("id", "code", "symbol", "name", "isDefault")

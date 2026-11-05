@@ -22,7 +22,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
-import cz.cleansia.customer.features.booking.BookingSuccessScreen
 import cz.cleansia.customer.features.auth.AuthOutcome
 import cz.cleansia.customer.features.auth.AuthViewModel
 import cz.cleansia.customer.features.auth.EmailVerifyScreen
@@ -80,7 +79,6 @@ private val popExit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> and
     ) + fadeOut(tween(PUSH_DUR))
 }
 
-// Celebratory fade (booking success)
 private val fadeEnterLong: AnimatedContentTransitionScope<NavBackStackEntry>.() -> androidx.compose.animation.EnterTransition = {
     fadeIn(tween(400))
 }
@@ -283,30 +281,6 @@ fun CleansiaNavHost(
                 loading = state.loading,
             )
         }
-        composable<Routes.BookingSuccess>(
-            enterTransition = fadeEnterLong,
-            exitTransition = fadeExitLong,
-        ) { backStackEntry ->
-            val args = backStackEntry.toRoute<Routes.BookingSuccess>()
-            BookingSuccessScreen(
-                confirmationCode = args.confirmationCode,
-                orderId = args.orderId,
-                // Primary CTA — deep-link into the newly-created order's detail
-                // screen. popUpTo(Home, inclusive = false) first clears the
-                // success destination off the back stack so pressing Back from
-                // the detail returns the user to the Home tab, not to success.
-                onViewOrders = {
-                    navController.navigate(Routes.OrderDetail(args.orderId)) {
-                        popUpTo<Routes.Home> { inclusive = false }
-                    }
-                },
-                onGoHome = {
-                    navController.navigate(Routes.Home()) {
-                        popUpTo<Routes.Home> { inclusive = true }
-                    }
-                },
-            )
-        }
         composable<Routes.Home>(
             enterTransition = { fadeIn(tween(PUSH_DUR)) },
             exitTransition = { fadeOut(tween(PUSH_DUR)) },
@@ -347,9 +321,6 @@ fun CleansiaNavHost(
                         "subscribe_plus" -> navController.navigate(Routes.SubscribePlus)
                         "recurring_bookings" -> navController.navigate(Routes.RecurringBookings)
                     }
-                },
-                onBookingComplete = { confirmationCode, orderId ->
-                    navController.navigate(Routes.BookingSuccess(confirmationCode, orderId))
                 },
                 onNavigateToEditProfile = {
                     navController.navigate(Routes.EditProfile)

@@ -1,60 +1,30 @@
 package cz.cleansia.customer.ui.components
 
-import androidx.annotation.RawRes
-import androidx.compose.foundation.layout.size
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.Dp
-import coil3.compose.AsyncImage
-import coil3.gif.repeatCount
-import coil3.request.CachePolicy
-import coil3.request.ImageRequest
-import cz.cleansia.customer.BuildConfig
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
+import cz.cleansia.core.ui.components.MASCOT_CANVAS_PX
 
 /**
- * Canvas size, in pixels, of every animated mascot in `res/raw/`.
- *
- * Pinned as the decode size because otherwise Coil resolves it from the
- * layout — 140.dp is 420 px at 3x — and `ImageDecoder` then rescales all
- * 125 frames on the CPU to buy no extra detail the source doesn't have.
- * Decoding at native size lets the GPU do the upscale once per draw
- * instead, via [ContentScale.Fit].
+ * Where a mascot's figure stands on its 360 px canvas: the rows its alpha covers. The cleaning box is the still's,
+ * the loop's first frame, which every other frame's height is within 2 % of; the welcoming box is the hero's.
  */
-private const val MASCOT_CANVAS_PX = 360
+internal enum class MascotFigureBox(private val top: Float, private val height: Float) {
+    Cleaning(top = 43f, height = 272f),
+    Welcoming(top = 51f, height = 249f),
+    ;
 
-/**
- * Animated WebP mascot. Animated WebP keeps full alpha so the mascot floats over any background — no
- * compositing rectangle, no chroma-key artifacts, no video-player overhead.
- *
- * **Loop count is overridden at the request level rather than trusting the container's baked-in
- * metadata**, because Android's decoder is inconsistent about respecting it across vendors.
- */
-@Composable
-fun MascotAnimation(
-    @RawRes resId: Int,
-    size: Dp,
-    modifier: Modifier = Modifier,
-    contentDescription: String? = null,
-    loop: Boolean = true,
-) {
-    val context = LocalContext.current
-    val request = remember(context, resId, loop) {
-        ImageRequest.Builder(context)
-            .data(resId)
-            .size(MASCOT_CANVAS_PX)
-            .memoryCacheKey("mascot:$resId:${BuildConfig.VERSION_CODE}:$loop")
-            .diskCachePolicy(CachePolicy.DISABLED)
-            .repeatCount(if (loop) -1 else 0)
-            .build()
+    fun canvasSide(figureHeight: Float): Float = figureHeight * MASCOT_CANVAS_PX / height
+
+    fun figureHeight(canvasSide: Float): Float = canvasSide * height / MASCOT_CANVAS_PX
+
+    /**
+     * The canvas that stands this figure where [standingAs]'s stands on [on]: as tall, its top on the same line,
+     * centred on the same vertical.
+     */
+    fun canvas(standingAs: MascotFigureBox, on: Rect): Rect {
+        val side = canvasSide(standingAs.figureHeight(on.height))
+        val line = on.top + on.height * standingAs.top / MASCOT_CANVAS_PX
+        return Rect(Offset(on.center.x - side / 2, line - side * top / MASCOT_CANVAS_PX), Size(side, side))
     }
-
-    AsyncImage(
-        model = request,
-        contentDescription = contentDescription,
-        modifier = modifier.size(size),
-        contentScale = ContentScale.Fit,
-    )
 }

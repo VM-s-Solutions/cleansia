@@ -30,12 +30,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import cz.cleansia.core.ui.components.OrderSectionHeader
+import cz.cleansia.core.ui.theme.orderStatusColor
 import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.R
 import cz.cleansia.core.format.formatOrderDateTime
 import cz.cleansia.customer.core.orders.OrderDetailDto
 import cz.cleansia.customer.core.orders.OrderStatusTrackDto
-import cz.cleansia.customer.ui.format.orderStatusColor
 import cz.cleansia.customer.ui.theme.WarningStar
 
 /* ── Timeline ── */
@@ -63,7 +64,7 @@ internal fun timelineRows(history: List<OrderStatusTrackDto>): List<TimelineEntr
 internal fun TimelineCard(history: List<OrderStatusTrackDto>) {
     val rows = timelineRows(history)
     Card {
-        SectionHeader(title = stringResource(R.string.order_detail_timeline))
+        OrderSectionHeader(title = stringResource(R.string.order_detail_timeline))
         Spacer(Modifier.height(10.dp))
         rows.forEachIndexed { idx, row ->
             TimelineRow(row.track, returnedToBoard = row.returnedToBoard, isLast = idx == rows.lastIndex)
@@ -124,7 +125,7 @@ internal fun ReviewCard(
     onLeaveReview: () -> Unit,
 ) {
     Card {
-        SectionHeader(title = stringResource(R.string.order_detail_your_review))
+        OrderSectionHeader(title = stringResource(R.string.order_detail_your_review))
         Spacer(Modifier.height(8.dp))
         val review = order.review
         if (review != null) {

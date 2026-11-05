@@ -101,6 +101,27 @@ class BookingSheetDraftTest {
         )
     }
 
+    /**
+     * The confirmation scrolls, and a scroll keeps every drag it is handed, so a drag down on it never reached
+     * the sheet: only the grabber strip above it closed the sheet. What its scroll leaves over moves the sheet
+     * now, and a release settles it; the form keeps its own drag.
+     */
+    @Test
+    fun `a drag on the confirmation moves the sheet`() {
+        val flat = sheet.replace(Regex("\\s+"), " ")
+        assertTrue(
+            "the sheet no longer takes the drag its confirmation's scroll leaves over",
+            flat.contains(".then(if (confirmation != null) Modifier.nestedScroll(confirmationDrag) else Modifier)"),
+        )
+        val link = flat.substringAfter("val confirmationDrag = remember(draggableState) {")
+            .substringBefore(".then(if (confirmation != null)")
+        assertTrue(
+            "a drag the confirmation cannot scroll no longer moves the sheet",
+            link.contains("override fun onPostScroll(") && link.contains("draggableState.dispatchRawDelta(available.y)"),
+        )
+        assertTrue("letting go no longer settles the sheet on Full or Hidden", link.contains("draggableState.settle(available.y)"))
+    }
+
     @Test
     fun `every seeded open starts its booking afresh before filling it`() {
         listOf(
@@ -119,6 +140,40 @@ class BookingSheetDraftTest {
             "a success path no longer resets before onComplete",
             2,
             Regex("bookingVm\\.reset\\(\\)\\s*onComplete\\(").findAll(sheet).count(),
+        )
+    }
+
+    /**
+     * The confirmation names the basket and the extras from the catalogue the form showed, in the app's language,
+     * so they are read before the form resets: the order itself carries extras as slugs only.
+     */
+    @Test
+    fun `the confirmation is captured from the draft and the catalogue before the form resets`() {
+        val flat = sheet.replace(Regex("\\s+"), " ")
+        val hold = flat.substringAfter("fun holdForArrival(").substringBefore("arrivingFor = booked.orderId")
+        val builder = flat.substringAfter("fun successFor(").substringBefore("fun holdForArrival(")
+        assertTrue("the hand-over no longer builds its confirmation at the hand-over", hold.contains("val booked = successFor(response)"))
+        assertTrue(
+            "the hand-over no longer captures the catalogue names into the confirmation",
+            builder.contains(
+                "bookingSuccessOf( response, bookingVm.state.value, (bookingVm.quoteState.value as? QuoteState.Quoted)?.response, " +
+                    "bookingVm.effectiveDiscount.value, catalogRepo.services.value, catalogRepo.packages.value, catalogRepo.extras.value, " +
+                    "context.resources.configuration.locales.get(0)?.language, )",
+            ),
+        )
+        assertEquals(
+            "a success path no longer captures before it resets",
+            2,
+            Regex("val booked = holdForArrival\\([^)]*\\)\\s*bookingVm\\.reset\\(\\)").findAll(sheet).count(),
+        )
+    }
+
+    /** The scrim lifts while the mascot flies (120–420 ms), after the busy card has gone (0–120 ms). */
+    @Test
+    fun `the overlay's scrim lifts after its card, while the mascot travels`() {
+        assertTrue(
+            "the booking overlay's exit is no longer the 300 ms scrim lift after a 120 ms delay",
+            sheet.contains("internal val BookingOverlayExit = fadeOut(tween(300, delayMillis = 120, easing = LinearOutSlowInEasing))"),
         )
     }
 

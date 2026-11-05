@@ -143,8 +143,11 @@ final class OrderReviewLayoutTests: XCTestCase {
 
         let confirmation = try HostedCanvas(size: CGSize(width: 375, height: 812)) {
             BookingSuccessView(
-                confirmationCode: "ABC123", orderId: "order-1", loadOrder: { _ in order },
-                onViewOrder: {}, onDone: {}
+                BookingSuccess(
+                    orderId: "order-1", confirmationCode: "ABC123", cleaningAt: order.cleaningDateTime,
+                    estimatedMinutes: order.estimatedMinutes, street: "Example Street 12", city: "Praha"
+                ),
+                loadOrder: { _ in order }, onViewOrder: {}, onDone: {}
             )
         }
         await confirmation.settle()

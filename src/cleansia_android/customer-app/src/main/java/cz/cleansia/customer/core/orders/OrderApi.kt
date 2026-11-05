@@ -245,6 +245,7 @@ private fun GenOrderItem?.toAppDto(): OrderDetailDto {
         dirtinessLevel = order.dirtinessLevel.required("dirtinessLevel").toApp(),
         dirtinessSurchargeAmount = order.dirtinessSurchargeAmount.required("dirtinessSurchargeAmount"),
         isGuestBooking = order.isGuestBooking == true,
+        freeCancellationHours = order.freeCancellationHours,
     )
 }
 

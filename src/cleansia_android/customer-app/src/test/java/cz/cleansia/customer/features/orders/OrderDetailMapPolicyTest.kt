@@ -1,5 +1,6 @@
 package cz.cleansia.customer.features.orders
 
+import cz.cleansia.core.location.canShowOrderMap
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test

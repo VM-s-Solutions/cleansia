@@ -738,8 +738,7 @@
 
     <!-- Dirtiness level: booking step, recurring wizard, summaries -->
     <string name="dirtiness_title">Наскільки у вас прибрано?</string>
-    <string name="dirtiness_intro">Оберіть стан, який найкраще відповідає всьому помешканню.</string>
-    <string name="dirtiness_hint">Якщо вагаєтеся між двома рівнями, оберіть вищий. Тоді прибиральник матиме достатньо часу, і результат буде таким, як слід.</string>
+    <string name="dirtiness_torn_hint">Вагаєтеся між двома? Оберіть вищий, щоб прибиральник мав достатньо часу.</string>
     <string name="dirtiness_level_label">Рівень забруднення</string>
     <string name="dirtiness_normal_title">Звичайний</string>
     <string name="dirtiness_normal_price">Без доплати</string>
@@ -838,9 +837,6 @@
     <string name="booking_special_instructions_hint">Особливі побажання? (необов’язково)</string>
     <string name="booking_access_instructions_hint">Як увійти? (необов’язково)</string>
 
-    <string name="booking_success_title">Бронювання підтверджено!</string>
-    <string name="booking_success_subtitle">Ваше прибирання заброньовано. Розслабтеся.</string>
-    <string name="booking_success_progress">Прогрес бронювання</string>
     <string name="booking_success_t1_title">Бронювання отримано</string>
     <string name="booking_success_t1_desc">Щойно</string>
     <string name="booking_success_t2_title">Призначаємо клінера</string>
@@ -851,11 +847,7 @@
     <string name="booking_success_t4_desc">Нагадаємо за годину</string>
     <string name="booking_success_view_orders">Переглянути замовлення</string>
     <string name="booking_success_go_home">На головну</string>
-    <string name="booking_success_confirmation_code">Код підтвердження</string>
-    <string name="booking_success_arrival_label">Прибуття</string>
-    <string name="booking_success_address_label">Адреса</string>
     <string name="booking_success_total_label">Усього</string>
-    <string name="booking_success_whats_next">Клінер скоро прийме ваше замовлення — ми сповістимо, коли він буде в дорозі.</string>
     <string name="error_booking_sign_in_required">Будь ласка, увійдіть, щоб завершити бронювання.</string>
     <string name="error_booking_pick_time">Будь ласка, виберіть дату та час прибирання.</string>
     <string name="error_booking_phone_missing">Будь ласка, додайте номер телефону до профілю, щоб ми могли зв’язатися з вами щодо цього бронювання.</string>
@@ -1594,4 +1586,28 @@
     <string name="order_photos_phase_count">%1$s · %2$d</string>
     <string name="booking_cash_needs_saved_card">Для оплати готівкою збережіть дійсну картку у валюті замовлення.</string>
     <string name="error_order_cash_requires_saved_card">Для оплати готівкою потрібна дійсна збережена картка у валюті замовлення.</string>
+    <string name="booking_success_confirmed_title">Бронювання підтверджено</string>
+    <string name="booking_success_details_loading">Завантажуємо деталі бронювання…</string>
+    <string name="booking_success_details_unavailable">Деталі бронювання тимчасово недоступні.</string>
+    <string name="booking_success_cleaner_assigned">Клінера призначено</string>
+    <string name="booking_success_finding">Поки що жоден клінер його не взяв.</string>
+    <string name="booking_success_finding_sub">Повідомимо вас, щойно хтось його візьме.</string>
+    <plurals name="booking_success_crew">
+        <item quantity="one">%1$d клінер</item>
+        <item quantity="few">%1$d клінери</item>
+        <item quantity="many">%1$d клінерів</item>
+        <item quantity="other">%1$d клінера</item>
+    </plurals>
+    <plurals name="booking_success_crew_needed">
+        <item quantity="one">Потрібен %1$d клінер.</item>
+        <item quantity="few">Потрібно %1$d клінери.</item>
+        <item quantity="many">Потрібно %1$d клінерів.</item>
+        <item quantity="other">Потрібно %1$d клінерів.</item>
+    </plurals>
+    <string name="booking_success_free_until">Безкоштовне скасування до %1$s</string>
+    <string name="booking_success_free_while">Скасування безкоштовне, поки жоден клінер його не взяв.</string>
+    <string name="booking_success_no_cleaner_card">Якщо його ніхто не візьме, ми скасуємо його, повернемо всю суму й нарахуємо кредит.</string>
+    <string name="booking_success_no_cleaner_cash">Якщо його ніхто не візьме, ми безкоштовно скасуємо його й нарахуємо вам кредит.</string>
+    <string name="booking_success_cash_on_day">Сплатіть готівкою клінеру в день прибирання.</string>
+    <string name="auth_email_placeholder">customer@example.com</string>
 </resources>

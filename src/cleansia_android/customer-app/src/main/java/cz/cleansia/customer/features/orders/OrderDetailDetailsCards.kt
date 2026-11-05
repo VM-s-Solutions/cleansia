@@ -46,6 +46,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import cz.cleansia.core.ui.components.OrderInfoRow
+import cz.cleansia.core.ui.components.OrderSectionHeader
 import cz.cleansia.core.ui.theme.primaryIconOnContainer
 import cz.cleansia.core.ui.theme.primaryTextOnContainer
 import cz.cleansia.customer.R
@@ -67,11 +69,11 @@ import cz.cleansia.customer.features.profile.ProfileAvatarContent
 @Composable
 internal fun CleaningDetailsCard(order: OrderDetailDto) {
     Card {
-        SectionHeader(title = stringResource(R.string.order_detail_section_details))
+        OrderSectionHeader(title = stringResource(R.string.order_detail_section_details))
         Spacer(Modifier.height(8.dp))
 
         // Rooms + bathrooms (backend always returns 0 if unset — show anyway).
-        InfoRow(
+        OrderInfoRow(
             label = stringResource(R.string.order_detail_rooms),
             // Two counts, so this cannot be one <plurals> — Android selects on a single quantity.
             // Composed from the two resources the booking wizard already uses, which also keeps the
@@ -79,12 +81,12 @@ internal fun CleaningDetailsCard(order: OrderDetailDto) {
             value = roomsAndBathrooms(order.rooms, order.bathrooms),
         )
         Spacer(Modifier.height(6.dp))
-        InfoRow(
+        OrderInfoRow(
             label = stringResource(R.string.dirtiness_level_label),
             value = stringResource(order.dirtinessLevel.titleRes()),
         )
         Spacer(Modifier.height(6.dp))
-        InfoRow(
+        OrderInfoRow(
             label = stringResource(R.string.order_detail_estimated),
             value = if (order.estimatedTime > 0) {
                 stringResource(R.string.order_detail_duration_minutes, order.estimatedTime)
@@ -96,7 +98,7 @@ internal fun CleaningDetailsCard(order: OrderDetailDto) {
         val actualMinutes = order.actualCompletionTime ?: 0
         if (actualMinutes > 0) {
             Spacer(Modifier.height(6.dp))
-            InfoRow(
+            OrderInfoRow(
                 label = stringResource(R.string.order_detail_actual_time),
                 value = stringResource(R.string.order_detail_duration_minutes, actualMinutes),
             )
@@ -107,7 +109,7 @@ internal fun CleaningDetailsCard(order: OrderDetailDto) {
         // dedicated DB column) instead of inferring from statusHistory.
         if (!order.completedAt.isNullOrBlank()) {
             Spacer(Modifier.height(6.dp))
-            InfoRow(
+            OrderInfoRow(
                 label = stringResource(R.string.order_detail_completed_at),
                 value = cz.cleansia.core.format.formatOrderDateTime(order.completedAt),
             )
@@ -180,7 +182,7 @@ internal fun prettifyExtraKey(key: String): String {
 @Composable
 internal fun ServicesCard(services: List<OrderServiceDetailsDto>) {
     Card {
-        SectionHeader(title = stringResource(R.string.order_detail_services_header))
+        OrderSectionHeader(title = stringResource(R.string.order_detail_services_header))
         Spacer(Modifier.height(6.dp))
         services.forEachIndexed { idx, svc ->
             if (idx > 0) {
@@ -233,7 +235,7 @@ private fun TimeChip(minutes: Int) {
 @Composable
 internal fun PackagesCard(packages: List<OrderPackageDetailsDto>) {
     Card {
-        SectionHeader(title = stringResource(R.string.order_detail_packages_header))
+        OrderSectionHeader(title = stringResource(R.string.order_detail_packages_header))
         Spacer(Modifier.height(6.dp))
         packages.forEachIndexed { idx, pkg ->
             if (idx > 0) {
@@ -289,7 +291,7 @@ internal fun InstructionsCard(order: OrderDetailDto) {
         }
     }
     Card {
-        SectionHeader(title = stringResource(R.string.order_detail_instructions))
+        OrderSectionHeader(title = stringResource(R.string.order_detail_instructions))
         val blocks = listOfNotNull(
             order.specialInstructions?.takeIf { it.isNotBlank() }?.let { stringResource(R.string.order_detail_special_instructions) to it },
             order.notes?.takeIf { it.isNotBlank() }?.let { stringResource(R.string.order_detail_notes) to it },
@@ -329,7 +331,7 @@ private fun InstructionText(label: String, value: String) {
 internal fun AssignedCleanersCard(employees: List<AssignedEmployeeDto>) {
     val context = LocalContext.current
     Card {
-        SectionHeader(title = stringResource(R.string.order_detail_cleaners))
+        OrderSectionHeader(title = stringResource(R.string.order_detail_cleaners))
         LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             itemsIndexed(employees) { _, emp ->
                 val displayName = emp.fullName?.takeIf { it.isNotBlank() } ?: stringResource(R.string.order_detail_cleaner_fallback)

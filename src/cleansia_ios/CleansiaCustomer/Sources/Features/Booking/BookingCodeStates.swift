@@ -18,6 +18,7 @@ struct BookingQuote: Equatable {
     let expressSurchargeAmount: Double
     let expressSurchargeWaivedByMembership: Bool
     let requiredEmployees: Int
+    let estimatedMinutes: Int
     /// The level the server priced, echoed so the surcharge row names the level it was charged for.
     let dirtiness: Dirtiness
     /// Inside ``totalPrice`` and inside the base the discounts come off; express is measured on top.
@@ -43,6 +44,7 @@ struct BookingQuote: Equatable {
         expressSurchargeAmount: Double = 0,
         expressSurchargeWaivedByMembership: Bool = false,
         requiredEmployees: Int = 1,
+        estimatedMinutes: Int = 0,
         dirtiness: Dirtiness = .normal,
         dirtinessSurchargeAmount: Double = 0,
         creditBalance: Double = 0,
@@ -62,6 +64,7 @@ struct BookingQuote: Equatable {
         self.expressSurchargeAmount = expressSurchargeAmount
         self.expressSurchargeWaivedByMembership = expressSurchargeWaivedByMembership
         self.requiredEmployees = requiredEmployees
+        self.estimatedMinutes = estimatedMinutes
         self.dirtiness = dirtiness
         self.dirtinessSurchargeAmount = dirtinessSurchargeAmount
         self.creditBalance = creditBalance
@@ -89,6 +92,7 @@ struct BookingQuote: Equatable {
             expressSurchargeWaivedByMembership: response.expressSurchargeWaivedByMembership
                 .require("expressSurchargeWaivedByMembership"),
             requiredEmployees: response.requiredEmployees.require("requiredEmployees"),
+            estimatedMinutes: response.estimatedDurationMinutes ?? 0,
             dirtiness: Dirtiness(wire: response.dirtinessLevel.require("dirtinessLevel")),
             dirtinessSurchargeAmount: response.dirtinessSurchargeAmount.require("dirtinessSurchargeAmount"),
             // Defaulted, not refused: an absent balance previews no credit, and the screen then states

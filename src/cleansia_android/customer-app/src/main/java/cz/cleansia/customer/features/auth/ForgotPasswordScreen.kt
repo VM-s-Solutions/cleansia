@@ -149,6 +149,7 @@ private fun EmailStep(
         value = email,
         onValueChange = onEmailChange,
         label = stringResource(R.string.forgot_email),
+        placeholder = stringResource(R.string.auth_email_placeholder),
         keyboardType = KeyboardType.Email,
     )
     Spacer(Modifier.height(16.dp))

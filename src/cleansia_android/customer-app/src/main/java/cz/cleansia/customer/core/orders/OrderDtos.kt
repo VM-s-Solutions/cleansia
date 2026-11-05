@@ -170,6 +170,8 @@ data class OrderDetailDto(
     val dirtinessSurchargeAmount: Double = 0.0,
     /** See [OrderListItemDto.isGuestBooking]. */
     val isGuestBooking: Boolean = false,
+    /** The order's own free-cancellation window (24 h, or 4 h for an entitled Plus member); null when not sent. */
+    val freeCancellationHours: Int? = null,
 )
 
 /**

@@ -741,8 +741,7 @@
 
     <!-- Dirtiness level: booking step, recurring wizard, summaries -->
     <string name="dirtiness_title">Jak moc je u vás uklizeno?</string>
-    <string name="dirtiness_intro">Vyberte stav, který nejlépe odpovídá celé domácnosti.</string>
-    <string name="dirtiness_hint">Pokud váháte mezi dvěma stupni, zvolte vyšší. Uklízečka pak má dost času a výsledek bude odpovídat.</string>
+    <string name="dirtiness_torn_hint">Váháte mezi dvěma? Zvolte vyšší, ať má uklízečka dost času.</string>
     <string name="dirtiness_level_label">Míra znečištění</string>
     <string name="dirtiness_normal_title">Běžné</string>
     <string name="dirtiness_normal_price">Bez příplatku</string>
@@ -841,9 +840,6 @@
     <string name="booking_special_instructions_hint">Speciální požadavky? (nepovinné)</string>
     <string name="booking_access_instructions_hint">Pokyny ke vstupu? (nepovinné)</string>
 
-    <string name="booking_success_title">Rezervace potvrzena!</string>
-    <string name="booking_success_subtitle">Váš úklid je rezervován. Odpočiňte si.</string>
-    <string name="booking_success_progress">Průběh rezervace</string>
     <string name="booking_success_t1_title">Rezervace přijata</string>
     <string name="booking_success_t1_desc">Právě teď</string>
     <string name="booking_success_t2_title">Přidělujeme uklízeče</string>
@@ -854,11 +850,7 @@
     <string name="booking_success_t4_desc">Připomeneme hodinu předem</string>
     <string name="booking_success_view_orders">Zobrazit objednávku</string>
     <string name="booking_success_go_home">Zpět domů</string>
-    <string name="booking_success_confirmation_code">Potvrzovací kód</string>
-    <string name="booking_success_arrival_label">Příjezd</string>
-    <string name="booking_success_address_label">Adresa</string>
     <string name="booking_success_total_label">Celkem</string>
-    <string name="booking_success_whats_next">Uklízeč si vaši objednávku brzy převezme — oznámíme vám, až bude na cestě.</string>
     <string name="error_booking_sign_in_required">Pro dokončení rezervace se prosím přihlaste.</string>
     <string name="error_booking_pick_time">Vyberte prosím datum a čas úklidu.</string>
     <string name="error_booking_phone_missing">Přidejte si prosím do profilu telefonní číslo, abychom vás mohli kontaktovat ohledně této rezervace.</string>
@@ -1597,4 +1589,28 @@
     <string name="order_photos_phase_count">%1$s · %2$d</string>
     <string name="booking_cash_needs_saved_card">Pro platbu hotově uložte platnou kartu v měně objednávky.</string>
     <string name="error_order_cash_requires_saved_card">Platba hotově vyžaduje platnou uloženou kartu v měně objednávky.</string>
+    <string name="booking_success_confirmed_title">Rezervace potvrzena</string>
+    <string name="booking_success_details_loading">Načítání údajů rezervace…</string>
+    <string name="booking_success_details_unavailable">Údaje rezervace jsou dočasně nedostupné.</string>
+    <string name="booking_success_cleaner_assigned">Uklízeč přiřazen</string>
+    <string name="booking_success_finding">Zatím ji nepřevzal žádný uklízeč.</string>
+    <string name="booking_success_finding_sub">Dáme vám vědět, jakmile ji někdo převezme.</string>
+    <plurals name="booking_success_crew">
+        <item quantity="one">%1$d uklízeč</item>
+        <item quantity="few">%1$d uklízeči</item>
+        <item quantity="many">%1$d uklízeče</item>
+        <item quantity="other">%1$d uklízečů</item>
+    </plurals>
+    <plurals name="booking_success_crew_needed">
+        <item quantity="one">Potřebuje %1$d uklízeče.</item>
+        <item quantity="few">Potřebuje %1$d uklízeče.</item>
+        <item quantity="many">Potřebuje %1$d uklízečů.</item>
+        <item quantity="other">Potřebuje %1$d uklízečů.</item>
+    </plurals>
+    <string name="booking_success_free_until">Zrušení zdarma do %1$s</string>
+    <string name="booking_success_free_while">Zrušení zdarma, dokud ji nepřevezme žádný uklízeč.</string>
+    <string name="booking_success_no_cleaner_card">Když ji nikdo nepřevezme, zrušíme ji, vrátíme vám vše a\u00A0přidáme kredit.</string>
+    <string name="booking_success_no_cleaner_cash">Když ji nikdo nepřevezme, zrušíme ji zdarma a\u00A0přidáme vám kredit.</string>
+    <string name="booking_success_cash_on_day">Zaplaťte v\u00A0hotovosti uklízeči v\u00A0den úklidu.</string>
+    <string name="auth_email_placeholder">customer@example.com</string>
 </resources>

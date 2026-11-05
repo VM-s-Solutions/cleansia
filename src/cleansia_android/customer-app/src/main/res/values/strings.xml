@@ -745,8 +745,7 @@
 
     <!-- Dirtiness level: booking step, recurring wizard, summaries -->
     <string name="dirtiness_title">How clean is your home?</string>
-    <string name="dirtiness_intro">Choose the state that best matches your whole home.</string>
-    <string name="dirtiness_hint">If you are torn between two levels, choose the higher one. Your cleaner will then have enough time and the result will be as it should.</string>
+    <string name="dirtiness_torn_hint">Torn between two? Choose the higher one, so your cleaner has enough time.</string>
     <string name="dirtiness_level_label">Dirtiness level</string>
     <string name="dirtiness_normal_title">Normal</string>
     <string name="dirtiness_normal_price">No surcharge</string>
@@ -845,9 +844,6 @@
     <string name="booking_special_instructions_hint">Any special requests? (optional)</string>
     <string name="booking_access_instructions_hint">How do we get in? (optional)</string>
 
-    <string name="booking_success_title">Booking confirmed!</string>
-    <string name="booking_success_subtitle">Your cleaning is booked. Sit back and relax.</string>
-    <string name="booking_success_progress">Your booking progress</string>
     <string name="booking_success_t1_title">Booking received</string>
     <string name="booking_success_t1_desc">Just now</string>
     <string name="booking_success_t2_title">Cleaner being assigned</string>
@@ -858,11 +854,7 @@
     <string name="booking_success_t4_desc">We\'ll remind you 1 hour before</string>
     <string name="booking_success_view_orders">View order</string>
     <string name="booking_success_go_home">Back to home</string>
-    <string name="booking_success_confirmation_code">Confirmation code</string>
-    <string name="booking_success_arrival_label">Arrival</string>
-    <string name="booking_success_address_label">Address</string>
     <string name="booking_success_total_label">Total</string>
-    <string name="booking_success_whats_next">A cleaner will pick up your order soon — you\'ll get a notification when they\'re on the way.</string>
     <string name="error_booking_sign_in_required">Please sign in to complete your booking.</string>
     <string name="error_booking_pick_time">Please select a cleaning date and time.</string>
     <string name="error_booking_phone_missing">Please add a phone number to your profile so we can reach you about this booking.</string>
@@ -1600,4 +1592,24 @@
     <string name="order_photos_phase_count">%1$s · %2$d</string>
     <string name="booking_cash_needs_saved_card">Save a valid card for this currency to pay in cash.</string>
     <string name="error_order_cash_requires_saved_card">Cash requires a valid saved card in the booking currency.</string>
+    <string name="booking_success_confirmed_title">Booking confirmed</string>
+    <string name="booking_success_details_loading">Loading booking details…</string>
+    <string name="booking_success_details_unavailable">Booking details are temporarily unavailable.</string>
+    <string name="booking_success_cleaner_assigned">Cleaner assigned</string>
+    <string name="booking_success_finding">No cleaner has taken it yet.</string>
+    <string name="booking_success_finding_sub">We\'ll let you know as soon as one does.</string>
+    <plurals name="booking_success_crew">
+        <item quantity="one">%1$d cleaner</item>
+        <item quantity="other">%1$d cleaners</item>
+    </plurals>
+    <plurals name="booking_success_crew_needed">
+        <item quantity="one">It needs %1$d cleaner.</item>
+        <item quantity="other">It needs %1$d cleaners.</item>
+    </plurals>
+    <string name="booking_success_free_until">Free cancellation until %1$s</string>
+    <string name="booking_success_free_while">Free to cancel while no cleaner has taken it.</string>
+    <string name="booking_success_no_cleaner_card">If no cleaner can take it, we cancel it and refund you in full, plus credit.</string>
+    <string name="booking_success_no_cleaner_cash">If no cleaner can take it, we cancel it free of charge and give you credit.</string>
+    <string name="booking_success_cash_on_day">Please pay in cash to the cleaner on the day.</string>
+    <string name="auth_email_placeholder">customer@example.com</string>
 </resources>

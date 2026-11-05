@@ -14,9 +14,9 @@ struct UpsellSlide: Equatable, Identifiable {
         min(1, max(0, now.timeIntervalSince(startedAt) / rotationSeconds))
     }
 
-    /// A selected page remains a visible mark even before its clock starts or after manual control.
+    /// The selected page keeps a visible mark while its next countdown is paused.
     static func indicatorFraction(startedAt: Date?, now: Date) -> Double {
-        startedAt.map { max(0.08, rotationFraction(startedAt: $0, now: now)) } ?? 1
+        startedAt.map { max(0.08, rotationFraction(startedAt: $0, now: now)) } ?? 0.08
     }
 
     enum Kind: Equatable, CaseIterable {

@@ -60,7 +60,7 @@ import cz.cleansia.customer.R
 import cz.cleansia.customer.core.market.MarketState
 import cz.cleansia.core.format.formatOrderDateRange
 import cz.cleansia.core.format.formatOrderPrice
-import cz.cleansia.customer.ui.format.orderStatusColor
+import cz.cleansia.core.ui.theme.orderStatusColor
 import cz.cleansia.customer.core.orders.OrderListItemDto
 import cz.cleansia.customer.features.booking.localizedName
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton

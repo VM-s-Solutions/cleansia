@@ -141,7 +141,7 @@ class CreditCopyStringsTest {
                 "order_paid_by_card",
                 "booking_summary_due_on_card",
             ),
-            "features/booking/BookingSuccessScreen.kt" to listOf(
+            "features/booking/BookingSuccessPresentation.kt" to listOf(
                 "order_paid_with_credit",
                 "order_paid_by_card",
                 "booking_summary_due_on_card",
@@ -159,7 +159,7 @@ class CreditCopyStringsTest {
             "the order detail no longer labels the card share by its payment",
             source("features/orders/OrderDetailSummary.kt").contains("cardShareLabelRes("),
         )
-        val success = source("features/booking/BookingSuccessScreen.kt")
+        val success = source("features/booking/BookingSuccessPresentation.kt")
         assertTrue(
             "the confirmation labels a card it just charged by a payment status the webhook has not set yet",
             !success.contains("cardShareLabelRes(") && success.contains("order.paymentStatus?.value == 3"),

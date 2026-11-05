@@ -6,29 +6,28 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.LocationOn
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.withStyle
 import cz.cleansia.customer.R
 import cz.cleansia.core.format.formatOrderDateRange
 import cz.cleansia.core.format.formatOrderPrice
+import cz.cleansia.core.ui.components.OrderSectionHeader
 import cz.cleansia.customer.core.orders.OrderAddressDto
 import cz.cleansia.customer.core.orders.OrderDetailDto
-import cz.cleansia.customer.ui.format.orderStatusColor
 import cz.cleansia.core.ui.theme.Poppins
 
 /* ── Address ── */
@@ -43,21 +42,33 @@ internal fun AddressCard(address: OrderAddressDto) {
         }
     }
     Card {
-        SectionHeader(
-            icon = {
-                Icon(
-                    Icons.Outlined.LocationOn,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(18.dp),
-                )
-            },
+        OrderSectionHeader(
+            icon = Icons.Outlined.LocationOn,
             title = stringResource(R.string.order_detail_address),
         )
-        Text(address.street ?: "—", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
-        val locality = listOfNotNull(cityZip.takeIf { it.isNotBlank() }, address.country?.takeIf { it.isNotBlank() }).joinToString(" · ")
-        if (locality.isNotBlank()) {
-            Text(locality, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
+        val locality = listOfNotNull(
+            cityZip.takeIf { it.isNotBlank() },
+            address.country?.takeIf { it.isNotBlank() },
+        ).joinToString(" · ")
+        Text(
+            buildAnnotatedString {
+                val street = address.street?.takeIf { it.isNotBlank() }
+                if (street != null) append(street)
+                if (locality.isNotBlank()) {
+                    withStyle(
+                        SpanStyle(
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = MaterialTheme.typography.bodyMedium.fontSize,
+                        ),
+                    ) {
+                        if (street != null) append(" · ")
+                        append(locality)
+                    }
+                }
+                if (length == 0) append("—")
+            },
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
     }
 }

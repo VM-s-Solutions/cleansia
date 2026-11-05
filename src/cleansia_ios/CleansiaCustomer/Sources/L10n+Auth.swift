@@ -30,6 +30,10 @@ extension L10n {
             localized("auth_email")
         }
 
+        static var emailPlaceholder: String {
+            localized("auth_email_placeholder")
+        }
+
         static var password: String {
             localized("auth_password")
         }

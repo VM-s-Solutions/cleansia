@@ -101,12 +101,20 @@ extension L10n.Booking {
         L10n.localized("booking_success_title")
     }
 
-    static var successSubtitle: String {
-        L10n.localized("booking_success_subtitle")
+    static var successConfirmedTitle: String {
+        L10n.localized("booking_success_confirmed_title")
     }
 
-    static var successConfirmationCode: String {
-        L10n.localized("booking_success_confirmation_code")
+    static var successDetailsLoading: String {
+        L10n.localized("booking_success_details_loading")
+    }
+
+    static var successDetailsUnavailable: String {
+        L10n.localized("booking_success_details_unavailable")
+    }
+
+    static var successCleanerAssigned: String {
+        L10n.localized("booking_success_cleaner_assigned")
     }
 
     static var successGoHome: String {
@@ -149,20 +157,44 @@ extension L10n.Booking {
         L10n.localized("booking_success_t4_desc")
     }
 
-    static var successArrivalLabel: String {
-        L10n.localized("booking_success_arrival_label")
-    }
-
-    static var successAddressLabel: String {
-        L10n.localized("booking_success_address_label")
-    }
-
     static var successTotalLabel: String {
         L10n.localized("booking_success_total_label")
     }
 
-    static var successWhatsNext: String {
-        L10n.localized("booking_success_whats_next")
+    static var successFinding: String {
+        L10n.localized("booking_success_finding")
+    }
+
+    static var successFindingSub: String {
+        L10n.localized("booking_success_finding_sub")
+    }
+
+    static func successCrew(_ count: Int) -> String {
+        L10n.plural("booking_success_crew", count)
+    }
+
+    static func successCrewNeeded(_ count: Int) -> String {
+        L10n.plural("booking_success_crew_needed", count)
+    }
+
+    static func successFreeUntil(_ deadline: String) -> String {
+        L10n.format("booking_success_free_until", deadline)
+    }
+
+    static var successFreeWhile: String {
+        L10n.localized("booking_success_free_while")
+    }
+
+    static var successNoCleanerCard: String {
+        L10n.localized("booking_success_no_cleaner_card")
+    }
+
+    static var successNoCleanerCash: String {
+        L10n.localized("booking_success_no_cleaner_cash")
+    }
+
+    static var successCashOnDay: String {
+        L10n.localized("booking_success_cash_on_day")
     }
 
     static var errorSignInRequired: String {

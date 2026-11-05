@@ -18,7 +18,6 @@ struct CustomerShellView: View {
     let container: CustomerAppContainer
     private let onSignedOut: () -> Void
     private let onNeedsOnboarding: () -> Void
-
     init(
         container: CustomerAppContainer,
         preferences: CustomerPreferencesModel,
@@ -110,6 +109,7 @@ struct CustomerShellView: View {
                 },
                 onOpenPayments: { model.openPayments() }
             )
+            .environment(\.scenePhase, scenePhase)
             .zoomDestination(id: Self.bookZoomID, in: bookingFromFab ? fabZoom : nil)
         })
         .sheet(isPresented: $model.isAddressManagerPresented) {

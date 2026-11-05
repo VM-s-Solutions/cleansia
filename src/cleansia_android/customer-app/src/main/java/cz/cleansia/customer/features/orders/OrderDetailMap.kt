@@ -9,18 +9,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.LocationOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -39,26 +36,6 @@ import cz.cleansia.core.location.CleansiaMapPin
 import cz.cleansia.core.location.CleansiaMapStyle
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.customer.R
-
-/**
- * Whether the order detail backs its sheet with a real map.
- *
- * Purely a question of the geocode, in every status. Cancelled used to be excluded on the
- * reasoning that the visit never happened; the job still had a place, and the placeholder read
- * as a map that had failed to load. Owner ruling, 2026-08-27.
- *
- * The remaining guards are unrelated and stay: orders placed before the address geocoder existed
- * carry no coordinates, and a failed geocode is stored as null island (0, 0), which would
- * otherwise drop a pin in the Gulf of Guinea.
- */
-internal fun canShowOrderMap(
-    latitude: Double?,
-    longitude: Double?,
-): Boolean {
-    if (latitude == null || longitude == null) return false
-    if (latitude == 0.0 && longitude == 0.0) return false
-    return latitude in -90.0..90.0 && longitude in -180.0..180.0
-}
 
 /**
  * Full-bleed map behind the sheet. The pin is a Mapbox ViewAnnotation rather
@@ -150,31 +127,6 @@ internal fun OrderMapPlaceholder() {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                 textAlign = TextAlign.Center,
-            )
-        }
-    }
-}
-
-/** Circular control that floats over the map — back, and the map/details toggle. */
-@Composable
-internal fun MapOverlayButton(
-    icon: ImageVector,
-    contentDescription: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Surface(
-        onClick = onClick,
-        modifier = modifier.size(40.dp),
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.surface,
-        shadowElevation = 4.dp,
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Icon(
-                imageVector = icon,
-                contentDescription = contentDescription,
-                tint = MaterialTheme.colorScheme.onSurface,
             )
         }
     }

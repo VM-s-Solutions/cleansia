@@ -1,8 +1,6 @@
 package cz.cleansia.customer.features.home
 
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.boundsInWindow
@@ -71,6 +69,7 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -134,7 +133,7 @@ import cz.cleansia.customer.features.booking.localizedName
 import cz.cleansia.customer.features.orders.OrderStatus
 import cz.cleansia.customer.features.orders.orderStatusFromValue
 import cz.cleansia.customer.features.orders.orderStatusLabelRes
-import cz.cleansia.customer.ui.format.orderStatusColor
+import cz.cleansia.core.ui.theme.orderStatusColor
 import cz.cleansia.customer.ui.theme.CleansiaTheme
 import cz.cleansia.customer.ui.theme.SuccessText
 import cz.cleansia.customer.ui.theme.WarningStar
@@ -956,11 +955,7 @@ private fun SmartUpsellCarousel(
         }
     }
 
-    var userInteracted by remember { mutableStateOf(false) }
     val dragged by pagerState.interactionSource.collectIsDraggedAsState()
-    androidx.compose.runtime.LaunchedEffect(dragged) {
-        if (dragged) userInteracted = true
-    }
     val context = androidx.compose.ui.platform.LocalContext.current
     val view = LocalView.current
     var inForeground by remember { mutableStateOf(false) }
@@ -971,21 +966,35 @@ private fun SmartUpsellCarousel(
         motionAllowed = upsellAutoAdvanceAllowed(context)
         onPauseOrDispose { inForeground = false }
     }
-    val rotationProgress = remember { Animatable(0f) }
-    val autoplay = slideCount > 1 && inForeground && inViewport && motionAllowed && !userInteracted
+    val rotationClock = remember { UpsellRotationClock() }
+    var rotationProgress by remember { mutableFloatStateOf(0f) }
+    val autoplay = slideCount > 1 && inForeground && inViewport && motionAllowed
     androidx.compose.runtime.LaunchedEffect(slideCount, kinds, autoplay) {
-        rotationProgress.snapTo(0f)
+        rotationClock.restart()
+        rotationProgress = 0f
         if (!autoplay) return@LaunchedEffect
-        while (upsellAutoAdvanceAllowed(context)) {
-            rotationProgress.animateTo(1f, tween(6_000, easing = LinearEasing))
-            if (!pagerState.isScrollInProgress) {
-                pagerState.animateScrollToPage(pagerState.currentPage + 1, animationSpec = tween(600))
+        while (true) {
+            val nowMillis = androidx.compose.runtime.withFrameNanos { it / 1_000_000 }
+            val tick = rotationClock.tick(
+                nowMillis = nowMillis,
+                settledPage = pagerState.settledPage,
+                eligible = autoplay,
+                scrolling = dragged || pagerState.isScrollInProgress,
+            )
+            rotationProgress = tick.progress
+            if (tick.advance) {
+                if (!upsellAutoAdvanceAllowed(context)) {
+                    motionAllowed = false
+                    return@LaunchedEffect
+                }
+                pagerScope.launch {
+                    pagerState.animateScrollToPage(pagerState.currentPage + 1, animationSpec = tween(600))
+                }
             }
-            rotationProgress.snapTo(0f)
         }
     }
     val goToPage: (Int) -> Unit = { page ->
-        userInteracted = true
+        rotationClock.restart()
         pagerScope.launch { pagerState.animateScrollToPage(page, animationSpec = tween(600)) }
     }
 
@@ -1027,15 +1036,15 @@ private fun SmartUpsellCarousel(
                     rooms = quickRooms,
                     bathrooms = quickBathrooms,
                     onRoomsChange = {
-                        userInteracted = true
+                        rotationClock.restart()
                         quickRooms = it.coerceIn(1, PropertySize.MAX_ROOMS)
                     },
                     onBathroomsChange = {
-                        userInteracted = true
+                        rotationClock.restart()
                         quickBathrooms = it.coerceIn(1, PropertySize.MAX_BATHROOMS)
                     },
                     onSeePrice = {
-                        userInteracted = true
+                        rotationClock.restart()
                         onBookSize(quickRooms, quickBathrooms)
                     },
                     modifier = pageSemantics,
@@ -1044,7 +1053,7 @@ private fun SmartUpsellCarousel(
                 UpsellSlideCard(
                     slide = slide.copy(
                         onClick = {
-                            userInteracted = true
+                            rotationClock.restart()
                             slide.onClick()
                         },
                     ),
@@ -1077,7 +1086,7 @@ private fun SmartUpsellCarousel(
                             .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(999.dp)),
                     ) {
                         if (selected) {
-                            Box(Modifier.fillMaxHeight().fillMaxWidth(if (autoplay) rotationProgress.value.coerceAtLeast(0.12f) else 1f)
+                            Box(Modifier.fillMaxHeight().fillMaxWidth(if (autoplay) rotationProgress.coerceAtLeast(0.12f) else 1f)
                                 .background(MaterialTheme.colorScheme.primary))
                         }
                     }

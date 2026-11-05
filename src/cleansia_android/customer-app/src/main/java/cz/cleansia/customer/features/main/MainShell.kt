@@ -64,6 +64,7 @@ import androidx.compose.ui.unit.dp
 import cz.cleansia.customer.R
 import cz.cleansia.customer.features.addresses.AddressManagerSheet
 import cz.cleansia.customer.features.booking.BookingBottomSheet
+import cz.cleansia.customer.features.booking.BookingSuccess
 import cz.cleansia.customer.features.home.HomeTab
 import cz.cleansia.customer.features.orders.OrdersTab
 import cz.cleansia.customer.features.orders.ReviewPromptGate
@@ -88,7 +89,6 @@ fun MainShell(
     onPromptOrderReview: (orderId: String) -> Unit = {},
     onLogout: () -> Unit = {},
     onProfileRow: (key: String) -> Unit = {},
-    onBookingComplete: (confirmationCode: String, orderId: String) -> Unit = { _, _ -> },
     onNavigateToEditProfile: () -> Unit = {},
     onOpenPayments: () -> Unit = {},
     onNavigateToOnboarding: () -> Unit = {},
@@ -148,6 +148,9 @@ fun MainShell(
     // EditProfile, so a plain `remember` would lose the flag and the sheet
     // wouldn't reopen on return.
     var reopenBookingAfterProfile by rememberSaveable { mutableStateOf(false) }
+    // The booking just made, shown in the booking sheet until the customer leaves it. Saveable, so the
+    // confirmation comes back after process death.
+    var success by rememberSaveable { mutableStateOf<BookingSuccess?>(null) }
 
     // External rebook trigger — NavHost passes a one-shot orderId via the
     // rebookOrderId param. We mirror it into local state, open the sheet, and
@@ -392,31 +395,38 @@ fun MainShell(
 
         // Sheet rendered as overlay — its empty space passes touches to the pager below
         BookingBottomSheet(
-            visible = bookingSheetOpen,
+            visible = bookingSheetOpen || success != null,
+            success = success,
             rebookFromOrderId = rebookFromOrderId,
             prefillPackageId = prefillPackageId,
             prefillSize = prefillSize,
             onDismiss = {
                 bookingSheetOpen = false
+                success = null
                 rebookFromOrderId = null
                 prefillPackageId = null
                 prefillSize = null
             },
-            onComplete = { confirmationCode, orderId ->
+            onComplete = { booked ->
                 bookingSheetOpen = false
+                success = booked
                 rebookFromOrderId = null
                 prefillPackageId = null
                 prefillSize = null
                 // Refresh the orders cache the moment a booking is confirmed
                 // so the new order shows up on the Orders tab without the
-                // user needing to pull-to-refresh. Fire-and-forget — the
-                // BookingSuccess screen is what they're navigating to first.
+                // user needing to pull-to-refresh. Fire-and-forget.
                 scope.launch { orderRepo.refresh() }
-                // A card booking may have spent credit. Marked stale here rather than fetched: this
-                // scope ends as the shell leaves for BookingSuccess, and the shell's loyalty warm-up
-                // re-reads a stale cache when the customer comes back.
+                // A card booking may have spent credit. The shell stays composed under the
+                // confirmation, so nothing re-reads a stale cache on the way back; fetch it now.
                 loyaltyRepo.staleness.reset()
-                onBookingComplete(confirmationCode, orderId)
+                scope.launch { loyaltyRepo.refresh() }
+                scope.launch { pagerState.scrollToPage(MainTab.Home.ordinal) }
+            },
+            onViewOrder = { orderId ->
+                success = null
+                bookingSheetOpen = false
+                onOrderClick(orderId)
             },
             onNavigateToEditProfile = {
                 bookingSheetOpen = false

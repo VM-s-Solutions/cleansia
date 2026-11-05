@@ -4,7 +4,22 @@ import SwiftUI
 struct BookingSheetView: View {
     @ObservedObject var vm: BookingViewModel
     @Environment(\.snackbarController) private var snackbar
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.locale) private var locale
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var success: BookingSuccess?
+    @State private var holdsBusyOverlay = false
+    @State private var busyShownAt = ContinuousClock.now
+    @State private var revealed = true
+    @State private var mascotTravels = false
+    @State private var busyMascotFrame: CGRect?
+    @State private var heroMascotFrame: CGRect?
+    @State private var draftHeroFrame: CGRect?
+    @State private var sheetHeight: CGFloat = 0
+    @State private var busyMascotSettles = ContinuousClock.now
+    @State private var flight: (from: CGRect, to: CGRect)?
+    @State private var flightLanded = false
+    @State private var flightArtTurned = false
     @State private var slideResetCount = 0
     @State private var owesMoney = false
     let geocoding: GeocodingService
@@ -17,8 +32,12 @@ struct BookingSheetView: View {
     let onViewOrder: (String) -> Void
     let onCompleteProfile: () -> Void
     let onOpenPayments: () -> Void
+    private let submitsOnAppear: Bool
 
     private static let footerSnackbarInset: CGFloat = 88
+    private static let detailsWait = Duration.milliseconds(1200)
+    private static let minimumBusy = Duration.milliseconds(600)
+    private static let flightLength = 0.42
 
     init(
         vm: BookingViewModel,
@@ -31,7 +50,9 @@ struct BookingSheetView: View {
         onDismiss: @escaping () -> Void,
         onViewOrder: @escaping (String) -> Void = { _ in },
         onCompleteProfile: @escaping () -> Void = {},
-        onOpenPayments: @escaping () -> Void = {}
+        onOpenPayments: @escaping () -> Void = {},
+        initialSuccess: BookingSuccess? = nil,
+        submitsOnAppear: Bool = false
     ) {
         self.vm = vm
         self.geocoding = geocoding
@@ -44,14 +65,15 @@ struct BookingSheetView: View {
         self.onViewOrder = onViewOrder
         self.onCompleteProfile = onCompleteProfile
         self.onOpenPayments = onOpenPayments
+        self.submitsOnAppear = submitsOnAppear
+        _success = State(initialValue: initialSuccess)
     }
 
     var body: some View {
         Group {
             if let success {
                 BookingSuccessView(
-                    confirmationCode: success.confirmationCode,
-                    orderId: success.orderId,
+                    success,
                     loadOrder: { [orderClient] id in
                         if case let .success(order) = await orderClient.getById(orderId: id) {
                             return order
@@ -59,6 +81,8 @@ struct BookingSheetView: View {
                         return nil
                     },
                     warmOrders: warmOrders,
+                    revealed: revealed,
+                    mascotTravels: mascotTravels,
                     onViewOrder: success.orderId.isBlank ? nil : {
                         vm.reset()
                         self.success = nil
@@ -68,8 +92,11 @@ struct BookingSheetView: View {
                         vm.reset()
                         self.success = nil
                         onDismiss()
-                    }
+                    },
+                    onDetailsSettled: { Task { await reveal() } },
+                    onHeroMascotFrame: { heroMascotFrame = $0 }
                 )
+                .transition(.identity)
             } else {
                 BookingSheetContent(
                     viewModel: vm,
@@ -83,14 +110,32 @@ struct BookingSheetView: View {
                     onContinue: { vm.advance() },
                     onConfirm: submit
                 )
+                .transition(.identity)
             }
         }
+        .background { draftConfirmation }
+        .background(GeometryReader { proxy in
+            Color.clear
+                .onAppear { sheetHeight = proxy.size.height }
+                .onChange(of: proxy.size.height) { sheetHeight = $0 }
+        }
+        .ignoresSafeArea(.keyboard))
         .overlay {
             BusyMascotOverlay(
-                visible: vm.submitState.isSubmitting,
-                message: L10n.Booking.busyBooking
+                visible: vm.submitState.isSubmitting || holdsBusyOverlay,
+                message: L10n.Booking.busyBooking,
+                exit: reduceMotion ? .easeOut(duration: 0.15) : .timingCurve(0.3, 0, 1, 1, duration: 0.12),
+                scrimExit: reduceMotion ? .easeOut(duration: 0.15) : .easeOut(duration: 0.3).delay(0.12),
+                mascotFigureHeight: busyFigureHeight,
+                mascotHidden: flight != nil,
+                onMascotFrame: { busyMascotFrame = $0 }
             )
         }
+        .overlay { flyer }
+        .onChange(of: busyFigureHeight) { _ in
+            busyMascotSettles = .now + .seconds(BusyMascotOverlay.mascotResize)
+        }
+        .task(id: submitsOnAppear) { if submitsOnAppear { await submit() } }
         .onReceive(vm.events) { event in
             switch event {
             case .selectionPrunedForMarket:
@@ -106,19 +151,95 @@ struct BookingSheetView: View {
         // Swiping down closes the sheet on any step: the draft is the session's view model, so the Book
         // button reopens it where it was left. Only a booking being placed holds it, so its outcome has
         // somewhere to land.
-        .interactiveDismissDisabled(vm.submitState.isSubmitting)
+        .interactiveDismissDisabled(vm.submitState.isSubmitting || holdsBusyOverlay)
+    }
+
+    private var busyFigureHeight: CGFloat {
+        BookingSuccessView.busyFigureHeight(
+            hero: heroMascotFrame,
+            draft: draftHeroFrame,
+            sheetHeight: sheetHeight,
+            accessibilityText: dynamicTypeSize.isAccessibilitySize
+        )
+    }
+
+    /// The confirmation this booking will arrive as, laid out unseen in its own place from the review step on: a
+    /// compact sheet gives its hero the ticket's slack, which no size tier can tell, so the busy card reads the
+    /// hero's height here before the order lands.
+    @ViewBuilder private var draftConfirmation: some View {
+        if success == nil, vm.currentStep == BookingStepGate.totalSteps {
+            BookingSuccessView.unseen(Self.submittedDraft(
+                vm.state,
+                quote: vm.quoteState.quote,
+                discount: vm.effectiveDiscount,
+                catalog: vm.catalogState.loadedValue,
+                extras: vm.extrasState.loadedValue,
+                locale: locale
+            )) { draftHeroFrame = $0 }
+        }
+    }
+
+    static func submittedDraft(
+        _ state: BookingState,
+        quote: BookingQuote?,
+        discount: Double,
+        catalog: Catalog? = nil,
+        extras: [CatalogExtra]? = nil,
+        locale: Locale = .current
+    ) -> BookingSuccess {
+        let summary = BookingPriceSummary.resolve(
+            quote: quote,
+            discount: discount,
+            payByCard: state.paymentMethod == .card
+        )
+        let services = catalog?.services.filter { state.selectedServiceIds.contains($0.id) }
+            .map { $0.localizedName(for: locale) } ?? []
+        let packages = catalog?.packages.filter { state.selectedPackageIds.contains($0.id) }
+            .map { $0.localizedName(for: locale) } ?? []
+        return BookingSuccess(
+            orderId: "",
+            confirmationCode: "",
+            cleaningAt: state.selectedInstant,
+            estimatedMinutes: quote?.estimatedMinutes ?? 0,
+            street: state.street,
+            city: state.city,
+            appliesCredit: summary.creditApplied > 0,
+            requiredEmployees: quote?.requiredEmployees ?? 1,
+            rooms: state.rooms,
+            bathrooms: state.bathrooms,
+            dirtiness: quote?.dirtiness ?? state.dirtiness ?? .normal,
+            basketNames: services + packages,
+            extraNames: (extras ?? []).filter { state.selectedExtraSlugs.contains($0.slug) }
+                .map { $0.localizedName(for: locale) },
+            paysCash: state.paymentMethod == .cash
+        )
     }
 
     private func submit() async {
-        await handle(vm.submit())
+        let draft = Self.submittedDraft(
+            vm.state,
+            quote: vm.quoteState.quote,
+            discount: vm.effectiveDiscount,
+            catalog: vm.catalogState.loadedValue,
+            extras: vm.extrasState.loadedValue,
+            locale: locale
+        )
+        busyShownAt = .now
+        holdsBusyOverlay = true
+        let outcome = await vm.submit()
+        if case .success = outcome {} else { holdsBusyOverlay = false }
+        await handle(outcome, draft: draft)
     }
 
-    private func handle(_ outcome: BookingSubmitOutcome) async {
+    private func handle(_ outcome: BookingSubmitOutcome, draft: BookingSuccess) async {
         switch outcome {
         case let .success(orderId, confirmationCode):
-            success = BookingSuccess(orderId: orderId, confirmationCode: confirmationCode)
+            handOver(draft.placed(orderId: orderId, confirmationCode: confirmationCode))
         case let .cardPending(orderId, confirmationCode, presentation):
-            await presentPaymentSheet(presentation, orderId: orderId, confirmationCode: confirmationCode)
+            await presentPaymentSheet(
+                presentation,
+                booking: draft.placed(orderId: orderId, confirmationCode: confirmationCode)
+            )
         case .profileIncomplete:
             slideResetCount += 1
             onCompleteProfile()
@@ -145,6 +266,79 @@ struct BookingSheetView: View {
         }
     }
 
+    /// The busy overlay stays over the confirmation until its details are read or 1.2 s have passed, so
+    /// the confirmation arrives complete rather than filling in after it is on screen.
+    private func handOver(_ booking: BookingSuccess) {
+        revealed = false
+        holdsBusyOverlay = true
+        success = booking
+        awaitDetails()
+    }
+
+    private func awaitDetails() {
+        Task {
+            try? await Task.sleep(for: Self.detailsWait)
+            await reveal()
+        }
+    }
+
+    /// The cleaner leaves the busy card at the hero's height, so a card still growing to it is let finish first.
+    private func reveal() async {
+        try? await Task.sleep(until: busyShownAt + Self.minimumBusy, clock: .continuous)
+        if !reduceMotion { try? await Task.sleep(until: busyMascotSettles, clock: .continuous) }
+        guard success != nil, holdsBusyOverlay, !revealed, flight == nil else { return }
+        if !reduceMotion, let from = busyMascotFrame, let to = heroMascotFrame {
+            flightLanded = false
+            flightArtTurned = false
+            flight = (from, to)
+            try? await Task.sleep(for: .milliseconds(16))
+        }
+        mascotTravels = flight != nil
+        revealed = true
+        holdsBusyOverlay = false
+        guard flight != nil else { return }
+        withAnimation(.timingCurve(0.05, 0.7, 0.1, 1, duration: Self.flightLength)) { flightLanded = true }
+        withAnimation(.linear(duration: 0.14)) { flightArtTurned = true }
+        try? await Task.sleep(for: .milliseconds(460))
+        flight = nil
+    }
+
+    /// Each pose is drawn on its own canvas, so both stand as tall as the figure they leave and the one they land
+    /// on: the cleaner from the busy card's canvas, the welcomer onto the hero's.
+    @ViewBuilder private var flyer: some View {
+        if let flight {
+            GeometryReader { proxy in
+                let origin = proxy.frame(in: .global).origin
+                ZStack(alignment: .topLeading) {
+                    standIn(
+                        "mascot_cleaning_still",
+                        from: flight.from,
+                        to: MascotFigureBox.cleaning.canvas(standingAs: .welcoming, on: flight.to),
+                        origin: origin
+                    )
+                    .opacity(flightArtTurned ? 0 : 1)
+                    standIn(
+                        "mascot_welcoming_start",
+                        from: MascotFigureBox.welcoming.canvas(standingAs: .cleaning, on: flight.from),
+                        to: flight.to,
+                        origin: origin
+                    )
+                    .opacity(flightArtTurned ? 1 : 0)
+                }
+            }
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+        }
+    }
+
+    private func standIn(_ art: String, from: CGRect, to: CGRect, origin: CGPoint) -> some View {
+        let frame = flightLanded ? to : from
+        return Image(decorative: art).resizable()
+            .frame(width: to.width, height: to.height)
+            .scaleEffect(frame.width / to.width, anchor: .topLeading)
+            .offset(x: frame.minX - origin.x, y: frame.minY - origin.y)
+    }
+
     /// Stripe's sheet over the booking. The app leaves the foreground under it and comes back — a 3-D Secure
     /// approval in the bank app, a look-up of the card number, a Face ID prompt — and the order is past the
     /// time by then, so the open booking is not re-checked while it is up.
@@ -154,28 +348,26 @@ struct BookingSheetView: View {
         return await paymentSheet.present(presentation)
     }
 
-    private func presentPaymentSheet(
-        _ presentation: PaymentSheetPresentation,
-        orderId: String,
-        confirmationCode: String
-    ) async {
+    private func presentPaymentSheet(_ presentation: PaymentSheetPresentation, booking: BookingSuccess) async {
         let outcome = await showPaymentSheet(presentation)
-        switch BookingCardResultResolver.resolve(outcome, confirmationCode: confirmationCode) {
+        switch BookingCardResultResolver.resolve(outcome, confirmationCode: booking.confirmationCode) {
         case let .navigateToSuccess(code):
             // Same duplicate-order guard as the VM's cash path: clear the
             // session-lived draft the moment the payment lands, not on the
             // success screen's exit (a swiped-away sheet skips those closures).
-            vm.reset()
-            success = BookingSuccess(orderId: orderId, confirmationCode: code)
+            // Stripe's sheet has already gone, so the overlay comes up whole, without its entrance, in the
+            // frame the confirmation replaces the form.
+            var cover = Transaction()
+            cover.disablesAnimations = true
+            withTransaction(cover) {
+                vm.reset()
+                busyShownAt = .now
+                handOver(booking.placed(orderId: booking.orderId, confirmationCode: code))
+            }
         case let .snackbar(messageKey):
             snackbar.showError(L10n.localized(messageKey))
         }
     }
-}
-
-private struct BookingSuccess {
-    let orderId: String
-    let confirmationCode: String
 }
 
 private struct BookingSheetContent: View {
@@ -360,7 +552,6 @@ private struct BookingSheetContent: View {
                     isBusy: isSubmitting,
                     enabled: canConfirm,
                     resetTrigger: slideResetTrigger,
-                    style: .prominent,
                     onConfirm: { Task { await onConfirm() } }
                 )
                 .lineLimit(1)

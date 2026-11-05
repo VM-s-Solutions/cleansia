@@ -204,6 +204,7 @@ final class FakePaymentIntentClient: PaymentIntentClient, @unchecked Sendable {
 final class FakePaymentSheetPresenter: PaymentSheetPresenting, @unchecked Sendable {
     var outcome: PaymentSheetOutcome
     private(set) var presentations: [PaymentSheetPresentation] = []
+    var beforeReturning: (() async -> Void)?
 
     init(outcome: PaymentSheetOutcome = .completed) {
         self.outcome = outcome
@@ -211,6 +212,7 @@ final class FakePaymentSheetPresenter: PaymentSheetPresenting, @unchecked Sendab
 
     func present(_ presentation: PaymentSheetPresentation) async -> PaymentSheetOutcome {
         presentations.append(presentation)
+        await beforeReturning?()
         return outcome
     }
 }

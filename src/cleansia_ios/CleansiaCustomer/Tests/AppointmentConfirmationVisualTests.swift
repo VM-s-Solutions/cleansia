@@ -16,6 +16,20 @@ final class AppointmentConfirmationVisualTests: XCTestCase {
     private var restoreBundle = L10n.bundle
     private var restoreTag = CoreL10n.languageTag
 
+    /// The measurements read the sheet's accessibility tree, which SwiftUI builds only while the process has
+    /// accessibility on; a simulator that has never run an assistive tool has it off. This flips libAccessibility's
+    /// own switch for the test process, as VoiceOver or Accessibility Inspector would.
+    override static func setUp() {
+        super.setUp()
+        typealias SetEnabled = @convention(c) (Bool) -> Void
+        let library = "/usr/lib/libAccessibility.dylib"
+        let root = ProcessInfo.processInfo.environment["IPHONE_SIMULATOR_ROOT"] ?? ""
+        guard let handle = dlopen(root + library, RTLD_NOW) ?? dlopen(library, RTLD_NOW),
+              let symbol = dlsym(handle, "_AXSApplicationAccessibilitySetEnabled")
+        else { return }
+        unsafeBitCast(symbol, to: SetEnabled.self)(true)
+    }
+
     override func setUp() {
         super.setUp()
         restoreBundle = L10n.bundle
@@ -375,19 +389,20 @@ extension AppointmentConfirmationVisualTests {
         return canvas
     }
 
+    /// Waits for the test host's scene to reach the foreground. A headless simulator, as CI's is, never makes that
+    /// scene key, so it stays `foregroundInactive` however long it waits; it is on screen all the same.
     func waitForForegroundScene() async throws -> UIWindowScene {
         FileHandle.standardOutput.write(Data("CLEANSIA_CONFIRMATION_FOREGROUND_WAIT\n".utf8))
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let deadline = ProcessInfo.processInfo.systemUptime + 20
-        while scene.activationState != .foregroundActive || UIApplication.shared.applicationState != .active,
+        while PresentedBookingConfirmation.phase(of: scene) != .active,
               ProcessInfo.processInfo.systemUptime < deadline
         {
             try await Task.sleep(nanoseconds: 100_000_000)
         }
         return try XCTUnwrap(
-            scene.activationState == .foregroundActive && UIApplication.shared
-                .applicationState == .active ? scene : nil,
-            "Real foreground wait expired: scene=\(scene.activationState.rawValue), "
+            PresentedBookingConfirmation.phase(of: scene) == .active ? scene : nil,
+            "Foreground wait expired: scene=\(scene.activationState.rawValue), "
                 + "application=\(UIApplication.shared.applicationState.rawValue)"
         )
     }
@@ -501,12 +516,12 @@ struct PresentedBookingConfirmation: View {
     var reduceMotion = false
     @State private var presented = false
 
-    /// A UIKit-created hosting window does not supply the SwiftUI App scene's environment to its modal.
-    /// Bridge only the real window scene's current state, rather than forcing the animation on.
+    /// A UIKit-created hosting window does not supply the SwiftUI App scene's environment to its modal, so the
+    /// real window scene's state is bridged. A scene in the foreground reads `.active`, whether or not it is key: a
+    /// headless simulator leaves the host's scene `foregroundInactive` while it is on screen.
     static func phase(of scene: UIWindowScene) -> ScenePhase {
         switch scene.activationState {
-        case .foregroundActive: .active
-        case .foregroundInactive: .inactive
+        case .foregroundActive, .foregroundInactive: .active
         case .background, .unattached: .background
         @unknown default: .background
         }

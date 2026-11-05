@@ -403,12 +403,29 @@
 | T-0888 | Show assigned cleaner photos with initials fallback | M | `in_review` | — | — |
 | T-0889 | Smooth cleaning mascot playback | M | `in_review` | — | — |
 | T-0890 | Refine order creation and completion success marks | M | `in_review` | — | — |
-| T-0891 | Keep Home gallery progress visible after swiping | M | `in_review` | — | — |
+| T-0891 | Resume Home gallery autoplay and live progress after swiping | M | `in_review` | — | native source/visual review approved locally 2026-10-30; evidence appointment-gallery-20261030 |
 | T-0892 | Remove Partner confirmation code accessory icon | M | `in_review` | — | — |
 | T-0893 | Validate duplicate phones during Partner onboarding | M | `in_review` | — | — |
 | T-0894 | Save Partner profile photo through the bottom action | M | `in_review` | — | — |
 | T-0895 | Confirm cleaning evidence photo deletion | M | `in_review` | — | — |
 | T-0896 | Use concise mobile translations | M | `in_review` | — | — |
+| T-0897 | Apply the Appointment order confirmation layout | M | `in_review` | — | compact success-only sheet, centered address icon and native light/dark animation recordings verified; evidence confirmation-compact-motion-20261030 |
+| T-0898 | Compact Customer order facts and address | M | `in_review` | — | native source/visual review approved locally 2026-10-30; evidence appointment-gallery-20261030 |
+| T-0899 | Add example email placeholders to mobile authentication | S | `in_review` | — | four app builds, 83 focused iOS tests and source/resource review passed locally; evidence auth-placeholders-20261030 |
+| T-0900 | Redesign parts of the Appointment confirmation to remove unused space | M | `in_review` | — | round 2 approved 2026-10-31; iOS 31 focused tests, Android 1,819 unit tests, native captures; Android shell path unverified at runtime; evidence confirmation-appointment-round2-impl-20261031 |
+| T-0901 | Welcoming Appointment confirmation at the booking sheet's full height, with a smooth arrival | M | `in_review` | — | round 3 approved 2026-10-31; iOS 220/221 focused tests (1 unrelated Payments failure), Android 1,825 + 347 unit tests and 21/21 real-sheet emulator cases, native captures; Android shell and Stripe paths unverified on a device; evidence confirmation-appointment-round3-impl-20261031 |
+| T-0902 | Partner Orders redesign on iOS and Android — calendar cards, tab switcher, Available/Active/History, take sheet with the contract summary, banner removed | L | `in_review` | — | approved 2026-10-31; iOS 1,316 Partner tests, Android 1,066 + 347 unit tests, review fixes red-then-green, native captures; Android 360×640 contract area is the owner's call; evidence partner-orders-build-20261031 |
+| T-0903 | Pre-take location — Prague district from the postcode and a snapped distance band from home (ADR-0079) | M | `in_review` | — | backend unit 9,183, integration 1,042, host 518, all green; correctness + security reviews approve; ADR-0079 proposed pending owner acknowledgement; evidence partner-orders-build-20261031 |
+| T-0904 | Document the cash float cap refusal and how it lifts | S | `in_review` | — | docs written 2026-10-31; four surfaces that ignore the cap reported, not fixed |
+| T-0905 | Decide pay when a team job's seat never fills (analysis filed) | S | `todo` | — | analysis agents/analysts/unfilled-team-seat-pay-20261031.md; nine owner questions with defaults |
+| T-0906 | Booking confirmation as one ticket (round 4) on iOS and Android — finding, remedy line, deadline from the order, retry | L | `in_review` | — | approved 2026-11-01; iOS 1,958 tests (3 pre-existing failures outside it), Android 1,856 / 0; uk/sk default-size overflow and the late-failure fit reported for a call |
+| T-0907 | Partner Orders redesign, "the working day" — day panels, day line, pay tile, run-sheet job detail, on iOS and Android | L | `in_review` | — | built 2026-11-01; job-card refinement and the reported findings built 2026-11-02 (round 4); uncommitted, sits on T-0902 |
+| T-0908 | The pre-take area label names the district or city only — no "· 180 xx" postal prefix | S | `in_review` | — | owner ruling 2026-11-01 "You can remove it" |
+| T-0909 | Booking confirmation — the cleaning mascot hands over to the waving mascot at the same size | S | `in_review` | — | Mike 2026-11-01: the size jump in the hand-off is visible; build the recommendation |
+| T-0910 | Partner Orders and the job detail on the app's design system — shared type scale, standard slide, richer detail head, alignment; then clean up | L | `in_review` | — | Mike 2026-11-02: fonts don't match, detail very plain; mock first, then build, then clean up |
+| T-0911 | Customer booking confirmation on the app's type scale — less bold, the app's fonts | S | `in_review` | — | Mike 2026-11-04: as for the partner pages, not much bold |
+| T-0912 | Partner Orders — job rows open the job, map behind the detail, Job-taken panel, gallery photos, cleaning animation, Note/Issue row | M | `in_review` | — | Mike 2026-11-04: picks E, M1, M3, J3 + three remarks |
+| T-0913 | Customer booking — "How clean is your home?" on one screen, without scrolling | S | `in_review` | — | Mike 2026-11-05 picked C1; built on iOS and Android. Android fits 375×667 in every state; iOS fits only with no level picked (options in `build/handoff/t0913-ios.json`) |
 
 > **T-0785–T-0799 filed 2026-09-20** — the UI-polish and dead-code batch, on the owner's ruling of
 > that day (*"I want to polish alignments in admin app a bit on all of the overview/detail pages.
@@ -453,7 +470,7 @@
 > reported not absorbed. Owed: the DEV drop at the next DEV deploy (MS-2 / A1, `20260920204705`);
 > the merge order is #255 then #260. Open rows: none.
 
-*Next id: **T-0897**.*
+*Next id: **T-0914**.*
 
 
 Current startup checkpoint — 2026-10-16 UTC: PR #344 merged C12 `70d9c8b1ea82` as M5 `a8d308126dc4`; C12 local8, PR5 workflows/7 checks and M5 4/5 passed, all attempt 1/no reruns, with guarded manual skips and prior application limits retained. First read-only observation `38947741183/a1` failed before its baseline with a generic validation error; one POST, GET-only discovery, final artifact saved once, no resize/restart/B3 trial. T-0636 remains `in_progress`; safe diagnostic correction and the temporary comparison remain pending. The ticket's dated PR #344 closure and `pr344-closure-preparation001/CLAIMS-AND-PINS001.json` carry the bounds.

@@ -29,12 +29,14 @@ extension BookingSuccessView {
 
     // swiftlint:disable large_tuple
     /// Spare height is spent tier by tier, so it never collects into one band: the rows to their natural
-    /// padding, the header to its cap, the rows to their cap and past it, and only then a rest. A row's
-    /// padding is on both sides of four rows, so a padding tier is shared over eight sides.
+    /// padding, the header to its cap, the rows to their cap and past it, and only then a rest, which past
+    /// `restCap` opens the rows further. A row's padding is on both sides of four rows, so a padding tier is
+    /// shared over eight sides.
     static func distribute(
         available: CGFloat,
         natural: CGFloat,
-        tiers: Tiers
+        tiers: Tiers,
+        restCap: CGFloat = .infinity
     ) -> (header: CGFloat, rowPad: CGFloat, rest: CGFloat) {
         let sides: CGFloat = 8
         var slack = max(0, available - natural)
@@ -47,6 +49,7 @@ extension BookingSuccessView {
         let header = tiers.hdMin + spend(tiers.hdCap - tiers.hdMin)
         rowPad += spend((tiers.pMax - tiers.pNat) * sides) / sides
         rowPad += spend((tiers.pOver - tiers.pMax) * sides) / sides
+        rowPad += spend(slack - restCap) / sides
         return (header, rowPad, slack)
     }
 
@@ -356,6 +359,16 @@ extension BookingSuccessView.SizeClass {
         case .regular: .init(pMin: 10, pNat: 13, pMax: 20, pOver: 24, hdMin: 96, hdCap: 116)
         case .tall: .init(pMin: 10, pNat: 14, pMax: 20, pOver: 24, hdMin: 104, hdCap: 136)
         case .accessibility: .init(pMin: 14, pNat: 14, pMax: 14, pOver: 14, hdMin: 96, hdCap: 96)
+        }
+    }
+
+    /// The tiers were drawn on iOS 16's .large sheet; iOS 26's leaves a regular phone 17 pt more, which would
+    /// rest above the actions past the 12 pt the frames allow. A compact phone keeps its last tier, and large
+    /// text scrolls.
+    var restCap: CGFloat {
+        switch self {
+        case .regular, .tall: Spacing.xs
+        case .compact, .accessibility: .infinity
         }
     }
 

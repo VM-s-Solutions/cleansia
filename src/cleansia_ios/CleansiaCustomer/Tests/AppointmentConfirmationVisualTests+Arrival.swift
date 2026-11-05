@@ -12,16 +12,21 @@ import XCTest
 extension AppointmentConfirmationVisualTests {
     static let stills: [TimeInterval] = [0, 0.12, 0.24, 0.42, 0.8, 2.6]
 
+    /// Recorded until the figure rests and read by what finishes before what, so no runner's pace moves a check.
     func testCashArrivalLiftsTheScrimWhileTheMascotTravels() async throws {
         _ = try await waitForForegroundScene()
-        let run = try await recordArrival(.cash, detailsAfter: 0.3, length: 3.8, name: "cash")
+        let run = try await recordArrival(.cash, detailsAfter: 0.3, length: 10, name: "cash") {
+            $0.restsOnTheThumbsUp(for: 0.3)
+        }
         let reveal = try XCTUnwrap(run.reveal, "the busy card never left: \(run)")
-        XCTAssertTrue(run.dimmed(in: reveal - 0.2 ... reveal + 0.09, atLeast: 0.4), "the scrim holds at first: \(run)")
-        XCTAssertTrue(run.lifting(in: reveal + 0.15 ... reveal + 0.38), "and lifts as the mascot lands: \(run)")
+        let cardGone = try XCTUnwrap(run.cardGone, "the card never left: \(run)")
+        let landed = try XCTUnwrap(run.samples.first(where: \.welcoming), "the mascot never landed: \(run)")
+        XCTAssertTrue(run.dimmed(in: reveal - 0.2 ... reveal, atLeast: 0.4), "the scrim holds at first: \(run)")
+        XCTAssertGreaterThan(run.dimming(cardGone), 0.03, "and outlasts the card as the mascot travels: \(run)")
+        XCTAssertLessThan(cardGone.time, landed.time, "the card has left before the mascot lands: \(run)")
         XCTAssertTrue(run.dimmed(in: reveal + 0.47 ... reveal + 0.8, atMost: 0.03), "gone once it has: \(run)")
-        XCTAssertTrue(run.calm(in: reveal + 0.2 ... reveal + 0.8), "the card leaves in its 120 ms: \(run)")
-        XCTAssertTrue(run.welcoming(in: reveal + 0.55 ... reveal + 2.3), "the welcome plays after landing: \(run)")
-        XCTAssertTrue(run.still(in: reveal + 2.8 ... reveal + 3.0), "then rests on the thumbs-up: \(run)")
+        XCTAssertGreaterThanOrEqual(run.welcomeBracket ?? 0, 2.0, "the welcome plays its 2.1 s after landing: \(run)")
+        XCTAssertTrue(run.restsOnTheThumbsUp(for: 0.3), "then rests on the thumbs-up: \(run)")
     }
 
     /// Stripe's sheet has the screen for 600 ms; the busy card is back, whole, in the frame the confirmation
@@ -98,18 +103,19 @@ extension AppointmentConfirmationVisualTests {
     }
 
     /// Nothing travels and nothing plays: the card and the scrim fade out together in 150 ms over the
-    /// thumbs-up, which is there from the first frame.
+    /// thumbs-up, which is there from the first frame. Recorded past the moment a welcome would have started.
     func testReduceMotionCrossFadesCardAndScrimTogether() async throws {
         _ = try await waitForForegroundScene()
         let run = try await recordArrival(
             .cash,
             detailsAfter: 0.3,
             reduceMotion: true,
-            length: 2.2,
+            length: 6,
             name: "reduced-motion"
-        )
+        ) { $0.cardHasBeenGone(for: 0.8) }
         let reveal = try XCTUnwrap(run.reveal, "the busy card never left: \(run)")
-        XCTAssertTrue(run.lifting(in: reveal + 0.02 ... reveal + 0.12), "the scrim fades with the card: \(run)")
+        let cardGone = try XCTUnwrap(run.cardGone, "the card never left: \(run)")
+        XCTAssertLessThanOrEqual(run.dimming(cardGone), 0.03, "the scrim fades with the card, gone as it is: \(run)")
         XCTAssertTrue(run.dimmed(in: reveal + 0.2 ... reveal + 0.6, atMost: 0.03), "both gone by 150 ms: \(run)")
         XCTAssertFalse(run.samples.contains(where: \.welcoming), "motion off never plays the welcome: \(run)")
     }
@@ -117,6 +123,9 @@ extension AppointmentConfirmationVisualTests {
     /// A customer who typed notes slides to confirm with the keyboard up, and it only goes down after the
     /// confirmation has replaced the form. The spare height is spread over a viewport that ignores the keyboard.
     func testAKeyboardUpAtTheHandOverStillGivesTheMascotItsHeight() async throws {
+        if #available(iOS 26, *) {
+            throw XCTSkip("iOS 26 ignores synthetic keyboard notifications: SwiftUI's keyboard avoidance never moves")
+        }
         _ = try await waitForForegroundScene()
         let create = FakeOrderCreateClient(result: .success(CreatedOrder(id: "o-1", confirmationCode: "130AA4")))
         create.beforeCreate = { try? await Task.sleep(nanoseconds: 1_200_000_000) }
@@ -248,7 +257,8 @@ private extension AppointmentConfirmationVisualTests {
 
     func recordArrival(
         _ sample: Sample, language: String = "en", detailsAfter: TimeInterval,
-        detail: ApiResult<CustomerOrderDetail>? = nil, reduceMotion: Bool = false, length: TimeInterval, name: String
+        detail: ApiResult<CustomerOrderDetail>? = nil, reduceMotion: Bool = false, length: TimeInterval, name: String,
+        until done: (ArrivalTimeline) -> Bool = { _ in false }
     ) async throws -> ArrivalTimeline {
         try useLanguage(language)
         let create = FakeOrderCreateClient(result: .success(CreatedOrder(id: "o-1", confirmationCode: "130AA4")))
@@ -276,7 +286,7 @@ private extension AppointmentConfirmationVisualTests {
         var timeline = ArrivalTimeline()
         var cardSpot: CGPoint?
         var released = false
-        while ProcessInfo.processInfo.systemUptime - started < length {
+        while ProcessInfo.processInfo.systemUptime - started < length, !done(timeline) {
             let now = ProcessInfo.processInfo.systemUptime - started
             if timeline.swap == nil, vm.state.selectedServiceIds.isEmpty { timeline.swap = now }
             if let swap = timeline.swap, !released, now >= swap + detailsAfter {
@@ -540,19 +550,33 @@ struct ArrivalTimeline: CustomStringConvertible {
         inside(window).contains { (0.05 ... 0.38).contains(dimming($0)) }
     }
 
-    func calm(in window: ClosedRange<TimeInterval>) -> Bool {
-        let frames = inside(window)
-        return !frames.isEmpty && frames.allSatisfy { !$0.busy }
+    /// The first frame, from the reveal on, the busy card's exit has finished in.
+    var cardGone: Sample? {
+        reveal.flatMap { reveal in samples.first { $0.time >= reveal && !$0.busy } }
     }
 
-    func welcoming(in window: ClosedRange<TimeInterval>) -> Bool {
-        let frames = inside(window)
-        return !frames.isEmpty && frames.allSatisfy(\.welcoming)
+    func cardHasBeenGone(for tail: TimeInterval) -> Bool {
+        guard let gone = cardGone, let last = samples.last else { return false }
+        return last.time - gone.time >= tail
     }
 
-    func still(in window: ClosedRange<TimeInterval>) -> Bool {
-        let frames = inside(window)
-        return !frames.isEmpty && frames.allSatisfy { !$0.busy && !$0.welcoming }
+    /// The welcome has played in one run, and the figure has stood still on the thumbs-up for `rest` since.
+    func restsOnTheThumbsUp(for rest: TimeInterval) -> Bool {
+        guard let first = samples.firstIndex(where: \.welcoming),
+              let last = samples.lastIndex(where: \.welcoming),
+              samples[first ... last].allSatisfy(\.welcoming),
+              last + 1 < samples.count
+        else { return false }
+        let resting = samples[(last + 1)...]
+        return resting.allSatisfy { !$0.busy } && samples[samples.count - 1].time - samples[last + 1].time >= rest
+    }
+
+    /// From the frame before the welcome to the frame after it: never shorter than the welcome, however sparse.
+    var welcomeBracket: TimeInterval? {
+        guard let first = samples.firstIndex(where: \.welcoming), first > 0,
+              let last = samples.lastIndex(where: \.welcoming), last + 1 < samples.count
+        else { return nil }
+        return samples[last + 1].time - samples[first - 1].time
     }
 
     var description: String {

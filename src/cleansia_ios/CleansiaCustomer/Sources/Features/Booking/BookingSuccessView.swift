@@ -118,7 +118,7 @@ struct BookingSuccessView: View {
         let spread = Self.distribute(available: viewport, natural: natural, tiers: Tiers(
             pMin: tiers.pMin, pNat: tiers.pNat, pMax: tiers.pMax, pOver: tiers.pOver,
             hdMin: header, hdCap: max(tiers.hdCap, header)
-        ))
+        ), restCap: size.restCap)
         return (spread.header, spread.rowPad)
     }
 

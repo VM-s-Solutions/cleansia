@@ -334,6 +334,28 @@ extension BookingSuccessViewModelTests {
         }
     }
 
+    /// iOS 26's .large sheet leaves the 393 x 852 phone 17 pt more room than iOS 16's: the cash ticket's 6.5 pt rest
+    /// there would be 23.5 here.
+    func testARestPastItsCapOpensTheRowsOfARegularOrTallPhone() {
+        let regular = BookingSuccessView.SizeClass.regular
+        let rest = { (slack: CGFloat) in
+            BookingSuccessView.distribute(
+                available: 500 + slack, natural: 500, tiers: regular.tiers, restCap: regular.restCap
+            )
+        }
+        XCTAssertEqual(regular.restCap, 8)
+        XCTAssertEqual(BookingSuccessView.SizeClass.tall.restCap, 8)
+        XCTAssertEqual(rest(138.5).rowPad, 24, "a rest under the cap stays")
+        XCTAssertEqual(rest(138.5).rest, 6.5, accuracy: 0.001)
+        XCTAssertEqual(rest(140).rowPad, 24, accuracy: 0.001)
+        XCTAssertEqual(rest(140).rest, 8, accuracy: 0.001)
+        XCTAssertEqual(rest(155.5).header, 116)
+        XCTAssertEqual(rest(155.5).rowPad, 24 + 15.5 / 8, accuracy: 0.001, "past it, the rows open")
+        XCTAssertEqual(rest(155.5).rest, 8, accuracy: 0.001)
+        XCTAssertEqual(BookingSuccessView.SizeClass.compact.restCap, .infinity, "a compact phone keeps its last tier")
+        XCTAssertEqual(BookingSuccessView.SizeClass.accessibility.restCap, .infinity, "large text scrolls")
+    }
+
     func testACompactPhoneNeverPadsPastItsLastTier() {
         let tiers = BookingSuccessView.SizeClass.compact.tiers
         let fit = BookingSuccessView.distribute(available: 1512, natural: 512, tiers: tiers)

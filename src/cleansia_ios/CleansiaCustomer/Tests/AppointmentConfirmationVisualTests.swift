@@ -13,6 +13,12 @@ final class AppointmentConfirmationVisualTests: XCTestCase {
     static let phone = CGSize(width: 393, height: 852)
     static let smallPhone = CGSize(width: 375, height: 667)
 
+    /// The window less where the runtime starts a .large sheet: 57 pt down on iOS 16, 62 on iOS 26.
+    static func largeSheetHeight(in window: CGSize) -> CGFloat {
+        if #available(iOS 26, *) { return window.height - 62 }
+        return window.height - 57
+    }
+
     private var restoreBundle = L10n.bundle
     private var restoreTag = CoreL10n.languageTag
 
@@ -120,7 +126,10 @@ final class AppointmentConfirmationVisualTests: XCTestCase {
             "iphone-se-375x667-cs-dark-cash", language: "cs", scheme: .dark, size: Self.smallPhone, sample: .cash
         )
         for shot in [card, cash] {
-            XCTAssertEqual(shot.sheet.height, 610, accuracy: 1, "\(shot.name): the SE's .large sheet")
+            XCTAssertEqual(
+                shot.sheet.height, Self.largeSheetHeight(in: Self.smallPhone), accuracy: 1,
+                "\(shot.name): the SE's .large sheet"
+            )
         }
     }
 

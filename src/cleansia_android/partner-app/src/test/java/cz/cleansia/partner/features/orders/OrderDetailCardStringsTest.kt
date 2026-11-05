@@ -7,16 +7,10 @@ import org.junit.Assert.fail
 import org.junit.Test
 
 /**
- * Two cards on the order detail printed English into every locale, and neither
- * defect was visible to a key-parity check: the scope line concatenated its own
- * copy (`"$rooms rooms"`) and the timeline printed the backend's enum name
- * (`entry.status.name`). Text that never became a resource is invisible to `R`,
- * to `lint`, and to every test that compares locale key sets.
- *
- * Both cards are single `@Composable`s with no seam, so this works on the
- * source and resource files directly — the `NotificationsScreenTogglesTest`
- * precedent. `OrderStatusPresentationTest` pins the resolver these call; this
- * pins that the cards still call it, which a resolver test cannot see.
+ * The detail's scope line once concatenated its own copy (`"$rooms rooms"`), which no key-parity check could
+ * see: text that never became a resource is invisible to `R`, to `lint`, and to every test that compares locale
+ * key sets. The scope and crew lines are now the board's rules (`OrdersBoardRules`) drawn by the about panel
+ * (`ScopeCard`), so this works on those source files and the resources directly.
  */
 class OrderDetailCardStringsTest {
 
@@ -43,14 +37,14 @@ class OrderDetailCardStringsTest {
         ?: error("partner-app module not found from working dir ${File(".").absolutePath}")
 
     private val scopeCard = card("ScopeCard.kt")
-    private val statusTimeline = card("StatusTimeline.kt")
+    private val boardRules = card("OrdersBoardRules.kt")
 
-    /** Every counted label the scope card renders — property scope and crew alike. */
-    private val scopePlurals = listOf("scope_rooms", "scope_baths", "crew_size", "crew_spots_open")
+    /** Every counted label the scope and crew lines render — property scope and crew alike. */
+    private val scopePlurals = listOf("scope_rooms", "scope_baths", "crew_size", "orders_flag_crew_taken")
 
     @Test
-    fun `neither card carries prose of its own`() {
-        mapOf("ScopeCard.kt" to scopeCard, "StatusTimeline.kt" to statusTimeline)
+    fun `the about panel carries no prose of its own`() {
+        mapOf("ScopeCard.kt" to scopeCard)
             .forEach { (name, source) ->
                 val prose = userFacingLiterals(source)
                 if (prose.isNotEmpty()) {
@@ -63,13 +57,14 @@ class OrderDetailCardStringsTest {
     }
 
     @Test
-    fun `every counted label on the scope card goes through a shared plural`() {
+    fun `every counted label on the scope and crew lines goes through a shared plural`() {
         scopePlurals.forEach { name ->
             assertTrue(
-                "ScopeCard must read R.plurals.$name — the orders list already does",
-                scopeCard.contains("R.plurals.$name"),
+                "the scope or crew line must read R.plurals.$name, as the board does",
+                scopeCard.contains("R.plurals.$name") || boardRules.contains("R.plurals.$name"),
             )
         }
+        assertTrue("Property & scope names the package or service the board names", scopeCard.contains("rules.scopeLead("))
     }
 
     @Test
@@ -111,28 +106,6 @@ class OrderDetailCardStringsTest {
                 .findAll(pluralBody(stringsXml(locale), locale, "scope_baths"))
                 .associate { it.groupValues[1] to it.groupValues[2] }
             assertEquals("$locale/scope_baths", items, declared)
-        }
-    }
-
-    /**
-     * The wire `name` ("OnTheWay") is only ever a debug diagnostic, and the one
-     * place that decides so is [orderStatusLabel]. Reading it at the call site
-     * puts it back on screen in every locale.
-     */
-    @Test
-    fun `the timeline resolves its label through the presentation seam`() {
-        assertTrue(
-            "StatusTimeline must label rows with orderStatusLabel(…)",
-            statusTimeline.contains("orderStatusLabel("),
-        )
-        val rawReads = statusTimeline.lines()
-            .filter { it.contains("status?.name") || it.contains("status.name") }
-            .filterNot { it.contains("orderStatusLabel(") }
-        if (rawReads.isNotEmpty()) {
-            fail(
-                "StatusTimeline reads the backend's English enum name outside " +
-                    "orderStatusLabel: ${rawReads.joinToString(" | ") { it.trim() }}",
-            )
         }
     }
 

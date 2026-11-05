@@ -10,7 +10,7 @@ final class PlatformWorkCopyTests: XCTestCase {
     /// Each key with the format slots its sentence must carry, in every locale.
     private static let slots: [String: [String]] = [
         "order_removal_title": [],
-        "order_removal_message": ["%1$@"],
+        "order_removal_lead": [],
         "profile_weekly_limit": ["%1$d"],
         "profile_weekly_limit_reason": ["%1$@"],
         "period_pay_line_deduction": ["%1$@"],
@@ -31,7 +31,12 @@ final class PlatformWorkCopyTests: XCTestCase {
         "legal_documents_text_updated": [],
         "legal_documents_review": [],
         "work_contract_reward": [],
-        "work_contract_parties": []
+        "work_contract_parties": [],
+        "work_contract_summary_lead": [],
+        "work_contract_summary_lockout": [],
+        "work_contract_summary_late_cancel": [],
+        "work_contract_summary_complaint": [],
+        "work_contract_summary_equipment": []
     ]
 
     private func catalog() throws -> [String: Any] {

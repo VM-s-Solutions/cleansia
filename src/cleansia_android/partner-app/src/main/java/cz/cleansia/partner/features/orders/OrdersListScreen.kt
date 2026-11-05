@@ -1,58 +1,72 @@
 package cz.cleansia.partner.features.orders
 
-import android.Manifest
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import android.text.format.DateFormat
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowForward
-import androidx.compose.material.icons.outlined.ArrowDropDown
-import androidx.compose.material.icons.outlined.LocalFireDepartment
-import androidx.compose.material.icons.outlined.LocationOn
-import androidx.compose.material.icons.outlined.PlayCircle
-import androidx.compose.material.icons.outlined.Schedule
-import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.ErrorOutline
+import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material.icons.outlined.Payments
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.SwapVert
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -60,110 +74,184 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.AlignmentLine
+import androidx.compose.ui.layout.FirstBaseline
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cz.cleansia.core.ui.components.MascotEmptyState
+import cz.cleansia.core.money.CurrencySymbols
+import cz.cleansia.core.ui.components.CleansiaButtonSize
+import cz.cleansia.core.ui.components.CleansiaChip
+import cz.cleansia.core.ui.components.CleansiaOutlinedButton
+import cz.cleansia.core.ui.components.CleansiaTextButton
+import cz.cleansia.core.ui.components.CleansiaTextLink
 import cz.cleansia.core.ui.components.SudsRefreshIndicator
 import cz.cleansia.core.ui.theme.Spacing
+import cz.cleansia.core.ui.theme.capBandAligned
 import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.OrderListItem
-import cz.cleansia.partner.api.model.OrderStatus
+import cz.cleansia.partner.data.orders.PendingOffer
+import cz.cleansia.partner.data.payroll.CashHeld
 import cz.cleansia.partner.features.main.MainBottomNavInset
+import cz.cleansia.partner.ui.theme.Slate400
+import cz.cleansia.partner.ui.theme.Slate500
+import cz.cleansia.partner.ui.theme.pendingInk
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
-import java.util.Locale
-import kotlin.math.roundToInt
+import kotlinx.coroutines.delay
 
 /**
- * Wolt/Bolt-style cleaner job board.
- *
- *  - Top: title + segmented control (Available / Active / History).
- *  - Sticky in-progress banner above everything when a job is in flight,
- *    so the cleaner can never lose track of what they're doing.
- *  - Available pane: stack of opportunity cards with map preview, distance
- *    hero metric, pay, meta, and a single primary Take button. No reject —
- *    skipping is implicit (just scroll past).
- *  - Active pane: list of confirmed/on-the-way orders with inline
- *    status-advance buttons.
- *  - History pane: period filter + earnings summary + day-grouped rows.
- *
- * "Tab" terminology survives in the VM (`OrdersTab`) for now; only the
- * surface (segmented control vs TabRow) changed.
+ * The cleaner's job board: one sliding tab switcher with counts over Available (reserved cards first, honest
+ * cards, paging), Active (the hero, then Later) and History (period totals). Every state of every tab can be
+ * pulled. -> /mobile-app/features#partner-orders
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrdersListScreen(
     onOrderClick: (String) -> Unit,
     onOpenLegalDocuments: () -> Unit,
+    onOpenEarnings: () -> Unit = {},
     viewModel: OrdersListViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-    ) { granted -> viewModel.onLocationPermissionResult(granted) }
-
-    LaunchedEffect(uiState.tab) {
-        if (uiState.tab == OrdersTab.Available) {
-            if (!uiState.hasLocationPermission) {
-                permissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
-            } else {
-                // Re-resolve every time the cleaner enters the Available tab.
-                // VM.init() only runs once; without this the first fix attempt
-                // (often null on a cold emulator with no mock location) sticks
-                // forever. Re-entering the tab now retries.
-                viewModel.refreshLocation()
-            }
+    var now by remember { mutableStateOf(Instant.now()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(30_000)
+            now = Instant.now()
         }
     }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.onResume() }
 
-    // Returning from OrderDetailScreen (after take / on-the-way / start
-    // / complete) used to fire a visible pull indicator on every resume.
-    // Route through the cached/stale-checking path instead: a warm cache
-    // (within the Staleness window, ~30s default) means no network call
-    // at all; a stale cache means a silent background fetch with no
-    // chunky pull indicator. The mutation paths in the VM call
-    // repo.invalidatePanesFor() first, so a real change is always visible.
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        viewModel.onResume()
-    }
+    // Back to jobs: focus goes to the card that took the taken row's place, else the first, else the tab.
+    val afterTakeFocus = remember { FocusRequester() }
+    var focusIndexAfterTake by remember { mutableStateOf<Int?>(null) }
 
     uiState.contractRequest?.let { request ->
         WorkContractSheet(
             request = request,
-            onDismiss = viewModel::dismissContract,
+            onDismiss = {
+                if (uiState.takeTaken) focusIndexAfterTake = uiState.takenIndex ?: 0
+                viewModel.dismissContract()
+            },
             onOutcome = viewModel::onWorkContractOutcome,
             onOpenLegalDocuments = {
                 viewModel.dismissContract()
                 onOpenLegalDocuments()
             },
+            taken = uiState.takeTaken,
+            takenRow = uiState.takenRow,
+            boardRefusal = uiState.takeRefusal,
+            onOpenJob = {
+                viewModel.dismissContract()
+                onOrderClick(request.orderId)
+            },
         )
     }
 
-    val inProgress = remember(uiState.orders) {
-        // Sticky banner only shows when there's actually an in-progress job
-        // *currently in state*. We don't peek across tabs because the VM only
-        // holds the current tab's orders — that's fine: the banner is most
-        // relevant on the Active tab where the user lives during a job.
-        uiState.orders.firstOrNull { it.orderStatus.toOrderStatus() == OrderStatus._4 }
+    var pendingDecline by remember { mutableStateOf<String?>(null) }
+    pendingDecline?.let { orderId ->
+        AlertDialog(
+            onDismissRequest = { pendingDecline = null },
+            title = { Text(stringResource(R.string.offer_decline_title)) },
+            text = { Text(stringResource(R.string.offer_decline_body)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        pendingDecline = null
+                        viewModel.declineOffer(orderId)
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                ) { Text(stringResource(R.string.offer_decline_cta)) }
+            },
+            dismissButton = { CleansiaTextButton(onClick = { pendingDecline = null }) { Text(stringResource(R.string.cancel)) } },
+        )
+    }
+    uiState.declineRefusal?.let { reason ->
+        val copy = offerRefusalCopy(OfferAction.Decline)
+        AlertDialog(
+            onDismissRequest = viewModel::dismissDeclineRefusal,
+            title = { Text(stringResource(copy.titleRes)) },
+            text = { Text(stringResource(copy.bodyRes, reason)) },
+            confirmButton = { CleansiaTextButton(onClick = viewModel::dismissDeclineRefusal) { Text(stringResource(R.string.ok)) } },
+        )
     }
 
+    OrdersListContent(
+        uiState = uiState,
+        now = now,
+        onSelectTab = viewModel::selectTab,
+        onRefresh = viewModel::onRefresh,
+        onOrderClick = onOrderClick,
+        onTake = viewModel::takeOrderInline,
+        onDecline = { pendingDecline = it },
+        onSortSelected = viewModel::setAvailableSort,
+        onLoadMore = viewModel::loadMore,
+        onNotifyOnTheWay = viewModel::notifyOnTheWayInline,
+        onStart = viewModel::startOrderInline,
+        onPeriodSelected = viewModel::setCompletedPeriod,
+        onOpenEarnings = onOpenEarnings,
+        afterTakeFocus = afterTakeFocus,
+        focusIndexAfterTake = focusIndexAfterTake,
+        onAfterTakeFocused = { focusIndexAfterTake = null },
+    )
+}
+
+/** The board as a function of its state: everything the screen draws, with no view model or sheet. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun OrdersListContent(
+    uiState: OrdersListUiState,
+    now: Instant,
+    onSelectTab: (OrdersTab) -> Unit,
+    onRefresh: () -> Unit,
+    onOrderClick: (String) -> Unit,
+    onTake: (String) -> Unit,
+    onDecline: (String) -> Unit,
+    onSortSelected: (AvailableSort) -> Unit,
+    onLoadMore: () -> Unit,
+    onNotifyOnTheWay: (String) -> Unit,
+    onStart: (String) -> Unit,
+    onPeriodSelected: (CompletedPeriod) -> Unit,
+    onOpenEarnings: () -> Unit,
+    afterTakeFocus: FocusRequester = remember { FocusRequester() },
+    focusIndexAfterTake: Int? = null,
+    onAfterTakeFocused: () -> Unit = {},
+) {
+    val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val tabFocus = remember { FocusRequester() }
+    val available = uiState.pane(OrdersTab.Available)
+    val lists = OrdersTab.entries.associateWith { rememberLazyListState() }
+    val list = lists.getValue(uiState.tab)
+    val scrolled by remember(list) { derivedStateOf { list.canScrollBackward } }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -174,45 +262,25 @@ fun OrdersListScreen(
             text = stringResource(R.string.orders),
             style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(horizontal = Spacing.M, vertical = Spacing.M),
+            modifier = Modifier.padding(start = Spacing.M, end = Spacing.M, top = Spacing.S),
         )
-
         SegmentedTabs(
             current = uiState.tab,
-            onSelect = viewModel::selectTab,
-            modifier = Modifier.padding(horizontal = Spacing.M),
+            counts = mapOf(
+                OrdersTab.Available to OrdersBoardRules.availableBadge(available.hasLoaded, available.total, available.rows, now),
+                OrdersTab.MyActive to uiState.pane(OrdersTab.MyActive).total,
+            ),
+            onSelect = onSelectTab,
+            availableFocus = tabFocus,
+            modifier = Modifier.padding(start = Spacing.M, end = Spacing.M, top = Spacing.XS, bottom = 7.dp),
         )
+        HorizontalDivider(color = if (scrolled) MaterialTheme.colorScheme.outlineVariant else Color.Transparent)
 
-        Spacer(Modifier.height(Spacing.M))
-
-        if (inProgress != null) {
-            InProgressStickyBanner(
-                order = inProgress,
-                onClick = { inProgress.id?.let(onOrderClick) },
-                modifier = Modifier.padding(horizontal = Spacing.M),
-            )
-            Spacer(Modifier.height(Spacing.S))
-        }
-
-        // Pull-to-refresh wraps all three panes so the gesture is
-        // available regardless of which tab is active. The initial
-        // load still shows the centered CircularProgressIndicator so
-        // pull-down isn't competing with the first paint. Subsequent
-        // USER refreshes drive the built-in PTR spinner at the top of
-        // the pane — background refreshes (auto-resume, post-mutation,
-        // sort/period change) do NOT, by design.
         val pullState = rememberPullToRefreshState()
-        // True only on the very first load (before any refresh has finished).
-        // After that, even when the list is empty, we want to show the empty
-        // mascot inside the PullToRefreshBox so pull-to-refresh keeps working
-        // — matches InvoicesListScreen.
-        val isInitialLoad = uiState.isInitialLoad && !uiState.hasLoadedOnce
         PullToRefreshBox(
-            // INVARIANT: PullToRefreshBox subscribes to isUserRefreshing
-            // ONLY. Never isBackgroundRefreshing, never a generic isLoading.
-            // The chunky pull indicator must only fire from a user pull.
+            // Only a user pull drives the indicator; background refreshes never do.
             isRefreshing = uiState.isUserRefreshing,
-            onRefresh = { viewModel.onRefresh() },
+            onRefresh = onRefresh,
             state = pullState,
             modifier = Modifier.fillMaxSize(),
             indicator = {
@@ -221,35 +289,129 @@ fun OrdersListScreen(
                     isRefreshing = uiState.isUserRefreshing,
                     modifier = Modifier
                         .align(Alignment.TopCenter)
-                        .padding(top = statusBarTop + 8.dp),
+                        .padding(top = 8.dp),
                 )
             },
         ) {
-            when {
-                isInitialLoad -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
-                }
-                else -> when (uiState.tab) {
-                    OrdersTab.Available -> AvailablePane(
-                        uiState = uiState,
-                        onOrderClick = onOrderClick,
-                        onSearchChange = viewModel::setSearchQuery,
-                        onSortSelected = viewModel::setAvailableSort,
-                        onTakeOrder = viewModel::takeOrderInline,
-                    )
-                    OrdersTab.MyActive -> ActivePane(
-                        uiState = uiState,
-                        onOrderClick = onOrderClick,
-                        onNotifyOnTheWay = viewModel::notifyOnTheWayInline,
-                        onStart = viewModel::startOrderInline,
-                        onComplete = viewModel::completeOrderInline,
-                    )
-                    OrdersTab.MyCompleted -> HistoryPane(
-                        uiState = uiState,
-                        onOrderClick = onOrderClick,
-                        onPeriodSelected = viewModel::setCompletedPeriod,
+            when (uiState.tab) {
+                OrdersTab.Available -> AvailablePane(
+                    uiState = uiState,
+                    now = now,
+                    list = list,
+                    onOrderClick = onOrderClick,
+                    onTake = onTake,
+                    onDecline = onDecline,
+                    onSortSelected = onSortSelected,
+                    onRetry = onRefresh,
+                    onLoadMore = onLoadMore,
+                    afterTakeFocus = afterTakeFocus,
+                    focusIndexAfterTake = focusIndexAfterTake,
+                    onAfterTakeFocused = onAfterTakeFocused,
+                    tabFocus = tabFocus,
+                )
+                OrdersTab.MyActive -> ActivePane(
+                    uiState = uiState,
+                    now = now,
+                    list = list,
+                    onOrderClick = onOrderClick,
+                    onNotifyOnTheWay = onNotifyOnTheWay,
+                    onStart = onStart,
+                    onRetry = onRefresh,
+                    onShowAvailable = { onSelectTab(OrdersTab.Available) },
+                )
+                OrdersTab.MyCompleted -> HistoryPane(
+                    uiState = uiState,
+                    now = now,
+                    list = list,
+                    onOrderClick = onOrderClick,
+                    onPeriodSelected = onPeriodSelected,
+                    onRetry = onRefresh,
+                    onOpenEarnings = onOpenEarnings,
+                )
+            }
+        }
+    }
+}
+
+/** A tab pane's list: 16 from the screen, the first card 8 under the header, cards 12 apart. */
+private val PanePadding = PaddingValues(start = Spacing.M, end = Spacing.M, top = Spacing.XS)
+
+// ─── Tab switcher ──────────────────────────────────────────────────
+
+/**
+ * One capsule track with a sliding knob and three segments, each a tab in a selectable group that reports whether it
+ * is the selected one and says its count ("Available, 6 jobs") whatever arrangement fits. The segments share the track
+ * equally while each keeps 12 between its words and the knob's edge; a longer one takes the room it needs from the
+ * others. Badge beside the label; at large text under it; with no room, the label alone (TalkBack still says the count).
+ */
+@Composable
+private fun SegmentedTabs(
+    current: OrdersTab,
+    counts: Map<OrdersTab, Int?>,
+    onSelect: (OrdersTab) -> Unit,
+    availableFocus: FocusRequester,
+    modifier: Modifier = Modifier,
+) {
+    val dark = isDarkScheme()
+    val trackColor = if (dark) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.outline
+    val knobColor = if (dark) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.surface
+    val density = LocalDensity.current
+    val large = density.fontScale >= 1.3f
+    val measurer = rememberTextMeasurer()
+    val labelStyle = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
+    val badgeStyle = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold, fontFeatureSettings = "tnum")
+    val tabs = OrdersTab.entries
+    val labels = tabs.map { stringResource(segmentLabelFor(it)) }
+    val badges = tabs.map { OrdersBoardRules.badge(counts[it]) }
+    BoxWithConstraints(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(trackColor, CircleShape)
+            .padding(TRACK_PADDING),
+    ) {
+        val inner = constraints.maxWidth
+        val px = { dp: Dp -> with(density) { dp.roundToPx() } }
+        val labelWidths = labels.map { measurer.measure(it, labelStyle, maxLines = 1, softWrap = false).size.width }
+        val badgeWidths = badges.map { badge -> badge?.let { maxOf(px(BadgeSize), measurer.measure(it, badgeStyle, maxLines = 1, softWrap = false).size.width + px(Spacing.XS) * 2 - px(2.dp)) } ?: 0 }
+        val edge = px(SEGMENT_LABEL_INSET) * 2
+        val beside = tabs.indices.map { labelWidths[it] + (if (badgeWidths[it] > 0) px(BadgeGap) + badgeWidths[it] else 0) + edge }
+        val stacked = tabs.indices.map { maxOf(labelWidths[it], badgeWidths[it]) + edge }
+        val arrangement = when {
+            !large && beside.sum() <= inner -> SegmentArrangement.Beside
+            stacked.sum() <= inner -> SegmentArrangement.Stacked
+            else -> SegmentArrangement.LabelAlone
+        }
+        val need = when (arrangement) {
+            SegmentArrangement.Beside -> beside
+            SegmentArrangement.Stacked -> stacked
+            SegmentArrangement.LabelAlone -> labelWidths.map { it + edge }
+        }
+        val widths = segmentWidths(need, inner)
+        val index = tabs.indexOf(current)
+        val easing = tween<Dp>(durationMillis = 260, easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f))
+        val knobX by animateDpAsState(with(density) { widths.take(index).sum().toDp() }, easing, label = "orders-tab-knob")
+        val knobWidth by animateDpAsState(with(density) { widths[index].toDp() }, easing, label = "orders-tab-knob-width")
+        Box(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+            Box(
+                Modifier
+                    .offset { IntOffset(knobX.roundToPx(), 0) }
+                    .width(knobWidth)
+                    .fillMaxHeight()
+                    .background(knobColor, CircleShape),
+            )
+            Row(modifier = Modifier.fillMaxWidth().selectableGroup()) {
+                tabs.forEachIndexed { i, tab ->
+                    SegmentChip(
+                        label = labels[i],
+                        badge = badges[i],
+                        count = counts[tab],
+                        selected = tab == current,
+                        arrangement = arrangement,
+                        onClick = { onSelect(tab) },
+                        modifier = Modifier
+                            .width(with(density) { widths[i].toDp() })
+                            .fillMaxHeight()
+                            .then(if (tab == OrdersTab.Available) Modifier.focusRequester(availableFocus) else Modifier),
                     )
                 }
             }
@@ -257,34 +419,25 @@ fun OrdersListScreen(
     }
 }
 
-// ─── Segmented control + sticky banner ──────────────────────────────
+private enum class SegmentArrangement { Beside, Stacked, LabelAlone }
 
-@Composable
-private fun SegmentedTabs(
-    current: OrdersTab,
-    onSelect: (OrdersTab) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(44.dp),
-        shape = RoundedCornerShape(50),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxSize().padding(4.dp).selectableGroup(),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            OrdersTab.values().forEach { tab ->
-                SegmentChip(
-                    label = stringResource(segmentLabelFor(tab)),
-                    selected = tab == current,
-                    onClick = { onSelect(tab) },
-                    modifier = Modifier.weight(1f),
-                )
-            }
+/**
+ * Each segment's width in an [inner]-wide track: an equal share, and a segment that needs more than its share takes what
+ * it needs from the others. With no room for every need, each takes its need.
+ */
+internal fun segmentWidths(need: List<Int>, inner: Int): List<Int> {
+    val fixed = BooleanArray(need.size)
+    while (true) {
+        val free = need.indices.filter { !fixed[it] }
+        if (free.isEmpty()) return need
+        val room = inner - need.indices.filter { fixed[it] }.sumOf { need[it] }
+        val share = room / free.size
+        val over = free.filter { need[it] > share }
+        if (over.isEmpty()) {
+            val extra = room - share * free.size
+            return need.indices.map { i -> if (fixed[i]) need[i] else share + if (i == free.last()) extra else 0 }
         }
+        over.forEach { fixed[it] = true }
     }
 }
 
@@ -294,202 +447,590 @@ private fun segmentLabelFor(tab: OrdersTab): Int = when (tab) {
     OrdersTab.MyCompleted -> R.string.history
 }
 
+/** The track's padding around the knob. */
+private val TRACK_PADDING = 3.dp
+
+/** Clear room between a segment's words and the knob's edge, so they never reach its round ends. */
+private val SEGMENT_LABEL_INSET = 12.dp
+
+private val BadgeSize = 22.dp
+private val BadgeGap = 6.dp
+
 @Composable
 private fun SegmentChip(
     label: String,
+    badge: String?,
+    count: Int?,
     selected: Boolean,
+    arrangement: SegmentArrangement,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val spoken = count?.takeIf { it > 0 }?.let { "$label, ${pluralStringResource(R.plurals.orders_job_count, it, it)}" } ?: label
     Surface(
         selected = selected,
         onClick = onClick,
-        modifier = modifier.fillMaxSize().semantics { role = Role.Tab },
-        shape = RoundedCornerShape(50),
-        color = if (selected) MaterialTheme.colorScheme.surface else Color.Transparent,
-        shadowElevation = if (selected) 2.dp else 0.dp,
+        modifier = modifier
+            .heightIn(min = 42.dp)
+            .semantics {
+                role = Role.Tab
+                contentDescription = spoken
+            },
+        shape = CircleShape,
+        color = Color.Transparent,
     ) {
-        Box(contentAlignment = Alignment.Center) {
+        val words: @Composable () -> Unit = {
             Text(
                 text = label,
-                style = MaterialTheme.typography.labelLarge,
-                color = if (selected) primaryText() else MaterialTheme.colorScheme.onSurfaceVariant,
-                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                style = MaterialTheme.typography.labelLarge.copy(fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal),
+                color = if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = if (arrangement == SegmentArrangement.LabelAlone) 2 else 1,
+                softWrap = arrangement == SegmentArrangement.LabelAlone,
+                textAlign = TextAlign.Center,
             )
+        }
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = SEGMENT_LABEL_INSET, vertical = 2.dp)) {
+            when {
+                badge == null || arrangement == SegmentArrangement.LabelAlone -> words()
+                arrangement == SegmentArrangement.Beside -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(BadgeGap)) {
+                    words()
+                    TabBadge(badge)
+                }
+                else -> Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp), modifier = Modifier.padding(vertical = 4.dp)) {
+                    words()
+                    TabBadge(badge)
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun InProgressStickyBanner(
-    order: OrderListItem,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Surface(
-        onClick = onClick,
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.primary,
+private fun TabBadge(text: String) {
+    Box(
+        modifier = Modifier
+            .heightIn(min = BadgeSize)
+            .widthIn(min = BadgeSize)
+            .background(tonalFill(), CircleShape)
+            .padding(horizontal = 6.dp),
+        contentAlignment = Alignment.Center,
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = Spacing.M, vertical = Spacing.S),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.S),
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.PlayCircle,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onPrimary,
-            )
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(R.string.in_progress_now),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
-                    fontWeight = FontWeight.SemiBold,
-                )
-                Text(
-                    text = order.customerName?.takeIf { it.isNotBlank() }
-                        ?: order.customerAddress?.takeIf { it.isNotBlank() }
-                        ?: "#${order.displayOrderNumber.orEmpty()}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    fontWeight = FontWeight.Medium,
-                )
-            }
-            Icon(
-                imageVector = Icons.AutoMirrored.Outlined.ArrowForward,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onPrimary,
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold, fontFeatureSettings = "tnum"),
+            color = primaryText(),
+            maxLines = 1,
+        )
+    }
+}
+
+/** The app's card: the surface, radius 16, a hairline in the outline variant; [padded] puts its words 16 in. */
+@Composable
+internal fun Panel(modifier: Modifier = Modifier, padded: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .background(MaterialTheme.colorScheme.surface)
+            .border(BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), MaterialTheme.shapes.medium)
+            .then(if (padded) Modifier.padding(Spacing.M) else Modifier),
+        content = content,
+    )
+}
+
+@Composable
+internal fun Rule(modifier: Modifier = Modifier) = HorizontalDivider(modifier = modifier, color = MaterialTheme.colorScheme.outlineVariant)
+
+/** A flat bar at the real size of the value it stands for: the skeleton, with no shimmer. */
+@Composable
+internal fun Bar(width: Dp, height: Dp, modifier: Modifier = Modifier) {
+    Box(modifier.size(width, height).background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(6.dp)))
+}
+
+/** "Later · 2 jobs": a heading on the ground over its card, the count in the secondary ink. */
+@Composable
+internal fun SectionHeading(title: String, count: Int? = null) {
+    Row(
+        modifier = Modifier.padding(top = Spacing.XS).semantics(mergeDescendants = true) { heading() },
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text(
+            text = OrdersBoardRules.tie(title),
+            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.alignByBaseline(),
+        )
+        if (count != null) {
+            Text(
+                text = "· " + pluralStringResource(R.plurals.orders_job_count, count, count),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.alignByBaseline(),
             )
         }
     }
 }
 
-// ─── Available pane ─────────────────────────────────────────────────
+/** An outlined button in the brand: the in-card secondary move (Retry, Check again, See all, Open the job). */
+@Composable
+internal fun BrandOutlinedButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    leadingIcon: androidx.compose.ui.graphics.vector.ImageVector? = null,
+    enabled: Boolean = true,
+    maxLines: Int = 1,
+) {
+    CleansiaOutlinedButton(
+        text = text,
+        onClick = onClick,
+        size = CleansiaButtonSize.Medium,
+        leadingIcon = leadingIcon,
+        enabled = enabled,
+        maxLines = maxLines,
+        contentColor = primaryText(),
+        borderColor = MaterialTheme.colorScheme.primary,
+        modifier = modifier,
+    )
+}
+
+/** A short state's card: the answer in words beside a mascot, then the one move under them. */
+@Composable
+private fun StatePanel(
+    title: String,
+    body: String,
+    mascot: Int,
+    mascotSize: Dp,
+    action: String,
+    onAction: () -> Unit,
+    titleIcon: Boolean = false,
+) {
+    val large = LocalDensity.current.fontScale >= 1.3f
+    Panel(padded = true) {
+        val words: @Composable () -> Unit = {
+            Column {
+                Row {
+                    val style = MaterialTheme.typography.titleMedium
+                    if (titleIcon) Icon(Icons.Outlined.ErrorOutline, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = capBandAligned(style).padding(end = 8.dp).size(18.dp))
+                    Text(
+                        text = OrdersBoardRules.tie(title),
+                        style = style,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.alignBy(FirstBaseline).semantics { heading() }.announcePolitely(),
+                    )
+                }
+                Text(
+                    text = OrdersBoardRules.tie(body),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = Spacing.XXS),
+                )
+            }
+        }
+        if (large) {
+            words()
+        } else {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.S)) {
+                Box(Modifier.weight(1f)) { words() }
+                Image(painter = painterResource(mascot), contentDescription = null, modifier = Modifier.size(mascotSize))
+            }
+        }
+        BrandOutlinedButton(text = action, onClick = onAction, leadingIcon = Icons.Outlined.Refresh, modifier = Modifier.padding(top = Spacing.S))
+    }
+}
+
+internal enum class AvailableShort { Error, Empty }
+
+/** Available's short panel, from what is on show: the error only while a failed pane holds no row at all, else empty once no card is left. */
+internal fun availableShort(pane: PaneState, cards: List<OrderListItem>, reservedShown: Boolean): AvailableShort? = when {
+    pane.showsError(heldElsewhere = reservedShown) -> AvailableShort.Error
+    cards.isEmpty() && !reservedShown -> AvailableShort.Empty
+    else -> null
+}
 
 @Composable
 private fun AvailablePane(
     uiState: OrdersListUiState,
+    now: Instant,
+    list: LazyListState,
     onOrderClick: (String) -> Unit,
-    onSearchChange: (String) -> Unit,
+    onTake: (String) -> Unit,
+    onDecline: (String) -> Unit,
     onSortSelected: (AvailableSort) -> Unit,
-    onTakeOrder: (String) -> Unit,
+    onRetry: () -> Unit,
+    onLoadMore: () -> Unit,
+    afterTakeFocus: FocusRequester,
+    focusIndexAfterTake: Int?,
+    onAfterTakeFocused: () -> Unit,
+    tabFocus: FocusRequester,
 ) {
-    val filtered = remember(uiState.orders, uiState.searchQuery) {
-        uiState.orders.filter { it.matchesSearch(uiState.searchQuery) }
+    val rules = OrdersBoardRules
+    val zone = ZoneId.systemDefault()
+    val locale = appLocale()
+    val today = now.atZone(zone).toLocalDate()
+    val pane = uiState.pane(OrdersTab.Available)
+    val active = uiState.pane(OrdersTab.MyActive)
+    // The clash check runs only on a complete, current Active list; otherwise the server stays the guard.
+    val own = if (active.hasLoaded && !active.failed && active.complete) active.rows else emptyList()
+    val reserved = remember(uiState.offers, pane.rows, uiState.reservedRows, now) {
+        rules.reservedShown(uiState.offers, pane.rows + uiState.reservedRows.values, now)
     }
-    val totalEarnings = remember(filtered) { formatEarningsTotal(filtered) }
-    // The "hot deal" badge highlights the single highest-paying offer in
-    // the currently visible list. We hide it when the list is trivially
-    // short (<2) so we don't decorate the only card on screen.
-    val hotDealPay = remember(filtered) {
-        if (filtered.size < 2) null
-        else filtered.maxOfOrNull { it.estimatedCleanerPay ?: 0.0 }?.takeIf { it > 0.0 }
+    val reservedIds = reserved.map { it.second.id }.toSet()
+    val sortOptions = rules.sortOptions(pane.rows.size, pane.total)
+    val sort = uiState.availableSort.takeIf { it in sortOptions } ?: AvailableSort.SoonestFirst
+    val cards = remember(pane.rows, reservedIds, sort, now) { rules.visibleCards(pane.rows, reservedIds, sort, now) }
+    val clashes = remember(cards, reserved, own) { (cards + reserved.map { it.second }).associate { it.id to rules.clashes(it, own) } }
+    val clashing = (reserved.map { it.second } + cards).mapNotNull { row -> clashes[row.id]?.let { row to it } }
+    val finding = rules.overlapFinding(clashing, today, zone, locale)?.text()
+    val groups = remember(cards, zone) { rules.dayGroups(cards, zone) }
+    val range = remember(cards, reserved, own, zone) {
+        rules.dayRange(
+            (cards + reserved.map { it.second } + own).mapNotNull { row -> rules.day(row, zone)?.let { rules.daySpan(row, it, zone) } },
+        )
     }
-
-    if (filtered.isEmpty() && uiState.searchQuery.isBlank()) {
-        // Wrap the empty state in a scrollable Column so PullToRefreshBox
-        // above us can still capture vertical drag gestures when the list
-        // is empty. A plain Box swallows the gesture and pull-to-refresh
-        // never fires. Matches the InvoicesListScreen pattern.
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-        ) {
-            EmptyState(tab = uiState.tab)
-        }
-        return
+    val tileWidth = payTileWidth(reserved.map { reservedTileSpec(it.second) })
+    val appendedFocus = remember { FocusRequester() }
+    LaunchedEffect(pane.appendedFrom) {
+        if (pane.appendedFrom != null) runCatching { delay(50); appendedFocus.requestFocus() }
     }
+    LaunchedEffect(focusIndexAfterTake) {
+        if (focusIndexAfterTake == null) return@LaunchedEffect
+        delay(300)
+        runCatching { if (cards.isNotEmpty()) afterTakeFocus.requestFocus() else tabFocus.requestFocus() }
+        onAfterTakeFocused()
+    }
+    val headerMode = dayHeaderMode(groups.mapNotNull { it.first }.map { day -> day to rules.ownOfDay(own, day, zone) }, today)
+    val short = availableShort(pane, cards, reservedShown = reserved.isNotEmpty())
 
     LazyColumn(
+        state = list,
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = Spacing.M, vertical = Spacing.S),
+        contentPadding = PanePadding,
         verticalArrangement = Arrangement.spacedBy(Spacing.S),
     ) {
-        item { SearchBar(value = uiState.searchQuery, onValueChange = onSearchChange) }
-        item {
-            AvailableSummaryRow(
-                count = filtered.size,
-                totalEarnings = totalEarnings,
-                currentSort = uiState.availableSort,
-                onSortSelected = onSortSelected,
-            )
-        }
-        if (filtered.isEmpty()) {
-            item { EmptyInline(text = stringResource(R.string.no_matching_orders)) }
-        }
-        items(filtered, key = { it.id.orEmpty() }) { order ->
-            val pay = order.estimatedCleanerPay ?: 0.0
-            AvailableOrderRow(
-                order = order,
-                currentLocation = uiState.currentLocation,
-                isTaking = uiState.inFlightActionOrderId != null &&
-                    uiState.inFlightActionOrderId == order.id,
-                isHotDeal = hotDealPay != null && pay >= hotDealPay,
-                onOpenDetails = { order.id?.let(onOrderClick) },
-                onTake = { order.id?.let(onTakeOrder) },
-            )
+        when {
+            !pane.hasLoaded && !pane.failed -> item { AvailableLoading() }
+            short != null -> {
+                val error = short == AvailableShort.Error
+                item {
+                    StatePanel(
+                        title = stringResource(if (error) R.string.orders_load_error else R.string.available_empty_title),
+                        body = if (error) {
+                            stringResource(R.string.available_empty_subtitle)
+                        } else {
+                            pane.loadedAt?.let { stringResource(R.string.available_checked_at, rules.timeText(it, zone, locale)) + ". " }.orEmpty() +
+                                stringResource(R.string.available_empty_subtitle)
+                        },
+                        mascot = if (error) R.drawable.mascot_resting else R.drawable.mascot_leaning,
+                        mascotSize = 112.dp,
+                        action = stringResource(if (error) R.string.retry else R.string.orders_check_again),
+                        onAction = onRetry,
+                    )
+                }
+                uiState.cashHidden?.let { item { CashNotice(it) } }
+                nextJobs(active, now, onOrderClick)
+                if (uiState.cashHidden == null) uiState.cashHeld?.let { item { CashPanel(it) } }
+            }
+            else -> {
+                if (pane.failed) item(key = "stale") { StaleStrip(loadedAt = pane.loadedAt, now = now, onRetry = onRetry) }
+                items(reserved, key = { "reserved-" + it.first.id }) { (offer, row) ->
+                    ReservedCard(
+                        row = row,
+                        offer = offer,
+                        now = now,
+                        clash = clashes[row.id],
+                        declineBusy = uiState.decliningOrderId == offer.id,
+                        onOpen = { row.id?.let(onOrderClick) },
+                        onConfirm = { row.id?.let(onTake) },
+                        onDecline = { onDecline(offer.id) },
+                        tileWidth = tileWidth,
+                        modifier = Modifier.animateItem(),
+                    )
+                }
+                item(key = "toolbar") {
+                    AvailableToolbar(
+                        cashHidden = uiState.cashHidden != null,
+                        overlap = finding,
+                        sortOptions = sortOptions,
+                        currentSort = sort,
+                        onSortSelected = onSortSelected,
+                    )
+                }
+                uiState.cashHidden?.let { item(key = "cash-notice") { CashNotice(it) } }
+                groups.forEach { (day, rows) ->
+                    item(key = "day-${day ?: "none"}-${rows.first().id}") {
+                        DayPanel(
+                            day = day,
+                            rows = rows,
+                            own = own,
+                            reservedRows = reserved.map { it.second },
+                            range = range,
+                            headerMode = headerMode,
+                            now = now,
+                            clashes = clashes,
+                            onOrderClick = onOrderClick,
+                            focusFor = { _, row ->
+                                when {
+                                    pane.appendedFrom != null && row.id == pane.rows.getOrNull(pane.appendedFrom)?.id -> appendedFocus
+                                    focusIndexAfterTake != null && cards.indexOf(row) == focusIndexAfterTake.coerceAtMost(cards.lastIndex) -> afterTakeFocus
+                                    else -> null
+                                }
+                            },
+                            modifier = Modifier.animateItem(),
+                        )
+                    }
+                }
+                item(key = "footer") { AvailableFooter(pane = pane, onLoadMore = onLoadMore) }
+                if ((cards + reserved.map { it.second }).any { it.homeDistanceBand != null }) {
+                    item(key = "band-footnote") {
+                        Text(
+                            text = OrdersBoardRules.tie(stringResource(R.string.available_distance_footnote)),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
+            }
         }
         item { Spacer(Modifier.height(MainBottomNavInset)) }
     }
 }
 
+/** How every day header of the page shows her jobs, decided once: the long label, the short word, or under the name. */
+private enum class HeaderMode { Long, Short, Wrap }
+
 @Composable
-private fun AvailableSummaryRow(
-    count: Int,
-    totalEarnings: String,
-    currentSort: AvailableSort,
-    onSortSelected: (AvailableSort) -> Unit,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = stringResource(R.string.available_summary, count, totalEarnings),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        SortDropdown(currentSort = currentSort, onSortSelected = onSortSelected)
+private fun dayHeaderMode(days: List<Pair<LocalDate, List<OrderListItem>>>, today: LocalDate): HeaderMode {
+    val rules = OrdersBoardRules
+    val zone = ZoneId.systemDefault()
+    val locale = appLocale()
+    val density = LocalDensity.current
+    val measurer = rememberTextMeasurer()
+    val nameStyle = MaterialTheme.typography.titleMedium
+    val labelStyle = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum")
+    val resources = androidx.compose.ui.platform.LocalContext.current.resources
+    val mine = days.filter { it.second.isNotEmpty() }
+    if (mine.isEmpty()) return HeaderMode.Long
+    val screen = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp.dp
+    val leaf = maxOf(TileSize.Header.minSide, 40.dp * density.fontScale + 6.dp)
+    val room = with(density) { (screen - Spacing.M * 2 - Spacing.M * 2 - 2.dp - leaf - Spacing.S - Spacing.XS - MineMarkRoom).roundToPx() }
+    val fits = { short: Boolean ->
+        mine.all { (day, own) ->
+            val name = measurer.measure(rules.dayName(day, today, locale).resolve(resources), nameStyle, softWrap = false, maxLines = 1).size.width
+            val label = measurer.measure(rules.dayMineLabel(own, short, zone, locale)!!.resolve(resources), labelStyle, softWrap = false, maxLines = 1).size.width
+            name + label <= room
+        }
+    }
+    val long = fits(false)
+    val short = long || fits(true)
+    return when {
+        long -> HeaderMode.Long
+        short -> HeaderMode.Short
+        else -> HeaderMode.Wrap
     }
 }
 
+/** Her job's mark before its label: the 8 dot and its 6 gap. */
+private val MineMarkRoom = 14.dp
+
+/** One day: leaf │ the day's name and her job that day │ the day line; then its job rows between rules. */
 @Composable
-private fun SortDropdown(
+private fun DayPanel(
+    day: LocalDate?,
+    rows: List<OrderListItem>,
+    own: List<OrderListItem>,
+    reservedRows: List<OrderListItem>,
+    range: DayRange,
+    headerMode: HeaderMode,
+    now: Instant,
+    clashes: Map<String?, OrderListItem?>,
+    onOrderClick: (String) -> Unit,
+    focusFor: (Int, OrderListItem) -> FocusRequester?,
+    modifier: Modifier = Modifier,
+) {
+    val rules = OrdersBoardRules
+    val zone = ZoneId.systemDefault()
+    val locale = appLocale()
+    val today = now.atZone(zone).toLocalDate()
+    Panel(modifier = modifier) {
+        if (day != null) {
+            val mine = rules.ownOfDay(own, day, zone)
+            val name = rules.dayName(day, today, locale).text()
+            val label = rules.dayMineLabel(mine, headerMode != HeaderMode.Long, zone, locale)?.text()
+            val open = rows + reservedRows.filter { rules.day(it, zone) == day }
+            Row(
+                modifier = Modifier
+                    .padding(horizontal = Spacing.M, vertical = Spacing.S)
+                    .semantics(mergeDescendants = true) { heading() },
+                horizontalArrangement = Arrangement.spacedBy(Spacing.S),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                OrdersDateTile(start = rules.start(rows.first()), size = TileSize.Header, now = now)
+                Column(Modifier.weight(1f)) {
+                    val nameText: @Composable (Modifier) -> Unit = { m ->
+                        Text(text = name, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, modifier = m)
+                    }
+                    val labelText: @Composable (Modifier) -> Unit = { m -> if (label != null) MineLabel(label, m) }
+                    if (headerMode == HeaderMode.Wrap) {
+                        nameText(Modifier)
+                        labelText(Modifier)
+                    } else {
+                        Row {
+                            nameText(Modifier.weight(1f).alignBy(FirstBaseline))
+                            labelText(Modifier.alignBy(FirstBaseline))
+                        }
+                    }
+                    OrdersDayLine(
+                        range = range,
+                        mine = mine.mapNotNull { rules.daySpan(it, day, zone) },
+                        open = rules.openSlots(open, own, day, zone),
+                        now = if (day == today) now.atZone(zone).let { it.hour * 60 + it.minute } else null,
+                        modifier = Modifier.padding(top = 6.dp),
+                    )
+                }
+            }
+        }
+        rows.forEachIndexed { index, row ->
+            Rule()
+            AvailableJobRow(
+                row = row,
+                now = now,
+                clash = clashes[row.id],
+                onOpen = { row.id?.let(onOrderClick) },
+                bodyFocus = focusFor(index, row),
+            )
+        }
+    }
+}
+
+/** "● your job 14:00–16:00": her own time that day, the dot on the words' x-height. */
+@Composable
+private fun MineLabel(label: String, modifier: Modifier = Modifier) {
+    val style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum")
+    Row(modifier) {
+        Box(xBandAligned(style).size(8.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
+        Text(text = label, style = style, color = primaryText(), maxLines = 1, softWrap = false, modifier = Modifier.padding(start = 6.dp).alignBy(FirstBaseline))
+    }
+}
+
+/**
+ * The finding at the start (cash hidden in amber, else the overlap with a red mark), the sort at the end on its first
+ * line; when the finding wraps, the sort is its glyph alone.
+ */
+@Composable
+private fun AvailableToolbar(
+    cashHidden: Boolean,
+    overlap: String?,
+    sortOptions: List<AvailableSort>,
     currentSort: AvailableSort,
     onSortSelected: (AvailableSort) -> Unit,
 ) {
+    val text = when {
+        cashHidden -> stringResource(R.string.available_cash_hidden)
+        else -> overlap
+    }
+    val style = MaterialTheme.typography.bodyMedium
+    val linkStyle = MaterialTheme.typography.labelLarge
+    BoxWithConstraints(Modifier.fillMaxWidth().padding(vertical = Spacing.XXS)) {
+        val measurer = rememberTextMeasurer()
+        val density = LocalDensity.current
+        val sortWidth = measurer.measure(stringResource(currentSort.labelRes), linkStyle, softWrap = false).size.width +
+            with(density) { (if (sortOptions.size > 1) 18.dp else 0.dp).roundToPx() }
+        val findingRoom = constraints.maxWidth - sortWidth - with(density) { (Spacing.S + 18.dp + Spacing.XS).roundToPx() }
+        val compact = text != null && measurer.measure(OrdersBoardRules.tie(text), style, constraints = Constraints(maxWidth = findingRoom.coerceAtLeast(1))).lineCount > 1
+        val sort: @Composable () -> Unit = { SortControl(options = sortOptions, currentSort = currentSort, onSortSelected = onSortSelected, compact = compact) }
+        if (text == null) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { sort() }
+        } else {
+            ToolbarLayout(
+                finding = {
+                    Row {
+                        Icon(
+                            imageVector = if (cashHidden) Icons.Outlined.Payments else Icons.Outlined.ErrorOutline,
+                            contentDescription = null,
+                            tint = if (cashHidden) MaterialTheme.colorScheme.pendingInk else MaterialTheme.colorScheme.error,
+                            modifier = capBandAligned(style).size(18.dp),
+                        )
+                        Text(
+                            text = OrdersBoardRules.tie(text),
+                            style = style,
+                            color = if (cashHidden) MaterialTheme.colorScheme.pendingInk else MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(start = Spacing.XS).alignBy(FirstBaseline),
+                        )
+                    }
+                },
+                sort = sort,
+                capBand = with(density) { (style.fontSize.toPx() * cz.cleansia.core.ui.theme.NunitoCapHeight / 2f).toInt() },
+            )
+        }
+    }
+}
+
+/**
+ * The finding and the sort on one first line: a sort with words shares the finding's first baseline, a glyph alone sits on
+ * its cap band ([capBand] above the baseline). The sort's touch room reaches past the line.
+ */
+@Composable
+private fun ToolbarLayout(finding: @Composable () -> Unit, sort: @Composable () -> Unit, capBand: Int) {
+    Layout(contents = listOf(finding, sort)) { (findingM, sortM), constraints ->
+        val width = constraints.maxWidth
+        val sortP = sortM.first().measure(Constraints())
+        val findingP = findingM.first().measure(Constraints(maxWidth = (width - sortP.width - Spacing.S.roundToPx()).coerceAtLeast(0)))
+        val base = findingP[FirstBaseline].takeIf { it != AlignmentLine.Unspecified } ?: 0
+        val sortBase = sortP[FirstBaseline].takeIf { it != AlignmentLine.Unspecified }
+        val sortY = if (sortBase != null) base - sortBase else base - capBand - sortP.height / 2
+        layout(width, findingP.height) {
+            findingP.place(0, 0)
+            sortP.place(width - sortP.width, sortY)
+        }
+    }
+}
+
+/** One option: plain words, not a button. Two: a menu whose label and chevron read in the text blue. */
+@Composable
+private fun SortControl(options: List<AvailableSort>, currentSort: AvailableSort, onSortSelected: (AvailableSort) -> Unit, compact: Boolean) {
+    val style = MaterialTheme.typography.labelLarge
+    val spoken = stringResource(R.string.orders_sort_a11y, stringResource(currentSort.labelRes))
+    if (options.size < 2) {
+        Box(Modifier.heightIn(min = 48.dp).semantics { contentDescription = spoken }, contentAlignment = Alignment.Center) {
+            if (compact) {
+                Icon(Icons.Outlined.SwapVert, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+            } else {
+                Text(text = stringResource(R.string.sort_soonest_first), style = style, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        return
+    }
     var expanded by remember { mutableStateOf(false) }
     Box {
         Row(
             modifier = Modifier
-                .clip(RoundedCornerShape(50))
+                .heightIn(min = 48.dp)
+                .widthIn(min = 48.dp)
+                .clip(CircleShape)
                 .clickable { expanded = true }
-                .padding(horizontal = 10.dp, vertical = 6.dp),
+                .semantics { contentDescription = spoken; role = Role.DropdownList }
+                .padding(horizontal = Spacing.XXS),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalArrangement = Arrangement.Center,
         ) {
-            Text(
-                text = stringResource(currentSort.labelRes),
-                style = MaterialTheme.typography.labelLarge,
-                color = primaryText(),
-                fontWeight = FontWeight.SemiBold,
-            )
-            Icon(
-                imageVector = Icons.Outlined.ArrowDropDown,
-                contentDescription = null,
-                tint = primaryText(),
-                modifier = Modifier.size(20.dp),
-            )
+            if (compact) {
+                Icon(imageVector = Icons.Outlined.SwapVert, contentDescription = null, tint = primaryText(), modifier = Modifier.size(20.dp))
+            } else {
+                Row {
+                    Text(text = stringResource(currentSort.labelRes), style = style, color = primaryText(), modifier = Modifier.alignBy(FirstBaseline))
+                    Icon(
+                        imageVector = Icons.Outlined.ExpandMore,
+                        contentDescription = null,
+                        tint = primaryText(),
+                        modifier = capBandAligned(style).padding(start = 2.dp).size(16.dp),
+                    )
+                }
+            }
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            AvailableSort.values().forEach { option ->
+            options.forEach { option ->
                 DropdownMenuItem(
                     text = { Text(stringResource(option.labelRes)) },
                     onClick = {
@@ -503,708 +1044,967 @@ private fun SortDropdown(
 }
 
 /**
- * Available-order card: when and where, scope chips, distance and duration, the pay readout, and the
- * decision badges.
- *
- * **The pay readout is prominent because it is the decision** — cleaners said a card without it is not
- * worth reading. -> /flows/offerability-and-take
+ * Over the limit (cash jobs hidden): the held amount over the bar, amber up to an ink tick at the limit and red
+ * past it, *0* at the left end and the limit at the tick; then how the jobs come back.
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun AvailableOrderRow(
-    order: OrderListItem,
-    currentLocation: cz.cleansia.core.location.UserLocation?,
-    isTaking: Boolean,
-    isHotDeal: Boolean,
-    onOpenDetails: () -> Unit,
-    onTake: () -> Unit,
-) {
-    val pay = order.estimatedCleanerPay ?: 0.0
-    val currencySymbol = order.currency?.symbol
-    val distance = OrdersListViewModel.distanceKmFor(order, currentLocation)
-    val isStartingSoon = remember(order.cleaningDateTime) {
-        order.cleaningDateTime?.let { runCatching { Instant.parse(it) }.getOrNull() }
-            ?.let { java.time.Duration.between(Instant.now(), it) }
-            ?.let { it.toMinutes() in 0..120 } == true
-    }
-    val address = order.customerAddress?.takeIf { it.isNotBlank() }
-        ?: order.customerAddressApproximate?.takeIf { it.isNotBlank() }
-
-    // Press-scale tween — same tactile feedback the old OfferCard had,
-    // tuned a touch more subtle (0.985) so the larger card doesn't feel
-    // like it's collapsing when tapped.
-    val interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-    val pressScale by androidx.compose.animation.core.animateFloatAsState(
-        targetValue = if (isPressed) 0.985f else 1f,
-        animationSpec = androidx.compose.animation.core.tween(durationMillis = 120),
-        label = "available-row-press-scale",
-    )
-
-    Surface(
-        onClick = onOpenDetails,
-        interactionSource = interactionSource,
+private fun CashNotice(cash: CashHeld) {
+    val locale = appLocale()
+    val symbol = CurrencySymbols.forCode(cash.currencyCode)
+    val held = OrdersBoardRules.money(cash.amount, symbol, locale)
+    val cap = cash.floatCap
+    val limit = cap?.let { OrdersBoardRules.money(it, symbol, locale) }
+    val ink = MaterialTheme.colorScheme.pendingInk
+    val title = MaterialTheme.typography.titleMedium
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .graphicsLayer(scaleX = pressScale, scaleY = pressScale),
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            .background(amberFill(), MaterialTheme.shapes.medium)
+            .padding(horizontal = Spacing.M, vertical = Spacing.S),
     ) {
-        Column(
-            modifier = Modifier.padding(Spacing.M),
-            verticalArrangement = Arrangement.spacedBy(Spacing.S),
-        ) {
-            // ── Header row: when + pay ────────────────────────────────
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Top,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.S),
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    val whenText = order.cleaningDateTime?.takeIf { it.isNotBlank() }
-                        ?.let { formatRelativeDateTime(it) } ?: "—"
-                    Text(
-                        text = whenText,
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    val mins = order.estimatedTime ?: 0
-                    if (mins > 0) {
-                        Text(
-                            text = formatDuration(mins),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        text = formatMoney(pay, currencySymbol),
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                        color = primaryText(),
-                    )
-                    Text(
-                        text = stringResource(R.string.you_earn),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+        Icon(Icons.Outlined.Payments, contentDescription = null, tint = ink, modifier = capBandAligned(title).size(18.dp))
+        Column(Modifier.weight(1f).padding(start = 10.dp).alignBy(FirstBaseline)) {
+            Row {
+                Text(text = stringResource(R.string.cash_held_title), style = title, color = ink, modifier = Modifier.weight(1f).alignByBaseline())
+                Text(text = held, style = title.copy(fontFeatureSettings = "tnum"), color = ink, modifier = Modifier.alignByBaseline())
             }
-
-            // ── Address row ───────────────────────────────────────────
-            if (address != null || distance != null) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.LocationOn,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(16.dp),
-                    )
-                    Text(
-                        text = listOfNotNull(
-                            address,
-                            distance?.let { stringResource(R.string.km_away, formatDistance(it)) },
-                        ).joinToString(" · "),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f),
-                    )
+            if (cap != null && limit != null && cash.amount > 0) {
+                val tick = (cap / cash.amount).toFloat().coerceIn(0f, 1f)
+                CashMeter(fill = tick, over = true, track = MaterialTheme.colorScheme.surface, modifier = Modifier.padding(top = 6.dp))
+                val small = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum")
+                BoxWithConstraints(Modifier.fillMaxWidth()) {
+                    Text(text = "0", style = small, color = ink)
+                    val label = stringResource(R.string.cash_limit_at, limit)
+                    val measurer = rememberTextMeasurer()
+                    val labelWidth = measurer.measure(label, small, softWrap = false).size.width
+                    val x = (constraints.maxWidth * tick - labelWidth).coerceAtLeast(0f)
+                    Text(text = label, style = small, color = ink, softWrap = false, modifier = Modifier.offset { IntOffset(x.toInt(), 0) })
                 }
+                Text(
+                    text = OrdersBoardRules.tie(stringResource(R.string.cash_hidden_back, limit)),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = ink,
+                    modifier = Modifier.padding(top = 6.dp),
+                )
             }
+        }
+    }
+}
 
-            // ── Scope row: rooms / baths / extras ─────────────────────
-            val rooms = order.rooms ?: 0
-            val baths = order.bathrooms ?: 0
-            val extras = order.extras?.count { it.value } ?: 0
-            val dirtinessRes = dirtinessChipLabelRes(order.dirtinessLevel)
-            if (rooms > 0 || baths > 0 || extras > 0 || dirtinessRes != null) {
-                // Wraps onto a second line when the card runs out of width, as iOS's ChipFlow does: in uk
-                // the dirtiness chip and "2 ванні кімнати" together are wider than a 360dp card.
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    if (dirtinessRes != null) {
-                        ScopeChip(text = stringResource(dirtinessRes))
-                    }
-                    if (rooms > 0) {
-                        ScopeChip(text = androidx.compose.ui.res.pluralStringResource(R.plurals.scope_rooms, rooms, rooms))
-                    }
-                    if (baths > 0) {
-                        ScopeChip(text = androidx.compose.ui.res.pluralStringResource(R.plurals.scope_baths, baths, baths))
-                    }
-                    if (extras > 0) {
-                        ScopeChip(text = androidx.compose.ui.res.pluralStringResource(R.plurals.scope_extras, extras, extras))
-                    }
-                }
+/** The cash a cleaner holds: the meter at its true ratio with both ends labelled; no cap, the amount alone. */
+@Composable
+private fun CashPanel(cash: CashHeld) {
+    val locale = appLocale()
+    val symbol = CurrencySymbols.forCode(cash.currencyCode)
+    val held = OrdersBoardRules.money(cash.amount, symbol, locale)
+    val ratio = OrdersBoardRules.cashRatio(cash.amount, cash.floatCap)
+    val title = MaterialTheme.typography.titleMedium
+    Panel(padded = true) {
+        Row {
+            Text(text = stringResource(R.string.cash_held_title), style = title, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f).alignByBaseline())
+            Text(text = held, style = title.copy(fontFeatureSettings = "tnum"), color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.alignByBaseline())
+        }
+        if (ratio != null && cash.floatCap != null) {
+            val limit = OrdersBoardRules.money(cash.floatCap, symbol, locale)
+            val small = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum")
+            CashMeter(fill = ratio, over = false, track = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.padding(top = Spacing.XXS))
+            Row {
+                Text(text = "0", style = small, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+                Text(text = stringResource(R.string.cash_held_of_limit, held, limit), style = small, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-
-            // ── Decision badges ───────────────────────────────────────
-            if (isHotDeal || isStartingSoon) {
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    if (isHotDeal) {
-                        DecisionBadge(
-                            icon = Icons.Outlined.LocalFireDepartment,
-                            label = stringResource(R.string.top_pay),
-                            tint = MaterialTheme.colorScheme.error,
-                        )
-                    }
-                    if (isStartingSoon) {
-                        DecisionBadge(
-                            icon = Icons.Outlined.Schedule,
-                            label = stringResource(R.string.starts_soon),
-                            tint = primaryText(),
-                        )
-                    }
-                }
-            }
-
-            // ── Take CTA ──────────────────────────────────────────────
-            TakeButton(
-                isTaking = isTaking,
-                onTake = onTake,
-                modifier = Modifier.fillMaxWidth(),
+            Text(
+                text = OrdersBoardRules.tie(stringResource(R.string.cash_held_hint)),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = Spacing.XS),
             )
         }
     }
 }
 
-/** Subtle outlined chip for scope tokens (rooms · baths · extras). */
+/** 10 high, a capsule; amber at [fill]; [over] puts an ink tick at [fill] and the rest in the error tone. */
 @Composable
-private fun ScopeChip(text: String) {
-    Surface(
-        shape = RoundedCornerShape(50),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-    ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-        )
+private fun CashMeter(fill: Float, over: Boolean, track: Color, modifier: Modifier = Modifier) {
+    val amber = MaterialTheme.colorScheme.pendingInk
+    val red = MaterialTheme.colorScheme.error
+    val tick = MaterialTheme.colorScheme.onSurface
+    Canvas(modifier.fillMaxWidth().height(18.dp).clearAndSetSemantics {}) {
+        val top = 4.dp.toPx()
+        val h = 10.dp.toPx()
+        val r = androidx.compose.ui.geometry.CornerRadius(h / 2f)
+        val at = size.width * fill.coerceIn(0f, 1f)
+        drawRoundRect(track, topLeft = androidx.compose.ui.geometry.Offset(0f, top), size = androidx.compose.ui.geometry.Size(size.width, h), cornerRadius = r)
+        if (over) drawRoundRect(red, topLeft = androidx.compose.ui.geometry.Offset(0f, top), size = androidx.compose.ui.geometry.Size(size.width, h), cornerRadius = r)
+        drawRoundRect(amber, topLeft = androidx.compose.ui.geometry.Offset(0f, top), size = androidx.compose.ui.geometry.Size(at, h), cornerRadius = r)
+        if (over) {
+            drawRect(red, topLeft = androidx.compose.ui.geometry.Offset(at, top), size = androidx.compose.ui.geometry.Size((size.width - at - r.x).coerceAtLeast(0f), h))
+            drawRect(tick, topLeft = androidx.compose.ui.geometry.Offset(at - 1.dp.toPx(), 0f), size = androidx.compose.ui.geometry.Size(2.dp.toPx(), size.height))
+        }
     }
 }
 
-/** Tinted icon-plus-label badge for hot-deal / starting-soon callouts. */
 @Composable
-private fun DecisionBadge(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    label: String,
-    tint: Color,
-) {
-    Surface(
-        shape = RoundedCornerShape(50),
-        color = tint.copy(alpha = 0.12f),
+private fun StaleStrip(loadedAt: Instant?, now: Instant, onRetry: () -> Unit) {
+    val locale = appLocale()
+    val whenText = loadedAt?.let {
+        OrdersBoardRules.staleWhen(it, now, ZoneId.systemDefault(), locale, DateFormat.getBestDateTimePattern(locale, "EEEdMMM"))
+    }.orEmpty()
+    val ink = MaterialTheme.colorScheme.pendingInk
+    val style = MaterialTheme.typography.bodyMedium
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(amberFill(), MaterialTheme.shapes.medium)
+            .padding(start = Spacing.M, end = Spacing.XS),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = tint,
-                modifier = Modifier.size(14.dp),
+        Icon(Icons.Outlined.Refresh, contentDescription = null, tint = ink, modifier = Modifier.size(18.dp))
+        Text(
+            text = OrdersBoardRules.tie(stringResource(R.string.orders_stale_since, whenText)),
+            style = style,
+            color = ink,
+            modifier = Modifier.weight(1f).padding(horizontal = 10.dp, vertical = Spacing.S).announcePolitely(),
+        )
+        CleansiaTextLink(text = stringResource(R.string.retry), onClick = onRetry)
+    }
+}
+
+@Composable
+private fun AvailableFooter(pane: PaneState, onLoadMore: () -> Unit) {
+    val total = pane.total ?: return
+    if (pane.rows.size >= total) return
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(top = Spacing.XXS),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(Spacing.XXS),
+    ) {
+        if (pane.pagingFailed) {
+            Text(
+                text = stringResource(R.string.orders_load_more_failed),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.announcePolitely(),
+            )
+            CleansiaTextLink(text = stringResource(R.string.retry), onClick = onLoadMore)
+        } else {
+            Text(
+                text = stringResource(R.string.available_showing_of, pane.rows.size, total),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+            if (pane.isPaging) {
+                Box(Modifier.fillMaxWidth().heightIn(min = 48.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp), color = primaryText(), strokeWidth = 2.dp)
+                }
+            } else {
+                BrandOutlinedButton(text = stringResource(R.string.available_load_more), onClick = onLoadMore)
+            }
+        }
+    }
+}
+
+/** Loading at real size: the toolbar's labels at once, two days of flat bars, each row with its pay and chevron column. */
+@Composable
+private fun AvailableLoading() {
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.S)) {
+        Row(Modifier.fillMaxWidth().padding(vertical = Spacing.XXS), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(170.dp, 16.dp).background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(6.dp)))
+            Spacer(Modifier.weight(1f))
+            Text(text = stringResource(R.string.sort_soonest_first), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        repeat(2) {
+            Panel(modifier = Modifier.clearAndSetSemantics {}) {
+                Row(Modifier.padding(horizontal = Spacing.M, vertical = Spacing.S), horizontalArrangement = Arrangement.spacedBy(Spacing.S), verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(TileSize.Header.minSide).background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.small))
+                    Column(Modifier.weight(1f)) {
+                        Bar(90.dp, 20.dp)
+                        Box(Modifier.padding(top = 6.dp).fillMaxWidth().height(10.dp).background(MaterialTheme.colorScheme.surfaceVariant, CircleShape))
+                        Spacer(Modifier.height(18.dp))
+                    }
+                }
+                listOf(150.dp to 190.dp, 170.dp to 175.dp).forEach { (area, scope) ->
+                    Rule()
+                    Row(Modifier.height(IntrinsicSize.Min)) {
+                        Column(Modifier.weight(1f).padding(start = Spacing.M, end = Spacing.S, top = Spacing.S, bottom = Spacing.M)) {
+                            Row {
+                                Bar(116.dp, 22.dp)
+                                Spacer(Modifier.weight(1f))
+                                Bar(64.dp, 20.dp)
+                            }
+                            Bar(area, 16.dp, Modifier.padding(top = 6.dp))
+                            Bar(scope, 14.dp, Modifier.padding(top = Spacing.XS))
+                        }
+                        ChevronEdge(showsChevron = false)
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** *Your next jobs · 3 jobs*: her own rows, from the Active call, under a short state. */
+private fun LazyListScope.nextJobs(active: PaneState, now: Instant, onOrderClick: (String) -> Unit) {
+    val rows = active.rows.sortedWith(compareBy(nullsLast()) { OrdersBoardRules.start(it) })
+    if (rows.isEmpty()) return
+    item(key = "next-heading") { SectionHeading(stringResource(R.string.orders_your_next_jobs), rows.size) }
+    item(key = "next-jobs") {
+        Panel {
+            rows.forEachIndexed { index, row ->
+                if (index > 0) Rule()
+                OwnJobRow(row = row, now = now, onClick = { row.id?.let(onOrderClick) }, flags = false)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ActivePane(
+    uiState: OrdersListUiState,
+    now: Instant,
+    list: LazyListState,
+    onOrderClick: (String) -> Unit,
+    onNotifyOnTheWay: (String) -> Unit,
+    onStart: (String) -> Unit,
+    onRetry: () -> Unit,
+    onShowAvailable: () -> Unit,
+) {
+    val rules = OrdersBoardRules
+    val zone = ZoneId.systemDefault()
+    val pane = uiState.pane(OrdersTab.MyActive)
+    val available = uiState.pane(OrdersTab.Available)
+    val hero = remember(pane.rows) { rules.heroPick(pane.rows) }
+    val later = remember(pane.rows, hero) {
+        pane.rows.filter { it.id != hero?.id }.sortedWith(compareBy(nullsLast()) { rules.start(it) })
+    }
+    val open = remember(available.rows, uiState.reservedRows, now) {
+        rules.mergePage(available.rows, uiState.reservedRows.values.toList()).filterNot { rules.isExpired(it, now) }
+            .sortedWith(compareBy(nullsLast()) { rules.start(it) })
+    }
+    val openTotal = rules.availableBadge(available.hasLoaded, available.total, available.rows, now)
+    val large = LocalDensity.current.fontScale >= 1.3f
+    LazyColumn(
+        state = list,
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PanePadding,
+        verticalArrangement = Arrangement.spacedBy(Spacing.S),
+    ) {
+        when {
+            !pane.hasLoaded && !pane.failed -> item { ActiveLoading() }
+            pane.showsError() -> {
+                item {
+                    StatePanel(
+                        title = stringResource(R.string.orders_load_error),
+                        body = stringResource(R.string.available_empty_subtitle),
+                        mascot = R.drawable.mascot_resting,
+                        mascotSize = 112.dp,
+                        action = stringResource(R.string.retry),
+                        onAction = onRetry,
+                    )
+                }
+                if (available.hasLoaded) {
+                    item(key = "week") {
+                        WeekPanel(
+                            title = stringResource(R.string.active_open_next_7_days),
+                            subtitle = null,
+                            cells = rules.weekCells(now.atZone(zone).toLocalDate(), open, emptyList(), zone, loaded = available.hasLoaded),
+                            openTotal = openTotal,
+                            onShowAvailable = onShowAvailable,
+                            onCheckAgain = null,
+                        )
+                    }
+                }
+                uiState.cashHidden?.let { item(key = "cash-notice") { CashNotice(it) } }
+                if (uiState.cashHidden == null) uiState.cashHeld?.let { item(key = "cash") { CashPanel(it) } }
+            }
+            pane.rows.isEmpty() -> {
+                item(key = "stand") { ActiveStand(large) }
+                rules.reservedShown(uiState.offers, available.rows + uiState.reservedRows.values, now).firstOrNull()?.let { (offer, row) ->
+                    item(key = "teaser") { OfferTeaser(offer = offer, row = row, now = now, onClick = onShowAvailable) }
+                }
+                item(key = "week") {
+                    WeekPanel(
+                        title = stringResource(R.string.active_open_next_7_days),
+                        subtitle = null,
+                        cells = rules.weekCells(now.atZone(zone).toLocalDate(), open, emptyList(), zone, loaded = available.hasLoaded),
+                        openTotal = openTotal,
+                        onShowAvailable = onShowAvailable,
+                        onCheckAgain = onRetry,
+                    )
+                }
+            }
+            else -> {
+                if (pane.failed) item { StaleStrip(loadedAt = pane.loadedAt, now = now, onRetry = onRetry) }
+                hero?.let { row ->
+                    item(key = "hero") {
+                        ActiveHero(
+                            row = row,
+                            now = now,
+                            progress = uiState.heroProgress,
+                            isBusy = uiState.inFlightActionOrderId == row.id,
+                            onOpen = { row.id?.let(onOrderClick) },
+                            onNotifyOnTheWay = { row.id?.let(onNotifyOnTheWay) },
+                            onStart = { row.id?.let(onStart) },
+                        )
+                    }
+                }
+                if (later.isNotEmpty()) {
+                    item(key = "later-heading") { SectionHeading(stringResource(R.string.day_later), later.size) }
+                    item(key = "later") {
+                        Panel {
+                            later.forEachIndexed { index, row ->
+                                if (index > 0) Rule()
+                                OwnJobRow(row = row, now = now, onClick = { row.id?.let(onOrderClick) })
+                            }
+                        }
+                    }
+                } else {
+                    item(key = "week") {
+                        WeekPanel(
+                            title = stringResource(R.string.active_nothing_else),
+                            subtitle = stringResource(R.string.active_open_next_7_days),
+                            cells = rules.weekCells(now.atZone(zone).toLocalDate(), open, pane.rows, zone, loaded = available.hasLoaded),
+                            openTotal = openTotal,
+                            onShowAvailable = onShowAvailable,
+                            onCheckAgain = null,
+                        )
+                    }
+                    val own = if (pane.hasLoaded && !pane.failed && pane.complete) pane.rows else emptyList()
+                    rules.soonestOpen(open, own, now)?.let { first ->
+                        item(key = "soonest-heading") { SectionHeading(stringResource(R.string.active_soonest_open)) }
+                        item(key = "soonest") {
+                            Panel {
+                                AvailableJobRow(
+                                    row = first,
+                                    now = now,
+                                    clash = null,
+                                    onOpen = { first.id?.let(onOrderClick) },
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        item { Spacer(Modifier.height(MainBottomNavInset)) }
+    }
+}
+
+/** No jobs of her own: the answer and what she will find here, the ready mascot standing on the card below. */
+@Composable
+private fun ActiveStand(large: Boolean) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(
+                if (large) {
+                    Modifier
+                } else {
+                    Modifier.layout { measurable, constraints ->
+                        val placeable = measurable.measure(constraints)
+                        layout(placeable.width, placeable.height - StandOverlap.roundToPx()) { placeable.place(0, 0, zIndex = 1f) }
+                    }
+                },
+            ),
+        verticalAlignment = Alignment.Bottom,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.S),
+    ) {
+        Column(Modifier.weight(1f).padding(bottom = if (large) 0.dp else Spacing.L)) {
+            Text(
+                text = OrdersBoardRules.tie(stringResource(R.string.no_active_orders)),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.semantics { heading() },
             )
             Text(
-                text = label,
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = tint,
+                text = OrdersBoardRules.tie(stringResource(R.string.active_empty_body)),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = Spacing.XXS),
             )
+        }
+        if (!large) Image(painter = painterResource(R.drawable.mascot_ready), contentDescription = null, modifier = Modifier.size(156.dp))
+    }
+}
+
+/** How far the standing figure's feet reach onto the card under it. */
+private val StandOverlap = 16.dp + Spacing.S
+
+/** The reserved offer as a link card on an empty Active tab: it opens Available, where the card can be confirmed. */
+@Composable
+private fun OfferTeaser(offer: PendingOffer, row: OrderListItem, now: Instant, onClick: () -> Unit) {
+    val rules = OrdersBoardRules
+    val locale = appLocale()
+    val zone = ZoneId.systemDefault()
+    val until = reservedUntilLabel(offer.respondByUtc, now.toEpochMilli())
+    val then = OrdersBoardRules.tie(stringResource(R.string.available_reserved_then))
+    val weekday = rules.start(row)?.let { DateTimeFormatter.ofPattern("EEEE", locale).format(it.atZone(zone)).replaceFirstChar { c -> c.titlecase(locale) } }
+    val window = rules.window(rules.start(row), rules.minutes(row), zone, locale)
+    val pay = rules.payText(row, locale)
+    val scheme = MaterialTheme.colorScheme
+    val seeOffer = stringResource(R.string.active_see_offer)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .background(scheme.surface)
+            .border(BorderStroke(1.5.dp, scheme.primary), MaterialTheme.shapes.medium)
+            .clickable(onClick = onClick),
+    ) {
+        Row(Modifier.padding(start = Spacing.M, end = Spacing.M, top = Spacing.M), horizontalArrangement = Arrangement.spacedBy(Spacing.S)) {
+            OrdersDateTile(start = rules.start(row), size = TileSize.Header, now = now)
+            Column {
+                Text(text = OrdersBoardRules.tie(stringResource(R.string.offers_card_title)), style = MaterialTheme.typography.titleMedium, color = scheme.onSurface)
+                DotFlow(
+                    items = listOf(styled(until, androidx.compose.ui.text.SpanStyle(color = primaryText())), styled(then, androidx.compose.ui.text.SpanStyle(color = scheme.onSurfaceVariant))),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = scheme.onSurface,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+        }
+        val runStyle = MaterialTheme.typography.bodyLarge.copy(fontFeatureSettings = "tnum")
+        val areaStyle = MaterialTheme.typography.bodyMedium
+        val area = rules.areaLine(row)
+        val job = @Composable { modifier: Modifier ->
+            Column(modifier) {
+                DotFlow(
+                    items = listOfNotNull(weekday, window).map { AnnotatedString(it) },
+                    style = runStyle,
+                    color = scheme.onSurface,
+                )
+                DotFlow(
+                    items = listOfNotNull(
+                        area?.let { AnnotatedString(it) },
+                        rules.bandText(row.homeDistanceBand)?.text()?.let { styled(it, androidx.compose.ui.text.SpanStyle(color = scheme.onSurfaceVariant)) },
+                    ),
+                    style = areaStyle,
+                    color = scheme.onSurface,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+        }
+        val spec = TileSpec(pay = pay, action = seeOffer)
+        val tileWidth = payTileWidth(listOf(spec))
+        val measurer = rememberTextMeasurer()
+        val density = LocalDensity.current
+        BoxWithConstraints(Modifier.padding(start = Spacing.M, end = Spacing.M, top = Spacing.S, bottom = Spacing.M)) {
+            val runs = listOfNotNull(weekday?.let { it to runStyle }, window?.let { it to runStyle }, area?.let { it to areaStyle })
+                .map { (text, style) -> measurer.measure(text, style, maxLines = 1, softWrap = false).size.width }
+            val column = with(density) { (maxWidth - tileWidth - Spacing.S).roundToPx() }
+            if (rules.offerStacks(runs, column, density.fontScale)) {
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.S)) {
+                    job(Modifier.fillMaxWidth())
+                    PayTile(spec = spec, description = seeOffer, onClick = onClick, modifier = Modifier.fillMaxWidth(), wide = true)
+                }
+            } else {
+                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.S)) {
+                    job(Modifier.weight(1f))
+                    PayTile(spec = spec, description = seeOffer, onClick = onClick, modifier = Modifier.width(tileWidth))
+                }
+            }
+        }
+    }
+}
+
+/** *Open jobs, next 7 days*: the week strip from today, *See N open jobs* (the Available badge, none without one) and, empty, *Check again*. */
+@Composable
+internal fun WeekPanel(
+    title: String,
+    subtitle: String?,
+    cells: List<WeekCell>,
+    openTotal: Int?,
+    onShowAvailable: () -> Unit,
+    onCheckAgain: (() -> Unit)?,
+) {
+    Panel(padded = true) {
+        Text(text = OrdersBoardRules.tie(title), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.semantics { heading() })
+        subtitle?.let { Text(text = OrdersBoardRules.tie(it), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp)) }
+        WeekStrip(cells = cells, modifier = Modifier.padding(top = Spacing.S))
+        if (cells.any { it.mine }) {
+            val caption = MaterialTheme.typography.bodySmall
+            Row(Modifier.padding(top = Spacing.XS)) {
+                Box(
+                    xBandAligned(caption)
+                        .size(10.dp)
+                        .background(tonalFill(), RoundedCornerShape(3.dp))
+                        .border(1.5.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(3.dp)),
+                )
+                Text(
+                    text = stringResource(R.string.active_week_legend_your_job),
+                    style = caption,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 6.dp).alignBy(FirstBaseline).clearAndSetSemantics {},
+                )
+            }
+        }
+        if (openTotal != null) {
+            BrandOutlinedButton(
+                text = OrdersBoardRules.tie(pluralStringResource(R.plurals.active_see_open, openTotal, openTotal)),
+                onClick = onShowAvailable,
+                maxLines = 2,
+                modifier = Modifier.padding(top = Spacing.S),
+            )
+        }
+        if (onCheckAgain != null) {
+            Box(Modifier.fillMaxWidth().padding(top = Spacing.XXS), contentAlignment = Alignment.Center) {
+                CleansiaTextLink(text = stringResource(R.string.orders_check_again), onClick = onCheckAgain, leadingIcon = Icons.Outlined.Refresh)
+            }
         }
     }
 }
 
 /**
- * Primary CTA for the Available card. Full-width pill button so the
- * cleaner has a clear target after scanning the decision panel above
- * (when / where / scope / pay / badges). While [isTaking] the label is
- * replaced by an inline spinner so the request landing is visible
- * without the button shifting size.
+ * Seven days from today: the weekday heading each column, the day a square card holding its number, the open count
+ * under it once Available has answered (a real 0 in grey); her days carry the selected stroke.
  */
 @Composable
-private fun TakeButton(
-    isTaking: Boolean,
-    onTake: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Surface(
-        onClick = onTake,
-        enabled = !isTaking,
-        shape = RoundedCornerShape(50),
-        color = MaterialTheme.colorScheme.primary,
-        modifier = modifier,
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 10.dp)
-                .height(20.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (isTaking) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(18.dp),
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    strokeWidth = 2.dp,
-                )
-            } else {
-                Text(
-                    text = stringResource(R.string.take_order),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
-        }
-    }
-}
-
-// ─── Active pane ────────────────────────────────────────────────────
-
-@Composable
-private fun ActivePane(
-    uiState: OrdersListUiState,
-    onOrderClick: (String) -> Unit,
-    onNotifyOnTheWay: (String) -> Unit,
-    onStart: (String) -> Unit,
-    onComplete: (String) -> Unit,
-) {
-    if (uiState.orders.isEmpty()) {
-        // Wrap in a scrollable Column so the surrounding PullToRefreshBox
-        // still receives drag gestures when the list is empty. A plain
-        // Box swallows the gesture and pull-to-refresh never fires.
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-        ) {
-            EmptyState(tab = uiState.tab)
-        }
-        return
-    }
-    val grouped = remember(uiState.orders) {
-        // In-progress order is shown by the sticky banner at the top of the
-        // screen — don't repeat it inside the day groups.
-        uiState.orders
-            .filter { it.orderStatus.toOrderStatus() != OrderStatus._4 }
-            .groupBy { ActiveDayBucket.forDate(it.cleaningLocalDate()) }
-            .toSortedMap(compareBy { it.ordinal })
-    }
-
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = Spacing.M, vertical = Spacing.S),
-        verticalArrangement = Arrangement.spacedBy(Spacing.S),
-    ) {
-        grouped.forEach { (bucket, ordersForBucket) ->
-            item {
-                Text(
-                    text = stringResource(bucket.labelRes),
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = Spacing.S),
-                )
-            }
-            items(ordersForBucket, key = { it.id.orEmpty() }) { order ->
-                ActiveOrderRow(
-                    order = order,
-                    isBusy = uiState.inFlightActionOrderId != null &&
-                        uiState.inFlightActionOrderId == order.id,
-                    onClick = { order.id?.let(onOrderClick) },
-                    onNotifyOnTheWay = { order.id?.let(onNotifyOnTheWay) },
-                    onStart = { order.id?.let(onStart) },
-                    onComplete = { order.id?.let(onComplete) },
-                )
-            }
-        }
-        item { Spacer(Modifier.height(MainBottomNavInset)) }
-    }
-}
-
-@Composable
-private fun ActiveOrderRow(
-    order: OrderListItem,
-    isBusy: Boolean,
-    onClick: () -> Unit,
-    onNotifyOnTheWay: () -> Unit,
-    onStart: () -> Unit,
-    onComplete: () -> Unit,
-) {
-    val status = order.orderStatus.toOrderStatus()
-    // Per status: idle label + busy label + commit callback. The deliberate
-    // swipe gesture (vs a one-tap button) is the point — advancing an
-    // active job changes what the customer sees, so a mis-tap is a real
-    // cost. Reuses the same SlideToCommit used in OrderDetail for the
-    // Take/Start sliders so muscle memory is consistent.
-    val swipeConfig: Triple<String, String, () -> Unit>? = when (status) {
-        OrderStatus._2 -> Triple(
-            stringResource(R.string.swipe_to_notify_on_the_way),
-            stringResource(R.string.customer_notified_on_the_way),
-            onNotifyOnTheWay,
-        )
-        OrderStatus._3 -> Triple(
-            stringResource(R.string.swipe_to_start),
-            stringResource(R.string.starting_order),
-            onStart,
-        )
-        OrderStatus._4 -> Triple(
-            stringResource(R.string.swipe_to_complete),
-            stringResource(R.string.completing_order),
-            onComplete,
-        )
-        else -> null
-    }
-
-    Surface(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-    ) {
-        Column(
-            modifier = Modifier.padding(Spacing.M),
-            verticalArrangement = Arrangement.spacedBy(Spacing.S),
-        ) {
-            // Top row: when + address + pay. Tap anywhere on this row
-            // (whole card is clickable) opens the details screen.
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.S),
+internal fun WeekStrip(cells: List<WeekCell>, modifier: Modifier = Modifier) {
+    val locale = appLocale()
+    val scheme = MaterialTheme.colorScheme
+    val caption = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum")
+    Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        cells.forEach { cell ->
+            val said = OrdersBoardRules.weekCellLabel(cell, DateTimeFormatter.ofPattern("EEEE d MMMM", locale).format(cell.day)).text()
+            val open = cell.open ?: 0
+            val shape = MaterialTheme.shapes.small
+            Column(
+                modifier = Modifier.weight(1f).clearAndSetSemantics { contentDescription = said },
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = DateTimeFormatter.ofPattern("EEE", locale).format(cell.day).trimEnd('.'),
+                    style = caption,
+                    color = scheme.onSurfaceVariant,
+                    maxLines = 1,
+                    modifier = Modifier.padding(bottom = Spacing.XXS),
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(1f)
+                        .background(if (cell.mine || open > 0) tonalFill() else scheme.surfaceVariant, shape)
+                        .then(if (cell.mine) Modifier.border(1.5.dp, scheme.primary, shape) else Modifier),
+                    contentAlignment = Alignment.Center,
+                ) {
                     Text(
-                        text = order.cleaningDateTime?.let { formatTimeOnly(it) } ?: "—",
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                    )
-                    Text(
-                        text = order.customerAddress?.takeIf { it.isNotBlank() }
-                            ?: order.customerName.orEmpty(),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+                        text = cell.day.dayOfMonth.toString(),
+                        style = MaterialTheme.typography.titleMedium.copy(fontFeatureSettings = "tnum"),
+                        color = if (cell.mine || open > 0) scheme.onSurface else scheme.onSurfaceVariant,
                     )
                 }
                 Text(
-                    text = formatMoney(order.estimatedCleanerPay ?: 0.0, order.currency?.symbol),
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                    color = primaryText(),
-                )
-                if (swipeConfig == null) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Outlined.ArrowForward,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-
-            // Swipe-to-act CTA per status. Inline busy state mirrors what
-            // the OrderDetail slider does — thumb locks at the end with a
-            // spinner while the API call is in flight; on failure the VM
-            // clears inFlightActionOrderId and the thumb springs back so
-            // the cleaner can retry.
-            if (swipeConfig != null) {
-                val (idle, busy, onCommit) = swipeConfig
-                SlideToCommit(
-                    idleLabel = idle,
-                    busyLabel = busy,
-                    onCommit = onCommit,
-                    isBusy = isBusy,
+                    text = cell.open?.toString().orEmpty(),
+                    style = caption,
+                    color = if (open > 0) primaryText() else scheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = Spacing.XXS),
                 )
             }
         }
     }
 }
 
-// ─── History pane ───────────────────────────────────────────────────
+/** Loading at real size: the hero's head, day line, scope and slide as flat bars, then the *Later* rows at their pitch. */
+@Composable
+private fun ActiveLoading() {
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.S), modifier = Modifier.clearAndSetSemantics {}) {
+        Panel(padded = true) {
+            Bar(170.dp, 22.dp)
+            Bar(190.dp, 20.dp, Modifier.padding(top = 2.dp))
+            Bar(220.dp, 22.dp, Modifier.padding(top = Spacing.S))
+            Box(Modifier.padding(top = Spacing.XS).fillMaxWidth().height(4.dp).background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(2.dp)))
+            Bar(150.dp, 24.dp, Modifier.padding(top = Spacing.M))
+            Box(Modifier.padding(top = Spacing.M).fillMaxWidth().height(10.dp).background(MaterialTheme.colorScheme.surfaceVariant, CircleShape))
+            Bar(220.dp, 20.dp, Modifier.padding(top = Spacing.L))
+            Box(Modifier.padding(top = Spacing.S).fillMaxWidth().height(56.dp).background(MaterialTheme.colorScheme.surfaceVariant, CircleShape))
+        }
+        Bar(90.dp, 20.dp, Modifier.padding(top = Spacing.XS))
+        Panel {
+            listOf(150.dp, 120.dp, 170.dp).forEachIndexed { index, street ->
+                if (index > 0) Rule()
+                Row(Modifier.padding(horizontal = Spacing.M, vertical = Spacing.S), horizontalArrangement = Arrangement.spacedBy(Spacing.S)) {
+                    Box(Modifier.size(TileSize.Row.minSide).background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.small))
+                    Column(Modifier.weight(1f)) {
+                        Bar(118.dp, 24.dp)
+                        Bar(street, 20.dp, Modifier.padding(top = 2.dp))
+                    }
+                    Bar(56.dp, 22.dp)
+                }
+            }
+        }
+    }
+}
 
 @Composable
 private fun HistoryPane(
     uiState: OrdersListUiState,
+    now: Instant,
+    list: LazyListState,
     onOrderClick: (String) -> Unit,
     onPeriodSelected: (CompletedPeriod) -> Unit,
+    onRetry: () -> Unit,
+    onOpenEarnings: () -> Unit,
 ) {
-    val grouped = remember(uiState.orders) {
-        uiState.orders.groupBy { it.cleaningLocalDate() }.toSortedMap(compareByDescending { it })
-    }
-    val totalEarnings = remember(uiState.orders) { formatEarningsTotal(uiState.orders) }
-
+    val pane = uiState.pane(OrdersTab.MyCompleted)
+    // A zero total still names the cleaner's currency when any of their rows does.
+    val fallbackSymbol = (uiState.pane(OrdersTab.MyActive).rows + uiState.pane(OrdersTab.Available).rows)
+        .firstNotNullOfOrNull { it.currency?.symbol?.takeIf(String::isNotBlank) }
     LazyColumn(
+        state = list,
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = Spacing.M, vertical = Spacing.S),
+        contentPadding = PanePadding,
         verticalArrangement = Arrangement.spacedBy(Spacing.S),
     ) {
-        item {
-            PeriodFilterRow(
-                currentPeriod = uiState.completedPeriod,
+        if (pane.failed && pane.rows.isNotEmpty()) item(key = "stale") { StaleStrip(loadedAt = pane.loadedAt, now = now, onRetry = onRetry) }
+        item(key = "history") {
+            HistoryPanel(
+                pane = pane,
+                reference = uiState.historyReference,
+                period = uiState.completedPeriod,
+                now = now,
+                fallbackSymbol = fallbackSymbol,
                 onPeriodSelected = onPeriodSelected,
+                onRetry = onRetry,
+                onOpenEarnings = onOpenEarnings,
+                onOrderClick = onOrderClick,
             )
         }
-        item {
-            HistorySummaryCard(
-                totalEarnings = totalEarnings,
-                jobCount = uiState.orders.size,
-            )
-        }
-        if (uiState.orders.isEmpty()) {
-            item { EmptyInline(text = stringResource(R.string.no_completed_orders)) }
-        }
-        grouped.forEach { (date, ordersForDay) ->
-            item {
-                Text(
-                    text = date?.let { formatDate(it.atStartOfDay(ZoneId.systemDefault()).toInstant().toString()) }
-                        ?: stringResource(R.string.unscheduled),
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = Spacing.S),
-                )
-            }
-            items(ordersForDay, key = { it.id.orEmpty() }) { order ->
-                HistoryRow(order = order, onClick = { order.id?.let(onOrderClick) })
-            }
+        if (pane.showsError()) {
+            nextJobs(uiState.pane(OrdersTab.MyActive), now, onOrderClick)
+            uiState.cashHeld?.let { item { CashPanel(it) } }
         }
         item { Spacer(Modifier.height(MainBottomNavInset)) }
     }
 }
 
+/** History as one card: the period chips, the total, the month, the payouts link, then the ledger by day. */
 @Composable
-private fun PeriodFilterRow(
-    currentPeriod: CompletedPeriod,
+private fun HistoryPanel(
+    pane: PaneState,
+    reference: PaneState?,
+    period: CompletedPeriod,
+    now: Instant,
+    fallbackSymbol: String?,
     onPeriodSelected: (CompletedPeriod) -> Unit,
+    onRetry: () -> Unit,
+    onOpenEarnings: () -> Unit,
+    onOrderClick: (String) -> Unit,
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(Spacing.S),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        CompletedPeriod.values().forEach { period ->
-            val selected = period == currentPeriod
-            Surface(
-                onClick = { onPeriodSelected(period) },
-                shape = RoundedCornerShape(50),
-                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
-                border = BorderStroke(
-                    1.dp,
-                    if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-                ),
-            ) {
-                Text(
-                    text = stringResource(period.labelRes),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                )
+    val rules = OrdersBoardRules
+    val locale = appLocale()
+    val zone = ZoneId.systemDefault()
+    val today = now.atZone(zone).toLocalDate()
+    val names = periodNames(locale, today)
+    val chevron = Icons.AutoMirrored.Outlined.KeyboardArrowRight
+    val payouts: @Composable () -> Unit = {
+        CleansiaTextLink(
+            text = stringResource(R.string.history_payouts_link, stringResource(R.string.earnings_title)),
+            onClick = onOpenEarnings,
+            trailingIcon = chevron,
+            maxLines = 2,
+            modifier = Modifier.padding(top = Spacing.XXS).offsetStart(),
+        )
+    }
+    Panel(padded = true) {
+        PeriodChips(names = names, current = period, onSelected = onPeriodSelected)
+        if (pane.showsError()) {
+            Row(Modifier.padding(vertical = Spacing.S), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.S)) {
+                Column(Modifier.weight(1f)) {
+                    val title = MaterialTheme.typography.titleMedium
+                    Row {
+                        Icon(Icons.Outlined.ErrorOutline, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = capBandAligned(title).padding(end = 8.dp).size(18.dp))
+                        Text(text = OrdersBoardRules.tie(stringResource(R.string.orders_load_error)), style = title, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.alignBy(FirstBaseline).announcePolitely())
+                    }
+                    Text(text = OrdersBoardRules.tie(stringResource(R.string.available_empty_subtitle)), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))
+                    BrandOutlinedButton(text = stringResource(R.string.retry), onClick = onRetry, leadingIcon = Icons.Outlined.Refresh, modifier = Modifier.padding(top = Spacing.S).width(IntrinsicSize.Max))
+                }
+                Image(painter = painterResource(R.drawable.mascot_resting), contentDescription = null, modifier = Modifier.size(120.dp))
             }
+            payouts()
+            return@Panel
         }
-    }
-}
-
-@Composable
-private fun HistorySummaryCard(
-    totalEarnings: String,
-    jobCount: Int,
-) {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant,
-                shape = RoundedCornerShape(16.dp),
-            ),
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surface,
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(Spacing.M),
-            horizontalArrangement = Arrangement.SpaceAround,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            SummaryStat(label = stringResource(R.string.earnings), value = totalEarnings)
-            SummaryStat(label = stringResource(R.string.jobs), value = jobCount.toString())
-        }
-    }
-}
-
-@Composable
-private fun SummaryStat(label: String, value: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        val (from, to) = periodDays(period, today)
+        val gridEnd = rules.historyGridEnd(to, today)
+        val loading = !pane.hasLoaded
         Text(
-            text = value,
-            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+            text = OrdersBoardRules.tie(stringResource(R.string.history_rewards_title)),
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
             color = primaryText(),
+            modifier = Modifier.padding(top = Spacing.M).semantics { heading() },
         )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-@Composable
-private fun HistoryRow(order: OrderListItem, onClick: () -> Unit) {
-    Surface(
-        modifier = Modifier.fillMaxWidth().clickable { onClick() },
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = Spacing.M, vertical = Spacing.S),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.S),
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = order.customerName?.takeIf { it.isNotBlank() }
-                        ?: "#${order.displayOrderNumber.orEmpty()}",
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(
-                    text = order.cleaningDateTime?.let { formatTimeOnly(it) } ?: "—",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Text(
-                text = formatMoney(order.estimatedCleanerPay ?: 0.0, order.currency?.symbol),
-                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                color = primaryText(),
-            )
+        if (loading) {
+            Bar(150.dp, 30.dp, Modifier.padding(vertical = 2.dp))
+            Bar(200.dp, 16.dp)
+        } else {
+            HistoryTotal(rows = pane.rows, total = pane.total, fallbackSymbol = fallbackSymbol, periodName = names.getValue(period))
         }
-    }
-}
-
-// ─── Shared bits ────────────────────────────────────────────────────
-
-@Composable
-private fun SearchBar(value: String, onValueChange: (String) -> Unit) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = Spacing.M, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.Search,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(Modifier.width(8.dp))
-            Box(modifier = Modifier.weight(1f)) {
-                if (value.isEmpty()) {
+        MonthGrid(from = from, to = gridEnd, rows = if (loading) emptyList() else pane.rows, today = today, modifier = Modifier.padding(top = Spacing.M))
+        payouts()
+        if (loading) {
+            listOf(2 to 150.dp, 1 to 120.dp, 1 to 170.dp).forEach { (jobs, width) ->
+                Rule(Modifier.offsetHorizontal())
+                Row(Modifier.padding(vertical = Spacing.S).clearAndSetSemantics {}, horizontalArrangement = Arrangement.spacedBy(Spacing.S)) {
+                    Box(Modifier.size(TileSize.Row.minSide).background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.small))
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.S)) {
+                        repeat(jobs) {
+                            Column {
+                                Row {
+                                    Bar(118.dp, 22.dp)
+                                    Spacer(Modifier.weight(1f))
+                                    Bar(56.dp, 22.dp)
+                                }
+                                Bar(width, 14.dp, Modifier.padding(top = 6.dp))
+                            }
+                        }
+                    }
+                }
+            }
+            return@Panel
+        }
+        if (pane.rows.isEmpty()) {
+            Rule(Modifier.offsetHorizontal())
+            Row(Modifier.padding(vertical = Spacing.S), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.S)) {
+                Column(Modifier.weight(1f)) {
                     Text(
-                        text = stringResource(R.string.search_orders_hint),
+                        text = OrdersBoardRules.tie(stringResource(if (period == CompletedPeriod.ThisWeek) R.string.history_empty_week else R.string.history_empty_month)),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Text(text = OrdersBoardRules.tie(stringResource(R.string.history_empty_body)), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))
+                }
+                Image(painter = painterResource(R.drawable.mascot_resting), contentDescription = null, modifier = Modifier.size(88.dp))
+            }
+            reference?.takeIf { period == CompletedPeriod.ThisMonth }?.let { ref ->
+                val lastName = names.getValue(CompletedPeriod.LastMonth)
+                Rule(Modifier.offsetHorizontal())
+                Column(Modifier.padding(top = Spacing.S)) {
+                    Text(text = stringResource(R.string.history_last_month), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    val totals = rules.historyTotals(ref.rows, ref.total)
+                    Row {
+                        Text(text = lastName, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f).alignByBaseline())
+                        Text(
+                            text = rules.historyTotalText(ref.rows, ref.total, fallbackSymbol, locale),
+                            style = MaterialTheme.typography.titleMedium.copy(fontFeatureSettings = "tnum"),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            softWrap = false,
+                            modifier = Modifier.alignByBaseline(),
+                        )
+                    }
+                    DotFlow(
+                        items = summaryItems(totals.jobs, totals.hours).map { AnnotatedString(it) },
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                    val (lastFrom, lastTo) = periodDays(CompletedPeriod.LastMonth, today)
+                    MonthGrid(from = lastFrom, to = lastTo, rows = ref.rows, today = today, modifier = Modifier.padding(top = 10.dp))
+                    val lower = if (locale.language == "en") lastName else lastName.lowercase(locale)
+                    CleansiaTextLink(
+                        text = stringResource(R.string.history_show_period, lower),
+                        onClick = { onPeriodSelected(CompletedPeriod.LastMonth) },
+                        trailingIcon = chevron,
+                        modifier = Modifier.padding(top = Spacing.XXS).offsetStart(),
                     )
                 }
-                BasicTextField(
-                    value = value,
-                    onValueChange = onValueChange,
-                    singleLine = true,
-                    textStyle = MaterialTheme.typography.bodyMedium.copy(
-                        color = MaterialTheme.colorScheme.onSurface,
-                    ),
-                    modifier = Modifier.fillMaxWidth(),
-                )
+            }
+            return@Panel
+        }
+        rules.dayGroups(pane.rows, zone).forEach { (_, rows) ->
+            Rule(Modifier.offsetHorizontal())
+            LedgerDay(rows = rows, now = now, onOrderClick = onOrderClick)
+        }
+    }
+}
+
+/** A rule inside a padded card reaches its edges. */
+internal fun Modifier.offsetHorizontal(): Modifier = layout { measurable, constraints ->
+    val extra = Spacing.M.roundToPx() * 2
+    val placeable = measurable.measure(constraints.copy(minWidth = constraints.maxWidth + extra, maxWidth = constraints.maxWidth + extra))
+    layout(constraints.maxWidth, placeable.height) { placeable.place(-Spacing.M.roundToPx(), 0) }
+}
+
+/** A text link at the start of a column: its own padding hangs outside, so its words start on the column's edge. */
+private fun Modifier.offsetStart(): Modifier = offset(x = -LinkPadding)
+
+private val LinkPadding = 4.dp
+
+@Composable
+private fun summaryItems(jobs: Int, hours: Int): List<String> {
+    val jobsText = pluralStringResource(R.plurals.orders_job_count, jobs, jobs)
+    if (jobs == 0) return listOf(jobsText)
+    return stringResource(R.string.history_summary, jobsText, stringResource(R.string.orders_duration_h, hours)).split(OrdersBoardRules.SEP, " · ")
+}
+
+/** The period's one money hero, one string, and its jobs and hours under it. */
+@Composable
+private fun HistoryTotal(rows: List<OrderListItem>, total: Int?, fallbackSymbol: String?, periodName: String) {
+    val locale = appLocale()
+    val totals = OrdersBoardRules.historyTotals(rows, total)
+    val earnings = OrdersBoardRules.historyTotalText(rows, total, fallbackSymbol, locale)
+    val eyebrow = stringResource(R.string.history_rewards_title)
+    Text(
+        text = earnings,
+        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold, fontFeatureSettings = "tnum"),
+        color = MaterialTheme.colorScheme.onSurface,
+        softWrap = false,
+        modifier = Modifier.semantics { contentDescription = "$eyebrow, $periodName: $earnings" },
+    )
+    DotFlow(
+        items = summaryItems(totals.jobs, totals.hours).map { AnnotatedString(it) },
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = 2.dp),
+    )
+}
+
+/** This week (Monday-first), the current month, the previous month, as dates. */
+private fun periodDays(period: CompletedPeriod, today: LocalDate): Pair<LocalDate, LocalDate> = when (period) {
+    CompletedPeriod.ThisWeek -> today.with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY)).let { it to it.plusDays(6) }
+    CompletedPeriod.ThisMonth -> today.withDayOfMonth(1).let { it to it.plusMonths(1).minusDays(1) }
+    CompletedPeriod.LastMonth -> today.withDayOfMonth(1).minusMonths(1).let { it to it.plusMonths(1).minusDays(1) }
+}
+
+/**
+ * Monday-first weeks of square days: a worked day on the app's tint with one dot per job hanging under its digit, so the
+ * digits of a week share one line; today with the selected stroke; days outside the period quiet.
+ */
+@Composable
+private fun MonthGrid(from: LocalDate, to: LocalDate, rows: List<OrderListItem>, today: LocalDate, modifier: Modifier = Modifier) {
+    val zone = ZoneId.systemDefault()
+    val locale = appLocale()
+    val scheme = MaterialTheme.colorScheme
+    val quiet = if (isDarkScheme()) Slate400 else Slate500
+    val perDay = rows.groupingBy { OrdersBoardRules.day(it, zone) }.eachCount()
+    val days = OrdersBoardRules.historyGrid(from, to)
+    val weekdays = remember(locale) {
+        val names = android.icu.text.DateFormatSymbols.getInstance(locale)
+            .getWeekdays(android.icu.text.DateFormatSymbols.STANDALONE, android.icu.text.DateFormatSymbols.SHORT)
+        listOf(2, 3, 4, 5, 6, 7, 1).map { names[it].replaceFirstChar { c -> c.titlecase(locale) } }
+    }
+    val shape = MaterialTheme.shapes.small
+    Column(modifier.clearAndSetSemantics {}, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            weekdays.forEach {
+                Text(text = it, style = MaterialTheme.typography.bodySmall, color = scheme.onSurfaceVariant, textAlign = TextAlign.Center, modifier = Modifier.weight(1f).padding(bottom = 2.dp))
+            }
+        }
+        days.chunked(7).forEach { week ->
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                week.forEach { day ->
+                    val count = perDay[day] ?: 0
+                    val inPeriod = day in from..to
+                    val future = day > today
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .aspectRatio(1f)
+                            .background(if (count > 0) tonalFill() else Color.Transparent, shape)
+                            .then(if (day == today) Modifier.border(1.5.dp, scheme.primary, shape) else Modifier),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = day.dayOfMonth.toString(),
+                            style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"),
+                            color = if (!inPeriod || future) quiet else scheme.onSurface,
+                        )
+                        if (count > 0) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(3.dp), modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 4.dp)) {
+                                repeat(count) { Box(Modifier.size(5.dp).background(scheme.primary, CircleShape)) }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
 }
 
+/** One closed day: the grey leaf, its jobs stacked (window ‖ pay, area · service, what happened to the cash); at large text the pay goes last. */
 @Composable
-private fun EmptyState(tab: OrdersTab) {
-    val (mascot, text) = when (tab) {
-        OrdersTab.Available -> R.drawable.mascot_resting to stringResource(R.string.no_orders_available)
-        // All three sit. A thumbs-up on "you have no active orders" congratulates the cleaner for
-        // having no work, which is the opposite of what the screen is telling them.
-        OrdersTab.MyActive -> R.drawable.mascot_resting to stringResource(R.string.no_active_orders)
-        OrdersTab.MyCompleted -> R.drawable.mascot_resting to stringResource(R.string.no_completed_orders)
+private fun LedgerDay(rows: List<OrderListItem>, now: Instant, onOrderClick: (String) -> Unit) {
+    val rules = OrdersBoardRules
+    val locale = appLocale()
+    val zone = ZoneId.systemDefault()
+    val large = LocalDensity.current.fontScale >= 1.3f
+    Row(Modifier.padding(vertical = Spacing.S), horizontalArrangement = Arrangement.spacedBy(Spacing.S)) {
+        OrdersDateTile(start = rules.start(rows.first()), size = TileSize.Row, now = now, closed = true)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.S)) {
+            rows.forEach { row ->
+                val window = rules.window(rules.start(row), rules.minutes(row), zone, locale)
+                val pay = rules.payText(row, locale)
+                val lines = listOfNotNull(rules.areaLine(row), rules.scopeLead(row, locale.language), rules.heroTeam(row)?.text())
+                val cash = rules.historyCash(row, locale).map { it.text() }
+                val sentence = spokenSentence(
+                    listOf(rules.start(row)?.let { dayAndDate(it, now) }, window),
+                    lines,
+                    listOf(pay?.let { "${stringResource(R.string.you_earn)} $it" }),
+                    cash,
+                )
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { row.id?.let(onOrderClick) }
+                        .clearAndSetSemantics { contentDescription = sentence },
+                ) {
+                    val windowStyle = MaterialTheme.typography.bodyLarge.copy(fontFeatureSettings = "tnum")
+                    val payStyle = MaterialTheme.typography.titleMedium.copy(fontFeatureSettings = "tnum")
+                    val shownWindow = window?.let(rules::holdDash) ?: "—"
+                    if (large) {
+                        Text(text = shownWindow, style = windowStyle, color = MaterialTheme.colorScheme.onSurface)
+                    } else {
+                        Row {
+                            Text(text = shownWindow, style = windowStyle, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f).alignByBaseline())
+                            pay?.let { Text(text = it, style = payStyle, color = MaterialTheme.colorScheme.onSurface, softWrap = false, modifier = Modifier.padding(start = Spacing.XS).alignByBaseline()) }
+                        }
+                    }
+                    DotFlow(items = lines.map { AnnotatedString(it) }, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))
+                    when (cash.size) {
+                        1 -> FlagFlow(Modifier.padding(top = Spacing.XS)) { OrderFlag(cash.single(), FlagTone.Warn, Icons.Outlined.Payments) }
+                        2 -> FlagFlow(Modifier.padding(top = Spacing.XS)) {
+                            OrderFlagShell(FlagTone.Neutral, Icons.Outlined.Payments) { style, ink ->
+                                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                    Text(text = cash[0], style = style, color = ink)
+                                    Text(text = cash[1].replaceFirstChar { it.titlecase(locale) }, style = style, color = ink)
+                                }
+                            }
+                        }
+                    }
+                    if (large) pay?.let { Text(text = it, style = payStyle, color = MaterialTheme.colorScheme.onSurface, softWrap = false, modifier = Modifier.padding(top = 6.dp)) }
+                }
+            }
+        }
     }
-    MascotEmptyState(
-        painter = painterResource(mascot),
-        text = text,
-        modifier = Modifier.padding(bottom = MainBottomNavInset),
-        // Orders has the segmented tab bar above the empty region; less
-        // top spacer compensates so the mascot lands at the same Y as on
-        // Invoices (no tabs).
-        topSpacer = 220.dp,
+}
+
+/** This week, then the current and previous months by their standalone names ("Listopad", "Листопад"). */
+@Composable
+private fun periodNames(locale: java.util.Locale, today: LocalDate): Map<CompletedPeriod, String> {
+    val month = { date: LocalDate -> DateTimeFormatter.ofPattern("LLLL", locale).format(date).replaceFirstChar { it.titlecase(locale) } }
+    return mapOf(
+        CompletedPeriod.ThisWeek to stringResource(R.string.period_this_week),
+        CompletedPeriod.ThisMonth to month(today),
+        CompletedPeriod.LastMonth to month(today.minusMonths(1)),
     )
 }
 
+/** The period: the app's chips in a row, each a tab that says whether it is the chosen one. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun EmptyInline(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.fillMaxWidth().padding(Spacing.L),
-    )
-}
-
-// ─── Formatters ─────────────────────────────────────────────────────
-
-private fun formatDistance(km: Double): String = when {
-    km < 1.0 -> String.format(Locale.getDefault(), "%.1f", km)
-    else -> km.roundToInt().toString()
-}
-
-private fun formatDuration(minutes: Int): String {
-    if (minutes < 60) return "$minutes min"
-    val h = minutes / 60
-    val m = minutes % 60
-    return if (m == 0) "${h}h" else "${h}h ${m}m"
-}
-
-private fun formatRelativeDateTime(iso: String): String = runCatching {
-    val instant = Instant.parse(iso)
-    val local = instant.atZone(ZoneId.systemDefault())
-    val date = local.toLocalDate()
-    val today = java.time.LocalDate.now()
-    val timeStr = DateTimeFormatter.ofPattern("HH:mm").format(local)
-    when (date) {
-        today -> "Today $timeStr"
-        today.plusDays(1) -> "Tomorrow $timeStr"
-        else -> DateTimeFormatter.ofPattern("EEE d MMM HH:mm")
-            .withLocale(Locale.getDefault())
-            .format(local)
+private fun PeriodChips(names: Map<CompletedPeriod, String>, current: CompletedPeriod, onSelected: (CompletedPeriod) -> Unit) {
+    FlowRow(
+        modifier = Modifier.fillMaxWidth().selectableGroup(),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.XS),
+        verticalArrangement = Arrangement.spacedBy(Spacing.XS),
+    ) {
+        CompletedPeriod.entries.forEach { period ->
+            val chosen = period == current
+            CleansiaChip(
+                label = names.getValue(period),
+                isSelected = chosen,
+                onClick = { onSelected(period) },
+                role = Role.Tab,
+                modifier = Modifier.semantics { selected = chosen },
+            )
+        }
     }
-}.getOrDefault(iso)
-
-private fun formatDate(iso: String): String = runCatching {
-    val instant = Instant.parse(iso)
-    val local = instant.atZone(ZoneId.systemDefault())
-    DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
-        .withLocale(Locale.getDefault())
-        .format(local)
-}.getOrDefault(iso)
-
-private fun formatTimeOnly(iso: String): String = runCatching {
-    val instant = Instant.parse(iso)
-    val local = instant.atZone(ZoneId.systemDefault())
-    DateTimeFormatter.ofPattern("HH:mm").format(local)
-}.getOrDefault(iso)
+}

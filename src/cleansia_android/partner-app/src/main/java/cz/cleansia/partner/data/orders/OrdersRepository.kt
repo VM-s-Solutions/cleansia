@@ -12,6 +12,7 @@ import cz.cleansia.partner.api.model.MarkCashCollectedCommand
 import cz.cleansia.partner.api.model.MarkMyPartDoneCommand
 import cz.cleansia.partner.api.model.NotifyOnTheWayCommand
 import cz.cleansia.partner.api.model.OrderItem
+import cz.cleansia.partner.api.model.OrderListItem
 import cz.cleansia.partner.api.model.OrderStatus
 import cz.cleansia.partner.api.model.PagedDataOfOrderListItem
 import cz.cleansia.partner.api.model.PendingOfferItem
@@ -32,9 +33,12 @@ import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.safeApiCall
 import cz.cleansia.core.network.mapWire
 import cz.cleansia.core.network.required
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import cz.cleansia.partner.data.dashboard.DashboardRepository
@@ -69,7 +73,7 @@ interface OrdersRepository {
         sortField: String = "cleaningDateTime",
         sortAscending: Boolean = true,
         offset: Int = 0,
-        limit: Int = 50,
+        limit: Int = 100,
         /**
          * Logical pane this fetch belongs to. On success the repo stamps
          * the matching pane's [Staleness] watermark so future freshness
@@ -80,6 +84,8 @@ interface OrdersRepository {
         pane: OrdersPane? = null,
         hasAvailableSpots: Boolean? = null,
         excludeEmployeeId: String? = null,
+        /** One order by id (`Filter.Id`): the board's reserved-row and taken-row reads, never `GetById`. */
+        orderId: String? = null,
     ): ApiResult<PagedDataOfOrderListItem>
 
     suspend fun getById(orderId: String): ApiResult<OrderItem>
@@ -149,6 +155,22 @@ interface OrdersRepository {
 
     fun arePendingOffersStale(): Boolean
 
+    /**
+     * The Available rows and her own Active rows the Orders board last loaded, so the job detail reads the row
+     * it was opened from by order id, whether it came from the board, a push or the Dashboard.
+     */
+    val boardRows: StateFlow<BoardRows>
+
+    fun publishBoardRows(rows: BoardRows)
+
+    /**
+     * A job detail's *See N open jobs* or *Browse jobs*: the board shows its Available tab. The ask is held until the
+     * board takes it, so a board created on the way back reads it too.
+     */
+    val availableTabRequests: Flow<Unit>
+
+    fun requestAvailableTab()
+
     suspend fun refreshPendingOffers(): ApiResult<List<PendingOffer>>
 
     /**
@@ -207,6 +229,15 @@ interface OrdersRepository {
  */
 enum class OrdersMutation { TakeOrder, NotifyOnTheWay, StartOrder, CompleteOrder }
 
+/** What the board last loaded; null is a list the board has not loaded (yet, or in this session). */
+data class BoardRows(
+    val available: List<OrderListItem>? = null,
+    val availableTotal: Int? = null,
+    val own: List<OrderListItem>? = null,
+) {
+    fun row(orderId: String): OrderListItem? = own?.firstOrNull { it.id == orderId } ?: available?.firstOrNull { it.id == orderId }
+}
+
 @Singleton
 class OrdersRepositoryImpl @Inject constructor(
     private val orderApi: OrderApi,
@@ -231,6 +262,20 @@ class OrdersRepositoryImpl @Inject constructor(
 
     private val _pendingOffers = MutableStateFlow<List<PendingOffer>>(emptyList())
     override val pendingOffers: StateFlow<List<PendingOffer>> = _pendingOffers.asStateFlow()
+
+    private val _boardRows = MutableStateFlow(BoardRows())
+    override val boardRows: StateFlow<BoardRows> = _boardRows.asStateFlow()
+
+    override fun publishBoardRows(rows: BoardRows) {
+        _boardRows.value = rows
+    }
+
+    private val availableTabRequest = Channel<Unit>(Channel.CONFLATED)
+    override val availableTabRequests: Flow<Unit> = availableTabRequest.receiveAsFlow()
+
+    override fun requestAvailableTab() {
+        availableTabRequest.trySend(Unit)
+    }
 
     private val pendingOffersStaleness = Staleness()
     private val pendingOffersLock = Mutex()
@@ -274,6 +319,7 @@ class OrdersRepositoryImpl @Inject constructor(
             paneStaleness.values.forEach { it.reset() }
             _pendingOffers.value = emptyList()
             pendingOffersStaleness.reset()
+            _boardRows.value = BoardRows()
         }
     }
 
@@ -360,8 +406,10 @@ class OrdersRepositoryImpl @Inject constructor(
         pane: OrdersPane?,
         hasAvailableSpots: Boolean?,
         excludeEmployeeId: String?,
+        orderId: String?,
     ): ApiResult<PagedDataOfOrderListItem> = safeApiCall(json) {
         orderApi.orderGetPaged(
+            filterId = orderId,
             filterOrderStatuses = statuses,
             filterIsUnassigned = isUnassigned,
             filterEmployeeId = employeeId,

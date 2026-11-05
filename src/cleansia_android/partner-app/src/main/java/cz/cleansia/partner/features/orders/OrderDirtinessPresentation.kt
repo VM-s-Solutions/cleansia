@@ -4,16 +4,14 @@ import androidx.annotation.StringRes
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.DirtinessLevel
 
-/** Null when the wire carried no level — a server that predates it. */
+/** Dirt is said only when it is more than normal; null for a normal home or a server that predates the level. */
 @StringRes
 fun dirtinessLevelLabelRes(level: DirtinessLevel?): Int? = when (level) {
-    DirtinessLevel._0 -> R.string.dirtiness_level_normal
     DirtinessLevel._1 -> R.string.dirtiness_level_increased
     DirtinessLevel._2 -> R.string.dirtiness_level_heavy
-    null -> null
+    DirtinessLevel._0, null -> null
 }
 
-/** The board card flags only a dirtier-than-normal home; the detail names every level. */
+/** The board card and the detail flag the same levels. */
 @StringRes
-fun dirtinessChipLabelRes(level: DirtinessLevel?): Int? =
-    if (level == DirtinessLevel._0) null else dirtinessLevelLabelRes(level)
+fun dirtinessChipLabelRes(level: DirtinessLevel?): Int? = dirtinessLevelLabelRes(level)

@@ -223,25 +223,19 @@
     <!-- Orders -->
     <string name="orders">Замовлення</string>
     <string name="order_details">Деталі замовлення</string>
-    <string name="order_detail_error_title">Не вдалося завантажити це замовлення</string>
     <string name="order_detail_error_message">Перевірте підключення до Інтернету та спробуйте знову.</string>
     <string name="active">Активні</string>
     <string name="available">Доступні</string>
     <string name="my_orders">Мої замовлення</string>
-    <string name="completed">Завершені</string>
     <string name="take_order">Взяти замовлення</string>
     <string name="swipe_to_take">Проведіть, щоб взяти</string>
     <string name="start_order">Почати замовлення</string>
-    <string name="swipe_to_start">Проведіть, щоб почати</string>
-    <string name="swipe_to_complete">Проведіть, щоб завершити</string>
     <string name="swipe_to_notify_on_the_way">Проведіть, щоб повідомити „У дорозі"</string>
     <string name="customer_notified_on_the_way">Клієнта повідомлено · ви в дорозі</string>
     <string name="waiting_for_other_employees">Вас призначено! Чекаємо підтвердження від інших партнерів, щоб замовлення могло розпочатися.</string>
     <string name="order_started">Розпочато!</string>
     <string name="complete_order">Завершити замовлення</string>
-    <string name="no_orders_available">Немає доступних замовлень</string>
     <string name="no_active_orders">Немає активних замовлень</string>
-    <string name="no_completed_orders">Немає завершених замовлень</string>
     <string name="no_services">Немає послуг</string>
     <string name="order_id">Замовлення #%1$s</string>
     <string name="customer">Клієнт</string>
@@ -276,14 +270,12 @@
     <string name="scheduled_date">Запланована дата</string>
     <string name="upload_photos">Завантажити фото</string>
     <string name="photos">Фото</string>
-    <string name="add_photo">Додати фото</string>
     <string name="no_photos">Фото не завантажено</string>
     <string name="take_photo">Зробити фото</string>
     <string name="choose_from_gallery">Вибрати з галереї</string>
     <string name="document_choose_file">Вибрати файл</string>
     <string name="delete_photo">Видалити фото</string>
     <string name="delete_photo_confirm">Видалити це фото?</string>
-    <string name="photos_none_recorded">Фотографій не записано</string>
     <string name="estimated_time">Орієнтовний час</string>
     <string name="completion_notes">Нотатки до завершення (необов\'язково)</string>
     <string name="rooms">Кімнати</string>
@@ -332,9 +324,6 @@
     <string name="sort_amount_low_high">Сума (від найменшої)</string>
     <string name="sort_amount_high_low">Сума (від найбільшої)</string>
 
-    <!-- Order Status -->
-    <string name="status_new">Нове</string>
-    <string name="notify_on_the_way">Повідомити, що в дорозі</string>
     <string name="property">Помешкання</string>
     <string name="rooms_count">%1$d кімнат</string>
     <string name="bathrooms_count">%1$d ванних кімнат</string>
@@ -368,11 +357,6 @@
     <string name="deduction">Утримання</string>
     <string name="open_invoice_pdf">Відкрити PDF рахунку</string>
     <string name="no_pdf_viewer">На цьому пристрої не встановлено програму для перегляду PDF.</string>
-    <string name="status_pending">Очікує</string>
-    <string name="status_confirmed">Підтверджено</string>
-    <string name="status_in_progress">В процесі</string>
-    <string name="status_completed">Завершено</string>
-    <string name="status_cancelled">Скасовано</string>
     <string name="status_on_the_way">У дорозі</string>
 
     <!-- Payment Status -->
@@ -835,31 +819,17 @@
     <string name="syncing">Синхронізація…</string>
 
     <!-- Orders redesign -->
-    <string name="search_orders_hint">Пошук за іменем, адресою, № замовлення</string>
-    <string name="available_summary">%1$d замовлень · до %2$s</string>
-    <string name="no_matching_orders">Немає замовлень, що відповідають пошуку</string>
-    <string name="km_away">%1$s км</string>
-    <string name="top_pay">Найвища оплата</string>
-    <string name="starts_soon">Скоро початок</string>
     <string name="sort_earnings_high_to_low">Заробіток від найвищого</string>
     <string name="sort_soonest_first">Найближчі</string>
-    <string name="sort_price_high_to_low">Ціна від найвищої</string>
     <string name="day_today">Сьогодні</string>
     <string name="day_tomorrow">Завтра</string>
     <string name="day_later">Пізніше</string>
     <string name="period_this_week">Цього тижня</string>
-    <string name="period_this_month">Цього місяця</string>
-    <string name="period_last_month">Минулого місяця</string>
-    <string name="period_all">За весь час</string>
     <string name="action_on_the_way">У дорозі</string>
     <string name="action_start">Почати</string>
     <string name="action_complete">Завершити</string>
-    <string name="in_progress_now">Зараз виконується</string>
     <string name="complete_now">Завершити</string>
-    <string name="earnings">Заробіток</string>
-    <string name="jobs">Замовлення</string>
     <string name="rating">Рейтинг</string>
-    <string name="unscheduled">Без дати</string>
     <plurals name="scope_rooms">
         <item quantity="one">%1$d кімната</item>
         <item quantity="few">%1$d кімнати</item>
@@ -872,38 +842,23 @@
         <item quantity="many">%1$d ванних кімнат</item>
         <item quantity="other">%1$d ванні кімнати</item>
     </plurals>
-    <plurals name="scope_extras">
-        <item quantity="one">+%1$d додатково</item>
-        <item quantity="few">+%1$d додатково</item>
-        <item quantity="many">+%1$d додатково</item>
-        <item quantity="other">+%1$d додатково</item>
-    </plurals>
     <plurals name="crew_size">
         <item quantity="one">Потрібен %1$d прибиральник</item>
         <item quantity="few">Потрібні %1$d прибиральники</item>
         <item quantity="many">Потрібно %1$d прибиральників</item>
         <item quantity="other">Потрібно %1$d прибиральника</item>
     </plurals>
-    <plurals name="crew_spots_open">
-        <item quantity="one">%1$d вільне місце</item>
-        <item quantity="few">%1$d вільні місця</item>
-        <item quantity="many">%1$d вільних місць</item>
-        <item quantity="other">%1$d вільного місця</item>
-    </plurals>
-    <string name="crew_no_spots">Вільних місць немає</string>
     <string name="history">Історія</string>
     <string name="you_earn">ви заробите</string>
     <string name="distance_unknown">Місце невідоме</string>
     <!-- Contract for work: the sheet under the take, the standalone acceptance, the detail line and banner. -->
     <string name="work_contract_title">Договір підряду</string>
     <string name="work_contract_version">Версія %1$s</string>
-    <string name="work_contract_order_number">Замовлення %1$s</string>
     <string name="work_contract_swipe_to_accept">Проведіть, щоб прийняти договір підряду</string>
     <string name="work_contract_accepting">Приймаємо\u2026</string>
     <string name="work_contract_load_error">Не вдалося завантажити договір підряду.</string>
     <string name="work_contract_accepted_on">Прийнято %1$s, версія %2$s</string>
     <string name="work_contract_accepted_in_language">Прийнято мовою: %1$s</string>
-    <string name="work_contract_accepted_line">Ви прийняли договір підряду %1$s, версія %2$s</string>
     <string name="work_contract_pending_banner">Перш ніж почати, прийміть договір підряду</string>
     <string name="work_contract_accept_cta">Прийняти договір</string>
     <string name="work_contract_read">Прочитати договір</string>
@@ -927,7 +882,6 @@
     <string name="completing_order">Завершую…</string>
     <string name="slide_to_mark_my_part_done">Моя частина готова</string>
     <string name="marking_my_part_done">Позначаю…</string>
-    <string name="order_my_part_done_waiting">Ви позначили свою частину виконаною. Щойно це зроблять усі на цьому замовленні, будь-хто з вас зможе його завершити.</string>
     <string name="order_mark_cash_collected">Позначити готівку як отриману</string>
     <string name="partner_order_mark_cash_collected_confirm_title">Позначити готівку як отриману?</string>
     <string name="partner_order_mark_cash_collected_confirm_message">Підтвердьте, що ви отримали від клієнта %1$s готівкою. Цю дію не можна скасувати.</string>
@@ -955,10 +909,6 @@
     <string name="action_call">Подзвонити</string>
     <string name="action_sms">SMS</string>
     <string name="action_navigate">Маршрут</string>
-    <string name="scope_section_title">Об\'єкт та обсяг</string>
-    <string name="scope_services_label">Послуги та пакети</string>
-    <string name="scope_extras_label">Додатки</string>
-    <string name="dirtiness_level_normal">Звичайне забруднення</string>
     <string name="dirtiness_level_increased">Підвищене забруднення</string>
     <string name="dirtiness_level_heavy">Сильне забруднення</string>
 
@@ -970,76 +920,34 @@
     <string name="extra_name_pet_hair_supplement">Глибоке прибирання шерсті тварин</string>
 
     <!-- Shown instead of the map when the order has no street address to point at. -->
-    <string name="map_approximate_area">Приблизний район — точна адреса з\'явиться, щойно ви візьмете замовлення.</string>
     <string name="order_customer_details_closed_completed">Ім\'я, адресу й номер телефону клієнта видалено через 24 години після завершення замовлення.</string>
     <string name="order_customer_details_closed_cancelled">Ім\'я, адресу й номер телефону клієнта видалено під час скасування замовлення.</string>
 
     <string name="from_customer_section_title">Від клієнта</string>
     <string name="note_general_label">Примітка</string>
-    <string name="note_access_label">Доступ</string>
     <string name="note_special_label">Особливі вказівки</string>
-    <string name="payment_section_title">Оплата</string>
-    <string name="payment_subtotal">Проміжний підсумок</string>
-    <string name="payment_tier_discount">Знижка за лояльність</string>
-    <string name="payment_membership_discount">Знижка Plus</string>
-    <string name="payment_promo_discount">Промо знижка</string>
-    <string name="payment_total">Разом</string>
-    <string name="payment_method_value">Метод: %1$s</string>
-    <string name="payment_method_cash">Готівкою</string>
-    <string name="payment_method_card">Карткою</string>
-    <string name="payment_status_paid">Оплачено</string>
-    <string name="payment_status_pending">Очікує</string>
-    <string name="payment_status_failed">Не вдалося</string>
-    <string name="payment_status_refunded">Повернено</string>
-    <string name="payment_status_disputed">Оскаржено</string>
-    <string name="payment_status_partially_refunded">Частково повернено</string>
-    <string name="status_timeline_section_title">Хронологія статусу</string>
     <string name="order_on_the_way_encouragement">У дорозі — скоро побачимось!</string>
 
     <!-- Order details v2 -->
     <string name="access_section_title">Як зайти всередину</string>
     <string name="checklist_section_title">Чек-лист прибирання</string>
     <string name="checklist_progress">%1$d з %2$d виконано</string>
-    <string name="checklist_locked_hint">Почніть роботу, щоб відстежувати прогрес</string>
-    <string name="checklist_services_label">Послуги</string>
-    <string name="checklist_packages_label">Пакети</string>
-    <string name="checklist_extras_label">Додатки</string>
-    <string name="checklist_all_done_hint">Все готово — можна завершити</string>
     <string name="timer_section_title">Час</string>
     <string name="timer_elapsed_label">Минуло</string>
     <string name="timer_estimated_label">Оцінка %1$s</string>
     <string name="timer_ahead">%1$s до графіку</string>
     <string name="timer_over">%1$s понад оцінку</string>
     <string name="timer_on_track">За графіком</string>
-    <string name="duration_hours_minutes">%1$dг %2$dхв</string>
-    <string name="duration_minutes_only">%1$dхв</string>
 
     <!-- Tracker hero -->
     <string name="tracker_subtitle_new">Проведіть нижче, щоб взяти замовлення</string>
-    <string name="tracker_countdown_starts_in">Початок через %1$s</string>
     <string name="tracker_subtitle_confirmed_far">Прибирання заплановано на %1$s</string>
     <string name="tracker_subtitle_confirmed_soon">Час вирушати!</string>
-    <string name="tracker_subtitle_on_the_way_arriving">Прибуття %1$s</string>
     <string name="tracker_subtitle_on_the_way_action">Після прибуття проведіть, щоб почати</string>
-    <string name="tracker_completed_in">Виконано за %1$s</string>
-    <string name="tracker_finished_at">Завершено о %1$s</string>
     <string name="tracker_completed_subtitle">Чудова робота!</string>
 
-    <!-- Short step labels -->
-    <string name="tracker_step_new">Нове</string>
-    <string name="tracker_step_confirmed">Підтв.</string>
-    <string name="tracker_step_on_way">В дорозі</string>
-    <string name="tracker_step_cleaning">Прибир.</string>
-    <string name="tracker_step_done">Готово</string>
-
     <!-- Hero headlines -->
-    <string name="tracker_headline_new">Нова пропозиція</string>
-    <string name="tracker_headline_confirmed">Підтверджено</string>
-    <string name="tracker_headline_confirmed_soon">Скоро вирушаєте</string>
-    <string name="tracker_headline_on_the_way">У дорозі</string>
-    <string name="tracker_headline_in_progress">Прибирання</string>
     <string name="tracker_headline_done">Готово</string>
-    <string name="tracker_step_counter">Крок %1$d / %2$d</string>
 
     <!-- Registration lock -->
     <string name="registration_lock_title">Завершіть налаштування, щоб почати заробляти</string>
@@ -1394,7 +1302,6 @@
     <string name="offer_decline_cta">Звільнити</string>
     <string name="offer_declined_toast">Звільнено \u2014 замовлення тепер відкрите для всіх.</string>
     <string name="order_removal_title">Вас знято з цього замовлення</string>
-    <string name="order_removal_message">Адміністратор зняв вас із цього замовлення і вказав причину:\n\n%1$s</string>
     <string name="offer_empty">Зараз нічого не чекає на вашу відповідь.</string>
     <string name="offer_blocked_title">Ми не змогли передати вам це замовлення</string>
     <string name="offer_blocked_body">%1$s\n\nЦе наша провина \u2014 ми зарезервували замовлення на ваше ім\'я без перевірки, тож це ніяк не зараховується вам у мінус.</string>
@@ -1462,7 +1369,236 @@
     <string name="error_payroll_invoice_pdf_not_ready">PDF рахунку ще не готовий. Оновіть стан.</string>
     <string name="error_payroll_invoice_pdf_unavailable">PDF цього рахунку недоступний. Оновіть стан або зверніться до підтримки.</string>
     <string name="error_payroll_invoice_pdf_generation_failed">Не вдалося створити PDF рахунку. Оновіть стан або зверніться до підтримки.</string>
-    <string name="tracker_estimate_overrun">На %1$d хв довше за орієнтовний час</string>
-    <string name="tracker_estimate_remaining">Залишилося приблизно %1$d хв</string>
     <string name="error_order_cash_requires_saved_card">Для оплати готівкою потрібна дійсна збережена картка у валюті замовлення.</string>
+    <string name="auth_email_placeholder">partner@example.com</string>
+    <plurals name="orders_job_count">
+        <item quantity="one">%1$d замовлення</item>
+        <item quantity="few">%1$d замовлення</item>
+        <item quantity="many">%1$d замовлень</item>
+        <item quantity="other">%1$d замовлення</item>
+    </plurals>
+    <string name="orders_card_your_share">Ваша частка</string>
+    <string name="orders_duration_h">%1$d\u00A0год</string>
+    <string name="orders_duration_h_min">%1$d\u00A0год %2$d\u00A0хв</string>
+    <string name="orders_duration_min">%1$d\u00A0хв</string>
+    <plurals name="orders_flag_crew_taken">
+        <item quantity="one">%1$d місце вже зайняте</item>
+        <item quantity="few">%1$d місця вже зайняті</item>
+        <item quantity="many">%1$d місць уже зайнято</item>
+        <item quantity="other">%1$d місця вже зайнято</item>
+    </plurals>
+    <string name="orders_flag_crew_nobody">поки нікого</string>
+    <string name="orders_flag_take_until">Можна взяти до %1$s</string>
+    <string name="orders_flag_overlap">Перетинається з вашим замовленням %1$s</string>
+    <string name="extra_short_inside_oven">духовка</string>
+    <string name="extra_short_inside_fridge">холодильник</string>
+    <string name="extra_short_interior_windows">вікна зсередини</string>
+    <string name="extra_short_laundry_ironing">прасування</string>
+    <string name="distance_band_under_3">до 3\u00A0км від дому</string>
+    <string name="distance_band_3_6">3–6\u00A0км від дому</string>
+    <string name="distance_band_6_10">6–10\u00A0км від дому</string>
+    <string name="distance_band_10_20">10–20\u00A0км від дому</string>
+    <string name="distance_band_over_20">понад 20\u00A0км від дому</string>
+    <string name="available_distance_footnote">Відстань — по прямій від вашої домашньої адреси, приблизними діапазонами.</string>
+    <plurals name="available_overlap_count">
+        <item quantity="one">%1$d замовлення перетинається з вашим днем</item>
+        <item quantity="few">%1$d замовлення перетинаються з вашим днем</item>
+        <item quantity="many">%1$d замовлень перетинаються з вашим днем</item>
+        <item quantity="other">%1$d замовлення перетинаються з вашим днем</item>
+    </plurals>
+    <string name="available_reserved_then">потім його побачать інші</string>
+    <string name="available_showing_of">Показано %1$d з %2$d замовлень</string>
+    <string name="available_load_more">Завантажити ще</string>
+    <string name="available_empty_title">Зараз немає вільних замовлень</string>
+    <string name="available_empty_subtitle">Потягніть униз, щоб перевірити ще раз.</string>
+    <string name="orders_load_error">Не вдалося завантажити замовлення.</string>
+    <string name="orders_stale_since">Не вдалося оновити. Показано замовлення станом на %1$s.</string>
+    <string name="orders_load_more_failed">Не вдалося завантажити ще замовлення.</string>
+    <string name="orders_check_again">Перевірити ще раз</string>
+    <string name="orders_sort_a11y">Сортування: %1$s</string>
+    <string name="orders_a11y_expanded">Розгорнуто</string>
+    <string name="orders_a11y_collapsed">Згорнуто</string>
+    <string name="orders_a11y_toggle_hint">Показує або приховує, чому замовлення з готівкою приховані.</string>
+    <string name="available_cash_hidden">Замовлення з готівкою приховані · понад ліміт готівки</string>
+    <string name="active_hero_next">Наступне замовлення</string>
+    <string name="active_hero_in">через %1$s</string>
+    <string name="active_hero_due">мало початися о %1$s</string>
+    <string name="active_hero_until">заброньовано до %1$s</string>
+    <string name="active_set_off_from">Виїхати можна з %1$s</string>
+    <string name="active_hero_details">Деталі замовлення</string>
+    <plurals name="active_hero_team">
+        <item quantity="one">команда з %1$d особи</item>
+        <item quantity="few">команда з %1$d осіб</item>
+        <item quantity="many">команда з %1$d осіб</item>
+        <item quantity="other">команда з %1$d особи</item>
+    </plurals>
+    <string name="orders_open_job">Відкрити замовлення</string>
+    <string name="history_rewards_title">Винагорода за виконані замовлення</string>
+    <string name="history_summary">%1$s · близько %2$s заброньованого часу</string>
+    <string name="history_payouts_link">Виплати — у розділі «%1$s»</string>
+    <string name="take_sheet_title">Взяти це замовлення?</string>
+    <string name="work_contract_loading">Завантажуємо договір…</string>
+    <string name="take_cancel_free_until">Безкоштовно скасувати можна до %1$s, якщо ще ніхто не виїхав на нього і не почав.</string>
+    <string name="take_cancel_under_way">Замовлення вже виконується: показана винагорода — повна винагорода за ваше місце. Узявши його, скасувати в застосунку не вийде.</string>
+    <string name="take_cancel_start_passed">Час початку вже минув, тож, узявши його, скасувати в застосунку не вийде.</string>
+    <string name="take_team_line">%1$s. Застосунок не ділить роботу між вами, і ви не можете взяти інше замовлення, що перетинається з його заброньованим часом.</string>
+    <string name="take_done_cannot_cancel">Скасувати це замовлення в застосунку не вийде.</string>
+    <string name="take_cash_line">Клієнт заплатить вам %1$s готівкою. Готівка належить компанії й зараховується в рахунок вашої наступної виплати. Ваша винагорода — %2$s.</string>
+    <string name="take_pay_updated">Змінено з %1$s: це винагорода в договорі.</string>
+    <string name="take_done_title">Замовлення ваше</string>
+    <string name="orders_map_exact_after_take">Точну адресу побачите, коли візьмете замовлення</string>
+    <string name="orders_map_recenter">Центрувати карту на замовленні</string>
+    <string name="take_back_to_jobs">До замовлень</string>
+    <string name="work_contract_summary_lead">Коротко — ви приймаєте договір нижче:</string>
+    <string name="work_contract_summary_lockout">Вас не впустили? Повідомте. Коли компанія підтвердить, вам заплатять повністю.</string>
+    <string name="work_contract_summary_late_cancel">Якщо клієнт скасує пізно, ви отримаєте свою частку отриманої плати.</string>
+    <string name="work_contract_summary_complaint">За скаргу ви платите, лише якщо компанія визнає, що винні ви.</string>
+    <string name="work_contract_summary_equipment">Ви приносите власне обладнання та засоби для прибирання.</string>
+    <plurals name="orders_day_your_job">
+        <item quantity="one">ваше замовлення %1$s</item>
+        <item quantity="few">ваші замовлення %1$s</item>
+        <item quantity="many">ваші замовлення %1$s</item>
+        <item quantity="other">ваші замовлення %1$s</item>
+    </plurals>
+    <plurals name="orders_day_yours_short">
+        <item quantity="one">ваше %1$s</item>
+        <item quantity="few">ваші %1$s</item>
+        <item quantity="many">ваші %1$s</item>
+        <item quantity="other">ваші %1$s</item>
+    </plurals>
+    <plurals name="active_week_open_count">
+        <item quantity="one">%1$d вільне замовлення</item>
+        <item quantity="few">%1$d вільні замовлення</item>
+        <item quantity="many">%1$d вільних замовлень</item>
+        <item quantity="other">%1$d вільні замовлення</item>
+    </plurals>
+    <plurals name="orders_overlap_day">
+        <item quantity="one">%1$s: %2$d замовлення накладається на ваше %3$s</item>
+        <item quantity="few">%1$s: %2$d замовлення накладаються на ваше %3$s</item>
+        <item quantity="many">%1$s: %2$d замовлень накладаються на ваше %3$s</item>
+        <item quantity="other">%1$s: %2$d замовлення накладаються на ваше %3$s</item>
+    </plurals>
+    <string name="cash_hidden_back">Вони повернуться, коли у вас буде %1$s або менше: передайте готівку, або її зарахують у рахунок наступної виплати.</string>
+    <string name="cash_limit_at">ліміт %1$s</string>
+    <string name="orders_flag_under_way_short">Триває</string>
+    <string name="orders_flag_cash_collect">Готівка: приймаєте %1$s для компанії</string>
+    <string name="available_checked_at">Перевірено о %1$s</string>
+    <string name="orders_your_next_jobs">Ваші наступні замовлення</string>
+    <string name="cash_held_title">Готівка у вас</string>
+    <string name="cash_held_of_limit">%1$s з ліміту %2$s</string>
+    <string name="cash_held_hint">Понад ліміт замовлення з готівкою приховано, доки ви не передасте готівку або її не зарахують у рахунок виплати.</string>
+    <string name="active_empty_body">Замовлення, які ви візьмете, з’являться тут з адресою і телефоном клієнта.</string>
+    <string name="active_nothing_else">Більше нічого не заброньовано</string>
+    <string name="active_open_next_7_days">Вільні замовлення, наступні 7 днів</string>
+    <string name="active_week_legend_your_job">ваше замовлення</string>
+    <string name="active_soonest_open">Найближче вільне замовлення</string>
+    <string name="active_see_offer">Переглянути пропозицію</string>
+    <plurals name="active_see_open">
+        <item quantity="one">Переглянути %1$d вільне замовлення</item>
+        <item quantity="few">Переглянути %1$d вільні замовлення</item>
+        <item quantity="many">Переглянути %1$d вільних замовлень</item>
+        <item quantity="other">Переглянути %1$d вільні замовлення</item>
+    </plurals>
+    <string name="history_cash_collected">Готівка: прийнято %1$s для компанії</string>
+    <string name="history_cash_not_paid">Готівка: клієнт не\u00A0заплатив %1$s</string>
+    <string name="history_paid_in_full">вам заплатять повністю</string>
+    <string name="history_empty_month">Цього місяця ще немає виконаних замовлень</string>
+    <string name="history_empty_week">Цього тижня ще немає виконаних замовлень</string>
+    <string name="history_empty_body">Замовлення з’явиться тут у день, коли ви його завершите.</string>
+    <string name="history_last_month">Минулий місяць</string>
+    <string name="history_show_period">Показати %1$s</string>
+    <plurals name="detail_in_days">
+        <item quantity="one">через %1$d день</item>
+        <item quantity="few">через %1$d дні</item>
+        <item quantity="many">через %1$d днів</item>
+        <item quantity="other">через %1$d дні</item>
+    </plurals>
+    <string name="detail_left">залишилось %1$s</string>
+    <string name="detail_finished_at">завершено о %1$s</string>
+    <string name="detail_cancelled_at">Скасовано о %1$s</string>
+    <string name="order_cancelled_customer_lockout">вас ніхто не впустив</string>
+    <string name="order_cancelled_recurring_not_confirmed">клієнт не підтвердив повторне бронювання</string>
+    <string name="order_cancelled_payment_not_completed">оплату карткою не завершено</string>
+    <string name="order_cancelled_no_cleaner_available">на початку замовлення ніхто не був на ньому</string>
+    <string name="order_cancelled_company_wind_down">компанія припинила цю послугу</string>
+    <string name="status_set_off_now">можна вирушати</string>
+    <string name="detail_waiting_company">Очікує підтвердження</string>
+    <string name="detail_reported_at">повідомлено о %1$s</string>
+    <string name="run_step_set_off">Дорога</string>
+    <string name="run_step_get_in">Вхід</string>
+    <string name="run_step_clean">Прибирання</string>
+    <string name="run_step_finish">Завершення</string>
+    <string name="cancel_lockout_paid">Компанія це підтвердила: вам заплатять повну винагороду.</string>
+    <string name="cancel_no_fee">Скасовано без плати: за це замовлення нічого не нараховується.</string>
+    <string name="run_job_stamp">замовлення %1$s</string>
+    <string name="run_job_stamp_a11y">час замовлення %1$s</string>
+    <string name="late_already_there">Уже на місці? Почніть прибирання</string>
+    <string name="crew_all_marked">Обидві частини позначено: будь-хто з вас може завершити замовлення.</string>
+    <string name="detail_waiting_for">Ще не готово: %1$s</string>
+    <string name="detail_your_job_that_day">Ваше замовлення того дня</string>
+    <string name="detail_mate_on_it">%1$s вже працює</string>
+    <string name="detail_same_pay_late">Та сама винагорода, навіть якщо приєднаєтеся пізніше</string>
+    <string name="run_a11y">Хід замовлення</string>
+    <string name="run_step_done_at">готово о %1$s</string>
+    <string name="run_from">з %1$s</string>
+    <string name="run_day_from">%1$s з %2$s</string>
+    <string name="run_at">о %1$s</string>
+    <string name="run_by">до %1$s</string>
+    <string name="access_mode_at_home">Клієнт буде вдома</string>
+    <string name="access_mode_keys_handover">Передача ключів</string>
+    <string name="access_mode_door_code">Код дверей</string>
+    <string name="access_mode_reception">Рецепція</string>
+    <string name="detail_floor">%1$s-й поверх</string>
+    <string name="detail_flat">кв. %1$s</string>
+    <string name="access_shown_on_set_off">Як зайти, побачите, коли вирушите</string>
+    <string name="lockout_paid_in_full">Коли компанія підтвердить, вам заплатять повністю.</string>
+    <string name="checklist_phone_only">Позначки зберігаються лише на цьому телефоні.</string>
+    <string name="photos_add">Додати</string>
+    <string name="photos_after_needed">Потрібне перед завершенням</string>
+    <string name="issue_not_resolved">не вирішено</string>
+    <string name="crew_you">Ви</string>
+    <string name="crew_not_yet">ще ні</string>
+    <string name="crew_done_at">готово о %1$s</string>
+    <string name="finish_needs_photo">Фото після прибирання, потім проведіть, щоб завершити</string>
+    <string name="finish_needs_crew">Обидві частини позначено, потім завершує будь-хто з вас</string>
+    <string name="finish_before_complete">Перш ніж завершити</string>
+    <string name="finish_after_photo">Фото після прибирання</string>
+    <string name="finish_cash_collected">Готівку отримано</string>
+    <string name="crew_both_parts">Коли обидві частини буде позначено, будь-хто з вас зможе завершити замовлення.</string>
+    <string name="cash_rule">Готівка належить компанії й зараховується в рахунок вашої наступної виплати. Ваша винагорода\u00A0— %1$s.</string>
+    <string name="cash_mark_amount">Позначити %1$s як отримані</string>
+    <string name="crew_mark_done_sub">Позначає вашу частину</string>
+    <string name="take_after_photo">Зробити фото «після»</string>
+    <string name="drop_possible_until">можна до початку, %1$s</string>
+    <string name="detail_shown_after_take">Побачите, коли візьмете</string>
+    <string name="detail_hidden_address">Вулиця, поверх і квартира</string>
+    <string name="detail_hidden_contact">Імʼя та телефон клієнта</string>
+    <string name="detail_hidden_notes">Примітки клієнта</string>
+    <string name="details_close_tomorrow">Дані клієнта зникнуть завтра о %1$s</string>
+    <string name="details_close_today">Дані клієнта зникнуть сьогодні о %1$s</string>
+    <string name="day_line_free">вільно</string>
+    <string name="detail_later_today">Сьогодні ще</string>
+    <string name="detail_also_open_that_day">Того дня також вільні</string>
+    <string name="detail_open_today">Сьогодні вільні</string>
+    <string name="detail_error_rest">Не вдалося завантажити решту замовлення.</string>
+    <string name="detail_error_rest_body">Разом із нею надійдуть поверх і квартира, як зайти та примітки клієнта.</string>
+    <string name="detail_error_job">Не вдалося завантажити замовлення.</string>
+    <string name="detail_gone">Це замовлення вже недоступне.</string>
+    <string name="detail_off_schedule">Цього замовлення більше немає у вашому графіку.</string>
+    <string name="status_new">Нове</string>
+    <string name="status_confirmed">Підтверджено</string>
+    <string name="status_in_progress">В процесі</string>
+    <string name="status_completed">Завершено</string>
+    <string name="status_cancelled">Скасовано</string>
+    <string name="tracker_step_counter">Крок %1$d / %2$d</string>
+    <string name="scope_section_title">Об\'єкт та обсяг</string>
+    <string name="scope_services_label">Послуги та пакети</string>
+    <string name="scope_extras_label">Додатки</string>
+    <string name="payment_section_title">Оплата</string>
+    <string name="contract_accepted_on_label">Прийнято</string>
+    <string name="contract_version_label">Версія</string>
+    <string name="order_removal_lead">Адміністратор зняв вас із цього замовлення і вказав причину:</string>
+    <string name="partner_order_complete_blocked_cash_sequence">Додайте фото \"після\", потім отримайте готівку, а потім завершіть замовлення.</string>
+    <string name="instructions_copy">Копіювати</string>
+    <string name="instructions_copied">Скопійовано</string>
 </resources>

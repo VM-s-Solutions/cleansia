@@ -19,17 +19,17 @@ class OrderDirtinessPresentationTest {
     private val json = Json { ignoreUnknownKeys = true; isLenient = true; explicitNulls = false }
 
     private val labels = mapOf(
-        DirtinessLevel._0 to R.string.dirtiness_level_normal,
         DirtinessLevel._1 to R.string.dirtiness_level_increased,
         DirtinessLevel._2 to R.string.dirtiness_level_heavy,
     )
 
+    /** Dirt only when increased or heavy; a normal home says nothing about it. */
     @Test
-    fun `the detail names every level`() {
+    fun `the detail names the increased and heavy levels only`() {
         labels.forEach { (level, res) ->
             assertEquals("$level", res, dirtinessLevelLabelRes(level))
         }
-        assertEquals(labels.size, labels.values.toSet().size)
+        assertNull(dirtinessLevelLabelRes(DirtinessLevel._0))
     }
 
     @Test
@@ -68,9 +68,9 @@ class OrderDirtinessPresentationTest {
     }
 
     @Test
-    fun `a normal job detail still names its level`() {
+    fun `a normal job detail names no level`() {
         val detail = json.decodeFromString(OrderItem.serializer(), """{ "id": "ord-1", "dirtinessLevel": 0 }""")
 
-        assertEquals(R.string.dirtiness_level_normal, dirtinessLevelLabelRes(detail.dirtinessLevel))
+        assertNull(dirtinessLevelLabelRes(detail.dirtinessLevel))
     }
 }

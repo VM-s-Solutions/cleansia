@@ -1,20 +1,7 @@
 import Foundation
 
-/// Emoji + display name for a known extra slug — mirrors the customer wizard's
-/// mapping so both surfaces show the same icon/name. Unknown slugs fall back to
-/// ✨ + a title-cased slug (the `emojiForExtraSlug`/`nameForExtraSlug` parity).
+/// The display name for a known extra slug, the customer wizard's name for it.
 enum OrderExtras {
-    static func emoji(_ slug: String) -> String {
-        switch slug {
-        case "inside-oven": "🔥"
-        case "inside-fridge": "❄️"
-        case "interior-windows": "🪟"
-        case "laundry-ironing": "🧺"
-        case "pet-hair-supplement": "🐾"
-        default: "✨"
-        }
-    }
-
     /// Extras reach the app as bare slugs — unlike services and packages, which carry the server's
     /// translations map — so the name is resolved against the app catalogue instead. A slug seeded
     /// after this build has no key, and `localized` hands the key straight back; the readable slug is

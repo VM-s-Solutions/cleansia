@@ -15,6 +15,7 @@ struct OrderDetail: Equatable {
     let currencySymbol: String?
 
     let location: OrderLocation
+    var area: String?
     let customerName: String?
     let customerPhone: String?
 
@@ -32,6 +33,10 @@ struct OrderDetail: Equatable {
     let customerNotes: String?
     let specialInstructions: String?
     let accessInstructions: String?
+    /// How the cleaner gets in, and where: each arrives from Confirmed and each may be null.
+    var floor: String?
+    var flat: String?
+    var accessMode: String?
 
     let payment: OrderDetailPayment
 
@@ -44,8 +49,9 @@ struct OrderDetail: Equatable {
     let orderNotes: [OrderNoteDto]
     let orderIssues: [OrderIssueDto]
     let statusHistory: [OrderStatusTrackDto]
-    /// Missing or nonpositive estimates draw no timed progress.
     var estimatedMinutes: Int?
+    /// One of the five keys the system cancels with; null is the customer or an administrator.
+    var cancellationReason: String?
 }
 
 /// Name + the stable backend id: the checklist persists ticks under id-based keys
@@ -77,9 +83,9 @@ struct OrderDetailPackage: Equatable, Hashable {
     }
 }
 
-/// One crew entry: `id` is the SEAT (`OrderEmployee.Id`), which is what an acceptance names; the
-/// name and phone the wire also carries are not read here. `completionConfirmedAt` is when its cleaner
-/// marked their part of the job done.
+/// One crew entry: `id` is the SEAT (`OrderEmployee.Id`), which is what an acceptance names. The name and phone
+/// are the assigned crew's view of each other; past the job's 24 hours the server sends a given name only.
+/// `completionConfirmedAt` is when its cleaner marked their part of the job done.
 ///
 /// **Drop the row.** A seat with no id or no employee id pairs with nothing, while refusing would blank a
 /// detail the server answered correctly for every other member. A dropped seat also leaves the crew count
@@ -89,11 +95,21 @@ struct OrderSeat: Equatable {
     let id: String
     let employeeId: String
     let completionConfirmedAt: Date?
+    var fullName: String?
+    var phone: String?
 
-    init(id: String, employeeId: String, completionConfirmedAt: Date? = nil) {
+    init(
+        id: String,
+        employeeId: String,
+        completionConfirmedAt: Date? = nil,
+        fullName: String? = nil,
+        phone: String? = nil
+    ) {
         self.id = id
         self.employeeId = employeeId
         self.completionConfirmedAt = completionConfirmedAt
+        self.fullName = fullName
+        self.phone = phone
     }
 
     init?(_ dto: AssignedEmployeeDto) {
@@ -101,6 +117,19 @@ struct OrderSeat: Equatable {
         self.id = id
         self.employeeId = employeeId
         completionConfirmedAt = dto.completionConfirmedAt
+        fullName = dto.fullName
+        phone = dto.phoneNumber
+    }
+
+    /// The first word of the name, as the server's own redaction cuts it.
+    var givenName: String? {
+        guard let name = fullName?.trimmingCharacters(in: .whitespaces), !name.isEmpty else { return nil }
+        return name.components(separatedBy: " ").first
+    }
+
+    var initials: String {
+        let words = (fullName ?? "").components(separatedBy: " ").filter { !$0.isEmpty }
+        return words.prefix(2).compactMap(\.first).map { String($0).uppercased() }.joined()
     }
 }
 
@@ -161,6 +190,8 @@ struct OrderDetailPayment: Equatable {
     let membershipDiscount: Double?
     let promoDiscount: Double?
     let creditApplied: Double?
+    /// What the customer still owes: the total less any credit. The cash the cleaner collects.
+    var amountDue: Double?
     let typeCode: Int?
     let statusCode: Int?
 
@@ -180,16 +211,16 @@ struct OrderDetailPayment: Equatable {
     var isPending: Bool {
         statusCode == PaymentStatusCode.pending.rawValue
     }
+
+    /// `CompleteOrder.CardIsCharged` refuses a card job whose payment is not Paid, PartiallyRefunded or Refunded.
+    var isCardNotCharged: Bool {
+        guard typeCode == PaymentTypeCode.card.rawValue, let statusCode else { return false }
+        let charged: [PaymentStatusCode] = [.paid, .partiallyRefunded, .refunded]
+        return !charged.map(\.rawValue).contains(statusCode)
+    }
 }
 
 extension OrderDetail {
-    /// Where the full-bleed map centres, or nil when there is nothing precise to point at — a
-    /// browsing cleaner who only got the coarse zone, or an order that predates the geocoding
-    /// backfill. Cancellation is no longer one of those reasons: the job still had a place.
-    var mapCoordinate: Coordinate? {
-        location.mapPoint()
-    }
-
     /// The cleaner is on this job and the job is live (Confirmed / OnTheWay / InProgress): the work
     /// tools show, and the photo rails with them. It is also the gate on the photo FETCH, because
     /// `GetOrderPhotos` serves only a caller the strict access check admits and every photo is a
@@ -198,6 +229,11 @@ extension OrderDetail {
     /// creating the photos view model inside the section itself.
     var showsWorkSections: Bool {
         isAssignedToCurrentUser && (status == ._2 || status == ._3 || status == ._4)
+    }
+
+    /// The caller's own photos outlive the work: read from Confirmed through Completed.
+    var readsPhotos: Bool {
+        showsWorkSections || (isAssignedToCurrentUser && status == ._5)
     }
 
     /// The server's photo windows (`OrderPhoto.MayBeAddedAt`): before and entrance photos from
@@ -253,19 +289,15 @@ extension OrderDetail {
         isAssignedToCurrentUser && (status == ._3 || status == ._4)
     }
 
-    /// The formatted sum the cleaner takes in cash, or nil when the wire carried no
-    /// total — the cash-collection confirmation then asks without naming an amount
-    /// rather than guessing one.
+    /// The cash the cleaner takes, the same figure in the head's flag, the block, the button and both confirms;
+    /// nil when the wire carried none, so a confirmation asks without naming an amount rather than guessing one.
     var cashDueLabel: String? {
-        guard let total = payment.total, total > 0 else { return nil }
-        return OrdersFormat.money(total, symbol: currencySymbol)
+        guard let due = payment.amountDue, due > 0 else { return nil }
+        return OrdersFormat.money(due, symbol: currencySymbol)
     }
 
-    /// What the report makes the customer owe: the price less any credit applied. A missing figure names no
-    /// amount rather than a guessed one.
     var cashNotPaidOwedLabel: String? {
-        guard let total = payment.total, let credit = payment.creditApplied, total - credit > 0 else { return nil }
-        return OrdersFormat.money(total - credit, symbol: currencySymbol)
+        cashDueLabel
     }
 }
 
@@ -288,9 +320,10 @@ extension OrderDetail {
         estimatedMinutes = item.estimatedTime.flatMap { $0 > 0 ? $0 : nil }
         pay = item.estimatedCleanerPay
         currencyCode = item.currency?.code ?? item.currency?.symbol
-        currencySymbol = item.currency?.symbol
+        currencySymbol = OrdersFormat.symbolOf(symbol: item.currency?.symbol, code: item.currency?.code)
 
         location = OrderLocation(item)
+        area = item.customerAddressApproximate.flatMap { $0.isBlank ? nil : $0 }
         customerName = item.customerName
         customerPhone = item.customerPhone
 
@@ -317,6 +350,10 @@ extension OrderDetail {
         customerNotes = item.notes
         specialInstructions = item.specialInstructions
         accessInstructions = item.accessInstructions
+        floor = item.customerFloor
+        flat = item.customerApartment
+        accessMode = item.accessMode
+        cancellationReason = item.systemCancellationReason
 
         payment = OrderDetailPayment(
             subtotal: item.originalSubtotal,
@@ -325,6 +362,7 @@ extension OrderDetail {
             membershipDiscount: item.membershipDiscountAmount,
             promoDiscount: item.promoDiscountAmount,
             creditApplied: item.creditAppliedAmount,
+            amountDue: item.amountDueOnCard,
             typeCode: item.paymentType?.value,
             statusCode: item.paymentStatus?.value
         )
@@ -338,5 +376,224 @@ extension OrderDetail {
         orderNotes = item.orderNotes ?? []
         orderIssues = item.orderIssues ?? []
         statusHistory = item.statusHistory ?? []
+    }
+}
+
+extension OrderDetail {
+    var bookedEnd: Date? {
+        cleaningDateTime.map { $0.addingTimeInterval(TimeInterval(estimatedMinutes ?? 0) * 60) }
+    }
+
+    /// The earliest time the history reached `status`: a job bounced back and restarted keeps its first start.
+    func firstStamp(_ status: OrderStatus) -> Date? {
+        statusHistory.filter { $0.statusEnum == status }.compactMap(\.createdOn).min()
+    }
+
+    /// `completedAt` is the column the domain writes; the last Completed entry stands in for rows that predate it.
+    var finishedAt: Date? {
+        completedAt ?? statusHistory.filter { $0.statusEnum == ._5 }.compactMap(\.createdOn).max()
+    }
+
+    var cancelledAt: Date? {
+        statusHistory.filter { $0.statusEnum == ._6 }.compactMap(\.createdOn).max()
+    }
+
+    /// Two or more on the job: each marks their own part, and the on-the-way and start stamps are the order's.
+    var isCrewJob: Bool {
+        seats.count >= 2
+    }
+
+    func ownSeat(_ myEmployeeId: String?) -> OrderSeat? {
+        seats.first { $0.employeeId == myEmployeeId }
+    }
+
+    /// Everyone else on the job, in the order the server lists them.
+    func mates(_ myEmployeeId: String?) -> [OrderSeat] {
+        seats.filter { $0.employeeId != myEmployeeId }
+    }
+
+    /// The crew-mate the job waits for once her own part is marked: the first whose part is still open. Call goes
+    /// to her only while she has not marked, and only with a phone the server sent.
+    func openMate(_ myEmployeeId: String?) -> OrderSeat? {
+        guard ownSeat(myEmployeeId)?.completionConfirmedAt != nil else { return nil }
+        return mates(myEmployeeId).first { $0.completionConfirmedAt == nil }
+    }
+
+    /// The facts the status line and the run sheet are built from: her own mark, never a crew-mate's; the first
+    /// after photo from the photos when they have loaded, else the server's flag.
+    func runFacts(myEmployeeId: String?, photos: [OrderPhoto]) -> OrdersBoardRules.RunFacts? {
+        guard let start = cleaningDateTime, let end = bookedEnd, [._2, ._3, ._4, ._5, ._6].contains(status) else {
+            return nil
+        }
+        return OrdersBoardRules.RunFacts(
+            status: status,
+            start: start,
+            end: end,
+            crew: isCrewJob,
+            ownMark: ownSeat(myEmployeeId)?.completionConfirmedAt,
+            hasAfterPhoto: hasAfterPhotos || photos.contains { $0.photoType == ._2 },
+            lockoutReportedAt: lockoutReportedAt,
+            finishedAt: finishedAt,
+            cancelledAt: cancelledAt,
+            cancellationReason: cancellationReason
+        )
+    }
+
+    /// Mode, floor and flat, each left out when the server sent none.
+    var accessFacts: [String] {
+        [L10n.Orders.accessMode(accessMode)].compactMap { $0 } + floorAndFlat
+    }
+
+    var floorAndFlat: [String] {
+        [
+            floor.flatMap { $0.isBlank ? nil : L10n.Orders.floor($0) },
+            flat.flatMap { $0.isBlank ? nil : L10n.Orders.flat($0) }
+        ].compactMap { $0 }
+    }
+
+    /// The package or service, rooms, baths, then the extras: the board's scope line.
+    func scopeItems(locale: Locale) -> [String] {
+        [
+            packages.first.map { $0.localizedName(for: locale) } ?? services.first
+                .map { $0.localizedName(for: locale) },
+            rooms > 0 ? L10n.Orders.rooms(rooms) : nil,
+            bathrooms > 0 ? L10n.Orders.baths(bathrooms) : nil,
+            OrdersBoardRules.extrasLine(extras)
+        ].compactMap { $0 }
+    }
+
+    /// Floor, flat and mode show from Confirmed; the access text itself from On the way (`showsAccessCard`).
+    var showsAccessFacts: Bool {
+        isAssignedToCurrentUser && [._2, ._3, ._4].contains(status)
+    }
+
+    /// The Getting-in step's "Cannot get in?" line: from On the way, and on Confirmed once the start has passed.
+    func showsLockoutLine(now: Date) -> Bool {
+        switch status {
+        case ._3: true
+        case ._2: cleaningDateTime.map { now >= $0 } ?? false
+        default: false
+        }
+    }
+
+    /// A job not taken whose crew has started: one named crew-mate is "Marta is already on it", anything else the
+    /// board's count.
+    var onItLine: String? {
+        guard !seats.isEmpty else { return nil }
+        if seats.count == 1, let name = seats[0].givenName { return L10n.Orders.mateOnIt(name) }
+        return L10n.Orders.crewTaken(seats.count)
+    }
+
+    /// What a cancelled job pays, by why it was cancelled; a lockout the company confirmed says so in bold. With no
+    /// reason it was the customer or an administrator, and the general fee rule holds whoever it was.
+    var cancelledPayLine: (text: String, bold: Bool) {
+        guard let reason = cancellationReason, L10n.Orders.cancellationReasons.contains(reason) else {
+            return (L10n.WorkContract.summaryLateCancel, false)
+        }
+        return reason == "order.cancelled.customer_lockout"
+            ? (L10n.Orders.cancelLockoutPaid, true)
+            : (L10n.Orders.cancelNoFee, false)
+    }
+
+    /// While the customer's details are still shown on a completed job (24 hours): when they close, "tomorrow" on
+    /// the day it was finished and "today" on the next.
+    func detailsCloseLine(now: Date, locale: Locale, calendar: Calendar = .current) -> String? {
+        guard status == ._5, location.navigationTarget != nil, let finishedAt else { return nil }
+        let time = OrdersFormat.timeOnly(finishedAt, locale: locale)
+        return calendar.isDate(now, inSameDayAs: finishedAt)
+            ? L10n.Orders.detailsCloseTomorrow(time)
+            : L10n.Orders.detailsCloseToday(time)
+    }
+
+    /// "possible until the start, 14:00", the weekday too when the start is another day.
+    func dropUntil(now: Date, locale: Locale, calendar: Calendar = .current) -> String? {
+        guard let start = cleaningDateTime else { return nil }
+        let time = OrdersFormat.timeOnly(start, locale: locale)
+        return L10n.Orders.dropPossibleUntil(calendar.isDate(start, inSameDayAs: now)
+            ? time
+            : "\(OrdersFormat.pattern("EEE", start, locale: locale)) \(time)")
+    }
+}
+
+extension OrderDetail {
+    /// What the board's row already says, drawn at once while the job loads (and kept when the rest of it fails):
+    /// the head, the run sheet's labels, the scope and the contact. Floor, flat and the customer's words come only
+    /// with the job.
+    init?(row: OrderListItem, mine: Bool) {
+        guard let id = row.id, !id.isBlank else { return nil }
+        self.init(
+            id: id,
+            orderNumber: row.displayOrderNumber ?? "",
+            status: row.status,
+            cleaningDateTime: row.cleaningDateTime,
+            completedAt: nil,
+            pay: row.estimatedCleanerPay,
+            currencyCode: row.currency?.code ?? row.currency?.symbol,
+            currencySymbol: OrdersFormat.symbolOf(row.currency),
+            location: Self.location(of: row),
+            area: OrdersBoardRules.areaLine(row),
+            customerName: row.customerName,
+            customerPhone: row.customerPhone,
+            rooms: row.rooms ?? 0,
+            bathrooms: row.bathrooms ?? 0,
+            dirtinessLevel: row.dirtinessLevel,
+            crew: Self.crew(of: row),
+            seats: [],
+            workContractAcceptances: [],
+            services: row.selectedServices?.compactMap { service in
+                service.name.map { OrderDetailService(id: service.id, name: $0, translations: service.translations) }
+            } ?? [],
+            packages: row.selectedPackages?.compactMap { package in
+                package.name.map {
+                    OrderDetailPackage(
+                        id: package.id,
+                        name: $0,
+                        price: package.price,
+                        translations: package.translations
+                    )
+                }
+            } ?? [],
+            extras: OrdersBoardRules.extraSlugs(row.extras),
+            customerNotes: nil,
+            specialInstructions: nil,
+            accessInstructions: nil,
+            payment: OrderDetailPayment(
+                subtotal: row.originalSubtotal,
+                total: row.totalPrice,
+                tierDiscount: nil,
+                membershipDiscount: nil,
+                promoDiscount: nil,
+                creditApplied: row.creditAppliedAmount,
+                amountDue: row.amountDueOnCard,
+                typeCode: row.paymentType?.value,
+                statusCode: row.paymentStatus?.value
+            ),
+            isAssignedToCurrentUser: mine,
+            hasAfterPhotos: false,
+            lockoutReportedAt: nil,
+            lockoutCallAttempts: nil,
+            orderNotes: [],
+            orderIssues: [],
+            statusHistory: [],
+            estimatedMinutes: row.estimatedTime.flatMap { $0 > 0 ? $0 : nil }
+        )
+    }
+
+    private static func location(of row: OrderListItem) -> OrderLocation {
+        guard OrdersBoardRules.streetLine(row.customerAddress) != nil, let line = row.customerAddress else {
+            return OrdersBoardRules.areaLine(row).map(OrderLocation.approximate) ?? .none
+        }
+        let coordinate = row.customerAddressLatitude.flatMap { lat in
+            row.customerAddressLongitude.map { Coordinate(latitude: lat, longitude: $0) }
+        }
+        return .precise(.init(line: line, coordinate: coordinate))
+    }
+
+    private static func crew(of row: OrderListItem) -> OrderCrew? {
+        let size = row.requiredEmployees ?? 0
+        let open = row.availableSpots ?? 0
+        guard size > 0 else { return nil }
+        return row.hasAvailableSpots == true && open > 0 ? .spotsOpen(crewSize: size, openSpots: open)
+            : .full(crewSize: size)
     }
 }

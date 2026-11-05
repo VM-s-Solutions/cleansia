@@ -7,17 +7,15 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * The order and invoice status pills (OrderStatusPill, InvoiceStatusBadge) write their label on a solid
- * fill that is the same in both schemes, so each pair has to read 4.5:1 on its own (F1): "Confirmed" and
- * "Approved" were white on sky-600 (4.10:1), "In progress" sky-900 on sky-400 (4.42:1) and "Cancelled"
- * slate-500 on slate-100 (4.34:1).
+ * The invoice status badge (InvoiceStatusBadge) writes its label on a solid fill that is the same in both
+ * schemes, so each pair has to read 4.5:1 on its own (F1): "Approved" was white on sky-600 (4.10:1) and
+ * "Cancelled" slate-500 on slate-100 (4.34:1).
  */
 class StatusPillContrastTest {
 
     private val pairs = mapOf(
         "pending" to (StatusPendingBg to StatusPendingText),
         "confirmed / approved" to (StatusConfirmedBg to StatusConfirmedText),
-        "in progress" to (StatusInProgressBg to StatusInProgressText),
         "completed / paid" to (StatusCompletedBg to StatusCompletedText),
         "cancelled" to (StatusCancelledBg to StatusCancelledText),
         "disputed / rejected" to (StatusFailedBg to StatusFailedText),
@@ -32,9 +30,8 @@ class StatusPillContrastTest {
     }
 
     @Test
-    fun `confirmed is white on sky-700, in progress sky-950 on sky-400, cancelled slate-600 on slate-100`() {
+    fun `approved is white on sky-700, cancelled slate-600 on slate-100`() {
         assertEquals(Sky700 to Color.White, StatusConfirmedBg to StatusConfirmedText)
-        assertEquals(Sky400 to Sky950, StatusInProgressBg to StatusInProgressText)
         assertEquals(Slate100 to Slate600, StatusCancelledBg to StatusCancelledText)
     }
 

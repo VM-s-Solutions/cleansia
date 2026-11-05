@@ -88,9 +88,9 @@ final class OrderDetailWorkContractTests: XCTestCase {
         XCTAssertNil(vm.contractRequest)
     }
 
-    /// The sheet took the seat; the detail reconciles as it did after its own take — silent, the panes
-    /// invalidated, the order refetched.
-    func testATakenOutcomeClosesTheSheetAndReconcilesLikeATake() async {
+    /// The sheet took the seat and stays up on the Job taken panel; behind it the detail reconciles as it did after
+    /// its own take — silent, the panes invalidated, the order refetched.
+    func testATakenOutcomeKeepsTheSheetOnThePanelAndReconcilesLikeATake() async {
         client.byIdResult = .success(loaded(status: 2, isMine: false, seated: false))
         let vm = makeVM()
         await vm.load()
@@ -102,7 +102,8 @@ final class OrderDetailWorkContractTests: XCTestCase {
 
         await vm.onWorkContractOutcome(.taken(orderId: "order-1"))
 
-        XCTAssertNil(vm.contractRequest)
+        XCTAssertEqual(vm.contractRequest, .take(orderId: "order-1"))
+        XCTAssertNotNil(vm.takenJob)
         XCTAssertEqual(client.getByIdCallCount, fetchesBefore + 1)
         XCTAssertTrue(staleness.isPaneStale(.available))
         XCTAssertTrue(staleness.isPaneStale(.active))
@@ -110,6 +111,60 @@ final class OrderDetailWorkContractTests: XCTestCase {
         XCTAssertNil(snackbar.current)
         XCTAssertEqual(vm.actionState, .idle)
         XCTAssertNil(vm.inFlightAction)
+    }
+
+    /// The panel's strip waits while the order is read back, then pins her address; the area and the reward are the
+    /// order's.
+    func testThePanelsStripWaitsForTheReadBackThenPinsTheAddress() async {
+        var browsing = loaded(status: 0, isMine: false, seated: false)
+        browsing.customerAddressApproximate = "Praha 8"
+        browsing.estimatedCleanerPay = 804
+        browsing.currency = CurrencyDetailDto(code: "CZK", symbol: "Kč")
+        client.byIdResult = .success(browsing)
+        let vm = makeVM()
+        await vm.load()
+        vm.take()
+        var hers = loaded(status: 2)
+        hers.customerAddressApproximate = "Praha 8"
+        hers.estimatedCleanerPay = 804
+        hers.currency = CurrencyDetailDto(code: "CZK", symbol: "Kč")
+        hers.address = OrderAddress(
+            street: "Zenklova 6",
+            city: "Praha",
+            zipCode: "18000",
+            latitude: 50.11,
+            longitude: 14.47
+        )
+        client.byIdResult = .success(hers)
+        client.suspendGetById = true
+
+        let outcome = Task { await vm.onWorkContractOutcome(.taken(orderId: "order-1")) }
+        let fetches = client.getByIdCallCount
+        while client.getByIdCallCount == fetches {
+            await Task.yield()
+        }
+        XCTAssertEqual(vm.takenJob?.strip, .waiting)
+        XCTAssertEqual(vm.takenJob?.area, "Praha 8")
+        client.resumeGetById()
+        await outcome.value
+
+        XCTAssertEqual(vm.takenJob?.strip, .pin(Coordinate(latitude: 50.11, longitude: 14.47), street: "Zenklova 6"))
+        XCTAssertEqual(vm.takenJob?.reward, OrdersFormat.money(804, symbol: "Kč"))
+        XCTAssertEqual(vm.takenJob?.status, ._2)
+    }
+
+    /// Open job closes the panel onto the detail, now hers.
+    func testClosingThePanelLeavesTheTakenDetail() async {
+        client.byIdResult = .success(loaded(status: 2, isMine: false, seated: false))
+        let vm = makeVM()
+        await vm.load()
+        vm.take()
+        await vm.onWorkContractOutcome(.taken(orderId: "order-1"))
+
+        vm.dismissContract()
+
+        XCTAssertNil(vm.contractRequest)
+        XCTAssertNil(vm.takenJob)
     }
 
     func testARefusedTakeOutcomeIsSnackbarredAndTheOrderRefetched() async {

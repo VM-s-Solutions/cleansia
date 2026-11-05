@@ -1,9 +1,9 @@
 import CleansiaCore
 import SwiftUI
 
-/// The cleaner's standing on the contract for work: the acceptance line with a way to read the
-/// accepted text, or — for a seat an administrator placed — the prompt to accept before starting.
-/// Nothing renders for a cleaner who is not on the crew; the take path carries its own contract.
+/// The cleaner's standing on the contract for work: under the head, the amber notice to accept it before starting
+/// (a seat an administrator placed); among the sections, *Contract for work*: when she accepted which version, and the
+/// way to read it. Nothing for a cleaner who is not on the crew; the take path carries its own contract.
 struct WorkContractCard: View {
     @Environment(\.locale) private var locale
     let standing: WorkContractStanding
@@ -15,67 +15,44 @@ struct WorkContractCard: View {
         case .none:
             EmptyView()
         case .pending:
-            PendingBanner(onAccept: onAccept)
-                .id(locale.identifier)
-        case let .accepted(acceptanceId, acceptedOn, documentVersion):
-            AcceptedLine(
-                acceptedOn: OrdersFormat.dateTime(acceptedOn, locale: locale),
-                documentVersion: documentVersion,
-                onRead: { onRead(acceptanceId) }
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                Image(systemName: "exclamationmark.circle")
+                    .font(CleansiaTypography.bodyLarge)
+                    .capBandAligned(of: CleansiaTypography.scale.bodyMedium)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: Spacing.xs) {
+                    Text(L10n.tie(L10n.WorkContract.pendingBanner))
+                        .font(CleansiaTypography.bodyMedium)
+                        .fixedSize(horizontal: false, vertical: true)
+                    CleansiaPrimaryButton(L10n.WorkContract.acceptCta, size: .small, action: onAccept).fixedSize()
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .foregroundColor(CleansiaColors.pendingInk)
+            .padding(.vertical, Spacing.s)
+            .padding(.horizontal, Spacing.m)
+            .background(
+                CleansiaColors.pendingInk.opacity(0.12),
+                in: RoundedRectangle(cornerRadius: CornerRadius.medium)
             )
             .id(locale.identifier)
+        case let .accepted(acceptanceId, acceptedOn, documentVersion):
+            DetailSection(title: L10n.WorkContract.title, icon: "doc.text") {
+                VStack(alignment: .leading, spacing: 0) {
+                    OrderInfoRow(
+                        label: L10n.Orders.contractAcceptedLabel,
+                        value: OrdersFormat.dayMonth(acceptedOn, locale: locale)
+                    )
+                    .padding(.vertical, 3)
+                    OrderInfoRow(label: L10n.Orders.contractVersionLabel, value: documentVersion)
+                        .padding(.vertical, 3)
+                    CleansiaTextLink(L10n.WorkContract.read, trailingIcon: "chevron.right") { onRead(acceptanceId) }
+                        .padding(.leading, -Spacing.xxs)
+                        .padding(.bottom, -Spacing.s)
+                }
+            }
+            .id(locale.identifier)
         }
-    }
-}
-
-/// The attention treatment the access card uses: tinted, inset, rounded — this is the one thing on
-/// the detail the cleaner has to act on before the work.
-private struct PendingBanner: View {
-    let onAccept: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.xs) {
-            ContractTitle(ink: CleansiaColors.warningStar)
-            Text(L10n.WorkContract.pendingBanner)
-                .font(CleansiaTypography.bodyMedium)
-                .foregroundColor(CleansiaColors.onSurface)
-                .fixedSize(horizontal: false, vertical: true)
-            CleansiaPrimaryButton(L10n.WorkContract.acceptCta, size: .medium, action: onAccept)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(Spacing.m)
-        .background(CleansiaColors.warningStar.opacity(0.12), in: RoundedRectangle(cornerRadius: CornerRadius.medium))
-    }
-}
-
-/// Flat like every other section on the sheet (`OrderSectionCard`): a fact, not a prompt.
-private struct AcceptedLine: View {
-    let acceptedOn: String
-    let documentVersion: String
-    let onRead: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.xs) {
-            ContractTitle(ink: CleansiaColors.onSurface)
-            Text(L10n.WorkContract.acceptedLine(acceptedOn, documentVersion))
-                .font(CleansiaTypography.bodyMedium)
-                .foregroundColor(CleansiaColors.onSurface)
-                .fixedSize(horizontal: false, vertical: true)
-            CleansiaTextLink(L10n.WorkContract.read, action: onRead)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, Spacing.m)
-        .background(CleansiaColors.surface)
-    }
-}
-
-private struct ContractTitle: View {
-    let ink: Color
-
-    var body: some View {
-        Label(L10n.WorkContract.title, systemImage: "doc.text")
-            .font(CleansiaTypography.titleMedium)
-            .foregroundColor(ink)
     }
 }
 

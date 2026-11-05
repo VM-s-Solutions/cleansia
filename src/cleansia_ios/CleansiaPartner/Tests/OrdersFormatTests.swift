@@ -53,7 +53,7 @@ final class OrdersFormatTests: XCTestCase {
         ])
         XCTAssertEqual(total, OrdersFormat.money(912.30, symbol: "Kč"))
         XCTAssertEqual(
-            OrdersFormat.pay(order(pay: 412.30, code: "CZK", symbol: "Kč")),
+            OrdersBoardRules.pay(order(pay: 412.30, code: "CZK", symbol: "Kč")),
             OrdersFormat.money(412.30, symbol: "Kč")
         )
     }

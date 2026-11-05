@@ -82,6 +82,7 @@ fun PendingOffersScreen(
     val attempt by viewModel.attempt.collectAsStateWithLifecycle()
     val refusal by viewModel.offerRefusal.collectAsStateWithLifecycle()
     val contractRequest by viewModel.contractRequest.collectAsStateWithLifecycle()
+    val takenRow by viewModel.takenRow.collectAsStateWithLifecycle()
 
     var pendingDecline by remember { mutableStateOf<PendingOffer?>(null) }
 
@@ -109,6 +110,10 @@ fun PendingOffersScreen(
                 viewModel.dismissContract()
                 onOpenLegalDocuments()
             },
+            taken = takenRow != null,
+            takenRow = takenRow,
+            onOpenJob = viewModel::openTakenJob,
+            onBackToJobs = viewModel::dismissContract,
         )
     }
 
@@ -301,7 +306,7 @@ private fun PendingOfferCard(
             }
         }
 
-        // City and a truncated postcode — the pre-acceptance ceiling for every cleaner-facing surface.
+        // The district or the city — the pre-acceptance ceiling for every cleaner-facing surface.
         // The server sends nothing finer and the screen asks for nothing finer.
         offer.customerAddressApproximate?.takeIf { it.isNotBlank() }?.let { address ->
             Row(

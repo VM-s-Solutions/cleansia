@@ -1,5 +1,7 @@
 package cz.cleansia.partner.features.orders
 
+import androidx.annotation.StringRes
+import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.OrderItem
 import cz.cleansia.partner.api.model.OrderStatus
 
@@ -23,7 +25,7 @@ sealed interface OrderLocation {
         val longitude: Double?,
     ) : OrderLocation
 
-    /** City + ZIP prefix — enough to judge the travel, nothing to navigate to. */
+    /** The district or the city — enough to judge the travel, nothing to navigate to. */
     data class Approximate(override val line: String) : OrderLocation
 
     data object None : OrderLocation {
@@ -42,18 +44,19 @@ fun OrderItem.orderLocation(): OrderLocation {
 /** Navigation needs a door, not a district. */
 fun OrderLocation.navigationTarget(): OrderLocation.Precise? = this as? OrderLocation.Precise
 
-/**
- * Where the map backdrop centres, or null when there is nothing precise to point at.
- *
- * Status does not enter into it. A cancelled order used to be forced to null here on the
- * reasoning that the visit never happened — but the job still had a place, and suppressing the
- * map read as a map that had failed to load rather than as a decision. Owner ruling, 2026-08-27.
- * Entitlement is still enforced server-side by OrderPiiRedaction, which withholds the address
- * itself from a cleaner who has not taken the job, in every status.
- */
-fun OrderLocation.mapPoint(): Pair<Double, Double>? {
-    val target = navigationTarget() ?: return null
-    val latitude = target.latitude ?: return null
-    val longitude = target.longitude ?: return null
-    return latitude to longitude
+/** The access mode as the wizard wrote it (`CreateOrder`: at_home, keys_handover, door_code, reception); any other is left out. */
+@StringRes
+fun accessModeRes(mode: String?): Int? = when (mode) {
+    "at_home" -> R.string.access_mode_at_home
+    "keys_handover" -> R.string.access_mode_keys_handover
+    "door_code" -> R.string.access_mode_door_code
+    "reception" -> R.string.access_mode_reception
+    else -> null
 }
+
+/** "Customer will be home · Floor 3 · flat 12": each piece left out when it did not arrive. */
+fun OrderItem.accessFacts(): List<BoardText> = listOfNotNull(
+    accessModeRes(accessMode)?.let { BoardText.Res(it) },
+    customerFloor?.trim()?.takeIf { it.isNotEmpty() }?.let { BoardText.Res(R.string.detail_floor, listOf(it)) },
+    customerApartment?.trim()?.takeIf { it.isNotEmpty() }?.let { BoardText.Res(R.string.detail_flat, listOf(it)) },
+)

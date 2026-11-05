@@ -89,14 +89,48 @@ final class FakePartnerOrderClient: PartnerOrderClient {
 
     func currentEmployeeId() async -> ApiResult<String> {
         employeeIdCallCount += 1
+        if suspendEmployeeId {
+            await withCheckedContinuation { employeeIdGates.append($0) }
+        }
         return employeeIdResult
     }
 
-    func getPaged(_ query: OrderPageQuery) async -> ApiResult<[OrderListItem]> {
+    /// When set, every own-id read suspends until `resumeEmployeeId()`, so a test can act while it is outstanding.
+    var suspendEmployeeId = false
+    private var employeeIdGates: [CheckedContinuation<Void, Never>] = []
+
+    func resumeEmployeeId() {
+        suspendEmployeeId = false
+        let gates = employeeIdGates
+        employeeIdGates = []
+        gates.forEach { $0.resume() }
+    }
+
+    func getPaged(_ query: OrderPageQuery) async -> ApiResult<OrderPage> {
         onGetPaged?()
         getPagedCallCount += 1
         queries.append(query)
-        return pagedResult
+        if suspendGetPaged {
+            await withCheckedContinuation { getPagedGates.append($0) }
+        }
+        if let pageResponder { return pageResponder(query) }
+        return pagedResult.map { OrderPage(rows: $0, total: pagedTotal ?? $0.count) }
+    }
+
+    /// The server's count beside `pagedResult`; nil answers the rows' own count.
+    var pagedTotal: Int?
+    /// Answers each page request by its query — a pane, a page offset, an id — when a test needs them apart.
+    var pageResponder: ((OrderPageQuery) -> ApiResult<OrderPage>)?
+
+    /// When set, every page request suspends until `resumeGetPaged()`, so a test can act while a fetch runs.
+    var suspendGetPaged = false
+    private var getPagedGates: [CheckedContinuation<Void, Never>] = []
+
+    func resumeGetPaged() {
+        suspendGetPaged = false
+        let gates = getPagedGates
+        getPagedGates = []
+        gates.forEach { $0.resume() }
     }
 
     /// Holds the WIRE shape and maps it through the real initializer, so a fixture that breaks the

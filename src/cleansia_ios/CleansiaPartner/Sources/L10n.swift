@@ -30,6 +30,10 @@ enum L10n {
         localized("email")
     }
 
+    static var emailPlaceholder: String {
+        localized("auth_email_placeholder")
+    }
+
     static var password: String {
         localized("password")
     }
@@ -331,7 +335,16 @@ enum L10n {
     /// count picked no form by the language's rules; this resolves them in the IN-APP language
     /// (`CoreL10n.locale`), never the phone's — the in-app switch leaves `.current` on the device
     /// language. The customer app's `L10n.plural` is the same helper.
-    static func plural(_ key: String, _ count: Int) -> String {
-        String(format: localized(key), locale: CoreL10n.locale, arguments: [count])
+    static func plural(_ key: String, _ count: Int, _ extra: CVarArg...) -> String {
+        String(format: localized(key), locale: CoreL10n.locale, arguments: [count as CVarArg] + extra)
+    }
+
+    /// Ties the last two words of a text of three words or more with a no-break space, so a wrapped line never
+    /// ends a paragraph on one word. A separator's dot is never tied across.
+    static func tie(_ text: String) -> String {
+        guard let last = text.lastIndex(of: " "), let first = text.firstIndex(of: " "), first < last,
+              text[text.index(before: last)] != "·"
+        else { return text }
+        return text.replacingCharacters(in: last ... last, with: "\u{00A0}")
     }
 }

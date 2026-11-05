@@ -155,7 +155,7 @@ scenario("iOS take-BUTTON gate stops offering .take on New -> RED", {
         patch(
             r,
             "src/cleansia_ios/CleansiaPartner/Sources/Features/Orders/OrderPrimaryAction.swift",
-            "return isMine ? .none : .take",
+            "return isMine ? .none : take(clash: clash, ownRowsPending: ownRowsPending)",
             "return .none",
         ),
     expectExit: 1,

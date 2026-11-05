@@ -9,6 +9,7 @@ import cz.cleansia.partner.api.model.OrderItem
 import cz.cleansia.partner.data.orders.PendingOffer
 import cz.cleansia.partner.core.auth.EmployeeIdResolver
 import cz.cleansia.partner.core.network.ApiErrorTranslator
+import cz.cleansia.partner.data.orders.BoardRows
 import cz.cleansia.partner.data.orders.OrdersRepository
 import cz.cleansia.partner.testing.MainDispatcherRule
 import io.mockk.coEvery
@@ -55,6 +56,7 @@ class OrderDetailPreferredOfferTest {
         coEvery { employeeIdResolver.resolve() } returns "employee-me"
         offers = MutableStateFlow(emptyList())
         every { ordersRepository.pendingOffers } returns offers
+        every { ordersRepository.boardRows } returns MutableStateFlow(BoardRows())
         every { ordersRepository.arePendingOffersStale() } returns false
         every { ordersRepository.isOrderStale(orderId) } returns true
         coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(mockk<OrderItem>(relaxed = true))
@@ -67,6 +69,7 @@ class OrderDetailPreferredOfferTest {
         errorTranslator,
         snackbar,
         employeeIdResolver,
+        mockk(relaxed = true),
     )
 
     /** The sheet's verdict on the take it ran — the confirm is the take, and it now ends inside the sheet. */

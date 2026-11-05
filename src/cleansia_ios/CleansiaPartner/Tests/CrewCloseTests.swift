@@ -75,7 +75,8 @@ final class CrewCloseTests: XCTestCase {
         status: OrderStatus? = ._4,
         mine: Bool = true,
         photos: Bool = true,
-        cashPending: Bool = false
+        cashPending: Bool = false,
+        mateMarked: Bool = false
     ) -> OrderPrimaryAction {
         OrderPrimaryAction.action(
             for: status,
@@ -83,7 +84,8 @@ final class CrewCloseTests: XCTestCase {
             hasAfterPhotos: photos,
             isCashPayment: cashPending,
             isPaymentSettled: !cashPending,
-            crew: crew
+            crew: crew,
+            mateMarked: mateMarked
         )
     }
 
@@ -92,11 +94,47 @@ final class CrewCloseTests: XCTestCase {
         XCTAssertEqual(action(.solo, photos: false), .completeBlocked(cashPending: false))
     }
 
-    /// The mark has no photo rule; the after photo is the shared Complete's.
-    func testOnACrewMyOpenPartOffersImDoneWhateverThePhotos() {
+    /// While no one on the crew has marked, her part is cleaning like a solo job's: the after photo comes first, then
+    /// I'm done. Once a crew-mate has marked, I'm done is the move whatever the photos.
+    func testOnACrewMyOpenPartWaitsForTheAfterPhotoUntilACrewMateHasMarked() {
+        XCTAssertEqual(action(.myPartOpen, photos: false), .completeBlocked(cashPending: false))
+        XCTAssertEqual(action(.myPartOpen, photos: false, cashPending: true), .completeBlocked(cashPending: true))
         XCTAssertEqual(action(.myPartOpen), .markDone)
-        XCTAssertEqual(action(.myPartOpen, photos: false), .markDone)
+        XCTAssertEqual(action(.myPartOpen, photos: false, mateMarked: true), .markDone)
+        XCTAssertEqual(action(.myPartOpen, mateMarked: true), .markDone)
         XCTAssertEqual(OrderPrimaryAction.markDone.orderAction, .markDone)
+    }
+
+    /// The detail reads the crew-mate's mark off the seats the server sends.
+    @MainActor
+    func testTheDetailPinsTheAfterPhotoUntilTheCrewMateMarks() async {
+        let client = FakePartnerOrderClient()
+        let staleness = OrdersStaleness()
+        var item = OrderItem.wireComplete()
+        item.orderStatus = Code(value: 4)
+        item.isAssignedToCurrentUser = true
+        item.hasAfterPhotos = false
+        item.paymentType = Code(value: 2)
+        item.paymentStatus = Code(value: 2)
+        item.assignedEmployees = [
+            AssignedEmployeeDto(id: "seat-0", employeeId: "emp-self"),
+            AssignedEmployeeDto(id: "seat-1", employeeId: "emp-mate")
+        ]
+        client.byIdResult = .success(item)
+        let vm = OrderDetailViewModel(
+            orderId: "A2",
+            client: client,
+            staleness: staleness,
+            snackbar: SnackbarController(),
+            pendingOffers: PendingOffersStore(client: client, ordersStaleness: staleness)
+        )
+        await vm.load()
+        XCTAssertEqual(vm.primaryAction, .completeBlocked(cashPending: false))
+
+        item.assignedEmployees?[1].completionConfirmedAt = marked
+        client.byIdResult = .success(item)
+        await vm.load()
+        XCTAssertEqual(vm.primaryAction, .markDone)
     }
 
     func testOnACrewWithMyPartMarkedNothingIsOfferedWhileTheOthersWork() {
@@ -105,8 +143,7 @@ final class CrewCloseTests: XCTestCase {
         XCTAssertNil(OrderPrimaryAction.awaitingCrew.orderAction)
     }
 
-    /// The shared close is the crew's "Complete job", not the "Slide to complete" a job one cleaner works
-    /// shows; it sends the same completion.
+    /// The shared close sends the same completion as a job one cleaner works, and says the same words.
     func testOnceEveryoneHasMarkedTheSharedCompleteJobAppearsUnderTheAfterPhotoRule() {
         XCTAssertEqual(action(.everyoneDone), .completeJob)
         XCTAssertEqual(action(.everyoneDone, photos: false), .completeBlocked(cashPending: false))
@@ -141,14 +178,19 @@ final class CrewCloseTests: XCTestCase {
             "order_mark_done",
             "marking_done",
             "order_part_marked_done_toast",
-            "order_crew_waiting",
-            "order_complete_job",
-            "order_crew_done_toast"
+            "order_crew_done_toast",
+            "slide_to_complete",
+            "crew_both_parts",
+            "crew_all_marked",
+            "crew_mark_done_sub",
+            "detail_waiting_for",
+            "crew_done_at"
         ]
         let english = try table("en")
-        // The names the owner was given for the two crew controls, the ones the partner web shows.
+        // "I'm done" is the name the partner web shows; the crew completes with the solo words.
         XCTAssertEqual(english["order_mark_done"], "I'm done")
-        XCTAssertEqual(english["order_complete_job"], "Complete job")
+        XCTAssertEqual(english["slide_to_complete"], "Slide to complete")
+        XCTAssertNil(english["order_crew_waiting"], "the wait is said by name now, not by this sentence")
         for language in ["en", "cs", "sk", "uk", "ru"] {
             let strings = try table(language)
             for key in keys {
@@ -224,7 +266,7 @@ final class CrewCloseDetailTests: XCTestCase {
         XCTAssertEqual(vm.primaryAction, .awaitingCrew)
     }
 
-    func testOnceEveryoneHasMarkedTheDetailOffersCompleteJob() async {
+    func testOnceEveryoneHasMarkedTheDetailOffersTheSharedComplete() async {
         let vm = await loadedVM(job(myPartDone: true, mateDone: true))
 
         XCTAssertEqual(vm.primaryAction, .completeJob)
@@ -319,28 +361,55 @@ final class CrewCloseFooterTests: XCTestCase {
         let footer = try footerSource().replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
 
         XCTAssertTrue(footer.contains(
-            "case .markDone: footer { SlideToConfirm( idleLabel: L10n.Orders.markDone, "
-                + "busyLabel: L10n.Orders.markingDone, isBusy: isBusy(.markDone), "
-                + "onConfirm: { onConfirm(.markDone) } ) }"
-        ), "I'm done")
-        XCTAssertTrue(footer.contains("case .awaitingCrew: footer { CrewWaitingHint() }"), "the wait")
+            "case .markDone: footer { slide( .markDone, idle: L10n.Orders.markDone, "
+                + "busy: L10n.Orders.markingDone, detail: L10n.Orders.markDoneSub ) }"
+        ), "I'm done, and on the slide under it that it marks her part")
+        XCTAssertTrue(footer.contains("case .awaitingCrew: footer { CrewWait(mate: waitingFor) }"), "the wait")
         XCTAssertTrue(footer.contains(
-            "case .completeJob: footer { SlideToConfirm( idleLabel: L10n.Orders.completeJob, "
-                + "busyLabel: L10n.Orders.completingOrder, isBusy: isBusy(.complete), "
-                + "onConfirm: { onConfirm(.completeJob) } ) }"
-        ), "Complete job")
+            "case .completeJob: footer { slide(.completeJob, idle: L10n.Orders.slideToComplete, "
+                + "busy: L10n.Orders.completingOrder) }"
+        ), "the crew's Complete says the solo words")
         XCTAssertTrue(footer.contains(
-            "case .complete: footer { SlideToConfirm( idleLabel: L10n.Orders.slideToComplete, "
-                + "busyLabel: L10n.Orders.completingOrder, isBusy: isBusy(.complete), "
-                + "onConfirm: { onConfirm(.complete) } ) }"
+            "case .complete: footer { slide(.complete, idle: L10n.Orders.slideToComplete, "
+                + "busy: L10n.Orders.completingOrder) }"
         ), "the solo Complete")
+    }
+
+    /// The wait is the crew-mate by name: Call her while she has a phone, else say who the job waits for.
+    func testTheWaitCallsTheCrewMateOrNamesHer() throws {
+        let footer = try footerSource().replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+
+        XCTAssertTrue(footer.contains("if let call = ContactActions.callURL(phone: mate?.phone) {"))
+        XCTAssertTrue(footer.contains(
+            "CleansiaOutlinedButton( \"\\(L10n.Orders.actionCall)\\(OrdersBoardRules.dot)\\(name)\","
+        ), "Call · Lenka")
+        XCTAssertTrue(footer.contains("Text(L10n.tie(L10n.Orders.waitingFor(name)))"), "Waiting for Lenka")
+    }
+
+    /// A crew-mate's number only ever becomes a `tel:` link: never printed, read aloud, selectable or copied.
+    func testACrewMatesNumberIsOnlyEverDialled() throws {
+        let footer = try footerSource()
+        let crewFinish = try String(
+            contentsOf: URL(fileURLWithPath: #filePath)
+                .deletingLastPathComponent()
+                .deletingLastPathComponent()
+                .appendingPathComponent("Sources/Features/Orders/CrewFinish.swift"),
+            encoding: .utf8
+        )
+        for source in [crewFinish, footer] {
+            XCTAssertNil(source.range(of: #"Text\([^)\n]*phone"#, options: .regularExpression), "printed")
+            XCTAssertNil(source.range(of: #"accessibility\w*\([^)\n]*phone"#, options: .regularExpression), "spoken")
+            XCTAssertFalse(source.contains("textSelection"), "selectable")
+            XCTAssertFalse(source.contains("UIPasteboard"), "copied")
+        }
+        XCTAssertTrue(footer.contains("if let call = ContactActions.callURL(phone: mate?.phone) {"))
     }
 
     /// The wait reads no per-locale value, so after an in-app language switch nothing it observes changes and
     /// it would keep the old language.
     func testTheWaitFollowsAnInAppLanguageSwitch() throws {
         let source = try footerSource()
-        let start = try XCTUnwrap(source.range(of: "private struct CrewWaitingHint: View {"))
+        let start = try XCTUnwrap(source.range(of: "private struct CrewWait: View {"))
         let end = source.range(of: "\n}\n", range: start.upperBound ..< source.endIndex)?.upperBound ?? source.endIndex
         let hint = source[start.lowerBound ..< end]
 

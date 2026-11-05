@@ -4,6 +4,8 @@ import androidx.annotation.StringRes
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.OrderItem
 import cz.cleansia.partner.api.model.OrderStatus
+import java.time.Instant
+import java.time.ZoneId
 
 /**
  * What the server released to THIS caller on this order, read off each field's own arrival.
@@ -58,3 +60,12 @@ fun OrderItem.customerDetailsClosedNote(): Int? {
         else -> null
     }
 }
+
+/** Floor, flat and the access mode arrive from Confirmed and are shown from then; the access text waits for On the way. */
+fun OrderDisclosure.showsAccessFacts(status: OrderStatus?): Boolean =
+    status == OrderStatus._2 || status == OrderStatus._3 || status == OrderStatus._4
+
+/** "close tomorrow at 15:51" on the job's own day; read on a later day, "close today at 15:51". */
+@StringRes
+fun detailsCloseRes(completedAt: Instant, now: Instant, zone: ZoneId): Int =
+    if (now.atZone(zone).toLocalDate() > completedAt.atZone(zone).toLocalDate()) R.string.details_close_today else R.string.details_close_tomorrow

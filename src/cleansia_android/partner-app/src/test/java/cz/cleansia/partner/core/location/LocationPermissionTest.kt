@@ -6,9 +6,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * The partner app reads the device location for two things only, both in the foreground: the rough
- * distance to a job on the feed, and where the address picker's map opens before the cleaner moves
- * the pin. Neither needs a precise fix, so the app holds approximate location and nothing more.
+ * The partner app reads the device location for one thing only, in the foreground: where the address
+ * picker's map opens before the cleaner moves the pin (the job board no longer measures from the device).
+ * That needs no precise fix, so the app holds approximate location and nothing more.
  *
  * Android silently denies a request for a permission the manifest does not declare, so a screen
  * still asking for the fine one would read as "the cleaner said no" on every device.

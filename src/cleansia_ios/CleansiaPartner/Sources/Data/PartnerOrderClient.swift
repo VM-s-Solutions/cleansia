@@ -13,7 +13,16 @@ struct OrderPageQuery {
     var sortField: String
     var sortAscending: Bool
     var offset: Int = 0
-    var limit: Int = 50
+    /// The server's maximum page.
+    var limit: Int = 100
+    /// One order by id (`Filter.Id`): the reserved job off the loaded page, and the row a take just made yours.
+    var id: String?
+}
+
+/// One page of the board and the server's count of every row that matches.
+struct OrderPage {
+    let rows: [OrderListItem]
+    let total: Int?
 }
 
 protocol PartnerOrderClient: AnyObject {
@@ -22,7 +31,7 @@ protocol PartnerOrderClient: AnyObject {
     /// caller's own id; it never echoes a foreign one.
     func currentEmployeeId() async -> ApiResult<String>
 
-    func getPaged(_ query: OrderPageQuery) async -> ApiResult<[OrderListItem]>
+    func getPaged(_ query: OrderPageQuery) async -> ApiResult<OrderPage>
     func getById(orderId: String) async -> ApiResult<OrderDetail>
     /// The written reason an administrator gave for taking this cleaner off `orderId`.
     func getMyAssignmentRemovalReason(orderId: String) async -> ApiResult<String>
@@ -88,11 +97,13 @@ struct OrderPhoto: Equatable, Identifiable {
     let id: String
     let photoType: PhotoType?
     let blobUrl: String?
+    var capturedAt: Date?
 
-    init(id: String, photoType: PhotoType?, blobUrl: String?) {
+    init(id: String, photoType: PhotoType?, blobUrl: String?, capturedAt: Date? = nil) {
         self.id = id
         self.photoType = photoType
         self.blobUrl = blobUrl
+        self.capturedAt = capturedAt
     }
 
     init?(_ dto: GetOrderPhotosOrderPhotoDto) {
@@ -100,6 +111,7 @@ struct OrderPhoto: Equatable, Identifiable {
         self.id = id
         photoType = dto.photoType
         blobUrl = dto.blobUrl
+        capturedAt = dto.capturedAt
     }
 }
 
@@ -117,9 +129,10 @@ final class LivePartnerOrderClient: PartnerOrderClient {
         }
     }
 
-    func getPaged(_ query: OrderPageQuery) async -> ApiResult<[OrderListItem]> {
+    func getPaged(_ query: OrderPageQuery) async -> ApiResult<OrderPage> {
         await apiResult(mapError: ApiError.fromGenerated) {
             let paged = try await PartnerOrderAPI.orderGetPaged(
+                filterId: query.id,
                 filterEmployeeId: query.employeeId,
                 filterCleaningDateFrom: query.cleaningDateFrom,
                 filterCleaningDateTo: query.cleaningDateTo,
@@ -132,7 +145,7 @@ final class LivePartnerOrderClient: PartnerOrderClient {
                 offset: query.offset,
                 limit: query.limit
             )
-            return paged.data ?? []
+            return OrderPage(rows: paged.data ?? [], total: paged.total)
         }
     }
 

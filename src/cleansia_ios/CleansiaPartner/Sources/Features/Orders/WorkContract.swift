@@ -29,12 +29,24 @@ struct WorkContractJobFacts: Equatable {
     let services: [String]
     let packages: [String]
     let extraSlugs: [String]
+    /// The id of each name in `services` / `packages`, index for index, so the take sheet can show the board
+    /// row's translated name of the same service.
+    var serviceIds: [String] = []
+    var packageIds: [String] = []
 }
 
 struct WorkContractAcceptanceFacts: Equatable {
     let acceptedOn: Date
     let documentVersion: String
     let acceptedLanguage: String?
+}
+
+extension WorkContract {
+    /// The versions whose clauses the four summary lines are true to (contract.md §3-6). A version not listed
+    /// here — the lawyer's next text — shows no summary until the lines are checked against it.
+    static let summaryVersions: Set<String> = ["2026-10-05", "2026-10-27"]
+    /// The versions that carry the release and cash clauses the "free to cancel" and cash lines summarise.
+    static let releaseVersions: Set<String> = ["2026-09-29", "2026-10-05", "2026-10-27"]
 }
 
 extension WorkContract {
@@ -63,15 +75,20 @@ extension WorkContractJobFacts {
         locationApproximate = dto.locationApproximate
         rooms = try dto.rooms.require("facts.rooms")
         bathrooms = try dto.bathrooms.require("facts.bathrooms")
-        services = Self.names(dto.services)
-        packages = Self.names(dto.packages)
+        let services = Self.lines(dto.services)
+        let packages = Self.lines(dto.packages)
+        self.services = services.map(\.name)
+        self.packages = packages.map(\.name)
         extraSlugs = dto.extraSlugs ?? []
+        serviceIds = services.map(\.id)
+        packageIds = packages.map(\.id)
     }
 
-    private static func names(_ lines: [WorkContractFactsLine]?) -> [String] {
+    /// The named lines, each name with its id, built in one pass so index *i* of the ids is the id of name *i*.
+    private static func lines(_ lines: [WorkContractFactsLine]?) -> [(id: String, name: String)] {
         (lines ?? []).compactMap { line in
             guard let name = line.name, !name.isBlank else { return nil }
-            return name
+            return (line.id ?? "", name)
         }
     }
 }
@@ -83,3 +100,31 @@ extension WorkContractAcceptanceFacts {
         acceptedLanguage = dto.acceptedLanguage
     }
 }
+
+#if DEBUG
+    extension WorkContract {
+        /// The previews' contract (the detail's photo and note previews hand it out as their preview).
+        static let preview = WorkContract(
+            legalDocumentTextId: "text-1",
+            version: "2026-10-27",
+            language: "en",
+            title: "Contract for work",
+            contentHtml: "<p>This contract for work is concluded between the operating company (the client)"
+                + " and you (the contractor).</p>",
+            facts: WorkContractJobFacts(
+                orderNumber: "CL-2026-0042",
+                cleaningDateTimeUtc: Date(timeIntervalSince1970: 1_786_200_000),
+                estimatedMinutes: 180,
+                reward: 620,
+                currencyCode: "CZK",
+                locationApproximate: "Praha 4",
+                rooms: 3,
+                bathrooms: 1,
+                services: ["Standard cleaning"],
+                packages: [],
+                extraSlugs: ["inside-oven"]
+            ),
+            acceptance: nil
+        )
+    }
+#endif

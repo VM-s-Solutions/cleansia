@@ -125,7 +125,7 @@ class OrdersDashboardInvalidationTest(private val mutation: String) {
         val release = CompletableDeferred<Unit>()
         stubMutation { entered.complete(Unit); release.await() }
         coEvery { api.orderGetById("same-id") } returns Response.success(OrderItem(id = "same-id"))
-        coEvery { api.orderGetPaged(offset = 0, limit = 50, sort0Field = any(), sort0Direction = any()) } returns
+        coEvery { api.orderGetPaged(offset = 0, limit = 100, sort0Field = any(), sort0Direction = any()) } returns
             Response.success(PagedDataOfOrderListItem(data = emptyList()))
         val repo = orders()
         val old = async { mutate(repo) }

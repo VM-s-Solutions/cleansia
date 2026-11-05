@@ -2,12 +2,12 @@ import CleansiaCore
 import CleansiaPartnerApi
 import SwiftUI
 
-/// The detail screen's primary action area — renders the resolved
-/// `OrderPrimaryAction` (the shared machine) as the matching native confirm
-/// control, with per-action busy state and the after-photos-blocked hint
-/// (the `StickyActionFooter`/`OrderPrimaryAction.kt` parity). Renders nothing
-/// when there is no action (terminal / not mine).
+/// The detail's one move, pinned under the thumb: the resolved `OrderPrimaryAction` (the shared machine) drawn as
+/// the control the board uses for the same act — a slide to set off, start and complete, the locked slide while
+/// the server would refuse, Take disabled with its reason, the after photo, the cash pair, the crew's wait. Renders
+/// nothing when the state has no move.
 struct StickyActionFooter: View {
+    @Environment(\.locale) private var locale
     let action: OrderPrimaryAction
     let inFlightAction: OrderAction?
     let onConfirm: (OrderPrimaryAction) -> Void
@@ -21,9 +21,18 @@ struct StickyActionFooter: View {
     /// why the screen degrades to an ordinary job in the short-lead band the push also reaches.
     var preferredOffer: PendingOfferItem?
     var onDeclineOffer: () -> Void = {}
-    /// Leaving the job is confirmed by the screen root as well.
-    var canDropOrder = false
-    var onDropRequested: () -> Void = {}
+    /// The cash to collect as the customer still owes it, for the button's own label.
+    var cashAmount: String?
+    /// The crew-mate whose part is still open while hers is marked.
+    var waitingFor: OrderSeat?
+    /// Late and not set off: the start offered under the set-off slide, asked for in a sheet over the page. The sheet
+    /// closes as the start is sent, and the footer shows it under way in the set-off slide's place.
+    var offersStartFromConfirmed = false
+    var onTakeAfterPhoto: () -> Void = {}
+    var now = Date()
+
+    @State private var confirmingStart = false
+    @State private var homeIndicator: CGFloat = 0
 
     private func isBusy(_ orderAction: OrderAction) -> Bool {
         inFlightAction == orderAction
@@ -32,58 +41,53 @@ struct StickyActionFooter: View {
     var body: some View {
         switch action {
         case .take:
-            footer {
-                VStack(spacing: Spacing.xs) {
-                    if let preferredOffer {
-                        ReservedForYouRow(respondByUtc: preferredOffer.respondByUtc)
-                    }
-                    // Opens the contract sheet; the deliberate gesture sits under the text it
-                    // accepts, and a slide that opened a second slide would ask twice. On a job
-                    // reserved for them by name the sheet runs the same command with a different
-                    // word: confirming IS taking. Spins while the host reconciles the order after
-                    // the sheet's verdict, so it cannot reopen the sheet on a job already taken.
-                    CleansiaPrimaryButton(
-                        preferredOffer == nil ? L10n.Orders.takeOrder : L10n.Offers.confirm,
-                        loading: isBusy(.take),
-                        enabled: inFlightAction == nil,
-                        action: { onConfirm(.take) }
-                    )
-                    if preferredOffer != nil {
-                        CleansiaTextLink(L10n.Offers.decline, action: onDeclineOffer)
-                            .disabled(inFlightAction != nil)
-                    }
-                }
-            }
+            footer { take(waiting: false) }
+        case let .takeOverlaps(start, end):
+            footer { refusedTake(start: start, end: end) }
+        case .takeWaiting:
+            footer { take(waiting: true) }
+        case let .setOffLocked(opensAt):
+            footer { SlideToConfirm(lockedReason: L10n.tie(setOffReason(opensAt))) }
         case .notifyOnTheWay:
             footer {
-                VStack(spacing: Spacing.xs) {
-                    CleansiaPrimaryButton(
-                        L10n.Orders.notifyOnTheWay,
-                        loading: isBusy(.notifyOnTheWay),
-                        enabled: inFlightAction == nil,
-                        action: { onConfirm(.notifyOnTheWay) }
-                    )
-                    if canDropOrder {
-                        dropLink
+                VStack(spacing: Spacing.xxs) {
+                    if isBusy(.start) {
+                        slide(.start, idle: L10n.Orders.slideToStart, busy: L10n.Orders.startingOrder)
+                    } else {
+                        slide(
+                            .notifyOnTheWay,
+                            idle: L10n.Orders.swipeToNotifyOnTheWay,
+                            busy: L10n.Orders.customerNotifiedOnTheWay
+                        )
+                        if offersStartFromConfirmed {
+                            FooterTextLink(
+                                L10n.Orders.lateAlreadyThere,
+                                isBusy: false,
+                                enabled: inFlightAction == nil
+                            ) { confirmingStart = true }
+                        }
                     }
+                }
+                .sheet(isPresented: $confirmingStart) {
+                    StartConfirmation(
+                        onCancel: { confirmingStart = false },
+                        slide: {
+                            slide(.start, idle: L10n.Orders.slideToStart, busy: L10n.Orders.startingOrder) {
+                                confirmingStart = false
+                            }
+                        }
+                    )
                 }
             }
         case .start:
-            footer {
-                SlideToConfirm(
-                    idleLabel: L10n.Orders.slideToStart,
-                    busyLabel: L10n.Orders.startingOrder,
-                    isBusy: isBusy(.start),
-                    onConfirm: { onConfirm(.start) }
-                )
-            }
+            footer { slide(.start, idle: L10n.Orders.slideToStart, busy: L10n.Orders.startingOrder) }
         case .collectCash:
             // The two irreversible money answers in the app: the server rejects a second
             // call and neither can be taken back from here, so each asks first.
             footer {
-                VStack(spacing: Spacing.xs) {
+                VStack(spacing: Spacing.xxs) {
                     CleansiaPrimaryButton(
-                        L10n.Orders.markCashCollected,
+                        cashAmount.map(L10n.Orders.cashMarkAmount) ?? L10n.Orders.markCashCollected,
                         loading: isBusy(.markCashCollected),
                         enabled: inFlightAction == nil,
                         action: onCashConfirmRequested
@@ -100,61 +104,148 @@ struct StickyActionFooter: View {
             }
         case .markDone:
             footer {
-                SlideToConfirm(
-                    idleLabel: L10n.Orders.markDone,
-                    busyLabel: L10n.Orders.markingDone,
-                    isBusy: isBusy(.markDone),
-                    onConfirm: { onConfirm(.markDone) }
+                slide(
+                    .markDone,
+                    idle: L10n.Orders.markDone,
+                    busy: L10n.Orders.markingDone,
+                    detail: L10n.Orders.markDoneSub
                 )
             }
         case .awaitingCrew:
-            footer { CrewWaitingHint() }
+            footer { CrewWait(mate: waitingFor) }
         case .complete:
-            footer {
-                SlideToConfirm(
-                    idleLabel: L10n.Orders.slideToComplete,
-                    busyLabel: L10n.Orders.completingOrder,
-                    isBusy: isBusy(.complete),
-                    onConfirm: { onConfirm(.complete) }
-                )
-            }
+            footer { slide(.complete, idle: L10n.Orders.slideToComplete, busy: L10n.Orders.completingOrder) }
         case .completeJob:
-            footer {
-                SlideToConfirm(
-                    idleLabel: L10n.Orders.completeJob,
-                    busyLabel: L10n.Orders.completingOrder,
-                    isBusy: isBusy(.complete),
-                    onConfirm: { onConfirm(.completeJob) }
-                )
+            footer { slide(.completeJob, idle: L10n.Orders.slideToComplete, busy: L10n.Orders.completingOrder) }
+        case .completeBlocked:
+            footer { CleansiaPrimaryButton(L10n.Orders.takeAfterPhoto, leadingIcon: "camera", action: onTakeAfterPhoto)
             }
-        case let .completeBlocked(cashPending):
-            footer { CompleteBlockedHint(cashPending: cashPending) }
+        case .paymentNotConfirmed:
+            footer { SlideToConfirm(lockedReason: L10n.tie(L10n.Orders.paymentNotConfirmed)) }
         case .none:
-            // An assigned job still New: there is nothing to start yet, but it can be left.
-            if canDropOrder {
-                footer { dropLink }
-            } else {
-                EmptyView()
-            }
+            EmptyView()
         }
     }
 
-    private var dropLink: some View {
-        CleansiaDangerButton(
-            L10n.Orders.dropAction,
-            loading: isBusy(.drop),
-            enabled: inFlightAction == nil,
-            action: onDropRequested
+    // MARK: - Take
+
+    /// While her own rows are read the take waits; on a job reserved for her only Confirm does, since declining it
+    /// does not depend on her other jobs.
+    @ViewBuilder
+    private func take(waiting: Bool) -> some View {
+        if preferredOffer != nil {
+            // On a job reserved for her by name the sheet runs the same command with a different word:
+            // confirming IS taking.
+            HStack(spacing: Spacing.s) {
+                CleansiaOutlinedButton(
+                    L10n.Offers.decline,
+                    contentColor: CleansiaColors.primaryText,
+                    borderColor: CleansiaColors.primary,
+                    horizontalPadding: Spacing.xs,
+                    enabled: inFlightAction == nil,
+                    action: onDeclineOffer
+                )
+                CleansiaPrimaryButton(
+                    L10n.Offers.confirm,
+                    loading: isBusy(.take),
+                    enabled: !waiting && inFlightAction == nil
+                ) { onConfirm(.take) }
+            }
+        } else {
+            // Opens the contract sheet; the deliberate gesture sits under the text it accepts. Spins while the
+            // host reconciles the order after the sheet's verdict, so it cannot reopen the sheet on a job taken.
+            CleansiaPrimaryButton(
+                L10n.Orders.takeOrder,
+                loading: isBusy(.take),
+                enabled: !waiting && inFlightAction == nil
+            ) { onConfirm(.take) }
+        }
+    }
+
+    /// The one red mark by the move: the reason, with a lock, over the Take the server would refuse.
+    private func refusedTake(start: Date, end: Date) -> some View {
+        let reason = L10n.Orders.flagOverlap(OrdersBoardRules.unbreakable(
+            OrdersFormat.timeWindow(start, minutes: Int(end.timeIntervalSince(start) / 60), locale: locale)
+        ))
+        return VStack(spacing: 10) {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Image(systemName: "lock")
+                    .font(CleansiaTypography.bodyMedium)
+                    .capBandAligned(of: CleansiaTypography.scale.bodyMedium)
+                Text(L10n.tie(reason))
+                    .font(CleansiaTypography.bodyMedium)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .foregroundColor(CleansiaColors.error)
+            .accessibilityHidden(true)
+            CleansiaPrimaryButton(
+                L10n.Orders.takeOrder,
+                enabled: false,
+                disabledContainerColor: CleansiaColors.surfaceVariant,
+                disabledContentColor: CleansiaColors.onSurfaceVariant
+            ) {}
+                .accessibilityHint(reason)
+        }
+    }
+
+    // MARK: - Slides
+
+    /// `first` runs before the move is sent: the start asked for in a sheet closes it.
+    private func slide(
+        _ move: OrderPrimaryAction,
+        idle: String,
+        busy: String,
+        detail: String? = nil,
+        first: @escaping () -> Void = {}
+    ) -> some View {
+        let busyNow = move.orderAction.map(isBusy) ?? false
+        let commit = {
+            first()
+            onConfirm(move)
+        }
+        return SlideToConfirm(
+            idleLabel: L10n.tie(idle),
+            busyLabel: L10n.tie(busy),
+            isBusy: busyNow,
+            maxLabelLines: 2,
+            thumbLanes: true,
+            detail: detail,
+            onConfirm: commit
         )
+        .slideAccessibility(
+            label: [OrdersAccessibility.slideLabel(idle: idle, busy: busy, isBusy: busyNow), detail]
+                .compactMap { $0 }.joined(separator: ", "),
+            enabled: !busyNow && inFlightAction == nil,
+            onActivate: commit
+        )
+    }
+
+    private func setOffReason(_ opensAt: Date) -> String {
+        L10n.Orders.setOffFrom(OrdersFormat.timeOnly(opensAt, locale: locale))
+    }
+
+    /// The home indicator's inset is the room under the move; a phone without one keeps 12.
+    static func bottomPadding(homeIndicator: CGFloat) -> CGFloat {
+        homeIndicator > 0 ? 0 : Spacing.s
     }
 
     private func footer(@ViewBuilder _ control: () -> some View) -> some View {
         VStack(spacing: 0) {
             control()
         }
-        .padding(Spacing.m)
+        .padding(.horizontal, Spacing.m)
+        .padding(.top, Spacing.s)
+        .padding(.bottom, Self.bottomPadding(homeIndicator: homeIndicator))
         .readableWidth()
-        .background(CleansiaColors.surface)
+        .frame(maxWidth: .infinity)
+        .background(CleansiaColors.surface.ignoresSafeArea(edges: .bottom))
+        .background(GeometryReader { space in
+            Color.clear
+                .onAppear { homeIndicator = space.safeAreaInsets.bottom }
+                .onChange(of: space.safeAreaInsets.bottom) { homeIndicator = $0 }
+        })
+        .overlay(alignment: .top) { Divider().overlay(CleansiaColors.outlineVariant) }
     }
 }
 
@@ -180,57 +271,68 @@ private struct FooterTextLink: View {
                 .padding(Spacing.xxs)
                 .frame(minHeight: 44)
         } else {
-            CleansiaTextLink(label, action: onTap)
+            CleansiaTextLink(label, maxLines: 2, action: onTap)
+                .frame(maxWidth: .infinity)
                 .disabled(!enabled)
         }
     }
 }
 
-/// Where the Complete slide stands on a crew job once the caller has marked their part done and someone
-/// else on it has not.
-private struct CrewWaitingHint: View {
-    @Environment(\.locale) private var locale
+/// *Already there? Start cleaning*: the start slide and Cancel in a sheet sized to them, so the set-off slide stays
+/// pinned behind it and a mistaken tap costs nothing.
+private struct StartConfirmation<Slide: View>: View {
+    let onCancel: () -> Void
+    @ViewBuilder let slide: () -> Slide
+    @State private var height: CGFloat = 240
 
     var body: some View {
-        HStack(spacing: Spacing.xs) {
-            Image(systemName: "person.2")
-                .foregroundColor(CleansiaColors.onSurfaceVariant)
-            Text(L10n.Orders.crewWaiting)
-                .font(CleansiaTypography.labelMedium)
-                .foregroundColor(CleansiaColors.onSurfaceVariant)
-                .multilineTextAlignment(.leading)
+        VStack(alignment: .leading, spacing: Spacing.m) {
+            Text(L10n.tie(L10n.Orders.lateAlreadyThere))
+                .cleansiaFont(CleansiaTypography.headlineSmall)
+                .foregroundColor(CleansiaColors.onSurface)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityAddTraits(.isHeader)
+            slide()
+            CleansiaTextLink(L10n.cancel, action: onCancel)
+                .frame(maxWidth: .infinity)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, Spacing.s)
         .padding(.horizontal, Spacing.m)
-        .background(CleansiaColors.surfaceVariant, in: Capsule())
-        .id(locale.identifier)
+        .padding(.top, Spacing.l)
+        .padding(.bottom, Spacing.s)
+        .background(GeometryReader { space in
+            Color.clear
+                .onAppear { height = space.size.height }
+                .onChange(of: space.size.height) { height = $0 }
+        })
+        .presentationDetents([.height(height)])
+        .presentationDragIndicator(.visible)
     }
 }
 
-/// Disabled-state stand-in for the Complete slide when no "after" photo exists
-/// yet — surfaces the server's after-photos guard early. With cash still owed the
-/// photo is only the first of three steps, so the hint spells the sequence out
-/// rather than letting the cleaner discover the cash button after uploading.
-private struct CompleteBlockedHint: View {
-    let cashPending: Bool
-
-    private var text: String {
-        cashPending ? L10n.Orders.completeBlockedCashSequence : L10n.Orders.afterPhotosRequired
-    }
+/// Her part is marked and her crew-mate's is not: Call her while she has a phone, else say who the job waits for.
+private struct CrewWait: View {
+    @Environment(\.locale) private var locale
+    @Environment(\.openURL) private var openURL
+    let mate: OrderSeat?
 
     var body: some View {
-        HStack(spacing: Spacing.xs) {
-            Image(systemName: "camera")
-                .foregroundColor(CleansiaColors.onSurfaceVariant)
-            Text(text)
-                .font(CleansiaTypography.labelMedium)
-                .foregroundColor(CleansiaColors.onSurfaceVariant)
-                .multilineTextAlignment(.leading)
+        let name = mate?.givenName ?? ""
+        Group {
+            if let call = ContactActions.callURL(phone: mate?.phone) {
+                CleansiaOutlinedButton(
+                    "\(L10n.Orders.actionCall)\(OrdersBoardRules.dot)\(name)",
+                    leadingIcon: "phone",
+                    contentColor: CleansiaColors.primaryText,
+                    borderColor: CleansiaColors.primary
+                ) { openURL(call) }
+            } else {
+                Text(L10n.tie(L10n.Orders.waitingFor(name)))
+                    .font(CleansiaTypography.bodyMedium)
+                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity, minHeight: 56)
+            }
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, Spacing.s)
-        .padding(.horizontal, Spacing.m)
-        .background(CleansiaColors.surfaceVariant, in: Capsule())
+        .id(locale.identifier)
     }
 }

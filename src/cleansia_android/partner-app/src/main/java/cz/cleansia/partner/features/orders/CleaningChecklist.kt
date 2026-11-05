@@ -1,55 +1,39 @@
 package cz.cleansia.partner.features.orders
 
-import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.PlaylistAddCheck
-import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.FirstBaseline
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
-import cz.cleansia.core.ui.theme.primaryText
+import cz.cleansia.core.ui.theme.capBandAligned
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.OrderItem
 
 /**
- * Single checklist entry — the view layer is agnostic to whether it
- * came from a service, package or extra. Parent component groups
- * entries by source.
+ * The cleaner's tick-list: the package with its rooms and baths first, then one row per extra by its catalogue name,
+ * each box on its label's first line. Ticks live on this phone only, and say so; they gate nothing. Interactive once
+ * cleaning has started.
  */
-data class ChecklistItem(
-    val id: String,
-    val label: String,
-    val leadingGlyph: String? = null,
-)
-
-/**
- * Cleaner's tick-list. Rendered while the order is in any
- * status >= Confirmed but only interactive once the cleaner has
- * actually started the job (status = InProgress) — that prevents
- * pre-checking items "on the bus" and accidentally enabling the
- * Complete button before the work is real.
- */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun CleaningChecklist(
     order: OrderItem,
@@ -58,216 +42,75 @@ fun CleaningChecklist(
     interactive: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    val services = order.selectedServices.orEmpty()
-        .mapNotNull { s ->
-            val id = s.id ?: return@mapNotNull null
-            val name = localizedScopeName(s.translations, s.name)
-                ?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
-            ChecklistItem(id = id, label = name)
-        }
-    val packages = order.selectedPackages.orEmpty()
-        .mapNotNull { p ->
-            val id = p.id ?: return@mapNotNull null
-            val name = localizedScopeName(p.translations, p.name)
-                ?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
-            ChecklistItem(id = id, label = name)
-        }
-    val extras = order.extras.orEmpty()
-        .filterValues { it }
-        .keys
-        .map { slug ->
-            ChecklistItem(
-                id = "extra:$slug",
-                label = nameForExtraSlug(slug),
-                leadingGlyph = emojiForExtraSlug(slug),
-            )
-        }
+    val locale = appLocale()
+    val row = order.asBoardRow()
+    val lead = OrdersBoardRules.scopeItems(row.copy(extras = null), locale.language).map { it.text() }
+    val leadId = order.selectedPackages?.firstNotNullOfOrNull { it.id } ?: order.selectedServices?.firstNotNullOfOrNull { it.id } ?: "scope"
+    val items = listOfNotNull(lead.takeIf { it.isNotEmpty() }?.let { leadId to it }) +
+        OrdersBoardRules.extraSlugsOf(row).map { slug -> "extra:$slug" to listOf(nameForExtraSlug(slug)) }
+    if (items.isEmpty()) return
+    val done = items.count { it.first in checkedIds }
+    val labelStyle = MaterialTheme.typography.bodyMedium
 
-    val total = services.size + packages.size + extras.size
-    if (total == 0) return
-
-    val doneCount = services.count { it.id in checkedIds } +
-        packages.count { it.id in checkedIds } +
-        extras.count { it.id in checkedIds }
-    val allDone = doneCount == total
-
-    OrderSectionCard(
-        title = stringResource(R.string.checklist_section_title),
-        icon = Icons.AutoMirrored.Outlined.PlaylistAddCheck,
-        modifier = modifier,
-    ) {
-        Column(
-            modifier = Modifier.animateContentSize(),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            ChecklistProgressRow(
-                doneCount = doneCount,
-                total = total,
-                interactive = interactive,
-                allDone = allDone,
-            )
-
-            if (services.isNotEmpty()) {
-                ChecklistGroup(
-                    label = stringResource(R.string.checklist_services_label),
-                    items = services,
-                    checkedIds = checkedIds,
-                    interactive = interactive,
-                    onToggle = onToggle,
-                )
-            }
-            if (packages.isNotEmpty()) {
-                ChecklistGroup(
-                    label = stringResource(R.string.checklist_packages_label),
-                    items = packages,
-                    checkedIds = checkedIds,
-                    interactive = interactive,
-                    onToggle = onToggle,
-                )
-            }
-            if (extras.isNotEmpty()) {
-                ChecklistGroup(
-                    label = stringResource(R.string.checklist_extras_label),
-                    items = extras,
-                    checkedIds = checkedIds,
-                    interactive = interactive,
-                    onToggle = onToggle,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ChecklistProgressRow(
-    doneCount: Int,
-    total: Int,
-    interactive: Boolean,
-    allDone: Boolean,
-) {
-    val progress = if (total == 0) 0f else doneCount.toFloat() / total
-    Column {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
+    Column(modifier.fillMaxWidth()) {
+        FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, itemVerticalAlignment = Alignment.CenterVertically) {
+            PartHeading(stringResource(R.string.checklist_section_title), Modifier.padding(end = 8.dp))
             Text(
-                text = stringResource(R.string.checklist_progress, doneCount, total),
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = if (allDone) primaryText()
-                    else MaterialTheme.colorScheme.onSurface,
-            )
-            if (allDone) {
-                Icon(
-                    imageVector = Icons.Outlined.CheckCircle,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(24.dp),
-                )
-            }
-        }
-        Spacer(Modifier.height(8.dp))
-        LinearProgressIndicator(
-            progress = { progress.coerceIn(0f, 1f) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(6.dp)
-                .clip(RoundedCornerShape(3.dp)),
-            color = if (allDone) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
-            trackColor = MaterialTheme.colorScheme.surfaceVariant,
-            // Hide the M3 stop-indicator dot so the bar reads as a
-            // clean fill rather than "progress + something else."
-            drawStopIndicator = {},
-            gapSize = 0.dp,
-            strokeCap = androidx.compose.ui.graphics.StrokeCap.Round,
-        )
-        if (!interactive) {
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = stringResource(R.string.checklist_locked_hint),
-                style = MaterialTheme.typography.labelSmall,
+                text = stringResource(R.string.checklist_progress, done, items.size),
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-        } else if (allDone) {
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = stringResource(R.string.checklist_all_done_hint),
-                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                color = primaryText(),
-            )
         }
-    }
-}
-
-@Composable
-private fun ChecklistGroup(
-    label: String,
-    items: List<ChecklistItem>,
-    checkedIds: Set<String>,
-    interactive: Boolean,
-    onToggle: (itemId: String, checked: Boolean) -> Unit,
-) {
-    Column {
+        Column(Modifier.padding(top = 8.dp)) {
+            items.forEach { (id, words) ->
+                val checked = id in checkedIds
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp)
+                        .toggleable(value = checked, enabled = interactive, role = Role.Checkbox) { onToggle(id, it) },
+                    verticalAlignment = Alignment.Top,
+                ) {
+                    Box(
+                        Modifier
+                            .then(capBandAligned(labelStyle))
+                            .layout { measurable, constraints ->
+                                val placeable = measurable.measure(constraints)
+                                val inset = BoxInset.roundToPx()
+                                layout(placeable.width - inset, placeable.height) { placeable.place(-inset, 0) }
+                            }
+                            .size(48.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Checkbox(
+                            checked = checked,
+                            onCheckedChange = null,
+                            enabled = interactive,
+                            colors = CheckboxDefaults.colors(
+                                checkedColor = MaterialTheme.colorScheme.primary,
+                                uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                checkmarkColor = MaterialTheme.colorScheme.onPrimary,
+                            ),
+                        )
+                    }
+                    DotFlow(
+                        items = words.map { AnnotatedString(OrdersBoardRules.tie(it)) },
+                        style = labelStyle,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(1f).alignBy(FirstBaseline).padding(start = 4.dp, bottom = 12.dp),
+                        tieLast = true,
+                    )
+                }
+            }
+        }
         Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
+            text = OrdersBoardRules.tie(stringResource(R.string.checklist_phone_only)),
+            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 4.dp),
-        )
-        items.forEach { item ->
-            ChecklistRow(
-                item = item,
-                checked = item.id in checkedIds,
-                interactive = interactive,
-                onToggle = { value -> onToggle(item.id, value) },
-            )
-        }
-    }
-}
-
-@Composable
-private fun ChecklistRow(
-    item: ChecklistItem,
-    checked: Boolean,
-    interactive: Boolean,
-    onToggle: (Boolean) -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 2.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Checkbox(
-            checked = checked,
-            onCheckedChange = if (interactive) onToggle else null,
-            enabled = interactive,
-            colors = CheckboxDefaults.colors(
-                checkedColor = MaterialTheme.colorScheme.primary,
-                uncheckedColor = MaterialTheme.colorScheme.outline,
-                disabledCheckedColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                disabledUncheckedColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-            ),
-        )
-        Spacer(Modifier.width(4.dp))
-        if (item.leadingGlyph != null) {
-            Text(
-                text = item.leadingGlyph,
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(end = 8.dp),
-            )
-        }
-        Text(
-            text = item.label,
-            style = MaterialTheme.typography.bodyMedium.copy(
-                fontWeight = if (checked) FontWeight.Normal else FontWeight.Medium,
-                textDecoration = if (checked) TextDecoration.LineThrough else TextDecoration.None,
-            ),
-            color = if (checked) MaterialTheme.colorScheme.onSurfaceVariant
-                else MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(top = 4.dp),
         )
     }
 }
 
+/** The 48 target's side margin to the 18 box it holds, so the box's edge stands on the column's edge. */
+private val BoxInset = 15.dp

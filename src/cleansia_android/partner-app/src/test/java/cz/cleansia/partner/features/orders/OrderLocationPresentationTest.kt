@@ -46,38 +46,23 @@ class OrderLocationPresentationTest {
     }
 
     @Test
-    fun `a browsing cleaner gets no map and no Navigate`() {
-        val location = browsing.orderLocation()
-        assertNull(location.navigationTarget())
-        assertNull(location.mapPoint())
+    fun `a browsing cleaner gets no Navigate`() {
+        assertNull(browsing.orderLocation().navigationTarget())
     }
 
     @Test
-    fun `an entitled reader keeps the street address, the map and Navigate`() {
+    fun `an entitled reader keeps the street address and Navigate`() {
         val location = entitled.orderLocation()
         assertEquals(OrderLocation.Precise("Korunní 810/104, Praha, 12000", 50.0755, 14.4378), location)
-        assertEquals(location, location.navigationTarget())
-        assertEquals(50.0755 to 14.4378, location.mapPoint())
-    }
-
-    /**
-     * Owner ruling 2026-08-27, reversing 2026-08-24: a cancelled job still had a place, and
-     * withholding the map read as a map that had failed to load rather than as a decision.
-     */
-    @Test
-    fun `a cancelled order keeps its map for an entitled reader`() {
-        val location = entitled.orderLocation()
-        assertEquals(50.0755 to 14.4378, location.mapPoint())
         assertEquals(location, location.navigationTarget())
     }
 
     /** Orders that predate the geocoding backfill navigate by free-text query. */
     @Test
-    fun `an entitled address without coordinates still navigates but shows no map`() {
+    fun `an entitled address without coordinates still navigates`() {
         val location = OrderItem(address = precise.copy(latitude = null, longitude = null)).orderLocation()
         assertEquals("Korunní 810/104, Praha, 12000", location.line)
         assertEquals(location, location.navigationTarget())
-        assertNull(location.mapPoint())
     }
 
     /**
@@ -91,7 +76,6 @@ class OrderLocationPresentationTest {
         assertEquals(OrderLocation.None, location)
         assertNull(location.line)
         assertNull(location.navigationTarget())
-        assertNull(location.mapPoint())
     }
 
     @Test
@@ -102,7 +86,6 @@ class OrderLocationPresentationTest {
         ).orderLocation()
         assertEquals(OrderLocation.Approximate("Praha · 120"), location)
         assertNull(location.navigationTarget())
-        assertNull(location.mapPoint())
     }
 
     @Test

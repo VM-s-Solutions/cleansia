@@ -379,7 +379,9 @@ const SURFACES = [
                 /^\s*case\s+((?:\.\w+)(?:\s*,\s*\.\w+)*)\s*:/,
             );
             if (!br.length) return "no `case .X:` branches inside `switch status`";
-            const take = br.filter((b) => /\.take\b/.test(b.body));
+            // A branch offers Take by returning `.take` or through the `take(clash:…)` resolver,
+            // which turns the same offer into its waiting or overlapping form.
+            const take = br.filter((b) => /\.take\b|\btake\(/.test(b.body));
             if (!take.length) return "no branch of `switch status` returns .take";
             const statuses = new Set();
             for (const b of take) for (const o of swiftTokens(b.labels)) statuses.add(o);

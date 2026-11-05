@@ -122,8 +122,8 @@ final class OrderPhotosViewModel: ViewModel {
             .success("preview")
         }
 
-        func getPaged(_: OrderPageQuery) async -> ApiResult<[OrderListItem]> {
-            .success([])
+        func getPaged(_: OrderPageQuery) async -> ApiResult<OrderPage> {
+            .success(OrderPage(rows: [], total: 0))
         }
 
         func getById(orderId _: String) async -> ApiResult<OrderDetail> {

@@ -1,16 +1,21 @@
 import CleansiaCore
+import CleansiaPartnerApi
 import SwiftUI
 
+/// The job detail. With the board's row for this id it draws the job at once and fills the rest when `GetById`
+/// answers; with none (a push, the Dashboard) it holds every value as a flat bar until then. Opened from the removal
+/// notice for a job she is off, it is the page that says so, in place of the job.
 struct OrderDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var vm: OrderDetailViewModel
     @StateObject private var checklistVM: CleaningChecklistViewModel
     @StateObject private var notesVM: OrderNotesViewModel
     @StateObject private var photosVM: OrderPhotosViewModel
-    @State private var snapAnchor: SnapAnchor = .peek
     private let client: PartnerOrderClient
-    private let mapProvider: MapProvider
     private let onOpenLegalDocuments: () -> Void
+    private let onOpenJob: ((String) -> Void)?
+    private let onBrowseJobs: (() -> Void)?
+    private let onOpenEarnings: (() -> Void)?
 
     init(
         orderId: String,
@@ -18,10 +23,14 @@ struct OrderDetailView: View {
         staleness: OrdersStaleness,
         checklistStore: CleaningChecklistStore,
         snackbar: SnackbarController,
-        mapProvider: MapProvider,
         pendingOffers: PendingOffersStore,
+        boardStore: OrdersBoardStore? = nil,
         showRemovalReason: Bool = false,
-        onOpenLegalDocuments: @escaping () -> Void
+        onOpenLegalDocuments: @escaping () -> Void,
+        onOpenJob: ((String) -> Void)? = nil,
+        onBrowseJobs: (() -> Void)? = nil,
+        onOpenEarnings: (() -> Void)? = nil,
+        now: @escaping () -> Date = { Date() }
     ) {
         _vm = StateObject(
             wrappedValue: OrderDetailViewModel(
@@ -30,7 +39,9 @@ struct OrderDetailView: View {
                 staleness: staleness,
                 snackbar: snackbar,
                 pendingOffers: pendingOffers,
-                showRemovalReason: showRemovalReason
+                boardStore: boardStore,
+                showRemovalReason: showRemovalReason,
+                now: now
             )
         )
         _checklistVM = StateObject(
@@ -43,43 +54,45 @@ struct OrderDetailView: View {
             wrappedValue: OrderPhotosViewModel(orderId: orderId, client: client, snackbar: snackbar)
         )
         self.client = client
-        self.mapProvider = mapProvider
         self.onOpenLegalDocuments = onOpenLegalDocuments
+        self.onOpenJob = onOpenJob
+        self.onBrowseJobs = onBrowseJobs
+        self.onOpenEarnings = onOpenEarnings
     }
 
     var body: some View {
-        content
-            .alert(
-                L10n.Orders.removalTitle,
-                isPresented: Binding(
-                    get: { vm.removalReason != nil },
-                    set: { if !$0 { vm.dismissRemovalReason() } }
-                ),
-                presenting: vm.removalReason
-            ) { _ in
-                Button(L10n.close, role: .cancel) {}
-            } message: { reason in
-                Text(L10n.Orders.removalMessage(reason))
-            }
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar(.hidden, for: .tabBar)
-            .sheet(item: contractRequest) { request in
-                WorkContractSheet(
-                    request: request,
-                    client: client,
-                    onDismiss: vm.dismissContract,
-                    onOutcome: { outcome in Task { await vm.onWorkContractOutcome(outcome) } },
-                    onOpenLegalDocuments: {
-                        vm.dismissContract()
-                        onOpenLegalDocuments()
-                    }
-                )
-            }
-            .task { await vm.load() }
-            .task(id: vm.canReadPhotos) { await photosVM.load(isAuthorized: vm.canReadPhotos) }
-            .onReceive(notesVM.mutated) { Task { await vm.load() } }
-            .onReceive(photosVM.mutated) { Task { await vm.load() } }
-            .onReceive(vm.left) { dismiss() }
+        TimelineView(.periodic(from: .now, by: 30)) { _ in
+            content(now: vm.now())
+        }
+        // The page draws its own back control in the band. Not `.navigationBarBackButtonHidden`: the swipe-back
+        // delegate refuses a screen that hides its back button.
+        .toolbar(.hidden, for: .navigationBar)
+        .toolbar(.hidden, for: .tabBar)
+        .background(InteractivePopGestureEnabler())
+        .sheet(item: contractRequest) { request in
+            WorkContractSheet(
+                request: request,
+                client: client,
+                taken: vm.takenJob,
+                endsOnTakenPanel: true,
+                onDismiss: vm.dismissContract,
+                onOutcome: { outcome in Task { await vm.onWorkContractOutcome(outcome) } },
+                onOpenLegalDocuments: {
+                    vm.dismissContract()
+                    onOpenLegalDocuments()
+                },
+                onOpenJob: vm.dismissContract,
+                onBackToJobs: {
+                    vm.dismissContract()
+                    if let onBrowseJobs { onBrowseJobs() } else { dismiss() }
+                }
+            )
+        }
+        .task { await vm.load() }
+        .task(id: vm.canReadPhotos) { await photosVM.load(isAuthorized: vm.canReadPhotos) }
+        .onReceive(notesVM.mutated) { Task { await vm.load() } }
+        .onReceive(photosVM.mutated) { Task { await vm.load() } }
+        .onReceive(vm.left) { dismiss() }
     }
 
     private var contractRequest: Binding<WorkContractRequest?> {
@@ -90,169 +103,82 @@ struct OrderDetailView: View {
     }
 
     @ViewBuilder
-    private var content: some View {
-        switch vm.state {
-        case .loading:
-            ProgressView()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(CleansiaColors.background.ignoresSafeArea())
-        case let .error(error):
-            OrderDetailErrorView(error: error) { Task { await vm.load() } }
-        case let .loaded(order):
-            loadedShell(order)
-        }
-    }
-
-    private func loadedShell(_ order: OrderDetail) -> some View {
-        SnapSheet(anchor: $snapAnchor) {
-            mapBackdrop(order)
-        } ornament: {
-            OrderDetailOrnament(order: order)
-        } content: {
-            OrderDetailContent(
-                order: order,
-                primaryAction: vm.primaryAction,
-                offersCashNotPaid: vm.offersCashNotPaid,
-                inFlightAction: vm.inFlightAction,
-                preferredOffer: vm.preferredOffer,
-                refusal: vm.refusal,
-                contractStanding: vm.contractStanding,
-                onConfirm: { action in Task { await vm.dispatch(action) } },
-                onOpenContract: vm.openContract,
-                onDeclineOffer: { Task { await vm.declinePreferredOffer() } },
-                onDismissRefusal: vm.dismissActionError,
-                onReportLockout: { note in Task { await vm.reportLockout(note) } },
-                onReportCashNotPaid: { Task { await vm.reportCashNotPaid() } },
-                canDropOrder: vm.canDropOrder,
-                onDropOrder: { Task { await vm.dropOrder() } },
-                checklistVM: checklistVM,
-                notesVM: notesVM,
-                photosVM: photosVM
+    private func content(now: Date) -> some View {
+        if let removal = vm.removal {
+            RemovalPage(
+                page: removal,
+                now: now,
+                onCheckAgain: { Task { await vm.checkAgain() } },
+                onOpenJob: onOpenJob,
+                onBrowseJobs: onBrowseJobs
             )
-        }
-    }
-
-    @ViewBuilder
-    private func mapBackdrop(_ order: OrderDetail) -> some View {
-        // The View never imports MapKit — the provider encapsulates it.
-        if let coordinate = order.mapCoordinate {
-            mapProvider.fullBleedMap(coordinate: coordinate)
         } else {
-            ApproximateAreaBackdrop(
-                zone: order.location.line,
-                customerDetailsClosed: order.customerDetailsClosedNote != nil
-            )
-        }
-    }
-}
-
-/// Decorative detail art yields its space to job information at accessibility text sizes.
-struct OrderDetailOrnament: View {
-    @Environment(\.dynamicTypeSize) private var textSize
-    let order: OrderDetail
-
-    var body: some View {
-        if !textSize.isAccessibilitySize {
-            MascotPuck(OrderDetailMascotArt.art(for: order.status))
-        }
-    }
-}
-
-/// Stands in for the map when no coordinate was released to this caller. The withheld point is not a
-/// failure — the server nulls the address for a cleaner who has not taken the job — but an empty pane
-/// says "the map broke", so this names the coarse zone that *did* arrive and why the pin is missing.
-private struct ApproximateAreaBackdrop: View {
-    @Environment(\.locale) private var locale
-    /// Where the sheet's top edge is, in THIS view's coordinates, published by SnapSheet itself.
-    @Environment(\.snapSheetTop) private var sheetTop
-    @Environment(\.snapSheetSafeTop) private var safeTop
-    let zone: String?
-    let customerDetailsClosed: Bool
-
-    var body: some View {
-        ZStack(alignment: .top) {
-            CleansiaColors.primaryContainer
-            ViewThatFits(in: .vertical) {
-                legend.fixedSize(horizontal: false, vertical: true)
-                Color.clear
-            }
-            .padding(.horizontal, Spacing.xl)
-            .frame(maxWidth: .infinity)
-            .frame(height: max(sheetTop - safeTop, 0))
-            .clipped()
-            .padding(.top, safeTop)
-        }
-        .id(locale.identifier)
-    }
-
-    private var legend: some View {
-        VStack(spacing: Spacing.xs) {
-            Image(systemName: "mappin.and.ellipse")
-                .font(.system(size: 32))
-                .foregroundColor(CleansiaColors.onPrimaryContainer)
-            if let zone, !zone.isBlank {
-                Text(zone)
-                    .font(CleansiaTypography.titleMedium)
-                    .foregroundColor(CleansiaColors.onPrimaryContainer)
-            }
-            if !customerDetailsClosed {
-                Text(L10n.Orders.mapApproximateArea)
-                    .font(CleansiaTypography.bodyMedium)
-                    .foregroundColor(CleansiaColors.onPrimaryContainer.opacity(0.8))
-                    .multilineTextAlignment(.center)
-            }
-        }
-    }
-}
-
-private struct OrderDetailErrorView: View {
-    let error: ApiError
-    let onRetry: () -> Void
-
-    var body: some View {
-        VStack(spacing: Spacing.m) {
-            Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 40))
-                .foregroundColor(CleansiaColors.error)
-            Text(ApiErrorLocalizer().message(for: error))
-                .font(CleansiaTypography.bodyMedium)
-                .foregroundColor(CleansiaColors.onSurfaceVariant)
-                .multilineTextAlignment(.center)
-            CleansiaOutlinedButton(L10n.retry, size: .medium, action: onRetry)
-                .fixedSize()
-        }
-        .padding(Spacing.xl)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(CleansiaColors.background.ignoresSafeArea())
-    }
-}
-
-#if DEBUG
-    struct OrderDetailView_Previews: PreviewProvider {
-        static var previews: some View {
-            Group {
-                stateView(.loading).previewDisplayName("Loading")
-                stateView(.error(ApiError(httpStatus: 500))).previewDisplayName("Error")
-                OrderDetailContent(
-                    order: .preview,
-                    checklistVM: .preview,
-                    notesVM: .preview,
-                    photosVM: .preview
-                )
-                .previewDisplayName("Loaded content")
-            }
-        }
-
-        @ViewBuilder
-        private static func stateView(_ state: UiState<OrderDetail>) -> some View {
-            switch state {
+            switch vm.state {
             case .loading:
-                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
-            case let .error(error):
-                OrderDetailErrorView(error: error, onRetry: {})
-            case .loaded:
-                EmptyView()
+                if let row = vm.rowDetail {
+                    page(row, now: now, rest: .loading)
+                } else {
+                    NoRowSkeleton()
+                }
+            case .error:
+                if let row = vm.rowDetail {
+                    page(row, now: now, rest: .failed)
+                } else {
+                    NoRowFailure(
+                        isGone: vm.isGone,
+                        now: now,
+                        ownRows: vm.storedOwnRows,
+                        openRows: vm.storedOpenRows,
+                        openTotal: vm.storedOpenTotal,
+                        onRetry: { Task { await vm.load() } },
+                        onOpenJob: onOpenJob,
+                        onBrowseJobs: onBrowseJobs
+                    )
+                }
+            case let .loaded(order):
+                page(order, now: now, rest: .loaded)
             }
         }
     }
-#endif
+
+    private func page(_ order: OrderDetail, now: Date, rest: OrderDetailContent.Rest) -> some View {
+        let loaded = rest == .loaded
+        let rowMove = OrderPrimaryAction.fromRow(order, loading: rest == .loading, now: now)
+        return OrderDetailContent(
+            order: order,
+            now: now,
+            photos: photosVM.state.loadedValue ?? [],
+            myEmployeeId: vm.myEmployeeId,
+            band: vm.band,
+            ownRows: vm.ownRows?.loadedValue ?? vm.storedOwnRows,
+            openRows: vm.storedOpenRows,
+            openTotal: vm.storedOpenTotal,
+            hasBoardRow: vm.boardRow != nil,
+            clash: vm.clashingJob,
+            rest: rest,
+            primaryAction: loaded ? vm.primaryAction : rowMove ?? .none,
+            holdsMoveSlot: !loaded && rowMove == nil,
+            offersCashNotPaid: loaded && vm.offersCashNotPaid,
+            offersStartFromConfirmed: loaded && vm.offersStartFromConfirmed,
+            inFlightAction: vm.inFlightAction,
+            preferredOffer: vm.preferredOffer,
+            refusal: vm.refusal,
+            contractStanding: loaded ? vm.contractStanding : .none,
+            canDropOrder: loaded && vm.canDropOrder,
+            onConfirm: { action in Task { await vm.dispatch(action) } },
+            onOpenContract: vm.openContract,
+            onDeclineOffer: { Task { await vm.declinePreferredOffer() } },
+            onDismissRefusal: vm.dismissActionError,
+            onReportLockout: { note in Task { await vm.reportLockout(note) } },
+            onReportCashNotPaid: { Task { await vm.reportCashNotPaid() } },
+            onDropOrder: { Task { await vm.dropOrder() } },
+            onRetry: { Task { await vm.load() } },
+            onOpenJob: onOpenJob,
+            onBrowseJobs: onBrowseJobs,
+            onOpenEarnings: onOpenEarnings,
+            checklistVM: checklistVM,
+            notesVM: notesVM,
+            photosVM: photosVM
+        )
+    }
+}

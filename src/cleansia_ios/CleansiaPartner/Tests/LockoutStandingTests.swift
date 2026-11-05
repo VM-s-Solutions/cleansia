@@ -90,6 +90,26 @@ final class LockoutStandingTests: XCTestCase {
         }
     }
 
+    /// The block opens by the detail's clock, the one the run sheet orders its step by: the card keeps none of its
+    /// own, so the two can never disagree about whether she can report yet.
+    func testTheLockoutOpensByTheDetailsOwnClock() throws {
+        let folder = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("Sources/Features/Orders")
+        let compact = { (name: String) in
+            try String(contentsOf: folder.appendingPathComponent(name), encoding: .utf8)
+                .components(separatedBy: .whitespacesAndNewlines).joined()
+        }
+        let card = try compact("LockoutCard.swift")
+        let sheet = try compact("JobRunSheet.swift")
+
+        XCTAssertFalse(card.contains("Date()"), "the card keeps no clock of its own")
+        XCTAssertTrue(card.contains("letnow:Date"))
+        XCTAssertTrue(card.contains("order.lockoutStanding(now:now)"))
+        XCTAssertTrue(sheet.contains("LockoutCard(order:order,now:now,"))
+    }
+
     private static func serverWaitMinutes() throws -> Int {
         let policy = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()

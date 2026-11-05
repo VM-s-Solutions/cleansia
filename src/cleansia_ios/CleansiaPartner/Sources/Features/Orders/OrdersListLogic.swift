@@ -16,55 +16,23 @@ enum OrdersTab: CaseIterable {
     }
 }
 
+/// The Available tab's order. The server sorts by start across every page; pay it sorts within a page only, so
+/// "best pay" is a local sort offered only once every row is loaded (`OrdersBoardRules.bestPayOffered`).
 enum AvailableSort: CaseIterable {
-    case earningsHighToLow
-    case soonestFirst
-    case priceHighToLow
-
-    var field: String {
-        switch self {
-        case .earningsHighToLow: "estimatedCleanerPay"
-        case .soonestFirst: "cleaningDateTime"
-        case .priceHighToLow: "totalPrice"
-        }
-    }
-
-    var ascending: Bool {
-        switch self {
-        case .earningsHighToLow, .priceHighToLow: false
-        case .soonestFirst: true
-        }
-    }
+    case soonest
+    case bestPay
 }
 
 enum CompletedPeriod: CaseIterable {
     case thisWeek
     case thisMonth
     case lastMonth
-    case all
-}
-
-enum ActiveDayBucket: Int, CaseIterable {
-    case today
-    case tomorrow
-    case later
-
-    static func of(_ date: Date?, calendar: Calendar = .current, now: Date = Date()) -> ActiveDayBucket {
-        guard let date else { return .later }
-        let day = calendar.startOfDay(for: date)
-        let today = calendar.startOfDay(for: now)
-        guard let tomorrow = calendar.date(byAdding: .day, value: 1, to: today) else { return .later }
-        if day == today { return .today }
-        if day == tomorrow { return .tomorrow }
-        return .later
-    }
 }
 
 enum OrdersQueryBuilder {
     static func query(
         tab: OrdersTab,
         ownEmployeeId: String?,
-        sort: AvailableSort,
         period: CompletedPeriod,
         calendar: Calendar = .current,
         now: Date = Date()
@@ -79,8 +47,8 @@ enum OrdersQueryBuilder {
                 excludeEmployeeId: ownEmployeeId,
                 cleaningDateFrom: nil,
                 cleaningDateTo: nil,
-                sortField: sort.field,
-                sortAscending: sort.ascending
+                sortField: "cleaningDateTime",
+                sortAscending: true
             )
         case .active:
             return OrderPageQuery(
@@ -106,6 +74,23 @@ enum OrdersQueryBuilder {
         }
     }
 
+    /// The row a take just made the cleaner's own, read back through the list (never the audited detail read)
+    /// so the taken state can show its street.
+    static func takenRow(orderId: String, ownEmployeeId: String) -> OrderPageQuery {
+        var query = query(tab: .active, ownEmployeeId: ownEmployeeId, period: .thisMonth)
+        query.id = orderId
+        query.limit = 1
+        return query
+    }
+
+    /// A reserved job's board row when it is not on the loaded page: the Available query narrowed to its id.
+    static func reservedRow(orderId: String, ownEmployeeId: String) -> OrderPageQuery {
+        var query = query(tab: .available, ownEmployeeId: ownEmployeeId, period: .thisMonth)
+        query.id = orderId
+        query.limit = 1
+        return query
+    }
+
     /// Half-open [from, to) date range for the History period filter (the
     /// `periodToDateRange` parity, `OrdersListViewModel.kt:366-388`).
     static func periodToDateRange(
@@ -115,6 +100,7 @@ enum OrdersQueryBuilder {
     ) -> (from: Date?, to: Date?) {
         var calendar = baseCalendar
         calendar.timeZone = baseCalendar.timeZone
+        calendar.firstWeekday = 2
         let today = calendar.startOfDay(for: now)
 
         switch period {
@@ -133,34 +119,55 @@ enum OrdersQueryBuilder {
                   let lastMonthStart = calendar.date(byAdding: .month, value: -1, to: thisMonthStart)
             else { return (nil, nil) }
             return (lastMonthStart, thisMonthStart)
-        case .all:
-            return (nil, nil)
         }
+    }
+
+    /// The period's name on the History control: "This week", else the standalone month name ("LLLL"), its first
+    /// letter upper-cased in the locale.
+    static func periodLabel(
+        _ period: CompletedPeriod,
+        locale: Locale,
+        calendar: Calendar = .current,
+        now: Date = Date()
+    ) -> String {
+        guard period != .thisWeek, let start = periodToDateRange(period, calendar: calendar, now: now).from else {
+            return L10n.Orders.periodThisWeek
+        }
+        let month = OrdersFormat.pattern("LLLL", start, locale: locale)
+        guard let first = month.first else { return month }
+        return String(first).uppercased(with: locale) + month.dropFirst()
     }
 }
 
 extension OrderListItem {
-    /// Client-side row filter (the `matchesSearch` parity): order number,
-    /// customer name, or address contains the query (case-insensitive).
-    func matchesSearch(_ query: String) -> Bool {
-        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return true }
-        let needle = trimmed.lowercased()
-        let haystacks = [displayOrderNumber, customerName, customerAddress]
-        return haystacks.contains { $0?.lowercased().contains(needle) == true }
-    }
-
-    var coordinate: Coordinate? {
-        guard let lat = customerAddressLatitude, let lon = customerAddressLongitude else { return nil }
-        return Coordinate(latitude: lat, longitude: lon)
-    }
-
-    func distanceKm(from current: Coordinate?) -> Double? {
-        guard let current, let coordinate else { return nil }
-        return current.distanceKm(to: coordinate)
-    }
-
     var isInProgress: Bool {
         status == ._4
+    }
+}
+
+extension PartnerOrderClient {
+    /// Every page of `query`, so the overlap check and a period's totals see every row: the Active and History
+    /// tabs, and the job detail's own read of her jobs when the board holds none.
+    func everyPage(_ query: OrderPageQuery) async -> ApiResult<OrderPage> {
+        var rows: [OrderListItem] = []
+        var offset = 0
+        for _ in 0 ..< 50 {
+            var page = query
+            page.offset = offset
+            switch await getPaged(page) {
+            case let .success(result):
+                rows = OrdersBoardRules.appendPage(rows, result.rows)
+                offset += result.rows.count
+                let done = OrdersBoardRules.pagesComplete(
+                    loaded: offset,
+                    total: result.total,
+                    lastPageCount: result.rows.count
+                )
+                if done { return .success(OrderPage(rows: rows, total: result.total)) }
+            case let .failure(error):
+                return .failure(error)
+            }
+        }
+        return .success(OrderPage(rows: rows, total: rows.count))
     }
 }

@@ -33,6 +33,10 @@ data class WorkContractJobFacts(
     val services: List<String>,
     val packages: List<String>,
     val extraSlugs: List<String>,
+    /** The id of `services[i]` at index i, so the take sheet can show the row's translated name for it. */
+    val serviceIds: List<String> = emptyList(),
+    /** The id of `packages[i]` at index i. */
+    val packageIds: List<String> = emptyList(),
 )
 
 data class WorkContractAcceptanceFacts(
@@ -66,12 +70,16 @@ private fun WorkContractFacts.toDomain(): WorkContractJobFacts = WorkContractJob
     locationApproximate = locationApproximate,
     rooms = rooms.required("facts.rooms"),
     bathrooms = bathrooms.required("facts.bathrooms"),
-    services = services.orEmpty().names(),
-    packages = packages.orEmpty().names(),
+    services = services.orEmpty().named().map { it.second },
+    packages = packages.orEmpty().named().map { it.second },
     extraSlugs = extraSlugs.orEmpty(),
+    serviceIds = services.orEmpty().named().map { it.first },
+    packageIds = packages.orEmpty().named().map { it.first },
 )
 
-private fun List<WorkContractFactsLine>.names(): List<String> = mapNotNull { it.name?.takeIf(String::isNotBlank) }
+/** The lines with a name, as (id, name): one pass keeps index i of the ids on name i. */
+private fun List<WorkContractFactsLine>.named(): List<Pair<String, String>> =
+    mapNotNull { line -> line.name?.takeIf(String::isNotBlank)?.let { line.id.orEmpty() to it } }
 
 private fun WorkContractAcceptanceDetails.toDomain(): WorkContractAcceptanceFacts = WorkContractAcceptanceFacts(
     acceptedOn = acceptedOn.required("acceptance.acceptedOn"),

@@ -53,23 +53,19 @@ final class PartnerReadableWidthTests: XCTestCase {
 
     func testTheOrdersListSpansAPhoneAsBefore() async throws {
         for size in narrow {
-            let list = try await activeOrdersFrames(in: size)
-            XCTAssertEqual(list.row.minX, 0, accuracy: 0.5, "\(size)")
-            XCTAssertEqual(list.row.width, size.width, accuracy: 0.5, "\(size)")
-            XCTAssertEqual(list.tabs.minX, Spacing.m, accuracy: 0.5, "\(size)")
-            XCTAssertEqual(list.tabs.width, size.width - 2 * Spacing.m, accuracy: 0.5, "\(size)")
+            let pane = try await activeOrdersPane(in: size)
+            XCTAssertEqual(pane.minX, 0, accuracy: 0.5, "\(size)")
+            XCTAssertEqual(pane.width, size.width, accuracy: 0.5, "\(size)")
         }
     }
 
-    /// An active job's slide spans its row inside the row's margins, so the row held to the readable width holds the
-    /// slide there too, under tabs held to it as well.
+    /// The Active pane, its hero and the hero's slide inside the pane's margins, is held to the readable width and
+    /// centred on a wider canvas.
     func testTheOrdersListHoldsTheActiveJobsSlideToTheReadableWidthOnAWiderCanvas() async throws {
         for size in wide {
-            let list = try await activeOrdersFrames(in: size)
-            XCTAssertEqual(list.row.width, cap, accuracy: 0.5, "\(size)")
-            XCTAssertEqual(list.row.midX, size.width / 2, accuracy: 0.5, "\(size)")
-            XCTAssertEqual(list.tabs.width, cap - 2 * Spacing.m, accuracy: 0.5, "\(size)")
-            XCTAssertEqual(list.tabs.midX, size.width / 2, accuracy: 0.5, "\(size)")
+            let pane = try await activeOrdersPane(in: size)
+            XCTAssertEqual(pane.width, cap, accuracy: 0.5, "\(size)")
+            XCTAssertEqual(pane.midX, size.width / 2, accuracy: 0.5, "\(size)")
         }
     }
 
@@ -123,9 +119,9 @@ final class PartnerReadableWidthTests: XCTestCase {
         return try XCTUnwrap(probes.frames["form"], "the form never laid out at \(size)")
     }
 
-    /// The Orders screen on its Active tab with one job about to start, which its row offers as a slide: the row
-    /// and the tabs, where they lay out.
-    private func activeOrdersFrames(in size: CGSize) async throws -> (row: CGRect, tabs: CGRect) {
+    /// The Orders screen on its Active tab with one job on the way, which its hero offers as a slide: the pane's
+    /// scroll view, where it lays out.
+    private func activeOrdersPane(in size: CGSize) async throws -> CGRect {
         let client = FakePartnerOrderClient()
         client.pagedResult = .success([.sample(id: "job", status: ._3, cleaningDateTime: Date())])
         let vm = OrdersListViewModel(
@@ -134,16 +130,14 @@ final class PartnerReadableWidthTests: XCTestCase {
             snackbar: SnackbarController()
         )
         await vm.selectTab(.active)
-        XCTAssertEqual(vm.inlineAction(for: .sample(id: "job", status: ._3)), .start)
+        XCTAssertEqual(OrdersBoardRules.heroControl(.sample(id: "job", status: ._3), now: Date()), .start)
         let canvas = try HostedCanvas(size: size, safeArea: phoneSafeArea) {
             OrdersListView(vm: vm)
-                .environment(\.locationProvider, OrdersListViewModelTests.FakeLocationProvider())
         }
         defer { canvas.close() }
-        await canvas.settle { !canvas.views(of: UICollectionViewCell.self).isEmpty }
-        let row = try XCTUnwrap(canvas.views(of: UICollectionViewCell.self).first, "no job row at \(size)")
-        let tabs = try XCTUnwrap(canvas.views(of: UISegmentedControl.self).first, "no tabs at \(size)")
-        return (canvas.frame(of: row), canvas.frame(of: tabs))
+        await canvas.settle { !canvas.views(of: UIScrollView.self).isEmpty }
+        let pane = try XCTUnwrap(canvas.views(of: UIScrollView.self).first, "no Active pane at \(size)")
+        return canvas.frame(of: pane)
     }
 
     private func invoicesListFrame(in size: CGSize) async throws -> CGRect {

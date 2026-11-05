@@ -16,35 +16,43 @@ struct NotesAndIssuesSection: View {
     let isReadOnly: Bool
     @ObservedObject var vm: OrderNotesViewModel
 
+    @Environment(\.locale) private var locale
     @State private var entry: EntryContext?
     @State private var deletion: DeletionContext?
 
     var body: some View {
-        OrderSectionCard(title: L10n.Orders.notesAndIssues, systemImage: "note.text") {
-            VStack(alignment: .leading, spacing: Spacing.s) {
-                ForEach(notes, id: \.id) { note in
-                    EntryRow(
-                        text: note.content ?? "",
-                        accent: CleansiaColors.primary,
-                        showActions: !isReadOnly && vm.isAuthor(noteEmployeeId: note.employeeId),
-                        isMutating: vm.mutatingId == note.id,
-                        onEdit: { startEdit(noteId: note.id, text: note.content) },
-                        onDelete: { deletion = .note(id: note.id ?? "") }
-                    )
-                }
-                ForEach(issues, id: \.id) { issue in
-                    EntryRow(
-                        text: issue.description ?? "",
-                        accent: CleansiaColors.error,
-                        showActions: !isReadOnly && vm.isAuthor(noteEmployeeId: issue.reportedByEmployeeId),
-                        isMutating: vm.mutatingId == issue.id,
-                        onEdit: { startEditIssue(issueId: issue.id, text: issue.description) },
-                        onDelete: { deletion = .issue(id: issue.id ?? "") }
-                    )
-                }
-                if !isReadOnly, canAdd {
-                    addButtons
-                }
+        VStack(alignment: .leading, spacing: Spacing.xs) {
+            DetailEyebrow(text: L10n.Orders.notesAndIssues)
+            if !isReadOnly, canAdd {
+                addButtons
+            }
+            ForEach(Array(notes.enumerated()), id: \.offset) { _, note in
+                EntryRow(
+                    head: [
+                        vm.isAuthor(noteEmployeeId: note.employeeId) ? L10n.Orders.crewYou : nil,
+                        time(note.createdOn)
+                    ]
+                    .compactMap { $0 }.map { Text($0) },
+                    text: note.content ?? "",
+                    showActions: !isReadOnly && vm.isAuthor(noteEmployeeId: note.employeeId),
+                    isMutating: vm.mutatingId == note.id,
+                    onEdit: { startEdit(noteId: note.id, text: note.content) },
+                    onDelete: { deletion = .note(id: note.id ?? "") }
+                )
+            }
+            ForEach(Array(issues.enumerated()), id: \.offset) { _, issue in
+                EntryRow(
+                    head: [
+                        Text(L10n.Orders.reportIssue).foregroundColor(CleansiaColors.error),
+                        time(issue.createdOn).map { Text($0) },
+                        issue.isResolved == true ? nil : Text(L10n.Orders.issueNotResolved)
+                    ].compactMap { $0 },
+                    text: issue.description ?? "",
+                    showActions: !isReadOnly && vm.isAuthor(noteEmployeeId: issue.reportedByEmployeeId),
+                    isMutating: vm.mutatingId == issue.id,
+                    onEdit: { startEditIssue(issueId: issue.id, text: issue.description) },
+                    onDelete: { deletion = .issue(id: issue.id ?? "") }
+                )
             }
         }
         .task { await vm.resolveCurrentEmployeeId() }
@@ -63,22 +71,38 @@ struct NotesAndIssuesSection: View {
         }
     }
 
+    struct AddButton {
+        let entry: EntryContext
+        let title: String
+        let icon: String
+        let tone: TonalChip.Tone
+    }
+
+    static var addButtons: [AddButton] {
+        [
+            AddButton(entry: .addNote, title: L10n.Orders.addNote, icon: "pencil", tone: .primary),
+            AddButton(entry: .reportIssue, title: L10n.Orders.reportIssue, icon: "flag", tone: .error)
+        ]
+    }
+
+    /// Two equal halves on the photo columns' grid, each label centred in its half; one column once a label outgrows
+    /// its half.
     private var addButtons: some View {
-        HStack(spacing: Spacing.xs) {
-            CleansiaOutlinedButton(L10n.Orders.addNote, size: .medium, leadingIcon: "plus") {
-                entry = .addNote
+        let chips = Self.addButtons.map { button in
+            TonalChip(title: button.title, icon: button.icon, tone: button.tone, fills: true) { entry = button.entry }
+        }
+        return ViewThatFits(in: .horizontal) {
+            HStack(spacing: Spacing.s) {
+                ForEach(chips.indices, id: \.self) { chips[$0] }
             }
-            // Error-tinted, which colours the stroke with it: reporting an issue and adding a note are
-            // not the same act, and two identical grey capsules said they were.
-            CleansiaOutlinedButton(
-                L10n.Orders.reportIssue,
-                size: .medium,
-                leadingIcon: "exclamationmark.triangle",
-                contentColor: CleansiaColors.error
-            ) {
-                entry = .reportIssue
+            VStack(spacing: Spacing.xs) {
+                ForEach(chips.indices, id: \.self) { chips[$0] }
             }
         }
+    }
+
+    private func time(_ date: Date?) -> String? {
+        date.map { OrdersFormat.timeOnly($0, locale: locale) }
     }
 
     private func startEdit(noteId: String?, text: String?) {
@@ -113,7 +137,7 @@ private enum DeletionContext {
     }
 }
 
-enum EntryContext: Identifiable {
+enum EntryContext: Identifiable, Equatable {
     case addNote
     case reportIssue
     case editNote(id: String, text: String)
@@ -129,38 +153,42 @@ enum EntryContext: Identifiable {
     }
 }
 
+/// One note or issue: who and when on top, the words under it, and for its author a way to edit or delete it, centred
+/// on the top line.
 private struct EntryRow: View {
+    let head: [Text]
     let text: String
-    let accent: Color
     let showActions: Bool
     let isMutating: Bool
     let onEdit: () -> Void
     let onDelete: () -> Void
 
     var body: some View {
-        HStack(spacing: Spacing.s) {
-            RoundedRectangle(cornerRadius: 2)
-                .fill(accent)
-                .frame(width: 3, height: 28)
-            Text(text)
-                .font(CleansiaTypography.bodyMedium)
-                .foregroundColor(CleansiaColors.onSurface)
-                .frame(maxWidth: .infinity, alignment: .leading)
+        HStack(alignment: .firstTextBaseline, spacing: Spacing.s) {
+            VStack(alignment: .leading, spacing: Spacing.hair) {
+                OrdersDotFlow(items: head, style: CleansiaTypography.scale.labelMedium)
+                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+                Text(text)
+                    .font(CleansiaTypography.bodyMedium)
+                    .foregroundColor(CleansiaColors.onSurface)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
             if showActions {
                 if isMutating {
-                    ProgressView()
+                    ProgressView().capBandAligned(of: CleansiaTypography.scale.labelMedium)
                 } else {
                     Button(action: onEdit) {
                         Image(systemName: "pencil").foregroundColor(CleansiaColors.onSurfaceVariant)
                     }
+                    .capBandAligned(of: CleansiaTypography.scale.labelMedium)
                     Button(action: onDelete) {
                         Image(systemName: "trash").foregroundColor(CleansiaColors.error)
                     }
+                    .capBandAligned(of: CleansiaTypography.scale.labelMedium)
                 }
             }
         }
-        .padding(Spacing.xs)
-        .background(CleansiaColors.surfaceVariant.opacity(0.4), in: RoundedRectangle(cornerRadius: CornerRadius.small))
     }
 }
 

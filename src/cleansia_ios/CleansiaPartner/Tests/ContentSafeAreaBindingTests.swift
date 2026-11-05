@@ -22,17 +22,6 @@ final class ContentSafeAreaBindingTests: XCTestCase {
         ))
     }
 
-    func testApproximateMapLegendFitsBetweenTheSafeTopAndTheSheet() throws {
-        let source = try read("CleansiaPartner/Sources/Features/Orders/OrderDetailView.swift")
-        XCTAssertTrue(source.contains("@Environment(\\.snapSheetSafeTop)privatevarsafeTop"))
-        XCTAssertTrue(source.contains(
-            "ViewThatFits(in:.vertical){legend.fixedSize(horizontal:false,vertical:true)Color.clear}"
-        ))
-        XCTAssertTrue(source.contains(
-            ".frame(height:max(sheetTop-safeTop,0)).clipped().padding(.top,safeTop)"
-        ))
-    }
-
     /// The dashboard hides its navigation bar, so its cards scrolled under the clock and the Dynamic Island with
     /// nothing behind them. It scrolls through the shared fade, as the customer Home does.
     func testTheDashboardFadesItsContentUnderTheStatusBar() throws {

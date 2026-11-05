@@ -7,20 +7,32 @@ import XCTest
 
 @MainActor
 final class MobileRefinementVisualTests: XCTestCase {
-    func testPartnerOvertimeUsesTheSharedCustomerTrackerSurface() async {
-        var order = OrderDetail.preview
-        order.estimatedMinutes = 60
+    /// Past the booked end the head says until when it was booked, over a full step: no stopwatch, no estimate
+    /// counted from the actual start.
+    func testPartnerOvertimeSaysTheBookedEndOverAFullStep() async {
+        let start = Date(timeIntervalSince1970: 1_786_000_000)
+        let end = start.addingTimeInterval(7200)
+        let now = end.addingTimeInterval(600)
+        let facts = OrdersBoardRules.RunFacts(status: ._4, start: start, end: end)
+        let status = OrdersBoardRules.runStatus(facts, now: now, locale: Locale(identifier: "en"))?.items ?? []
+        XCTAssertEqual(status.last, L10n.Orders.heroUntil(OrdersFormat.timeOnly(end, locale: Locale(identifier: "en"))))
+        var head = JobHeadFacts()
+        head.statusWire = OrderStatus._4.rawValue
+        head.statusLabel = L10n.Orders.statusLabel(._4)
+        head.day = OrdersFormat.shortDay(start, locale: Locale(identifier: "en"))
+        head.window = OrdersFormat.timeWindow(start, minutes: 120, locale: Locale(identifier: "en"))
+        head.status = status
+        head.progress = JobHeadFacts.progress(runFacts: facts, isMine: true, now: now)
+        head.street = "Vinohradská 46"
+        head.pay = OrdersFormat.money(779, symbol: "Kč")
+        head.caption = L10n.WorkContract.reward
         for scheme in [ColorScheme.light, .dark] {
-            await capture(name: "Refinement Partner overtime \(scheme)", size: CGSize(width: 390, height: 240)) {
-                VStack(alignment: .leading, spacing: Spacing.xs) {
-                    OrderTimerCard(order: order, locale: Locale(identifier: "en"), showsStepCounter: true)
-                    OrderTrackerHero(status: order.status, showsStepCounter: false, order: order)
-                }
-                .padding(Spacing.m)
-                .frame(maxHeight: .infinity, alignment: .top)
-                .background(CleansiaColors.surface)
-                .preferredColorScheme(scheme)
-                .environment(\.scenePhase, .active)
+            await capture(name: "Refinement Partner overtime \(scheme)", size: CGSize(width: 390, height: 200)) {
+                JobHead(facts: head)
+                    .padding(Spacing.m)
+                    .frame(maxHeight: .infinity, alignment: .top)
+                    .background(CleansiaColors.surface)
+                    .preferredColorScheme(scheme)
             }
         }
     }

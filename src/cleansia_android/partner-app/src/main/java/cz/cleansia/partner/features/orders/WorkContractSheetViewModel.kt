@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.ui.state.ActionState
+import cz.cleansia.partner.api.model.OrderListItem
 import cz.cleansia.partner.core.settings.AppSettingsRepository
 import cz.cleansia.partner.data.orders.OrdersRepository
 import cz.cleansia.partner.data.orders.WorkContract
@@ -20,10 +21,14 @@ import javax.inject.Inject
 
 /** What the sheet is opened for. The take and the standalone acceptance swipe; a read only reads. */
 sealed interface WorkContractRequest {
-    data class Take(val orderId: String) : WorkContractRequest
+    /** [board] is set only when the Orders board opens the sheet: its row snapshot drives the board-only states. */
+    data class Take(val orderId: String, val board: BoardTake? = null) : WorkContractRequest
     data class Accept(val orderId: String) : WorkContractRequest
     data class Read(val acceptanceId: String) : WorkContractRequest
 }
+
+/** The board row the take was opened from: its facts show at once, before the preview lands. */
+data class BoardTake(val row: OrderListItem)
 
 sealed interface WorkContractUiState {
     data object Loading : WorkContractUiState

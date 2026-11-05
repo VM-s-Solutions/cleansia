@@ -74,6 +74,7 @@ final class PartnerAppContainer: AppContainer {
     let ordersStaleness = OrdersStaleness()
     let invoicesStaleness = InvoicesStaleness()
     lazy var pendingOffers = PendingOffersStore(client: orderClient, ordersStaleness: ordersStaleness)
+    let ordersBoardStore = OrdersBoardStore()
     let cleaningChecklistStore: CleaningChecklistStore = UserDefaultsCleaningChecklistStore()
     let geocodingService: GeocodingService = CLGeocoderGeocodingService()
     let mapProvider: MapProvider = MapKitMapProvider()
@@ -136,6 +137,7 @@ final class PartnerAppContainer: AppContainer {
         sessionScopedCaches.register(invoicesStaleness)
         sessionScopedCaches.register(cleaningChecklistStore)
         sessionScopedCaches.register(pendingOffers)
+        sessionScopedCaches.register(ordersBoardStore)
         sessionScopedCaches.register(notificationBadge)
         sessionScopedCaches.register(pushTokenRegistrar)
         // Rule 3: the authed Device/Unregister DELETE runs while the Bearer is

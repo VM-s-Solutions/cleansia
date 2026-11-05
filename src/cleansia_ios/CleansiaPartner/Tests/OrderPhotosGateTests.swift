@@ -131,8 +131,8 @@ final class OrderPhotosGateTests: XCTestCase {
         XCTAssertTrue(vm.canReadPhotos)
     }
 
-    /// Parity: Android never composes the section on a finished job, so it never fetches there either.
-    func testTheGateClosesAgainOnceTheOrderIsTerminal() async {
+    /// A finished job keeps its photos: the gate stays open on Completed and closes on Cancelled.
+    func testTheGateStaysOpenOnACompletedJobAndClosesOnACancelledOne() async {
         client.byIdResult = .success(item(status: 4, isMine: true))
         let vm = makeDetailVM()
         await vm.load()
@@ -140,7 +140,10 @@ final class OrderPhotosGateTests: XCTestCase {
 
         client.byIdResult = .success(item(status: 5, isMine: true))
         await vm.load()
+        XCTAssertTrue(vm.canReadPhotos)
 
+        client.byIdResult = .success(item(status: 6, isMine: true))
+        await vm.load()
         XCTAssertFalse(vm.canReadPhotos)
     }
 

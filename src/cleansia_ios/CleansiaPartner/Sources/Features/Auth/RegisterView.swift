@@ -111,6 +111,7 @@ private struct RegisterContent: View {
                 CleansiaTextField(
                     value: binding(form.email, onEmailChange),
                     label: L10n.email,
+                    placeholder: L10n.emailPlaceholder,
                     errorText: form.emailError,
                     keyboardType: .emailAddress,
                     textContentType: .username,

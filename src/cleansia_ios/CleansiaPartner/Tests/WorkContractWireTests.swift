@@ -167,6 +167,28 @@ final class WorkContractWireTests: XCTestCase {
         XCTAssertEqual(contract.facts.bathrooms, 1)
     }
 
+    /// The take sheet shows the board row's translated name of each service, matched by id, so each id must
+    /// stay beside its own name even when a blank-named line in front of it is dropped.
+    func testEachServiceAndPackageIdStaysBesideItsName() throws {
+        var payload = try fullPayload()
+        payload.facts?.services = [
+            WorkContractFactsLine(id: "svc-blank", name: " "),
+            WorkContractFactsLine(id: "svc-std", name: "Standard cleaning"),
+            WorkContractFactsLine(id: "svc-win", name: "Windows")
+        ]
+        payload.facts?.packages = [
+            WorkContractFactsLine(id: "pkg-none", name: nil),
+            WorkContractFactsLine(id: "pkg-deep", name: "Deep clean")
+        ]
+
+        let facts = try WorkContract(payload).facts
+
+        XCTAssertEqual(facts.services, ["Standard cleaning", "Windows"])
+        XCTAssertEqual(facts.serviceIds, ["svc-std", "svc-win"])
+        XCTAssertEqual(facts.packages, ["Deep clean"])
+        XCTAssertEqual(facts.packageIds, ["pkg-deep"])
+    }
+
     func testEveryMemberTheAcceptanceBindsIsRefusedRatherThanDefaulted() throws {
         let cases: [(String, (inout WorkContractDto) -> Void)] = [
             ("legalDocumentTextId", { $0.legalDocumentTextId = nil }),

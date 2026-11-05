@@ -18,8 +18,32 @@ final class OrdersListViewModelTests: XCTestCase {
         snackbar = SnackbarController()
     }
 
-    func makeVM() -> OrdersListViewModel {
-        OrdersListViewModel(client: client, staleness: staleness, snackbar: snackbar)
+    func makeVM(
+        payroll: PartnerPayrollClient? = nil,
+        offers: PendingOffersStore? = nil,
+        boardStore: OrdersBoardStore? = nil,
+        now: Date? = nil
+    ) -> OrdersListViewModel {
+        OrdersListViewModel(
+            client: client,
+            staleness: staleness,
+            snackbar: snackbar,
+            payroll: payroll,
+            pendingOffers: offers,
+            boardStore: boardStore,
+            now: { now ?? Date() }
+        )
+    }
+
+    /// Only the page requests of one pane: Available asks for free seats, Active for statuses 2-4, History for 5.
+    func queries(_ pane: OrdersPane) -> [OrderPageQuery] {
+        client.queries.filter { query in
+            switch pane {
+            case .available: query.hasAvailableSpots == true
+            case .active: query.statuses == [._2, ._3, ._4]
+            case .history: query.statuses == [._5]
+            }
+        }
     }
 
     func testInitialPaneStateIsLoading() {
@@ -37,392 +61,72 @@ final class OrdersListViewModelTests: XCTestCase {
         XCTAssertEqual(vm.refreshPhase, .idle)
     }
 
-    func testFailureWithNoCacheTransitionsToErrorAndSnackbars() async {
+    /// A list read that fails says so in the pane (and to VoiceOver), never in a snackbar (D17).
+    func testAFailedLoadWithNoRowsIsTheErrorStateWithoutASnackbar() async {
         client.pagedResult = .failure(ApiError(code: "network.unreachable"))
         let vm = makeVM()
         await vm.onAppear()
         guard case .error = vm.currentState else { return XCTFail("expected error") }
-        XCTAssertNotNil(snackbar.current)
+        XCTAssertNil(snackbar.current)
     }
 
     // MARK: current cleaner scope
 
-    func testAvailablePaneExcludesOnlyTheResolvedCurrentEmployee() async {
+    func testAvailablePaneExcludesOnlyTheResolvedCurrentEmployee() async throws {
         let vm = makeVM()
         await vm.onAppear()
-        let query = try? XCTUnwrap(client.queries.last)
-        XCTAssertNil(query?.employeeId)
-        XCTAssertNil(query?.isUnassigned)
-        XCTAssertEqual(query?.hasAvailableSpots, true)
-        XCTAssertEqual(query?.excludeEmployeeId, "emp-self")
-        XCTAssertEqual(client.employeeIdCallCount, 1)
+        let query = try XCTUnwrap(queries(.available).last)
+        XCTAssertNil(query.employeeId)
+        XCTAssertNil(query.isUnassigned)
+        XCTAssertEqual(query.excludeEmployeeId, "emp-self")
+        XCTAssertEqual(query.limit, 100)
+        XCTAssertEqual(client.employeeIdCallCount, 1, "Active reuses the id Available just read")
     }
 
     func testActivePaneSendsOnlyOwnEmployeeId() async {
-        client.employeeIdResult = .success("emp-self")
         let vm = makeVM()
         await vm.selectTab(.active)
-        let query = try? XCTUnwrap(client.queries.last)
-        XCTAssertEqual(query?.employeeId, "emp-self")
-        XCTAssertNil(query?.isUnassigned)
+        XCTAssertEqual(queries(.active).last?.employeeId, "emp-self")
+        XCTAssertNil(queries(.active).last?.isUnassigned)
     }
 
     func testHistoryPaneSendsOnlyOwnEmployeeId() async {
-        client.employeeIdResult = .success("emp-self")
         let vm = makeVM()
         await vm.selectTab(.history)
-        XCTAssertEqual(client.queries.last?.employeeId, "emp-self")
+        XCTAssertEqual(queries(.history).last?.employeeId, "emp-self")
     }
 
     func testOwnEmployeeIdResolvedOnceAndReused() async {
-        client.employeeIdResult = .success("emp-self")
         let vm = makeVM()
         await vm.selectTab(.active)
-        staleness.invalidatePanes(for: .startOrder) // force a re-fetch path
         await vm.userRefresh()
         XCTAssertEqual(client.employeeIdCallCount, 1)
     }
 
-    // MARK: PTR — userRefreshing ONLY on user pull, never on background
-
-    func testUserRefreshUsesUserRefreshingPhaseDuringFlight() async {
-        client.pagedResult = .success([.sample(id: "o1")])
-        let vm = makeVM()
-        await vm.onAppear()
-
-        var sawUserRefreshing = false
-        let token = vm.$refreshPhase.sink { if $0 == .userRefreshing { sawUserRefreshing = true } }
-        defer { token.cancel() }
-
-        await vm.userRefresh()
-        XCTAssertTrue(sawUserRefreshing)
-        XCTAssertEqual(vm.refreshPhase, .idle)
-    }
-
-    func testBackgroundFetchNeverEntersUserRefreshing() async {
-        let vm = makeVM()
-        var sawUserRefreshing = false
-        let token = vm.$refreshPhase.sink { if $0 == .userRefreshing { sawUserRefreshing = true } }
-        defer { token.cancel() }
-
-        await vm.onAppear() // background path
-        XCTAssertFalse(sawUserRefreshing)
-    }
-
-    func testBackgroundFetchKeepsLoadedRowsNoSpinnerFlash() async {
-        client.pagedResult = .success([.sample(id: "o1")])
-        let vm = makeVM()
-        await vm.onAppear()
-        // A subsequent stale background fetch must not drop the loaded rows.
-        clock = clock.addingTimeInterval(31)
-        client.pagedResult = .success([.sample(id: "o2")])
-        await vm.onAppear()
-        XCTAssertEqual(vm.currentState.loadedValue?.map(\.id), ["o2"])
-    }
-
-    // MARK: staleness freshness-skip
-
-    func testWarmCacheSkipsTheNetworkOnReentry() async {
-        client.pagedResult = .success([.sample(id: "o1")])
-        let vm = makeVM()
-        await vm.onAppear()
-        XCTAssertEqual(client.getPagedCallCount, 1)
-        await vm.onAppear() // still warm → no second fetch
-        XCTAssertEqual(client.getPagedCallCount, 1)
-    }
-
-    /// THE REGRESSION. The two tests around this one re-enter on the SAME view model, whose `paneState`
-    /// still holds the rows — so skipping is right there. In the app the view model does not survive:
-    /// `OrdersStaleness` is built once in `PartnerAppContainer` and lives as long as the process, while
-    /// `OrdersListView` rebuilds its `@StateObject` and every pane starts at `.loading`. Guarding on the
-    /// watermark alone therefore left a fresh view model spinning with nothing on the way, and only a
-    /// pull-to-refresh could end it.
-    func testAFreshViewModelLoadsEvenWhenTheWatermarkIsStillWarm() async {
-        client.pagedResult = .success([.sample(id: "o1")])
-        let warm = makeVM()
-        await warm.onAppear()
-        XCTAssertEqual(client.getPagedCallCount, 1)
-
-        // Same staleness object, brand-new view model — exactly what re-entering the tab does.
-        let reentered = makeVM()
-        XCTAssertTrue(reentered.currentState.isLoading)
-        await reentered.onAppear()
-
-        XCTAssertEqual(client.getPagedCallCount, 2, "the fresh view model never fetched")
-        XCTAssertEqual(reentered.currentState.loadedValue?.map(\.id), ["o1"])
-    }
-
-    func testStaleCacheRefetchesOnReentry() async {
-        client.pagedResult = .success([.sample(id: "o1")])
-        let vm = makeVM()
-        await vm.onAppear()
-        clock = clock.addingTimeInterval(31)
-        await vm.onAppear()
-        XCTAssertEqual(client.getPagedCallCount, 2)
-    }
-
-    // MARK: tab switch + search + sort/period
-
-    func testSelectTabFetchesNewPane() async {
-        let vm = makeVM()
-        await vm.onAppear()
-        await vm.selectTab(.active)
-        XCTAssertEqual(vm.tab, .active)
-        XCTAssertEqual(client.queries.last?.statuses, [._2, ._3, ._4])
-    }
-
-    func testSearchFiltersVisibleOrders() async {
-        client.pagedResult = .success([
-            .sample(id: "o1", customerName: "Jana"),
-            .sample(id: "o2", customerName: "Petr")
-        ])
-        let vm = makeVM()
-        await vm.onAppear()
-        vm.setSearchQuery("jana")
-        XCTAssertEqual(vm.visibleOrders.map(\.id), ["o1"])
-    }
-
-    // MARK: search is scoped to Available — the only pane that renders the field
-
-    // `OrdersListContent.swift` puts `OrdersSearchField` inside `AvailablePane`
-    // and nowhere else, so a query left over from Available used to silently
-    // filter Active/History with no visible control to clear it — and because
-    // `ActivePane`'s empty branch renders `noActiveOrders`, a cleaner could be
-    // told they have no jobs on a day they do. These pin the scoping. The
-    // Android parity is the same shape: only `AvailablePane` calls
-    // `matchesSearch`; `ActivePane`/`HistoryPane` read `uiState.orders` raw.
-
-    func testSearchQueryDoesNotFilterTheActivePane() async {
-        client.pagedResult = .success([
-            .sample(id: "o1", customerName: "Jana"),
-            .sample(id: "o2", customerName: "Petr")
-        ])
-        let vm = makeVM()
-        await vm.onAppear()
-        vm.setSearchQuery("jana")
-        XCTAssertEqual(vm.visibleOrders.map(\.id), ["o1"], "Available still filters")
-
-        await vm.selectTab(.active)
-        XCTAssertEqual(vm.visibleOrders.map(\.id), ["o1", "o2"])
-    }
-
-    func testSearchQueryDoesNotFilterTheHistoryPane() async {
-        client.pagedResult = .success([
-            .sample(id: "o1", customerName: "Jana"),
-            .sample(id: "o2", customerName: "Petr")
-        ])
-        let vm = makeVM()
-        await vm.onAppear()
-        vm.setSearchQuery("jana")
-
-        await vm.selectTab(.history)
-        XCTAssertEqual(vm.visibleOrders.map(\.id), ["o1", "o2"])
-    }
-
-    /// Deliberate decision, pinned so a later "tidy-up" can't silently reverse
-    /// it: switching tabs does NOT clear the query. Android's `selectTab` only
-    /// copies `tab`/`orders` and leaves `searchQuery` alone, and a cleaner who
-    /// checks an active job mid-search expects their typing back when they
-    /// return. Scoping the *filter* is the fix; clearing the *field* is not.
-    func testSearchQuerySurvivesATabRoundTrip() async {
-        client.pagedResult = .success([
-            .sample(id: "o1", customerName: "Jana"),
-            .sample(id: "o2", customerName: "Petr")
-        ])
-        let vm = makeVM()
-        await vm.onAppear()
-        vm.setSearchQuery("jana")
-
-        await vm.selectTab(.active)
-        await vm.selectTab(.available)
-
-        XCTAssertEqual(vm.searchQuery, "jana")
-        XCTAssertEqual(vm.visibleOrders.map(\.id), ["o1"])
-    }
-
-    func testSortChangeRefetchesAvailableSilently() async {
-        let vm = makeVM()
-        await vm.onAppear()
-        await vm.setAvailableSort(.priceHighToLow)
-        XCTAssertEqual(client.queries.last?.sortField, "totalPrice")
-    }
-
-    func testPeriodChangeRefetchesHistorySilently() async {
-        client.employeeIdResult = .success("emp-self")
-        let vm = makeVM()
-        await vm.selectTab(.history)
-        let before = client.getPagedCallCount
-        await vm.setCompletedPeriod(.lastMonth)
-        XCTAssertEqual(client.getPagedCallCount, before + 1)
-        XCTAssertEqual(vm.completedPeriod, .lastMonth)
-    }
-
-    func testInProgressOrderDrivesBanner() async {
-        client.pagedResult = .success([
-            .sample(id: "o1", status: ._2),
-            .sample(id: "o2", status: ._4)
-        ])
-        let vm = makeVM()
-        await vm.selectTab(.active)
-        XCTAssertEqual(vm.inProgressOrder?.id, "o2")
-    }
-
-    // MARK: navigation effect (VM emits, never navigates)
-
-    func testOpenDetailEmitsNavigateEffect() {
-        let vm = makeVM()
-        var captured: String?
-        let token = vm.navigateToDetail.sink { captured = $0 }
-        defer { token.cancel() }
-        vm.openDetail("o1")
-        XCTAssertEqual(captured, "o1")
-    }
-
-    // MARK: TC-IOS-ORDERS-OWNERSHIP (O1 / O2)
-
-    func testInlineActionActsOnlyOnRowIdNoEmployeeId() async {
-        client.pagedResult = .success([.sample(id: "row-id", status: ._3)])
-        let vm = makeVM()
-        await vm.selectTab(.active)
-
-        await vm.runInlineAction(.start, on: .sample(id: "row-id", status: ._3))
-
-        // O1: the command surface carries only orderId. O2: the carried id is
-        // the row's own id from the list response.
-        XCTAssertEqual(client.commands.first?.orderId, "row-id")
-    }
-
-    func testTheContractSheetIsOpenedOnTheRowsOwnIdAlone() async {
-        client.pagedResult = .success([.sample(id: "row-id", status: ._2)])
-        let vm = makeVM()
-        await vm.onAppear()
-
-        await vm.runInlineAction(.take, on: .sample(id: "row-id", status: ._2))
-
-        XCTAssertEqual(vm.contractRequest, .take(orderId: "row-id"))
-    }
-
-    // MARK: - Location (distance on the Available rows)
-
-    final class FakeLocationProvider: LocationProvider {
-        var status: LocationAuthorizationStatus = .notDetermined
-        var statusAfterRequest: LocationAuthorizationStatus = .denied
-        var fix: Coordinate?
-        private(set) var requestCount = 0
-        private(set) var currentLocationCount = 0
-
-        var authorizationStatus: LocationAuthorizationStatus {
-            status
+    /// banner.md §3a test 2: Active and History are "mine" only when the request names the cleaner. An id that
+    /// cannot be read must end in the error state, never in an unscoped request the server answers with open
+    /// jobs that are not theirs.
+    func testActiveAndHistoryIdentityFailureNeverSendsAnUnscopedRequest() async {
+        for tab in [OrdersTab.active, .history] {
+            client = FakePartnerOrderClient()
+            client.employeeIdResult = .failure(ApiError(code: "network.unreachable"))
+            let vm = makeVM()
+            await vm.selectTab(tab)
+            XCTAssertFalse(
+                client.queries.contains { $0.employeeId == nil && $0.excludeEmployeeId == nil },
+                "\(tab) sent an unscoped page request"
+            )
+            guard case .error = vm.currentState else { return XCTFail("\(tab): expected the error state") }
         }
-
-        func requestWhenInUseAuthorization() async -> LocationAuthorizationStatus {
-            requestCount += 1
-            status = statusAfterRequest
-            return status
-        }
-
-        func currentLocation() async -> Coordinate? {
-            currentLocationCount += 1
-            return fix
-        }
-    }
-
-    static let pragueFix = Coordinate(latitude: 50.08, longitude: 14.44)
-
-    /// The guard for the whole design decision: entering the Available tab must
-    /// never raise the system dialog by itself. iOS grants exactly one prompt per
-    /// install, so an auto-prompt seconds after login would burn it cold.
-    func testRefreshDoesNotPromptWhenNotDetermined() async {
-        let provider = FakeLocationProvider()
-        provider.status = .notDetermined
-        provider.fix = Self.pragueFix
-        let vm = makeVM()
-
-        await vm.refreshLocationIfAuthorized(provider)
-
-        XCTAssertEqual(provider.requestCount, 0)
-        XCTAssertEqual(provider.currentLocationCount, 0)
-        XCTAssertNil(vm.currentLocation)
-        XCTAssertTrue(vm.showsLocationPrompt)
-    }
-
-    func testRefreshAssignsTheFixWhenAuthorized() async {
-        let provider = FakeLocationProvider()
-        provider.status = .authorized
-        provider.fix = Self.pragueFix
-        let vm = makeVM()
-
-        await vm.refreshLocationIfAuthorized(provider)
-
-        XCTAssertEqual(vm.currentLocation, Self.pragueFix)
-        XCTAssertEqual(vm.locationStatus, .authorized)
-        XCTAssertEqual(provider.requestCount, 0)
-        XCTAssertFalse(vm.showsLocationPrompt)
-    }
-
-    func testRefreshIsSilentWhenDenied() async {
-        let provider = FakeLocationProvider()
-        provider.status = .denied
-        provider.fix = Self.pragueFix
-        let vm = makeVM()
-
-        await vm.refreshLocationIfAuthorized(provider)
-
-        XCTAssertEqual(provider.requestCount, 0)
-        XCTAssertEqual(provider.currentLocationCount, 0)
-        XCTAssertNil(vm.currentLocation)
-        XCTAssertFalse(vm.showsLocationPrompt)
-    }
-
-    func testExplicitRequestPromptsOnceAndAssignsTheFix() async {
-        let provider = FakeLocationProvider()
-        provider.status = .notDetermined
-        provider.statusAfterRequest = .authorized
-        provider.fix = Self.pragueFix
-        let vm = makeVM()
-
-        await vm.requestLocationPermission(provider)
-
-        XCTAssertEqual(provider.requestCount, 1)
-        XCTAssertEqual(vm.locationStatus, .authorized)
-        XCTAssertEqual(vm.currentLocation, Self.pragueFix)
-    }
-
-    /// A refused prompt must retire the row rather than leave it lingering —
-    /// iOS will not show the dialog again, so the button would be inert.
-    func testExplicitRequestDeniedLeavesDistanceHidden() async {
-        let provider = FakeLocationProvider()
-        provider.status = .notDetermined
-        provider.statusAfterRequest = .denied
-        provider.fix = Self.pragueFix
-        let vm = makeVM()
-
-        await vm.requestLocationPermission(provider)
-
-        XCTAssertEqual(provider.requestCount, 1)
-        XCTAssertEqual(provider.currentLocationCount, 0)
-        XCTAssertNil(vm.currentLocation)
-        XCTAssertFalse(vm.showsLocationPrompt)
-    }
-
-    func testPromptOnlyShowsOnTheAvailableTab() async {
-        let vm = makeVM()
-        XCTAssertTrue(vm.showsLocationPrompt)
-
-        await vm.selectTab(.active)
-
-        XCTAssertFalse(vm.showsLocationPrompt)
     }
 
     func testAvailableIdentityFailureNeverSendsAnUnscopedRequest() async {
         client.employeeIdResult = .failure(ApiError(code: "network.unreachable"))
         let vm = makeVM()
         await vm.onAppear()
-        XCTAssertEqual(client.employeeIdCallCount, 1)
         XCTAssertEqual(client.getPagedCallCount, 0)
         guard case .error = vm.currentState else { return XCTFail("expected unresolved identity error") }
         XCTAssertTrue(staleness.isPaneStale(.available))
-        XCTAssertNotNil(snackbar.current)
     }
 
     func testAvailableBlankIdentityNeverSendsAnUnscopedRequest() async {
@@ -437,20 +141,183 @@ final class OrdersListViewModelTests: XCTestCase {
         }
     }
 
+    /// Rows held and the refresh failed: the rows stay, dated by the stale strip; the next success clears it.
     func testLoadedAvailableIdentityFailureRetainsRowsAndRetries() async {
         client.pagedResult = .success([.sample(id: "last-good")])
         let vm = makeVM()
         await vm.onAppear()
         client.employeeIdResult = .failure(ApiError(code: "network.unreachable"))
-        clock.addTimeInterval(30)
-        await vm.onAppear()
-        XCTAssertEqual(client.getPagedCallCount, 1)
+        await vm.userRefresh()
         XCTAssertEqual(vm.currentState.loadedValue?.map(\.id), ["last-good"])
-        XCTAssertTrue(staleness.isPaneStale(.available))
-        XCTAssertNotNil(snackbar.current)
+        XCTAssertNotNil(vm.pane(.available).error, "the stale strip shows")
+        XCTAssertNotNil(vm.pane(.available).loadedAt)
         client.employeeIdResult = .success("emp-self")
+        await vm.userRefresh()
+        XCTAssertNil(vm.pane(.available).error)
+    }
+
+    // MARK: pulls and freshness
+
+    func testUserRefreshUsesUserRefreshingPhaseDuringFlight() async {
+        client.pagedResult = .success([.sample(id: "o1")])
+        let vm = makeVM()
         await vm.onAppear()
-        XCTAssertEqual(client.getPagedCallCount, 2)
-        XCTAssertFalse(staleness.isPaneStale(.available))
+        var sawUserRefreshing = false
+        let token = vm.$refreshPhase.sink { if $0 == .userRefreshing { sawUserRefreshing = true } }
+        defer { token.cancel() }
+        await vm.userRefresh()
+        XCTAssertTrue(sawUserRefreshing)
+        XCTAssertEqual(vm.refreshPhase, .idle)
+    }
+
+    func testBackgroundFetchNeverEntersUserRefreshing() async {
+        let vm = makeVM()
+        var sawUserRefreshing = false
+        let token = vm.$refreshPhase.sink { if $0 == .userRefreshing { sawUserRefreshing = true } }
+        defer { token.cancel() }
+        await vm.onAppear()
+        XCTAssertFalse(sawUserRefreshing)
+    }
+
+    func testBackgroundFetchKeepsLoadedRowsNoSpinnerFlash() async {
+        client.pagedResult = .success([.sample(id: "o1")])
+        let vm = makeVM()
+        await vm.onAppear()
+        clock = clock.addingTimeInterval(31)
+        client.pagedResult = .success([.sample(id: "o2")])
+        await vm.onAppear()
+        XCTAssertEqual(vm.currentState.loadedValue?.map(\.id), ["o2"])
+    }
+
+    func testWarmCacheSkipsTheNetworkOnReentry() async {
+        let vm = makeVM()
+        await vm.onAppear()
+        XCTAssertEqual(queries(.available).count, 1)
+        await vm.onAppear()
+        XCTAssertEqual(queries(.available).count, 1)
+    }
+
+    /// `OrdersStaleness` outlives the view model, whose panes start empty: a fresh view model must load even
+    /// when the watermark is still warm, or it spins with nothing on the way.
+    func testAFreshViewModelLoadsEvenWhenTheWatermarkIsStillWarm() async {
+        client.pagedResult = .success([.sample(id: "o1")])
+        await makeVM().onAppear()
+        let reentered = makeVM()
+        XCTAssertTrue(reentered.currentState.isLoading)
+        await reentered.onAppear()
+        XCTAssertEqual(queries(.available).count, 2, "the fresh view model never fetched")
+        XCTAssertEqual(reentered.currentState.loadedValue?.map(\.id), ["o1"])
+    }
+
+    func testStaleCacheRefetchesOnReentry() async {
+        let vm = makeVM()
+        await vm.onAppear()
+        clock = clock.addingTimeInterval(31)
+        await vm.onAppear()
+        XCTAssertEqual(queries(.available).count, 2)
+    }
+
+    /// A pull while the same pane is already loading waits for that load instead of returning at once, so the
+    /// indicator never ends before the rows land.
+    func testAPullWhileThePaneLoadsAwaitsTheRunningFetch() async {
+        client.pagedResult = .success([.sample(id: "o1")])
+        client.suspendGetPaged = true
+        let vm = makeVM()
+        let appear = Task { await vm.onAppear() }
+        while client.getPagedCallCount == 0 {
+            await Task.yield()
+        }
+        var pullDone = false
+        let pull = Task {
+            await vm.userRefresh()
+            pullDone = true
+        }
+        for _ in 0 ..< 20 {
+            await Task.yield()
+        }
+        XCTAssertFalse(pullDone, "the pull returned while the page was still loading")
+        client.resumeGetPaged()
+        await pull.value
+        await appear.value
+        XCTAssertTrue(pullDone)
+        XCTAssertEqual(vm.currentState.loadedValue?.map(\.id), ["o1"])
+    }
+
+    /// A period with jobs reads only itself; an empty one also reads last month, once, for its reference block.
+    func testSelectTabFetchesNewPane() async {
+        client.pagedResult = .success([.sample(id: "done", status: ._5)])
+        let vm = makeVM()
+        await vm.selectTab(.history)
+        XCTAssertEqual(vm.tab, .history)
+        XCTAssertEqual(queries(.history).count, 1)
+    }
+
+    func testPeriodChangeRefetchesHistoryToCompletion() async {
+        let vm = makeVM()
+        await vm.selectTab(.history)
+        let before = queries(.history).count
+        await vm.setCompletedPeriod(.lastMonth)
+        XCTAssertEqual(queries(.history).count, before + 1)
+        XCTAssertEqual(vm.completedPeriod, .lastMonth)
+    }
+
+    /// A period chosen while the previous one is still loading wins: the old period's page never lands under the
+    /// new name, and the new period is the one fetched.
+    func testAPeriodChosenWhileHistoryLoadsIsFetchedAndOnlyItsRowsShow() async {
+        let lastMonth = OrdersQueryBuilder.periodToDateRange(.lastMonth).from
+        client.pageResponder = { query in
+            guard query.statuses == [._5] else { return .success(OrderPage(rows: [], total: 0)) }
+            let id = query.cleaningDateFrom == lastMonth ? "last-month" : "this-month"
+            return .success(OrderPage(rows: [.sample(id: id, status: ._5)], total: 1))
+        }
+        let vm = makeVM()
+        client.suspendGetPaged = true
+        let open = Task { await vm.selectTab(.history) }
+        while queries(.history).isEmpty {
+            await Task.yield()
+        }
+        let pick = Task { await vm.setCompletedPeriod(.lastMonth) }
+        for _ in 0 ..< 20 {
+            await Task.yield()
+        }
+        client.resumeGetPaged()
+        await open.value
+        await pick.value
+        XCTAssertEqual(vm.completedPeriod, .lastMonth)
+        XCTAssertEqual(vm.pane(.history).rows.map(\.id), ["last-month"], "this month's page landed under last month")
+        XCTAssertEqual(queries(.history).last?.cleaningDateFrom, lastMonth)
+    }
+
+    // MARK: the in-progress banner is gone; the hero reads Active only
+
+    /// banner.md §1: an Available row in progress is someone else's started job with a seat open. It must
+    /// never be presented as the cleaner's own job in progress.
+    func testAStartedJobOnTheBoardIsNeverTheCleanersOwnJobInProgress() async {
+        client.pageResponder = { query in
+            let rows: [OrderListItem] = query.hasAvailableSpots == true ? [.sample(id: "theirs", status: ._4)] : []
+            return .success(OrderPage(rows: rows, total: rows.count))
+        }
+        let vm = makeVM()
+        await vm.onAppear()
+        XCTAssertNil(vm.hero, "another cleaner's started job became the cleaner's own")
+        XCTAssertTrue(vm.laterRows.isEmpty)
+        XCTAssertEqual(vm.state(of: .active).loadedValue?.count, 0)
+    }
+
+    func testOnlyAnInProgressJobOnActiveShowsTheHeroNotTheEmptyState() async {
+        client.pagedResult = .success([.sample(id: "mine", status: ._4)])
+        let vm = makeVM()
+        await vm.selectTab(.active)
+        XCTAssertEqual(vm.hero?.id, "mine")
+        XCTAssertEqual(vm.currentState.loadedValue?.count, 1)
+    }
+
+    func testOpenDetailEmitsNavigateEffect() {
+        let vm = makeVM()
+        var captured: String?
+        let token = vm.navigateToDetail.sink { captured = $0 }
+        defer { token.cancel() }
+        vm.openDetail("o1")
+        XCTAssertEqual(captured, "o1")
     }
 }

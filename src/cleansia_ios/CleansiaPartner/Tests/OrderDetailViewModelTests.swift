@@ -86,31 +86,8 @@ final class OrderDetailViewModelTests: XCTestCase {
         XCTAssertNotNil(snackbar.current)
     }
 
-    /// The map is a function of the coordinates alone. Completed and Cancelled both keep it —
-    /// only a missing coordinate takes it away, which the next test covers.
-    func testMapSurvivesEveryTerminalStatus() async {
-        client.byIdResult = .success(loadedItem(status: 5)) // Completed
-        let completedVM = makeVM()
-        await completedVM.load()
-        XCTAssertEqual(completedVM.state.loadedValue?.mapCoordinate, Coordinate(latitude: 50.0, longitude: 14.0))
-
-        client.byIdResult = .success(loadedItem(status: 6)) // Cancelled
-        let cancelledVM = makeVM()
-        await cancelledVM.load()
-        XCTAssertEqual(cancelledVM.state.loadedValue?.mapCoordinate, Coordinate(latitude: 50.0, longitude: 14.0))
-    }
-
-    func testMapHidesWhenNoCoordinate() async {
-        var item = loadedItem()
-        item.address = OrderAddress(street: "X")
-        client.byIdResult = .success(item)
-        let vm = makeVM()
-        await vm.load()
-        XCTAssertNil(vm.state.loadedValue?.mapCoordinate)
-    }
-
     /// The regression: the server nulls `address` for a browsing cleaner and sends the coarse
-    /// zone instead, and the screen showed neither. The zone arrives; the map does not.
+    /// zone instead, and the screen showed neither. The zone arrives; Navigate does not.
     func testBrowsingCleanerGetsTheZoneAndNoMap() async {
         var item = loadedItem(isMine: false)
         item.address = nil
@@ -120,7 +97,6 @@ final class OrderDetailViewModelTests: XCTestCase {
         await vm.load()
         XCTAssertEqual(vm.state.loadedValue?.location.line, "Praha · 120")
         XCTAssertNil(vm.state.loadedValue?.location.navigationTarget)
-        XCTAssertNil(vm.state.loadedValue?.mapCoordinate)
     }
 
     // MARK: primaryAction via the shared machine
@@ -137,6 +113,32 @@ final class OrderDetailViewModelTests: XCTestCase {
         let vm = makeVM()
         await vm.load()
         XCTAssertEqual(vm.primaryAction, .completeBlocked(cashPending: false))
+    }
+
+    /// A job under way that is not hers is joined until its booked end and not after: the server stops offering it
+    /// there.
+    func testALateJoinIsOfferedOnThePageUntilTheBookedEnd() async {
+        let start = Date(timeIntervalSince1970: 1_786_000_000)
+        for status in [3, 4] {
+            var clock = start.addingTimeInterval(3600)
+            var item = loadedItem(status: status, isMine: false)
+            item.cleaningDateTime = start
+            item.estimatedTime = 120
+            client.byIdResult = .success(item)
+            let vm = OrderDetailViewModel(
+                orderId: "order-1",
+                client: client,
+                staleness: staleness,
+                snackbar: snackbar,
+                pendingOffers: PendingOffersStore(client: client, ordersStaleness: staleness),
+                now: { clock }
+            )
+            await vm.load()
+
+            XCTAssertEqual(vm.primaryAction, .take, "status \(status), an hour in")
+            clock = start.addingTimeInterval(7200)
+            XCTAssertEqual(vm.primaryAction, .none, "status \(status), at the booked end")
+        }
     }
 
     // MARK: payment-gated completion — a cash order must be collected first
@@ -173,11 +175,18 @@ final class OrderDetailViewModelTests: XCTestCase {
         XCTAssertEqual(vm.primaryAction, .complete)
     }
 
+    /// A card job never collects cash; one Stripe has not charged gets the locked Complete instead.
     func testPrimaryActionCardOrderNeverCollectsCash() async {
         client.byIdResult = .success(loadedItem(
             status: 4, isMine: true, hasAfterPhotos: true, paymentType: 2, paymentStatus: 1
         ))
         let vm = makeVM()
+        await vm.load()
+        XCTAssertEqual(vm.primaryAction, .paymentNotConfirmed)
+
+        client.byIdResult = .success(loadedItem(
+            status: 4, isMine: true, hasAfterPhotos: true, paymentType: 2, paymentStatus: 2
+        ))
         await vm.load()
         XCTAssertEqual(vm.primaryAction, .complete)
     }

@@ -181,10 +181,6 @@ class SurfaceRolesTest {
         val ratio = contrast(DarkColors.onPrimary, DarkColors.primary)
         assertTrue("dark onPrimary on primary: ${"%.2f".format(ratio)}:1", ratio >= 4.5)
         assertTrue(contrast(Sky900, Sky400) < 4.5)
-        // The slide-to-commit track is a filled control: its label is onPrimary on the primary (Z6's twin).
-        val slide = File(sourceRoot(), "features/orders/SlideToCommit.kt").readText()
-        assertTrue(slide.contains(".background(MaterialTheme.colorScheme.primary)"))
-        assertTrue(Regex("""text = idleLabel,\s*style = [^\n]+\n\s*color = MaterialTheme\.colorScheme\.onPrimary\.copy\(""").containsMatchIn(slide))
     }
 
     /** The argument list of the call whose `(` ends just before [from], up to its matching `)`. */

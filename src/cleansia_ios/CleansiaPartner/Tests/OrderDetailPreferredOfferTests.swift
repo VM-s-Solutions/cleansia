@@ -1,6 +1,8 @@
 import CleansiaCore
 import CleansiaPartnerApi
 import Foundation
+import SwiftUI
+import UIKit
 import XCTest
 @testable import CleansiaPartner
 
@@ -219,5 +221,62 @@ final class OrderDetailPreferredOfferTests: XCTestCase {
         vm.dismissActionError()
 
         XCTAssertEqual(vm.actionState, .idle)
+    }
+
+    /// While her own rows are read, a job reserved for her already shows the pair it becomes: Decline hers to use,
+    /// Confirm drawn and waiting. An ordinary job keeps its one waiting Take.
+    func testWhileHerRowsAreReadAReservedJobShowsThePairWithConfirmWaiting() async throws {
+        let reserved = try await spoken(StickyActionFooter(
+            action: .takeWaiting,
+            inFlightAction: nil,
+            onConfirm: { _ in },
+            preferredOffer: .sample(id: orderId)
+        ))
+        XCTAssertFalse(reserved.contains { $0.label == L10n.Orders.takeOrder }, "no lone Take")
+        let decline = try XCTUnwrap(reserved.first { $0.label == L10n.Offers.decline })
+        let confirm = try XCTUnwrap(reserved.first { $0.label == L10n.Offers.confirm })
+        XCTAssertTrue(decline.enabled, "Decline does not wait for her rows")
+        XCTAssertFalse(confirm.enabled, "Confirm waits for her rows")
+        XCTAssertLessThan(decline.minX, confirm.minX)
+
+        let ordinary = try await spoken(StickyActionFooter(
+            action: .takeWaiting,
+            inFlightAction: nil,
+            onConfirm: { _ in }
+        ))
+        XCTAssertEqual(ordinary.map(\.label), [L10n.Orders.takeOrder])
+        XCTAssertEqual(ordinary.first?.enabled, false)
+    }
+
+    private struct Spoken {
+        let label: String
+        let enabled: Bool
+        let minX: Double
+    }
+
+    private func spoken(_ footer: StickyActionFooter) async throws -> [Spoken] {
+        let host = UIHostingController(rootView: footer.frame(width: 393))
+        let scene = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first
+        let window = scene.map(UIWindow.init(windowScene:)) ?? UIWindow()
+        window.frame = CGRect(x: 0, y: 0, width: 393, height: 200)
+        window.rootViewController = host
+        window.isHidden = false
+        defer {
+            window.isHidden = true
+            window.rootViewController = nil
+        }
+        for _ in 0 ..< 6 {
+            try await Task.sleep(nanoseconds: 30_000_000)
+            host.view.layoutIfNeeded()
+        }
+        let tree = try JSONSerialization.jsonObject(with: CaptureProbe.semantics(of: window)) as? [[String: Any]]
+        return try XCTUnwrap(tree).map { node in
+            let traits = UIAccessibilityTraits(rawValue: (node["traits"] as? NSNumber)?.uint64Value ?? 0)
+            return Spoken(
+                label: node["label"] as? String ?? "",
+                enabled: !traits.contains(.notEnabled),
+                minX: (node["frame"] as? [Double])?.first ?? 0
+            )
+        }
     }
 }

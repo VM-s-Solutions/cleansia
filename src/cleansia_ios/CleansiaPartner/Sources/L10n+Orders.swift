@@ -19,10 +19,6 @@ extension L10n {
             localized("order_removal_title")
         }
 
-        static func removalMessage(_ reason: String) -> String {
-            format("order_removal_message", reason)
-        }
-
         static var available: String {
             localized("available")
         }
@@ -47,30 +43,6 @@ extension L10n {
             localized("you_earn")
         }
 
-        static func kmAway(_ value: String) -> String {
-            format("km_away", value)
-        }
-
-        static var locationPrompt: String {
-            localized("orders_location_prompt")
-        }
-
-        static var locationPromptAction: String {
-            localized("orders_location_prompt_action")
-        }
-
-        static var topPay: String {
-            localized("top_pay")
-        }
-
-        static var startsSoon: String {
-            localized("starts_soon")
-        }
-
-        static var noOrdersAvailable: String {
-            localized("no_orders_available")
-        }
-
         static var noActiveOrders: String {
             localized("no_active_orders")
         }
@@ -83,14 +55,6 @@ extension L10n {
             localized("no_matching_orders")
         }
 
-        static var searchHint: String {
-            localized("search_orders_hint")
-        }
-
-        static func availableSummary(_ count: Int, _ earnings: String) -> String {
-            format("available_summary", count, earnings)
-        }
-
         static var sortEarningsHighToLow: String {
             localized("sort_earnings_high_to_low")
         }
@@ -99,24 +63,8 @@ extension L10n {
             localized("sort_soonest_first")
         }
 
-        static var sortPriceHighToLow: String {
-            localized("sort_price_high_to_low")
-        }
-
         static var periodThisWeek: String {
             localized("period_this_week")
-        }
-
-        static var periodThisMonth: String {
-            localized("period_this_month")
-        }
-
-        static var periodLastMonth: String {
-            localized("period_last_month")
-        }
-
-        static var periodAll: String {
-            localized("period_all")
         }
 
         static var dayToday: String {
@@ -147,26 +95,6 @@ extension L10n {
             plural("crew_size", count)
         }
 
-        static func crewSpotsOpen(_ count: Int) -> String {
-            plural("crew_spots_open", count)
-        }
-
-        static var crewNoSpots: String {
-            localized("crew_no_spots")
-        }
-
-        static var inProgressNow: String {
-            localized("in_progress_now")
-        }
-
-        static var earnings: String {
-            localized("earnings")
-        }
-
-        static var jobs: String {
-            localized("jobs")
-        }
-
         static var unscheduled: String {
             localized("unscheduled")
         }
@@ -189,20 +117,12 @@ extension L10n {
             localized("action_navigate")
         }
 
-        static var mapApproximateArea: String {
-            localized("map_approximate_area")
-        }
-
         static var customerDetailsClosedCompleted: String {
             localized("order_customer_details_closed_completed")
         }
 
         static var customerDetailsClosedCancelled: String {
             localized("order_customer_details_closed_cancelled")
-        }
-
-        static var scopeSectionTitle: String {
-            localized("scope_section_title")
         }
 
         static var scopeServicesLabel: String {
@@ -263,16 +183,8 @@ extension L10n {
             localized("payment_total")
         }
 
-        static func paymentMethod(_ value: String) -> String {
-            format("payment_method_value", value)
-        }
-
         static var paymentMethodCash: String {
             localized("payment_method_cash")
-        }
-
-        static var paymentMethodCard: String {
-            localized("payment_method_card")
         }
 
         static var paymentStatusPaid: String {
@@ -327,14 +239,6 @@ extension L10n {
             localized("delete_photo_confirmation")
         }
 
-        static func estimateRemaining(_ minutes: Int) -> String {
-            format("order_estimate_remaining", minutes)
-        }
-
-        static func estimateOverrun(_ minutes: Int) -> String {
-            format("order_estimate_overrun", minutes)
-        }
-
         static var cameraUnavailable: String {
             localized("camera_unavailable")
         }
@@ -379,32 +283,12 @@ extension L10n {
             localized("tracker_headline_on_the_way")
         }
 
-        static var trackerHeadlineInProgress: String {
-            localized("tracker_headline_in_progress")
-        }
-
         static var trackerHeadlineDone: String {
             localized("tracker_headline_done")
         }
 
-        static func trackerCountdownStartsIn(_ duration: String) -> String {
-            format("tracker_countdown_starts_in", duration)
-        }
-
-        static func trackerSubtitleOnTheWayArriving(_ time: String) -> String {
-            format("tracker_subtitle_on_the_way_arriving", time)
-        }
-
-        static func trackerCompletedIn(_ duration: String) -> String {
-            format("tracker_completed_in", duration)
-        }
-
         static func trackerFinishedAt(_ dateTime: String) -> String {
             format("tracker_finished_at", dateTime)
-        }
-
-        static func trackerStepCounter(_ step: Int, _ total: Int) -> String {
-            format("tracker_step_counter", step, total)
         }
 
         static func durationHoursMinutes(_ hours: Int, _ minutes: Int) -> String {
@@ -428,13 +312,200 @@ extension L10n {
             }
         }
 
+        /// A normal home says nothing: only the increased and the heavy level are named.
         static func dirtinessLevel(_ level: DirtinessLevel?) -> String? {
             switch level {
-            case ._0: localized("dirtiness_level_normal")
             case ._1: localized("dirtiness_level_increased")
             case ._2: localized("dirtiness_level_heavy")
-            case .none: nil
+            case ._0, .none: nil
             }
         }
+    }
+}
+
+// MARK: - Board (the Orders tabs)
+
+extension L10n.Orders {
+    static func jobCount(_ count: Int) -> String {
+        L10n.plural("orders_job_count", count)
+    }
+
+    static var opensTheJob: String {
+        L10n.localized("orders_row_opens_job")
+    }
+
+    static var exactAddressAfterTake: String {
+        L10n.localized("orders_map_exact_after_take")
+    }
+
+    static var mapRecentre: String {
+        L10n.localized("orders_map_recenter")
+    }
+
+    static var yourShare: String {
+        L10n.localized("orders_card_your_share")
+    }
+
+    static func durationH(_ hours: Int) -> String {
+        L10n.format("orders_duration_h", hours)
+    }
+
+    static func durationHMin(_ hours: Int, _ minutes: Int) -> String {
+        L10n.format("orders_duration_h_min", hours, minutes)
+    }
+
+    static func durationMin(_ minutes: Int) -> String {
+        L10n.format("orders_duration_min", minutes)
+    }
+
+    static func crewTaken(_ count: Int) -> String {
+        L10n.plural("orders_flag_crew_taken", count)
+    }
+
+    static var crewNobody: String {
+        L10n.localized("orders_flag_crew_nobody")
+    }
+
+    static func flagTakeUntil(_ until: String) -> String {
+        L10n.format("orders_flag_take_until", until)
+    }
+
+    static func flagOverlap(_ window: String) -> String {
+        L10n.format("orders_flag_overlap", window)
+    }
+
+    static var extraShortOven: String {
+        L10n.localized("extra_short_inside_oven")
+    }
+
+    static var extraShortFridge: String {
+        L10n.localized("extra_short_inside_fridge")
+    }
+
+    static var extraShortInteriorWindows: String {
+        L10n.localized("extra_short_interior_windows")
+    }
+
+    static var extraShortIroning: String {
+        L10n.localized("extra_short_laundry_ironing")
+    }
+
+    static func overlapCount(_ count: Int) -> String {
+        L10n.plural("available_overlap_count", count)
+    }
+
+    /// The banded straight-line distance from the cleaner's stored home (D2); the set is frozen.
+    static func distanceBand(_ band: HomeDistanceBand) -> String {
+        switch band {
+        case ._1: L10n.localized("distance_band_under_3")
+        case ._2: L10n.localized("distance_band_3_6")
+        case ._3: L10n.localized("distance_band_6_10")
+        case ._4: L10n.localized("distance_band_10_20")
+        case ._5: L10n.localized("distance_band_over_20")
+        }
+    }
+
+    static var distanceFootnote: String {
+        L10n.localized("available_distance_footnote")
+    }
+
+    static var reservedThen: String {
+        L10n.localized("available_reserved_then")
+    }
+
+    static func showingOf(_ shown: Int, _ total: Int) -> String {
+        L10n.format("available_showing_of", shown, total)
+    }
+
+    static var loadMore: String {
+        L10n.localized("available_load_more")
+    }
+
+    static var emptyTitle: String {
+        L10n.localized("available_empty_title")
+    }
+
+    static var emptySubtitle: String {
+        L10n.localized("available_empty_subtitle")
+    }
+
+    static var loadError: String {
+        L10n.localized("orders_load_error")
+    }
+
+    static func staleSince(_ when: String) -> String {
+        L10n.format("orders_stale_since", when)
+    }
+
+    static var loadMoreFailed: String {
+        L10n.localized("orders_load_more_failed")
+    }
+
+    static var checkAgain: String {
+        L10n.localized("orders_check_again")
+    }
+
+    static func sortA11y(_ label: String) -> String {
+        L10n.format("orders_sort_a11y", label)
+    }
+
+    static var a11yExpanded: String {
+        L10n.localized("orders_a11y_expanded")
+    }
+
+    static var a11yCollapsed: String {
+        L10n.localized("orders_a11y_collapsed")
+    }
+
+    static var a11yToggleHint: String {
+        L10n.localized("orders_a11y_toggle_hint")
+    }
+
+    static var cashHidden: String {
+        L10n.localized("available_cash_hidden")
+    }
+
+    static var heroNext: String {
+        L10n.localized("active_hero_next")
+    }
+
+    static func heroIn(_ duration: String) -> String {
+        L10n.format("active_hero_in", duration)
+    }
+
+    static func heroDue(_ time: String) -> String {
+        L10n.format("active_hero_due", time)
+    }
+
+    static func heroUntil(_ time: String) -> String {
+        L10n.format("active_hero_until", time)
+    }
+
+    static func setOffFrom(_ time: String) -> String {
+        L10n.format("active_set_off_from", time)
+    }
+
+    static var heroDetails: String {
+        L10n.localized("active_hero_details")
+    }
+
+    static func heroTeam(_ count: Int) -> String {
+        L10n.plural("active_hero_team", count)
+    }
+
+    static var openJob: String {
+        L10n.localized("orders_open_job")
+    }
+
+    static var rewardsTitle: String {
+        L10n.localized("history_rewards_title")
+    }
+
+    static func historySummary(_ jobs: String, _ hours: String) -> String {
+        L10n.format("history_summary", jobs, hours)
+    }
+
+    static func payoutsLink(_ section: String) -> String {
+        L10n.format("history_payouts_link", section)
     }
 }

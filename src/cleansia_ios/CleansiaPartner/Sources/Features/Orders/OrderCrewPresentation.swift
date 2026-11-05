@@ -18,6 +18,14 @@ enum OrderCrew: Equatable {
         case let .full(crewSize): crewSize
         }
     }
+
+    /// The seats taken: the board's "1 already on it".
+    var taken: Int {
+        switch self {
+        case let .spotsOpen(crewSize, openSpots): max(crewSize - openSpots, 0)
+        case let .full(crewSize): crewSize
+        }
+    }
 }
 
 extension OrderCrew {

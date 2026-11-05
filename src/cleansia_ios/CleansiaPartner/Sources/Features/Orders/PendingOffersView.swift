@@ -17,7 +17,12 @@ struct PendingOffersView: View {
         onOpenOrder: @escaping (String) -> Void,
         onOpenLegalDocuments: @escaping () -> Void
     ) {
-        _vm = StateObject(wrappedValue: PendingOffersViewModel(store: store, staleness: staleness, snackbar: snackbar))
+        _vm = StateObject(wrappedValue: PendingOffersViewModel(
+            store: store,
+            client: client,
+            staleness: staleness,
+            snackbar: snackbar
+        ))
         self.client = client
         self.onOpenOrder = onOpenOrder
         self.onOpenLegalDocuments = onOpenLegalDocuments
@@ -45,12 +50,16 @@ struct PendingOffersView: View {
             WorkContractSheet(
                 request: request,
                 client: client,
+                taken: vm.takenJob,
+                endsOnTakenPanel: true,
                 onDismiss: vm.dismissContract,
                 onOutcome: { outcome in Task { await vm.onWorkContractOutcome(outcome) } },
                 onOpenLegalDocuments: {
                     vm.dismissContract()
                     onOpenLegalDocuments()
-                }
+                },
+                onOpenJob: vm.openTakenJob,
+                onBackToJobs: vm.dismissContract
             )
         }
         .task { await vm.load() }
@@ -123,7 +132,7 @@ private struct OffersErrorView: View {
     var body: some View {
         VStack(spacing: Spacing.m) {
             Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 40))
+                .font(.largeTitle)
                 .foregroundColor(CleansiaColors.error)
             Text(ApiErrorLocalizer().message(for: error))
                 .font(CleansiaTypography.bodyMedium)
@@ -169,7 +178,7 @@ private struct PendingOfferCard: View {
                 }
             }
 
-            // City and a truncated postcode — the pre-acceptance ceiling for every cleaner-facing
+            // The district or the city — the pre-acceptance ceiling for every cleaner-facing
             // surface. The server sends nothing finer and the screen asks for nothing finer.
             if let address = offer.customerAddressApproximate, !address.isBlank {
                 Label(address, systemImage: "mappin.and.ellipse")

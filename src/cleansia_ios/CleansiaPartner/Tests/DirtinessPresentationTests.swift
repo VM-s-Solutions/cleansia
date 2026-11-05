@@ -5,13 +5,15 @@ import XCTest
 /// The level is an integer on the wire, so these decode it the way the client does rather than
 /// constructing the enum by hand — the board card and the detail read what the server sends.
 final class DirtinessPresentationTests: XCTestCase {
-    private static let levels: [DirtinessLevel] = [._0, ._1, ._2]
+    private static let levels: [DirtinessLevel] = [._1, ._2]
 
-    func testTheDetailNamesEveryLevelInEveryLanguage() throws {
+    /// A normal home says nothing: the detail names the increased and the heavy level only.
+    func testTheDetailNamesTheDirtierLevelsInEveryLanguage() throws {
         let restore = L10n.bundle
         defer { L10n.bundle = restore }
         for language in ["en", "cs", "sk", "uk", "ru"] {
             L10n.bundle = try localeBundle(language)
+            XCTAssertNil(L10n.Orders.dirtinessLevel(._0), "a normal home is named in \(language)")
             let names = try Self.levels.map { try XCTUnwrap(L10n.Orders.dirtinessLevel($0), "\($0) in \(language)") }
             XCTAssertEqual(Set(names).count, Self.levels.count, "two levels share a name in \(language): \(names)")
             for name in names + [L10n.PeriodPay.dirtiness] {
@@ -55,32 +57,34 @@ final class DirtinessPresentationTests: XCTestCase {
         XCTAssertEqual(L10n.Orders.dirtinessLevel(detail.dirtinessLevel), L10n.Orders.dirtinessLevel(._1))
     }
 
-    func testANormalJobDetailStillNamesItsLevel() throws {
+    func testANormalJobDetailNamesNoLevel() throws {
         let detail = try OrderDetail(decode(OrderItem.self, Self.detailJson(level: 0)))
 
         XCTAssertEqual(detail.dirtinessLevel, ._0)
-        XCTAssertNotNil(L10n.Orders.dirtinessLevel(detail.dirtinessLevel))
+        XCTAssertNil(L10n.Orders.dirtinessLevel(detail.dirtinessLevel))
     }
 
     // MARK: - Where the level and the pay term are drawn
 
-    func testTheBoardCardLeadsItsChipsWithTheLevel() throws {
-        let source = try read("CleansiaPartner/Sources/Features/Orders/OrdersListComponents.swift")
-        XCTAssertTrue(
-            source.contains("let dirtiness = OrdersFormat.dirtinessChip(order.dirtinessLevel)"),
-            "the board card no longer reads the order's level"
-        )
-        XCTAssertTrue(
-            source.contains("if let dirtiness { ScopeChip(text: dirtiness) }"),
-            "the board card no longer draws the level chip"
-        )
+    /// The board flags both dirtier-than-normal levels (BR: Increased and Heavy), and a normal home not at all.
+    func testTheBoardCardFlagsIncreasedAndHeavyDirt() {
+        var row = OrderListItem.sample(id: "o1")
+        for level in [DirtinessLevel._1, ._2] {
+            row.dirtinessLevel = level
+            let flags = OrdersBoardRules.flags(row, clash: nil, now: Date(), locale: Locale(identifier: "en"))
+            XCTAssertEqual(flags.last, .dirt(L10n.Orders.dirtinessLevel(level) ?? ""), "\(level)")
+        }
+        row.dirtinessLevel = ._0
+        XCTAssertTrue(OrdersBoardRules.flags(row, clash: nil, now: Date(), locale: Locale(identifier: "en")).isEmpty)
     }
 
-    func testTheScopeCardNamesTheLevel() throws {
+    func testTheDetailNamesOnlyADirtierThanNormalHome() throws {
+        let source = try read("CleansiaPartner/Sources/Features/Orders/OrderDetailCards.swift")
+            .components(separatedBy: .whitespacesAndNewlines).joined()
         XCTAssertTrue(
-            try read("CleansiaPartner/Sources/Features/Orders/OrderDetailCards.swift")
-                .contains("if let dirtiness = L10n.Orders.dirtinessLevel(order.dirtinessLevel)"),
-            "the job detail no longer names the level"
+            source.contains("iforder.dirtinessLevel==._1||order.dirtinessLevel==._2,"
+                + "letdirt=L10n.Orders.dirtinessLevel(order.dirtinessLevel)"),
+            "the job detail names a level that is not increased or heavy"
         )
     }
 

@@ -31,41 +31,34 @@ extension OrderDetail {
     }
 }
 
+/// The lockout inside the Getting-in step: before it opens the one line saying when it will, with *paid in full*;
+/// from start + 15 the entrance photo and *I cannot get in*; once reported, the report and the calls as written. It
+/// opens by the detail's clock, the one the run sheet orders its step by, which redraws the page as time passes.
 struct LockoutCard: View {
-    static let icon = "door.left.hand.closed"
-
     @Environment(\.locale) private var locale
-    @Environment(\.scenePhase) private var scenePhase
     let order: OrderDetail
+    let now: Date
     let isReporting: Bool
     let actionsEnabled: Bool
     let photosVM: OrderPhotosViewModel
     let onReport: (String) -> Void
-
-    @State private var now = Date()
+    var showsLine = true
 
     var body: some View {
-        Group { standingCard }
-            .onChange(of: scenePhase) { phase in
-                if phase == .active { now = Date() }
-            }
-    }
-
-    @ViewBuilder
-    private var standingCard: some View {
         switch order.lockoutStanding(now: now) {
         case .hidden:
             EmptyView()
         case let .notYet(opensAt):
-            OrderSectionCard(title: L10n.Orders.lockoutCardTitle, systemImage: Self.icon) {
-                Text(L10n.Orders.lockoutCardNotYet(
-                    OrdersFormat.timeOnly(opensAt, locale: locale),
-                    LockoutStanding.waitMinutes
-                ))
-                .font(CleansiaTypography.bodyMedium)
-                .foregroundColor(CleansiaColors.onSurfaceVariant)
+            if showsLine {
+                (Text(L10n.Orders.lockoutCardTitle).foregroundColor(CleansiaColors.onSurface)
+                    + Text(" " + L10n.tie(L10n.Orders.lockoutCardNotYet(
+                        OrdersFormat.timeOnly(opensAt, locale: locale),
+                        LockoutStanding.waitMinutes
+                    ) + " " + L10n.Orders.lockoutPaidInFull)))
+                    .font(CleansiaTypography.bodyMedium)
+                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            .task(id: opensAt) { await reopen(at: opensAt) }
         case .open:
             OpenLockoutCard(
                 isReporting: isReporting,
@@ -74,29 +67,26 @@ struct LockoutCard: View {
                 onReport: onReport
             )
         case let .reported(reportedAt, callAttempts):
-            OrderSectionCard(title: L10n.Orders.lockoutReportedTitle, systemImage: Self.icon) {
-                VStack(alignment: .leading, spacing: Spacing.s) {
-                    Text(L10n.Orders.lockoutReportedBody(OrdersFormat.timeOnly(reportedAt, locale: locale)))
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                DetailEyebrow(text: L10n.Orders.lockoutReportedTitle)
+                Text(L10n.tie(L10n.Orders.lockoutReportedBody(OrdersFormat.timeOnly(reportedAt, locale: locale))))
+                    .font(CleansiaTypography.bodyMedium)
+                    .foregroundColor(CleansiaColors.onSurface)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let callAttempts, !callAttempts.isBlank {
+                    (Text(L10n.Orders.lockoutReportedCalls("")) + Text(CustomerText.spoken(callAttempts)))
                         .font(CleansiaTypography.bodyMedium)
-                        .foregroundColor(CleansiaColors.onSurface)
-                    if let callAttempts, !callAttempts.isBlank {
-                        Text(L10n.Orders.lockoutReportedCalls(callAttempts))
-                            .font(CleansiaTypography.labelSmall)
-                            .foregroundColor(CleansiaColors.onSurfaceVariant)
-                    }
+                        .foregroundColor(CleansiaColors.onSurfaceVariant)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
+                EntrancePhotos(photosVM: photosVM, canUpload: false)
+                Text(L10n.tie(L10n.Orders.lockoutPaidInFull))
+                    .font(CleansiaTypography.bodyMedium)
+                    .foregroundColor(CleansiaColors.onSurface)
+                    .fixedSize(horizontal: false, vertical: true)
             }
+            .lockoutBlock()
         }
-    }
-
-    @MainActor
-    private func reopen(at opensAt: Date) async {
-        while Date() < opensAt {
-            let step = LockoutStanding.clockStep(now: Date(), opensAt: opensAt)
-            try? await Task.sleep(nanoseconds: UInt64(step * 1_000_000_000))
-            if Task.isCancelled { return }
-        }
-        now = Date()
     }
 }
 
@@ -106,7 +96,6 @@ private struct OpenLockoutCard: View {
     @ObservedObject var photosVM: OrderPhotosViewModel
     let onReport: (String) -> Void
 
-    @StateObject private var imageCache = RemoteImageCache()
     @State private var sheetOpen = false
     @State private var note = ""
 
@@ -115,36 +104,33 @@ private struct OpenLockoutCard: View {
     }
 
     var body: some View {
-        OrderSectionCard(title: L10n.Orders.lockoutCardTitle, systemImage: LockoutCard.icon) {
-            VStack(alignment: .leading, spacing: Spacing.m) {
-                Text(L10n.Orders.lockoutCardBody)
-                    .font(CleansiaTypography.bodyMedium)
-                    .foregroundColor(CleansiaColors.onSurfaceVariant)
-                PhotoRail(
-                    title: L10n.Orders.lockoutEntrancePhoto,
-                    type: ._3,
-                    photos: entrancePhotos,
-                    isReadOnly: false,
-                    mutation: photosVM.mutation,
-                    imageCache: imageCache,
-                    onPick: { type, image in Task { await photosVM.upload(type: type, image: image) } },
-                    onDelete: { id in Task { await photosVM.delete(photoId: id) } }
-                )
-                if entrancePhotos.isEmpty {
-                    Text(L10n.Orders.lockoutPhotoNeeded)
-                        .font(CleansiaTypography.labelSmall)
-                        .foregroundColor(CleansiaColors.onSurfaceVariant)
-                }
+        VStack(alignment: .leading, spacing: Spacing.xs) {
+            DetailEyebrow(text: L10n.Orders.lockoutCardTitle)
+            Text(L10n.tie("\(L10n.Orders.lockoutCardBody) \(L10n.Orders.lockoutPaidInFull)"))
+                .font(CleansiaTypography.bodyMedium)
+                .foregroundColor(CleansiaColors.onSurface)
+                .fixedSize(horizontal: false, vertical: true)
+            EntrancePhotos(photosVM: photosVM, canUpload: true)
+            if entrancePhotos.isEmpty {
+                OrdersCaption(text: L10n.Orders.lockoutPhotoNeeded)
+            }
+            if isReporting {
+                ProgressView()
+                    .tint(CleansiaColors.primaryText)
+                    .frame(maxWidth: .infinity, minHeight: 48)
+            } else {
                 CleansiaOutlinedButton(
                     L10n.Orders.lockoutReportAction,
                     size: .medium,
-                    leadingIcon: LockoutCard.icon,
-                    enabled: !entrancePhotos.isEmpty && actionsEnabled && !isReporting
+                    contentColor: CleansiaColors.primaryText,
+                    borderColor: CleansiaColors.primary,
+                    enabled: !entrancePhotos.isEmpty && actionsEnabled
                 ) {
                     sheetOpen = true
                 }
             }
         }
+        .lockoutBlock()
         .sheet(isPresented: $sheetOpen) {
             LockoutReportSheet(
                 note: $note,
@@ -198,5 +184,35 @@ private struct LockoutReportSheet: View {
             .background(CleansiaColors.background.ignoresSafeArea())
         }
         .presentationDetents([.medium, .large])
+    }
+}
+
+/// The entrance photos a lockout report rests on.
+private struct EntrancePhotos: View {
+    @ObservedObject var photosVM: OrderPhotosViewModel
+    let canUpload: Bool
+    @StateObject private var imageCache = RemoteImageCache()
+
+    var body: some View {
+        PhotoColumn(
+            title: L10n.Orders.lockoutEntrancePhoto,
+            type: ._3,
+            photos: (photosVM.state.loadedValue ?? []).filter { $0.photoType == ._3 },
+            canUpload: canUpload,
+            mutation: photosVM.mutation,
+            imageCache: imageCache,
+            request: .constant(false),
+            onPick: { type, image in Task { await photosVM.upload(type: type, image: image) } },
+            onDelete: { id in Task { await photosVM.delete(photoId: id) } }
+        )
+    }
+}
+
+private extension View {
+    /// The lockout leads its step, ruled off from the access and the customer under it.
+    func lockoutBlock() -> some View {
+        padding(.bottom, Spacing.m)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .overlay(alignment: .bottom) { Divider().overlay(CleansiaColors.outlineVariant) }
     }
 }

@@ -5,7 +5,8 @@ import UIKit
 import XCTest
 @testable import CleansiaPartner
 
-/// The sheet-edge puck's status → art rule, against Android's `FloatingMascot.mascotForStatus`.
+/// The figure standing on the detail's head, by the state the detail shows, and the head it stands
+/// on captured in uk at 375 pt, light and dark, large and AX3.
 final class OrderDetailMascotArtTests: XCTestCase {
     @MainActor
     func testPartnerMobilePolishVisualEvidence() async throws {
@@ -16,43 +17,47 @@ final class OrderDetailMascotArtTests: XCTestCase {
         defer { L10n.bundle = restore }
         let localization = try XCTUnwrap(Bundle.main.url(forResource: "uk", withExtension: "lproj"))
         L10n.bundle = try XCTUnwrap(Bundle(url: localization))
+        var item = OrderItem.wireComplete()
+        item.orderStatus = Code(value: 2)
+        item.isAssignedToCurrentUser = true
+        item.cleaningDateTime = Date(timeIntervalSinceNow: 4 * 3600)
+        item.estimatedTime = 120
+        item.estimatedCleanerPay = 779
+        item.currency = CurrencyDetailDto(code: "CZK", symbol: "Kč")
+        item.address = OrderAddress(street: "Vinohradská 46", city: "Praha", zipCode: "12000")
+        item.customerAddressApproximate = "Praha 2"
+        item.customerName = "Jana Nováková"
+        let order = try OrderDetail(item)
         for textSize in [DynamicTypeSize.large, .accessibility3] {
-            for anchor in [SnapAnchor.peek, .expanded] {
-                for scheme in [ColorScheme.light, .dark] {
-                    let host = UIHostingController(rootView:
-                        SnapSheet(anchor: .constant(anchor)) {
-                            CleansiaColors.primaryContainer
-                        } ornament: {
-                            OrderDetailOrnament(order: .preview)
-                        } content: {
-                            OrderDetailContent(
-                                order: .preview,
-                                checklistVM: .preview,
-                                notesVM: .preview,
-                                photosVM: .preview
-                            )
-                        }
-                        .environment(\.locale, Locale(identifier: "uk"))
-                        .environment(\.colorScheme, scheme)
-                        .environment(\.dynamicTypeSize, textSize)
+            for scheme in [ColorScheme.light, .dark] {
+                let host = UIHostingController(rootView:
+                    OrderDetailContent(
+                        order: order,
+                        checklistVM: .preview,
+                        notesVM: .preview,
+                        photosVM: .preview
                     )
-                    let window = UIWindow(windowScene: scene)
-                    window.frame = CGRect(x: 0, y: 0, width: 375, height: 812)
-                    window.rootViewController = host
-                    window.makeKeyAndVisible()
-                    host.view.layoutIfNeeded()
-                    try await Task.sleep(nanoseconds: 250_000_000)
-                    let image = UIGraphicsImageRenderer(bounds: window.bounds).image { _ in
-                        window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
-                    }
-                    let attachment = XCTAttachment(image: image)
-                    attachment.name = "Partner header 375pt uk \(anchor) \(scheme) \(textSize)"
-                    attachment.lifetime = .keepAlways
-                    add(attachment)
-                    window.isHidden = true
-                    window.rootViewController = nil
-                    previous?.makeKeyAndVisible()
+                    .padding(.top, 64)
+                    .environment(\.locale, Locale(identifier: "uk"))
+                    .environment(\.colorScheme, scheme)
+                    .environment(\.dynamicTypeSize, textSize)
+                )
+                let window = UIWindow(windowScene: scene)
+                window.frame = CGRect(x: 0, y: 0, width: 375, height: 812)
+                window.rootViewController = host
+                window.makeKeyAndVisible()
+                host.view.layoutIfNeeded()
+                try await Task.sleep(nanoseconds: 250_000_000)
+                let image = UIGraphicsImageRenderer(bounds: window.bounds).image { _ in
+                    window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
                 }
+                let attachment = XCTAttachment(image: image)
+                attachment.name = "Partner job head 375pt uk \(scheme) \(textSize)"
+                attachment.lifetime = .keepAlways
+                add(attachment)
+                window.isHidden = true
+                window.rootViewController = nil
+                previous?.makeKeyAndVisible()
             }
         }
     }
@@ -66,8 +71,23 @@ final class OrderDetailMascotArtTests: XCTestCase {
         XCTAssertEqual(OrderDetailMascotArt.art(for: ._2), .still(.waving))
     }
 
-    func testOnTheWayCarriesTheKit() {
-        XCTAssertEqual(OrderDetailMascotArt.art(for: ._3), .still(.sprayAndCloth))
+    func testOnTheWayIsReady() {
+        XCTAssertEqual(OrderDetailMascotArt.art(for: ._3), .still(.ready))
+    }
+
+    func testAReportedLockoutRests() {
+        XCTAssertEqual(OrderDetailMascotArt.art(for: ._3, reported: true), .still(.resting))
+    }
+
+    func testInProgressCarriesTheKitAndACashJobItsSlip() {
+        XCTAssertEqual(OrderDetailMascotArt.art(for: ._4), .still(.sprayAndCloth))
+        XCTAssertEqual(OrderDetailMascotArt.art(for: ._4, cash: true), .still(.invoice))
+    }
+
+    func testAJobNotTakenLeansAndOneAskedForHerWaves() {
+        XCTAssertEqual(OrderDetailMascotArt.art(for: ._0, isMine: false), .still(.leaning))
+        XCTAssertEqual(OrderDetailMascotArt.art(for: ._4, isMine: false), .still(.leaning))
+        XCTAssertEqual(OrderDetailMascotArt.art(for: ._0, isMine: false, offered: true), .still(.waving))
     }
 
     func testCompletedGivesAThumbsUp() {
@@ -78,14 +98,9 @@ final class OrderDetailMascotArtTests: XCTestCase {
         XCTAssertEqual(OrderDetailMascotArt.art(for: nil), .still(.thumbsUp))
     }
 
-    /// The rule the whole affordance rests on, and the one a silent static fallback would hide:
-    /// InProgress is the ONLY status that animates.
-    func testOnlyInProgressAnimates() {
-        XCTAssertEqual(
-            OrderDetailMascotArt.art(for: ._4),
-            .animated(.cleaningInProgress, loop: true, fallback: .cleaning)
-        )
-        for status in OrderStatus.allCases where status != ._4 {
+    /// The head draws still figures only: `cleaning`'s pale blob reads as a sticker on dark.
+    func testNoStateAnimates() {
+        for status in OrderStatus.allCases {
             guard let art = OrderDetailMascotArt.art(for: status) else { continue }
             switch art {
             case .animated: XCTFail("\(status) must not animate")
@@ -94,12 +109,12 @@ final class OrderDetailMascotArtTests: XCTestCase {
         }
     }
 
-    func testCancelledShowsNoMascot() {
-        XCTAssertNil(OrderDetailMascotArt.art(for: ._6))
+    func testCancelledRests() {
+        XCTAssertEqual(OrderDetailMascotArt.art(for: ._6), .still(.resting))
     }
 
-    func testEveryOtherStatusShowsOne() {
-        for status in OrderStatus.allCases where status != ._6 {
+    func testEveryStatusShowsOne() {
+        for status in OrderStatus.allCases {
             XCTAssertNotNil(OrderDetailMascotArt.art(for: status), "\(status) has no mascot")
         }
     }

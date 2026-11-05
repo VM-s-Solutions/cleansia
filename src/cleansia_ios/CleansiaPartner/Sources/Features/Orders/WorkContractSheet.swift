@@ -1,77 +1,193 @@
 import CleansiaCore
+import CleansiaPartnerApi
 import SwiftUI
 
-/// The contract for work, on one screen with the gesture that accepts it: the job's facts, the text,
-/// and the swipe beneath. A take and a standalone acceptance differ only in what the swipe calls; a
-/// read shows the stored facts and the accepted version with no swipe at all.
+/// The contract for work, on one screen with the gesture that accepts it: the job's facts, a plain summary of
+/// what the contract means for the cleaner, the text, and the swipe beneath. A take and a standalone acceptance
+/// differ only in what the swipe calls; a read shows the stored facts and the accepted version with no swipe.
 ///
-/// Built per presentation, so every open re-loads — the facts are the server's word at that moment,
-/// never the list row's.
+/// Built per presentation, so every open re-loads — the facts are the server's word at that moment. Opened from
+/// the board it also knows the row the card showed: its facts appear at once while the contract loads, the
+/// board's rules for the job sit above the text, and a refusal keeps the sheet open. A take from the board or the
+/// detail ends on the taken job.
 struct WorkContractSheet: View {
     @StateObject private var vm: WorkContractSheetViewModel
+    @State private var takenHeight: CGFloat = 0
+    private let board: BoardTake?
+    private let taken: TakenJob?
     private let onDismiss: () -> Void
     private let onOutcome: (WorkContractOutcome) -> Void
     private let onOpenLegalDocuments: () -> Void
+    private let onOpenJob: () -> Void
+    private let onBackToJobs: (() -> Void)?
 
+    /// `taken` is the panel's facts from a host other than the board, which also asks for the panel with
+    /// `endsOnTakenPanel`; the board's come from its row.
     init(
         request: WorkContractRequest,
         client: PartnerOrderClient,
+        board: BoardTake? = nil,
+        taken: TakenJob? = nil,
+        endsOnTakenPanel: Bool = false,
         onDismiss: @escaping () -> Void,
         onOutcome: @escaping (WorkContractOutcome) -> Void,
-        onOpenLegalDocuments: @escaping () -> Void
+        onOpenLegalDocuments: @escaping () -> Void,
+        onOpenJob: @escaping () -> Void = {},
+        onBackToJobs: (() -> Void)? = nil
     ) {
-        _vm = StateObject(wrappedValue: WorkContractSheetViewModel(request: request, client: client))
+        _vm = StateObject(wrappedValue: WorkContractSheetViewModel(
+            request: request,
+            client: client,
+            hasBoardContext: board != nil,
+            endsOnTakenPanel: endsOnTakenPanel
+        ))
+        self.board = board
+        self.taken = taken
         self.onDismiss = onDismiss
         self.onOutcome = onOutcome
         self.onOpenLegalDocuments = onOpenLegalDocuments
+        self.onOpenJob = onOpenJob
+        self.onBackToJobs = onBackToJobs
     }
 
     private var submitting: Bool {
         vm.actionState.isSubmitting
     }
 
+    /// The taken sheet hugs what it says; every other state takes the whole height.
+    private var detents: Set<PresentationDetent> {
+        guard case .taken = vm.state, takenHeight > 0 else { return [.large] }
+        return [.height(takenHeight)]
+    }
+
     var body: some View {
-        NavigationStack {
-            WorkContractSheetContent(
-                request: vm.request,
-                state: vm.state,
-                notice: vm.notice,
-                submitting: submitting,
-                onAccept: { Task { await vm.accept() } },
-                onRetry: { Task { await vm.load() } },
-                onClose: onDismiss,
-                onOpenLegalDocuments: onOpenLegalDocuments
-            )
-            .navigationTitle(vm.state.loadedContract?.title ?? L10n.WorkContract.title)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(L10n.close, action: onDismiss).disabled(submitting)
-                }
-            }
-            .background(CleansiaColors.surface.ignoresSafeArea())
-        }
+        WorkContractSheetContent(
+            request: vm.request,
+            state: vm.state,
+            board: board,
+            taken: taken,
+            notice: vm.notice,
+            submitting: submitting,
+            onAccept: { Task { await vm.accept() } },
+            onRetry: { Task { await vm.load() } },
+            onClose: onDismiss,
+            onOpenLegalDocuments: onOpenLegalDocuments,
+            onOpenJob: onOpenJob,
+            onBackToJobs: onBackToJobs,
+            onTakenHeight: { takenHeight = $0 }
+        )
+        .presentationDetents(detents)
+        .presentationDragIndicator(.visible)
         .interactiveDismissDisabled(submitting)
         .task { await vm.load() }
         .onReceive(vm.outcome) { onOutcome($0) }
+        .onChange(of: submitting) { busy in
+            if busy { OrdersAccessibility.announce(L10n.WorkContract.accepting) }
+        }
     }
 }
 
 struct WorkContractSheetContent: View {
     let request: WorkContractRequest
     let state: WorkContractSheetState
+    var board: BoardTake?
+    var taken: TakenJob?
     var notice: WorkContractNotice?
     var submitting = false
     var onAccept: () -> Void = {}
     var onRetry: () -> Void = {}
     var onClose: () -> Void = {}
     var onOpenLegalDocuments: () -> Void = {}
+    var onOpenJob: () -> Void = {}
+    var onBackToJobs: (() -> Void)?
+    var onTakenHeight: (CGFloat) -> Void = { _ in }
+    var now = Date()
 
+    @State private var scrolled = false
+
+    /// A read names the stored contract's order; a take or an acceptance shows only the job's facts.
+    static func orderLine(_ facts: WorkContractJobFacts, request: WorkContractRequest) -> String? {
+        guard case .read = request, let number = facts.orderNumber, !number.isBlank else { return nil }
+        return L10n.WorkContract.orderNumber(number)
+    }
+
+    /// "Take this job?" from the board, none once taken; the contract's own title everywhere else.
+    static func title(request: WorkContractRequest, state: WorkContractSheetState, fromBoard: Bool) -> String {
+        if case .taken = state { return "" }
+        if fromBoard, case .take = request { return L10n.WorkContract.takeSheetTitle }
+        return state.loadedContract?.title ?? L10n.WorkContract.title
+    }
+
+    /// The header stays put on the sheet's own surface and takes a rule once the body scrolls under it; the taken job
+    /// has none, its own title under the grabber. Each state change crossfades over 200 ms; a refusal keeps the
+    /// loaded screen, whose swipe area fades.
     var body: some View {
+        VStack(spacing: 0) {
+            if showsHeader {
+                header
+            }
+            ZStack { content }
+                .animation(.easeInOut(duration: 0.2), value: phase)
+                .frame(maxHeight: .infinity)
+        }
+        .background(CleansiaColors.surface.ignoresSafeArea())
+        .onPreferenceChange(OrdersScrolledKey.self) { scrolled = $0 }
+    }
+
+    private var header: some View {
+        HStack(alignment: .center, spacing: Spacing.s) {
+            Text(Self.title(request: request, state: state, fromBoard: board != nil))
+                .cleansiaFont(CleansiaTypography.headlineSmall)
+                .foregroundColor(CleansiaColors.onSurface)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityAddTraits(.isHeader)
+            Spacer(minLength: 0)
+            CleansiaTextLink(L10n.close, action: onClose)
+                .disabled(submitting)
+                .padding(.trailing, -Spacing.xxs)
+        }
+        .frame(minHeight: 48)
+        .padding(.horizontal, Spacing.m)
+        .padding(.top, Spacing.m)
+        .padding(.bottom, Spacing.xxs)
+        .background(CleansiaColors.surface)
+        .overlay(alignment: .bottom) {
+            Rectangle().fill(CleansiaColors.outlineVariant).frame(height: 1).opacity(scrolled ? 1 : 0)
+        }
+        .zIndex(1)
+    }
+
+    private var showsHeader: Bool {
+        if case .taken = state { return false }
+        return true
+    }
+
+    private var phase: Int {
+        switch state {
+        case .loading: 0
+        case .error: 1
+        case .unavailable: 2
+        case .legalDocumentsNotAccepted: 3
+        case .loaded, .refused: 4
+        case .taken: 5
+        }
+    }
+
+    private var refusal: ApiError? {
+        guard case let .refused(_, error) = state else { return nil }
+        return error
+    }
+
+    @ViewBuilder
+    private var content: some View {
         switch state {
         case .loading:
-            ProgressView()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            if let board {
+                BoardLoadingContract(snapshot: board.snapshot, now: now)
+            } else {
+                ProgressView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
         case .error:
             SheetMessage(text: L10n.WorkContract.loadError, ctaLabel: L10n.retry, onCta: onRetry)
         case let .unavailable(error):
@@ -82,14 +198,26 @@ struct WorkContractSheetContent: View {
                 ctaLabel: L10n.LegalDocuments.review,
                 onCta: onOpenLegalDocuments
             )
-        case let .loaded(contract):
+        case let .loaded(contract), let .refused(contract, _):
             LoadedContract(
                 request: request,
                 contract: contract,
+                board: board,
                 notice: notice,
                 submitting: submitting,
+                refusal: refusal,
+                now: now,
                 onAccept: onAccept,
                 onClose: onClose
+            )
+        case let .taken(contract):
+            TakenContract(
+                contract: contract,
+                job: taken ?? board.map(TakenJob.init(board:)),
+                onBack: onBackToJobs ?? onClose,
+                onOpenJob: onOpenJob,
+                onHeight: onTakenHeight,
+                now: now
             )
         }
     }
@@ -99,127 +227,176 @@ private struct LoadedContract: View {
     @Environment(\.locale) private var locale
     let request: WorkContractRequest
     let contract: WorkContract
+    let board: BoardTake?
     let notice: WorkContractNotice?
     let submitting: Bool
+    let refusal: ApiError?
+    let now: Date
     let onAccept: () -> Void
     let onClose: () -> Void
+    @State private var contractHeight: CGFloat = 1
 
+    /// One scroll for the facts, the four lines, the rules and the contract, with the swipe pinned under it. The
+    /// contract is as tall as its text, and the page ends with the text's own bottom margin.
     var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.s) {
-            Text(L10n.WorkContract.version(contract.version))
-                .font(CleansiaTypography.labelMedium)
-                .foregroundColor(CleansiaColors.onSurfaceVariant)
-            Text(L10n.WorkContract.parties)
-                .font(CleansiaTypography.bodyMedium)
-                .foregroundColor(CleansiaColors.onSurfaceVariant)
-                .fixedSize(horizontal: false, vertical: true)
-            JobFactsCard(facts: contract.facts, locale: locale)
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    facts
+                    HtmlContentView(html: contract.contentHtml) { contractHeight = $0 }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: contractHeight)
+                        .padding(.top, Spacing.xs)
+                }
+                .padding(.horizontal, Spacing.m)
+                .padding(.top, Spacing.xxs)
+                .background(GeometryReader { content in
+                    Color.clear.preference(
+                        key: OrdersScrolledKey.self,
+                        value: content.frame(in: .named(OrdersScrolledKey.space)).minY < -0.5
+                    )
+                })
+            }
+            .coordinateSpace(name: OrdersScrolledKey.space)
+            foot
+                .padding(.horizontal, Spacing.m)
+                .padding(.vertical, Spacing.s)
+                .background(CleansiaColors.surface)
+                .overlay(alignment: .top) { Divider().overlay(CleansiaColors.outlineVariant) }
+        }
+    }
+
+    /// The facts card, the summary (it is the point of ruling 4, so it comes before the rules), the board's rules
+    /// for this job, and the contract's heading.
+    private var facts: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            TakeFactsCard(
+                contract: contract,
+                snapshot: board?.snapshot,
+                orderLine: WorkContractSheetContent.orderLine(contract.facts, request: request),
+                now: now
+            )
+            if OrdersBoardRules.summaryVisible(request, version: contract.version) {
+                ContractSummary().padding(.top, Spacing.m)
+            }
+            if let snapshot = board?.snapshot {
+                BoardRules(snapshot: snapshot, contract: contract)
+            }
             if let acceptance = contract.acceptance {
                 AcceptanceFacts(acceptance: acceptance, renderedLanguage: contract.language, locale: locale)
+                    .padding(.top, Spacing.s)
             }
-            if let notice {
-                NoticeRow(text: notice.message)
-            }
-            Divider().overlay(CleansiaColors.outlineVariant)
-            HtmlContentView(html: contract.contentHtml)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            Divider().overlay(CleansiaColors.outlineVariant)
+            Divider().overlay(CleansiaColors.outlineVariant).padding(.top, Spacing.m).padding(.horizontal, -Spacing.m)
+            contractHeading.padding(.top, Spacing.m)
+        }
+    }
+
+    private var foot: some View {
+        VStack(alignment: .leading, spacing: Spacing.xs) {
+            if let notice { NoticeRow(text: notice.message) }
             gesture
         }
-        .padding(.horizontal, Spacing.m)
-        .padding(.top, Spacing.s)
-        .padding(.bottom, Spacing.m)
+        .animation(.easeInOut(duration: 0.2), value: refusal == nil)
+    }
+
+    private var contractHeading: some View {
+        VStack(alignment: .leading, spacing: Spacing.hair) {
+            if board != nil {
+                Text(L10n.WorkContract.title)
+                    .font(CleansiaTypography.titleMedium)
+                    .foregroundColor(CleansiaColors.onSurface)
+                    .accessibilityAddTraits(.isHeader)
+            }
+            let terms = L10n.WorkContract.version(contract.version) + OrdersBoardRules.dot + L10n.WorkContract.parties
+            Text(verbatim: terms)
+                .font(CleansiaTypography.labelMedium)
+                .foregroundColor(CleansiaColors.onSurfaceVariant)
+                .fixedSize(horizontal: false, vertical: true)
+        }
     }
 
     @ViewBuilder
     private var gesture: some View {
         switch request {
         case .take, .accept:
-            SlideToConfirm(
-                idleLabel: L10n.WorkContract.swipeToAccept,
-                busyLabel: L10n.WorkContract.accepting,
-                isBusy: submitting,
-                onConfirm: onAccept
-            )
+            if let refusal {
+                RefusedTake(reason: ApiErrorLocalizer().message(for: refusal), onBack: onClose)
+            } else {
+                SlideToConfirm(
+                    idleLabel: L10n.tie(L10n.WorkContract.swipeToAccept),
+                    busyLabel: L10n.tie(L10n.WorkContract.accepting),
+                    isBusy: submitting,
+                    maxLabelLines: 2,
+                    thumbLanes: true,
+                    onConfirm: onAccept
+                )
+                .slideAccessibility(
+                    label: OrdersAccessibility.slideLabel(
+                        idle: L10n.WorkContract.swipeToAccept,
+                        busy: L10n.WorkContract.accepting,
+                        isBusy: submitting
+                    ),
+                    enabled: !submitting,
+                    onActivate: onAccept
+                )
+            }
         case .read:
             CleansiaPrimaryButton(L10n.close, action: onClose)
         }
     }
 }
 
-private struct JobFactsCard: View {
-    let facts: WorkContractJobFacts
-    let locale: Locale
-
-    private var window: String {
-        OrdersFormat.window(facts.cleaningDateTimeUtc, minutes: facts.estimatedMinutes, locale: locale)
-    }
-
-    private var orderNumber: String? {
-        guard let number = facts.orderNumber, !number.isBlank else { return nil }
-        return number
-    }
-
-    private var scopeLine: String? {
-        let parts = [
-            facts.rooms > 0 ? OrdersFormat.rooms(facts.rooms) : nil,
-            facts.bathrooms > 0 ? OrdersFormat.baths(facts.bathrooms) : nil
-        ].compactMap { $0 }
-        return parts.isEmpty ? nil : parts.joined(separator: " · ")
-    }
-
-    private var contentsLine: String? {
-        let names = facts.packages + facts.services + facts.extraSlugs.map(OrderExtras.name)
-        return names.isEmpty ? nil : names.joined(separator: ", ")
-    }
+/// From the board, while the contract loads: the card's own facts at once, the rest held as skeletons, and the
+/// swipe waiting for the text it accepts.
+private struct BoardLoadingContract: View {
+    @Environment(\.locale) private var locale
+    let snapshot: OrderListItem
+    let now: Date
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.xxs) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(orderNumber.map(L10n.WorkContract.orderNumber) ?? window)
-                    .font(CleansiaTypography.titleMedium)
-                    .foregroundColor(CleansiaColors.onSurface)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                VStack(alignment: .trailing, spacing: 0) {
-                    Text(L10n.WorkContract.reward)
-                        .font(CleansiaTypography.labelSmall)
-                        .foregroundColor(CleansiaColors.onSurfaceVariant)
-                    // The board's formatter, so the reward reads as the job's pay does there.
-                    Text(OrdersFormat.money(facts.reward, symbol: EarningsFormat.currencySymbol(facts.currencyCode)))
-                        .font(CleansiaTypography.titleMedium)
-                        .foregroundColor(CleansiaColors.primaryText)
+        VStack(alignment: .leading, spacing: 0) {
+            FactsCardLayout(
+                date: snapshot.cleaningDateTime,
+                window: OrdersBoardRules.window(of: snapshot, locale: locale),
+                area: OrdersBoardRules.areaLine(snapshot),
+                band: OrdersBoardRules.bandText(snapshot.homeDistanceBand),
+                scope: OrdersBoardRules.scopeLine(snapshot, locale: locale),
+                pay: OrdersBoardRules.pay(snapshot),
+                live: snapshot.status == ._3 || snapshot.status == ._4,
+                now: now
+            )
+            skeleton(widths: [1, 0.7]).padding(.top, Spacing.s)
+            Divider().overlay(CleansiaColors.outlineVariant).padding(.top, Spacing.s)
+            skeleton(widths: [1, 0.8, 0.9]).padding(.top, Spacing.s)
+            Spacer(minLength: Spacing.s)
+            SlideToConfirm(
+                idleLabel: L10n.WorkContract.loading,
+                busyLabel: L10n.WorkContract.accepting,
+                isBusy: false,
+                enabled: false,
+                maxLabelLines: 2,
+                thumbLanes: true,
+                onConfirm: {}
+            )
+            .slideAccessibility(label: L10n.WorkContract.loading, hint: L10n.WorkContract.loading, enabled: false) {}
+        }
+        .padding(.horizontal, Spacing.m)
+        .padding(.top, Spacing.s)
+        .padding(.bottom, Spacing.m)
+    }
+
+    private func skeleton(widths: [CGFloat]) -> some View {
+        GeometryReader { space in
+            VStack(alignment: .leading, spacing: Spacing.s) {
+                ForEach(widths.indices, id: \.self) { index in
+                    RoundedRectangle(cornerRadius: CornerRadius.extraSmall)
+                        .fill(CleansiaColors.surfaceVariant)
+                        .frame(width: space.size.width * widths[index], height: 12)
                 }
             }
-            if orderNumber != nil {
-                FactLine(window)
-            }
-            if let location = facts.locationApproximate, !location.isBlank {
-                FactLine(location)
-            }
-            if let scopeLine {
-                FactLine(scopeLine)
-            }
-            if let contentsLine {
-                FactLine(contentsLine)
-            }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(Spacing.s)
-        .background(CleansiaColors.surfaceVariant.opacity(0.5), in: RoundedRectangle(cornerRadius: CornerRadius.small))
-    }
-}
-
-private struct FactLine: View {
-    let text: String
-
-    init(_ text: String) {
-        self.text = text
-    }
-
-    var body: some View {
-        Text(text)
-            .font(CleansiaTypography.bodyMedium)
-            .foregroundColor(CleansiaColors.onSurfaceVariant)
+        .frame(height: CGFloat(widths.count) * 24 - 12)
+        .accessibilityHidden(true)
     }
 }
 
@@ -239,14 +416,16 @@ private struct AcceptanceFacts: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xxs) {
-            FactLine(L10n.WorkContract.acceptedOn(
+            Text(L10n.WorkContract.acceptedOn(
                 OrdersFormat.dateTime(acceptance.acceptedOn, locale: locale),
                 acceptance.documentVersion
             ))
             if let acceptedLanguageName {
-                FactLine(L10n.WorkContract.acceptedInLanguage(acceptedLanguageName))
+                Text(L10n.WorkContract.acceptedInLanguage(acceptedLanguageName))
             }
         }
+        .font(CleansiaTypography.bodyMedium)
+        .foregroundColor(CleansiaColors.onSurfaceVariant)
     }
 }
 
@@ -286,55 +465,3 @@ private struct SheetMessage: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
-
-#if DEBUG
-    extension WorkContract {
-        static let preview = WorkContract(
-            legalDocumentTextId: "text-1",
-            version: "2026-09-29",
-            language: "en",
-            title: "Contract for work",
-            contentHtml: "<p>This contract for work is concluded between the operating company (the client)"
-                + " and you (the contractor).</p>",
-            facts: WorkContractJobFacts(
-                orderNumber: "CL-2026-0042",
-                cleaningDateTimeUtc: Date(timeIntervalSince1970: 1_786_200_000),
-                estimatedMinutes: 180,
-                reward: 620,
-                currencyCode: "CZK",
-                locationApproximate: "Praha 4 · 14000",
-                rooms: 3,
-                bathrooms: 1,
-                services: ["Standard cleaning"],
-                packages: [],
-                extraSlugs: ["inside-oven"]
-            ),
-            acceptance: nil
-        )
-    }
-
-    struct WorkContractSheet_Previews: PreviewProvider {
-        static var previews: some View {
-            Group {
-                WorkContractSheetContent(request: .take(orderId: "order-1"), state: .loaded(.preview))
-                    .previewDisplayName("Take")
-                WorkContractSheetContent(
-                    request: .accept(orderId: "order-1"),
-                    state: .loaded(.preview),
-                    notice: .textUpdated
-                )
-                .previewDisplayName("Accept · text updated")
-                WorkContractSheetContent(request: .read(acceptanceId: "acc-1"), state: .loading)
-                    .previewDisplayName("Loading")
-                WorkContractSheetContent(
-                    request: .take(orderId: "order-1"),
-                    state: .unavailable(ApiError(code: WorkContractErrorKey.documentNotFound))
-                )
-                .previewDisplayName("Unavailable")
-                WorkContractSheetContent(request: .take(orderId: "order-1"), state: .legalDocumentsNotAccepted)
-                    .previewDisplayName("Contract documents owed")
-            }
-            .background(CleansiaColors.surface)
-        }
-    }
-#endif

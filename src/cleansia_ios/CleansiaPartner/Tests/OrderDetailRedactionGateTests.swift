@@ -1,5 +1,6 @@
 import CleansiaCore
 import CleansiaPartnerApi
+import UIKit
 import XCTest
 @testable import CleansiaPartner
 
@@ -9,6 +10,23 @@ import XCTest
 /// the flag **false**. A case with the flag true proves nothing, and one with the field blank proves
 /// the server's behaviour rather than the client's.
 final class OrderDetailRedactionGateTests: XCTestCase {
+    /// A door code copied at the door stays on this phone: never handed to Universal Clipboard, and gone after five
+    /// minutes.
+    func testCopiedInstructionsStayOnThisPhoneForFiveMinutes() {
+        let now = Date(timeIntervalSince1970: 1_786_000_000)
+        var written: (items: [[String: Any]], options: [UIPasteboard.OptionsKey: Any])?
+        CopyInstructionButton.copy("Code 1234 at the gate.", now: now) { written = ($0, $1) }
+        XCTAssertEqual(written?.items.count, 1)
+        XCTAssertEqual(written?.items.first?["public.utf8-plain-text"] as? String, "Code 1234 at the gate.")
+        XCTAssertEqual(written?.options[.localOnly] as? Bool, true)
+        XCTAssertEqual(written?.options[.expirationDate] as? Date, now.addingTimeInterval(5 * 60))
+
+        let board = UIPasteboard.withUniqueName()
+        defer { UIPasteboard.remove(withName: board.name) }
+        CopyInstructionButton.copy("Code 1234 at the gate.", write: board.setItems)
+        XCTAssertEqual(board.string, "Code 1234 at the gate.")
+    }
+
     func testTheContactChipsRenderForAnEntitledNonAssignee() throws {
         XCTAssertTrue(try detail(isMine: false, phone: "+420 777 111 222").showsCustomerContact)
     }

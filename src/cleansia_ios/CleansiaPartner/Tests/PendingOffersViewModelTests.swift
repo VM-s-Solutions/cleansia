@@ -30,7 +30,7 @@ final class PendingOffersViewModelTests: XCTestCase {
     }
 
     private func makeVM() -> PendingOffersViewModel {
-        PendingOffersViewModel(store: store, staleness: ordersStaleness, snackbar: snackbar)
+        PendingOffersViewModel(store: store, client: client, staleness: ordersStaleness, snackbar: snackbar)
     }
 
     private func rows(_ state: UiState<[PendingOfferItem]>) -> [String] {
@@ -70,7 +70,7 @@ final class PendingOffersViewModelTests: XCTestCase {
         XCTAssertEqual(rendered, row)
     }
 
-    /// The cleaner has not accepted yet, so the row carries the coarse city-and-partial-postcode the
+    /// The cleaner has not accepted yet, so the row carries the coarse district or city the
     /// pre-acceptance board already shows and nothing finer. A regenerated client that widened the DTO
     /// would put a street address or a customer's name on a screen that may never be accepted.
     func testTheOfferCarriesNoIdentityAndNoPreciseLocation() {
@@ -174,7 +174,9 @@ final class PendingOffersViewModelTests: XCTestCase {
         XCTAssertNil(vm.attempt)
     }
 
-    func testATakenOutcomeClosesTheSheetAndOpensTheJob() async {
+    /// A take from the offers ends on the Job taken panel, as on the board and the detail: the sheet stays up and
+    /// nothing opens until she picks a way on.
+    func testATakenOutcomeKeepsTheSheetUpOnTheTakenJob() async {
         client.pendingOffersResult = .success([.sample(id: "a")])
         let vm = makeVM()
         await vm.load()
@@ -184,11 +186,99 @@ final class PendingOffersViewModelTests: XCTestCase {
 
         await confirmed(vm, "a")
 
-        XCTAssertNil(vm.contractRequest)
+        XCTAssertEqual(vm.contractRequest, .take(orderId: "a"))
+        XCTAssertNotNil(vm.takenJob)
+        XCTAssertEqual(opened, [])
         XCTAssertTrue(client.pendingOfferCommands.isEmpty, "a confirm must not reach the decline endpoint")
-        XCTAssertEqual(opened, ["a"])
         XCTAssertEqual(vm.actionState, .idle)
         XCTAssertNil(vm.attempt)
+    }
+
+    /// The offer's area and reward show at once; the strip waits while the job is read back as hers, then pins her
+    /// address.
+    func testThePanelsStripWaitsForTheReadBackThenPinsTheAddress() async {
+        client.pendingOffersResult = .success([.sample(id: "a")])
+        client.byIdResult = .success(hers())
+        client.suspendGetById = true
+        let vm = makeVM()
+        await vm.load()
+        vm.confirm(.sample(id: "a"))
+
+        let outcome = Task { await vm.onWorkContractOutcome(.taken(orderId: "a")) }
+        for _ in 0 ..< 10000 where client.getByIdCallCount == 0 {
+            await Task.yield()
+        }
+        XCTAssertEqual(client.getByIdCallCount, 1)
+        XCTAssertEqual(vm.takenJob?.strip, .waiting)
+        XCTAssertEqual(vm.takenJob?.area, "Praha 4 · 14000")
+        XCTAssertEqual(vm.takenJob?.reward, OrdersFormat.money(600, symbol: EarningsFormat.currencySymbol("CZK")))
+        client.resumeGetById()
+        await outcome.value
+
+        XCTAssertEqual(vm.takenJob?.strip, .pin(Coordinate(latitude: 50.11, longitude: 14.47), street: "Zenklova 6"))
+        XCTAssertEqual(vm.takenJob?.status, ._2)
+        XCTAssertEqual(vm.contractRequest, .take(orderId: "a"))
+    }
+
+    /// A read-back that fails keeps the offer's facts and leaves the strip out.
+    func testAReadBackThatFailsLeavesTheStripOut() async {
+        client.pendingOffersResult = .success([.sample(id: "a")])
+        client.byIdResult = .failure(ApiError(httpStatus: 500))
+        let vm = makeVM()
+        await vm.load()
+
+        await confirmed(vm, "a")
+
+        XCTAssertNil(vm.takenJob?.strip)
+        XCTAssertEqual(vm.takenJob?.area, "Praha 4 · 14000")
+        XCTAssertEqual(vm.contractRequest, .take(orderId: "a"))
+    }
+
+    /// Open job closes the panel onto the job, now hers.
+    func testOpenJobClosesThePanelOntoTheTakenJob() async {
+        client.pendingOffersResult = .success([.sample(id: "a")])
+        let vm = makeVM()
+        await vm.load()
+        var opened: [String] = []
+        vm.confirmed.sink { opened.append($0) }.store(in: &cancellables)
+        await confirmed(vm, "a")
+
+        vm.openTakenJob()
+
+        XCTAssertEqual(opened, ["a"])
+        XCTAssertNil(vm.contractRequest)
+        XCTAssertNil(vm.takenJob)
+    }
+
+    /// Back to jobs closes the panel where she took it, opening nothing.
+    func testBackToJobsClosesThePanelAndOpensNothing() async {
+        client.pendingOffersResult = .success([.sample(id: "a")])
+        let vm = makeVM()
+        await vm.load()
+        var opened: [String] = []
+        vm.confirmed.sink { opened.append($0) }.store(in: &cancellables)
+        await confirmed(vm, "a")
+
+        vm.dismissContract()
+
+        XCTAssertEqual(opened, [])
+        XCTAssertNil(vm.contractRequest)
+        XCTAssertNil(vm.takenJob)
+    }
+
+    private func hers() -> OrderItem {
+        var item = OrderItem.wireComplete()
+        item.orderStatus = Code(value: 2)
+        item.isAssignedToCurrentUser = true
+        item.assignedEmployees = [AssignedEmployeeDto(id: "seat-1", employeeId: "emp-self")]
+        item.address = OrderAddress(
+            street: "Zenklova 6",
+            city: "Praha",
+            zipCode: "18000",
+            latitude: 50.11,
+            longitude: 14.47
+        )
+        return item
     }
 
     /// A confirmed offer is an ordinary job from that instant on, so the board and the job the cleaner
@@ -322,5 +412,22 @@ final class PendingOffersViewModelTests: XCTestCase {
 
         XCTAssertEqual(client.pendingOffersCallCount, afterWarm)
         XCTAssertEqual(rows(vm.state), ["a"])
+    }
+}
+
+extension PartnerOrdersVisualTests {
+    /// The Job taken panel after a take from the Dashboard's offers: the offer's job, read back as hers.
+    func testMockOfferTakeEndsOnThePanel() async throws {
+        let offered = OrdersDesignFixture.available()[4]
+        var hers = DetailJob.from(OrdersDesignFixture.taken(offered).taken ?? offered, order: "ORD-R1", mine: true)
+        hers.orderStatus = Code(value: 2)
+        detailTake = try TakenJob(detail: OrderDetail(hers), readBack: true)
+        let contract = OrdersDesignFixture.contract(for: offered)
+        mapSettle = 5
+        for theme in ["light", "dark"] {
+            try await sheet("taken-offer", "en", theme, state: .taken(contract), row: offered)
+        }
+        mapSettle = 0
+        detailTake = nil
     }
 }

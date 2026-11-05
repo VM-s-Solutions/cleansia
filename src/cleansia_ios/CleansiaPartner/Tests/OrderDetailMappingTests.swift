@@ -159,33 +159,19 @@ final class OrderDetailMappingTests: XCTestCase {
         XCTAssertFalse(detail.payment.hasBreakdown)
     }
 
-    func testMapCoordinateResolvesWheneverThereAreCoordinates() throws {
-        XCTAssertEqual(try OrderDetail(makeItem()).mapCoordinate, Coordinate(latitude: 50.0755, longitude: 14.4378))
-    }
-
-    /// Owner ruling 2026-08-27: a cancelled job still had a place. Status is not an input here.
-    func testMapCoordinateSurvivesCancellation() throws {
+    /// The cash is what the customer still owes, the total less any credit, as the server sends it.
+    func testCashDueLabelFormatsWhatTheCustomerStillOwesWithItsCurrency() throws {
         var item = makeItem()
-        item.orderStatus = Code(value: 6)
-        XCTAssertEqual(try OrderDetail(item).mapCoordinate, Coordinate(latitude: 50.0755, longitude: 14.4378))
+        item.amountDueOnCard = 950
+        XCTAssertEqual(try OrderDetail(item).cashDueLabel, OrdersFormat.money(950, symbol: "Kč"))
     }
 
-    func testMapCoordinateIsNilWhenNoCoordinate() throws {
+    func testCashDueLabelIsNilWithoutAnAmountDue() throws {
         var item = makeItem()
-        item.address = OrderAddress(street: "X")
-        XCTAssertNil(try OrderDetail(item).mapCoordinate)
-    }
-
-    func testCashDueLabelFormatsTheOrderTotalWithItsCurrency() throws {
-        XCTAssertEqual(try OrderDetail(makeItem()).cashDueLabel, OrdersFormat.money(1200, symbol: "Kč"))
-    }
-
-    func testCashDueLabelIsNilWithoutATotal() throws {
-        var item = makeItem()
-        item.totalPrice = nil
+        item.amountDueOnCard = nil
         XCTAssertNil(try OrderDetail(item).cashDueLabel)
 
-        item.totalPrice = 0
+        item.amountDueOnCard = 0
         XCTAssertNil(try OrderDetail(item).cashDueLabel)
     }
 }

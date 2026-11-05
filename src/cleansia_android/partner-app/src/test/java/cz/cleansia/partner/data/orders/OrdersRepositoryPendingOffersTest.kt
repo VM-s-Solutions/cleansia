@@ -14,7 +14,9 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -231,4 +233,26 @@ class OrdersRepositoryPendingOffersTest {
         } finally { release.complete(Unit); held.await() }
     }
 
+    @Test
+    fun `the board rows the Orders board published clear with the session`() = runTest {
+        val repo = newRepo()
+        val row = cz.cleansia.partner.api.model.OrderListItem(id = "o1")
+        repo.publishBoardRows(BoardRows(available = listOf(row), availableTotal = 1, own = emptyList()))
+        assertEquals(row, repo.boardRows.value.row("o1"))
+
+        (repo as SessionScopedCache).clear()
+
+        assertEquals(BoardRows(), repo.boardRows.value)
+        assertEquals(null, repo.boardRows.value.row("o1"))
+    }
+
+    @Test
+    fun `a detail's ask for the Available tab waits for the board and is taken once`() = runTest {
+        val repo = newRepo()
+        repo.requestAvailableTab()
+        repo.requestAvailableTab()
+
+        assertEquals(Unit, withTimeout(1_000) { repo.availableTabRequests.first() })
+        assertEquals(null, withTimeoutOrNull(100) { repo.availableTabRequests.first() })
+    }
 }

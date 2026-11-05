@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using Cleansia.Core.Domain.Enums;
 
 namespace Cleansia.Core.Domain.Orders;
 
@@ -140,6 +141,51 @@ public static class JobProximity
         && order.CustomerAddress.Latitude <= box.MaxLatitude
         && order.CustomerAddress.Longitude >= box.MinLongitude
         && order.CustomerAddress.Longitude <= box.MaxLongitude;
+
+    /// <summary>The band cell's height, ≈2.2 km. → /decisions/adr-0079</summary>
+    public const double BandCellLatitudeDegrees = 0.02;
+
+    /// <summary>The band cell's width, ≈2.1 km at Prague's latitude. → /decisions/adr-0079</summary>
+    public const double BandCellLongitudeDegrees = 0.03;
+
+    /// <summary>
+    /// The centre of the band cell a point lies in. Every distance band is measured to this centre, never
+    /// to the job's exact point: a cleaner can move their stored home at will, and crisp band edges around
+    /// an exact point would locate the customer within a few dozen probes. With the snap no number of
+    /// probes reveals more than the cell, which therefore becomes the pre-take location ceiling, finer
+    /// than the "Praha N" label. → /architecture/security-rules#s4-dto-leak-prevention
+    /// </summary>
+    public static (double Lat, double Lon) SnapToBandCell(double latitude, double longitude)
+        => (SnapToCellCentre(latitude, BandCellLatitudeDegrees), SnapToCellCentre(longitude, BandCellLongitudeDegrees));
+
+    public static HomeDistanceBand ClassifyBand(double km) => km switch
+    {
+        < 3d => HomeDistanceBand.Under3Km,
+        < 6d => HomeDistanceBand.From3To6Km,
+        < 10d => HomeDistanceBand.From6To10Km,
+        < 20d => HomeDistanceBand.From10To20Km,
+        _ => HomeDistanceBand.Over20Km,
+    };
+
+    /// <summary>
+    /// The band from the cleaner's STORED home to the job's snapped cell, or null when either end has no
+    /// coordinates. The origin is the home on record, never device GPS and never a request parameter (S1).
+    /// Neither the coordinates nor the distance are ever logged (S6).
+    /// </summary>
+    public static HomeDistanceBand? Band(
+        double? homeLatitude, double? homeLongitude, double? jobLatitude, double? jobLongitude)
+    {
+        if (homeLatitude is null || homeLongitude is null || jobLatitude is null || jobLongitude is null)
+        {
+            return null;
+        }
+
+        var (cellLatitude, cellLongitude) = SnapToBandCell(jobLatitude.Value, jobLongitude.Value);
+        return ClassifyBand(DistanceKm(homeLatitude.Value, homeLongitude.Value, cellLatitude, cellLongitude));
+    }
+
+    private static double SnapToCellCentre(double degrees, double cell)
+        => (Math.Floor(degrees / cell) * cell) + (cell / 2d);
 
     private static double ToRadians(double degrees) => degrees * Math.PI / 180d;
 

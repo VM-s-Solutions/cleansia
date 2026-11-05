@@ -49,7 +49,7 @@ public class AvailableJobsPreviewSurfaceTests(PostgresContainerFixture fixture) 
     private const string Street = "Vinohradska 12";
     private const string City = "Praha";
     private const string ZipCode = "12000";
-    private const string ApproximateAddress = "Praha · 120 xx";
+    private const string ApproximateAddress = "Praha 2";
 
     /// <summary>
     /// One more than the server ceiling, written as a literal rather than read off the constant under

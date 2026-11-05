@@ -156,7 +156,7 @@ public sealed class TakeOrderWorkContractTests(PostgresContainerFixture fixture)
 
                 var facts = WorkContractFacts.FromJson(acceptance.FactsJson);
                 Assert.Equal(order.DisplayOrderNumber, facts.OrderNumber);
-                Assert.Equal("Praha · 120 xx", facts.LocationApproximate);
+                Assert.Equal("Praha 2", facts.LocationApproximate);
                 Assert.Equal("CZK", facts.CurrencyCode);
                 Assert.Equal(900m, facts.TotalPrice);
                 Assert.Equal(ServiceId, Assert.Single(facts.Services).Id);

@@ -46,6 +46,13 @@ public sealed class GetPagedOrdersFrozenSeatPayTests
     private readonly Mock<IOrderEmployeePayRepository> _orderEmployeePayRepository = new();
     private readonly Mock<ICurrencyResolutionService> _currencyResolutionService = new();
     private readonly Mock<IAppConfigurationProvider> _configurationProvider = new();
+    private readonly Mock<IEmployeeRepository> _employeeRepository = new();
+
+    public GetPagedOrdersFrozenSeatPayTests()
+    {
+        // Both callers are non-admin, so the handler reads the caller's home; no home on record, no band.
+        _employeeRepository.Setup(r => r.GetQueryable()).Returns(Array.Empty<Employee>().AsQueryable().BuildMock());
+    }
 
     private IRequestHandler<GetPagedOrders.Request, PagedData<OrderListItem>> CreateHandler()
     {
@@ -60,6 +67,7 @@ public sealed class GetPagedOrdersFrozenSeatPayTests
             _currencyResolutionService.Object,
             Mock.Of<IServiceScopeFactory>(),
             _configurationProvider.Object,
+            _employeeRepository.Object,
             Activator.CreateInstance(typeof(NullLogger<>).MakeGenericType(handlerType)))!;
     }
 

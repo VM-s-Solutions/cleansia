@@ -89,8 +89,8 @@ public class OrderRedactionSurfaceTests
     /// <summary>
     /// Everything a cleaner reads to decide whether to take the job, plus the identifiers they arrived
     /// with. None of it describes the customer: the discount amounts are already unblanked on the list
-    /// row, the timestamps and counts are job state, <c>CustomerAddressApproximate</c> is city + zip
-    /// prefix and survives on the list row for the same reason, the five seat members survive on the
+    /// row, the timestamps and counts are job state, <c>CustomerAddressApproximate</c> is the coarse
+    /// area and survives on the list row for the same reason, the five seat members survive on the
     /// list row for that same reason again, and <c>EstimatedCleanerPay</c> is the browse branch's whole
     /// purpose.
     /// </summary>
@@ -193,6 +193,10 @@ public class OrderRedactionSurfaceTests
         // public rating average already implies. The review CONTENT stays where it was, on the detail
         // payload behind the same access gate.
         nameof(OrderListItem.HasReview),
+        // Kept, not blanked: a rough straight-line band from the cleaner's own stored home to the job's
+        // snapped cell (JobProximity.Band). No probe reveals more than the cell, and a browsing cleaner
+        // is exactly who needs it to judge the trip.
+        nameof(OrderListItem.HomeDistanceBand),
     ];
 
     /// <summary>
@@ -575,5 +579,6 @@ public class OrderRedactionSurfaceTests
             HasReview: true,
             DirtinessLevel: DirtinessLevel.Heavy,
             DirtinessSurchargeAmount: 540m,
-            IsGuestBooking: true);
+            IsGuestBooking: true,
+            HomeDistanceBand: HomeDistanceBand.From3To6Km);
 }

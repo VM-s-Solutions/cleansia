@@ -449,7 +449,7 @@ public sealed class OrderListProjectionEquivalenceTests : IAsyncLifetime, IDispo
             new TestUserSessionProvider("admin", "admin@cleansia.test", [new Claim(ClaimTypes.Role, UserProfile.Administrator.ToString())]),
             Mock.Of<IEmployeePayConfigRepository>(), Mock.Of<IOrderEmployeePayRepository>(),
             Mock.Of<ICurrencyResolutionService>(), Mock.Of<IServiceScopeFactory>(),
-            Mock.Of<IAppConfigurationProvider>(),
+            Mock.Of<IAppConfigurationProvider>(), Mock.Of<IEmployeeRepository>(),
             Activator.CreateInstance(typeof(NullLogger<>).MakeGenericType(adminHandlerType)))!;
         return await adminHandler.Handle(new GetPagedOrders.Request { Offset = offset, Limit = 2, Sort = sort, Filter = filter }, CancellationToken.None);
     }

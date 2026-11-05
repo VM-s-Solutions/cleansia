@@ -28938,6 +28938,14 @@ export interface IGrantPointsManuallyResponse {
     points: number;
 }
 
+export enum HomeDistanceBand {
+    Under3Km = 1,
+    From3To6Km = 2,
+    From6To10Km = 3,
+    From10To20Km = 4,
+    Over20Km = 5,
+}
+
 export class IssueCustomerCreditCommand implements IIssueCustomerCreditCommand {
     userId!: string | undefined;
     amount!: number;
@@ -30986,6 +30994,7 @@ export class OrderListItem implements IOrderListItem {
     dirtinessLevel!: DirtinessLevel;
     dirtinessSurchargeAmount!: number;
     isGuestBooking!: boolean | undefined;
+    homeDistanceBand!: HomeDistanceBand;
 
     constructor(data?: IOrderListItem) {
         if (data) {
@@ -31057,6 +31066,7 @@ export class OrderListItem implements IOrderListItem {
             this.dirtinessLevel = Data["dirtinessLevel"];
             this.dirtinessSurchargeAmount = Data["dirtinessSurchargeAmount"];
             this.isGuestBooking = Data["isGuestBooking"];
+            this.homeDistanceBand = Data["homeDistanceBand"];
         }
     }
 
@@ -31128,6 +31138,7 @@ export class OrderListItem implements IOrderListItem {
         data["dirtinessLevel"] = this.dirtinessLevel;
         data["dirtinessSurchargeAmount"] = this.dirtinessSurchargeAmount;
         data["isGuestBooking"] = this.isGuestBooking;
+        data["homeDistanceBand"] = this.homeDistanceBand;
         return data;
     }
 }
@@ -31174,6 +31185,7 @@ export interface IOrderListItem {
     dirtinessLevel: DirtinessLevel;
     dirtinessSurchargeAmount: number;
     isGuestBooking: boolean | undefined;
+    homeDistanceBand: HomeDistanceBand;
 }
 
 export class OrderNoteDto implements IOrderNoteDto {

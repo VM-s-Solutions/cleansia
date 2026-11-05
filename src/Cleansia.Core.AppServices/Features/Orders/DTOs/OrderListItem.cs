@@ -19,8 +19,8 @@ public record OrderListItem(
     /// </summary>
     string CustomerAddress,
     /// <summary>
-    /// City + neighbourhood / zip-prefix combo safe to show before the
-    /// cleaner accepts the job. e.g. "Praha 4 · Nusle" or "Brno · 60200".
+    /// Coarse location safe to show before the cleaner accepts the job, e.g.
+    /// "Praha 4" or "Brno" (<c>OrderMappers.BuildApproximateAddress</c>).
     /// Always populated when CustomerAddress.City is non-empty; backend never
     /// blanks this field. Wolt/Bolt-style coarse signal: enough to evaluate
     /// distance / area, no PII leakage.
@@ -80,4 +80,11 @@ public record OrderListItem(
     /// True only on a booking made without an account that a signed-in customer's My orders lists because
     /// it carries their e-mail; null on every other read.
     /// </summary>
-    bool? IsGuestBooking = null);
+    bool? IsGuestBooking = null,
+    /// <summary>
+    /// How far the job is from the calling cleaner's stored home address, as a straight-line band measured
+    /// to the job's snapped cell, never to its exact point and never from the device. Null for an admin
+    /// caller, for a cleaner whose home has no coordinates, for an order not yet geocoded, and on every
+    /// customer read. → /decisions/adr-0079
+    /// </summary>
+    HomeDistanceBand? HomeDistanceBand = null);

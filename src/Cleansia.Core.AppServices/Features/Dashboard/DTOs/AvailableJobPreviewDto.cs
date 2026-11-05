@@ -11,7 +11,7 @@ public record AvailableJobPreviewDto(
     string Id,
     string? DisplayOrderNumber,
     /// <summary>
-    /// City + zip-prefix, the same value and the same builder as
+    /// The district or city, the same value and the same builder as
     /// <c>OrderListItem.CustomerAddressApproximate</c>. Every row on this surface is by construction
     /// an order the caller is NOT assigned to, so there is no branch on which a street belongs here.
     /// </summary>

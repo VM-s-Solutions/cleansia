@@ -10027,6 +10027,24 @@
         },
         "additionalProperties": false
       },
+      "HomeDistanceBand": {
+        "enum": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "type": "integer",
+        "format": "int32",
+        "x-enumNames": [
+          "Under3Km",
+          "From3To6Km",
+          "From6To10Km",
+          "From10To20Km",
+          "Over20Km"
+        ]
+      },
       "JwtTokenResponse": {
         "type": "object",
         "properties": {
@@ -11181,6 +11199,9 @@
           "isGuestBooking": {
             "type": "boolean",
             "nullable": true
+          },
+          "homeDistanceBand": {
+            "$ref": "#/components/schemas/HomeDistanceBand"
           }
         },
         "additionalProperties": false

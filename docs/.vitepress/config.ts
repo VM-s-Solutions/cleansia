@@ -175,6 +175,8 @@ export default withMermaid(
               { text: "ADR-0076 — An open cleaning seat stops at its booked slot end", link: '/decisions/adr-0076' },
               { text: "ADR-0077 — Every cleaner marks done before shared Complete", link: '/decisions/adr-0077' },
               { text: "ADR-0078 — Each Live Activity token carries its APNs environment", link: '/decisions/adr-0078' },
+              { text: "ADR-0079 — Pre-take location, a Prague district and a snapped distance band", link: '/decisions/adr-0079' },
+              { text: "ADR-0080 — The order-status tint table lives in Core, keyed by the wire value", link: '/decisions/adr-0080' },
             ],
           },
         ],

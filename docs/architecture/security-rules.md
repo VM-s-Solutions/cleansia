@@ -262,8 +262,12 @@ reach the client:
 - `TenantId` (never expose — and never *print*: the incident file resolves the operator to its display
   name and markets from the market registry rather than emitting the id, and the id is absent from
   the hashed section model — `IncidentFileTests`)
-- email / phone / full name of non-self users (exception: cleaner first-name on an assigned order
-  is documented intent)
+- email / phone / full name of non-self users (documented exceptions: cleaner first-name on an
+  assigned order; and between the cleaners of one job, each crew-mate's name, done stamp and phone
+  while the job is live and for 24 h after completion — the apps show the given name and the stamp,
+  and offer a **Call** only while the job is `InProgress` and that mate's part is unmarked, with the
+  number going to the dialer and never drawn, spoken, logged, copied or stored →
+  [Crew access](/flows/execution-and-completion#crew-access))
 - Stripe customer/subscription ids, token hashes, password hashes
 - Soft-deleted rows leaking through unfiltered queries
 
@@ -282,6 +286,35 @@ timestamps remain withheld. The crew is shown by given name without phone. `IsGu
 identifies this access; it stays null for other audiences. Source:
 `src/Cleansia.Core.AppServices/Features/Orders/OrderPiiRedaction.cs:33` and `:50`.
 → [Guest bookings in My orders](/product/business-rules#listed-guest-bookings)
+
+### What a cleaner learns of a job's place before the take {#pre-take-location}
+
+Two fields of `OrderListItem` survive the browsing redaction and say where a job is, both classified
+as kept in `OrderRedactionSurfaceTests`: the coarse label `customerAddressApproximate` (*Praha 4*, or
+the city alone, *Brno*, with no part of the postcode by owner ruling 2026-11-01), and since 2026-10-31
+`HomeDistanceBand`. The band is the finer of the two.
+
+- **Origin is server truth (S1).** The distance is measured from the cleaner's stored home address.
+  `GetPaged` takes no origin, and no device location is read.
+- **Snapped and banded.** The mobile `UpdateAddressInfo` stores the coordinates the client sends, as
+  often as the `auth` window allows (S5), so a cleaner can move their home at will and read the board
+  again. Crisp bands on the job's exact point would locate a customer by repeated probes. The server
+  therefore snaps the job's point to the centre of a 0.02° × 0.03° cell (`JobProximity.SnapToBandCell`)
+  before it measures, and the narrowest band is 3 km: no number of probes reveals more than which cell
+  the job is in.
+- **The effective pre-take location ceiling is that cell, narrowed by the label's area**: at most about
+  2.2 × 2.1 km (about 4.8 km²) in Prague, and only part of a cell where the cell crosses a district or
+  city boundary. The snap bounds what the band tells a cleaner; the label is read on the same row, and
+  the grid is aligned to neither. It is finer than the *Praha N* label, and finer than an old three-digit postal area wherever
+  that area is larger than a cell, so the platform does **not** claim that what a cleaner learns before
+  the take is at or below the earlier ceiling. The owner's acknowledgement of it is pending
+  → [ADR-0079](/decisions/adr-0079).
+- **Never logged (S6)** — neither the coordinates nor the per-order distance — and kept out of
+  `WorkContractFacts`, whose row is permanent.
+- **The band set is frozen.** Adding the nullable field is safe (S9); adding a value to its enum is not,
+  because installed apps fail the whole response on an unknown value. A changed band is a new field.
+
+→ [Business rules — where a job is, before it is taken](/product/business-rules#approximate-location)
 
 ### When the gate is a secret the wrong people hold {#gate-secret-wrong-people}
 

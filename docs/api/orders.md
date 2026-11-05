@@ -603,6 +603,21 @@ also accepted as a sort field. For a **non-admin caller** the list is additional
 currency the cleaner is paid in (their work country's): an order in another currency is not on their
 board at all, unless they are already assigned to it. → [Business rules](/product/business-rules#cleaner-currency)
 
+**Cash jobs above the float cap.** For a non-admin caller who holds **strictly more** of the company's
+cash in their currency than the company's float cap (`cash.float_cap`), every cash job is left off the
+page, and off its count, unless they are already assigned to it. Card jobs are unaffected. The page
+carries no flag saying so; the reason is `GET api/EmployeePayroll/GetCashHeld` → `cashJobsHidden`.
+→ [Business rules](/product/business-rules#cash-held)
+
+**`homeDistanceBand`** (nullable integer enum `HomeDistanceBand`, the last member of `OrderListItem`):
+how far the job is from the calling cleaner's stored home address — `1` under 3 km, `2` 3–6 km,
+`3` 6–10 km, `4` 10–20 km, `5` 20 km or more, measured straight-line to the job's point snapped to a
+grid cell. `null` for an administrator, for a cleaner with no home coordinates and for an order not
+geocoded yet; the customer hosts serve the same record and always send `null`. It is on every row a
+cleaner reads and survives the browsing redaction (only the Available tab shows it), and is not on the detail, the pending offers or the contract facts. The values
+are frozen: installed apps fail the whole page on an unknown one, so a new band would be a new field.
+→ [Business rules](/product/business-rules#distance-band)
+
 **Customer contact sorting.** A non-admin open-board request ignores every `customerName` and
 `customerEmail` sort before paging; safe sort entries retain their priority and direction. Administrators
 and a cleaner's own-orders request retain those sorts. Own rows still sort by those stored values after
@@ -758,7 +773,7 @@ GET /api/Order/GetWorkContractPreview?orderId=order-id&language=cs
     "estimatedMinutes": 180,
     "totalPrice": 1890,
     "currencyCode": "CZK",
-    "locationApproximate": "Praha · 120",
+    "locationApproximate": "Praha 2",
     "countryId": "CZE",
     "rooms": 3,
     "bathrooms": 1,
@@ -774,7 +789,8 @@ Readable exactly where the board would show the job — on the crew, or offerabl
 and not held from the caller: a held order answers `order.not_found` to everyone but its beneficiary,
 and a cancelled, finished, full or unpaid-card job the caller is not on answers `order.not_found` and
 discloses no facts. An order with no text (a fixture — the production writer always stamps one)
-answers `legal.document_not_found`.
+answers `legal.document_not_found`. The float cap is the one board term it does not read: a cash job
+hidden from a cleaner over the cap still previews, and the take refuses it (`order.cash_float_cap_exceeded`).
 
 ---
 
@@ -830,6 +846,7 @@ on nothing about the order, so it can leak neither existence nor the hold) and t
 | 10a | Every cleaner document in force for the caller's market is accepted at its current version (nothing in force → passes) | `employee.legal_documents_not_accepted` |
 | 11 | Not already assigned to this order | `order.employee_already_assigned` |
 | 12 | Weekly cap, **only if an admin set one** on this cleaner (`Employee.WeeklyOrderLimit`; null = unlimited, the default) | `order.weekly_limit_reached` |
+| 12a | Not a **cash** job while the caller holds strictly more of the company's cash in the order's currency than the company's float cap (`cash.float_cap`; none by default). A card job passes | `order.cash_float_cap_exceeded` |
 | 13 | No scheduling overlap with the employee's live commitments | `order.time_conflict` |
 | 14 | The echoed text row belongs to **this order's** `workContractDocumentId` (an order with no document matches nothing) | `contract.text_mismatch` |
 

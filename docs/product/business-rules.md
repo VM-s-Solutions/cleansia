@@ -111,6 +111,14 @@ never-started/empty-crew selection and its existing refund and credit rules. Bef
 it, a late unfilled slot remains takeable while its booked time is open. At end it stops being offered
 even if the sweep has not run. A stale list's take gets `order.not_takeable` when expiry is the first failed check; earlier opaque existence/hold/currency checks and terminal-status refusals keep their existing keys; seat-open notices stop too.
 
+**A cleaner who joins late is paid the same** (owner ruling 2026-10-31). Taking a free seat on a job
+already on the way or in progress gives the same reward for that place as a take before the start
+would have: priced at the taker's own rates at their take and frozen by their contract for work, with
+nothing in it that depends on when they join or how long they stay. The platform does not divide the
+work between the cleaners on a job — each seat's contract covers the whole booked scope, and the whole
+booked window blocks each cleaner's time — and a job taken once it is under way cannot be released in
+the app ([When a cleaner leaves](#crew-lost)). → [Cleaner pay](#cleaner-pay)
+
 ## Guest bookings in My orders {#listed-guest-bookings}
 
 A confirmed Customer session lists and counts bookings made **without an account** under its
@@ -677,15 +685,16 @@ Three rules ride with it:
   rejected cleaner is ended with the release — an order back on the board must be *on* the board — while
   a hold naming another cleaner is left alone. → [Offerability](/domain/offerability#the-preferred-cleaner-hold)
 
-**The partner apps offer the drop more narrowly than the server takes it.** Partner web, Android and
-iOS show *Cancel job* only while the cleaner is on the crew, the job is `New` or `Confirmed` and no
-lockout has been reported (owner defaults 2026-10-24) and, since 2026-10-25, its start is still ahead
+**The partner apps offer the drop more narrowly than the server takes it.** Partner web shows *Cancel
+job*, and Android and iOS *Withdraw from this job* (their English label since 2026-11-01), only while
+the cleaner is on the crew, the job is `New` or `Confirmed` and no lockout has been reported (owner defaults 2026-10-24) and, since 2026-10-25, its start is still ahead
 (owner ruling 2026-10-25: asked whether the apps keep closing *Cancel job* at the job's start time,
 *"Yup"*); with no start time, the other three decide. From its start, a job nobody started is a no-show for the
 administrators to confirm, and a drop would walk it back to `New` for the unfilled-order sweep to cancel
-instead. Android hides *Cancel job* at the start and again when the app resumes. iOS and partner web
-hide it the next time they read the job; until then a cancel confirmed from the start on sends nothing
-and reads the job again, and partner web opens no confirmation for a tap from the start on. Since
+instead. Android hides it at the start and again when the app resumes, iOS within 30 seconds of the
+start while the job is open, and partner web the next time it reads the job; until then a cancel
+confirmed from the start on sends nothing and reads the job again, and partner web opens no
+confirmation for a tap from the start on. Since
 2026-10-25 `DropOrder` itself takes a drop only while the job is `New` or `Confirmed`, the apps' status
 gate, and refuses the rest with `order.not_confirmed`, the key it already gave a completed or cancelled
 job; nothing moves. It sets no limit at the job's start, so the apps are narrower in two ways only, the
@@ -1940,8 +1949,8 @@ They copy `2026-10-05` and differ only in these paragraphs, in all five language
   the app, *until it is on the way or in progress — until someone on it records in the app that they
   have set off or started — and no later than its start time*, at no cost and with no change to the jobs
   they are offered, as early as they can; after that they can no longer release it, and a cleaner who
-  then cannot do the job tells the company without delay. That is the window the apps give *Cancel job*
-  ([When a cleaner leaves](#crew-lost)). The `2026-10-05` text allowed a release, by asking for cover or
+  then cannot do the job tells the company without delay. That is the window the apps give *Withdraw
+  from this job* and the partner web *Cancel job* ([When a cleaner leaves](#crew-lost)). The `2026-10-05` text allowed a release, by asking for cover or
   dropping it, *at any time before it is finished*, while since 2026-10-25 the server refuses a drop of a
   job under way and no app offers cover. A placement is still an offer the cleaner may decline without any
   consequence: by releasing the job while that window allows it, and otherwise by not accepting its
@@ -2084,6 +2093,14 @@ as a new wording key on all three clients plus a bump of that constant, not a se
 off-session charge on a saved card stays switched off: since 2026-10-04 no card is charged
 → [What a customer owes](#receivables).
 
+**A third is the summary of the contract for work** on Android and iOS (since 2026-10-31): a lead line
+and four plain lines above the text a cleaner takes or accepts ([below](#work-contract)). They are app
+strings in five locales, written against the contract-for-work versions `2026-10-05` and `2026-10-27`,
+and each app shows them only on an order booked under one of those two — a list kept in the app, not a
+version the server records. So the lawyer's new version hides them on its own, until someone re-reads
+it and adds its date; nothing in the production deploy checks them either, and they are checked by
+hand before launch with the other two.
+
 ### The texts in force and the rulings of 2026-10-04 {#legal-texts-lag}
 
 **No text in force lags the owner's rulings of 2026-10-04.** The seeded texts carry them since their
@@ -2126,9 +2143,10 @@ deleted, and an admin's placement left the same row a cleaner's own act did.
 | Who it names | the client through the company placeholders, filled from the company record of the order's operator when the text is shown ([above](#company-identity)); the cleaner as *you* |
 | What the customer is told | the confirm step's sentence, on every client and whether or not the account already consented: the booking concludes a contract for the cleaning with the operating company of the market where the home is, under its terms of service, and the cleaner carries it out as the company's subcontractor and is no party to it — a sentence, **not a checkbox**. There is no contract-for-work page, no order-detail line and no read for the customer |
 | When the acceptance forms | at the **take**: the cleaner reads the text and the job facts in the app and takes the job in one act; the take **carries the id of the exact text row** they read (`acceptedWorkContractTextId`), and a take without it is refused |
+| What the app summarises | on Android and iOS (since 2026-10-31), between the job's facts and the contract text (above its version line) when a cleaner takes a job or accepts a placement — never when reading an accepted one — a lead line and four plain lines: *Not let in? Report it. Once the company confirms, you're paid in full.* · *If the customer cancels late, you get your share of the fee collected.* · *A complaint costs you only if the company finds you at fault.* · *You bring your own equipment and cleaning products.* They are **app copy, not the contract**: not part of the text row, the facts or the acceptance record. Shown only on the versions they were checked against, `2026-10-05` and `2026-10-27`; hidden on `2026-09-29` (whose lockout clause paid a share of a fee, not the full reward), on `2026-09-20` and on any newer version until it is re-read ([above](#legal-drafts)). A take from the Orders board adds two lines that summarise a clause too — *Free to cancel until …* (the release clause) and, on a cash job, that the cash belongs to the company and is set off (the cash clause) — shown only on `2026-09-29`, `2026-10-05` and `2026-10-27`, since `2026-09-20` has neither clause, and hidden on a newer version the same way. That a job under way or past its start cannot be cancelled in the app once taken is the app's own rule and shows on every version |
 | One contract per **seat** | a take → drop → re-take is two seats and **two** contracts; a take → drop → admin re-add of the same cleaner is a new seat with **no** contract until they accept |
 | An administrator places a cleaner | **no** acceptance is written — an admin cannot accept on a cleaner's behalf. The placement is an offer the cleaner may decline without consequence: by releasing the job while it is `New` or `Confirmed` and its start is ahead, and, from 2026-10-27 (the framework agreement's §6), otherwise by not accepting its contract for work and telling the company ([below](#placement-is-an-offer)); a cleaner who keeps it accepts from the job detail (a banner), or is refused at **Start** and at **Complete** with `contract.acceptance_required` and accepts then; a cleaner placed on an **in-progress** job can still accept before completing |
-| What binds | the text row (document, version, language, hash by one join) **and a frozen snapshot of the job as shown at acceptance**: order number, date and time window, **the seat's reward** and currency — the accepting cleaner's own rates for one seat, as the board quotes them, never what the customer pays — the coarse location (*"Praha · 120"*), rooms, bathrooms, services, packages, extras. Never the street, never a name. Since 2026-10-03 the seat also keeps the job figures that reward was priced from, and is paid from them ([Cleaner pay](#cleaner-pay)) |
+| What binds | the text row (document, version, language, hash by one join) **and a frozen snapshot of the job as shown at acceptance**: order number, date and time window, **the seat's reward** and currency — the accepting cleaner's own rates for one seat, as the board quotes them, never what the customer pays — the coarse location (*"Praha 2"*, *"Brno"*; an acceptance before 2026-10-31 kept *"Praha · 120 xx"*, and one outside Prague before 2026-11-01 *"Brno · 602 xx"* → [below](#approximate-location)), rooms, bathrooms, services, packages, extras. Never the street, never a name. Since 2026-10-03 the seat also keeps the job figures that reward was priced from, and is paid from them ([Cleaner pay](#cleaner-pay)) |
 | A new version of the text | applies to orders **booked from its date**; an order already booked keeps its text — no re-acceptance, no "stale version" case |
 | What survives | the row outlives the seat (a drop, cover, rejection or reassignment leaves it), the order's anonymisation and the cleaner's erasure — it is books, kept with the order, **never deleted** |
 | Who can read an accepted contract | the cleaner who accepted it (the server still answers them after they left the job — the read is keyed on the acceptance, not the seat) and the company's administrators — with the stored facts and the text in the reader's language (the page says *accepted in Czech* when it renders another); anyone else, **the order's customer included**, is told the order does not exist. The customer hosts still mount the read, and it answers every customer that way |
@@ -2197,8 +2215,12 @@ be.
 is refused without `removalReason` (`order.reassign.removal_reason_required`, at most 500 characters).
 The reason goes on the audit row's own column; the removed cleaner's `order.assignment_revoked` notice
 carries only the order, and the cleaner reads the reason by asking for it (`GetMyAssignmentRemoval`) —
-shown above the job on the partner web and both partner apps. **A weekly job limit carries a reason
-too**: setting a cap without one is refused (`employee.weekly_limit_reason_required`), the reason is
+shown above the job on the partner web, and on both partner apps (since 2026-11-01) as a page in place
+of the job, which the server no longer shows them: *You were taken off this job*, the job's day, window
+and street when the app still holds the board's row for it, the reason as written, then their next jobs
+and the open jobs of the next seven days. With no reason on record (a cover handover sends the same
+notice) the page says *Job reassigned* and *This job is no longer on your schedule.*
+**A weekly job limit carries a reason too**: setting a cap without one is refused (`employee.weekly_limit_reason_required`), the reason is
 cleared with the cap and at erasure, and the cleaner sees the cap and its reason on their profile.
 
 A partner-facing page, **How jobs are offered**, states the rules behind the board — the order of the
@@ -2468,6 +2490,95 @@ register of economic subjects. Before the ruling, only its format (`^\d{8}$` for
 The framework agreement names the register check among its approval conditions since `2026-10-05`
 (§5); its `2026-09-29` version did not ([The legal texts](#legal-texts)).
 
+## Where a job is, before it is taken {#approximate-location}
+
+**Owner rulings 2026-10-31** (a Prague job names its district, from the postcode; approximate is
+accepted) **and 2026-11-01** (every other job names its city alone; of *Praha 8 · 180 xx* on the
+partner card: *"You can remove it"*). Before a take, the one place name a cleaner is shown is a coarse
+label, `customerAddressApproximate`, built by one server function (`OrderMappers.BuildApproximateAddress`)
+for the board, the job detail, the pending offers, the dashboard's preview and the contract-for-work
+facts. The clients print it as sent; none parses it.
+
+- **A Prague postcode names its district.** The postcode with every whitespace character removed is
+  five ASCII digits starting with `1`, and the city is `Praha` or `Prague` by the
+  [serviced-city name rule](#serviced-city) — so `Praha 8`, `Praha 4 - Nusle`, `Praha-Libuš` and
+  `PRAHA` are, and the okres `Praha-západ` is not: the label is `Praha N`, where N is the postcode's
+  second digit and `0` reads `10`. *Praha* is a place name and reads the same in every language.
+- **Anything else is the city alone**, trimmed, with no part of the postcode (`Brno`); nothing without
+  a city. Until 2026-11-01 it was the city and the postcode's first three characters, then `xx`
+  (`Brno · 602 xx`).
+- **Approximate, as ruled.** The second digit is the old postal district, not the administrative one,
+  and the postcode wins over a district typed into the city. An exonym (`Прага`, `Prag`) is not
+  matched by name and gives the city alone (`Прага`) — coarser than the district, not a wrong label. Every Prague
+  postcode starts with `1` and no other Czech one does ([Serviced cities](#serviced-city)); the city
+  test keeps another country's `1xxxx` (Berlin's `10115`) out.
+- **Coarser, never finer.** `Praha 4` covers the prefixes `140`–`149`, so it discloses less than the
+  three-digit prefix it replaces, and a city alone less than the city with its prefix.
+- **A contract freezes the label it showed.** A contract for work accepted from 2026-10-31 keeps
+  `Praha 4` in its facts and on its PDF copy, and outside Prague one accepted from 2026-11-01 keeps the
+  city alone; one accepted earlier keeps what it stored (`Praha · 140 xx`, `Brno · 602 xx`)
+  → [ADR-0068 §Amended 2026-10-31](/decisions/adr-0068#amended-2026-10-31),
+  [§Amended 2026-11-01](/decisions/adr-0068#amended-2026-11-01).
+
+| City | Postcode | Label |
+|---|---|---|
+| `Praha` | `140 00` | `Praha 4` |
+| `Praha` | `149 00` (Háje, administratively Praha 11) | `Praha 4` |
+| `Praha` | `100 00`, `102 00` | `Praha 10` |
+| `Prague` | `11000` | `Praha 1` |
+| `Praha 11` | `149 00` | `Praha 4` — the postcode wins |
+| `Praha-Libuš` | `142 00` | `Praha 4` |
+| `Praha 8` | `180 00` | `Praha 8` |
+| `Praha 8 - Karlín` | `186 00` | `Praha 8` |
+| `Praha` | `602 00` | `Praha` — not a Prague postcode |
+| `Praha` | none / `1100` | `Praha` — no valid postcode |
+| `Прага` | `110 00` | `Прага` — an exonym |
+| `Brno` | `602 00` | `Brno` |
+| `Berlin` | `10115` | `Berlin` |
+
+**The label is no longer the finest thing a cleaner learns before the take**: the distance band below
+is, and with the label it sets the ceiling.
+
+### Distance from home {#distance-band}
+
+**Owner ruling 2026-10-31.** The Available tab on Android and iOS says roughly how far each job is from
+the cleaner's home: `OrderListItem.homeDistanceBand`, which the server computes for every row it
+returns to a cleaner from `GetPaged`. Only the Available tab shows it, with a footnote under the list:
+the distances are straight-line from the home address, in rough bands. No figure is ever shown, and
+nothing is sorted by distance.
+
+| Band (wire) | Straight-line distance, from the snapped point | Shown as |
+|---|---|---|
+| `Under3Km` (`1`) | under 3 km | *under 3 km from home* |
+| `From3To6Km` (`2`) | 3 to under 6 km | *3–6 km from home* |
+| `From6To10Km` (`3`) | 6 to under 10 km | *6–10 km from home* |
+| `From10To20Km` (`4`) | 10 to under 20 km | *10–20 km from home* |
+| `Over20Km` (`5`) | 20 km or more | *over 20 km from home* |
+
+- **From the stored home only.** The origin is the cleaner's address on file
+  (`Employee.Address` coordinates) — never the phone's location, never a request parameter. The
+  partner apps no longer read the phone's location on Orders.
+- **The job's point is snapped first.** It is moved to the centre of its cell on a grid of 0.02°
+  latitude × 0.03° longitude — about 2.2 × 2.1 km in Prague, a move of at most about 1.54 km — and the
+  haversine distance from the home to that centre is banded. A cleaner can move their stored home and
+  read the board again, and crisp bands on the exact point would let them find a customer by repeated
+  probes; with the snap no number of probes tells them more than which cell the job is in. That is why
+  the narrowest band is 3 km and the wording says *rough*.
+- **Null, and nothing is shown**, when the caller is an administrator, the cleaner has no home
+  coordinates, or the order has none yet (the board geocodes it in the background, and a later read
+  has it). The customer hosts serve the same record and always send null.
+- **Not on a contract, not in a log.** The band depends on the cleaner's home, so it is kept out of the
+  contract-for-work facts, and neither the coordinates nor the distance are logged.
+- **The set is frozen.** Installed apps refuse an unknown value of the enum and fail the whole page,
+  so a changed or added band is a new field, never a new value.
+
+**The effective pre-take location ceiling is that cell, narrowed by the label's area**: at most about
+4.8 km², and only part of a cell where the cell crosses a district or city boundary, because the label
+is read beside the band and the grid is aligned to neither. It is finer than the `Praha N` label, and
+finer than the old three-digit postal area wherever that area is larger than a cell. The
+owner's acknowledgement of that ceiling is pending → [ADR-0079](/decisions/adr-0079),
+[Security rules — S4](/architecture/security-rules#pre-take-location).
+
 ## Photos, and the customer's details after the job {#photos-and-access}
 
 **Owner rulings 2026-09-28.** A photo of a customer's home and the customer's address, phone and door
@@ -2480,6 +2591,7 @@ instructions are held by a cleaner only for as long as the job needs them.
 | A photo may be deleted by the cleaner | until the order is `Completed` or `Cancelled`, never after |
 | A photo link lives | **15 minutes** (it was an hour) |
 | The crew reads the customer's name, phone, address and door instructions | while the job is live, and until **24 h after completion**; **not at all** once the order is cancelled |
+| A cleaner reads a crew-mate's name, done stamp and phone | in the same window; the apps show the given name and the stamp, and offer **Call** only while the job is `InProgress` and that mate's part is unmarked, never printing the number; the partner web prints the full name and phone. A cleaner who has not taken the job, or whose window has closed, gets the given name only |
 | A job is completed without an *after* photo | only by an administrator's override with a written reason |
 
 - **The windows are the server's** (`OrderPhoto.MayBeAddedAt`, `MayBeDeletedAt`): an upload outside
@@ -2982,7 +3094,12 @@ holding **strictly more** than it no longer sees cash jobs: not on the board, th
 count, or their pending offers, and a take is refused (`order.cash_float_cap_exceeded`). A cash job
 they are already on stays, and card jobs are never hidden. *Cash I hold* states the cap and whether
 cash jobs are hidden (`floatCap`, `cashJobsHidden`), per currency, which is the reason the partner apps
-show. → [Money constants](#money-constants)
+show. **It lifts by itself.** Nothing is cached: once a remittance, a write-off or an invoice's set-off
+brings the cash the cleaner holds in that currency back to the cap or below, the next read shows the
+cash jobs again. The cleaner cannot lower it from the app; they hand the cash over, or wait for the
+next invoice. The new-jobs digest, the seat-open push, the order detail and the contract preview do not
+read the cap → [Offerability — the cash a cleaner holds](/domain/offerability#cash-float-cap).
+→ [Money constants](#money-constants)
 
 **The archive waits for it.** A company cannot be archived while a cleaner holds a non-zero balance
 (`company.has_cash_held`); the wind-down's last close sets cash off like any other

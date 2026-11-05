@@ -56,7 +56,9 @@ takeable seat and not held from the caller. A held order is a missing order to e
 beneficiary, and a cancelled, finished, full or unpaid-card job the caller is not on answers
 `order.not_found` and discloses no facts. An order with no text (a fixture — the one production
 writer always stamps it) answers `legal.document_not_found` on the preview and `contract.text_mismatch`
-on the take; nothing resolves a text lazily.
+on the take; nothing resolves a text lazily. The float cap is the one board term the preview does not
+read: a cash job hidden from a cleaner over it still previews, and the take refuses it
+(`order.cash_float_cap_exceeded`).
 
 **The admin path writes no acceptance.** `AdminReassignOrder` puts a cleaner on a job without their
 act, and an administrator cannot accept a contract on the cleaner's behalf. The placed cleaner sees a
@@ -70,11 +72,12 @@ detail shows the seat as *contract pending* until then.
 [WorkContractAcceptance](/domain/roles/work-contract-acceptance)
 
 **A placement is an offer, and a removal has a reason** (owner ruling 2026-09-28). The placed cleaner may
-drop the job at no cost, with *Cancel job* (`DropOrder`), which partner web, Android and iOS offer to a
-cleaner on the crew while the job is `New` or `Confirmed`, no lockout is reported and its start is still
-ahead (with no start time, the rest decides), never once it is `OnTheWay` or `InProgress` (owner
-defaults 2026-10-24); Android takes it away at the start, iOS and partner web at the next read of the
-job. Since 2026-10-25 `DropOrder` itself takes only `New` and `Confirmed` too (owner ruling
+drop the job at no cost (`DropOrder`), with *Cancel job* on partner web or *Withdraw from this job* on
+Android and iOS (their English label since 2026-11-01), offered to a cleaner on the crew while the job
+is `New` or `Confirmed`, no lockout is reported and its start is still ahead (with no start time, the
+rest decides), never once it is `OnTheWay` or `InProgress` (owner defaults 2026-10-24); Android takes it
+away at the start, iOS within 30 seconds of it while the job is open, and partner web at the next read
+of the job. Since 2026-10-25 `DropOrder` itself takes only `New` and `Confirmed` too (owner ruling
 2026-10-25), refusing the rest with `order.not_confirmed`, so a cleaner placed on a job already under
 way cannot drop it → [Leaving a job](/product/features#cleaner-partner). From 2026-10-27 the framework
 agreement (§6) names a second way to decline: not accepting the job's contract for work and telling the
@@ -155,6 +158,7 @@ neither set off nor start. → [Business rules — when a cleaner leaves](/produ
 | Order held for someone else | Indistinguishable from a missing order. The refusal must not reveal that someone else was named. |
 | Cleaner already on a conflicting job | Refused by the time-conflict check, last in the cascade. |
 | Cleaner over the weekly cap | Refused. The cap, when an administrator sets one, carries a reason the cleaner sees on their profile. |
+| Cleaner holds more company cash than the float cap | Cash jobs are not on their board, dashboard count and preview, or pending offers; card jobs, and cash jobs they are already on, stay. A cash job reached another way — a stale list, a link, the digest or a seat-open push, which do not read the cap — opens, and its take is refused `order.cash_float_cap_exceeded`. The jobs come back once a remittance, a write-off or an invoice's set-off brings the cash they hold to the cap or below. → [Business rules](/product/business-rules#cash-held) |
 | Cleaner has not accepted a cleaner document in force | Refused, `employee.legal_documents_not_accepted`; the app points to the documents. |
 | Profile incomplete, or contract not approved | Refused before the seat is even considered. |
 | Order cancelled but with a free seat | "This job is gone", not "this job is full" — those checks sit *before* offerability on purpose. |

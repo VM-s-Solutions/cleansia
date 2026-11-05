@@ -169,6 +169,13 @@ a week.
 
 → [ADR-0053](/decisions/adr-0053)
 
+**Cash float cap** — a partner holding more of the company's cash than the company's float cap
+(`cash.float_cap`, none by default) is not shown cash jobs, and a take of one is refused with
+`order.cash_float_cap_exceeded` (`api.order.cash_float_cap_exceeded`, five locales). Card jobs are
+never held back. My Pay's *Cash I hold* shows the cash held, the limit and that cash jobs are hidden;
+the Available table itself says nothing. The jobs come back once the cash is handed over or set off
+against an invoice. → [Business rules — the company's cash in a cleaner's hands](/product/business-rules#cash-held)
+
 **Time conflict detection:** the server checks for overlaps against the partner's live commitments
 (`New`, `Pending`, `Confirmed`, `OnTheWay`, `InProgress` — terminal orders free the slot).
 

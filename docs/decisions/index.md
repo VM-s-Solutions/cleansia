@@ -246,6 +246,8 @@ until it is under way, and a placement past that is declined by not accepting it
 | **[ADR-0076](./adr-0076)** | An open cleaning seat stops being offered and takeable when its booked slot ends (owner ruling 2026-10-13; partially supersedes ADR-0037 D1) | `accepted` |
 | **[ADR-0077](./adr-0077)** | Every cleaner marks done before a crew uses shared Complete; automatic completion waits two hours after the last mark and retains after-photo/payment checks (owner rulings 2026-10-26 and 2026-10-27) | `accepted` |
 | **[ADR-0078](./adr-0078)** | Each Live Activity token carries nullable APNs environment metadata, preserving mixed Xcode/TestFlight use of DEV APIs without endpoint guessing (design review 2026-10-28) | `accepted` |
+| **[ADR-0079](./adr-0079)** | Pre-take location: a Prague job names its district from the postcode, and the Available tab shows a distance band from the cleaner's stored home, measured to a snapped cell — so the snapped cell, narrowed by the label's area, becomes the effective pre-take ceiling (Mike's rulings 2026-10-31; owner acknowledgement of the ceiling pending) | `proposed` |
+| **[ADR-0080](./adr-0080)** | The order-status tint and tone table lives in Core, keyed by the backend's wire integer, so both apps read one table per platform; a status mapping crosses into Core as that integer only when both apps map it the same way (Mike's approval of mock v2, 2026-11-02; T-0910; changes the `OrderStatusTone` doc-comment rule, supersedes no record) | `proposed` |
 
 ⟲ = superseded in whole or in part by a later record.
 

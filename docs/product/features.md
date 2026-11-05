@@ -316,11 +316,21 @@ cleaner sees is the job, not the household — the customer's identity, address 
 withheld until they take it. Every job, a job reserved for them on *Pending offers* included (since
 the fix plan of 2026-10-25), is quoted at their own pay for one seat, and a job's detail shows the
 customer's price only on a cash job, as the amount to collect (since the same day)
-→ [Business rules — cleaner pay](/product/business-rules#cleaner-pay).
+→ [Business rules — cleaner pay](/product/business-rules#cleaner-pay). Before the take a job's place is
+a coarse label — *Praha 4* for a Prague address (city Praha or Prague, postcode 1xx xx), otherwise the
+city alone, with no part of the postcode (since 2026-11-01) — and on Android and iOS the Available tab
+adds a rough distance band from the cleaner's home
+address, which the server measures (since 2026-10-31)
+→ [Business rules — where a job is, before it is taken](/product/business-rules#approximate-location).
+A cleaner holding more of the company's cash than the company's limit is offered no cash jobs until
+it is handed over or set off against their pay; a take of one is refused, and *Cash I hold* on their
+pay screen says why — on Android and iOS the Available tab says so too, with the cash held and the
+limit → [Business rules — the company's cash in a cleaner's hands](/product/business-rules#cash-held).
 
 **Doing the job** — take a job, mark on-the-way, start, add photos and notes. On a crew of two or
-more, each cleaner marks **I'm done**, then any cleaner uses shared **Complete job** once all have
-marked, with the existing after-photo and payment checks. Solo keeps one Complete action. A fully
+more, each cleaner marks **I'm done**, then any cleaner completes the job once all have marked —
+shared **Complete job** on partner web, **Slide to complete** on Android and iOS, the solo wording
+(since 2026-11-01) — with the existing after-photo and payment checks. Solo keeps one Complete action. A fully
 marked job nobody completes is eligible two hours after the last mark on the next cleanup tick;
 without all marks, an after photo or settled payment it stays in progress.
 → [Crew completion](/product/business-rules#crew-completion)
@@ -328,8 +338,12 @@ without all marks, an after photo or settled payment it stays in progress.
 Entry instructions and the full address become visible on assignment. A job cannot be started more than an
 hour before it is booked for.
 
-The partner mobile header groups the job facts and timer more compactly. Quick actions stay on one
-line with full accessible labels, and an eligible **Cancel job** action is red. Eligibility and the
+The partner mobile job detail has no timer (since 2026-11-01). Its head is the Active hero's, with a
+status line naming the step at hand and the time left to the booked end, and a run sheet under it walks
+*Setting off → Getting in → Cleaning → Finishing*. *Navigate*, *Call* and *SMS* sit in the step that
+needs them, with full accessible labels; when a label does not fit they drop their icons, then fall
+back to two rows (*Navigate* over *Call · SMS*), then one column. An eligible **Withdraw from this job** (red; *Cancel
+job* on partner web) sits under the job, above its number, not in the head. Eligibility and the
 existing card/cash price rules stay the same. iOS navigation offers Apple Maps or Google Maps; the
 Google option opens its app when available and otherwise its web directions.
 
@@ -343,24 +357,31 @@ under, and the cleaner accepts it in the same act as taking the job — a *Swipe
 for work* slider under the text on Android and iOS, a tick and *Accept and take the job* on the web.
 A cleaner an administrator placed on a job sees a banner on the job detail and accepts from there;
 tapping Start or Complete first opens the same contract. The job detail then states *You accepted the
-contract for work on {date}, version {version}* with **Read the contract**. If the text changed
-between the preview and the take, the app re-fetches it and asks again. → [Business rules — the contract for work](/product/business-rules#work-contract),
+contract for work on {date}, version {version}* on partner web, and *Contract for work accepted on
+{date} · version {version}* on Android and iOS (since 2026-11-01), with **Read the contract**. If the text changed
+between the preview and the take, the app re-fetches it and asks again. On Android and iOS, taking or
+accepting shows four plain lines above the contract — not let in, a late cancellation by the customer,
+complaints, own equipment — as the app's summary, not the contract, and only on the contract versions
+they were checked against; any other version hides them (since 2026-10-31).
+→ [Business rules — the contract for work](/product/business-rules#work-contract),
 [ADR-0068](/decisions/adr-0068)
 
-**Leaving a job** — *Cancel job* on the job, on partner web, Android and iOS (since 2026-10-24), while
+**Leaving a job** — *Cancel job* on the job on partner web, *Withdraw from this job* on Android and iOS
+(since 2026-10-24; the apps' English label was *Cancel job* until 2026-11-01, while the other four
+languages already said withdraw), with *possible until the start, 14:00* under it on the apps, while
 the cleaner is on its crew, the job is *New* or *Confirmed* and no lockout has been reported, never once
 they are on the way or the clean has started (owner defaults 2026-10-24), and the server refuses it
 then too (owner ruling 2026-10-25). Since 2026-10-25 the apps also require its start to be still ahead
 (owner ruling 2026-10-25, *"Yup"*; the server sets no such limit): from the start on, a job nobody
 started is a no-show for the administrators; a job with no start time is judged without it. Android
-takes *Cancel job* away at the start and again when the app resumes; iOS and partner web take it away
-the next time they read the job, and until then a cancel confirmed from the start on sends nothing and
-reads the job again. A confirmation
-asks first: they will be taken off the job and their place goes back on the board for other cleaners, the
-customer's booking is not cancelled, and if they are its only cleaner the job has no cleaner until
-someone takes it; *Keep the job* changes nothing. After *Yes, cancel the job* the cleaner reads that they
-are off the job and their place is back on the board for others, or, when nobody is left on it, that it
-has no cleaner now and is back on the board, and the app leaves the job. It puts the seat back on the
+takes it away at the start and again when the app resumes, iOS within 30 seconds of the start while
+the job is open, and partner web the next time it reads the job; until then a cancel confirmed from
+the start on sends nothing and reads the job again. A confirmation (*Withdraw from this job?* on the
+apps in English) asks first: they will be taken off the job and their place goes back on the board for
+other cleaners, the customer's booking is not cancelled, and if they are its only cleaner the job has
+no cleaner until someone takes it; *Keep the job* changes nothing. After *Yes, cancel the job* (*Yes,
+withdraw* on the apps in English) the cleaner reads that they are off the job and their place is back
+on the board for others, or, when nobody is left on it, that it has no cleaner now and is back on the board, and the app leaves the job. It puts the seat back on the
 board and cancels nothing; a confirmed booking with nobody left goes back to *New* and is re-offered
 ([ADR-0067](/decisions/adr-0067)). The company's administrators are told when the crew empties, when a
 release leaves somebody on the job but the crew short (since the fix plan of 2026-10-25), and once more

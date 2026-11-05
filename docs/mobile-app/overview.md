@@ -253,15 +253,18 @@ Play Data safety declaration is filled in from.
 <uses-feature android:name="android.hardware.camera" android:required="false" />
 ```
 
-**The partner app asks for approximate location only** (since 2026-09-28). Its two uses are both
-satisfied by a coarse fix: the job list's distance is worked out on the device, to the cleaner's own
-jobs, shown in kilometres and never uploaded; the address picker only centres the map on it, and the
-cleaner moves the pin. Every permission request asks for `ACCESS_COARSE_LOCATION` — Android refuses a
-request for a permission the manifest does not declare, so a leftover request for precise location
-would read as a denial on every device — and the merged manifest declares nothing finer.
-`LocationPermissionTest` pins both. The iOS partner app's location purpose string names the same two
-uses, and says the distance is calculated only on the device, in all five `InfoPlist.strings` and in
-`project.yml` (`LocationPurposeCopyTests`). Its camera purpose string names before-and-after job photos,
+**The partner app asks for approximate location only** (since 2026-09-28), **and uses it for one
+thing**: the address picker centres the map on it, and the cleaner moves the pin. Until 2026-10-31 the
+job list also worked out a distance on the device; Orders now reads no device location at all, and the
+Available tab shows a distance band the server measures from the cleaner's stored home address
+([Distance from home](/product/business-rules#distance-band)). Every permission request asks for
+`ACCESS_COARSE_LOCATION` — Android refuses a request for a permission the manifest does not declare,
+so a leftover request for precise location would read as a denial on every device — and the merged
+manifest declares nothing finer.
+`LocationPermissionTest` pins both. The iOS partner app's location purpose string names only the
+address picker's map, the one place it asks (the job detail has had no map since 2026-11-01),
+in all five `InfoPlist.strings`, in `project.yml` and in the `Info.plist` generated from it
+(`LocationPurposeCopyTests`). Its camera purpose string names before-and-after job photos,
 the profile photo and photos of the cleaner's documents, and its photo-library string the profile photo
 and a photo of a document, which job photos never come from (since the fix plan of 2026-10-25, the same
 five files and `project.yml`; `PhotoPurposeCopyTests`).

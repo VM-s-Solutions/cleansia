@@ -853,9 +853,9 @@ A call site that passes the deviating-form test and is not here means the **rost
 
 | # | Field | Android | iOS |
 |---|---|---|---|
-| 1 | `CustomerPhone` — call + SMS chips | `CustomerCard.kt:86-87` | `OrderDetailCards.swift:96-97` |
-| 2 | `AccessInstructions` — access card | `OrderDetailScreen.kt:481-483` | `OrderDetailContent.swift:19-23` |
-| 3 | `OrderNotes`/`OrderIssues` — notes & issues section | `OrderDetailScreen.kt:630` | `OrderDetailContent.swift:124` |
+| 1 | `CustomerPhone` — call + SMS chips | `CustomerCard.kt:31`, `:41-46` | `OrderDetailCards.swift:22-25` |
+| 2 | `AccessInstructions` — access card | `partner/features/orders/OrderDetailScreen.kt:661`, `:748` | `OrderDetailCards.swift:137`, `CleansiaPartner/Sources/Features/Orders/OrderDetailContent.swift:351` |
+| 3 | `OrderNotes`/`OrderIssues` — notes & issues section | `partner/features/orders/OrderDetailScreen.kt:707`, `:757` | `JobRunSheet.swift:323` |
 
 ⚠️ **Two things the conversion taught that the rule as written did not say, both worth more than the
 roster.**

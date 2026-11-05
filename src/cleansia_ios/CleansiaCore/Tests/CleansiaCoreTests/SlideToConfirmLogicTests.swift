@@ -113,4 +113,88 @@ final class SlideToConfirmLogicTests: XCTestCase {
         XCTAssertTrue(source.contains(".opacity(isBusy?1:1-Double(thumb.progress(maxX:maxX)))"))
         XCTAssertFalse(source.contains(".offset(x:thumb.offset)"))
     }
+
+    func testALockedSlideIsSpokenAsItsReasonThenItsCountdown() {
+        XCTAssertEqual(
+            SlideToConfirm.lockedLabel(reason: "You can set off from 13:00", detail: "in 3 h 40 min"),
+            "You can set off from 13:00, in 3 h 40 min"
+        )
+        XCTAssertEqual(SlideToConfirm.lockedLabel(reason: "Not yet", detail: nil), "Not yet")
+        XCTAssertEqual(SlideToConfirm.lockedLabel(reason: "Not yet", detail: " "), "Not yet")
+    }
+
+    /// The locked slide has no thumb to drag and reads as a disabled button; every open slide keeps its defaults.
+    func testALockedSlideNeverDragsAndIsADisabledButton() throws {
+        let source = try String(
+            contentsOf: URL(fileURLWithPath: #filePath)
+                .deletingLastPathComponent()
+                .deletingLastPathComponent()
+                .deletingLastPathComponent()
+                .appendingPathComponent("Sources/CleansiaCore/Components/SlideToConfirm.swift"),
+            encoding: .utf8
+        )
+        .components(separatedBy: .whitespacesAndNewlines)
+        .joined()
+        let locked = try XCTUnwrap(source.range(of: "privatefunclockedTrack(").map { String(source[$0.lowerBound...]) })
+            .components(separatedBy: "private").dropFirst().first ?? ""
+
+        XCTAssertFalse(locked.isEmpty)
+        XCTAssertFalse(locked.contains("gesture("), "a locked slide has nothing to drag")
+        XCTAssertTrue(locked.contains(".accessibilityAddTraits(.isButton).disabled(true)"))
+        XCTAssertTrue(locked.contains("Image(systemName:\"lock\")"))
+        XCTAssertTrue(source.contains(
+            "enabled:Bool=true,resetTrigger:Int=0,maxLabelLines:Int=1,thumbLanes:Bool=false,"
+        ))
+    }
+
+    /// The locked slide is the prominent track in its locked face: the words in the type tokens, centred between
+    /// the lanes, a ringed lock where the thumb would be, and no dimming, because it is a state, not a disabled
+    /// control.
+    func testTheLockedSlideIsTheProminentTrackInItsLockedFace() throws {
+        let source = try compactSlideSource()
+        let locked = try XCTUnwrap(source.range(of: "privatefunclockedTrack(").map { String(source[$0.lowerBound...]) })
+            .components(separatedBy: "private").dropFirst().first ?? ""
+
+        XCTAssertTrue(locked.contains("lanedShell(fill:CleansiaColors.surfaceVariant,lanes:true)"))
+        XCTAssertTrue(locked.contains(".font(CleansiaTypography.labelLarge).foregroundColor(CleansiaColors.onSurface)"))
+        XCTAssertTrue(locked.contains(
+            ".font(CleansiaTypography.labelMedium).foregroundColor(CleansiaColors.onSurfaceVariant)"
+        ))
+        XCTAssertTrue(locked.contains(".strokeBorder(CleansiaColors.outline,lineWidth:1.5)"))
+        XCTAssertFalse(locked.contains(".nunito("), "no hand-set face")
+        XCTAssertFalse(locked.contains("words("))
+        XCTAssertFalse(locked.contains(".opacity("), "a locked slide is not dimmed")
+    }
+
+    /// Whichever track an open slide draws, it springs back when its busy state ends and when the caller bumps
+    /// `resetTrigger`, so a failed submit hands the thumb back.
+    func testEveryOpenSlideSpringsBackWhenItsBusyStateEndsOrItsResetTriggerMoves() throws {
+        let source = try compactSlideSource()
+
+        XCTAssertTrue(source.contains(
+            "openTrack.onChange(of:isBusy){busyinif!busy{withAnimation(.spring()){thumb.reset()}}}"
+                + ".onChange(of:resetTrigger){_inwithAnimation(.spring()){thumb.reset()}}"
+        ))
+        XCTAssertEqual(source.components(separatedBy: ".onChange(of:isBusy)").count, 2, "one place for every track")
+    }
+
+    /// An opt-in reaches the laned track; with none the customer's fixed track is drawn as before.
+    func testOnlyAnOptInDrawsTheLanedTrack() throws {
+        let source = try compactSlideSource()
+
+        XCTAssertTrue(source.contains("ifthumbLanes||maxLabelLines>1{lanedTrack}else{slidingTrack}"))
+    }
+
+    private func compactSlideSource() throws -> String {
+        try String(
+            contentsOf: URL(fileURLWithPath: #filePath)
+                .deletingLastPathComponent()
+                .deletingLastPathComponent()
+                .deletingLastPathComponent()
+                .appendingPathComponent("Sources/CleansiaCore/Components/SlideToConfirm.swift"),
+            encoding: .utf8
+        )
+        .components(separatedBy: .whitespacesAndNewlines)
+        .joined()
+    }
 }

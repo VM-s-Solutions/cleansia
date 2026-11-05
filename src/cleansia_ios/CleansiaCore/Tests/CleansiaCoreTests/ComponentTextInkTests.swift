@@ -73,26 +73,40 @@ final class ComponentTextInkTests: XCTestCase {
         XCTAssertLessThan(contrast(rgb(0x0284C7), wash), 4.5, "the primary is not a text colour on the wash")
     }
 
-    /// The subtle slide-to-confirm (the partner's order actions, the orders list's take, the work contract) writes
-    /// its label on a 12 % primary wash over the card: it takes the text ink, 5.10:1 in light mode where the
-    /// primary read 3.52:1 (finding 2026-10-05), and 5.43:1 in dark. The track and the thumb keep the primary.
-    func testTheSubtleSlideToConfirmLabelReadsOnItsWash() throws {
-        let slide = try compactSource("Components/SlideToConfirm.swift")
-        XCTAssertTrue(slide.contains("privatevarlabelColor:Color{switchstyle{case.subtle:CleansiaColors.primaryText"))
-        XCTAssertTrue(slide
-            .contains("privatevartrackColor:Color{switchstyle{case.subtle:CleansiaColors.primary.opacity(0.12)"))
-        XCTAssertTrue(slide.contains(
-            "privatevarthumbColor:Color{switchstyle{case.subtle:CleansiaColors.primarycase.prominent:"
-        ))
-        for style in [UIUserInterfaceStyle.light, .dark] {
-            let wash = resolved(CleansiaColors.primary, style) * 0.12 + resolved(CleansiaColors.surface, style) * 0.88
-            XCTAssertGreaterThanOrEqual(contrast(resolved(CleansiaColors.primaryText, style), wash), 4.5)
-        }
+    /// An unticked box is a control's edge, so it reads 3:1 on the surface in both modes: the outline it was drawn in
+    /// read about 1.2:1 on white.
+    func testAnUntickedCheckboxReadsOnTheSurface() throws {
+        let checkbox = try compactSource("Components/CleansiaCheckbox.swift")
+        XCTAssertTrue(checkbox.contains(".foregroundColor(checked?CleansiaColors.primary:CleansiaColors.quiet)"))
         XCTAssertLessThan(
-            contrast(rgb(0x0284C7), mix(0x0284C7, 0.12, over: 0xFFFFFF)),
-            4.5,
-            "the primary reads after all"
+            contrast(resolved(CleansiaColors.outline, .light), resolved(CleansiaColors.surface, .light)),
+            1.3
         )
+        for style in [UIUserInterfaceStyle.light, .dark] {
+            XCTAssertGreaterThanOrEqual(
+                contrast(resolved(CleansiaColors.quiet, style), resolved(CleansiaColors.surface, style)),
+                3,
+                "\(style == .dark ? "dark" : "light")"
+            )
+        }
+    }
+
+    /// The partner Orders board's three tokens: the set-off band, the quiet ink and the crew-mate's disc, each an
+    /// existing palette value per mode (the crew-mate's dark disc is green-400 at 16 % over the surface).
+    func testTheBoardTokensResolveToTheirPaletteValuesInBothModes() {
+        XCTAssertEqual(resolved(CleansiaColors.dayLineSetOff, .light), rgb(0xBAE6FD))
+        XCTAssertEqual(resolved(CleansiaColors.dayLineSetOff, .dark), rgb(0x0C4A6E))
+        XCTAssertEqual(resolved(CleansiaColors.quiet, .light), rgb(0x64748B))
+        XCTAssertEqual(resolved(CleansiaColors.quiet, .dark), rgb(0x94A3B8))
+        XCTAssertEqual(resolved(CleansiaColors.crewMateContainer, .light), rgb(0xDCFCE7))
+        let disc = composited(CleansiaColors.crewMateContainer, over: CleansiaColors.surface, .dark)
+        for (drawn, wanted) in zip([disc.x, disc.y, disc.z], [0x25, 0x46, 0x46]) {
+            XCTAssertEqual(drawn * 255, Double(wanted), accuracy: 1.5, "green-400 at 16 % over the dark surface")
+        }
+        XCTAssertGreaterThanOrEqual(contrast(resolved(CleansiaColors.successInk, .light), rgb(0xDCFCE7)), 4.5)
+        XCTAssertGreaterThanOrEqual(contrast(resolved(CleansiaColors.successInk, .dark), disc), 4.5)
+        XCTAssertGreaterThanOrEqual(contrast(resolved(CleansiaColors.quiet, .light), rgb(0xFFFFFF)), 4.5)
+        XCTAssertGreaterThanOrEqual(contrast(resolved(CleansiaColors.quiet, .dark), rgb(0x1E293B)), 4.5)
     }
 
     /// A filled button's label reads 4.5:1 on its dark-mode fill (finding 2026-10-05): sky-900 on the dark
@@ -106,7 +120,11 @@ final class ComponentTextInkTests: XCTestCase {
         XCTAssertLessThan(contrast(rgb(0x0C4A6E), rgb(0x38BDF8)), 4.5, "sky-900 reads on sky-400 after all")
         XCTAssertEqual(contrast(resolved(CleansiaColors.onPrimary, .light), rgb(0xFFFFFF)), 1, accuracy: 0.001)
         let button = try compactSource("Components/CleansiaButton.swift")
-        XCTAssertTrue(button.contains(".foregroundColor(CleansiaColors.onPrimary).background(CleansiaColors.primary"))
+        XCTAssertTrue(button.contains(
+            ".foregroundColor(Self.ink(pressable:pressable,disabled:disabledContentColor))"
+                + ".background(Self.fill(pressable:pressable,disabled:disabledContainerColor))"
+        ))
+        XCTAssertEqual(CleansiaPrimaryButton.ink(pressable: true, disabled: nil), CleansiaColors.onPrimary)
     }
 
     /// Blue text on the primary container reads 4.5:1 in both modes (finding 2026-10-05): in dark mode the
@@ -238,6 +256,31 @@ final class ComponentTextInkTests: XCTestCase {
 
     private func resolved(_ color: Color, _ style: UIUserInterfaceStyle) -> RGB {
         StatusBarFade.rgb(color, style == .dark ? .dark : .light)
+    }
+
+    private func composited(_ top: Color, over bottom: Color, _ style: UIUserInterfaceStyle) -> RGB {
+        let scheme: ColorScheme = style == .dark ? .dark : .light
+        let renderer = ImageRenderer(
+            content: ZStack { bottom
+                top
+            }.frame(width: 1, height: 1).environment(\.colorScheme, scheme)
+        )
+        renderer.scale = 1
+        guard let image = renderer.cgImage,
+              let space = CGColorSpace(name: CGColorSpace.sRGB),
+              let context = CGContext(
+                  data: nil,
+                  width: 1,
+                  height: 1,
+                  bitsPerComponent: 8,
+                  bytesPerRow: 4,
+                  space: space,
+                  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+              )
+        else { return .zero }
+        context.draw(image, in: CGRect(x: 0, y: 0, width: 1, height: 1))
+        guard let pixel = context.data?.assumingMemoryBound(to: UInt8.self) else { return .zero }
+        return RGB(Double(pixel[0]), Double(pixel[1]), Double(pixel[2])) / 255
     }
 
     private func rgb(_ hex: UInt32) -> RGB {

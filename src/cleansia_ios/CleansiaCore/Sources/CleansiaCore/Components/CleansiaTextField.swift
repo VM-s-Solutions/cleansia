@@ -4,6 +4,7 @@ import UIKit
 public struct CleansiaTextField: View {
     @Binding private var value: String
     private let label: String
+    private let placeholder: String?
     private let helper: String?
     private let errorText: String?
     private let keyboardType: UIKeyboardType
@@ -20,6 +21,7 @@ public struct CleansiaTextField: View {
     public init(
         value: Binding<String>,
         label: String,
+        placeholder: String? = nil,
         helper: String? = nil,
         errorText: String? = nil,
         keyboardType: UIKeyboardType = .default,
@@ -32,6 +34,7 @@ public struct CleansiaTextField: View {
     ) {
         _value = value
         self.label = label
+        self.placeholder = placeholder
         self.helper = helper
         self.errorText = errorText
         self.keyboardType = keyboardType
@@ -157,6 +160,7 @@ public struct CleansiaTextField: View {
         ManagedTextField(
             text: $value,
             focused: $focused,
+            placeholder: floating ? placeholder : nil,
             isSecure: isPassword && !passwordVisible,
             keyboardType: keyboardType,
             textContentType: textContentType,
@@ -179,6 +183,7 @@ public struct CleansiaTextField: View {
 private struct ManagedTextField: UIViewRepresentable {
     @Binding var text: String
     @Binding var focused: Bool
+    let placeholder: String?
     let isSecure: Bool
     let keyboardType: UIKeyboardType
     let textContentType: UITextContentType?
@@ -322,6 +327,7 @@ private struct ManagedTextField: UIViewRepresentable {
                 field.tintColor = UIColor(parent.tintColor)
                 configuredTint = parent.tintColor
             }
+            if field.placeholder != parent.placeholder { field.placeholder = parent.placeholder }
             if field.keyboardType != parent.keyboardType { field.keyboardType = parent.keyboardType }
             if field.textContentType != parent.textContentType { field.textContentType = parent.textContentType }
         }

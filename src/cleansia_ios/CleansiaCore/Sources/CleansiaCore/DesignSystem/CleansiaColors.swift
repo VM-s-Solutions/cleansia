@@ -85,6 +85,14 @@ public enum CleansiaColors {
     public static let pendingInk = Color.dynamic(light: Palette.amber800, dark: Palette.warningStar)
     public static let successInk = Color.dynamic(light: Palette.green800, dark: Palette.green400)
 
+    /// The partner Orders board's day line: the hour before a job's start, when the cleaner may set off.
+    public static let dayLineSetOff = Color.dynamic(light: Palette.sky200, dark: Palette.sky900)
+    /// Ink one step quieter than `onSurfaceVariant` that still reads 4.5:1 on the surface: out-of-period dates,
+    /// seat rings, a real zero.
+    public static let quiet = Color.dynamic(light: Palette.slate500, dark: Palette.slate400)
+    /// A crew-mate's disc, under `successInk`: identity only, never a status.
+    public static let crewMateContainer = Color.dynamic(light: Palette.successBg, dark: Palette.green400.opacity(0.16))
+
     // Fixed brand ramp for the splash gradient (sky-600 → sky-400), matching
     // Android's SplashScreen which does not vary with the color scheme.
     public static let splashGradientStart = Palette.sky600

@@ -53,6 +53,7 @@ fun CleansiaTextField(
     transparentContainer: Boolean = false,
     /** How the value is drawn, e.g. an IBAN in groups of four; the value itself is unchanged. */
     visualTransformation: VisualTransformation = VisualTransformation.None,
+    placeholder: String? = null,
 ) {
     var passwordVisible by remember { mutableStateOf(false) }
     val visual = if (isPassword && !passwordVisible) PasswordVisualTransformation() else visualTransformation
@@ -63,6 +64,7 @@ fun CleansiaTextField(
         onValueChange = onValueChange,
         modifier = modifier.fillMaxWidth(),
         label = { Text(label) },
+        placeholder = if (placeholder != null) { { Text(placeholder) } } else null,
         enabled = enabled,
         singleLine = singleLine,
         isError = isError,

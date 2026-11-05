@@ -42,6 +42,7 @@ final class StringCatalogCompletenessTests: XCTestCase {
             ["uk", "ru"],
             "a rate only; uk/ru write it unspaced, as Android does"
         ),
+        Exception("Customer", "auth_email_placeholder", allLocalized, "an example address, not a word"),
         Exception("Customer", "devices_platform_ios", allLocalized, "Apple product name"),
         Exception("Customer", "dispute_create_char_count", allLocalized, "format specifiers and a literal count only"),
         Exception("Customer", "home_upsell_chip_credit", allLocalized, "a plus sign and a specifier only"),
@@ -69,7 +70,9 @@ final class StringCatalogCompletenessTests: XCTestCase {
         Exception("Customer", "payments_card_label", allLocalized, "the brand and the last four digits behind a mask"),
         Exception("Customer", "profile_tier_plus", allLocalized, "Cleansia Plus is the product name"),
         Exception("Partner", "action_sms", allLocalized, "SMS is the same initialism everywhere"),
+        Exception("Partner", "auth_email_placeholder", allLocalized, "an example address, not a word"),
         Exception("Partner", "bonus", ["cs", "sk"], "\"Bonus\" is the Czech and Slovak word"),
+        Exception("Partner", "cash_limit_at", ["cs", "sk"], "\"limit\" is the Czech and Slovak word"),
         Exception("Partner", "devices_platform_android", allLocalized, "platform name"),
         Exception("Partner", "devices_platform_ios", allLocalized, "platform name"),
         Exception("Partner", "devices_platform_web", allLocalized, "platform name"),
@@ -77,6 +80,14 @@ final class StringCatalogCompletenessTests: XCTestCase {
         Exception("Partner", "duration_minutes_only", ["cs", "sk"], "\"m\" is the same abbreviation in cs/sk"),
         Exception("Partner", "earnings_cash_held_limit", ["cs", "sk"], "\"Limit\" is the Czech and Slovak word"),
         Exception("Partner", "job_radius_value", ["cs", "sk"], "a specifier and the \"km\" symbol, Latin in cs/sk"),
+        Exception("Partner", "orders_duration_h", ["cs", "sk"], "\"h\" is the same abbreviation in cs/sk"),
+        Exception(
+            "Partner",
+            "orders_duration_h_min",
+            ["cs", "sk"],
+            "\"h\"/\"min\" are the same abbreviations in cs/sk"
+        ),
+        Exception("Partner", "orders_duration_min", ["cs", "sk"], "\"min\" is the same abbreviation in cs/sk"),
         Exception("Partner", "profile_iban", allLocalized, "IBAN is an international standard")
     ]
 

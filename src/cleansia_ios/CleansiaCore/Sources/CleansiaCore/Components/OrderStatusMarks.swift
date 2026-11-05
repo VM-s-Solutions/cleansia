@@ -2,9 +2,9 @@ import SwiftUI
 
 /// Which of the three semantic groups an order status belongs to.
 ///
-/// The two apps generate their own `OrderStatus` from their own API contract, so — exactly as
-/// `OrderTrackerRule` does — the mapping stays in each app and only the GROUP crosses into
-/// `CleansiaCore`.
+/// The two apps generate their own `OrderStatus` from their own API contract. A mapping both apps make the same
+/// way crosses into `CleansiaCore` keyed by the backend's wire integer, never by a generated type
+/// (`OrderStatusStyle`); one that differs between the apps stays in each. → /decisions/adr-0080
 public enum OrderStatusTone: Equatable {
     /// New · Pending · Confirmed · On the way · In progress — the order is still moving.
     case live
@@ -14,6 +14,31 @@ public enum OrderStatusTone: Equatable {
     case failed
     /// A status the app could not resolve. Drawn with no mark: there is nothing to assert.
     case unknown
+}
+
+/// The tint and group of an order status, for both apps' pills and timeline points, by the backend's wire value.
+/// An app hands over its typed status's `rawValue`, and keeps its own labels and its own choice of which status to
+/// show. A value this table does not name, or none, draws neutral with no mark.
+public enum OrderStatusStyle {
+    public static func tint(wireValue: Int?) -> Color {
+        switch wireValue {
+        case 0?, 1?: CleansiaColors.warningStar
+        case 2?: CleansiaColors.primary
+        case 3?, 4?: CleansiaColors.secondary
+        case 5?: CleansiaColors.successText
+        case 6?: CleansiaColors.error
+        default: CleansiaColors.outlineVariant
+        }
+    }
+
+    public static func tone(wireValue: Int?) -> OrderStatusTone {
+        switch wireValue {
+        case 0?, 1?, 2?, 3?, 4?: .live
+        case 5?: .done
+        case 6?: .failed
+        default: .unknown
+        }
+    }
 }
 
 enum StatusMarkMetrics {
@@ -155,7 +180,7 @@ public struct OrderTimelinePoint: View {
     }
 }
 
-/// Shared by the current timeline point and tracker segment, with no persistent repeating animation
+/// Used by the current timeline point, with no persistent repeating animation
 /// to restart when a live clock updates the surrounding view.
 struct OrderPhasePulse: ViewModifier {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion

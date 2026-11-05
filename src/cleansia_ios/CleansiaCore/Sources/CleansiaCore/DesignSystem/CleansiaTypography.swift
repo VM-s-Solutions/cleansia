@@ -14,6 +14,7 @@ public enum CleansiaTypography {
 
     public static let bodyLarge = scale.bodyLarge.font
     public static let bodyMedium = scale.bodyMedium.font
+    public static let bodySmall = scale.bodySmall.font
 
     public static let labelLarge = scale.labelLarge.font
     public static let labelMedium = scale.labelMedium.font
@@ -33,6 +34,7 @@ public enum CleansiaTypography {
 
         public let bodyLarge = CleansiaTextStyle.nunito(.regular, size: 16)
         public let bodyMedium = CleansiaTextStyle.nunito(.regular, size: 14)
+        public let bodySmall = CleansiaTextStyle.nunito(.regular, size: 12)
 
         public let labelLarge = CleansiaTextStyle.nunito(.bold, size: 14)
         public let labelMedium = CleansiaTextStyle.nunito(.semibold, size: 12)

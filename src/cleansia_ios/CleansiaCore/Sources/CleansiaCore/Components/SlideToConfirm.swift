@@ -50,21 +50,24 @@ public struct SlideToConfirmThumb: Equatable {
 /// end with a spinner and snaps back when the busy state ends; the parent can
 /// also bump `resetTrigger` to snap the thumb back after a failed submit so
 /// the user can retry.
+///
+/// `thumbLanes` keeps the words clear of the thumb at both ends and `maxLabelLines` lets them wrap there; the track
+/// grows from its height to hold them. Both are off by default, so a one-line label keeps the fixed track and the
+/// caller's own line limit and scale factor still govern it.
 public struct SlideToConfirm: View {
-    public enum Style {
-        case subtle
-        case prominent
-    }
-
     let idleLabel: String
     let busyLabel: String
     let isBusy: Bool
     let enabled: Bool
     let resetTrigger: Int
-    let style: Style
+    let maxLabelLines: Int
+    let thumbLanes: Bool
     let onConfirm: () -> Void
+    private var detail: String?
+    private var isLocked = false
 
     @State private var thumb = SlideToConfirmThumb()
+    @State private var trackWidth: CGFloat = 0
 
     private let thumbInset: CGFloat = 4
 
@@ -74,7 +77,9 @@ public struct SlideToConfirm: View {
         isBusy: Bool,
         enabled: Bool = true,
         resetTrigger: Int = 0,
-        style: Style = .subtle,
+        maxLabelLines: Int = 1,
+        thumbLanes: Bool = false,
+        detail: String? = nil,
         onConfirm: @escaping () -> Void
     ) {
         self.idleLabel = idleLabel
@@ -82,15 +87,137 @@ public struct SlideToConfirm: View {
         self.isBusy = isBusy
         self.enabled = enabled
         self.resetTrigger = resetTrigger
-        self.style = style
+        self.maxLabelLines = maxLabelLines
+        self.thumbLanes = thumbLanes
+        self.detail = detail
         self.onConfirm = onConfirm
     }
 
+    /// The slide that cannot be used yet: a lock where the thumb would be, why in its label, and when (or what
+    /// else) under it. Nothing drags; VoiceOver reads a disabled button named by the reason and the detail.
+    public init(lockedReason reason: String, detail: String? = nil) {
+        self.init(
+            idleLabel: reason,
+            busyLabel: reason,
+            isBusy: false,
+            enabled: false,
+            detail: detail,
+            onConfirm: {}
+        )
+        isLocked = true
+    }
+
+    public static func lockedLabel(reason: String, detail: String?) -> String {
+        guard let detail, !detail.trimmingCharacters(in: .whitespaces).isEmpty else { return reason }
+        return "\(reason), \(detail)"
+    }
+
     private var trackHeight: CGFloat {
-        style == .prominent ? 56 : 52
+        56
+    }
+
+    private var thumbSize: CGFloat {
+        trackHeight - thumbInset * 2
+    }
+
+    /// The thumb, its inset and a gap: what a laned label keeps clear at each end, so it stays centred on the track.
+    private var laneWidth: CGFloat {
+        thumbSize + thumbInset + Spacing.xs
     }
 
     public var body: some View {
+        if isLocked {
+            lockedTrack()
+        } else {
+            openTrack
+                .onChange(of: isBusy) { busy in
+                    if !busy { withAnimation(.spring()) { thumb.reset() } }
+                }
+                .onChange(of: resetTrigger) { _ in
+                    withAnimation(.spring()) { thumb.reset() }
+                }
+        }
+    }
+
+    @ViewBuilder
+    private var openTrack: some View {
+        if thumbLanes || maxLabelLines > 1 {
+            lanedTrack
+        } else {
+            slidingTrack
+        }
+    }
+
+    private func lockedTrack() -> some View {
+        lanedShell(fill: CleansiaColors.surfaceVariant, lanes: true) {
+            Text(idleLabel)
+                .font(CleansiaTypography.labelLarge)
+                .foregroundColor(CleansiaColors.onSurface)
+            if let detail {
+                Text(detail)
+                    .font(CleansiaTypography.labelMedium)
+                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+            }
+        } knob: {
+            Image(systemName: "lock")
+                .font(.system(size: thumbSize * 0.4, weight: .semibold))
+                .foregroundColor(CleansiaColors.onSurfaceVariant)
+                .frame(width: thumbSize, height: thumbSize)
+                .background(CleansiaColors.surface, in: Circle())
+                .overlay(Circle().strokeBorder(CleansiaColors.outline, lineWidth: 1.5))
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Self.lockedLabel(reason: idleLabel, detail: detail))
+        .accessibilityAddTraits(.isButton)
+        .disabled(true)
+    }
+
+    private var lanedTrack: some View {
+        let maxX = max(trackWidth - thumbSize - thumbInset * 2, 0)
+        return lanedShell(
+            fill: trackColor,
+            lanes: thumbLanes,
+            wordsOpacity: isBusy ? 1 : 1 - Double(thumb.progress(maxX: maxX))
+        ) {
+            Text(isBusy ? busyLabel : idleLabel)
+                .font(CleansiaTypography.labelLarge)
+                .lineLimit(maxLabelLines)
+            if let detail {
+                Text(detail)
+                    .font(CleansiaTypography.labelMedium)
+            }
+        } knob: {
+            thumbView(size: thumbSize, maxX: maxX)
+        }
+        .foregroundColor(labelColor)
+        .background(GeometryReader { geometry in
+            Color.clear
+                .onAppear { trackWidth = geometry.size.width }
+                .onChange(of: geometry.size.width) { trackWidth = $0 }
+        })
+        .opacity(enabled || isBusy ? 1 : 0.6)
+    }
+
+    /// The words centred on the track, between the lanes when it has them, over a track at least its height tall.
+    private func lanedShell(
+        fill: Color,
+        lanes: Bool,
+        wordsOpacity: Double = 1,
+        @ViewBuilder words: () -> some View,
+        @ViewBuilder knob: () -> some View
+    ) -> some View {
+        VStack(spacing: 0) { words() }
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .opacity(wordsOpacity)
+            .padding(.horizontal, lanes ? laneWidth : 0)
+            .padding(.vertical, Spacing.xs)
+            .frame(maxWidth: .infinity, minHeight: trackHeight)
+            .background(fill, in: Capsule())
+            .overlay(alignment: .leading) { knob().padding(thumbInset) }
+    }
+
+    private var slidingTrack: some View {
         GeometryReader { geometry in
             let thumbSize = trackHeight - thumbInset * 2
             let maxX = max(geometry.size.width - thumbSize - thumbInset * 2, 0)
@@ -108,12 +235,6 @@ public struct SlideToConfirm: View {
                     .padding(thumbInset)
             }
             .frame(height: trackHeight)
-            .onChange(of: isBusy) { busy in
-                if !busy { withAnimation(.spring()) { thumb.reset() } }
-            }
-            .onChange(of: resetTrigger) { _ in
-                withAnimation(.spring()) { thumb.reset() }
-            }
         }
         .frame(height: trackHeight)
         .opacity(enabled || isBusy ? 1 : 0.6)
@@ -134,7 +255,7 @@ public struct SlideToConfirm: View {
             ProgressView()
                 .tint(thumbGlyphColor)
         } else {
-            Image(systemName: style == .prominent ? "chevron.right" : "chevron.right.2")
+            Image(systemName: "chevron.right")
                 .font(.system(size: size * 0.4, weight: .bold))
                 .foregroundColor(thumbGlyphColor)
         }
@@ -158,41 +279,19 @@ public struct SlideToConfirm: View {
     }
 
     private var trackColor: Color {
-        switch style {
-        case .subtle:
-            CleansiaColors.primary.opacity(0.12)
-        case .prominent:
-            enabled || isBusy ? CleansiaColors.primary : CleansiaColors.surfaceVariant
-        }
+        enabled || isBusy ? CleansiaColors.primary : CleansiaColors.surfaceVariant
     }
 
-    /// The subtle label is text on a 12 % primary wash, so it takes the text ink: the light primary read 3.52:1
-    /// there, sky-700 reads 5.10:1 (dark mode is sky-400 either way, 5.43:1).
     private var labelColor: Color {
-        switch style {
-        case .subtle:
-            CleansiaColors.primaryText
-        case .prominent:
-            enabled || isBusy ? CleansiaColors.onPrimary : CleansiaColors.onSurfaceVariant
-        }
+        enabled || isBusy ? CleansiaColors.onPrimary : CleansiaColors.onSurfaceVariant
     }
 
     private var thumbColor: Color {
-        switch style {
-        case .subtle:
-            CleansiaColors.primary
-        case .prominent:
-            CleansiaColors.surface
-        }
+        CleansiaColors.surface
     }
 
     private var thumbGlyphColor: Color {
-        switch style {
-        case .subtle:
-            CleansiaColors.onPrimary
-        case .prominent:
-            enabled || isBusy ? CleansiaColors.primary : CleansiaColors.onSurfaceVariant
-        }
+        enabled || isBusy ? CleansiaColors.primary : CleansiaColors.onSurfaceVariant
     }
 }
 
@@ -206,7 +305,6 @@ public struct SlideToConfirm: View {
                     idleLabel: "Slide to confirm · 1 200 Kč",
                     busyLabel: "Booking…",
                     isBusy: false,
-                    style: .prominent,
                     onConfirm: {}
                 )
                 SlideToConfirm(
@@ -214,9 +312,17 @@ public struct SlideToConfirm: View {
                     busyLabel: "Booking…",
                     isBusy: false,
                     enabled: false,
-                    style: .prominent,
                     onConfirm: {}
                 )
+                SlideToConfirm(
+                    idleLabel: "Swipe to accept the contract for work",
+                    busyLabel: "Accepting…",
+                    isBusy: false,
+                    maxLabelLines: 2,
+                    thumbLanes: true,
+                    onConfirm: {}
+                )
+                SlideToConfirm(lockedReason: "You can set off from 13:00", detail: "in 3 h 40 min")
             }
             .padding()
         }

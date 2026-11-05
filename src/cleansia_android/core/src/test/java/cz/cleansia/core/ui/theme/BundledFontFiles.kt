@@ -38,6 +38,17 @@ internal object BundledFontFiles {
         return buffer.u16(os2!! + 4)
     }
 
+    /** `OS/2.sCapHeight` over `head.unitsPerEm`: the cap height as a share of the font size. */
+    fun capHeightShare(file: File): Float {
+        val bytes = file.readBytes()
+        val buffer = bytes.bigEndian()
+        val os2 = tableOffset(bytes, buffer, "OS/2")
+        val head = tableOffset(bytes, buffer, "head")
+        assertNotNull("${file.name} has no OS/2 table", os2)
+        assertNotNull("${file.name} has no head table", head)
+        return buffer.getShort(os2!! + 88).toFloat() / buffer.u16(head!! + 18)
+    }
+
     fun typeScaleSlots(typography: Typography): List<Pair<String, TextStyle>> =
         Typography::class.java.methods
             .filter { it.parameterCount == 0 && it.returnType == TextStyle::class.java }

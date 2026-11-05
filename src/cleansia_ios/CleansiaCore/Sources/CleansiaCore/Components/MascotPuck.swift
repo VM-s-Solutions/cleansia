@@ -35,7 +35,19 @@ public struct MascotPuck: View {
         .accessibilityHidden(true)
     }
 
+    /// Where an art drawn leaning on a ledge has its ledge, as a share of the puck's height in a square frame once the
+    /// puck's own scale is applied, so a caller can sit that line on an edge instead of centring the figure on it.
+    /// Nil for an art with no ledge.
+    public static func ledgeFraction(_ art: MascotArt?) -> CGFloat? {
+        guard case .still(.waving)? = art else { return nil }
+        return 0.5 + (0.797 - 0.5) * scale(of: art)
+    }
+
     private var artScale: CGFloat {
+        Self.scale(of: art)
+    }
+
+    private static func scale(of art: MascotArt?) -> CGFloat {
         switch art {
         case .still(.leaning), .still(.ready): 0.903
         case .still(.waving): 1.009

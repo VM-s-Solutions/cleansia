@@ -9,6 +9,11 @@ import XCTest
 final class SlideToConfirmLayoutTests: XCTestCase {
     private let long = "Swipe to accept the contract for work and every one of its terms"
 
+    override static func setUp() {
+        super.setUp()
+        ApplicationAccessibility.enable()
+    }
+
     private func open(_ label: String, maxLabelLines: Int = 1, thumbLanes: Bool = false) -> SlideToConfirm {
         SlideToConfirm(
             idleLabel: label,

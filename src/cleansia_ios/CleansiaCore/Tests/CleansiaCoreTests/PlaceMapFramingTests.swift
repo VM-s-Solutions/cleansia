@@ -168,8 +168,14 @@ final class PlaceMapMotionTests: XCTestCase {
         XCTAssertTrue(away, "her pan is written back")
 
         away = false
+        XCTAssertTrue(mapView.isAway)
         view.apply(to: mapView, placement: placement)
-        XCTAssertTrue(mapView.isRecentring, "clearing the binding sends the map back to the place")
+        // iOS 16 animates the move back; iOS 26 finishes it inside `setRegion`, reporting the region change before
+        // it returns. Either way the map is on its way back to the place, or already there.
+        XCTAssertTrue(
+            mapView.isRecentring || !mapView.isAway,
+            "clearing the binding sends the map back to the place"
+        )
     }
 
     func testTheStreetRidesOnThePinAsPartOfIt() throws {

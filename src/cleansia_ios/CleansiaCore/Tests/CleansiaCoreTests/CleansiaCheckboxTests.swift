@@ -5,6 +5,11 @@ import XCTest
 
 @MainActor
 final class CleansiaCheckboxTests: XCTestCase {
+    override static func setUp() {
+        super.setUp()
+        ApplicationAccessibility.enable()
+    }
+
     private func element(_ checkbox: CleansiaCheckbox<some View>) async -> NSObject? {
         let canvas = HostedCanvas(size: CGSize(width: 320, height: 200)) {
             checkbox.frame(width: 300)

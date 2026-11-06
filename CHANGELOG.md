@@ -623,8 +623,8 @@ need backfilling.
 - **Customer web, Android and iOS — cash requires a saved card.** Cash is offered only for a signed-in
   customer's one-cleaner booking with a verified, unexpired saved card in the booking's currency.
   Recurring visits and card-to-cash fallback use the same rule. Choosing cash authorizes no automatic
-  card charge; existing cash bookings keep their agreed tender. The cash wording in the published terms
-  needs alignment before deploying this rule. → [Paying in cash](docs/product/business-rules.md#cash)
+  card charge; existing cash bookings keep their agreed tender. Customer terms dated 2026-11-06
+  reflect this eligibility. → [Paying in cash](docs/product/business-rules.md#cash)
 - **Customer and Partner apps — clearer progress and quieter copy.** Active cleaning progress pulses
   with motion preferences respected; Partner progress shows time beyond the estimate. Instructions
   that repeat an obvious tap action are shorter in all five languages. The iOS booking-success check

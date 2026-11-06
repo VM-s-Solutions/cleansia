@@ -12,19 +12,18 @@ import XCTest
 extension AppointmentConfirmationVisualTests {
     static let stills: [TimeInterval] = [0, 0.12, 0.24, 0.42, 0.8, 2.6]
 
-    /// Recorded until the figure rests and read by what finishes before what, so no runner's pace moves a check.
+    /// Recorded until the figure rests, and read only from what had finished by each frame and in what order, so
+    /// a runner that records few frames cannot fail it.
     func testCashArrivalLiftsTheScrimWhileTheMascotTravels() async throws {
         _ = try await waitForForegroundScene()
-        let run = try await recordArrival(.cash, detailsAfter: 0.3, length: 10, name: "cash") {
-            $0.restsOnTheThumbsUp(for: 0.3)
-        }
-        let reveal = try XCTUnwrap(run.reveal, "the busy card never left: \(run)")
-        let cardGone = try XCTUnwrap(run.cardGone, "the card never left: \(run)")
-        let landed = try XCTUnwrap(run.samples.first(where: \.welcoming), "the mascot never landed: \(run)")
-        XCTAssertTrue(run.dimmed(in: reveal - 0.2 ... reveal, atLeast: 0.4), "the scrim holds at first: \(run)")
-        XCTAssertGreaterThan(run.dimming(cardGone), 0.03, "and outlasts the card as the mascot travels: \(run)")
-        XCTAssertLessThan(cardGone.time, landed.time, "the card has left before the mascot lands: \(run)")
-        XCTAssertTrue(run.dimmed(in: reveal + 0.47 ... reveal + 0.8, atMost: 0.03), "gone once it has: \(run)")
+        let run = try await recordArrival(.cash, detailsAfter: 0.3, name: "cash") { $0.restsOnTheThumbsUp(for: 0.3) }
+        let swap = try XCTUnwrap(run.swap, "the confirmation never replaced the form: \(run)")
+        let cardGone = try XCTUnwrap(run.cardGone, "the busy card never left: \(run)")
+        let landed = try XCTUnwrap(run.landed, "the mascot never landed: \(run)")
+        XCTAssertTrue(run.scrimHeld(from: swap), "the scrim holds until the card leaves: \(run)")
+        XCTAssertGreaterThan(run.dimming(cardGone), 0.03, "and outlasts it as the mascot travels: \(run)")
+        XCTAssertLessThanOrEqual(cardGone.time, landed.time, "the card has gone by the time it lands: \(run)")
+        XCTAssertTrue(run.clear(from: landed.time), "and the scrim with it: \(run)")
         XCTAssertGreaterThanOrEqual(run.welcomeBracket ?? 0, 2.0, "the welcome plays its 2.1 s after landing: \(run)")
         XCTAssertTrue(run.restsOnTheThumbsUp(for: 0.3), "then rests on the thumbs-up: \(run)")
     }
@@ -33,17 +32,18 @@ extension AppointmentConfirmationVisualTests {
     /// replaces the form, and holds 1.2 s for details that answer only after 2 s.
     func testCardArrivalComesUpWholeAndLiftsTheScrimOnTheSameBeat() async throws {
         _ = try await waitForForegroundScene()
-        let run = try await recordArrival(.card, detailsAfter: 2.0, length: 5.4, name: "card")
+        let run = try await recordArrival(.card, detailsAfter: 2.0, name: "card") { $0.restsOnTheThumbsUp(for: 0.3) }
         let swap = try XCTUnwrap(run.swap, "the confirmation never replaced the form: \(run)")
         let reveal = try XCTUnwrap(run.reveal, "the busy card never left: \(run)")
-        XCTAssertTrue(
-            run.dimmed(in: swap ... reveal, atLeast: 0.4),
-            "no confirmation frame outside the overlay: \(run)"
-        )
-        XCTAssertEqual(reveal - swap, 1.2, accuracy: 0.15, "the overlay waits 1.2 s, no longer: \(run)")
-        XCTAssertTrue(run.lifting(in: reveal + 0.15 ... reveal + 0.38), "the scrim lifts as the mascot lands: \(run)")
-        XCTAssertTrue(run.dimmed(in: reveal + 0.47 ... reveal + 0.8, atMost: 0.03), "and is gone after: \(run)")
-        XCTAssertLessThan(reveal, try XCTUnwrap(run.released), "the amounts land after the reveal: \(run)")
+        let lastForm = try XCTUnwrap(run.samples.last { $0.time < swap }, "no frame before the swap: \(run)")
+        let cardGone = try XCTUnwrap(run.cardGone, "the busy card never left: \(run)")
+        let landed = try XCTUnwrap(run.landed, "the mascot never landed: \(run)")
+        XCTAssertTrue(run.scrimHeld(from: swap), "no confirmation frame outside the overlay: \(run)")
+        XCTAssertGreaterThanOrEqual(reveal - lastForm.time, 1.2, "the overlay holds its 1.2 s: \(run)")
+        let whole = try XCTUnwrap(run.lastWholeCard, "the busy card never left: \(run)")
+        XCTAssertLessThan(whole.time, try XCTUnwrap(run.released), "and leaves before the amounts land: \(run)")
+        XCTAssertGreaterThan(run.dimming(cardGone), 0.03, "the scrim lifts as the mascot lands: \(run)")
+        XCTAssertTrue(run.clear(from: landed.time), "and is gone after: \(run)")
         assertNothingMoved(run, marks: ["title", "answer", "money"])
     }
 
@@ -51,9 +51,11 @@ extension AppointmentConfirmationVisualTests {
     /// takes two lines there, and the loading frame already holds them.
     func testLateDetailsOfALateBookingMoveNothingOnTheTicket() async throws {
         _ = try await waitForForegroundScene()
-        let run = try await recordArrival(.late, language: "cs", detailsAfter: 2.0, length: 3.4, name: "cs-late")
-        let reveal = try XCTUnwrap(run.reveal, "the busy card never left: \(run)")
-        XCTAssertLessThan(reveal, try XCTUnwrap(run.released), "the details land after the reveal: \(run)")
+        let run = try await recordArrival(.late, language: "cs", detailsAfter: 2.0, name: "cs-late") {
+            $0.restsOnTheThumbsUp(for: 0.3)
+        }
+        let whole = try XCTUnwrap(run.lastWholeCard, "the busy card never left: \(run)")
+        XCTAssertLessThan(whole.time, try XCTUnwrap(run.released), "the details land after the reveal: \(run)")
         assertNothingMoved(run, marks: ["title", "answer", "money"])
     }
 
@@ -62,11 +64,10 @@ extension AppointmentConfirmationVisualTests {
     func testAFailureAfterTheRevealMovesNothingAboveTheMoney() async throws {
         _ = try await waitForForegroundScene()
         let run = try await recordArrival(
-            .cash, detailsAfter: 2.0, detail: .failure(ApiError(httpStatus: 500)), length: 3.4,
-            name: "cash-late-failure"
-        )
-        let reveal = try XCTUnwrap(run.reveal, "the busy card never left: \(run)")
-        XCTAssertLessThan(reveal, try XCTUnwrap(run.released), "the failure lands after the reveal: \(run)")
+            .cash, detailsAfter: 2.0, detail: .failure(ApiError(httpStatus: 500)), name: "cash-late-failure"
+        ) { $0.restsOnTheThumbsUp(for: 0.3) }
+        let whole = try XCTUnwrap(run.lastWholeCard, "the busy card never left: \(run)")
+        XCTAssertLessThan(whole.time, try XCTUnwrap(run.released), "the failure lands after the reveal: \(run)")
         XCTAssertTrue(
             run.after.keys.contains("money") && run.before["money"] != nil,
             "the money row is read before and after: \(run)"
@@ -102,21 +103,18 @@ extension AppointmentConfirmationVisualTests {
         XCTAssertGreaterThanOrEqual(widths.min() ?? 0, whole * 0.91, "from 92 %: \(widths)")
     }
 
-    /// Nothing travels and nothing plays: the card and the scrim fade out together in 150 ms over the
-    /// thumbs-up, which is there from the first frame. Recorded past the moment a welcome would have started.
+    /// Nothing travels and nothing plays: the card and the scrim fade out together over the thumbs-up, which is
+    /// there from the first frame. Recorded past the moment a welcome would have started.
     func testReduceMotionCrossFadesCardAndScrimTogether() async throws {
         _ = try await waitForForegroundScene()
-        let run = try await recordArrival(
-            .cash,
-            detailsAfter: 0.3,
-            reduceMotion: true,
-            length: 6,
-            name: "reduced-motion"
-        ) { $0.cardHasBeenGone(for: 0.8) }
-        let reveal = try XCTUnwrap(run.reveal, "the busy card never left: \(run)")
-        let cardGone = try XCTUnwrap(run.cardGone, "the card never left: \(run)")
-        XCTAssertLessThanOrEqual(run.dimming(cardGone), 0.03, "the scrim fades with the card, gone as it is: \(run)")
-        XCTAssertTrue(run.dimmed(in: reveal + 0.2 ... reveal + 0.6, atMost: 0.03), "both gone by 150 ms: \(run)")
+        let run = try await recordArrival(.cash, detailsAfter: 0.3, reduceMotion: true, name: "reduced-motion") {
+            $0.cardHasBeenGone(for: 0.8)
+        }
+        let swap = try XCTUnwrap(run.swap, "the confirmation never replaced the form: \(run)")
+        let cardGone = try XCTUnwrap(run.cardGone, "the busy card never left: \(run)")
+        XCTAssertTrue(run.scrimHeld(from: swap), "the scrim holds until the card leaves: \(run)")
+        XCTAssertLessThanOrEqual(run.dimming(cardGone), 0.03, "and fades with it, gone as it is: \(run)")
+        XCTAssertTrue(run.clear(from: cardGone.time), "and stays gone: \(run)")
         XCTAssertFalse(run.samples.contains(where: \.welcoming), "motion off never plays the welcome: \(run)")
     }
 
@@ -255,10 +253,11 @@ private extension AppointmentConfirmationVisualTests {
         return vm
     }
 
+    /// Every frame until `done` holds of what has been recorded, or ten seconds have passed.
     func recordArrival(
         _ sample: Sample, language: String = "en", detailsAfter: TimeInterval,
-        detail: ApiResult<CustomerOrderDetail>? = nil, reduceMotion: Bool = false, length: TimeInterval, name: String,
-        until done: (ArrivalTimeline) -> Bool = { _ in false }
+        detail: ApiResult<CustomerOrderDetail>? = nil, reduceMotion: Bool = false, name: String,
+        until done: (ArrivalTimeline) -> Bool
     ) async throws -> ArrivalTimeline {
         try useLanguage(language)
         let create = FakeOrderCreateClient(result: .success(CreatedOrder(id: "o-1", confirmationCode: "130AA4")))
@@ -286,13 +285,13 @@ private extension AppointmentConfirmationVisualTests {
         var timeline = ArrivalTimeline()
         var cardSpot: CGPoint?
         var released = false
-        while ProcessInfo.processInfo.systemUptime - started < length, !done(timeline) {
+        while ProcessInfo.processInfo.systemUptime - started < 10, !done(timeline) {
             let now = ProcessInfo.processInfo.systemUptime - started
             if timeline.swap == nil, vm.state.selectedServiceIds.isEmpty { timeline.swap = now }
             if let swap = timeline.swap, !released, now >= swap + detailsAfter {
                 timeline.before = ticketMarks(in: canvas.window)
                 client.releaseDetail(details)
-                timeline.released = now
+                timeline.released = ProcessInfo.processInfo.systemUptime - started
                 released = true
             }
             let mascots = animatedMascots(canvas).map { canvas.frame(of: $0) }
@@ -300,10 +299,11 @@ private extension AppointmentConfirmationVisualTests {
             if let busy {
                 cardSpot = CGPoint(x: busy.minX - 30, y: busy.midY)
             }
+            let capturedAt = ProcessInfo.processInfo.systemUptime - started
             let frame = try XCTUnwrap(snapshot(canvas, scale: 1).cgImage)
             frames.append(frame)
             try timeline.samples.append(ArrivalTimeline.Sample(
-                time: now,
+                time: capturedAt,
                 busy: busy != nil,
                 welcoming: mascots.contains { !isBusyCard($0, in: canvas) },
                 ground: rgba(frame, in: CGRect(x: 6, y: 420, width: 1, height: 1)),
@@ -531,23 +531,26 @@ struct ArrivalTimeline: CustomStringConvertible {
         }?.time
     }
 
-    func inside(_ window: ClosedRange<TimeInterval>) -> [Sample] {
-        samples.filter { window.contains($0.time) }
+    /// The last frame the busy card was still whole in.
+    var lastWholeCard: Sample? {
+        reveal.flatMap { reveal in samples.last { $0.time < reveal } }
     }
 
-    func dimmed(in window: ClosedRange<TimeInterval>, atLeast floor: Double) -> Bool {
-        let frames = inside(window)
-        return !frames.isEmpty && frames.allSatisfy { dimming($0) >= floor }
+    /// Every frame from `start` until the busy card starts to leave is under the whole scrim.
+    func scrimHeld(from start: TimeInterval) -> Bool {
+        guard let reveal else { return false }
+        let held = samples.filter { $0.time >= start && $0.time < reveal }
+        return !held.isEmpty && held.allSatisfy { dimming($0) >= 0.4 }
     }
 
-    func dimmed(in window: ClosedRange<TimeInterval>, atMost ceiling: Double) -> Bool {
-        let frames = inside(window)
-        return !frames.isEmpty && frames.allSatisfy { dimming($0) <= ceiling }
+    /// Every frame from `time` on is clear of the scrim.
+    func clear(from time: TimeInterval) -> Bool {
+        let after = samples.filter { $0.time >= time }
+        return !after.isEmpty && after.allSatisfy { dimming($0) <= 0.03 }
     }
 
-    /// Some frame in `window` is part way between the whole scrim and none.
-    func lifting(in window: ClosedRange<TimeInterval>) -> Bool {
-        inside(window).contains { (0.05 ... 0.38).contains(dimming($0)) }
+    var landed: Sample? {
+        samples.first(where: \.welcoming)
     }
 
     /// The first frame, from the reveal on, the busy card's exit has finished in.

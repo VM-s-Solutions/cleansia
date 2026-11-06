@@ -8,8 +8,10 @@ import XCTest
 /// primary, sky-600, reads 4.10:1 on white, under the 4.5:1 floor for text, so they take
 /// `CleansiaColors.primaryText` (sky-700, 5.93:1; dark mode is the primary's sky-400 either way). An icon
 /// inside the same control takes its label's ink, so no control shows two blues; fills, borders, filled
-/// buttons and standalone icons keep the primary. These are the partner app's own text buttons; the shared
-/// ones (`CleansiaTextLink`, the chip, the dropdown, the reveal panel) are pinned in Core.
+/// buttons and standalone icons keep the primary. The one exception is the secondary button, `TonalChip`: its
+/// label is the dark `onSurface` and its icon the primary, or the error for Issue, so it still shows one blue at
+/// most. These are the partner app's own text buttons; the shared ones (`CleansiaTextLink`, the chip, the
+/// dropdown, the reveal panel) are pinned in Core.
 @MainActor
 final class TextInkTests: XCTestCase {
     func testTheTabBarAndTheToolbarsTextButtonsTakeTheTextInk() throws {
@@ -55,23 +57,12 @@ final class TextInkTests: XCTestCase {
         ),
         (
             "Orders/OrderDetailCards.swift",
-            "Label(label,systemImage:icon).font(CleansiaTypography.labelLarge)"
-                + ".foregroundColor(CleansiaColors.primaryText)"
-        ),
-        (
-            "Orders/OrderDetailCards.swift",
-            "Label(L10n.Orders.copyInstruction,systemImage:\"doc.on.doc\").font(CleansiaTypography.labelMedium)"
-                + ".foregroundColor(CleansiaColors.primaryText)"
+            "CleansiaTextLink(L10n.Orders.copyInstruction,leadingIcon:\"doc.on.doc\")"
         ),
         (
             "Orders/OrdersListContent.swift",
-            "Button(L10n.Orders.locationPromptAction,action:onEnable).font(CleansiaTypography.labelLarge)"
-                + ".foregroundColor(CleansiaColors.primaryText)"
-        ),
-        (
-            "Orders/OrdersListContent.swift",
-            "Image(systemName:\"chevron.down\").font(.system(size:12))}"
-                + ".foregroundColor(CleansiaColors.primaryText)"
+            "Menu{ForEach(AvailableSort.allCases,id:\\.self){optioninButton(OrdersFormat.sortLabel(option))"
+                + "{vm.setAvailableSort(option)}}}label:{face.foregroundColor(CleansiaColors.primaryText)}"
         ),
         (
             "Onboarding/OnboardingView.swift",
@@ -82,7 +73,7 @@ final class TextInkTests: XCTestCase {
             "Orders/PendingOffersCard.swift",
             "Text(L10n.Offers.cardCta).font(CleansiaTypography.labelLarge)"
                 + ".foregroundColor(CleansiaColors.primaryText)Image(systemName:\"arrow.right\")"
-                + ".font(.system(size:13)).foregroundColor(CleansiaColors.primaryText)"
+                + ".font(CleansiaTypography.labelLarge).foregroundColor(CleansiaColors.primaryText)"
         ),
         (
             "RegistrationLock/RegistrationLockView.swift",
@@ -91,7 +82,7 @@ final class TextInkTests: XCTestCase {
         ),
         (
             "Orders/PhotosSection.swift",
-            "Text(L10n.Orders.addPhoto).font(CleansiaTypography.labelSmall)}"
+            "Text(L10n.Orders.photosAdd).font(CleansiaTypography.labelLarge)}"
                 + ".foregroundColor(CleansiaColors.primaryText)"
         )
     ]
@@ -176,50 +167,19 @@ final class TextInkTests: XCTestCase {
                 .contains("isUp?CleansiaColors.primaryText:CleansiaColors.error"),
             "the month delta chip"
         )
-        XCTAssertTrue(
-            try compactSource("Orders/OrdersListComponents.swift")
-                .contains("label:L10n.Orders.startsSoon,tint:CleansiaColors.primaryText"),
-            "Starts soon"
-        )
         XCTAssertTrue(try compactSource("Profile/OnboardingChainHeader.swift")
             .contains("privatevarlabelColor:Color{switchstate{case.current:CleansiaColors.primaryText"))
         XCTAssertTrue(try compactSource("Profile/LegalDocuments/LegalDocumentsView.swift")
             .contains(".foregroundColor(document.isAccepted?CleansiaColors.primaryText:CleansiaColors.error)"))
         XCTAssertTrue(try compactSource("Orders/PendingOfferComponents.swift").contains(
-            "Image(systemName:\"clock\").font(.system(size:14)).foregroundColor(CleansiaColors.primaryText)"
+            "Image(systemName:\"clock\").font(CleansiaTypography.labelLarge)"
+                + ".foregroundColor(CleansiaColors.primaryText)"
         ), "the clock beside \"Yours until\"")
         XCTAssertTrue(
             try compactSource("Profile/Address/AddressSectionView.swift")
                 .contains("case.inServicedCity:CleansiaColors.primaryText"),
             "\"We service jobs in {city}\": its message, icon and wash share one tint"
         )
-    }
-
-    /// The payment pill writes its status in its tint on a 12 % wash of that tint over the card. Every severity
-    /// reads 4.5:1 or more on it in both modes (finding 2026-10-05: "Pending" in the warning star read 1.96:1
-    /// in light mode, "Settled" in `successText` 4.27:1 light and 2.64:1 dark). Android's pill takes the same inks.
-    func testEveryPaymentStatusPillReadsOnItsWashInBothModes() throws {
-        let pill = try compactSource("Orders/OrderDetailCards.swift")
-        XCTAssertTrue(pill.contains(
-            "switchPaymentPresentation.statusSeverity(statusCode){case.success:CleansiaColors.successInk"
-                + "case.warning:CleansiaColors.pendingInkcase.error:CleansiaColors.error"
-                + "case.neutral:CleansiaColors.onSurfaceVariant}"
-        ))
-        XCTAssertTrue(pill.contains(".foregroundColor(tint).padding(.horizontal,Spacing.xs)"))
-        XCTAssertTrue(pill.contains(".background(tint.opacity(0.12),in:Capsule())"))
-        let inks = [
-            CleansiaColors.successInk, CleansiaColors.pendingInk, CleansiaColors.error, CleansiaColors.onSurfaceVariant
-        ]
-        for style in [UIUserInterfaceStyle.light, .dark] {
-            let card = rgb(CleansiaColors.surface, style)
-            for ink in inks {
-                let label = rgb(ink, style)
-                XCTAssertGreaterThanOrEqual(contrast(label, label * 0.12 + card * 0.88), 4.5, "style \(style.rawValue)")
-            }
-        }
-        let card = rgb(CleansiaColors.surface, .light)
-        let star = rgb(CleansiaColors.warningStar, .light)
-        XCTAssertLessThan(contrast(star, star * 0.12 + card * 0.88), 2, "the warning star reads on its wash after all")
     }
 
     /// A document's status word is drawn in its tint on the card, and every status reads 4.5:1 or more there in
@@ -245,9 +205,10 @@ final class TextInkTests: XCTestCase {
 
     func testAvailableSortMenuNamesItsCurrentVisibleSelection() throws {
         let source = try compactSource("Orders/OrdersListContent.swift")
+        XCTAssertTrue(source.contains("letcurrent=OrdersFormat.sortLabel(vm.shownSort)"))
         XCTAssertTrue(source.contains(
-            "Image(systemName:\"chevron.down\").font(.system(size:12))}"
-                + ".foregroundColor(CleansiaColors.primaryText)}.accessibilityLabel(OrdersFormat.sortLabel(sort))"
+            "label:{face.foregroundColor(CleansiaColors.primaryText)}"
+                + ".accessibilityLabel(L10n.Orders.sortA11y(current))"
         ), "the sort Menu must name its selected visible label")
     }
 

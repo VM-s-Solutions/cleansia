@@ -1029,7 +1029,8 @@
       "photo": {
         "window_closed": "This photo cannot be added now: before photos from the moment you hold the job until it is finished, after photos while the work is in progress.",
         "locked": "Photos cannot be deleted once the order is completed or cancelled."
-      }
+      },
+      "cash_requires_saved_card": "Cash requires a valid saved card in the booking currency."
     },
     "user": {
       "email_confirmed": "Email is already confirmed",

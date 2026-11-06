@@ -50,16 +50,11 @@ struct OrderDetailContent: View {
                                 .padding(.top, Spacing.xxs)
                         }
                     }
-                    OrderHeroFactsStrip(order: order)
-                        .padding(.top, Spacing.xxs)
-                    Text(OrderMarketLabel.text(
-                        countryId: order.countryId,
-                        currencyCode: order.currencyCode,
-                        markets: markets,
-                        locale: locale
+                    OrderHeroFactsStrip(order: order, marketLabel: OrderMarketLabel.text(
+                        countryId: order.countryId, currencyCode: order.currencyCode,
+                        markets: markets, locale: locale
                     ))
-                    .font(CleansiaTypography.bodyMedium)
-                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+                    .padding(.top, Spacing.xxs)
 
                     if let disclosure = PreferredOfferPresentation.disclosure(for: order) {
                         PreferredOfferCard(disclosure: disclosure)
@@ -141,20 +136,14 @@ struct OrderDetailCompactHeader: View {
                     }
                     OrderStatusPill(code: order.statusCode)
                 }
-                Label(
-                    OrdersFormat.dateTime(order.cleaningDateTime, locale: locale),
-                    systemImage: "calendar"
-                )
-                .font(CleansiaTypography.bodyMedium)
-                .foregroundColor(CleansiaColors.onSurfaceVariant)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
+                OrderCalendarLine(OrdersFormat.dateTime(order.cleaningDateTime, locale: locale))
                 if order.isGuestBooking {
                     GuestBookingLabel()
                 }
             }
             Spacer(minLength: mascotClearance)
         }
+        .fixedSize(horizontal: false, vertical: true)
         .padding(.horizontal, Spacing.ml)
         .padding(.bottom, Spacing.xs)
         .background {
@@ -174,7 +163,7 @@ struct OrderDetailHeaderHeight: PreferenceKey {
 }
 
 /// How much of this row's trailing edge the mascot puck occupies: half its 128pt width plus the trailing
-/// inset `SnapSheet` gives it. Reserved rather than merely avoided, so a long date shrinks instead of
+/// inset `SnapSheet` gives it. Reserved rather than merely avoided, so a long date wraps instead of
 /// sliding under the character.
 private let mascotClearance: CGFloat = 80
 

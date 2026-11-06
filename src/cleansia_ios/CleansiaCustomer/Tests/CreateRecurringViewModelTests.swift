@@ -31,7 +31,8 @@ final class CreateRecurringViewModelTests: XCTestCase {
             consentClient: FakeConsentStatusClient(granted: [.termsOfService, .privacyPolicy]),
             snackbar: snackbar ?? SnackbarController(),
             isCardPaymentAvailable: cardPaymentAvailable,
-            scheduler: TestScheduler.dispatch.eraseToAnyScheduler()
+            scheduler: TestScheduler.dispatch.eraseToAnyScheduler(),
+            savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])])
         )
         return (vm, recurringClient)
     }

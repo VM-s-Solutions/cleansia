@@ -28,7 +28,7 @@ class PlatformWorkCopyTest {
     /** Each key with the format slots its sentence must carry, in every locale. */
     private val slots = mapOf(
         "order_removal_title" to emptyList(),
-        "order_removal_message" to listOf("%1\$s"),
+        "order_removal_lead" to emptyList(),
         "profile_weekly_limit" to listOf("%1\$d"),
         "profile_weekly_limit_reason" to listOf("%1\$s"),
         "profile_how_jobs_are_offered" to emptyList(),

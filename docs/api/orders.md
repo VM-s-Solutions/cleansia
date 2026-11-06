@@ -199,7 +199,7 @@ serves, asked with its city **and its postcode**: a Prague row answers by a vali
 
 | `paymentType` | Value | Behavior |
 |---------------|-------|----------|
-| `Cash` | `1` | **Only for a signed-in caller whose selection needs one cleaner** — `requiredEmployees == 1` on the server's own duration; otherwise `order.cash_not_available` ([the cash rule](/product/business-rules#cash)). The informational booking e-mail is queued — no receipt, which is issued at completion once the cash is recorded. The order stays `New` + `PaymentStatus.Pending` and becomes offerable immediately; the cleaner's take is what writes `Confirmed` |
+| `Cash` | `1` | **Only for a signed-in caller whose selection needs one cleaner and who holds a usable saved card in the booking's currency** — `requiredEmployees == 1` on the server's own duration; otherwise `order.cash_not_available`, or `order.cash_requires_saved_card` for a missing usable card ([the cash rule](/product/business-rules#cash)). Choosing cash charges no card. The informational booking e-mail is queued — no receipt, which is issued at completion once the cash is recorded. The order stays `New` + `PaymentStatus.Pending` and becomes offerable immediately; the cleaner's take is what writes `Confirmed` |
 | `Card` | `2` | Web: a Stripe Checkout Session is created. Mobile: no session — the client drives a PaymentSheet against the PaymentIntent. Either way the order stays `New` + `PaymentStatus.Pending` and is **not** offerable until the webhook writes `Paid`; the status stays `New` until a cleaner takes it (ADR-0057) |
 
 ::: warning A cash order is never paid before the cash is in hand
@@ -258,6 +258,7 @@ failure is reported:
 | A membership express waiver the client assumed is still available | `membership.express_waiver.no_longer_available` |
 | Server-recalculated price equals the submitted `totalPrice` | `order.total_price.not_match` |
 | `paymentType` Cash only from a signed-in caller on a selection whose required crew — `max(1, ceil(minutes / 120))`, `OrderDuration.RequiredEmployees` on the same calculator run — is exactly one | `order.cash_not_available` — error code `PaymentType` |
+| Cash requires the authenticated customer's active, captured, unexpired saved card in the booking's currency, with a verified payment method | `order.cash_requires_saved_card` — error code `PaymentType` |
 | A `promoCode`, if any, is sent by a signed-in customer | `promo.requires_account` — error code `PromoCode` |
 | The `promoCode`, if any, would be honoured — previewed again in the address currency on the pre-surcharge subtotal | the preview's own reason: `promo.currency_mismatch`, `promo.expired`, `promo.global_limit_reached`, `promo.per_user_limit_reached`, `promo.below_minimum_order_amount`, `promo.not_found`, `promo.inactive`, `promo.not_yet_valid` — error code `PromoCode` |
 
@@ -396,7 +397,7 @@ subtotal. `QuotePlusSavings` takes the same two fields and resolves them the sam
 | `expressSurchargeWaivedByMembership` | Disambiguates `expressSurchargeApplied: false`. Without it, "waived" and "not an express slot at all" look identical |
 | `expressUpgradesRemaining` | Waivers left **this calendar month, before this booking** — server-computed. Null when the caller has no membership. A client that counts its own orders disagrees with the server the first time a cancellation releases a slot |
 | `tierDiscountMinOrderAmount` | The tier-discount floor the quote judged the order against, so a client can state the same rule. Null when no floor applied — the floor is a platform-default-currency number and is enforced only on an order in that currency |
-| `estimatedDurationMinutes` / `requiredEmployees` | The selection's booked duration and the crew it needs — `OrderDuration.RequiredEmployees`, the same function that staffs the order. The customer web, Android and iOS clients offer cash only when `requiredEmployees` is 1 and the customer is signed in; `CreateOrder` re-decides it server-side |
+| `estimatedDurationMinutes` / `requiredEmployees` | The selection's booked duration and the crew it needs — `OrderDuration.RequiredEmployees`, the same function that staffs the order. The customer web, Android and iOS clients combine `requiredEmployees == 1` with sign-in and a current usable matching-currency saved card; `CreateOrder` re-decides it server-side |
 | `currencyId` / `currencyCode` | The currency the quote was priced in — the one named on the request, else the request's `countryId`'s, else (no country named) the platform default. A named country without a configured currency throws rather than defaulting. There is no exchange rate on the wire; nothing converts |
 
 Promo codes are **not** priced here — they are entered at checkout and applied at create time.
@@ -602,6 +603,21 @@ also accepted as a sort field. For a **non-admin caller** the list is additional
 currency the cleaner is paid in (their work country's): an order in another currency is not on their
 board at all, unless they are already assigned to it. → [Business rules](/product/business-rules#cleaner-currency)
 
+**Cash jobs above the float cap.** For a non-admin caller who holds **strictly more** of the company's
+cash in their currency than the company's float cap (`cash.float_cap`), every cash job is left off the
+page, and off its count, unless they are already assigned to it. Card jobs are unaffected. The page
+carries no flag saying so; the reason is `GET api/EmployeePayroll/GetCashHeld` → `cashJobsHidden`.
+→ [Business rules](/product/business-rules#cash-held)
+
+**`homeDistanceBand`** (nullable integer enum `HomeDistanceBand`, the last member of `OrderListItem`):
+how far the job is from the calling cleaner's stored home address — `1` under 3 km, `2` 3–6 km,
+`3` 6–10 km, `4` 10–20 km, `5` 20 km or more, measured straight-line to the job's point snapped to a
+grid cell. `null` for an administrator, for a cleaner with no home coordinates and for an order not
+geocoded yet; the customer hosts serve the same record and always send `null`. It is on every row a
+cleaner reads and survives the browsing redaction (only the Available tab shows it), and is not on the detail, the pending offers or the contract facts. The values
+are frozen: installed apps fail the whole page on an unknown one, so a new band would be a new field.
+→ [Business rules](/product/business-rules#distance-band)
+
 **Customer contact sorting.** A non-admin open-board request ignores every `customerName` and
 `customerEmail` sort before paging; safe sort entries retain their priority and direction. Administrators
 and a cleaner's own-orders request retain those sorts. Own rows still sort by those stored values after
@@ -757,7 +773,7 @@ GET /api/Order/GetWorkContractPreview?orderId=order-id&language=cs
     "estimatedMinutes": 180,
     "totalPrice": 1890,
     "currencyCode": "CZK",
-    "locationApproximate": "Praha · 120",
+    "locationApproximate": "Praha 2",
     "countryId": "CZE",
     "rooms": 3,
     "bathrooms": 1,
@@ -773,7 +789,8 @@ Readable exactly where the board would show the job — on the crew, or offerabl
 and not held from the caller: a held order answers `order.not_found` to everyone but its beneficiary,
 and a cancelled, finished, full or unpaid-card job the caller is not on answers `order.not_found` and
 discloses no facts. An order with no text (a fixture — the production writer always stamps one)
-answers `legal.document_not_found`.
+answers `legal.document_not_found`. The float cap is the one board term it does not read: a cash job
+hidden from a cleaner over the cap still previews, and the take refuses it (`order.cash_float_cap_exceeded`).
 
 ---
 
@@ -829,6 +846,7 @@ on nothing about the order, so it can leak neither existence nor the hold) and t
 | 10a | Every cleaner document in force for the caller's market is accepted at its current version (nothing in force → passes) | `employee.legal_documents_not_accepted` |
 | 11 | Not already assigned to this order | `order.employee_already_assigned` |
 | 12 | Weekly cap, **only if an admin set one** on this cleaner (`Employee.WeeklyOrderLimit`; null = unlimited, the default) | `order.weekly_limit_reached` |
+| 12a | Not a **cash** job while the caller holds strictly more of the company's cash in the order's currency than the company's float cap (`cash.float_cap`; none by default). A card job passes | `order.cash_float_cap_exceeded` |
 | 13 | No scheduling overlap with the employee's live commitments | `order.time_conflict` |
 | 14 | The echoed text row belongs to **this order's** `workContractDocumentId` (an order with no document matches nothing) | `contract.text_mismatch` |
 

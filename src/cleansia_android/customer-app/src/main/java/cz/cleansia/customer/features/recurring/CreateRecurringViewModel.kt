@@ -12,6 +12,9 @@ import cz.cleansia.core.network.networkCall
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.core.booking.BookingApi
 import cz.cleansia.customer.core.payments.StripeConfig
+import cz.cleansia.customer.core.payments.SavedCard
+import cz.cleansia.customer.core.payments.SavedCardRepository
+import cz.cleansia.customer.core.payments.usableIn
 import cz.cleansia.customer.core.booking.CashEligibility
 import cz.cleansia.customer.core.booking.DirtinessLevel
 import cz.cleansia.customer.core.booking.PropertySize
@@ -86,6 +89,7 @@ class CreateRecurringViewModel @Inject constructor(
     private val addressRepo: AddressRepository,
     private val marketRepo: MarketRepository,
     private val bookingApi: BookingApi,
+    private val savedCardRepository: SavedCardRepository,
     private val consentClient: GdprConsentClient,
     private val snackbar: SnackbarController,
     @ApplicationContext private val appContext: Context,
@@ -130,7 +134,7 @@ class CreateRecurringViewModel @Inject constructor(
      */
     val catalogState: StateFlow<RecurringCatalogState> = _catalogState.asStateFlow()
 
-    val canAdvance: StateFlow<Boolean> = combine(_state, _step, _catalogState, _termsAsked) { s, step, catalog, asked ->
+    private val canAdvanceWithoutCash: StateFlow<Boolean> = combine(_state, _step, _catalogState, _termsAsked) { s, step, catalog, asked ->
         when (step) {
             1 -> s.timeOfDay in START_TIMES
             2 -> (s.selectedServiceIds.isNotEmpty() || s.selectedPackageIds.isNotEmpty()) && s.dirtinessLevel != null
@@ -180,9 +184,31 @@ class CreateRecurringViewModel @Inject constructor(
     /** The crew the server last quoted, with the selection it was quoted for. */
     private val quotedCrew = MutableStateFlow<QuotedCrew?>(null)
 
-    /** A schedule is always an account's, so only the crew decides. */
-    val cashEligibility: StateFlow<CashEligibility> = combine(_state, quotedCrew) { s, crew -> cashEligibilityOf(s, crew) }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, CashEligibility.Pending)
+    private val verifiedCards = MutableStateFlow<List<SavedCard>?>(null)
+    private var cashCardReadSequence = 0L
+
+    val cashEligibility: StateFlow<CashEligibility> =
+        combine(_state, quotedCrew, verifiedCards) { s, crew, cards ->
+            cashEligibilityOf(s, crew, cards)
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, CashEligibility.Pending)
+
+    val canAdvance: StateFlow<Boolean> = combine(canAdvanceWithoutCash, _state, _step, cashEligibility) { ready, s, step, cash ->
+        ready && (step != TOTAL_STEPS || s.paymentType != PAYMENT_CASH || cash == CashEligibility.Available)
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    fun refreshCashEligibility() {
+        viewModelScope.launch { refreshCashCards() }
+    }
+
+    private suspend fun refreshCashCards(): List<SavedCard>? {
+        val sequence = ++cashCardReadSequence
+        verifiedCards.value = null
+        val result = savedCardRepository.refresh()
+        if (sequence != cashCardReadSequence) return null
+        val cards = (result as? ApiResult.Success)?.data
+        verifiedCards.value = cards
+        return cards
+    }
 
     /** A cash choice was taken away because it stopped being allowed; cleared by the next choice. */
     private val _cashCleared = MutableStateFlow(false)
@@ -215,6 +241,7 @@ class CreateRecurringViewModel @Inject constructor(
     }
 
     init {
+        refreshCashEligibility()
         // The market watcher starts only once the entry refresh has answered: the repository skips a
         // refresh while one is in flight, so a concurrent reload for the address's country would be
         // dropped and the picks pruned against the wrong catalogue.
@@ -302,7 +329,7 @@ class CreateRecurringViewModel @Inject constructor(
     }
 
     fun setPaymentType(t: Int) {
-        if (t == PAYMENT_CASH && cashEligibilityOf(_state.value, quotedCrew.value) != CashEligibility.Available) return
+        if (t == PAYMENT_CASH && cashEligibility.value != CashEligibility.Available) return
         _cashCleared.value = false
         _state.update { it.copy(paymentType = t) }
     }
@@ -387,8 +414,9 @@ class CreateRecurringViewModel @Inject constructor(
      * against a catalogue the customer could see: a prefilled selection no market has vetted is not a
      * booking.
      */
-    val isValid: StateFlow<Boolean> = combine(_state, _catalogState) { s, catalog ->
-        s.isSubmittable() && catalog is RecurringCatalogState.Loaded
+    val isValid: StateFlow<Boolean> = combine(_state, _catalogState, cashEligibility) { s, catalog, cash ->
+        s.isSubmittable() && catalog is RecurringCatalogState.Loaded &&
+            (s.paymentType != PAYMENT_CASH || cash == CashEligibility.Available)
     }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     fun submit() = save(withoutPreferredCleaner = false)
@@ -427,6 +455,14 @@ class CreateRecurringViewModel @Inject constructor(
                 }
                 is ApiResult.Error -> {
                     val error = result.error
+                    val refusal = error as? ApiError.BadRequest
+                    val keys = listOfNotNull(refusal?.errorKey) + refusal?.validationErrors.orEmpty().values.flatten()
+                    if (CashEligibility.refusedBy(keys)) {
+                        cashCardReadSequence++
+                        verifiedCards.value = null
+                        dropCash(announce = false)
+                        refreshCashEligibility()
+                    }
                     if (UnpaidReceivable.refuses(error)) {
                         _owesMoney.value = true
                         _submitState.value = ActionState.Idle
@@ -447,9 +483,15 @@ class CreateRecurringViewModel @Inject constructor(
         }
     }
 
-    /** Cash goes out only on a fresh quote for the form that says one cleaner does it. */
     private suspend fun cashConfirmedFor(form: CreateRecurringFormState): Boolean {
-        val cash = CashEligibility.resolve(signedIn = true, requiredEmployees = quoteCrew(form.pricedSelection()))
+        val crew = quoteCrew(form.pricedSelection())
+        val cards = refreshCashCards()
+        val currency = quotedCrew.value?.takeIf { it.selection == form.pricedSelection() }?.currencyCode
+        val cash = CashEligibility.resolve(
+            signedIn = true,
+            requiredEmployees = crew,
+            hasUsableSavedCard = currency?.let { code -> cards?.let { it.usableIn(code) != null } },
+        )
         when {
             cash == CashEligibility.Available -> return true
             cash.isRefused -> {
@@ -465,18 +507,21 @@ class CreateRecurringViewModel @Inject constructor(
     }
 
     /** Never replaced by card: the customer is told and chooses again. */
-    private fun dropCash() {
+    private fun dropCash(announce: Boolean = true) {
         if (_state.value.paymentType != PAYMENT_CASH) return
         _state.update { it.copy(paymentType = null) }
         _cashCleared.value = true
-        snackbar.showInfoKey(R.string.recurring_cash_cleared)
+        if (announce) snackbar.showInfoKey(R.string.recurring_cash_cleared)
     }
 
-    private fun cashEligibilityOf(form: CreateRecurringFormState, crew: QuotedCrew?): CashEligibility =
-        CashEligibility.resolve(
+    private fun cashEligibilityOf(form: CreateRecurringFormState, crew: QuotedCrew?, cards: List<SavedCard>?): CashEligibility {
+        val quote = crew?.takeIf { it.selection == form.pricedSelection() }
+        return CashEligibility.resolve(
             signedIn = true,
-            requiredEmployees = crew?.takeIf { it.selection == form.pricedSelection() }?.requiredEmployees,
+            requiredEmployees = quote?.requiredEmployees,
+            hasUsableSavedCard = quote?.currencyCode?.let { code -> cards?.let { it.usableIn(code) != null } },
         )
+    }
 
     /** The crew for [selection], or null when the server could not quote it. */
     private suspend fun quoteCrew(selection: PricedSelection): Int? {
@@ -496,9 +541,9 @@ class CreateRecurringViewModel @Inject constructor(
                 ),
             )
         }
-        val crew = response?.takeIf { it.isSuccessful }?.body()?.requiredEmployees ?: return null
-        quotedCrew.value = QuotedCrew(selection, crew)
-        return crew
+        val quote = response?.takeIf { it.isSuccessful }?.body() ?: return null
+        quotedCrew.value = QuotedCrew(selection, quote.requiredEmployees, quote.currencyCode)
+        return quote.requiredEmployees
     }
 
     /**
@@ -700,7 +745,7 @@ private data class PricedSelection(
     val dirtinessLevel: DirtinessLevel?,
 )
 
-private data class QuotedCrew(val selection: PricedSelection, val requiredEmployees: Int)
+private data class QuotedCrew(val selection: PricedSelection, val requiredEmployees: Int, val currencyCode: String)
 
 private fun CreateRecurringFormState.pricedSelection() = PricedSelection(
     serviceIds = selectedServiceIds,

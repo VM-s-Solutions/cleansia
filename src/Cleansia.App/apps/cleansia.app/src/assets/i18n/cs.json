@@ -1028,10 +1028,10 @@
       "wizard": {
         "catalogue_changed_for_country": "Část vašeho výběru se na této adrese nenabízí, proto byla odebrána. Ceny jsou uvedeny v měně země, ve které objednáváte."
       },
-      "cash_needs_account": "Hotově mohou platit jen přihlášení zákazníci. Přihlaste se, pokud chcete platit hotově, nebo zaplaťte kartou.",
-      "cash_needs_card": "Počet uklízečů potřebných pro tuto objednávku: {{count}}. Hotově lze platit jen objednávky, které zvládne jeden uklízeč, tuto proto zaplatíte kartou.",
-      "cash_pending": "Zda můžete platit hotově, potvrdíme, jakmile bude známa cena.",
-      "cash_cleared": "Platba hotově už pro tuto objednávku není možná, a proto není vybrán žádný způsob platby. Zvolte, jak chcete platit.",
+      "cash_needs_account": "Pro platbu hotově se přihlaste a uložte kartu.",
+      "cash_needs_card": "Tato objednávka vyžaduje {{count}} uklízečů. Zaplaťte kartou.",
+      "cash_pending": "Ověřujeme počet uklízečů a uloženou kartu.",
+      "cash_cleared": "Platba hotově není dostupná. Vyberte jiný způsob platby.",
       "unpaid_owed": "Dlužíte částku z dřívější rezervace, proto tuto rezervaci zatím nelze vytvořit, kartou ani v hotovosti. Zaplaťte ji níže a tato rezervace na vás počká, až se vrátíte.",
       "cash_sign_in": "Přihlásit se",
       "plus_perk_grace": "60 minut po každé objednávce na bezplatné zrušení místo 15 minut",
@@ -1075,7 +1075,8 @@
       },
       "save_card": {
         "label": "Uložit tuto kartu k mým dalším objednávkám."
-      }
+      },
+      "cash_needs_saved_card": "Pro platbu hotově uložte platnou kartu v měně objednávky."
     },
     "orders": {
       "title": "Moje objednávky",
@@ -2028,7 +2029,8 @@
       "start_passed_cannot_cancel": "Čas začátku už uplynul a uklízeč je přidělen, takže rezervaci už nelze zrušit. Pokud uklízeč nedorazil, dejte nám vědět.",
       "cleaner_already_started": "Uklízeč už s úklidem začal.",
       "start_time_not_reached": "Objednaný čas začátku ještě nenastal.",
-      "recurring_already_confirmed": "Tento úklid už máte potvrzený. Uklízeči zaplatíte v hotovosti v den úklidu."
+      "recurring_already_confirmed": "Tento úklid už máte potvrzený. Uklízeči zaplatíte v hotovosti v den úklidu.",
+      "cash_requires_saved_card": "Platba hotově vyžaduje platnou uloženou kartu v měně objednávky."
     },
     "address": {
       "already_exists": "Tuto adresu už máte uloženou.",
@@ -2299,7 +2301,7 @@
     "save_address": "Uložit adresu",
     "address_loading": "Načítáme vaše adresy…",
     "cash_needs_card": "Počet uklízečů potřebných na každý úklid: {{count}}. Hotově lze platit jen úklidy, které zvládne jeden uklízeč, tento rozvrh proto platíte kartou.",
-    "cash_pending": "Zda lze tento rozvrh platit hotově, potvrdíme, jakmile bude známa cena.",
+    "cash_pending": "Ověřujeme počet uklízečů a uloženou kartu.",
     "cash_cleared": "Platba hotově už pro tento rozvrh není možná, a proto není vybrán žádný způsob platby. Zvolte, jak chcete platit.",
     "cash_unchecked": "Nepodařilo se ověřit, zda lze tento rozvrh platit hotově. Uložte ho za chvíli znovu, nebo zvolte kartu.",
     "owed": "Dlužíte částku z dřívější rezervace, proto opakovanou rezervaci nelze uložit, dokud nebude uhrazena, kartou ani v hotovosti. Zaplatit ji můžete níže.",

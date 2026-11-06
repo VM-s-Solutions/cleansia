@@ -65,7 +65,7 @@ public sealed class RecurringTemplateMarketZoneTests
                 _session.Object,
                 CatalogueDoubles.Services(),
                 CatalogueDoubles.Packages(),
-                _countryConfigurations.Object)
+                _countryConfigurations.Object, Cleansia.Tests.Common.SavedCardTestData.Repository(), Cleansia.Tests.Features.Orders.OrderMarketDoubles.Trading(Cleansia.Tests.Features.Orders.CreateOrderTestData.DefaultCurrency()))
             .Handle(new GetMyRecurringBookings.Query(), CancellationToken.None);
 
     private static RecurringBookingTemplate Template() =>

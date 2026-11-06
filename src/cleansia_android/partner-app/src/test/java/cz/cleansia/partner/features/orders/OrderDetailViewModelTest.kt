@@ -7,25 +7,33 @@ import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.AssignedEmployeeDto
 import cz.cleansia.partner.api.model.Code
+import cz.cleansia.partner.api.model.HomeDistanceBand
+import cz.cleansia.partner.api.model.OrderAddress
 import cz.cleansia.partner.api.model.OrderItem
+import cz.cleansia.partner.api.model.OrderListItem
+import cz.cleansia.partner.api.model.PagedDataOfOrderListItem
 import cz.cleansia.partner.api.model.WorkContractAcceptanceDto
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.partner.core.auth.EmployeeIdResolver
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.core.network.ApiResult
+import cz.cleansia.partner.data.orders.BoardRows
 import cz.cleansia.partner.data.orders.OrdersRepository
 import cz.cleansia.partner.features.orders.OrderAction
 import cz.cleansia.partner.features.orders.OrderDetailUiState
 import cz.cleansia.partner.features.orders.OrderDetailViewModel
 import cz.cleansia.partner.testing.MainDispatcherRule
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -45,8 +53,14 @@ class OrderDetailViewModelTest {
 
     private val orderId = "order-1"
 
-    /** A job the caller is not on: the standing resolver reads the crew and nothing else. */
-    private fun crewless() = mockk<OrderItem> { every { assignedEmployees } returns null }
+    /** A job the caller is not on: the standing resolver reads the crew, the load reads whether it is hers. */
+    private fun crewless() = mockk<OrderItem> {
+        every { assignedEmployees } returns null
+        every { isAssignedToCurrentUser } returns false
+    }
+
+    /** What the board last loaded; empty unless a case says otherwise. */
+    private val board = MutableStateFlow(BoardRows())
 
     private val order = crewless()
 
@@ -58,6 +72,7 @@ class OrderDetailViewModelTest {
         employeeIdResolver = mockk()
         every { errorTranslator.translate(any()) } returns "translated error"
         coEvery { employeeIdResolver.resolve() } returns "employee-me"
+        every { ordersRepository.boardRows } returns board
     }
 
     private fun viewModel() = OrderDetailViewModel(
@@ -66,6 +81,7 @@ class OrderDetailViewModelTest {
         errorTranslator,
         snackbar,
         employeeIdResolver,
+        mockk(relaxed = true),
     )
 
     private fun refusal(key: String) = ApiError.BadRequest(
@@ -194,26 +210,54 @@ class OrderDetailViewModelTest {
         assertEquals(ActionState.Idle, vm.actionState.value)
     }
 
+    private val openJob = OrderItem(id = orderId, orderStatus = Code(value = 1), isAssignedToCurrentUser = false, customerAddressApproximate = "Vinohrady")
+
+    private val takenJob = openJob.copy(
+        orderStatus = Code(value = 2),
+        isAssignedToCurrentUser = true,
+        address = OrderAddress(street = "Mánesova 12", city = "Praha", latitude = 50.07, longitude = 14.44),
+    )
+
     @Test
-    fun `a Taken outcome closes the sheet, refetches the order and returns to Idle`() = runTest {
-        val refreshed = crewless()
+    fun `a Taken outcome keeps the sheet up on the taken panel and pins the door once the order is read back`() = runTest {
         every { ordersRepository.isOrderStale(orderId) } returns true
-        coEvery { ordersRepository.getById(orderId) } returnsMany listOf(
-            ApiResult.Success(order),
-            ApiResult.Success(refreshed),
-        )
+        coEvery { ordersRepository.getById(orderId) } returnsMany listOf(ApiResult.Success(openJob), ApiResult.Success(takenJob))
 
         val vm = viewModel()
         advanceUntilIdle()
         vm.take()
+        assertNull(vm.takenRow.value)
 
         vm.onWorkContractOutcome(WorkContractOutcome.Taken(WorkContractRequest.Take(orderId)))
         advanceUntilIdle()
 
-        assertNull(vm.contractRequest.value)
-        assertEquals(OrderDetailUiState.Loaded(refreshed), vm.uiState.value)
+        assertEquals(WorkContractRequest.Take(orderId), vm.contractRequest.value)
+        assertEquals(OrderDetailUiState.Loaded(takenJob), vm.uiState.value)
+        assertEquals("Mánesova 12, Praha", vm.takenRow.value?.customerAddress)
+        assertEquals(50.07, vm.takenRow.value?.customerAddressLatitude)
+        assertEquals("Vinohrady", vm.takenRow.value?.customerAddressApproximate)
         assertEquals(ActionState.Idle, vm.actionState.value)
         assertNull(vm.inFlightAction.value)
+    }
+
+    @Test
+    fun `closing the taken panel leaves the page on the taken job`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returnsMany listOf(ApiResult.Success(openJob), ApiResult.Success(takenJob))
+
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.take()
+        vm.onWorkContractOutcome(WorkContractOutcome.Taken(WorkContractRequest.Take(orderId)))
+        advanceUntilIdle()
+
+        vm.dismissContract()
+        advanceUntilIdle()
+
+        assertNull(vm.contractRequest.value)
+        assertNull(vm.takenRow.value)
+        assertEquals(OrderDetailUiState.Loaded(takenJob), vm.uiState.value)
+        io.mockk.coVerify(exactly = 2) { ordersRepository.getById(orderId) }
     }
 
     @Test
@@ -727,6 +771,8 @@ class OrderDetailViewModelTest {
         assertEquals(OrderDetailUiState.Loaded(refreshed), vm.uiState.value)
         assertTrue(vm.actionState.value is ActionState.Error)
         assertNull(vm.inFlightAction.value)
+        assertNull("a refused take closes the sheet, as before", vm.contractRequest.value)
+        assertNull(vm.takenRow.value)
     }
 
     /**
@@ -782,6 +828,7 @@ class OrderDetailViewModelTest {
         errorTranslator,
         snackbar,
         employeeIdResolver,
+        mockk(relaxed = true),
     )
 
     @Test
@@ -798,7 +845,7 @@ class OrderDetailViewModelTest {
     }
 
     @Test
-    fun `the reason is shown even when the job is no longer visible to the removed cleaner`() = runTest {
+    fun `refused once she is off the job, the page says so with the administrator's reason and raises nothing`() = runTest {
         every { ordersRepository.isOrderStale(orderId) } returns true
         coEvery { ordersRepository.getById(orderId) } returns ApiResult.Error(refusal("order.not_found"))
         coEvery { ordersRepository.getMyAssignmentRemovalReason(orderId) } returns
@@ -807,36 +854,306 @@ class OrderDetailViewModelTest {
         val vm = openedFromRemovalNotice()
         advanceUntilIdle()
 
-        assertTrue(vm.uiState.value is OrderDetailUiState.Error)
-        assertEquals("The customer asked for another cleaner.", vm.removalReason.value)
+        assertEquals(OrderDetailUiState.Removed("The customer asked for another cleaner."), vm.uiState.value)
+        verify(exactly = 0) { snackbar.showError(any<String>()) }
     }
 
     @Test
-    fun `dismissing the reason closes it`() = runTest {
+    fun `a removal the server cannot find is the same page with no reason, and still raises nothing`() = runTest {
         every { ordersRepository.isOrderStale(orderId) } returns true
-        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(order)
-        coEvery { ordersRepository.getMyAssignmentRemovalReason(orderId) } returns ApiResult.Success("Reason.")
-
-        val vm = openedFromRemovalNotice()
-        advanceUntilIdle()
-        vm.dismissRemovalReason()
-
-        assertNull(vm.removalReason.value)
-    }
-
-    @Test
-    fun `a removal the server cannot find shows nothing and raises nothing`() = runTest {
-        every { ordersRepository.isOrderStale(orderId) } returns true
-        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(order)
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Error(refusal("order.not_found"))
         coEvery { ordersRepository.getMyAssignmentRemovalReason(orderId) } returns
             ApiResult.Error(refusal("order.not_found"))
 
         val vm = openedFromRemovalNotice()
         advanceUntilIdle()
 
+        assertEquals(OrderDetailUiState.Removed(null), vm.uiState.value)
         assertNull(vm.removalReason.value)
         verify(exactly = 0) { snackbar.showError(any<String>()) }
         verify(exactly = 0) { snackbar.showError(any<ApiError>()) }
+    }
+
+    @Test
+    fun `opened from the removal notice with no network, the page is the error with Retry, never the removed page`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Error(ApiError.Network("down"))
+        coEvery { ordersRepository.getMyAssignmentRemovalReason(orderId) } returns ApiResult.Error(ApiError.Network("down"))
+
+        val vm = openedFromRemovalNotice()
+        advanceUntilIdle()
+
+        assertEquals(OrderDetailUiState.Error(refused = false), vm.uiState.value)
+    }
+
+    @Test
+    fun `a job read that failed for want of network is the error, even with the reason read`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Error(ApiError.Network("down"))
+        coEvery { ordersRepository.getMyAssignmentRemovalReason(orderId) } returns ApiResult.Success("Reason.")
+
+        val vm = openedFromRemovalNotice()
+        advanceUntilIdle()
+
+        assertEquals(OrderDetailUiState.Error(refused = false), vm.uiState.value)
+    }
+
+    @Test
+    fun `refused while the reason could not be read is the error, and Retry reads the reason again`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Error(refusal("order.not_found"))
+        coEvery { ordersRepository.getMyAssignmentRemovalReason(orderId) } returnsMany listOf(
+            ApiResult.Error(ApiError.Network("down")),
+            ApiResult.Success("The customer asked for another cleaner."),
+        )
+
+        val vm = openedFromRemovalNotice()
+        advanceUntilIdle()
+        assertEquals(OrderDetailUiState.Error(refused = true), vm.uiState.value)
+
+        vm.refresh()
+        advanceUntilIdle()
+        assertEquals(OrderDetailUiState.Removed("The customer asked for another cleaner."), vm.uiState.value)
+    }
+
+    @Test
+    fun `a removal-notice open that fails to load raises no snackbar`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returnsMany listOf(
+            ApiResult.Error(ApiError.Network("down")),
+            ApiResult.Error(refusal("order.not_found")),
+        )
+        coEvery { ordersRepository.getMyAssignmentRemovalReason(orderId) } returns ApiResult.Error(ApiError.Network("down"))
+
+        val vm = openedFromRemovalNotice()
+        advanceUntilIdle()
+        assertEquals(OrderDetailUiState.Error(refused = false), vm.uiState.value)
+        vm.refresh()
+        advanceUntilIdle()
+        assertEquals(OrderDetailUiState.Error(refused = true), vm.uiState.value)
+
+        verify(exactly = 0) { snackbar.showError(any<String>()) }
+        verify(exactly = 0) { snackbar.showError(any<ApiError>()) }
+    }
+
+    @Test
+    fun `a refused job is not drawn from her stored row while the removal read has not answered`() = runTest {
+        val mine = OrderListItem(id = orderId, cleaningDateTime = "2026-11-13T14:00:00Z", estimatedTime = 180)
+        board.value = BoardRows(own = listOf(mine), available = emptyList(), availableTotal = 0)
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Error(refusal("order.not_found"))
+        coEvery { ordersRepository.getMyAssignmentRemovalReason(orderId) } returnsMany listOf(
+            ApiResult.Error(ApiError.Network("down")),
+            ApiResult.Success("Reason."),
+        )
+
+        val vm = openedFromRemovalNotice()
+        assertEquals(mine, vm.boardRow.value)
+        advanceUntilIdle()
+        assertEquals(OrderDetailUiState.Error(refused = true), vm.uiState.value)
+
+        vm.refresh()
+        advanceUntilIdle()
+        assertEquals(OrderDetailUiState.Removed("Reason."), vm.uiState.value)
+    }
+
+    @Test
+    fun `a reason the server answered is not asked again on a reload`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Error(refusal("order.not_found"))
+        coEvery { ordersRepository.getMyAssignmentRemovalReason(orderId) } returns ApiResult.Success("Reason.")
+
+        val vm = openedFromRemovalNotice()
+        advanceUntilIdle()
+        vm.refresh()
+        advanceUntilIdle()
+
+        assertEquals(OrderDetailUiState.Removed("Reason."), vm.uiState.value)
+        coVerify(exactly = 1) { ordersRepository.getMyAssignmentRemovalReason(orderId) }
+    }
+
+    @Test
+    fun `the removal page names the job from the store's row, read once at open`() = runTest {
+        val a2 = OrderListItem(id = orderId, cleaningDateTime = "2026-11-13T14:00:00Z", estimatedTime = 180)
+        board.value = BoardRows(own = listOf(a2), available = emptyList(), availableTotal = 0)
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Error(refusal("order.not_found"))
+        coEvery { ordersRepository.getMyAssignmentRemovalReason(orderId) } returns ApiResult.Success("Reason.")
+
+        val vm = openedFromRemovalNotice()
+        board.value = BoardRows(own = emptyList(), available = emptyList(), availableTotal = 0)
+        advanceUntilIdle()
+
+        assertEquals(a2, vm.removedJob)
+        coVerify(exactly = 0) { ordersRepository.getPaged(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `a cold start from the removal push names no job and reads both lists itself`() = runTest {
+        val a1 = OrderListItem(id = "A1", cleaningDateTime = "2026-11-12T13:00:00Z", estimatedTime = 120)
+        val v3 = OrderListItem(id = "V3", cleaningDateTime = "2026-11-13T07:00:00Z", estimatedTime = 120)
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Error(refusal("order.not_found"))
+        coEvery { ordersRepository.getMyAssignmentRemovalReason(orderId) } returns ApiResult.Success("Reason.")
+        coEvery { ordersRepository.getPaged(statuses = statusesFor(OrdersTab.MyActive), employeeId = "employee-me", offset = 0, limit = 100) } returns
+            ApiResult.Success(PagedDataOfOrderListItem(data = listOf(a1), total = 1))
+        coEvery {
+            ordersRepository.getPaged(statuses = statusesFor(OrdersTab.Available), hasAvailableSpots = true, excludeEmployeeId = "employee-me", limit = 100)
+        } returns ApiResult.Success(PagedDataOfOrderListItem(data = listOf(v3), total = 9))
+
+        val vm = openedFromRemovalNotice()
+        advanceUntilIdle()
+
+        assertNull(vm.removedJob)
+        assertEquals(listOf(a1), vm.ownRows.value.rows)
+        assertEquals(listOf(v3), vm.openRows.value.rows)
+        assertEquals(9, vm.openRows.value.total)
+    }
+
+    @Test
+    fun `a list whose read failed is left out, and Check again reads both again`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Error(refusal("order.not_found"))
+        coEvery { ordersRepository.getMyAssignmentRemovalReason(orderId) } returns ApiResult.Success("Reason.")
+        coEvery { ordersRepository.getPaged(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any()) } returns
+            ApiResult.Error(ApiError.Network("down"))
+
+        val vm = openedFromRemovalNotice()
+        advanceUntilIdle()
+        assertTrue(vm.ownRows.value.failed)
+        assertTrue(vm.openRows.value.failed)
+
+        coEvery { ordersRepository.getPaged(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any()) } returns
+            ApiResult.Success(PagedDataOfOrderListItem(data = emptyList(), total = 0))
+        vm.checkAgain()
+        advanceUntilIdle()
+
+        assertTrue(vm.ownRows.value.hasLoaded && !vm.ownRows.value.failed)
+        assertTrue(vm.openRows.value.hasLoaded && !vm.openRows.value.failed)
+    }
+
+    @Test
+    fun `a row the board holds is there before the job loads, and none from a push`() = runTest {
+        val row = OrderListItem(id = orderId, homeDistanceBand = HomeDistanceBand._2)
+        board.value = BoardRows(available = listOf(row), availableTotal = 1)
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(order)
+
+        val vm = viewModel()
+        assertEquals(OrderDetailUiState.Loading, vm.uiState.value)
+        assertEquals(row, vm.boardRow.value)
+
+        board.value = BoardRows()
+        advanceUntilIdle()
+        assertNull(vm.boardRow.value)
+    }
+
+    @Test
+    fun `a row the board loads while the detail is open is read from then on`() = runTest {
+        val row = OrderListItem(id = orderId, homeDistanceBand = HomeDistanceBand._2)
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(order)
+
+        val vm = viewModel()
+        advanceUntilIdle()
+        assertNull(vm.boardRow.value)
+
+        board.value = BoardRows(available = listOf(row), availableTotal = 1)
+        advanceUntilIdle()
+        assertEquals(row, vm.boardRow.value)
+    }
+
+    @Test
+    fun `a job not taken with no board rows reads her own rows before Take, and Take waits until they answer`() = runTest {
+        val a2 = OrderListItem(id = "A2", cleaningDateTime = "2026-11-13T14:00:00Z", estimatedTime = 180)
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(order)
+        val answer = kotlinx.coroutines.CompletableDeferred<ApiResult<PagedDataOfOrderListItem>>()
+        coEvery { ordersRepository.getPaged(statuses = statusesFor(OrdersTab.MyActive), employeeId = "employee-me", offset = 0, limit = 100) } coAnswers { answer.await() }
+
+        val vm = viewModel()
+        advanceUntilIdle()
+        assertFalse(vm.ownRows.value.hasLoaded || vm.ownRows.value.failed)
+
+        answer.complete(ApiResult.Success(PagedDataOfOrderListItem(data = listOf(a2), total = 1)))
+        advanceUntilIdle()
+        assertEquals(listOf(a2), vm.ownRows.value.rows)
+    }
+
+    @Test
+    fun `her cancelled job with no board rows reads her own rows, for the day line and her next jobs`() = runTest {
+        val a2 = OrderListItem(id = "A2", cleaningDateTime = "2026-11-12T15:00:00Z", estimatedTime = 180)
+        val cancelled = OrderItem(id = orderId, isAssignedToCurrentUser = true, orderStatus = Code(value = 6))
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(cancelled)
+        coEvery { ordersRepository.getPaged(statuses = statusesFor(OrdersTab.MyActive), employeeId = "employee-me", offset = 0, limit = 100) } returns
+            ApiResult.Success(PagedDataOfOrderListItem(data = listOf(a2), total = 1))
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        assertEquals(listOf(a2), vm.ownRows.value.rows)
+    }
+
+    @Test
+    fun `her own job in progress reads no rows of hers`() = runTest {
+        val mine = OrderItem(id = orderId, isAssignedToCurrentUser = true, orderStatus = Code(value = 4))
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(mine)
+
+        viewModel()
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { ordersRepository.getPaged(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `her own rows that fail to load leave Take to the server`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(order)
+        coEvery { ordersRepository.getPaged(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any()) } returns
+            ApiResult.Error(ApiError.Network("down"))
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        assertTrue(vm.ownRows.value.failed)
+    }
+
+    @Test
+    fun `the board's own rows are used as they are, with no read of her own`() = runTest {
+        val a1 = OrderListItem(id = "A1")
+        board.value = BoardRows(own = listOf(a1))
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(order)
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        assertEquals(listOf(a1), vm.ownRows.value.rows)
+        coVerify(exactly = 0) { ordersRepository.getPaged(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `a job no longer open is said once, with no retry and no snackbar`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Error(refusal("order.not_found"))
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        assertEquals(OrderDetailUiState.Gone, vm.uiState.value)
+        verify(exactly = 0) { snackbar.showError(any<String>()) }
+    }
+
+    @Test
+    fun `See open jobs and Browse jobs ask the board for its Available tab`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(order)
+
+        viewModel().showAvailable()
+
+        verify(exactly = 1) { ordersRepository.requestAvailableTab() }
     }
 
     @Test

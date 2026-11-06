@@ -64,7 +64,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -615,7 +614,7 @@ private fun StepRowView(step: StepRow, onFixStep: (NavRoute) -> Unit, onSupportE
                     Spacer(Modifier.size(4.dp))
                     Text(
                         text = stringResource(R.string.registration_lock_approval_rejected),
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp),
+                        style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.error,
                     )
                 }

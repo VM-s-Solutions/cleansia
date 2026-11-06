@@ -90,7 +90,7 @@ public class UpdateRecurringBookingPreferredEmployeeTests
             OrderMarketDoubles.Trading(CreateOrderTestData.DefaultCurrency()), OrderMarketDoubles.Servicing("country-cz"),
             OrderMarketDoubles.EveryCityServiced(),
             CatalogueDoubles.Services(), CatalogueDoubles.Packages(),
-            Mock.Of<IReceivableRepository>());
+            Mock.Of<IReceivableRepository>(), Cleansia.Tests.Common.SavedCardTestData.Repository());
 
     private static UpdateRecurringBooking.Command CommandWith(string? preferredEmployeeId) =>
         new(

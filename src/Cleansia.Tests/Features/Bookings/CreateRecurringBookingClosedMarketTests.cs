@@ -76,7 +76,7 @@ public class CreateRecurringBookingClosedMarketTests
             CatalogueDoubles.Packages(),
             Cleansia.Tests.Features.Legal.CustomerConsentDoubles.Consented(),
             Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.ILegalDocumentResolver>(),
-            Mock.Of<IReceivableRepository>());
+            Mock.Of<IReceivableRepository>(), Cleansia.Tests.Common.SavedCardTestData.Repository());
 
     private static CreateRecurringBooking.Command CommandAt(string savedAddressId) =>
         new(

@@ -62,7 +62,7 @@ struct ReservedForYouRow: View {
     var body: some View {
         HStack(spacing: Spacing.xxs) {
             Image(systemName: "clock")
-                .font(.system(size: 14))
+                .font(CleansiaTypography.labelLarge)
                 .foregroundColor(CleansiaColors.primaryText)
             Text(OfferLabels.reservedUntil(respondByUtc, now: now))
                 .font(CleansiaTypography.labelLarge)

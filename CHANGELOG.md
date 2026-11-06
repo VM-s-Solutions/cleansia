@@ -620,6 +620,16 @@ need backfilling.
 
 ### Changed
 
+- **Customer web, Android and iOS — cash requires a saved card.** Cash is offered only for a signed-in
+  customer's one-cleaner booking with a verified, unexpired saved card in the booking's currency.
+  Recurring visits and card-to-cash fallback use the same rule. Choosing cash authorizes no automatic
+  card charge; existing cash bookings keep their agreed tender. Customer terms dated 2026-11-06
+  reflect this eligibility. → [Paying in cash](docs/product/business-rules.md#cash)
+- **Customer and Partner apps — clearer progress and quieter copy.** Active cleaning progress pulses
+  with motion preferences respected; Partner progress shows time beyond the estimate. Instructions
+  that repeat an obvious tap action are shorter in all five languages. The iOS booking-success check
+  no longer bounces. New status layouts remain pending the owner's choice.
+
 - **Customer and cleaner, Android and iOS — clearer booking and order details, with payment recovery.**
   Customer details group review actions, prices, cleaners and instructions more compactly; photos
   stay in labelled phases, estimated overruns are explicit, expanded panels hide the mascot, and
@@ -1358,6 +1368,18 @@ need backfilling.
   generic English sentence that is honest about being generic, until counsel supplies each one.
 
 ### Fixed
+
+- **Customer iOS — registration AutoFill presentation.** The e-mail field identifies the account
+  username while retaining its e-mail keyboard, and redraws preserve UIKit's active password colours
+  and credential traits. Actual Keychain suggestions still require a physical-device check.
+- **Customer apps — cleaner photos and Home gallery.** Assigned cleaners show their photo or initials
+  from the name already disclosed. Gallery progress stays visible after manual paging, with smoother
+  transitions and small borders. iOS mascot playback uses the upcoming display deadline and skips late
+  intermediate frames; Android avoids rebuilding the same mascot image request during recomposition.
+- **Partner apps — profile and photo actions.** Onboarding checks duplicate phone numbers when saving.
+  The iOS profile photo saves through the bottom action together with personal details; a failed photo
+  save keeps the section open. Before/after photo deletion asks for confirmation on both platforms, and
+  the confirmation-code field no longer shows its extra paste button.
 
 - **Cleaner iOS, TestFlight — the partner app no longer closes on launch for a cleaner with an upcoming
   job.** TestFlight build 14 of the partner app closed on every launch once the cleaner had a job

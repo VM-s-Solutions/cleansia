@@ -38,14 +38,11 @@ struct BookingSuccessTimelineEntry: Equatable {
 }
 
 enum BookingSuccessTimeline {
-    /// `computeTimelineSteps` (`BookingSuccessScreen.kt`) parity. No order
-    /// loaded yet → the "just placed" fallback (received done, assigning
-    /// active) — what the user expects right after submission.
     static func entries(status: OrderStatus?, cleanerAssigned: Bool) -> [BookingSuccessTimelineEntry] {
         let assigning: BookingSuccessStepState = switch status {
-        case nil: .active
+        case nil, ._6: .pending
         case ._0, ._1: cleanerAssigned ? .done : .active
-        case ._2, ._3, ._4, ._5, ._6: .done
+        case ._2, ._3, ._4, ._5: .done
         }
         let confirmed: BookingSuccessStepState = switch status {
         case nil, ._0, ._1, ._6: .pending

@@ -1,4 +1,4 @@
-﻿using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
@@ -196,7 +196,7 @@ public class ExpressSurchargeDiscountCompositionTests
             WorkContractResolvers.Resolver().Object,
             _notificationProducer.Object,
             Mock.Of<IAdminNotifier>(),
-            NullLogger<OrderFactory>.Instance);
+            NullLogger<OrderFactory>.Instance, Cleansia.Tests.Common.SavedCardTestData.Repository());
 
         return await factory.CreateAsync(
             new CreateOrderInput(

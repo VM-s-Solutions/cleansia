@@ -83,4 +83,33 @@ class SnapAnchorTest {
             assertTrue(it.coveredFraction > 0f)
         }
     }
+
+    @Test
+    fun `a minimum top holds the deepest anchor under it and leaves the lower ones alone`() {
+        assertEquals(150f, snapSheetTopPx(SnapAnchor.Expanded, height, minSheetTopPx = 150f), 0.001f)
+        assertEquals(height * 0.25f, snapSheetTopPx(SnapAnchor.Peek, height, minSheetTopPx = 150f), 0.001f)
+        assertEquals(height * 0.70f, snapSheetTopPx(SnapAnchor.MapFocus, height, minSheetTopPx = 150f), 0.001f)
+    }
+
+    @Test
+    fun `a height floor never lifts the sheet above its minimum top`() {
+        assertEquals(150f, snapSheetTopPx(SnapAnchor.MapFocus, height, minSheetHeightPx = 760f, minSheetTopPx = 150f), 0.001f)
+    }
+
+    @Test
+    fun `a given map focus height is where the collapsed sheet rests and the other anchors keep theirs`() {
+        assertEquals(height - 182f, snapSheetTopPx(SnapAnchor.MapFocus, height, mapFocusHeightPx = 182f), 0.001f)
+        assertEquals(height - 260f, snapSheetTopPx(SnapAnchor.MapFocus, height, mapFocusHeightPx = 260f), 0.001f)
+        assertEquals(150f, snapSheetTopPx(SnapAnchor.Expanded, height, minSheetTopPx = 150f, mapFocusHeightPx = 182f), 0.001f)
+        assertEquals(snapSheetTopPx(SnapAnchor.Peek, height), snapSheetTopPx(SnapAnchor.Peek, height, mapFocusHeightPx = 182f), 0.001f)
+        assertEquals("the floor still holds", height - 240f, snapSheetTopPx(SnapAnchor.MapFocus, height, minSheetHeightPx = 240f, mapFocusHeightPx = 182f), 0.001f)
+        assertEquals(0f, snapSheetTopPx(SnapAnchor.MapFocus, height, mapFocusHeightPx = 900f), 0.001f)
+    }
+
+    @Test
+    fun `a zero minimum top is the top edge math as before`() {
+        SnapAnchor.entries.forEach {
+            assertEquals(snapSheetTopPx(it, height, 240f), snapSheetTopPx(it, height, 240f, minSheetTopPx = 0f), 0.0001f)
+        }
+    }
 }

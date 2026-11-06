@@ -70,7 +70,7 @@ public sealed class OrderFactoryWorkContractStampTests
         _legalDocumentResolver.Object,
         Mock.Of<INotificationProducer>(),
         Mock.Of<IAdminNotifier>(),
-        NullLogger<OrderFactory>.Instance);
+        NullLogger<OrderFactory>.Instance, Cleansia.Tests.Common.SavedCardTestData.Repository());
 
     private Task<Core.Domain.Orders.Order> CreateOrderAsync(Address address) =>
         CreateFactory().CreateAsync(

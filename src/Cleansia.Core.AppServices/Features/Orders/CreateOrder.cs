@@ -50,6 +50,7 @@ public class CreateOrder
         private readonly ICountryConfigurationRepository _countryConfigurationRepository;
         private readonly ILegalDocumentResolver _legalDocumentResolver;
         private readonly IReceivableRepository _receivableRepository;
+        private readonly ISavedCardRepository _savedCardRepository;
 
         public Validator(
             IPackageRepository packageRepository,
@@ -71,11 +72,13 @@ public class CreateOrder
             ILanguageRepository languageRepository,
             ICountryConfigurationRepository countryConfigurationRepository,
             ILegalDocumentResolver legalDocumentResolver,
-            IReceivableRepository receivableRepository)
+            IReceivableRepository receivableRepository,
+            ISavedCardRepository savedCardRepository)
         {
             _countryConfigurationRepository = countryConfigurationRepository;
             _legalDocumentResolver = legalDocumentResolver;
             _receivableRepository = receivableRepository;
+            _savedCardRepository = savedCardRepository;
             _operatorTenantResolver = operatorTenantResolver;
             _tenantProvider = tenantProvider;
             _userConsentRepository = userConsentRepository;
@@ -303,6 +306,9 @@ public class CreateOrder
                 .WithErrorCode(nameof(Command.PaymentType))
                 .MustAsync(CashLeavesRoomForAnotherOpenBookingAsync)
                 .WithMessage(BusinessErrorMessage.OrderCashOpenBookingsLimitReached)
+                .WithErrorCode(nameof(Command.PaymentType))
+                .MustAsync(CashHasUsableCardAsync)
+                .WithMessage(BusinessErrorMessage.OrderCashRequiresSavedCard)
                 .WithErrorCode(nameof(Command.PaymentType))
                 .Must(PromoNamesASignedInCustomer)
                 .WithMessage(BusinessErrorMessage.PromoRequiresAccount)
@@ -713,6 +719,14 @@ public class CreateOrder
             => command.PaymentType != PaymentType.Cash
                || await CustomerCashStanding.HasRoomForAnotherOpenCashBookingAsync(
                    _orderRepository, _userSessionProvider.GetUserId()!, cancellationToken);
+
+        private Task<bool> CashHasUsableCardAsync(
+            Command command, Command _, ValidationContext<Command> context, CancellationToken cancellationToken)
+            => command.PaymentType != PaymentType.Cash
+                ? Task.FromResult(true)
+                : CustomerCashStanding.HoldsUsableCardAsync(
+                    _savedCardRepository, _userSessionProvider.GetUserId()!, CachedPricing(context).CurrencyId,
+                    DateTimeOffset.UtcNow, cancellationToken);
 
         // The promo rule cannot pick its message up front: which refusal applies is only known after
         // the preview inside the predicate. So the predicate hands the resolved message key to the rule

@@ -6,6 +6,8 @@ import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.partner.R
+import cz.cleansia.partner.api.model.CurrencyListItem
+import cz.cleansia.partner.api.model.OrderListItem
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.partner.data.orders.OrdersRepository
 import cz.cleansia.partner.data.orders.PendingOffer
@@ -83,6 +85,15 @@ class PendingOffersViewModel @Inject constructor(
     private val _contractRequest = MutableStateFlow<WorkContractRequest.Take?>(null)
     val contractRequest: StateFlow<WorkContractRequest.Take?> = _contractRequest.asStateFlow()
 
+    private var opened: PendingOffer? = null
+
+    /**
+     * The job the sheet's taken panel shows once the take succeeded: the offer's own facts at once, then the job as it
+     * is read back as hers, which brings the door. Null while no take has succeeded or once the panel is closed.
+     */
+    private val _takenRow = MutableStateFlow<OrderListItem?>(null)
+    val takenRow: StateFlow<OrderListItem?> = _takenRow.asStateFlow()
+
     init {
         if (ordersRepository.arePendingOffersStale()) {
             refresh()
@@ -101,19 +112,32 @@ class PendingOffersViewModel @Inject constructor(
 
     fun confirm(offer: PendingOffer) {
         if (_actionState.value is ActionState.Submitting) return
+        opened = offer
         _contractRequest.value = WorkContractRequest.Take(offer.id)
     }
 
     fun dismissContract() {
         _contractRequest.value = null
+        _takenRow.value = null
     }
 
-    /** The sheet's verdict on the offer it was opened for, framed as the confirm it stands for. */
+    /** Open job on the taken panel: the panel closes and the screen opens the job. */
+    fun openTakenJob() {
+        val id = _takenRow.value?.id ?: return
+        dismissContract()
+        _confirmed.tryEmit(id)
+    }
+
+    /**
+     * The sheet's verdict on the offer it was opened for, framed as the confirm it stands for. A take keeps the sheet
+     * up on its taken panel; a refusal closes it.
+     */
     fun onWorkContractOutcome(outcome: WorkContractOutcome) {
-        _contractRequest.value = null
-        val orderId = (outcome.request as? WorkContractRequest.Take)?.orderId ?: return
-        val displayOrderNumber = ordersRepository.pendingOffers.value.firstOrNull { it.id == orderId }?.displayOrderNumber
-        runAction(orderId, displayOrderNumber, OfferAction.Confirm) { outcome.asResult() }
+        val orderId = (outcome.request as? WorkContractRequest.Take)?.orderId
+        val offer = orderId?.let { id -> opened?.takeIf { it.id == id } ?: ordersRepository.pendingOffers.value.firstOrNull { it.id == id } }
+        if (outcome is WorkContractOutcome.Taken && offer != null) _takenRow.value = offer.asTakenRow() else _contractRequest.value = null
+        orderId ?: return
+        runAction(orderId, offer?.displayOrderNumber, OfferAction.Confirm) { outcome.asResult() }
     }
 
     fun decline(offer: PendingOffer) =
@@ -132,6 +156,11 @@ class PendingOffersViewModel @Inject constructor(
         }
     }
 
+    private suspend fun readBack(orderId: String) {
+        val order = (ordersRepository.getById(orderId) as? ApiResult.Success)?.data ?: return
+        if (_takenRow.value?.id == orderId) _takenRow.value = order.asBoardRow()
+    }
+
     private fun runAction(
         orderId: String,
         displayOrderNumber: String?,
@@ -148,10 +177,10 @@ class PendingOffersViewModel @Inject constructor(
                 is ApiResult.Success -> {
                     _actionState.value = ActionState.Idle
                     _attempt.value = null
-                    if (action == OfferAction.Decline) {
-                        snackbar.showSuccessKey(R.string.offer_declined_toast)
-                    } else {
-                        _confirmed.emit(orderId)
+                    when {
+                        action == OfferAction.Decline -> snackbar.showSuccessKey(R.string.offer_declined_toast)
+                        _takenRow.value?.id == orderId -> readBack(orderId)
+                        else -> _confirmed.emit(orderId)
                     }
                 }
                 is ApiResult.Error -> {
@@ -169,3 +198,16 @@ class PendingOffersViewModel @Inject constructor(
         }
     }
 }
+
+/** The offer as the taken panel's row: its area, day, window and reward, and no door until the job is read back. */
+internal fun PendingOffer.asTakenRow(): OrderListItem = OrderListItem(
+    id = id,
+    displayOrderNumber = displayOrderNumber,
+    customerAddressApproximate = customerAddressApproximate,
+    rooms = rooms,
+    bathrooms = bathrooms,
+    cleaningDateTime = cleaningDateTime,
+    estimatedTime = estimatedTime,
+    currency = currencyCode?.let { CurrencyListItem(code = it) },
+    estimatedCleanerPay = estimatedCleanerPay,
+)

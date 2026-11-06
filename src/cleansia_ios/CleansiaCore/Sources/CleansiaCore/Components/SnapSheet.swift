@@ -33,6 +33,18 @@ public enum SnapAnchor: CaseIterable, Equatable {
         }
     }
 
+    /// `wanted` where the sheet may rest there, else the next of `stops` past it the same way; `self` when none is.
+    public func toward(_ wanted: SnapAnchor, within stops: Set<SnapAnchor>) -> SnapAnchor {
+        let rising = wanted.coveredFraction > coveredFraction
+        var next = wanted
+        while !stops.contains(next) {
+            let further = rising ? next.moreExpanded : next.lessExpanded
+            guard further != next else { return self }
+            next = further
+        }
+        return next
+    }
+
     public var accessibilityValue: String {
         switch self {
         case .mapFocus: CoreL10n.localized("snap_sheet.anchor.map_focus")
@@ -71,11 +83,16 @@ public enum SnapResolver {
     static func sheetTop(
         for anchor: SnapAnchor,
         containerHeight: CGFloat,
-        minimumSheetHeight: CGFloat = 0
+        minimumSheetHeight: CGFloat = 0,
+        minimumSheetTop: CGFloat = 0,
+        mapFocusHeight: CGFloat? = nil
     ) -> CGFloat {
         let height = max(0, containerHeight)
         let minimum = min(max(0, minimumSheetHeight), height)
-        return min(height * (1 - anchor.coveredFraction), height - minimum)
+        let ceiling = min(max(0, minimumSheetTop), height)
+        let natural = height * (1 - anchor.coveredFraction)
+        let top = anchor == .mapFocus ? mapFocusHeight.map { height - min(max(0, $0), height) } ?? natural : natural
+        return min(max(top, ceiling), height - minimum)
     }
 
     public static func resolve(
@@ -83,9 +100,23 @@ public enum SnapResolver {
         dragTranslation: CGFloat,
         predictedEndTranslation: CGFloat,
         containerHeight: CGFloat,
-        minimumSheetHeight: CGFloat = 0
+        minimumSheetHeight: CGFloat = 0,
+        stops: Set<SnapAnchor> = Set(SnapAnchor.allCases),
+        minimumSheetTop: CGFloat = 0,
+        mapFocusHeight: CGFloat? = nil
     ) -> SnapAnchor {
-        guard containerHeight > 0 else { return current }
+        let top = { (anchor: SnapAnchor) in
+            sheetTop(
+                for: anchor,
+                containerHeight: containerHeight,
+                minimumSheetHeight: minimumSheetHeight,
+                minimumSheetTop: minimumSheetTop,
+                mapFocusHeight: mapFocusHeight
+            )
+        }
+        let resting = SnapAnchor.allCases.filter(stops.contains)
+        guard containerHeight > 0, let highest = resting.map(top).min(), let lowest = resting.map(top).max()
+        else { return current }
 
         // A fling carries the predicted-end well past the finger; a slow settle
         // ends near the finger. Take whichever travels further so velocity wins
@@ -93,50 +124,9 @@ public enum SnapResolver {
         let travel = abs(predictedEndTranslation) >= abs(dragTranslation)
             ? predictedEndTranslation
             : dragTranslation
-        let currentTop = sheetTop(
-            for: current, containerHeight: containerHeight, minimumSheetHeight: minimumSheetHeight
-        )
-        let projectedTop = (currentTop + travel)
-            .clamped(to: minTop(containerHeight, minimumSheetHeight) ... maxTop(containerHeight, minimumSheetHeight))
-
-        return nearestAnchor(
-            toTop: projectedTop,
-            from: current,
-            containerHeight: containerHeight,
-            minimumSheetHeight: minimumSheetHeight
-        )
-    }
-
-    private static func minTop(_ containerHeight: CGFloat, _ minimumSheetHeight: CGFloat) -> CGFloat {
-        sheetTop(for: .expanded, containerHeight: containerHeight, minimumSheetHeight: minimumSheetHeight)
-    }
-
-    private static func maxTop(_ containerHeight: CGFloat, _ minimumSheetHeight: CGFloat) -> CGFloat {
-        sheetTop(for: .mapFocus, containerHeight: containerHeight, minimumSheetHeight: minimumSheetHeight)
-    }
-
-    private static func nearestAnchor(
-        toTop top: CGFloat,
-        from current: SnapAnchor,
-        containerHeight: CGFloat,
-        minimumSheetHeight: CGFloat
-    ) -> SnapAnchor {
-        let nearest = SnapAnchor.allCases.min { lhs, rhs in
-            let lhsDistance = abs(sheetTop(
-                for: lhs, containerHeight: containerHeight, minimumSheetHeight: minimumSheetHeight
-            ) - top)
-            let rhsDistance = abs(sheetTop(
-                for: rhs, containerHeight: containerHeight, minimumSheetHeight: minimumSheetHeight
-            ) - top)
-            return lhsDistance < rhsDistance
-        } ?? .peek
-        let nearestTop = sheetTop(
-            for: nearest, containerHeight: containerHeight, minimumSheetHeight: minimumSheetHeight
-        )
-        let currentTop = sheetTop(
-            for: current, containerHeight: containerHeight, minimumSheetHeight: minimumSheetHeight
-        )
-        return nearestTop == currentTop ? current : nearest
+        let projectedTop = (top(current) + travel).clamped(to: highest ... lowest)
+        let nearest = resting.min { abs(top($0) - projectedTop) < abs(top($1) - projectedTop) } ?? current
+        return top(nearest) == top(current) ? current : nearest
     }
 }
 
@@ -145,14 +135,22 @@ public struct SnapSheet<Background: View, Ornament: View, Content: View>: View {
     @State private var dragOffset: CGFloat = 0
     private let ornamentSize: CGFloat
     private let minimumSheetHeight: CGFloat
+    private let stops: Set<SnapAnchor>
+    private let minimumSheetTop: CGFloat
+    private let mapFocusHeight: CGFloat?
     private let background: Background
     private let ornament: Ornament
     private let content: Content
 
+    /// `stops` are the anchors the sheet may rest at, `minimumSheetTop` the highest its top rises, from the
+    /// container's top, and `mapFocusHeight` the sheet's height at `.mapFocus` in place of its share of the container.
     public init(
         anchor: Binding<SnapAnchor>,
         ornamentSize: CGFloat = SnapSheetOrnament.defaultSize,
         minimumSheetHeight: CGFloat = 0,
+        stops: Set<SnapAnchor> = Set(SnapAnchor.allCases),
+        minimumSheetTop: CGFloat = 0,
+        mapFocusHeight: CGFloat? = nil,
         @ViewBuilder background: () -> Background,
         @ViewBuilder ornament: () -> Ornament,
         @ViewBuilder content: () -> Content
@@ -160,6 +158,9 @@ public struct SnapSheet<Background: View, Ornament: View, Content: View>: View {
         _anchor = anchor
         self.ornamentSize = ornamentSize
         self.minimumSheetHeight = minimumSheetHeight
+        self.stops = stops
+        self.minimumSheetTop = minimumSheetTop
+        self.mapFocusHeight = mapFocusHeight
         self.background = background()
         self.ornament = ornament()
         self.content = content()
@@ -170,7 +171,11 @@ public struct SnapSheet<Background: View, Ornament: View, Content: View>: View {
             let height = geometry.size.height
             let beside = SnapSheetColumn.standsBeside(in: geometry.size)
             let restingTop = SnapResolver.sheetTop(
-                for: anchor, containerHeight: height, minimumSheetHeight: minimumSheetHeight
+                for: anchor,
+                containerHeight: height,
+                minimumSheetHeight: minimumSheetHeight,
+                minimumSheetTop: minimumSheetTop,
+                mapFocusHeight: mapFocusHeight
             )
             let currentTop = beside ? 0 : (restingTop + dragOffset)
                 .clamped(to: topBound(height) ... bottomBound(height))
@@ -220,7 +225,7 @@ public struct SnapSheet<Background: View, Ornament: View, Content: View>: View {
     private func sheet(bottomOverhang: CGFloat, beside: Bool) -> some View {
         VStack(spacing: 0) {
             if !beside {
-                DragHandle(anchor: $anchor)
+                DragHandle(anchor: $anchor, stops: stops)
             }
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -256,7 +261,10 @@ public struct SnapSheet<Background: View, Ornament: View, Content: View>: View {
                     dragTranslation: value.translation.height,
                     predictedEndTranslation: value.predictedEndTranslation.height,
                     containerHeight: containerHeight,
-                    minimumSheetHeight: minimumSheetHeight
+                    minimumSheetHeight: minimumSheetHeight,
+                    stops: stops,
+                    minimumSheetTop: minimumSheetTop,
+                    mapFocusHeight: mapFocusHeight
                 )
                 dragOffset = 0
                 anchor = resolved
@@ -264,11 +272,23 @@ public struct SnapSheet<Background: View, Ornament: View, Content: View>: View {
     }
 
     private func topBound(_ height: CGFloat) -> CGFloat {
-        SnapResolver.sheetTop(for: .expanded, containerHeight: height, minimumSheetHeight: minimumSheetHeight)
+        restingTops(height).min() ?? 0
     }
 
     private func bottomBound(_ height: CGFloat) -> CGFloat {
-        SnapResolver.sheetTop(for: .mapFocus, containerHeight: height, minimumSheetHeight: minimumSheetHeight)
+        restingTops(height).max() ?? 0
+    }
+
+    private func restingTops(_ height: CGFloat) -> [CGFloat] {
+        stops.map {
+            SnapResolver.sheetTop(
+                for: $0,
+                containerHeight: height,
+                minimumSheetHeight: minimumSheetHeight,
+                minimumSheetTop: minimumSheetTop,
+                mapFocusHeight: mapFocusHeight
+            )
+        }
     }
 }
 
@@ -277,10 +297,11 @@ public struct SnapSheet<Background: View, Ornament: View, Content: View>: View {
 /// element (swipe up/down walks the anchors).
 private struct DragHandle: View {
     @Binding var anchor: SnapAnchor
+    let stops: Set<SnapAnchor>
 
     var body: some View {
         Button {
-            anchor = anchor.tapToggled
+            anchor = anchor.toward(anchor.tapToggled, within: stops)
         } label: {
             Capsule()
                 .fill(CleansiaColors.outline)
@@ -296,8 +317,8 @@ private struct DragHandle: View {
         .accessibilityHint(Text(CoreL10n.localized("snap_sheet.handle.hint")))
         .accessibilityAdjustableAction { direction in
             switch direction {
-            case .increment: anchor = anchor.moreExpanded
-            case .decrement: anchor = anchor.lessExpanded
+            case .increment: anchor = anchor.toward(anchor.moreExpanded, within: stops)
+            case .decrement: anchor = anchor.toward(anchor.lessExpanded, within: stops)
             @unknown default: break
             }
         }

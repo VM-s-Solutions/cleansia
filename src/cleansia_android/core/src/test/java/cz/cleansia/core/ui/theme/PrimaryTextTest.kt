@@ -219,7 +219,6 @@ class PrimaryTextTest {
             val next = text.substring(call.end, TEXT_CALL.find(text, call.end)?.range?.first ?: text.length)
             if (next.contains("Icon(")) assertTrue("$path icon after $label", next.contains("tint = primaryText()"))
         }
-        assertTrue(source("partner-app", "features/orders/CustomerCard.kt").contains("tint = primaryText()"))
         assertTrue(source("partner-app", "features/settings/LanguageChooser.kt").contains("val tint = primaryText()"))
         assertTrue(source("partner-app", "features/orders/PhotosSection.kt").contains("val tint = primaryText()"))
     }
@@ -237,11 +236,9 @@ class PrimaryTextTest {
         assertEquals(emptyList<String>(), offenders.map { it.where })
         // Texts whose ink arrives through a value rather than their own `color =`.
         listOf(
-            "features/orders/PaymentCard.kt" to Regex("""valueColor = primaryText\(\)"""),
-            "features/orders/OrdersListScreen.kt" to Regex("""starts_soon\),\s*tint = primaryText\(\)"""),
             "features/dashboard/DashboardScreen.kt" to Regex("""val color = if \(up\) primaryText\(\)"""),
             "features/profile/DocumentsSectionScreen.kt" to Regex("""document_status_approved\) to primaryText\(\)"""),
-            "features/orders/OrderStatusProgressBar.kt" to Regex("""StepState\.Current -> primaryText\(\)"""),
+            "features/orders/JobRunSheet.kt" to Regex("""RunMark\.Current\) primaryText\(\)"""),
             "features/profile/LegalDocumentsScreen.kt" to Regex("""tint = if \(accepted\) primaryText\(\)"""),
             "features/orders/PendingOffersCard.kt" to Regex("""Icons\.Outlined\.Schedule,\s*contentDescription = null,\s*tint = primaryText\(\)"""),
             "features/orders/PendingOffersScreen.kt" to Regex("""Icons\.Outlined\.Schedule,\s*contentDescription = null,\s*tint = primaryText\(\)"""),

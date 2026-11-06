@@ -52,3 +52,7 @@ Root executed gate-ios-floor.sh on iPhone 14 / iOS 16.4: customer: 109 tests / 0
 Root independently executed the final Release build and full backend suites: 9,114 unit + 1,031 real PostgreSQL integration + 518 host tests; 0 failures/skips. Evidence: backend-final-full-results.json and logs/backend-final-full.log.
 
 Exact commands, cwd, exits and logs are in /Users/michael/cleansia-work.noindex/mobile-polish-20261028/commands-index.md. Repo consistency, documentation build, committed catalog validation and hosted PR checks are also verified at publication. No source approval authorizes merge or rollout; the INDEX remains the sole status record.
+
+### Merge closure — 29 October 2026
+
+Mike approved the merge. [PR #363](https://github.com/VM-s-Solutions/cleansia/pull/363) merged as `1acb9c721847c46da185a12ea93df7083cc053fa`; its tree equals approved head `eba38eec9b2db0960bb34645d8687dcf87efdef8`. All eight premerge hosted workflows succeeded (nine successful checks; optional Xcode readiness skipped), with existing skips, warnings and physical/runtime limits retained in the final report. INDEX.md records completion. This closure remains local and unpushed for the next branch; merge approval did not authorize deployment, app upload, database reset/reseed or invoice backfill. Evidence: `/Users/michael/cleansia-work.noindex/mobile-polish-20261028/merge-363-verification.json` and `report.md`.

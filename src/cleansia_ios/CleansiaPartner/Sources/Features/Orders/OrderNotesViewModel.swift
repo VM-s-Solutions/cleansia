@@ -124,8 +124,8 @@ final class OrderNotesViewModel: ViewModel {
             .success("preview")
         }
 
-        func getPaged(_: OrderPageQuery) async -> ApiResult<[CleansiaPartnerApi.OrderListItem]> {
-            .success([])
+        func getPaged(_: OrderPageQuery) async -> ApiResult<OrderPage> {
+            .success(OrderPage(rows: [], total: 0))
         }
 
         func getById(orderId _: String) async -> ApiResult<OrderDetail> {

@@ -67,7 +67,11 @@ final class HomeTabViewModelTests: XCTestCase {
             savedAddressRepository: SavedAddressRepository(client: FakeSavedAddressClient()),
             referralRepository: referralRepository ?? RewardsReferralRepository(client: referralClient),
             marketStore: marketStore,
-            catalogSource: BookingViewModel(catalogClient: catalog, market: marketStore.statePublisher),
+            catalogSource: BookingViewModel(
+                catalogClient: catalog,
+                market: marketStore.statePublisher,
+                savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])])
+            ),
             snackbar: SnackbarController(),
             notificationStatus: { self.notificationStatus },
             requestNotifications: {

@@ -75,6 +75,26 @@ public class SavedCardRepositoryTests(PostgresContainerFixture fixture) : BaseIn
             });
     }
 
+    [Fact]
+    public async Task A_Bookings_Operator_Reads_Only_The_Pinned_Owners_Card_In_Its_Currency_Across_Companies()
+    {
+        await TestMethod(
+            arrange: SeedAsync,
+            act: async provider =>
+            {
+                var context = provider.GetRequiredService<CleansiaDbContext>();
+                var ownerId = await context.Users.Where(user => user.Email == OwnerEmail).Select(user => user.Id).SingleAsync();
+                provider.GetRequiredService<ITenantProvider>().SetTenantOverride(TestTenants.Second);
+                return await provider.GetRequiredService<ISavedCardRepository>()
+                    .GetCapturedForUserInCurrencyAsync(ownerId, CzkId, CancellationToken.None);
+            },
+            assert: (CleansiaDbContext _, IReadOnlyList<SavedCard> cards) =>
+            {
+                Assert.Equal("pm_czk_live", Assert.Single(cards).StripePaymentMethodId);
+                return Task.CompletedTask;
+            });
+    }
+
     private static async Task SeedAsync(CleansiaDbContext ctx)
     {
         ctx.Languages.Add(Language.Create("en", "English"));

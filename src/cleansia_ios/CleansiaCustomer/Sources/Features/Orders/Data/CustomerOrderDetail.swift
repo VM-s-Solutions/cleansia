@@ -107,6 +107,8 @@ struct CustomerOrderDetail: Equatable {
     let statusHistory: [OrderStatusTrackDto]
     let review: CustomerOrderReview?
     let preferredOffer: PreferredOfferDetails?
+    /// Nil when the server sends none: no deadline is stated then, never an assumed 24.
+    let freeCancellationHours: Int?
     /// A booking made without an account under the signed-in customer's e-mail: it opens read-only with
     /// Cancel, and every other action on it stays refused on the server.
     var isGuestBooking = false
@@ -179,6 +181,7 @@ extension CustomerOrderDetail {
         statusHistory = item.statusHistory ?? []
         review = try item.review.map(CustomerOrderReview.init)
         preferredOffer = item.preferredOffer
+        freeCancellationHours = item.freeCancellationHours
         isGuestBooking = item.isGuestBooking ?? false
     }
 }

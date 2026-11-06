@@ -26,18 +26,35 @@ class CrewCloseCallSiteTest {
     private val detailScreen = File(featureDir, "OrderDetailScreen.kt").readText()
 
     @Test
-    fun `on a crew job the slide marks the cleaner's part, and a marked cleaner waits`() {
-        val inProgress = body(primaryAction, "OrderStatus._4 ->")
-        val mark = body(inProgress, "if (isAssignedToCurrentUser && completionStep == CompletionStep.MarkMyPart)")
-        assertTrue("the mark slide must commit through onMarkMyPartDone", mark.contains("onCommit = onMarkMyPartDone"))
-        assertTrue("the mark slide must read its own label", mark.contains("R.string.slide_to_mark_my_part_done"))
+    fun `on a crew job the slide marks the cleaner's part, and a marked cleaner calls or waits for her crew-mate`() {
+        val inProgress = body(primaryAction, "OrderStatus._4 -> when")
+        assertTrue("a part still open is marked by the slide", inProgress.contains("completionStep == CompletionStep.MarkMyPart -> PinnedMove.MarkMyPart"))
+        assertTrue(
+            "a marked cleaner calls the crew-mate through callNumber(), else waits with her name",
+            inProgress.contains("mate.callNumber()") && inProgress.contains("PinnedMove.CallMate(name, phone)") &&
+                inProgress.contains("PinnedMove.WaitingFor(name)") && !inProgress.contains("mate.phone"),
+        )
 
-        val waiting = body(inProgress, "else if (isAssignedToCurrentUser && completionStep == CompletionStep.WaitingForCrew)")
-        assertTrue("a marked cleaner must see the waiting line", waiting.contains("R.string.order_my_part_done_waiting"))
+        assertTrue("the mark slide must commit through onMarkMyPartDone", primaryAction.contains("onCommit = onMarkMyPartDone"))
+        assertTrue("the mark slide must read its own label", primaryAction.contains("idle = stringResource(R.string.slide_to_mark_my_part_done)"))
+        assertTrue(
+            "the call names the crew-mate in the outlined secondary move",
+            Regex("""is PinnedMove\.CallMate -> CleansiaOutlinedButton\(\s*text = "\$\{stringResource\(R\.string\.action_call\)\}\$\{OrdersBoardRules\.SEP\}\$\{move\.name\}"""").containsMatchIn(primaryAction),
+        )
+        assertTrue("without a phone the move is the words", primaryAction.contains("stringResource(R.string.detail_waiting_for, move.name)"))
+    }
+
+    /** The crew job's one Call is the pinned "Call · Lenka": the crew-mate's gate row keeps her name and part only. */
+    @Test
+    fun `the gate list offers no Call of its own, the pinned move is the one Call`() {
+        val gate = body(detailScreen, "private fun GateList(")
+        listOf("callNumber()", "R.string.action_call", "onCall", "seat.phone").forEach {
+            assertTrue("the gate list still offers a Call through `$it`", !gate.contains(it))
+        }
     }
 
     @Test
-    fun `the screen hands the footer the view model's step and its mark`() {
+    fun `the screen hands the footer the step and the mark`() {
         assertTrue(
             "the screen must collect the step from the view model",
             detailScreen.contains("val completionStep by viewModel.completionStep.collectAsStateWithLifecycle()"),
@@ -46,10 +63,10 @@ class CrewCloseCallSiteTest {
             "the screen must wire the mark to the view model",
             detailScreen.contains("onMarkMyPartDone = viewModel::markMyPartDone"),
         )
+        val own = body(detailScreen, "private fun OwnJobDetail(")
+        assertTrue("her job's move must take the step", arguments(own, "pinnedMove(").contains("completionStep = completionStep"))
         val footer = body(detailScreen, "private fun StickyActionFooter(")
-        val action = arguments(footer, "OrderPrimaryAction(")
-        assertTrue("the footer must pass the step to the action", action.contains("completionStep = completionStep"))
-        assertTrue("the footer must pass the mark to the action", action.contains("onMarkMyPartDone = onMarkMyPartDone"))
+        assertTrue("the footer must pass the mark to the action", arguments(footer, "OrderPrimaryAction(").contains("onMarkMyPartDone = onMarkMyPartDone"))
     }
 
     /** The `{…}` that opens first after [marker], which must occur exactly once in [text]. */

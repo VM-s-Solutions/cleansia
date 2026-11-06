@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -21,19 +20,17 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import cz.cleansia.core.ui.theme.primaryText
@@ -92,6 +89,10 @@ private fun DirtinessLevel.detailRes(): List<Int> = when (this) {
     )
 }
 
+/** Only the chosen card lists what its level looks like at home, so the three levels fit a small phone. */
+internal fun DirtinessLevel.signsShownRes(selected: DirtinessLevel?): List<Int> =
+    if (this == selected) detailRes() else emptyList()
+
 /** The booking wizard's level step; its title is the sheet header. */
 @Composable
 internal fun DirtinessStep(selected: DirtinessLevel?, onSelect: (DirtinessLevel) -> Unit) {
@@ -99,61 +100,50 @@ internal fun DirtinessStep(selected: DirtinessLevel?, onSelect: (DirtinessLevel)
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(20.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp),
     ) {
         DirtinessLevelPicker(selected = selected, onSelect = onSelect)
     }
 }
 
-/** The three levels with the descriptions the customer chooses by, shared by the booking and the recurring wizard. */
+/** The three levels with when each applies and the advice to pick the higher one, shared by the booking and the recurring wizard. */
 @Composable
 internal fun DirtinessLevelPicker(
     selected: DirtinessLevel?,
     onSelect: (DirtinessLevel) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(
-            stringResource(R.string.dirtiness_intro),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f))
-                .padding(12.dp),
-            verticalAlignment = Alignment.Top,
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(
+            modifier = Modifier.selectableGroup(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            DirtinessLevel.entries.forEach { level ->
+                LevelCard(level = level, chosen = selected, onClick = { onSelect(level) })
+            }
+        }
+        Row(verticalAlignment = Alignment.Top) {
             Icon(
                 Icons.Outlined.Info,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(18.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(16.dp),
             )
             Spacer(Modifier.width(8.dp))
             Text(
-                stringResource(R.string.dirtiness_hint),
+                stringResource(R.string.dirtiness_torn_hint),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-        }
-        Column(
-            modifier = Modifier.selectableGroup(),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            DirtinessLevel.entries.forEach { level ->
-                LevelCard(level = level, selected = level == selected, onClick = { onSelect(level) })
-            }
         }
     }
 }
 
 @Composable
-private fun LevelCard(level: DirtinessLevel, selected: Boolean, onClick: () -> Unit) {
+private fun LevelCard(level: DirtinessLevel, chosen: DirtinessLevel?, onClick: () -> Unit) {
+    val selected = level == chosen
     val shape = RoundedCornerShape(16.dp)
-    Column(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(shape)
@@ -164,62 +154,57 @@ private fun LevelCard(level: DirtinessLevel, selected: Boolean, onClick: () -> U
                 shape = shape,
             )
             .selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
-            .padding(14.dp),
+            .padding(12.dp),
+        verticalAlignment = Alignment.Top,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                stringResource(level.titleRes()),
-                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.weight(1f),
-            )
-            Text(
-                stringResource(level.priceRes()),
-                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                color = if (level == DirtinessLevel.Normal) {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                } else {
-                    primaryText()
-                },
-            )
-            if (selected) {
+        RadioButton(selected = selected, onClick = null)
+        Spacer(Modifier.width(8.dp))
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    stringResource(level.titleRes()),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f),
+                )
                 Spacer(Modifier.width(8.dp))
-                Box(
-                    modifier = Modifier
-                        .size(22.dp)
-                        .background(MaterialTheme.colorScheme.primary, CircleShape),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(Icons.Outlined.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
-                }
+                Text(
+                    stringResource(level.priceRes()),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = primaryText(),
+                )
             }
-        }
-        Spacer(Modifier.height(6.dp))
-        Text(
-            stringResource(level.whenRes()),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-        Spacer(Modifier.height(6.dp))
-        level.detailRes().forEach { res ->
-            Row(modifier = Modifier.padding(vertical = 2.dp)) {
-                Text(
-                    "•",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(Modifier.width(6.dp))
-                Text(
-                    stringResource(res),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            Text(
+                stringResource(level.whenRes()),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            val signs = level.signsShownRes(chosen)
+            if (signs.isNotEmpty()) {
+                Column(modifier = Modifier.padding(top = 2.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    signs.forEach { res ->
+                        Row(verticalAlignment = Alignment.Top) {
+                            Box(
+                                modifier = Modifier
+                                    .padding(top = 6.dp)
+                                    .size(4.dp)
+                                    .background(MaterialTheme.colorScheme.primary, CircleShape),
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                stringResource(res),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
+                    }
+                }
             }
         }
     }
 }
 
-@Preview(widthDp = 390, heightDp = 1100)
+@Preview(widthDp = 360, heightDp = 640)
 @Composable
 private fun DirtinessStepPreview() {
     CleansiaTheme {
@@ -227,7 +212,7 @@ private fun DirtinessStepPreview() {
     }
 }
 
-@Preview(locale = "ru", widthDp = 320, heightDp = 1300)
+@Preview(locale = "ru", widthDp = 320, heightDp = 900)
 @Composable
 private fun DirtinessStepRussianNarrowPreview() {
     CleansiaTheme {

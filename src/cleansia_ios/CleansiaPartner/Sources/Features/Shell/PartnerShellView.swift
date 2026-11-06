@@ -113,9 +113,12 @@ struct PartnerShellView: View {
                         staleness: container.ordersStaleness,
                         checklistStore: container.cleaningChecklistStore,
                         snackbar: container.snackbar,
-                        mapProvider: container.mapProvider,
                         pendingOffers: container.pendingOffers,
-                        onOpenLegalDocuments: { dashboardPath.append(.legalDocuments) }
+                        boardStore: container.ordersBoardStore,
+                        onOpenLegalDocuments: { dashboardPath.append(.legalDocuments) },
+                        onOpenJob: { dashboardPath.append(.orderDetail(orderId: $0)) },
+                        onBrowseJobs: { model.selectOrders() },
+                        onOpenEarnings: { model.selectEarnings() }
                     )
                 case .legalDocuments:
                     LegalDocumentsView(client: container.profileClient, snackbar: container.snackbar)
@@ -165,9 +168,11 @@ struct PartnerShellView: View {
                 staleness: container.ordersStaleness,
                 checklistStore: container.cleaningChecklistStore,
                 snackbar: container.snackbar,
-                mapProvider: container.mapProvider,
                 pendingOffers: container.pendingOffers,
-                deepLinkRoute: $deepLinkOrderRoute
+                payrollClient: container.payrollClient,
+                boardStore: container.ordersBoardStore,
+                deepLinkRoute: $deepLinkOrderRoute,
+                onOpenEarnings: { model.selectEarnings() }
             )
             .tabItem { Label(ShellTab.orders.label, systemImage: ShellTab.orders.systemImage) }
             .tag(ShellTab.orders)

@@ -71,7 +71,7 @@ order, so that a claim against a cleaner for a job is answered from a record and
 - **`WorkContractFactsBuilder.BuildAsync(orderId)`** — one `AsNoTracking` projection shared by the
   preview and the acceptor so the screen and the row cannot differ: `orderNumber`,
   `cleaningDateTimeUtc` + `estimatedMinutes` (the window), `totalPrice` + `currencyCode` (the
-  customer's price — Q-WC-01), `locationApproximate` (*"Praha · 120"*, the same
+  customer's price — Q-WC-01), `locationApproximate` (*"Praha 2"*, the same
   `BuildApproximateAddress` the board shows), `countryId`, `rooms`, `bathrooms`, `services` and
   `packages` as `{ id, name }`, `extraSlugs`. Never off the take handler's tracked aggregate (its
   includes are the seat-race arbiter's). `WorkContractFactsPiiGuardTests` walks every member name
@@ -130,7 +130,7 @@ order, so that a claim against a cleaner for a job is answered from a record and
 
 - **The customer.** No name, no street, no user id on the row: the customer resolves **through the
   order** at render time and reads as the anonymised marker after erasure. The coarse location
-  (*"Praha · 120"*) is kept on purpose as a term of the contract — it is the pre-acceptance disclosure
+  (*"Praha 2"*) is kept on purpose as a term of the contract — it is the pre-acceptance disclosure
   the board already makes (Q-WC-07 asks the lawyer/DPO to confirm).
 - **The cleaner's name or company.** Ids only; the given name comes from the crew entry on the order
   detail (Q-WC-03).

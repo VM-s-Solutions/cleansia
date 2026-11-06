@@ -62,6 +62,26 @@ public class CashEligibilityPolicyTests
         Assert.Equal(1, order.RequiredEmployees);
     }
 
+    [Fact]
+    public void A_Cash_Order_Cannot_Gain_A_Second_Cleaner_Even_With_Legacy_Spare_Seats()
+    {
+        var order = Order.Create("Customer", "customer@example.com", "+420777123456",
+            Address.Create("Main 1", "Prague", "11000", "cz"), 1, 1, DateTime.UtcNow.AddDays(2),
+            PaymentType.Cash, 1000m, "czk", PaymentStatus.Pending, userId: "user-1",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
+        order.SetMaxEmployees(3);
+        var first = Employee.CreateWithUser(User.CreateWithPassword("first@example.com", "x", "First", "Cleaner"));
+        var second = Employee.CreateWithUser(User.CreateWithPassword("second@example.com", "x", "Second", "Cleaner"));
+        order.AddAssignedEmployee(OrderEmployee.Create(order, first));
+
+        Assert.False(order.HasAvailableSpots);
+        Assert.Throws<InvalidOperationException>(() => order.AddAssignedEmployee(OrderEmployee.Create(order, second)));
+        Assert.Single(order.AssignedEmployees);
+        order.UnassignEmployee(first.Id);
+        order.AddAssignedEmployee(OrderEmployee.Create(order, second));
+        Assert.Equal(second.Id, Assert.Single(order.AssignedEmployees).EmployeeId);
+    }
+
     [Theory]
     [InlineData(0, 1)]
     [InlineData(120, 1)]

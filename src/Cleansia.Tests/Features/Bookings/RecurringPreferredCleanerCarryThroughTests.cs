@@ -255,7 +255,7 @@ public class RecurringPreferredCleanerCarryThroughTests
             _tenantProvider.Object,
             _unitOfWork.Object,
             NullLogger<MaterializeRecurringBookingTemplate.Handler>.Instance,
-            Mock.Of<INotificationProducer>());
+            Mock.Of<INotificationProducer>(), Cleansia.Tests.Common.SavedCardTestData.Repository());
     }
 
     private static MaterializeRecurringBookingTemplate.Command SweepCommand() =>

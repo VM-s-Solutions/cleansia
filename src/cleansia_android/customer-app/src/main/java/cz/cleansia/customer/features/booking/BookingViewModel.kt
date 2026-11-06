@@ -7,6 +7,7 @@ import cz.cleansia.customer.R
 import cz.cleansia.customer.core.auth.ApiErrorParser
 import cz.cleansia.customer.features.payments.UnpaidReceivable
 import cz.cleansia.core.auth.TokenStore
+import cz.cleansia.core.auth.JwtDecoder
 import cz.cleansia.customer.core.booking.BookingApi
 import cz.cleansia.customer.core.booking.CashEligibility
 import cz.cleansia.customer.core.booking.CreateOrderAddressDto
@@ -23,6 +24,9 @@ import cz.cleansia.customer.core.memberships.ExpressWaiver
 import cz.cleansia.customer.core.memberships.MembershipRepository
 import cz.cleansia.customer.core.memberships.resolveExpressWaiver
 import cz.cleansia.customer.core.payments.PaymentSheetParams
+import cz.cleansia.customer.core.payments.SavedCard
+import cz.cleansia.customer.core.payments.SavedCardRepository
+import cz.cleansia.customer.core.payments.usableIn
 import cz.cleansia.customer.core.payments.toPaymentSheetParams
 import cz.cleansia.customer.core.promo.PromoCodeApi
 import cz.cleansia.customer.core.promo.PromoCodeError
@@ -144,6 +148,7 @@ class BookingViewModel @Inject constructor(
     private val promoCodeApi: PromoCodeApi,
     private val referralRepository: ReferralRepository,
     private val paymentRepository: cz.cleansia.customer.core.payments.PaymentRepository,
+    private val savedCardRepository: SavedCardRepository,
     private val tokenStore: TokenStore,
     private val snackbar: SnackbarController,
     private val serviceAreaProvider: cz.cleansia.core.servicearea.ServiceAreaProvider,
@@ -240,10 +245,9 @@ class BookingViewModel @Inject constructor(
             .collectLatest { refreshQuote(it) }
     }
 
-    /**
-     * Whether this booking may be paid in cash, from the live session and the crew the server quoted
-     * for the selection on screen. A quote for an earlier selection says nothing about this one.
-     */
+    private val verifiedCards = MutableStateFlow<List<SavedCard>?>(null)
+    private var cashCardReadSequence = 0L
+
     val cashEligibility: StateFlow<CashEligibility> = combine(
         tokenStore.tokens,
         _state,
@@ -253,8 +257,43 @@ class BookingViewModel @Inject constructor(
     ) { tokens, s, countryId, quote, quotedFor ->
         val crew = (quote as? QuoteState.Quoted)?.response?.requiredEmployees
             ?.takeIf { quotedFor == s.toQuoteInputs(countryId) }
-        CashEligibility.resolve(signedIn = tokens != null, requiredEmployees = crew)
+        Triple(tokens != null, crew, (quote as? QuoteState.Quoted)?.response?.currencyCode)
+    }.combine(verifiedCards) { (signedIn, crew, currency), cards ->
+        CashEligibility.resolve(
+            signedIn = signedIn,
+            requiredEmployees = crew,
+            hasUsableSavedCard = currency?.let { code -> cards?.let { it.usableIn(code) != null } },
+        )
     }.stateIn(viewModelScope, SharingStarted.Eagerly, CashEligibility.Pending)
+
+    init {
+        viewModelScope.launch {
+            tokenStore.tokens
+                .map { tokens -> tokens?.let { JwtDecoder.extractUserId(it.accessToken) ?: it.accessToken } }
+                .distinctUntilChanged()
+                .collectLatest { accountId ->
+                    // Credential rotation keeps the same account. Only a session/account change
+                    // invalidates an in-flight read, including a submit's authenticated retry.
+                    cashCardReadSequence++
+                    verifiedCards.value = null
+                    if (accountId != null) refreshCashCards()
+                }
+        }
+    }
+
+    private suspend fun refreshCashCards(): List<SavedCard>? {
+        val sequence = ++cashCardReadSequence
+        verifiedCards.value = null
+        val result = savedCardRepository.refresh()
+        if (sequence != cashCardReadSequence) return null
+        val cards = (result as? ApiResult.Success)?.data
+        verifiedCards.value = cards
+        return cards
+    }
+
+    fun refreshCashEligibility() {
+        if (tokenStore.current() != null) viewModelScope.launch { refreshCashCards() }
+    }
 
     /** A cash choice was taken away because it stopped being allowed; cleared by the next choice. */
     private val _cashCleared = MutableStateFlow(false)
@@ -288,7 +327,7 @@ class BookingViewModel @Inject constructor(
     val canPlaceOrder: StateFlow<Boolean> =
         combine(_state, _alreadyConsented, cashEligibility) { s, consented, cash ->
             s.paymentMethod.isNotBlank() &&
-                !(s.paymentMethod == PAYMENT_CASH && cash.isRefused) &&
+                (s.paymentMethod != PAYMENT_CASH || cash == CashEligibility.Available) &&
                 (consented || s.termsAccepted) &&
                 s.earlyPerformanceRequested
         }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
@@ -321,6 +360,7 @@ class BookingViewModel @Inject constructor(
     fun setSheetVisible(visible: Boolean, now: Instant = clock.now()) {
         sheetVisible = visible
         if (!visible) draftLeftAt = now
+        else refreshCashEligibility()
     }
 
     /**
@@ -373,11 +413,11 @@ class BookingViewModel @Inject constructor(
     }
 
     /** Never replaced by card: the customer is told and chooses again. */
-    private fun dropCash() {
+    private fun dropCash(announce: Boolean = true) {
         if (_state.value.paymentMethod != PAYMENT_CASH) return
         _state.update { it.copy(paymentMethod = "") }
         _cashCleared.value = true
-        if (sheetVisible) snackbar.showInfoKey(R.string.booking_cash_cleared)
+        if (announce && sheetVisible) snackbar.showInfoKey(R.string.booking_cash_cleared)
     }
 
     private val _promoCodeState = MutableStateFlow<PromoCodeUiState>(PromoCodeUiState.Idle)
@@ -692,13 +732,21 @@ class BookingViewModel @Inject constructor(
                 PAYMENT_CASH -> PAYMENT_TYPE_CASH
                 else -> return BookingSubmitOutcome.Failed
             }
-            // Judged against the quote this booking is created from, not the one on screen.
-            if (paymentType == PAYMENT_TYPE_CASH &&
-                CashEligibility.resolve(signedIn = true, requiredEmployees = quoted.requiredEmployees) !=
-                CashEligibility.Available
-            ) {
-                dropCash()
-                return BookingSubmitOutcome.Failed
+            if (paymentType == PAYMENT_TYPE_CASH) {
+                val cards = refreshCashCards()
+                if (cards == null) {
+                    snackbar.showError(appContext.getString(R.string.error_generic_network))
+                    return BookingSubmitOutcome.Failed
+                }
+                if (CashEligibility.resolve(
+                        signedIn = tokenStore.current() != null,
+                        requiredEmployees = quoted.requiredEmployees,
+                        hasUsableSavedCard = cards.usableIn(quoted.currencyCode) != null,
+                    ) != CashEligibility.Available
+                ) {
+                    dropCash()
+                    return BookingSubmitOutcome.Failed
+                }
             }
 
             // Backend's quote response already folds the express surcharge into
@@ -774,7 +822,14 @@ class BookingViewModel @Inject constructor(
             }
             if (!createResp.isSuccessful) {
                 val raw = runCatching { createResp.errorBody()?.string() }.getOrNull()
-                if (UnpaidReceivable.refuses(ApiErrorParser.errorsByField(raw)?.values?.flatten().orEmpty())) {
+                val keys = ApiErrorParser.errorsByField(raw)?.values?.flatten().orEmpty()
+                if (CashEligibility.refusedBy(keys)) {
+                    cashCardReadSequence++
+                    verifiedCards.value = null
+                    dropCash(announce = false)
+                    refreshCashEligibility()
+                }
+                if (UnpaidReceivable.refuses(keys)) {
                     return BookingSubmitOutcome.OwesMoney
                 }
                 snackbar.showError(ApiErrorParser.parseToUserMessage(appContext, raw?.toResponseBody(), createResp.code()))

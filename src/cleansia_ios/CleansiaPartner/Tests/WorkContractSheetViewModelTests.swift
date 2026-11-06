@@ -21,8 +21,19 @@ final class WorkContractSheetViewModelTests: XCTestCase {
         outcomes = []
     }
 
-    private func makeVM(_ request: WorkContractRequest, language: String = "cs") -> WorkContractSheetViewModel {
-        let vm = WorkContractSheetViewModel(request: request, client: client, languageTag: { language })
+    private func makeVM(
+        _ request: WorkContractRequest,
+        language: String = "cs",
+        board: Bool = false,
+        panel: Bool = false
+    ) -> WorkContractSheetViewModel {
+        let vm = WorkContractSheetViewModel(
+            request: request,
+            client: client,
+            hasBoardContext: board,
+            endsOnTakenPanel: panel,
+            languageTag: { language }
+        )
         vm.outcome.sink { [weak self] in self?.outcomes.append($0) }.store(in: &cancellables)
         return vm
     }
@@ -230,5 +241,93 @@ final class WorkContractSheetViewModelTests: XCTestCase {
         client.resumeCommand()
         await first.value
         XCTAssertEqual(outcomes.count, 1)
+    }
+
+    // MARK: opened from the board
+
+    /// From the board the sheet stays open on the taken job; the host still hears the take.
+    func testABoardTakeStaysOpenOnTheTakenJob() async {
+        let vm = makeVM(.take(orderId: "order-1"), board: true)
+        await vm.load()
+
+        await vm.accept()
+
+        guard case .taken = vm.state else { return XCTFail("expected the taken state") }
+        XCTAssertEqual(vm.state.loadedContract, .sample())
+        XCTAssertEqual(outcomes, [.taken(orderId: "order-1")])
+    }
+
+    /// A refusal on the board stays in the sheet with the server's own reason; the host refreshes behind it.
+    func testABoardRefusalStaysOpenOnTheReason() async {
+        let vm = makeVM(.take(orderId: "order-1"), board: true)
+        await vm.load()
+        let refusal = ApiError(code: "order.take.no_available_spots", httpStatus: 400)
+        client.commandResult = .failure(refusal)
+
+        await vm.accept()
+
+        guard case let .refused(contract, error) = vm.state else { return XCTFail("expected the refused state") }
+        XCTAssertEqual(contract, .sample())
+        XCTAssertEqual(error, refusal)
+        XCTAssertEqual(outcomes, [.refused(.take(orderId: "order-1"), refusal)])
+    }
+
+    /// The contract's own two verdicts keep their handling on the board too.
+    func testABoardTakeStillReloadsOnATextMismatch() async {
+        let vm = makeVM(.take(orderId: "order-1"), board: true)
+        await vm.load()
+        client.commandResult = .failure(ApiError(code: WorkContractErrorKey.textMismatch, httpStatus: 400))
+
+        await vm.accept()
+
+        guard case .loaded = vm.state else { return XCTFail("expected the reloaded contract") }
+        XCTAssertEqual(vm.notice, .textUpdated)
+        XCTAssertTrue(outcomes.isEmpty)
+    }
+
+    /// The detail's take ends on the taken job too; the host still hears it.
+    func testADetailTakeEndsOnTheTakenPanel() async {
+        let vm = makeVM(.take(orderId: "order-1"), panel: true)
+        await vm.load()
+
+        await vm.accept()
+
+        guard case .taken = vm.state else { return XCTFail("expected the taken state") }
+        XCTAssertEqual(outcomes, [.taken(orderId: "order-1")])
+    }
+
+    /// Off the board a refusal is still the host's to frame: the sheet does not keep it.
+    func testADetailRefusalIsStillHandedToItsHost() async {
+        let vm = makeVM(.take(orderId: "order-1"), panel: true)
+        await vm.load()
+        let refusal = ApiError(code: "order.take.no_available_spots", httpStatus: 400)
+        client.commandResult = .failure(refusal)
+
+        await vm.accept()
+
+        guard case .loaded = vm.state else { return XCTFail("expected the sheet left to its host") }
+        XCTAssertEqual(outcomes, [.refused(.take(orderId: "order-1"), refusal)])
+    }
+
+    /// Without the board or the panel — the Dashboard's offers — a take ends as it always did.
+    func testAHostWithoutTheBoardKeepsTodaysEnding() async {
+        let vm = makeVM(.take(orderId: "order-1"))
+        await vm.load()
+
+        await vm.accept()
+
+        guard case .loaded = vm.state else { return XCTFail("expected the sheet left to its host") }
+        XCTAssertEqual(outcomes, [.taken(orderId: "order-1")])
+    }
+
+    /// A read of an accepted contract still names the order it binds; the take and acceptance layouts do not.
+    func testOnlyAReadNamesTheContractsOrder() {
+        let facts = WorkContract.sample().facts
+        XCTAssertEqual(
+            WorkContractSheetContent.orderLine(facts, request: .read(acceptanceId: "acceptance-1")),
+            L10n.WorkContract.orderNumber("CL-2026-0042")
+        )
+        XCTAssertNil(WorkContractSheetContent.orderLine(facts, request: .take(orderId: "order-1")))
+        XCTAssertNil(WorkContractSheetContent.orderLine(facts, request: .accept(orderId: "order-1")))
     }
 }

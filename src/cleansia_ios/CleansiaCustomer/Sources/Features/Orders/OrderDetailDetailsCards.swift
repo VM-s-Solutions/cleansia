@@ -194,6 +194,13 @@ struct OrderInstructionsCard: View {
 
 struct AssignedCleanersCard: View {
     let employees: [AssignedEmployeeDto]
+    @StateObject private var imageCache: RemoteImageCache
+
+    @MainActor
+    init(employees: [AssignedEmployeeDto], imageCache: RemoteImageCache? = nil) {
+        self.employees = employees
+        _imageCache = StateObject(wrappedValue: imageCache ?? RemoteImageCache())
+    }
 
     var body: some View {
         OrderCardSurface {
@@ -203,7 +210,7 @@ struct AssignedCleanersCard: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: Spacing.s) {
                     ForEach(Array(employees.enumerated()), id: \.offset) { _, employee in
-                        CleanerRow(employee: employee)
+                        AssignedCleanerRow(employee: employee, imageCache: imageCache)
                             .frame(minWidth: 140, maxWidth: 230)
                     }
                 }
@@ -212,8 +219,17 @@ struct AssignedCleanersCard: View {
     }
 }
 
-private struct CleanerRow: View {
+struct AssignedCleanerRow: View {
     let employee: AssignedEmployeeDto
+    let imageCache: RemoteImageCache
+
+    /// Only letters already present in the visible name are used, including a redacted name.
+    static func initials(for name: String?) -> String {
+        let parts = (name ?? "").split(whereSeparator: \.isWhitespace)
+        let ends = parts.count > 1 ? [parts.first, parts.last] : [parts.first]
+        let initials = ends.compactMap { $0?.first }.filter(\.isLetter).map { String($0).uppercased() }.joined()
+        return initials.isEmpty ? "?" : initials
+    }
 
     private var displayName: String {
         if let name = employee.fullName, !name.isBlank { return name }
@@ -222,14 +238,15 @@ private struct CleanerRow: View {
 
     var body: some View {
         HStack(spacing: Spacing.s) {
-            Circle()
-                .fill(CleansiaColors.primaryContainer)
-                .frame(width: 40, height: 40)
-                .overlay(
-                    Text(String(displayName.prefix(1)).uppercased())
-                        .font(CleansiaTypography.titleMedium)
-                        .foregroundColor(CleansiaColors.primaryTextOnContainer)
-                )
+            ProfileAvatar(
+                display: .resolve(photo: employee.profilePhoto?.toDomain(), edit: .unchanged),
+                initials: Self.initials(for: employee.fullName),
+                cache: imageCache,
+                diameter: 40,
+                strokeWidth: 1,
+                strokeColor: CleansiaColors.outlineVariant
+            )
+            .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 0) {
                 Text(displayName)
                     .font(CleansiaTypography.titleMedium)

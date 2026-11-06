@@ -109,12 +109,12 @@
     <string name="dashboard">Nástěnka</string>
     <string name="dashboard_subtitle">Přehled vaší aktivity</string>
     <string name="dash_available_now_count">%1$d volných zakázek</string>
-    <string name="dash_available_now_subtitle">Klepněte pro prohlížení a převzetí</string>
+    <string name="dash_available_now_subtitle">Zakázky k převzetí</string>
     <string name="dash_no_jobs_yet_title">Zatím žádné zakázky</string>
     <string name="dash_no_jobs_yet_subtitle">Zkontrolujte volné zakázky nebo upravte dostupnost</string>
     <string name="dash_todays_schedule">Dnes</string>
     <string name="dash_current_period">Aktuální období</string>
-    <string name="dash_tap_for_invoices">Klepněte pro faktury</string>
+    <string name="dash_tap_for_invoices">Faktury</string>
     <string name="dash_completed_this_month">Tento měsíc</string>
     <string name="dash_avg_rating">Hodnocení</string>
     <string name="dash_vs_last_month">vs minulý měsíc</string>
@@ -126,7 +126,7 @@
     <string name="dash_on_the_way">Na cestě</string>
     <string name="dash_browse_jobs">Procházet zakázky</string>
     <string name="dash_available_work_label">Dostupné zakázky</string>
-    <string name="dash_browse_jobs_subtitle">Klepněte pro přehled</string>
+    <string name="dash_browse_jobs_subtitle">Najděte si další zakázku</string>
     <string name="dash_open">Otevřít</string>
     <string name="dash_continue">Pokračovat</string>
     <string name="dash_earn_up_to">Vyděláte až %1$s</string>
@@ -177,18 +177,14 @@
     <!-- Orders -->
     <string name="orders">Objednávky</string>
     <string name="order_details">Detail objednávky</string>
-    <string name="order_detail_error_title">Objednávku se nepodařilo načíst</string>
     <string name="order_detail_error_message">Zkontrolujte připojení k internetu a zkuste to znovu.</string>
     <string name="active">Aktivní</string>
     <string name="available">Dostupné</string>
     <string name="my_orders">Moje objednávky</string>
-    <string name="completed">Dokončené</string>
-    <string name="take_order">Přijmout objednávku</string>
+    <string name="take_order">Vzít zakázku</string>
     <string name="start_order">Zahájit objednávku</string>
     <string name="complete_order">Dokončit objednávku</string>
-    <string name="no_orders_available">Žádné dostupné objednávky</string>
-    <string name="no_active_orders">Žádné aktivní objednávky</string>
-    <string name="no_completed_orders">Žádné dokončené objednávky</string>
+    <string name="no_active_orders">Žádné aktivní zakázky</string>
     <string name="no_services">Žádné služby</string>
     <string name="order_id">Objednávka #%1$s</string>
     <string name="customer">Zákazník</string>
@@ -222,14 +218,12 @@
     <string name="scheduled_date">Naplánované datum</string>
     <string name="upload_photos">Nahrát fotografie</string>
     <string name="photos">Fotografie</string>
-    <string name="add_photo">Přidat foto</string>
     <string name="no_photos">Žádné fotografie nenahrány</string>
     <string name="take_photo">Vyfotit</string>
     <string name="choose_from_gallery">Vybrat z galerie</string>
     <string name="document_choose_file">Vybrat soubor</string>
     <string name="delete_photo">Smazat fotografii</string>
-    <string name="delete_photo_confirm">Opravdu chcete smazat tuto fotografii?</string>
-    <string name="photos_none_recorded">Žádné fotografie nebyly zaznamenány</string>
+    <string name="delete_photo_confirm">Smazat tuto fotografii?</string>
     <string name="estimated_time">Odhadovaný čas</string>
     <string name="completion_notes">Poznámky k dokončení (volitelné)</string>
     <string name="rooms">Pokoje</string>
@@ -278,9 +272,6 @@
     <string name="sort_amount_low_high">Částka (Od nejnižší)</string>
     <string name="sort_amount_high_low">Částka (Od nejvyšší)</string>
 
-    <!-- Order Status -->
-    <string name="status_new">Nová</string>
-    <string name="notify_on_the_way">Oznámit cestu</string>
     <string name="property">Nemovitost</string>
     <string name="rooms_count">%1$d pokojů</string>
     <string name="bathrooms_count">%1$d koupelen</string>
@@ -314,11 +305,6 @@
     <string name="deduction">Srážka</string>
     <string name="open_invoice_pdf">Otevřít PDF faktury</string>
     <string name="no_pdf_viewer">V tomto zařízení není nainstalována žádná čtečka PDF.</string>
-    <string name="status_pending">Čekající</string>
-    <string name="status_confirmed">Potvrzeno</string>
-    <string name="status_in_progress">Probíhá</string>
-    <string name="status_completed">Dokončeno</string>
-    <string name="status_cancelled">Zrušeno</string>
     <string name="status_on_the_way">Na cestě</string>
 
     <!-- Payment Status -->
@@ -804,8 +790,6 @@
 
     <!-- Swipe actions -->
     <string name="swipe_to_take">Potáhněte pro převzetí</string>
-    <string name="swipe_to_start">Potáhněte pro zahájení</string>
-    <string name="swipe_to_complete">Potáhněte pro dokončení</string>
 
     <!-- Order detail actions -->
     <string name="navigate">Navigovat</string>
@@ -856,31 +840,17 @@
     <string name="notification_enable_open_settings">Otevřít nastavení</string>
 
     <!-- Orders redesign -->
-    <string name="search_orders_hint">Hledat podle jména, adresy, čísla</string>
-    <string name="available_summary">%1$d zakázek · až %2$s</string>
-    <string name="no_matching_orders">Žádné zakázky neodpovídají hledání</string>
-    <string name="km_away">%1$s km daleko</string>
-    <string name="top_pay">Nejvyšší výdělek</string>
-    <string name="starts_soon">Brzy začíná</string>
     <string name="sort_earnings_high_to_low">Výdělek od nejvyššího</string>
     <string name="sort_soonest_first">Nejdřív nadcházející</string>
-    <string name="sort_price_high_to_low">Cena od nejvyšší</string>
     <string name="day_today">Dnes</string>
     <string name="day_tomorrow">Zítra</string>
     <string name="day_later">Později</string>
     <string name="period_this_week">Tento týden</string>
-    <string name="period_this_month">Tento měsíc</string>
-    <string name="period_last_month">Minulý měsíc</string>
-    <string name="period_all">Celé období</string>
     <string name="action_on_the_way">Na cestě</string>
     <string name="action_start">Začít</string>
     <string name="action_complete">Dokončit</string>
-    <string name="in_progress_now">Právě probíhá</string>
     <string name="complete_now">Dokončit</string>
-    <string name="earnings">Výdělek</string>
-    <string name="jobs">Zakázky</string>
     <string name="rating">Hodnocení</string>
-    <string name="unscheduled">Bez termínu</string>
     <plurals name="scope_rooms">
         <item quantity="one">%1$d pokoj</item>
         <item quantity="few">%1$d pokoje</item>
@@ -891,35 +861,22 @@
         <item quantity="few">%1$d koupelny</item>
         <item quantity="other">%1$d koupelen</item>
     </plurals>
-    <plurals name="scope_extras">
-        <item quantity="one">+%1$d extra</item>
-        <item quantity="few">+%1$d extra</item>
-        <item quantity="other">+%1$d extra</item>
-    </plurals>
     <plurals name="crew_size">
         <item quantity="one">Potřeba %1$d uklízeč</item>
         <item quantity="few">Potřeba %1$d uklízeči</item>
         <item quantity="other">Potřeba %1$d uklízečů</item>
     </plurals>
-    <plurals name="crew_spots_open">
-        <item quantity="one">%1$d volné místo</item>
-        <item quantity="few">%1$d volná místa</item>
-        <item quantity="other">%1$d volných míst</item>
-    </plurals>
-    <string name="crew_no_spots">Volná místa už nejsou</string>
     <string name="history">Historie</string>
     <string name="you_earn">vyděláte</string>
     <string name="distance_unknown">Lokalita neznámá</string>
     <!-- Contract for work: the sheet under the take, the standalone acceptance, the detail line and banner. -->
     <string name="work_contract_title">Smlouva o dílo</string>
     <string name="work_contract_version">Verze %1$s</string>
-    <string name="work_contract_order_number">Objednávka %1$s</string>
     <string name="work_contract_swipe_to_accept">Přejetím přijmete smlouvu o dílo</string>
     <string name="work_contract_accepting">Přijímám\u2026</string>
     <string name="work_contract_load_error">Smlouvu o dílo se nepodařilo načíst.</string>
     <string name="work_contract_accepted_on">Přijato %1$s, verze %2$s</string>
     <string name="work_contract_accepted_in_language">Přijato v jazyce: %1$s</string>
-    <string name="work_contract_accepted_line">Smlouvu o dílo jste přijali %1$s, verze %2$s</string>
     <string name="work_contract_pending_banner">Než začnete, přijměte smlouvu o dílo</string>
     <string name="work_contract_accept_cta">Přijmout smlouvu</string>
     <string name="work_contract_read">Přečíst smlouvu</string>
@@ -943,7 +900,6 @@
     <string name="completing_order">Dokončuji…</string>
     <string name="slide_to_mark_my_part_done">Mám hotovo</string>
     <string name="marking_my_part_done">Označuji…</string>
-    <string name="order_my_part_done_waiting">Svou část máte označenou jako hotovou. Až to udělají všichni na této zakázce, kdokoli z vás ji může dokončit.</string>
     <string name="order_mark_cash_collected">Označit hotovost jako přijatou</string>
     <string name="partner_order_mark_cash_collected_confirm_title">Označit hotovost jako přijatou?</string>
     <string name="partner_order_mark_cash_collected_confirm_message">Potvrďte, že jste od zákazníka převzali %1$s v hotovosti. Tuto akci nelze vzít zpět.</string>
@@ -971,10 +927,6 @@
     <string name="action_call">Zavolat</string>
     <string name="action_sms">SMS</string>
     <string name="action_navigate">Navigovat</string>
-    <string name="scope_section_title">Objekt &amp; rozsah</string>
-    <string name="scope_services_label">Služby a balíčky</string>
-    <string name="scope_extras_label">Doplňky</string>
-    <string name="dirtiness_level_normal">Běžné znečištění</string>
     <string name="dirtiness_level_increased">Zvýšené znečištění</string>
     <string name="dirtiness_level_heavy">Silné znečištění</string>
 
@@ -986,76 +938,34 @@
     <string name="extra_name_pet_hair_supplement">Důkladné odstranění zvířecích chlupů</string>
 
     <!-- Shown instead of the map when the order has no street address to point at. -->
-    <string name="map_approximate_area">Přibližná oblast — přesnou adresu uvidíte, jakmile objednávku přijmete.</string>
     <string name="order_customer_details_closed_completed">Jméno, adresa a telefon zákazníka byly odstraněny 24 hodin po dokončení zakázky.</string>
     <string name="order_customer_details_closed_cancelled">Jméno, adresa a telefon zákazníka byly odstraněny při zrušení objednávky.</string>
 
     <string name="from_customer_section_title">Od zákazníka</string>
     <string name="note_general_label">Poznámka</string>
-    <string name="note_access_label">Přístup</string>
     <string name="note_special_label">Speciální pokyny</string>
-    <string name="payment_section_title">Platba</string>
-    <string name="payment_subtotal">Mezisoučet</string>
-    <string name="payment_tier_discount">Věrnostní sleva</string>
-    <string name="payment_membership_discount">Plus sleva</string>
-    <string name="payment_promo_discount">Promo sleva</string>
-    <string name="payment_total">Celkem</string>
-    <string name="payment_method_value">Metoda: %1$s</string>
-    <string name="payment_method_cash">Hotově</string>
-    <string name="payment_method_card">Kartou</string>
-    <string name="payment_status_paid">Zaplaceno</string>
-    <string name="payment_status_pending">Čeká</string>
-    <string name="payment_status_failed">Selhalo</string>
-    <string name="payment_status_refunded">Vráceno</string>
-    <string name="payment_status_disputed">Sporná platba</string>
-    <string name="payment_status_partially_refunded">Částečně vráceno</string>
-    <string name="status_timeline_section_title">Časová osa stavu</string>
     <string name="order_on_the_way_encouragement">Na cestě — brzy na viděnou!</string>
 
     <!-- Order details v2 -->
     <string name="access_section_title">Jak se dostat dovnitř</string>
     <string name="checklist_section_title">Kontrolní seznam úklidu</string>
     <string name="checklist_progress">%1$d z %2$d hotovo</string>
-    <string name="checklist_locked_hint">Začněte úklid pro sledování postupu</string>
-    <string name="checklist_services_label">Služby</string>
-    <string name="checklist_packages_label">Balíčky</string>
-    <string name="checklist_extras_label">Doplňky</string>
-    <string name="checklist_all_done_hint">Vše hotovo — můžete dokončit</string>
     <string name="timer_section_title">Čas</string>
     <string name="timer_elapsed_label">Uplynulo</string>
     <string name="timer_estimated_label">Odhad %1$s</string>
     <string name="timer_ahead">%1$s před plánem</string>
     <string name="timer_over">%1$s nad odhad</string>
     <string name="timer_on_track">V plánu</string>
-    <string name="duration_hours_minutes">%1$dh %2$dm</string>
-    <string name="duration_minutes_only">%1$dm</string>
 
     <!-- Tracker hero -->
     <string name="tracker_subtitle_new">Posuňte níže a vezměte zakázku</string>
-    <string name="tracker_countdown_starts_in">Začíná za %1$s</string>
     <string name="tracker_subtitle_confirmed_far">Úklid je naplánován na %1$s</string>
     <string name="tracker_subtitle_confirmed_soon">Je čas vyrazit!</string>
-    <string name="tracker_subtitle_on_the_way_arriving">Příjezd %1$s</string>
     <string name="tracker_subtitle_on_the_way_action">Po příjezdu zahajte úklid posunutím</string>
-    <string name="tracker_completed_in">Hotovo za %1$s</string>
-    <string name="tracker_finished_at">Dokončeno v %1$s</string>
     <string name="tracker_completed_subtitle">Skvělá práce!</string>
 
-    <!-- Short step labels -->
-    <string name="tracker_step_new">Nová</string>
-    <string name="tracker_step_confirmed">Potvrzeno</string>
-    <string name="tracker_step_on_way">Na cestě</string>
-    <string name="tracker_step_cleaning">Úklid</string>
-    <string name="tracker_step_done">Hotovo</string>
-
     <!-- Hero headlines -->
-    <string name="tracker_headline_new">Nová nabídka</string>
-    <string name="tracker_headline_confirmed">Potvrzeno</string>
-    <string name="tracker_headline_confirmed_soon">Brzy vyrazíte</string>
-    <string name="tracker_headline_on_the_way">Na cestě</string>
-    <string name="tracker_headline_in_progress">Probíhá úklid</string>
     <string name="tracker_headline_done">Hotovo</string>
-    <string name="tracker_step_counter">Krok %1$d / %2$d</string>
 
     <!-- Registration lock -->
     <string name="registration_lock_title">Dokončete nastavení a začněte vydělávat</string>
@@ -1297,7 +1207,7 @@
     <string name="notification_channel_new_jobs_name">Nové dostupné zakázky</string>
     <string name="notification_channel_new_jobs_desc">Pravidelný souhrn nových zakázek dostupných ve vaší oblasti.</string>
     <string name="notification_new_jobs_title">Nové dostupné zakázky</string>
-    <string name="notification_new_jobs_body">Ve vašem okolí je %1$d nových zakázek. Klepnutím je zobrazíte.</string>
+    <string name="notification_new_jobs_body">Ve vašem okolí je %1$d nových zakázek.</string>
     <string name="notification_reminder_tomorrow_title">Zítřejší zakázky</string>
     <string name="notification_reminder_tomorrow_body">Zakázky na zítra: %1$d. Klepnutím je zobrazíte.</string>
     <string name="notification_reminder_soon_title">Zakázka brzy začíná</string>
@@ -1320,7 +1230,7 @@
     <string name="notification_employee_registration_rejected_title">Žádost zamítnuta</string>
     <string name="notification_employee_registration_rejected_body">Vaše žádost byla zamítnuta. Otevřete aplikaci a zjistěte proč, nebo kontaktujte podporu.</string>
     <string name="notification_payroll_invoice_paid_title">Byli jste vyplaceni</string>
-    <string name="notification_payroll_invoice_paid_body">Vaše faktura za poslední výplatní období byla proplacena. Klepnutím zobrazíte.</string>
+    <string name="notification_payroll_invoice_paid_body">Vaše faktura za poslední výplatní období byla proplacena.</string>
     <string name="notification_preferred_offer_title">Zákazník si vás vyžádal</string>
     <string name="notification_preferred_offer_body">Zakázka %1$s — vyžádal si vás někdo, komu jste už uklízeli. Otevřete ji a vezměte si ji.</string>
     <!-- ── Vaše zařízení ── -->
@@ -1410,7 +1320,6 @@
     <string name="offer_decline_cta">Uvolnit</string>
     <string name="offer_declined_toast">Uvolněno \u2014 zakázka je teď otevřená všem.</string>
     <string name="order_removal_title">Byli jste z této zakázky odebráni</string>
-    <string name="order_removal_message">Administrátor vás z této zakázky odebral s tímto odůvodněním:\n\n%1$s</string>
     <string name="offer_empty">Právě teď na vaši odpověď nic nečeká.</string>
     <string name="offer_blocked_title">Zakázku se nám nepodařilo předat</string>
     <string name="offer_blocked_body">%1$s\n\nTohle je na nás \u2014 rezervovali jsme zakázku na vaše jméno, aniž bychom to ověřili, takže se vám to nijak nezapočítává.</string>
@@ -1478,4 +1387,226 @@
     <string name="error_payroll_invoice_pdf_not_ready">PDF faktury zatím není připravené. Obnovte stav.</string>
     <string name="error_payroll_invoice_pdf_unavailable">PDF této faktury není dostupné. Obnovte stav nebo kontaktujte podporu.</string>
     <string name="error_payroll_invoice_pdf_generation_failed">PDF faktury se nepodařilo vytvořit. Obnovte stav nebo kontaktujte podporu.</string>
+    <string name="error_order_cash_requires_saved_card">Platba hotově vyžaduje platnou uloženou kartu v měně objednávky.</string>
+    <string name="auth_email_placeholder">partner@example.com</string>
+    <plurals name="orders_job_count">
+        <item quantity="one">%1$d zakázka</item>
+        <item quantity="few">%1$d zakázky</item>
+        <item quantity="other">%1$d zakázek</item>
+    </plurals>
+    <string name="orders_card_your_share">Váš podíl</string>
+    <string name="orders_duration_h">%1$d\u00A0h</string>
+    <string name="orders_duration_h_min">%1$d\u00A0h %2$d\u00A0min</string>
+    <string name="orders_duration_min">%1$d\u00A0min</string>
+    <plurals name="orders_flag_crew_taken">
+        <item quantity="one">%1$d místo obsazeno</item>
+        <item quantity="few">%1$d místa obsazena</item>
+        <item quantity="other">%1$d míst obsazeno</item>
+    </plurals>
+    <string name="orders_flag_crew_nobody">zatím nikdo</string>
+    <string name="orders_flag_take_until">Vzít lze do %1$s</string>
+    <string name="orders_flag_overlap">Kryje se s vaší zakázkou %1$s</string>
+    <string name="extra_short_inside_oven">trouba</string>
+    <string name="extra_short_inside_fridge">lednice</string>
+    <string name="extra_short_interior_windows">okna zevnitř</string>
+    <string name="extra_short_laundry_ironing">žehlení</string>
+    <string name="distance_band_under_3">do 3\u00A0km od domova</string>
+    <string name="distance_band_3_6">3–6\u00A0km od domova</string>
+    <string name="distance_band_6_10">6–10\u00A0km od domova</string>
+    <string name="distance_band_10_20">10–20\u00A0km od domova</string>
+    <string name="distance_band_over_20">přes 20\u00A0km od domova</string>
+    <string name="available_distance_footnote">Vzdálenosti jsou vzdušnou čarou od vaší adresy domova, v přibližných pásmech.</string>
+    <plurals name="available_overlap_count">
+        <item quantity="one">%1$d zakázka se kryje s vaším dnem</item>
+        <item quantity="few">%1$d zakázky se kryjí s vaším dnem</item>
+        <item quantity="other">%1$d zakázek se kryje s vaším dnem</item>
+    </plurals>
+    <string name="available_reserved_then">pak ji uvidí ostatní</string>
+    <string name="available_showing_of">Zobrazeno %1$d z %2$d zakázek</string>
+    <string name="available_load_more">Načíst další</string>
+    <string name="available_empty_title">Teď tu nejsou volné zakázky</string>
+    <string name="available_empty_subtitle">Stáhněte dolů a zkontrolujte znovu.</string>
+    <string name="orders_load_error">Zakázky se nepodařilo načíst.</string>
+    <string name="orders_stale_since">Nepodařilo se obnovit. Zobrazujeme zakázky z %1$s.</string>
+    <string name="orders_load_more_failed">Další zakázky se nepodařilo načíst.</string>
+    <string name="orders_check_again">Zkontrolovat znovu</string>
+    <string name="orders_sort_a11y">Řazení: %1$s</string>
+    <string name="orders_a11y_expanded">Rozbaleno</string>
+    <string name="orders_a11y_collapsed">Sbaleno</string>
+    <string name="orders_a11y_toggle_hint">Zobrazí nebo skryje, proč jsou zakázky za hotové skryté.</string>
+    <string name="available_cash_hidden">Zakázky za hotové skryté · nad limitem hotovosti</string>
+    <string name="active_hero_next">Další zakázka</string>
+    <string name="active_hero_in">za %1$s</string>
+    <string name="active_hero_due">měla začít v %1$s</string>
+    <string name="active_hero_until">rezervováno do %1$s</string>
+    <string name="active_set_off_from">Vyrazit můžete od %1$s</string>
+    <string name="active_hero_details">Podrobnosti zakázky</string>
+    <plurals name="active_hero_team">
+        <item quantity="one">pro %1$d uklízeče</item>
+        <item quantity="few">pro %1$d uklízeče</item>
+        <item quantity="other">pro %1$d uklízečů</item>
+    </plurals>
+    <string name="orders_open_job">Otevřít zakázku</string>
+    <string name="history_rewards_title">Odměny za dokončené zakázky</string>
+    <string name="history_summary">%1$s · asi %2$s rezervovaného času</string>
+    <string name="history_payouts_link">Výplaty najdete v sekci %1$s</string>
+    <string name="take_sheet_title">Vzít tuto zakázku?</string>
+    <string name="work_contract_loading">Načítáme smlouvu…</string>
+    <string name="take_cancel_free_until">Zdarma ji zrušíte do %1$s, pokud k ní ještě nikdo nevyrazil ani ji nezačal.</string>
+    <string name="take_cancel_under_way">Zakázka už probíhá: uvedená odměna je plná odměna za vaše místo. Jakmile ji vezmete, v aplikaci ji zrušit nejde.</string>
+    <string name="take_cancel_start_passed">Čas začátku už uplynul, takže jakmile ji vezmete, v aplikaci ji zrušit nejde.</string>
+    <string name="take_team_line">%1$s. Aplikace mezi vás práci nedělí a nemůžete si vzít jinou zakázku, která se kryje s jejím rezervovaným časem.</string>
+    <string name="take_done_cannot_cancel">Tuto zakázku v aplikaci zrušit nejde.</string>
+    <string name="take_cash_line">Zákazník vám zaplatí %1$s hotově. Hotovost patří společnosti a započte se proti vaší příští výplatě. Vaše odměna zůstává %2$s.</string>
+    <string name="take_pay_updated">Změněno z %1$s: toto je odměna ve smlouvě.</string>
+    <string name="take_done_title">Zakázka je vaše</string>
+    <string name="orders_map_exact_after_take">Přesnou adresu uvidíte, až zakázku vezmete</string>
+    <string name="orders_map_recenter">Vycentrovat mapu na zakázku</string>
+    <string name="take_back_to_jobs">Zpět na zakázky</string>
+    <string name="work_contract_summary_lead">Ve zkratce — přijímáte smlouvu níže:</string>
+    <string name="work_contract_summary_lockout">Nepustí vás dovnitř? Nahlaste to. Když to společnost potvrdí, dostanete plnou odměnu.</string>
+    <string name="work_contract_summary_late_cancel">Když zákazník zruší pozdě, dostanete svůj podíl na vybraném poplatku.</string>
+    <string name="work_contract_summary_complaint">Za reklamaci platíte, jen když společnost shledá, že jste ji zavinili.</string>
+    <string name="work_contract_summary_equipment">Na zakázku si přinášíte vlastní vybavení a čisticí prostředky.</string>
+    <plurals name="orders_day_your_job">
+        <item quantity="one">vaše zakázka %1$s</item>
+        <item quantity="few">vaše zakázky %1$s</item>
+        <item quantity="other">vaše zakázky %1$s</item>
+    </plurals>
+    <plurals name="orders_day_yours_short">
+        <item quantity="one">vaše %1$s</item>
+        <item quantity="few">vaše %1$s</item>
+        <item quantity="other">vaše %1$s</item>
+    </plurals>
+    <plurals name="active_week_open_count">
+        <item quantity="one">%1$d volná zakázka</item>
+        <item quantity="few">%1$d volné zakázky</item>
+        <item quantity="other">%1$d volných zakázek</item>
+    </plurals>
+    <plurals name="orders_overlap_day">
+        <item quantity="one">%1$s: %2$d zakázka se kryje s vaší zakázkou %3$s</item>
+        <item quantity="few">%1$s: %2$d zakázky se kryjí s vaší zakázkou %3$s</item>
+        <item quantity="other">%1$s: %2$d zakázek se kryje s vaší zakázkou %3$s</item>
+    </plurals>
+    <string name="cash_hidden_back">Vrátí se, až budete mít %1$s nebo méně: odevzdejte hotovost, nebo se započte proti vaší další výplatě.</string>
+    <string name="cash_limit_at">limit %1$s</string>
+    <string name="orders_flag_under_way_short">Probíhá</string>
+    <string name="orders_flag_cash_collect">Hotově: vyberete %1$s pro společnost</string>
+    <string name="available_checked_at">Zkontrolováno v %1$s</string>
+    <string name="orders_your_next_jobs">Vaše další zakázky</string>
+    <string name="cash_held_title">Hotovost u vás</string>
+    <string name="cash_held_of_limit">%1$s z limitu %2$s</string>
+    <string name="cash_held_hint">Nad limitem se zakázky za hotové skryjí, dokud hotovost neodevzdáte nebo se nezapočte proti výplatě.</string>
+    <string name="active_empty_body">Zakázky, které vezmete, se ukážou tady i s adresou a telefonem zákazníka.</string>
+    <string name="active_nothing_else">Nic dalšího nemáte</string>
+    <string name="active_open_next_7_days">Volné zakázky, příštích 7 dní</string>
+    <string name="active_week_legend_your_job">vaše zakázka</string>
+    <string name="active_soonest_open">Nejbližší volná zakázka</string>
+    <string name="active_see_offer">Zobrazit nabídku</string>
+    <plurals name="active_see_open">
+        <item quantity="one">Zobrazit %1$d volnou zakázku</item>
+        <item quantity="few">Zobrazit %1$d volné zakázky</item>
+        <item quantity="other">Zobrazit %1$d volných zakázek</item>
+    </plurals>
+    <string name="history_cash_collected">Hotově: vybráno %1$s pro společnost</string>
+    <string name="history_cash_not_paid">Hotově: zákazník nezaplatil %1$s</string>
+    <string name="history_paid_in_full">odměnu dostanete celou</string>
+    <string name="history_empty_month">Tento měsíc zatím žádné dokončené zakázky</string>
+    <string name="history_empty_week">Tento týden zatím žádné dokončené zakázky</string>
+    <string name="history_empty_body">Zakázka se tu objeví v den, kdy ji dokončíte.</string>
+    <string name="history_last_month">Minulý měsíc</string>
+    <string name="history_show_period">Zobrazit %1$s</string>
+    <plurals name="detail_in_days">
+        <item quantity="one">za %1$d den</item>
+        <item quantity="few">za %1$d dny</item>
+        <item quantity="other">za %1$d dní</item>
+    </plurals>
+    <string name="detail_left">zbývá %1$s</string>
+    <string name="detail_finished_at">dokončeno v %1$s</string>
+    <string name="detail_cancelled_at">Zrušeno v %1$s</string>
+    <string name="order_cancelled_customer_lockout">nikdo vás nepustil dovnitř</string>
+    <string name="order_cancelled_recurring_not_confirmed">zákazník nepotvrdil opakovaný termín</string>
+    <string name="order_cancelled_payment_not_completed">platba kartou nebyla dokončena</string>
+    <string name="order_cancelled_no_cleaner_available">na začátku na zakázce nikdo nebyl</string>
+    <string name="order_cancelled_company_wind_down">společnost tuto službu ukončila</string>
+    <string name="status_set_off_now">můžete vyrazit</string>
+    <string name="detail_waiting_company">Čeká se na potvrzení</string>
+    <string name="detail_reported_at">nahlášeno v %1$s</string>
+    <string name="run_step_set_off">Cesta</string>
+    <string name="run_step_get_in">Vstup</string>
+    <string name="run_step_clean">Úklid</string>
+    <string name="run_step_finish">Dokončení</string>
+    <string name="cancel_lockout_paid">Společnost to potvrdila: dostanete plnou odměnu.</string>
+    <string name="cancel_no_fee">Zrušeno bez poplatku: za tuto zakázku se nic neplatí.</string>
+    <string name="run_job_stamp">zakázka %1$s</string>
+    <string name="run_job_stamp_a11y">čas zakázky %1$s</string>
+    <string name="late_already_there">Už jste na místě? Začněte úklid</string>
+    <string name="crew_all_marked">Obě části jsou označené: zakázku může dokončit kdokoli z vás.</string>
+    <string name="detail_waiting_for">Zbývá: %1$s</string>
+    <string name="detail_your_job_that_day">Vaše zakázka ten den</string>
+    <string name="detail_mate_on_it">%1$s už pracuje</string>
+    <string name="detail_same_pay_late">Stejná odměna i při pozdějším nástupu</string>
+    <string name="run_a11y">Průběh zakázky</string>
+    <string name="run_step_done_at">hotovo v %1$s</string>
+    <string name="run_from">od %1$s</string>
+    <string name="run_day_from">%1$s od %2$s</string>
+    <string name="run_at">v %1$s</string>
+    <string name="run_by">do %1$s</string>
+    <string name="access_mode_at_home">Zákazník bude doma</string>
+    <string name="access_mode_keys_handover">Předání klíčů</string>
+    <string name="access_mode_door_code">Kód ke dveřím</string>
+    <string name="access_mode_reception">Recepce</string>
+    <string name="detail_floor">%1$s. patro</string>
+    <string name="detail_flat">byt %1$s</string>
+    <string name="access_shown_on_set_off">Jak se dostat dovnitř, uvidíte, až vyrazíte</string>
+    <string name="lockout_paid_in_full">Když to společnost potvrdí, dostanete plnou odměnu.</string>
+    <string name="checklist_phone_only">Zaškrtnutí se ukládá jen v tomto telefonu.</string>
+    <string name="photos_add">Přidat</string>
+    <string name="photos_after_needed">Potřeba před dokončením</string>
+    <string name="issue_not_resolved">nevyřešeno</string>
+    <string name="crew_you">Vy</string>
+    <string name="crew_not_yet">zatím ne</string>
+    <string name="crew_done_at">hotovo v %1$s</string>
+    <string name="finish_needs_photo">Fotka po úklidu, pak posunutím dokončíte</string>
+    <string name="finish_needs_crew">Obě části označené, pak dokončí kdokoli z vás</string>
+    <string name="finish_before_complete">Než půjde zakázku dokončit</string>
+    <string name="finish_after_photo">Fotka po úklidu</string>
+    <string name="finish_cash_collected">Hotovost převzata</string>
+    <string name="crew_both_parts">Až budou obě části označené, může zakázku dokončit kdokoli z vás.</string>
+    <string name="cash_rule">Hotovost patří společnosti a započte se proti vaší příští výplatě. Vaše odměna zůstává %1$s.</string>
+    <string name="cash_mark_amount">Označit %1$s jako převzaté</string>
+    <string name="crew_mark_done_sub">Označí vaši část</string>
+    <string name="take_after_photo">Pořídit fotku „po“</string>
+    <string name="drop_possible_until">možné do začátku, %1$s</string>
+    <string name="detail_shown_after_take">Uvidíte, až ji vezmete</string>
+    <string name="detail_hidden_address">Ulice, patro a byt</string>
+    <string name="detail_hidden_contact">Jméno a telefon zákazníka</string>
+    <string name="detail_hidden_notes">Poznámky zákazníka</string>
+    <string name="details_close_tomorrow">Údaje zákazníka zmizí zítra v %1$s</string>
+    <string name="details_close_today">Údaje zákazníka zmizí dnes v %1$s</string>
+    <string name="day_line_free">volno</string>
+    <string name="detail_later_today">Dnes ještě</string>
+    <string name="detail_also_open_that_day">Ten den je volné také</string>
+    <string name="detail_open_today">Dnes volné</string>
+    <string name="detail_error_rest">Zbytek zakázky se nepodařilo načíst.</string>
+    <string name="detail_error_rest_body">S ním přijde patro a byt, jak se dostat dovnitř a poznámky zákazníka.</string>
+    <string name="detail_error_job">Zakázku se nepodařilo načíst.</string>
+    <string name="detail_gone">Tato zakázka už není volná.</string>
+    <string name="detail_off_schedule">Tato zakázka už není ve vašem rozvrhu.</string>
+    <string name="status_new">Nová</string>
+    <string name="status_confirmed">Potvrzeno</string>
+    <string name="status_in_progress">Probíhá</string>
+    <string name="status_completed">Dokončeno</string>
+    <string name="status_cancelled">Zrušeno</string>
+    <string name="tracker_step_counter">Krok %1$d / %2$d</string>
+    <string name="scope_section_title">Objekt &amp; rozsah</string>
+    <string name="scope_services_label">Služby a balíčky</string>
+    <string name="scope_extras_label">Doplňky</string>
+    <string name="payment_section_title">Platba</string>
+    <string name="contract_accepted_on_label">Přijata</string>
+    <string name="contract_version_label">Verze</string>
+    <string name="order_removal_lead">Administrátor vás z této zakázky odebral s tímto odůvodněním:</string>
+    <string name="partner_order_complete_blocked_cash_sequence">Přidejte fotografii \"po\", pak převezměte hotovost a nakonec zakázku dokončete.</string>
+    <string name="instructions_copy">Kopírovat</string>
+    <string name="instructions_copied">Zkopírováno</string>
 </resources>

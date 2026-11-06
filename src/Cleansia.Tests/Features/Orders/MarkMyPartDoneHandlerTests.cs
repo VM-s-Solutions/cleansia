@@ -28,7 +28,7 @@ public class MarkMyPartDoneHandlerTests
 
     private static Order OrderAt(OrderStatus status, params string[] assignedEmployeeIds)
     {
-        var order = ValidatorTestHelpers.BuildEmptyOrder(OrderId, status, maxEmployees: 3);
+        var order = ValidatorTestHelpers.BuildEmptyOrder(OrderId, status, paymentType: PaymentType.Card, paymentStatus: PaymentStatus.Paid, maxEmployees: 3);
 
         foreach (var id in assignedEmployeeIds)
         {

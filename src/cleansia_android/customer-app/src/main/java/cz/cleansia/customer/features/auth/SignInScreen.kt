@@ -101,6 +101,7 @@ fun SignInScreen(
             value = email,
             onValueChange = { email = it },
             label = stringResource(R.string.login_email),
+            placeholder = stringResource(R.string.auth_email_placeholder),
             modifier = Modifier.semantics { contentType = ContentType.Username },
             keyboardType = KeyboardType.Email,
         )

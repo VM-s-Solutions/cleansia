@@ -285,7 +285,7 @@ public class OrderSpanCapTests
             WorkContractResolvers.Resolver().Object,
             Mock.Of<INotificationProducer>(),
             Mock.Of<IAdminNotifier>(),
-            NullLogger<OrderFactory>.Instance);
+            NullLogger<OrderFactory>.Instance, Cleansia.Tests.Common.SavedCardTestData.Repository());
 
     private CreateOrder.Validator CreateValidator() =>
         new(
@@ -309,7 +309,7 @@ public class OrderSpanCapTests
             CreateOrderTestData.Speaking(Constants.Language.English),
             Mock.Of<ICountryConfigurationRepository>(),
             Mock.Of<ILegalDocumentResolver>(),
-            Mock.Of<IReceivableRepository>());
+            Mock.Of<IReceivableRepository>(), Cleansia.Tests.Common.SavedCardTestData.Repository());
 
     /// <summary>Anonymous, so the factory stays off the loyalty/membership lookups.</summary>
     private static CreateOrderInput Input() =>

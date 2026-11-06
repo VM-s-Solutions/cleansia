@@ -1,3 +1,4 @@
+using Cleansia.Core.Blobs.Abstractions;
 using System.Security.Claims;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Orders;
@@ -54,7 +55,9 @@ public sealed class GetOrderDetailsWorkContractTests
             _acceptanceRepository.Object,
             Mock.Of<IEmployeeActionAuditRepository>(),
             new Cleansia.Core.AppServices.Services.CancellationPolicyResolver(Mock.Of<IUserMembershipRepository>(), Mock.Of<IOrderRepository>()),
-            _configurationProvider.Object);
+            _configurationProvider.Object,
+            Mock.Of<IBlobContainerClientFactory>(),
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<GetOrderDetails.Handler>.Instance);
 
     private (Order Order, OrderEmployee Seat) ArrangeEmployeeCaller(string caller, bool entitled)
     {

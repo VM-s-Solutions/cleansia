@@ -51,6 +51,7 @@ class PendingOfferStringsTest {
         "offers_card_title",
         "offers_card_more",
         "offers_card_cta",
+        "active_see_offer",
     )
 
     @Test

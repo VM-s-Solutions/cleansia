@@ -243,7 +243,7 @@ public class PreferredOfferDeferredAnnouncementTests
         return new ConfirmRecurringOrder.Handler(
             OrderAccessDoubles.Over(_orderRepository, session),
             _orderRepository.Object,
-            Mock.Of<ISavedCardRepository>(), Mock.Of<IReceivableRepository>(),
+            Cleansia.Tests.Common.SavedCardTestData.Repository(), Mock.Of<IReceivableRepository>(),
             new Mock<ICreditAccountRepository>().Object,
             new Mock<IUserRepository>().Object,
             session.Object,

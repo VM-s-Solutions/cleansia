@@ -1,3 +1,5 @@
+using Cleansia.Core.AppServices.Shared.DTOs.Files;
+
 namespace Cleansia.Core.AppServices.Features.Orders.DTOs;
 
 // `EmployeeId` is load-bearing on the PARTNER side: the partner-app
@@ -19,5 +21,7 @@ public record AssignedEmployeeDto(
     /// When this cleaner marked their part of the job done; null until they do, and always null for a
     /// customer and in the view a cleaner gets of a job they are not working on.
     /// </summary>
-    DateTime? CompletionConfirmedAt = null
+    DateTime? CompletionConfirmedAt = null,
+    /// <summary>The cleaner's avatar with a short-lived read URL; null when absent or withheld.</summary>
+    BlobFileDto? ProfilePhoto = null
 );

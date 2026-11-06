@@ -18,7 +18,10 @@ final class RewardsViewModelTests: XCTestCase {
         let vm = RewardsViewModel(
             loyaltyRepository: loyaltyRepo,
             referralRepository: referralRepo,
-            catalogSource: catalogSource ?? BookingViewModel(catalogClient: FakeCatalogClient()),
+            catalogSource: catalogSource ?? BookingViewModel(
+                catalogClient: FakeCatalogClient(),
+                savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])])
+            ),
             marketStore: marketStore ?? MarketStore(
                 client: FakeMarketClient(),
                 preference: FakeMarketPreferenceStore()
@@ -34,9 +37,12 @@ final class RewardsViewModelTests: XCTestCase {
     /// with the code the catalogue overview names as the default — not the market the last booking
     /// was priced in.
     func testWithoutADirectoryTheTierFloorIsLabelledWithTheCataloguesDefaultCurrency() async {
-        let catalog = BookingViewModel(catalogClient: FakeCatalogClient(
-            result: .success(CatalogFixtures.catalog(currencyCode: "EUR", defaultCurrencyCode: "CZK"))
-        ))
+        let catalog = BookingViewModel(
+            catalogClient: FakeCatalogClient(
+                result: .success(CatalogFixtures.catalog(currencyCode: "EUR", defaultCurrencyCode: "CZK"))
+            ),
+            savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])])
+        )
         let market = await MarketFixtures.unavailable()
         let (vm, _, _) = makeVM(
             FakeLoyaltyClient(),
@@ -208,7 +214,10 @@ final class RewardsViewModelTests: XCTestCase {
         let vm = RewardsViewModel(
             loyaltyRepository: repository,
             referralRepository: RewardsReferralRepository(client: FakeRewardsReferralClient()),
-            catalogSource: BookingViewModel(catalogClient: FakeCatalogClient()),
+            catalogSource: BookingViewModel(
+                catalogClient: FakeCatalogClient(),
+                savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])])
+            ),
             marketStore: MarketStore(client: FakeMarketClient(), preference: FakeMarketPreferenceStore()),
             snackbar: SnackbarController()
         )

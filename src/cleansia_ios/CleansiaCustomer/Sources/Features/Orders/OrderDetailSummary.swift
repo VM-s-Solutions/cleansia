@@ -229,23 +229,44 @@ struct OrderPriceBreakdownCard: View {
 /// this strip is the remainder: what the booking costs, and what came off it.
 struct OrderHeroFactsStrip: View {
     let order: CustomerOrderDetail
+    var marketLabel: String?
 
     private var facts: OrderHeroFacts {
         OrderHeroFacts.resolve(order)
     }
 
     var body: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(alignment: .firstTextBaseline, spacing: Spacing.xs) {
-                discountChips
-                Spacer(minLength: Spacing.xs)
-                prices
+        VStack(alignment: .leading, spacing: Spacing.xs) {
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .firstTextBaseline, spacing: Spacing.xs) {
+                    leadingFacts.fixedSize(horizontal: true, vertical: false)
+                    Spacer(minLength: Spacing.xs)
+                    prices
+                }
+                VStack(alignment: .leading, spacing: Spacing.xs) {
+                    leadingFacts
+                    prices
+                }
             }
-            VStack(alignment: .leading, spacing: Spacing.xs) {
-                prices
-                discountChips
+            if facts.struckSubtotal != nil, let marketLabel {
+                marketText(marketLabel)
             }
         }
+    }
+
+    @ViewBuilder
+    private var leadingFacts: some View {
+        if facts.struckSubtotal == nil, let marketLabel {
+            marketText(marketLabel)
+        } else {
+            discountChips
+        }
+    }
+
+    private func marketText(_ label: String) -> some View {
+        Text(label)
+            .font(CleansiaTypography.bodyMedium)
+            .foregroundColor(CleansiaColors.onSurfaceVariant)
     }
 
     private var prices: some View {

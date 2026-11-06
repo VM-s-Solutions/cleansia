@@ -43,6 +43,7 @@ public class MarkCashCollectedHandlerTests
     private readonly Mock<IOrderAccessService> _accessService = new();
     private readonly Mock<IStripeClient> _stripeClient = new();
     private readonly Mock<ICashLedgerRepository> _cashLedger = new();
+    private readonly ISavedCardRepository _savedCards = Cleansia.Tests.Common.SavedCardTestData.Repository();
 
     public MarkCashCollectedHandlerTests()
     {
@@ -56,7 +57,23 @@ public class MarkCashCollectedHandlerTests
         _accessService.Object,
         _stripeClient.Object,
         _cashLedger.Object,
-        NullLogger<MarkCashCollected.Handler>.Instance);
+        NullLogger<MarkCashCollected.Handler>.Instance, _savedCards);
+
+    [Fact]
+    public async Task Card_To_Cash_Without_A_Saved_Card_Is_Refused_Before_Closing_The_Payment_Intent()
+    {
+        var order = ArrangeOrder(PaymentType.Card, withStripeSurface: true);
+        ArrangeStripeState(StripePaymentState.Unpaid, PaymentIntentId);
+        Mock.Get(_savedCards).Setup(r => r.GetCapturedForUserInCurrencyAsync(CustomerId, order.CurrencyId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+
+        var result = await CreateHandler().Handle(new MarkCashCollected.Command(OrderId), CancellationToken.None);
+
+        Assert.Equal(BusinessErrorMessage.OrderCashRequiresSavedCard, result.Error!.Message);
+        Assert.Null(order.CashCollectedAt);
+        _cashLedger.Verify(r => r.Add(It.IsAny<CashLedgerEntry>()), Times.Never);
+        _stripeClient.Verify(c => c.CancelPaymentIntentAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
 
     private Order ArrangeOrder(
         PaymentType paymentType, bool withStripeSurface, string? userId = CustomerId, int requiredEmployees = 1)

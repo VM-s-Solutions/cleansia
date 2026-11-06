@@ -23,7 +23,8 @@ extension BookingCodesViewModelTests {
             promoClient: promo,
             referralClient: FakeReferralClient(),
             countryResolver: FakeCountryResolver(),
-            scheduler: scheduler.eraseToAnyScheduler()
+            scheduler: scheduler.eraseToAnyScheduler(),
+            savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])])
         )
         vm.update { var s = $0
             s.selectedServiceIds = ["s-1"]
@@ -62,7 +63,8 @@ extension BookingCodesViewModelTests {
             promoClient: promo,
             referralClient: FakeReferralClient(),
             countryResolver: FakeCountryResolver(),
-            scheduler: scheduler.eraseToAnyScheduler()
+            scheduler: scheduler.eraseToAnyScheduler(),
+            savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])])
         )
         vm.update { var s = $0
             s.selectedServiceIds = ["s-1"]

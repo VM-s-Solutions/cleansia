@@ -547,8 +547,8 @@ display. Hosted layout tests pin the no-op at 393 × 852, 440 × 956 and 466 × 
   content to `ReadableWidth.cap`, 640pt, centred in a frame that still fills its container —
   `frame(maxWidth: 640)` inside `frame(maxWidth: .infinity)` — so a background or a map behind it stays
   full-bleed. It sits inside the scroll view of `CenteredAuthScroll`, `StatusBarFadeScrollView` and the
-  partner `SectionScaffold`; on the padded control of the partner `StickyActionFooter` (its *Cancel job*
-  link included), of the customer order detail's two footers and of the Plus offer's subscribe bar, each
+  partner `SectionScaffold`; on the padded control of the partner `StickyActionFooter` (the job
+  detail's pinned move), of the customer order detail's two footers and of the Plus offer's subscribe bar, each
   over a surface that stays full width; and around a list screen's whole column, before its full-bleed
   page background: partner Orders and Invoices, customer Orders, Disputes, Rewards, Rewards activity,
   Recurring bookings with its create button, and the saved-addresses list and review panes. A list
@@ -559,15 +559,14 @@ display. Hosted layout tests pin the no-op at 393 × 852, 440 × 956 and 466 × 
   Plus offer heroes and the partner Profile hub's paint their gradient sideways past their frame, as
   they already paint it upward ([above](#full-bleed-hero)). Their gradients are vertical and the scroll
   view clips at its bounds, so on a phone the sideways bleed shows nothing.
-- **Two panes only when wide and short.** `SnapSheet`, the order detail of both apps, stands beside its
-  backdrop as a 440pt column on the trailing side only when its container is wider than it is tall and
+- **Two panes only when wide and short.** `SnapSheet`, the customer order detail (the partner detail
+  has had no map and no sheet since 2026-11-01), stands beside its backdrop as a 440pt column on the trailing side only when its container is wider than it is tall and
   at least 700pt wide (`SnapSheetColumn.standsBeside(in:)`), as on the inner display held sideways; the
   backdrop takes the rest of the width. The column has no drag handle, no anchors and no mascot
   ornament, the sheet itself cannot be dragged while its content keeps its own gestures, and its surface
   runs into the top, bottom and trailing safe areas. `snapSheetTop` is published at the safe area's foot,
-  not at 0, which would collapse a backdrop that lays out against it (the partner's approximate-area
-  legend); an internal `snapSheetBeside` flag tells the full-bleed map to centre its pin instead of
-  lifting it above the resting sheet, and the map re-centres when a fold moves the sheet beside it or
+  not at 0, which would collapse a backdrop that lays out against it; an internal `snapSheetBeside`
+  flag tells the full-bleed map to centre its pin instead of lifting it above the resting sheet, and the map re-centres when a fold moves the sheet beside it or
   back over it. Upright on the inner display, on the outer one and on every iPhone, the three-anchor
   sheet over the map is unchanged.
 - **The fade needs a status bar across the top.** `StatusBarFadeBand` draws nothing, and mounts no
@@ -925,18 +924,21 @@ the thumb keep the primary; dark mode reads 5.43:1, the text ink there being the
 prominent style, the customer's booking slide, is a filled track and is unchanged, and so is Android's
 partner `SlideToCommit`, a filled track whose label is a filled button's. Core's
 `ComponentTextInkTests` pins the label, track and thumb and measures the label on its wash in both
-modes (iOS `d6acb7cb6`).
+modes (iOS `d6acb7cb6`). Since 2026-11 there is no subtle style and no `SlideToCommit`: both apps on
+each platform draw one filled slide, iOS Core's `SlideToConfirm` and Android `:core`'s
+`SwipeToConfirmButton`, the customer booking's look ([haptics](#haptics) lists where it plays).
 
 **A filled button's label reads 4.5:1 in dark mode** (finding 2026-10-05). `onPrimary` was sky-900 in
 dark mode, in iOS Core and in both Android schemes: 4.42:1 on the dark primary, sky-400. It is the label
-and spinner of every filled button, the prominent slide-to-confirm's label and Android's partner
-`SlideToCommit`'s, the subtle slide's thumb glyph on iOS, Android's partner in-progress banner, and the
+and spinner of every filled button, the slide-to-confirm's label on iOS, and the
 glyphs on primary fills, selected chips and day pills, the FAB and badges among them. It is sky-950
 `#082F49` now, 6.48:1, in both apps on both platforms. Light mode keeps white on sky-600, 4.10:1, the
 pair the owner kept for filled buttons. Every `onPrimary` site sits on the primary or on the brand
 gradient, all lighter than sky-950, so none reads lower. Core's `ComponentTextInkTests` and each
-Android app's `SurfaceRolesTest` measure the dark pair and pin light mode to white, and the partner's
-also pins `SlideToCommit`'s label to it (iOS `18ffe5ecf`, Android `36b2acf40`).
+Android app's `SurfaceRolesTest` measure the dark pair and pin light mode to white (iOS `18ffe5ecf`,
+Android `36b2acf40`). Android's slide writes its label in white on a track of its own, sky-600 in
+light mode and sky-800 in dark, and `:core`'s `SwipeToConfirmButtonTest` pins both and measures the
+white label at 4.5:1 or more on the dark track.
 
 **Blue text on the light-blue container has an ink of its own in dark mode** (finding 2026-10-05).
 `primaryContainer` is sky-100 in light mode and sky-700 in dark, and the text ink on it reads 5.17:1 in
@@ -1019,8 +1021,9 @@ two platforms draw these pills differently, and that split predates the fix:
   it, the dispute pill's shape, and the timeline's dot takes the same colour. *New* and *Pending*
   (amber-500) and *In progress* (sky-400) read 1.93:1 in light mode, *Confirmed* (sky-600) 3.43:1 in
   light and 3.04:1 in dark, and *Completed* and *Cancelled* 2.57 and 2.67:1 in dark.
-  `orderStatusColor` now goes through `orderStatusInk(status, scheme)` (`OrderFormatters.kt`), a light
-  and a dark ink per status:
+  `orderStatusColor` now goes through `orderStatusInk(status, scheme)`, a light and a dark ink per
+  status, keyed by the wire value (in `:core`'s `ui/theme/OrderStatusInk.kt` since 2026-11, with the
+  pill itself, `OrderStatusPill`, which both apps draw):
 
   | Status | Light mode | Dark mode |
   |---|---|---|
@@ -1035,14 +1038,18 @@ two platforms draw these pills differently, and that split predates the fix:
   *Completed* 4.14 to 5.72:1, *Cancelled* 3.99 to 6.12:1; dark: *Confirmed* 3.04 to 5.18:1,
   *Completed* 2.57 to 6.21:1, *Cancelled* 2.67 to 6.92:1. `OrderStatusInkTest` checks every status,
   both washes and both schemes.
-- **Android, partner**: `OrderStatusPill` and `InvoiceStatusBadge` are solid pills, the same in both
-  schemes. *Confirmed* and *Approved* are white on sky-700 (4.10 to 5.93:1; they were on sky-600),
+- **Android, partner**: an order's pill is `:core`'s `OrderStatusPill`, the customer's above, since
+  2026-11; the partner's `OrderStatusInkTest` measures it over this app's own schemes. Its
+  `InvoiceStatusBadge` is a solid pill, the same in both schemes, and so was the order pill until then.
+  *Confirmed* and *Approved* are white on sky-700 (4.10 to 5.93:1; they were on sky-600),
   *In progress* sky-950 on sky-400 (4.42 to 6.48:1; the label was sky-900) and *Cancelled* slate-600
   on slate-100 (4.34 to 6.92:1; the label was slate-500). *Pending*, *Paid*, *Disputed* and *Rejected*
   already passed. `StatusPillContrastTest` checks every pair.
 - **iOS, both apps' order pills**: no change. Core's `OrderStatusBadge` writes the label in
   `onSurface` on a 14 % wash of the status colour, 13.46:1 or more in light mode and 8.55:1 in dark;
-  the failing pairs above exist only on Android.
+  the failing pairs above exist only on Android. Since 2026-11 both apps take the colour and the mark
+  from Core's `OrderStatusStyle.tint(wireValue:)` and `.tone(wireValue:)`, one table keyed by the wire
+  value ([ADR-0080](/decisions/adr-0080)).
 - **iOS, the partner invoice's *Approved***: it was a solid primary pill, white on sky-600 in light
   mode (4.10:1) and sky-900 on sky-400 in dark (4.42:1). It is white on sky-700 in light mode, 5.93:1,
   and sky-950 on sky-400 in dark, 6.48:1. Dark mode keeps the sky-400 fill because iOS's *Pending*
@@ -1178,10 +1185,10 @@ Czech for every user (*Česko*), as it already was on Android.
   state. While there is no second line, the title holds its place in the second line's font, unseen
   and hidden from VoiceOver, so the height still follows the text size. `AddressPickerConfirmCardTests`
   measures the partner card in all five languages, at the default and an accessibility text size, in
-  every lookup state. Since 2026-10-02 the two full-bleed order maps (the customer
-  `OrderDetailMap` and the partner `OrderDetailView`) keep the logo and *Legal* above their `SnapSheet`
-  the same way: `fullBleedMap(coordinate:)` measures the map and reads the sheet's top, which `SnapSheet`
-  publishes to its backdrop (`snapSheetTop`), and the bottom margin is the part of the map below it, at
+  every lookup state. Since 2026-10-02 the customer's full-bleed order map, `OrderDetailMap`, keeps the
+  logo and *Legal* above its `SnapSheet` the same way (the partner `OrderDetailView` did too until its
+  map went on 2026-11-01): `fullBleedMap(coordinate:)` measures the map and reads the sheet's top, which
+  `SnapSheet` publishes to its backdrop (`snapSheetTop`), and the bottom margin is the part of the map below it, at
   every anchor and through a drag. The region is set once per coordinate, centred on the whole map with
   zero margins, and only then does the margin follow the sheet, so the logo and *Legal* move and the pin
   does not. A trailing margin of the ornament's width keeps *Legal* clear of the mascot puck on the
@@ -1190,9 +1197,10 @@ Czech for every user (*Česko*), as it already was on Android.
 - **Android** (`:core` `location/CleansiaMap.kt`). `CleansiaMapStyle(darkTheme)` is Mapbox Standard
   through the pinned maps-compose 11.8.0: POI and transit labels off, the faded theme, no 3D objects,
   and the day or night light preset from the app theme. It replaced `MapStyles`, whose classic
-  `light-v11` / `dark-v11` styles drew Mapbox's own POI and transit layers. The two order maps show the
-  Mapbox wordmark and attribution again, which Mapbox's terms require; they had been switched off.
-  Both are lifted above the resting sheet, which covers the map's bottom edge. Since 2026-10-02 the two
+  `light-v11` / `dark-v11` styles drew Mapbox's own POI and transit layers. The customer order map
+  shows the Mapbox wordmark and attribution again, which Mapbox's terms require; they had been switched
+  off. Both are lifted above the resting sheet, which covers the map's bottom edge; the partner order
+  map did the same until the partner detail lost its map on 2026-11-01. Since 2026-10-02 the two
   address pickers (the customer `AddressManagerScreen` and the partner `AddressPickerScreen`) lift them
   above their bottom card too, by the card's measured height, keeping Mapbox's own horizontal places;
   only the ornaments move, not the camera centre the pin marks. Since 2026-10-03 both pickers' address
@@ -1226,13 +1234,13 @@ stops meaning anything.
 
 | Moment | iOS | Android |
 |---|---|---|
-| A slide-to-confirm commits: the customer's booking, and the cleaner's contract, order-detail and orders-list slides | a medium impact, in Core `SlideToConfirm` just before its action | `LongPress`, in customer `SwipeToConfirmButton` and partner `SlideToCommit` |
+| A slide-to-confirm commits: the customer's booking, and the cleaner's contract, order-detail and orders-list slides | a medium impact, in Core `SlideToConfirm` just before its action | `LongPress`, in `:core` `SwipeToConfirmButton`, which both apps use |
 | The outcome of an action is shown | `SnackbarController.show` plays the success, error or warning notification haptic | `GlobalSnackbarHost` plays `CONFIRM` for a success and `REJECT` for an error or a warning; below API 30 all three play `LONG_PRESS` |
 | A size stepper takes a step | a selection tick in the customer `PropertyStepper`, on the booking and schedule size rows | `CLOCK_TICK`, Android's selection tick, from `rememberStepperTick` in the customer booking `CompactCounter` and the schedule `Stepper` (since 2026-10-02) |
 
 - **Each haptic is played at the one place its callers share**, so there is no wrapper type. Every
   outcome in both apps is shown by the shared snackbar host, and every slide goes through one
-  component per app.
+  component per platform.
 - **What plays nothing.** An info message reports no outcome. A cancelled request never reaches the
   snackbar host. A stepper disables its button at a bound, so a refused step never ticks.
 - **An offline failure is an outcome like any other** and plays the error haptic. On iOS and the

@@ -1,7 +1,8 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Reflection;
 using Cleansia.Core.AppServices.Features.Currencies.DTOs;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Shared.DTOs.Files;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.AppServices.Shared.DTOs.Enums;
@@ -88,8 +89,8 @@ public class OrderRedactionSurfaceTests
     /// <summary>
     /// Everything a cleaner reads to decide whether to take the job, plus the identifiers they arrived
     /// with. None of it describes the customer: the discount amounts are already unblanked on the list
-    /// row, the timestamps and counts are job state, <c>CustomerAddressApproximate</c> is city + zip
-    /// prefix and survives on the list row for the same reason, the five seat members survive on the
+    /// row, the timestamps and counts are job state, <c>CustomerAddressApproximate</c> is the coarse
+    /// area and survives on the list row for the same reason, the five seat members survive on the
     /// list row for that same reason again, and <c>EstimatedCleanerPay</c> is the browse branch's whole
     /// purpose.
     /// </summary>
@@ -192,6 +193,10 @@ public class OrderRedactionSurfaceTests
         // public rating average already implies. The review CONTENT stays where it was, on the detail
         // payload behind the same access gate.
         nameof(OrderListItem.HasReview),
+        // Kept, not blanked: a rough straight-line band from the cleaner's own stored home to the job's
+        // snapped cell (JobProximity.Band). No probe reveals more than the cell, and a browsing cleaner
+        // is exactly who needs it to judge the trip.
+        nameof(OrderListItem.HomeDistanceBand),
     ];
 
     /// <summary>
@@ -320,6 +325,7 @@ public class OrderRedactionSurfaceTests
         Assert.Equal("employee-1", crewMember.EmployeeId);
         Assert.Equal("Petra", crewMember.FullName);
         Assert.Null(crewMember.PhoneNumber);
+        Assert.Null(crewMember.ProfilePhoto);
     }
 
     [Fact]
@@ -393,6 +399,7 @@ public class OrderRedactionSurfaceTests
         var crewMember = Assert.Single(listed.AssignedEmployees);
         Assert.Equal("Petra", crewMember.FullName);
         Assert.Null(crewMember.PhoneNumber);
+        Assert.Null(crewMember.ProfilePhoto);
         var asBrowsing = typeof(OrderItem).GetProperties(BindingFlags.Public | BindingFlags.Instance)
             .Where(p => p.Name != "EqualityContract" && p.Name != nameof(OrderItem.IsGuestBooking) && !putBack.Contains(p.Name));
         Assert.All(asBrowsing, p => Assert.Equal(
@@ -491,7 +498,8 @@ public class OrderRedactionSurfaceTests
             [
                 new AssignedEmployeeDto(
                     "assignment-1", "employee-1", "Petra Svobodova", "+420602987654",
-                    new DateTime(2026, 8, 20, 11, 50, 0, DateTimeKind.Utc)),
+                    new DateTime(2026, 8, 20, 11, 50, 0, DateTimeKind.Utc),
+                    new BlobFileDto("cleaner-photo.jpg", null, null, "https://images.example.test/cleaner-photo.jpg?sig=test")),
             ],
             RequiredEmployees: RequiredEmployees,
             MaxEmployees: MaxEmployees,
@@ -571,5 +579,6 @@ public class OrderRedactionSurfaceTests
             HasReview: true,
             DirtinessLevel: DirtinessLevel.Heavy,
             DirtinessSurchargeAmount: 540m,
-            IsGuestBooking: true);
+            IsGuestBooking: true,
+            HomeDistanceBand: HomeDistanceBand.From3To6Km);
 }

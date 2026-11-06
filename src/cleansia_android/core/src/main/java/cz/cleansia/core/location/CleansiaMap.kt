@@ -51,6 +51,17 @@ fun CleansiaMapStyle(darkTheme: Boolean) {
     MapboxStandardStyle(standardStyleConfigurationState = configuration)
 }
 
+/**
+ * Whether a stored geocode can carry a map. Orders placed before the address geocoder existed carry no
+ * coordinates, and a failed geocode is stored as null island (0, 0), which would otherwise drop a pin in
+ * the Gulf of Guinea.
+ */
+fun canShowOrderMap(latitude: Double?, longitude: Double?): Boolean {
+    if (latitude == null || longitude == null) return false
+    if (latitude == 0.0 && longitude == 0.0) return false
+    return latitude in -90.0..90.0 && longitude in -180.0..180.0
+}
+
 /** The pin's height; its tip is the bottom edge, so a centre pin is lifted by exactly this much. */
 val CleansiaMapPinHeight = 50.dp
 

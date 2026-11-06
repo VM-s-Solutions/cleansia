@@ -52,8 +52,12 @@ final class CashChoiceBindingTests: XCTestCase {
     func testARefusedCashSubmitHandsTheSliderBack() throws {
         let source = try read(Self.sheet)
         let submit = try block(in: source, after: "private func submit() async {")
-        XCTAssertTrue(submit.contains("await handle(vm.submit())"), "the submit's outcome is never handled")
-        let handle = try block(in: source, after: "private func handle(_ outcome: BookingSubmitOutcome) async {")
+        XCTAssertTrue(submit.contains("let outcome = await vm.submit()"), "the submit's outcome is never read")
+        XCTAssertTrue(submit.contains("await handle(outcome, draft: draft)"), "the submit's outcome is never handled")
+        let handle = try block(
+            in: source,
+            after: "private func handle(_ outcome: BookingSubmitOutcome, draft: BookingSuccess) async {"
+        )
         let refused = try XCTUnwrap(handle.range(of: "case .paymentMethodCleared:"), "the refusal is not handled")
         let next = handle.range(of: "case ", range: refused.upperBound ..< handle.endIndex)?.lowerBound
             ?? handle.endIndex

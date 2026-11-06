@@ -108,10 +108,11 @@ it in progress; the wait itself is not counted as work. Mark, manual Complete an
 read under the same order-row lock. The common `CompleteOrder.FinishAsync` completes the status,
 stages the receipt/e-mail and applicable customer effects, and requests each seat's pay once.
 
-Partner web and admin show the seat times. Mobile slides say **I'm done** and **Complete job**,
-with **Slide to complete** for solo. The web crew list-row Complete opens the detail rather than
-skipping the marks. A last-fetched-state limit remains: web reload/reopen, Android pull-to-refresh
-or freshness reload, and iOS reopen/action reload reveal another cleaner's mark; a foreground push
+Partner web and admin show the seat times, and since 2026-11-01 so do the Android and iOS details,
+each cleaner by given name. Mobile slides say **I'm done** and, once every seat is marked,
+**Slide to complete**, the solo wording (**Complete job** until 2026-11-01). The web crew list-row
+Complete opens the detail rather than skipping the marks. A last-fetched-state limit remains: web
+reload/reopen, Android pull-to-refresh or freshness reload, and iOS reopen/action reload reveal another cleaner's mark; a foreground push
 alone does not refresh an already-open detail. A done cleaner still blocks overlapping work.
 → [ADR-0077](/decisions/adr-0077), [Business rules](/product/business-rules#crew-completion)
 
@@ -201,6 +202,13 @@ returns only the photos the caller took, and `DownloadOrderReceipt` answers `ord
 because the receipt names the customer. The partner apps say the customer's details were removed.
 Administrators and the customer are unaffected.
 
+The same window carries the **crew to each other** (owner decision 2026-11-01): an assigned cleaner's
+`GetOrderDetails` holds every seat's full name, phone and done stamp. The partner web prints them; the
+Android and iOS details show each crew-mate by given name with her done stamp, and offer **Call** only
+while the job is `InProgress` and that mate has not marked her part — the number goes to the dialer and
+is never drawn, read aloud, logged, copied or stored. The browsing and past-job shapes keep the given
+name only (`OrderPiiRedaction.WithoutPersonalContact`).
+
 ## What a cleaner who has *not* taken the job can see
 
 A cleaner browsing the board gets **the job, not the household**. The redaction strips the customer's
@@ -210,6 +218,17 @@ name, email, phone, address and coordinates, every free-text field — notes, sp
 List and detail shapes live in **one file** on purpose: when they lived apart, the detail answered with
 everything the list had just withheld. A surface test fails the build until a newly-added field is
 explicitly classified as kept or stripped.
+
+**Where the job is, before the take.** Two kept fields say it. The coarse label,
+`customerAddressApproximate`, is *Praha 4* for a Prague address (city Praha or Prague, postcode
+1xx xx) and otherwise the city alone, with no part of the postcode (*Brno*, since 2026-11-01; it was
+*Brno · 602 xx*). Since 2026-10-31 the list also carries
+`homeDistanceBand`: a distance band from the cleaner's stored home to the job's point snapped to a
+cell of about 2.2 × 2.1 km. **The effective pre-take ceiling is that cell, narrowed by the label's
+area** — at most the cell, and only part of one where it crosses a district or city boundary. However
+often a cleaner moves their stored home and reads the board again, the snap keeps them at the cell; at
+about 4.8 km² that is finer than *Praha N*
+→ [Business rules](/product/business-rules#approximate-location), [ADR-0079](/decisions/adr-0079).
 
 **The confirmation code is not on the list because it is no longer on the DTO.** It used to be
 redacted to an empty string for a browsing cleaner, which left it readable by every cleaner *assigned*

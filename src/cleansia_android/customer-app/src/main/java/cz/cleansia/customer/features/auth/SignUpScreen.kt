@@ -174,6 +174,7 @@ fun SignUpScreen(
             value = email,
             onValueChange = { email = it },
             label = stringResource(R.string.register_email),
+            placeholder = stringResource(R.string.auth_email_placeholder),
             modifier = Modifier.semantics { contentType = ContentType.NewUsername },
             keyboardType = KeyboardType.Email,
         )

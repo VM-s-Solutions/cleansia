@@ -122,6 +122,7 @@ fun MainScaffold(
                 MainTab.Orders -> OrdersListScreen(
                     onOrderClick = onOpenOrderDetails,
                     onOpenLegalDocuments = { onOpenProfileSection(NavRoute.LegalDocuments) },
+                    onOpenEarnings = onOpenEarnings,
                 )
                 MainTab.Invoices -> InvoicesListScreen(
                     onInvoiceClick = onOpenInvoiceDetails,

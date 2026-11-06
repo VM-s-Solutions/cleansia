@@ -78,7 +78,7 @@ public sealed class OrderFactoryTellsAdministratorsTests
         WorkContractResolvers.Resolver().Object,
         new Mock<INotificationProducer>().Object,
         _adminNotifier.Object,
-        new CapturingLogger(_log));
+        new CapturingLogger(_log), Cleansia.Tests.Common.SavedCardTestData.Repository());
 
     private Task<Order> CreateAsync(PaymentType paymentType, string? operatorTenantId = OperatorTenantId, string? recurringTemplateId = null) =>
         Factory().CreateAsync(

@@ -42,17 +42,28 @@ final class OrderPageWireTests: XCTestCase {
         }
         let client = LivePartnerOrderClient(staleness: OrdersStaleness())
         let vm = OrdersListViewModel(client: client, staleness: OrdersStaleness(), snackbar: SnackbarController())
-        await vm.onAppear()
+        await vm.load(.available)
         let query = try XCTUnwrap(bodies.query(ofPath: "/api/Order/GetPaged"))
         XCTAssertTrue(bodies.paths.contains("/api/Employee/GetCurrentEmployee"))
         XCTAssertTrue(query.contains(URLQueryItem(name: "Filter.HasAvailableSpots", value: "true")))
         XCTAssertTrue(query.contains(URLQueryItem(name: "Filter.ExcludeEmployeeId", value: "emp-self")))
         XCTAssertFalse(query.contains { ["Filter.IsUnassigned", "Filter.EmployeeId"].contains($0.name) })
         XCTAssertEqual(query.filter { $0.name == "Filter.OrderStatuses" }.map(\.value), ["0", "2", "3", "4"])
-        XCTAssertTrue(query.contains(URLQueryItem(name: "Sort[0].Field", value: "estimatedCleanerPay")))
-        XCTAssertTrue(query.contains(URLQueryItem(name: "Sort[0].Direction", value: "1")))
+        XCTAssertTrue(query.contains(URLQueryItem(name: "Sort[0].Field", value: "cleaningDateTime")))
+        XCTAssertTrue(query.contains(URLQueryItem(name: "Sort[0].Direction", value: "0")))
         XCTAssertTrue(query.contains(URLQueryItem(name: "Offset", value: "0")))
-        XCTAssertTrue(query.contains(URLQueryItem(name: "Limit", value: "50")))
+        XCTAssertTrue(query.contains(URLQueryItem(name: "Limit", value: "100")))
+        XCTAssertFalse(query.contains { $0.name == "Filter.Id" })
+    }
+
+    /// One order by id (the taken row, an off-page reservation) travels as `Filter.Id`.
+    func testOneOrderByIdTravelsAsTheFilterId() async throws {
+        let page = OrdersQueryBuilder.takenRow(orderId: "order-7", ownEmployeeId: "emp-self")
+        let result = try await LivePartnerOrderClient(staleness: OrdersStaleness()).getPaged(page).get()
+        let query = try XCTUnwrap(bodies.query(ofPath: "/api/Order/GetPaged"))
+        XCTAssertTrue(query.contains(URLQueryItem(name: "Filter.Id", value: "order-7")))
+        XCTAssertTrue(query.contains(URLQueryItem(name: "Limit", value: "1")))
+        XCTAssertEqual(result.total, 0, "the page carries the server's count")
     }
 
     func testAvailableRefusesMissingNullAndBlankCurrentEmployeeWireIdentity() async {
@@ -64,7 +75,7 @@ final class OrderPageWireTests: XCTestCase {
             }
             let client = LivePartnerOrderClient(staleness: OrdersStaleness())
             let vm = OrdersListViewModel(client: client, staleness: OrdersStaleness(), snackbar: SnackbarController())
-            await vm.onAppear()
+            await vm.load(.available)
             XCTAssertEqual(recorded.paths, ["/api/Employee/GetCurrentEmployee"], "wire body: \(body)")
             guard case .error = vm.currentState else { return XCTFail("expected identity refusal: \(body)") }
         }
@@ -74,7 +85,7 @@ final class OrderPageWireTests: XCTestCase {
         let calendar = Calendar(identifier: .gregorian)
         for tab in [OrdersTab.active, .history] {
             let page = OrdersQueryBuilder.query(
-                tab: tab, ownEmployeeId: "emp-self", sort: .priceHighToLow, period: .thisMonth,
+                tab: tab, ownEmployeeId: "emp-self", period: .thisMonth,
                 calendar: calendar, now: Date(timeIntervalSince1970: 1_780_000_000)
             )
             _ = try await LivePartnerOrderClient(staleness: OrdersStaleness()).getPaged(page).get()
@@ -92,7 +103,7 @@ final class OrderPageWireTests: XCTestCase {
             XCTAssertTrue(query.contains(URLQueryItem(name: "Sort[0].Field", value: "cleaningDateTime")))
             XCTAssertTrue(query.contains(URLQueryItem(name: "Sort[0].Direction", value: tab == .active ? "0" : "1")))
             XCTAssertTrue(query.contains(URLQueryItem(name: "Offset", value: "0")))
-            XCTAssertTrue(query.contains(URLQueryItem(name: "Limit", value: "50")))
+            XCTAssertTrue(query.contains(URLQueryItem(name: "Limit", value: "100")))
             XCTAssertEqual(query.contains { $0.name == "Filter.CleaningDateFrom" }, tab == .history)
             XCTAssertEqual(query.contains { $0.name == "Filter.CleaningDateTo" }, tab == .history)
         }

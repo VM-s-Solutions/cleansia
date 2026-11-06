@@ -387,7 +387,7 @@ public class ReceiptLinesReconcileTests
             WorkContractResolvers.Resolver().Object,
             Mock.Of<INotificationProducer>(),
             Mock.Of<IAdminNotifier>(),
-            NullLogger<OrderFactory>.Instance);
+            NullLogger<OrderFactory>.Instance, Cleansia.Tests.Common.SavedCardTestData.Repository());
 
         return await factory.CreateAsync(
             new CreateOrderInput(

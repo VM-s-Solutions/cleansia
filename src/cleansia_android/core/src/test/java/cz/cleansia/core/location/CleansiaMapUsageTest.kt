@@ -28,7 +28,7 @@ class CleansiaMapUsageTest {
     @Test
     fun `the four map surfaces are still found`() {
         assertEquals(
-            setOf("AddressManagerScreen.kt", "OrderDetailMap.kt", "AddressPickerScreen.kt", "OrderDetailScreen.kt"),
+            setOf("AddressManagerScreen.kt", "OrderDetailMap.kt", "AddressPickerScreen.kt", "JobMap.kt"),
             mapFiles.map { it.name }.toSet(),
         )
     }
@@ -53,7 +53,7 @@ class CleansiaMapUsageTest {
     }
 
     /**
-     * Each of the four maps has a card or sheet over its bottom edge, where Mapbox puts both ornaments
+     * Each of the maps has a card or sheet over its bottom edge, where Mapbox puts both ornaments
      * by default, so each places them itself. A map left on the defaults hides them under its card.
      */
     @Test

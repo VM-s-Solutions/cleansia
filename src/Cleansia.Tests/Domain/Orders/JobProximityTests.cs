@@ -1,3 +1,4 @@
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 
 namespace Cleansia.Tests.Domain.Orders;
@@ -134,6 +135,125 @@ public class JobProximityTests
 
         Assert.Equal(-180d, box.MinLongitude);
         Assert.Equal(180d, box.MaxLongitude);
+    }
+
+    [Theory]
+    [InlineData(0d, HomeDistanceBand.Under3Km)]
+    [InlineData(2.999d, HomeDistanceBand.Under3Km)]
+    [InlineData(3.0d, HomeDistanceBand.From3To6Km)]
+    [InlineData(5.999d, HomeDistanceBand.From3To6Km)]
+    [InlineData(6.0d, HomeDistanceBand.From6To10Km)]
+    [InlineData(9.999d, HomeDistanceBand.From6To10Km)]
+    [InlineData(10.0d, HomeDistanceBand.From10To20Km)]
+    [InlineData(19.999d, HomeDistanceBand.From10To20Km)]
+    [InlineData(20.0d, HomeDistanceBand.Over20Km)]
+    [InlineData(500d, HomeDistanceBand.Over20Km)]
+    public void A_Distance_Falls_In_The_Band_Whose_Lower_Edge_It_Reaches(double km, HomeDistanceBand expected)
+    {
+        Assert.Equal(expected, JobProximity.ClassifyBand(km));
+    }
+
+    /// <summary>
+    /// No band without both ends: an admin reads no home, a cleaner whose home never geocoded has no
+    /// origin, and an order not yet geocoded has no point. Each null arm on its own.
+    /// </summary>
+    [Theory]
+    [InlineData(null, PragueLon, KladnoLat, KladnoLon)]
+    [InlineData(PragueLat, null, KladnoLat, KladnoLon)]
+    [InlineData(PragueLat, PragueLon, null, KladnoLon)]
+    [InlineData(PragueLat, PragueLon, KladnoLat, null)]
+    public void A_Missing_Coordinate_On_Either_End_Gives_No_Band(
+        double? homeLatitude, double? homeLongitude, double? jobLatitude, double? jobLongitude)
+    {
+        Assert.Null(JobProximity.Band(homeLatitude, homeLongitude, jobLatitude, jobLongitude));
+    }
+
+    [Fact]
+    public void Both_Ends_Present_Give_A_Band()
+    {
+        Assert.Equal(HomeDistanceBand.Over20Km, JobProximity.Band(PragueLat, PragueLon, KladnoLat, KladnoLon));
+    }
+
+    /// <summary>
+    /// The guard against locating a customer by moving one's home: a cleaner can set any home point, so
+    /// a band measured to the exact job point leaks where its edges cross. Two job points inside one cell
+    /// must read the same band from every origin, swept in 1 km steps across ±30 km — wide enough to
+    /// cross every band edge, which the last assertion checks so the sweep cannot pass vacuously.
+    /// </summary>
+    [Fact]
+    public void Two_Jobs_In_One_Cell_Read_The_Same_Band_From_Every_Home()
+    {
+        var first = (Latitude: 50.0610, Longitude: 14.4310);
+        var second = (Latitude: 50.0790, Longitude: 14.4590);
+        Assert.Equal(
+            JobProximity.SnapToBandCell(first.Latitude, first.Longitude),
+            JobProximity.SnapToBandCell(second.Latitude, second.Longitude));
+
+        var kmPerDegreeLatitude = Math.PI * 6371.0088 / 180d;
+        var kmPerDegreeLongitude = kmPerDegreeLatitude * Math.Cos(50.07 * Math.PI / 180d);
+        var bandsSeen = new HashSet<HomeDistanceBand>();
+        for (var north = -30; north <= 30; north++)
+        {
+            for (var east = -30; east <= 30; east++)
+            {
+                var homeLatitude = 50.07 + (north / kmPerDegreeLatitude);
+                var homeLongitude = 14.445 + (east / kmPerDegreeLongitude);
+
+                var firstBand = JobProximity.Band(homeLatitude, homeLongitude, first.Latitude, first.Longitude);
+                var secondBand = JobProximity.Band(homeLatitude, homeLongitude, second.Latitude, second.Longitude);
+
+                Assert.True(
+                    firstBand == secondBand,
+                    $"home {north} km N, {east} km E read {firstBand} for one job and {secondBand} for the other");
+                bandsSeen.Add(firstBand!.Value);
+            }
+        }
+
+        Assert.Equal(Enum.GetValues<HomeDistanceBand>().ToHashSet(), bandsSeen);
+    }
+
+    /// <summary>
+    /// What the snap costs: it moves the point at most half a cell's diagonal (≈1.54 km at Prague's
+    /// latitude), so the measured distance never strays from the exact one by more than that. Sampled on
+    /// a grid of jobs across Prague from homes in the centre and on three edges of the city.
+    /// </summary>
+    [Fact]
+    public void The_Snapped_Distance_Stays_Within_1_6_Km_Of_The_Exact_One_Around_Prague()
+    {
+        (double Latitude, double Longitude)[] homes =
+        [
+            (PragueLat, PragueLon), (KladnoLat, KladnoLon), (49.9700, 14.4700), (50.1400, 14.6200),
+        ];
+
+        var worst = 0d;
+        for (var latitude = 49.95; latitude <= 50.20; latitude += 0.0037)
+        {
+            for (var longitude = 14.22; longitude <= 14.70; longitude += 0.0053)
+            {
+                var (snappedLatitude, snappedLongitude) = JobProximity.SnapToBandCell(latitude, longitude);
+                foreach (var home in homes)
+                {
+                    var exact = JobProximity.DistanceKm(home.Latitude, home.Longitude, latitude, longitude);
+                    var snapped = JobProximity.DistanceKm(home.Latitude, home.Longitude, snappedLatitude, snappedLongitude);
+                    worst = Math.Max(worst, Math.Abs(snapped - exact));
+                }
+            }
+        }
+
+        Assert.InRange(worst, 0.5d, 1.6d);
+    }
+
+    [Theory]
+    [InlineData(50.0755, 14.4378)]
+    [InlineData(50.0610, 14.4310)]
+    [InlineData(49.1951, 16.6068)]
+    [InlineData(-33.8688, 151.2093)]
+    [InlineData(40.7128, -74.0060)]
+    public void Snapping_A_Snapped_Point_Leaves_It_Where_It_Is(double latitude, double longitude)
+    {
+        var once = JobProximity.SnapToBandCell(latitude, longitude);
+
+        Assert.Equal(once, JobProximity.SnapToBandCell(once.Lat, once.Lon));
     }
 
     private static (double Latitude, double Longitude) PointAtBearing(

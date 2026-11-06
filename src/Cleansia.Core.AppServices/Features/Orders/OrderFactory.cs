@@ -42,7 +42,8 @@ public sealed class OrderFactory(
     ILegalDocumentResolver legalDocumentResolver,
     INotificationProducer notificationProducer,
     IAdminNotifier adminNotifier,
-    ILogger<OrderFactory> logger) : IOrderFactory
+    ILogger<OrderFactory> logger,
+    ISavedCardRepository savedCardRepository) : IOrderFactory
 {
     /// <summary>
     /// Hard cap on the combined (Plus + tier) discount, as a fraction of raw subtotal. <b>12% is an
@@ -308,6 +309,14 @@ public sealed class OrderFactory(
             throw new InvalidOperationException(
                 $"Cash is not available for this order: signed in = {!string.IsNullOrEmpty(input.UserId)}, "
                 + $"required cleaners = {order.RequiredEmployees}. Only a signed-in customer's one-cleaner job may pay cash.");
+        }
+
+        if (input.PaymentType == PaymentType.Cash
+            && !await CustomerCashStanding.HoldsUsableCardAsync(
+                savedCardRepository, input.UserId!, input.Currency.Id,
+                new DateTimeOffset(DateTime.SpecifyKind(input.NowUtc, DateTimeKind.Utc)), cancellationToken))
+        {
+            throw new InvalidOperationException("Cash requires a usable saved card in the booking currency.");
         }
 
         // The factory never assigns either hold column itself — it hands the resolver's answer to the

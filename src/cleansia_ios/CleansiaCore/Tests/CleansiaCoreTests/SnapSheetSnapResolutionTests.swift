@@ -191,4 +191,142 @@ final class SnapSheetSnapResolutionTests: XCTestCase {
             )
         }
     }
+
+    // MARK: - A sheet with fewer stops and a ceiling
+
+    private let twoStops: Set<SnapAnchor> = [.mapFocus, .expanded]
+
+    func testTheExpandedTopStopsAtTheGivenTopAndTheOthersKeepTheirs() {
+        XCTAssertEqual(
+            SnapResolver.sheetTop(for: .expanded, containerHeight: height, minimumSheetTop: 136), 136
+        )
+        XCTAssertEqual(
+            SnapResolver.sheetTop(for: .mapFocus, containerHeight: height, minimumSheetTop: 136), height * 0.70,
+            accuracy: 0.001
+        )
+        XCTAssertEqual(
+            SnapResolver.sheetTop(for: .expanded, containerHeight: height, minimumSheetTop: 0), height * 0.05,
+            accuracy: 0.001
+        )
+    }
+
+    func testASheetRestsOnlyOnItsStops() {
+        let resolved = SnapResolver.resolve(
+            from: .expanded,
+            dragTranslation: 100,
+            predictedEndTranslation: 100,
+            containerHeight: height,
+            stops: twoStops,
+            minimumSheetTop: 136
+        )
+        XCTAssertEqual(resolved, .expanded, "the middle stop it does not have is never chosen")
+        XCTAssertEqual(
+            SnapResolver.resolve(
+                from: .expanded,
+                dragTranslation: 20,
+                predictedEndTranslation: 600,
+                containerHeight: height,
+                stops: twoStops,
+                minimumSheetTop: 136
+            ),
+            .mapFocus
+        )
+        XCTAssertEqual(
+            SnapResolver.resolve(
+                from: .mapFocus,
+                dragTranslation: -40,
+                predictedEndTranslation: -1200,
+                containerHeight: height,
+                stops: twoStops,
+                minimumSheetTop: 136
+            ),
+            .expanded
+        )
+    }
+
+    // MARK: - A sheet that collapses onto a measured height
+
+    func testAGivenMapFocusHeightIsWhereTheCollapsedSheetRestsAndTheOtherStopsKeepTheirs() {
+        XCTAssertEqual(SnapResolver.sheetTop(for: .mapFocus, containerHeight: 660, mapFocusHeight: 182), 478)
+        XCTAssertEqual(SnapResolver.sheetTop(for: .mapFocus, containerHeight: 660, mapFocusHeight: 260), 400)
+        XCTAssertEqual(
+            SnapResolver.sheetTop(for: .expanded, containerHeight: 660, minimumSheetTop: 136, mapFocusHeight: 182), 136
+        )
+        XCTAssertEqual(
+            SnapResolver.sheetTop(for: .peek, containerHeight: 660, mapFocusHeight: 182),
+            SnapResolver.sheetTop(for: .peek, containerHeight: 660)
+        )
+        XCTAssertEqual(
+            SnapResolver.sheetTop(for: .mapFocus, containerHeight: 660, minimumSheetHeight: 240, mapFocusHeight: 182),
+            420,
+            "the floor still holds"
+        )
+        XCTAssertEqual(SnapResolver.sheetTop(for: .mapFocus, containerHeight: 660, mapFocusHeight: 900), 0)
+    }
+
+    func testWithNoMapFocusHeightEveryStopIsWhereItWas() {
+        for anchor in SnapAnchor.allCases {
+            for minimum: CGFloat in [0, 240] {
+                XCTAssertEqual(
+                    SnapResolver.sheetTop(
+                        for: anchor,
+                        containerHeight: 661.5,
+                        minimumSheetHeight: minimum,
+                        minimumSheetTop: 136,
+                        mapFocusHeight: nil
+                    ),
+                    min(max(661.5 * (1 - anchor.coveredFraction), 136), 661.5 - minimum),
+                    "\(anchor)"
+                )
+            }
+        }
+    }
+
+    /// Measured against the given height's stop, 560 here: a drag short of halfway to it, which would pass halfway to
+    /// the container's share at 462, stays expanded.
+    func testDraggingDownSettlesOnTheMapFocusHeight() {
+        let top = { (anchor: SnapAnchor) in
+            SnapResolver.sheetTop(
+                for: anchor,
+                containerHeight: 660,
+                minimumSheetTop: 136,
+                mapFocusHeight: 100
+            )
+        }
+        let past = (top(.mapFocus) - top(.expanded)) * 0.6
+        XCTAssertEqual(
+            SnapResolver.resolve(
+                from: .expanded,
+                dragTranslation: past,
+                predictedEndTranslation: past,
+                containerHeight: 660,
+                stops: twoStops,
+                minimumSheetTop: 136,
+                mapFocusHeight: 100
+            ),
+            .mapFocus
+        )
+        let short = (top(.mapFocus) - top(.expanded)) * 0.45
+        XCTAssertEqual(
+            SnapResolver.resolve(
+                from: .expanded,
+                dragTranslation: short,
+                predictedEndTranslation: short,
+                containerHeight: 660,
+                stops: twoStops,
+                minimumSheetTop: 136,
+                mapFocusHeight: 100
+            ),
+            .expanded
+        )
+    }
+
+    func testAStepToAMissingStopGoesOnToTheNextOneThatWay() {
+        XCTAssertEqual(SnapAnchor.mapFocus.toward(.peek, within: twoStops), .expanded)
+        XCTAssertEqual(SnapAnchor.expanded.toward(.peek, within: twoStops), .mapFocus)
+        XCTAssertEqual(SnapAnchor.expanded.toward(.mapFocus, within: twoStops), .mapFocus)
+        XCTAssertEqual(SnapAnchor.expanded.toward(.expanded, within: twoStops), .expanded)
+        XCTAssertEqual(SnapAnchor.mapFocus.toward(.peek, within: Set(SnapAnchor.allCases)), .peek)
+        XCTAssertEqual(SnapAnchor.mapFocus.toward(.peek, within: [.mapFocus]), .mapFocus)
+    }
 }

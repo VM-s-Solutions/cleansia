@@ -89,15 +89,23 @@ final class ProfileAvatarViewModel: ViewModel {
     /// `UpdateCurrentUser` replaces first and last name outright — the same reason the language push
     /// replays them — so the whole user row travels beside the photo. A row missing a name would be
     /// blanked by the save rather than rejected by it, so it is refused here instead.
-    func save() async {
-        guard hasPendingEdit, !action.isSubmitting, let user else { return }
+    func save() async -> Bool {
+        guard hasPendingEdit else { return true }
+        guard !action.isSubmitting else { return false }
+        // The section may have just changed the name and phone. Re-read the user before replaying
+        // its fields, so saving the photo cannot replace those changes with the previous values.
+        guard case let .success(user) = await client.getCurrentUser() else {
+            snackbar.showError(L10n.Profile.errorProfileNotLoaded)
+            return false
+        }
+        self.user = user
         guard let firstName = user.firstName?.trimmedOrNil else {
             snackbar.showError(L10n.Profile.errorFirstNameRequired)
-            return
+            return false
         }
         guard let lastName = user.lastName?.trimmedOrNil else {
             snackbar.showError(L10n.Profile.errorLastNameRequired)
-            return
+            return false
         }
         let confirmation = AvatarSaveConfirmation.forEdit(edit)
         action = .submitting
@@ -121,10 +129,12 @@ final class ProfileAvatarViewModel: ViewModel {
             if let confirmation {
                 snackbar.showSuccess(message(for: confirmation))
             }
+            return true
         case let .failure(error):
             let message = localizer.message(for: error)
             action = .error(message)
             snackbar.showError(message)
+            return false
         }
     }
 

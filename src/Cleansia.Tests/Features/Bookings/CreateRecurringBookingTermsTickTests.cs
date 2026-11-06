@@ -179,7 +179,7 @@ public sealed class CreateRecurringBookingTermsTickTests
             CatalogueDoubles.Packages(),
             _consents.Object,
             _resolver.Object,
-            Mock.Of<IReceivableRepository>());
+            Mock.Of<IReceivableRepository>(), Cleansia.Tests.Common.SavedCardTestData.Repository());
 
     private CreateRecurringBooking.Handler Handler() =>
         new(

@@ -6,7 +6,7 @@ extension L10n.Booking {
     }
 
     static var dirtinessHint: String {
-        L10n.localized("booking_dirtiness_hint")
+        L10n.localized("booking_dirtiness_torn_hint")
     }
 
     static var dirtinessLevelLabel: String {

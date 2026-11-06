@@ -110,7 +110,7 @@ public sealed class RecurringScheduleStartWindowTests
             CatalogueDoubles.Packages(),
             Cleansia.Tests.Features.Legal.CustomerConsentDoubles.Consented(),
             Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.ILegalDocumentResolver>(),
-            Mock.Of<IReceivableRepository>());
+            Mock.Of<IReceivableRepository>(), Cleansia.Tests.Common.SavedCardTestData.Repository());
 
     private UpdateRecurringBooking.Validator UpdateValidator() =>
         new(_templates.Object, Mock.Of<IUserMembershipRepository>(), _session.Object,
@@ -118,7 +118,7 @@ public sealed class RecurringScheduleStartWindowTests
             OrderMarketDoubles.Trading(CreateOrderTestData.DefaultCurrency()), OrderMarketDoubles.Servicing("country-cz"),
             OrderMarketDoubles.EveryCityServiced(),
             CatalogueDoubles.Services(), CatalogueDoubles.Packages(),
-            Mock.Of<IReceivableRepository>());
+            Mock.Of<IReceivableRepository>(), Cleansia.Tests.Common.SavedCardTestData.Repository());
 
     private static CreateRecurringBooking.Command CreateCommand(string timeOfDay, DateTime startsOn) =>
         new(

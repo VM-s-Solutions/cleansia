@@ -4,6 +4,7 @@ import UIKit
 public struct CleansiaTextField: View {
     @Binding private var value: String
     private let label: String
+    private let placeholder: String?
     private let helper: String?
     private let errorText: String?
     private let keyboardType: UIKeyboardType
@@ -20,6 +21,7 @@ public struct CleansiaTextField: View {
     public init(
         value: Binding<String>,
         label: String,
+        placeholder: String? = nil,
         helper: String? = nil,
         errorText: String? = nil,
         keyboardType: UIKeyboardType = .default,
@@ -32,6 +34,7 @@ public struct CleansiaTextField: View {
     ) {
         _value = value
         self.label = label
+        self.placeholder = placeholder
         self.helper = helper
         self.errorText = errorText
         self.keyboardType = keyboardType
@@ -157,6 +160,7 @@ public struct CleansiaTextField: View {
         ManagedTextField(
             text: $value,
             focused: $focused,
+            placeholder: floating ? placeholder : nil,
             isSecure: isPassword && !passwordVisible,
             keyboardType: keyboardType,
             textContentType: textContentType,
@@ -179,6 +183,7 @@ public struct CleansiaTextField: View {
 private struct ManagedTextField: UIViewRepresentable {
     @Binding var text: String
     @Binding var focused: Bool
+    let placeholder: String?
     let isSecure: Bool
     let keyboardType: UIKeyboardType
     let textContentType: UITextContentType?
@@ -221,14 +226,17 @@ private struct ManagedTextField: UIViewRepresentable {
             seat(text, in: field)
         }
 
-        field.font = font
-        field.textColor = UIColor(textColor)
-        field.tintColor = UIColor(tintColor)
-        field.keyboardType = keyboardType
-        field.textContentType = textContentType
+        // A binding update also runs when AutoFill installs a credential pair. Reassigning its traits
+        // and colours then restarts UIKit's credential presentation and paints our dark-theme ink over
+        // its generated-password highlight. Configure changes only; UIKit owns the active presentation.
+        context.coordinator.configure(field)
         let isAddress = keyboardType == .emailAddress
-        field.autocapitalizationType = isAddress ? .none : .sentences
-        field.autocorrectionType = isAddress ? .no : .default
+        let isCredential = textContentType == .password || textContentType == .newPassword
+        field.autocapitalizationType = isAddress || isCredential ? .none : .sentences
+        field.autocorrectionType = isAddress || isCredential ? .no : .default
+        field.spellCheckingType = isCredential ? .no : .default
+        field.smartQuotesType = isCredential ? .no : .default
+        field.smartDashesType = isCredential ? .no : .default
         field.isEnabled = isEnabled
 
         applySecureEntry(field)
@@ -298,9 +306,30 @@ private struct ManagedTextField: UIViewRepresentable {
 
     final class Coordinator: NSObject, UITextFieldDelegate {
         var parent: ManagedTextField
+        private var configuredFont: UIFont?
+        private var configuredInk: Color?
+        private var configuredTint: Color?
 
         init(_ parent: ManagedTextField) {
             self.parent = parent
+        }
+
+        func configure(_ field: UITextField) {
+            if configuredFont != parent.font {
+                field.font = parent.font
+                configuredFont = parent.font
+            }
+            if configuredInk != parent.textColor {
+                field.textColor = UIColor(parent.textColor)
+                configuredInk = parent.textColor
+            }
+            if configuredTint != parent.tintColor {
+                field.tintColor = UIColor(parent.tintColor)
+                configuredTint = parent.tintColor
+            }
+            if field.placeholder != parent.placeholder { field.placeholder = parent.placeholder }
+            if field.keyboardType != parent.keyboardType { field.keyboardType = parent.keyboardType }
+            if field.textContentType != parent.textContentType { field.textContentType = parent.textContentType }
         }
 
         @objc func editingChanged(_ field: UITextField) {

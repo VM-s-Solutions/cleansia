@@ -20,6 +20,8 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import cz.cleansia.core.format.formatOrderDateRange
 import cz.cleansia.core.format.formatOrderPrice
+import cz.cleansia.core.ui.components.OrderInfoRow
+import cz.cleansia.core.ui.components.OrderSectionHeader
 import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.BuildConfig
 import cz.cleansia.customer.R
@@ -51,25 +53,25 @@ internal fun PriceBreakdownCard(order: OrderDetailDto) {
         (order.originalSubtotal > 0.0 && order.originalSubtotal != order.totalPrice)
 
     Card {
-        SectionHeader(title = stringResource(R.string.order_detail_services))
+        OrderSectionHeader(title = stringResource(R.string.order_detail_services))
         Spacer(Modifier.height(8.dp))
 
         if (showSubtotal) {
-            InfoRow(
+            OrderInfoRow(
                 label = stringResource(R.string.order_detail_subtotal),
                 value = formatOrderPrice(order.subtotalBeforeDirtiness(), currencyCode),
             )
             Spacer(Modifier.height(6.dp))
         }
         if (dirtinessLine != null) {
-            InfoRow(
+            OrderInfoRow(
                 label = stringResource(dirtinessLine),
                 value = "+" + formatOrderPrice(order.dirtinessSurchargeAmount, currencyCode),
             )
             Spacer(Modifier.height(6.dp))
         }
         discounts.forEach { (label, amount) ->
-            InfoRow(
+            OrderInfoRow(
                 label = label,
                 value = "−" + formatOrderPrice(amount, currencyCode),
             )
@@ -97,12 +99,12 @@ internal fun PriceBreakdownCard(order: OrderDetailDto) {
         // rows say how it was paid — the card figure is what the customer's statement shows.
         if (order.creditAppliedAmount > 0.0) {
             Spacer(Modifier.height(6.dp))
-            InfoRow(
+            OrderInfoRow(
                 label = stringResource(R.string.order_paid_with_credit),
                 value = "−" + formatOrderPrice(order.creditAppliedAmount, currencyCode),
             )
             Spacer(Modifier.height(6.dp))
-            InfoRow(
+            OrderInfoRow(
                 label = stringResource(cardShareLabelRes(order.paymentType?.value, order.paymentStatus?.value)),
                 value = formatOrderPrice(order.amountDueOnCard, currencyCode),
             )
@@ -110,11 +112,11 @@ internal fun PriceBreakdownCard(order: OrderDetailDto) {
 
         paymentMethodLabel(order)?.let { method ->
             Spacer(Modifier.height(10.dp))
-            InfoRow(label = stringResource(R.string.order_detail_payment_method), value = method)
+            OrderInfoRow(label = stringResource(R.string.order_detail_payment_method), value = method)
         }
         paymentStatusLabel(order)?.let { status ->
             Spacer(Modifier.height(6.dp))
-            InfoRow(label = stringResource(R.string.order_detail_payment_status), value = status)
+            OrderInfoRow(label = stringResource(R.string.order_detail_payment_status), value = status)
         }
     }
 }

@@ -19,30 +19,13 @@ enum OrderStatusPresentation {
         return "—"
     }
 
-    /// Status accent color (`orderStatusColor`, `OrderFormatters.kt:29-36`):
-    /// New/Pending → warning, Confirmed → primary, OnTheWay/InProgress →
-    /// secondary, Completed → success, Cancelled → error.
+    /// The tint and the group are the table both apps share, read by the status's wire value.
     static func color(_ code: Code?) -> Color {
-        switch code?.toOrderStatus() {
-        case ._0, ._1: CleansiaColors.warningStar
-        case ._2: CleansiaColors.primary
-        case ._3, ._4: CleansiaColors.secondary
-        case ._5: CleansiaColors.successText
-        case ._6: CleansiaColors.error
-        case nil: CleansiaColors.outlineVariant
-        }
+        OrderStatusStyle.tint(wireValue: code?.toOrderStatus()?.rawValue)
     }
 
-    /// Which of `OrderStatusBadge`'s three groups the status belongs to — the badge's mark comes from
-    /// this, so the grouping is legible without reading the hue. New/Pending/Confirmed/OnTheWay/
-    /// InProgress are all still in flight; Completed and Cancelled are the two terminal ends.
     static func tone(_ code: Code?) -> OrderStatusTone {
-        switch code?.toOrderStatus() {
-        case ._0, ._1, ._2, ._3, ._4: .live
-        case ._5: .done
-        case ._6: .failed
-        case nil: .unknown
-        }
+        OrderStatusStyle.tone(wireValue: code?.toOrderStatus()?.rawValue)
     }
 }
 

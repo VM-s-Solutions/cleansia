@@ -20,6 +20,13 @@ final class CleansiaTypeScaleTests: XCTestCase {
         XCTAssertEqual(slots.count, declared, "a slot that is not a CleansiaTextStyle bypasses the fallback")
     }
 
+    func testBodySmallIsRegularTwelvePointNunitoAsOnAndroid() {
+        let bodySmall = Mirror(reflecting: CleansiaTypography.scale).descendant("bodySmall") as? CleansiaTextStyle
+        XCTAssertEqual(bodySmall?.family, .nunito)
+        XCTAssertEqual(bodySmall?.weight, .regular)
+        XCTAssertEqual(bodySmall?.size, 12)
+    }
+
     func testEverySlotResolvesToABundledFace() {
         for slot in slots {
             XCTAssertNotNil(

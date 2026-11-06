@@ -5,6 +5,7 @@ using Cleansia.Core.AppServices.Features.Services.DTOs;
 using Cleansia.Core.AppServices.Shared.DTOs.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.ServiceAreas;
 using Cleansia.Core.Domain.Users;
 
 namespace Cleansia.Core.AppServices.Mappers;
@@ -446,46 +447,39 @@ public static class OrderMappers
 
     /// <summary>
     /// Coarse location string safe to show to cleaners *before* they accept
-    /// the order — no street name, no house number. Mirrors how Wolt/Bolt
-    /// show pickup areas: enough for the cleaner to evaluate distance/zone,
+    /// the order — no street name, no house number, no postal digit. Mirrors how
+    /// Wolt/Bolt show pickup areas: enough for the cleaner to evaluate distance/zone,
     /// none of the PII that would let them dox the customer.
     ///
     /// Output examples:
-    ///   - "Praha 4 · 140 xx"   (Czech city districts encoded in the ZIP prefix)
-    ///   - "Brno · 602 xx"
-    ///   - "Praha"              (no ZIP → fall back to city only)
-    ///   - ""                   (no address at all)
+    ///   - "Praha 8"   (a valid Prague postcode, whether the city reads "Praha", "Praha 8 - Karlín" or
+    ///                  "Prague": the district its second digit names, 10x xx → "Praha 10")
+    ///   - "Brno"      (any other address: the trimmed city alone)
+    ///   - ""          (no city)
     ///
-    /// <para>The prefix is a privacy ceiling, not a formatting choice. PSČ "14000" already identifies
-    /// the broad district — the whole of Praha 4 — which is all a cleaner needs to judge distance;
-    /// the last two digits narrow it to one street group, which is precisely the doxing this field
-    /// exists to prevent. So the missing digits are not an oversight to be tidied up by restoring the
-    /// full postcode: widening this widens what every pre-acceptance surface discloses.</para>
+    /// <para>The postcode is a privacy ceiling, not a formatting choice. Its last two digits narrow an
+    /// address to one street group, which is precisely the doxing this field exists to prevent, and even
+    /// its three-digit prefix is finer than the city. So no part of it is shown: a Prague postcode yields
+    /// only the district, which spans ten prefixes, and every other address only its city. Restoring any
+    /// postal digit widens what every pre-acceptance surface discloses.</para>
     ///
-    /// <para>The trailing "xx" masks rather than discloses. Bare "Praha · 180" reads as a mangled
-    /// five-digit PSČ — a cleaner sees a broken postcode and reports a bug — where "Praha · 180 xx"
-    /// reads as an obviously deliberate prefix. It reveals nothing the truncation did not already.</para>
-    ///
-    /// <para>This is the pre-acceptance ceiling for EVERY cleaner-facing surface, which is why it is
-    /// public rather than a mapper-local helper: <c>OrderListItem</c>, <c>OrderItem</c>,
-    /// <c>PendingOfferItem</c> and the dashboard's available-jobs preview all read it. A second
-    /// spelling of "city + partial postcode" is how the ceiling stops being one decision.</para>
+    /// <para>One of the two pre-take location rules, with the distance band's snapped cell
+    /// (<c>JobProximity.SnapToBandCell</c>); since the band ships, that cell, not this label, is the
+    /// effective ceiling. It is public because every cleaner-facing surface reads this one spelling:
+    /// <c>OrderListItem</c>, <c>OrderItem</c>, <c>PendingOfferItem</c>, the dashboard's available-jobs
+    /// preview and the contract facts. → /product/business-rules#approximate-location,
+    /// /decisions/adr-0079</para>
     /// </summary>
     public static string BuildApproximateAddress(string? rawCity, string? rawZipCode)
     {
         var city = rawCity?.Trim();
         if (string.IsNullOrEmpty(city)) return string.Empty;
 
-        // Separators come out BEFORE the length is measured, because the two used to disagree: a PSČ
-        // written "180 00" is six raw characters but five digits, so guarding on the raw length and
-        // slicing the stripped value asked for three characters out of a shorter string. Anything
-        // spaced down to two digits threw ArgumentOutOfRangeException instead of falling back to city.
-        var zipDigits = rawZipCode?.Trim().Replace(" ", "");
-        if (!string.IsNullOrEmpty(zipDigits) && zipDigits.Length >= 3)
+        var postcode = rawZipCode is null ? null : string.Concat(rawZipCode.Where(c => !char.IsWhiteSpace(c)));
+        if (postcode is { Length: 5 } && postcode.All(char.IsAsciiDigit) && postcode[0] == '1'
+            && (CityNameMatch.Matches("Praha", city) || CityNameMatch.Matches("Prague", city)))
         {
-            // For Czech PSČ (5 digits) the first 3 are city + district granularity. International ZIPs
-            // vary; the length>=3 check just prevents emitting "1" as a "prefix".
-            return $"{city} · {zipDigits[..3]} xx";
+            return postcode[1] == '0' ? "Praha 10" : $"Praha {postcode[1]}";
         }
 
         return city;

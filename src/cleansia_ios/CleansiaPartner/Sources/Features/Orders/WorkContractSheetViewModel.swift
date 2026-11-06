@@ -1,4 +1,5 @@
 import CleansiaCore
+import CleansiaPartnerApi
 import Combine
 import Foundation
 
@@ -17,6 +18,14 @@ enum WorkContractRequest: Equatable, Identifiable {
     }
 }
 
+/// A take opened from the Orders board: the row as its card showed it, and — once taken — the cleaner's own row
+/// read back for the street. Only the board passes one; the detail and the Dashboard's offers do not.
+struct BoardTake {
+    let snapshot: OrderListItem
+    var taken: OrderListItem?
+    var takenLookupDone = false
+}
+
 enum WorkContractSheetState {
     case loading
     case error(ApiError)
@@ -25,10 +34,16 @@ enum WorkContractSheetState {
     /// The take was refused until the cleaner accepts the current version of their contract documents.
     case legalDocumentsNotAccepted
     case loaded(WorkContract)
+    /// Board context only: the take was refused, and the sheet stays open to say why.
+    case refused(WorkContract, ApiError)
+    /// The board's take or the detail's: the job is the cleaner's now.
+    case taken(WorkContract)
 
     var loadedContract: WorkContract? {
-        if case let .loaded(contract) = self { return contract }
-        return nil
+        switch self {
+        case let .loaded(contract), let .refused(contract, _), let .taken(contract): contract
+        case .loading, .error, .unavailable, .legalDocumentsNotAccepted: nil
+        }
     }
 }
 
@@ -85,7 +100,8 @@ enum WorkContractErrorKey {
 /// re-run, the gesture reset and the cleaner told to read again. So is
 /// `employee.legal_documents_not_accepted`: the sheet turns into the way to the documents, since nothing
 /// about the job changed. `legal.document_not_found` can only come from the preview and means the job
-/// cannot be taken now. Every other refusal is the host's to frame.
+/// cannot be taken now. Every other refusal is the host's to frame — except on the board, where the sheet
+/// stays open on the refusal's own sentence, and on the taken job.
 @MainActor
 final class WorkContractSheetViewModel: ViewModel {
     @Published private(set) var state: WorkContractSheetState = .loading
@@ -95,16 +111,24 @@ final class WorkContractSheetViewModel: ViewModel {
     let outcome = PassthroughSubject<WorkContractOutcome, Never>()
 
     let request: WorkContractRequest
+    /// Opened from the board: a refused or successful take keeps the sheet open in its own state.
+    let hasBoardContext: Bool
+    /// A successful take keeps the sheet open on the taken job, wherever it was opened.
+    let endsOnTakenPanel: Bool
     private let client: PartnerOrderClient
     private let languageTag: () -> String
 
     init(
         request: WorkContractRequest,
         client: PartnerOrderClient,
+        hasBoardContext: Bool = false,
+        endsOnTakenPanel: Bool = false,
         languageTag: @escaping () -> String = { CoreL10n.languageTag }
     ) {
         self.request = request
         self.client = client
+        self.hasBoardContext = hasBoardContext
+        self.endsOnTakenPanel = endsOnTakenPanel || hasBoardContext
         self.languageTag = languageTag
     }
 
@@ -158,6 +182,13 @@ final class WorkContractSheetViewModel: ViewModel {
         if case let .refused(_, error) = submitted, error.code == WorkContractErrorKey.legalDocumentsNotAccepted {
             state = .legalDocumentsNotAccepted
             return
+        }
+        if case .take = request {
+            switch submitted {
+            case .taken where endsOnTakenPanel: state = .taken(contract)
+            case let .refused(_, error) where hasBoardContext: state = .refused(contract, error)
+            case .taken, .refused, .accepted: break
+            }
         }
         outcome.send(submitted)
     }

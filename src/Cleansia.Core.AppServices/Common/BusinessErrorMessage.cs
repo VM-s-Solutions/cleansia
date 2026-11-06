@@ -1,4 +1,4 @@
-﻿namespace Cleansia.Core.AppServices.Common;
+namespace Cleansia.Core.AppServices.Common;
 
 public static class BusinessErrorMessage
 {
@@ -117,6 +117,7 @@ public static class BusinessErrorMessage
     public const string OrderCashNotCollected = "order.cash_not_collected";
     /// <summary>Cash is only for a signed-in customer whose booking needs one cleaner; anything else pays by card.</summary>
     public const string OrderCashNotAvailable = "order.cash_not_available";
+    public const string OrderCashRequiresSavedCard = "order.cash_requires_saved_card";
     /// <summary>
     /// The customer already holds the most cash bookings not yet paid at the door, their upcoming ones; the next
     /// one pays by card. It counts bookings in flight, not defaults.

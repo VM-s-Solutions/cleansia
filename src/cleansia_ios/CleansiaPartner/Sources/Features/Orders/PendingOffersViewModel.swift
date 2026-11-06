@@ -27,7 +27,8 @@ struct OfferAttempt: Equatable {
 ///
 /// Confirming is `takeOrder` — the platform has no confirm command, and a second acquisition path
 /// would either duplicate TakeOrder's one ordered gate or be weaker than it. The take runs inside the
-/// contract sheet, on the swipe under the text; its verdict comes back through `onWorkContractOutcome`.
+/// contract sheet, on the swipe under the text; its verdict comes back through `onWorkContractOutcome`, and a take ends
+/// on the Job taken panel, its strip waiting for the job read back as hers.
 /// Because nothing gates the reservation on the weekly cap, that gate can refuse a job the cleaner was
 /// told was theirs; the refusal is kept as an `ActionState.error` beside the `attempt` it belongs to so
 /// the screen can say whose fault it is, rather than dropped on a snackbar as a bare reason.
@@ -37,6 +38,7 @@ final class PendingOffersViewModel: ViewModel {
     @Published private(set) var actionState: ActionState = .idle
     @Published private(set) var attempt: OfferAttempt?
     @Published private(set) var contractRequest: WorkContractRequest?
+    @Published private(set) var takenJob: TakenJob?
 
     let confirmed = PassthroughSubject<String, Never>()
 
@@ -50,11 +52,18 @@ final class PendingOffersViewModel: ViewModel {
     private var cancellables: Set<AnyCancellable> = []
 
     private let store: PendingOffersStore
+    private let client: PartnerOrderClient
     private let staleness: OrdersStaleness
     private let snackbar: SnackbarController
 
-    init(store: PendingOffersStore, staleness: OrdersStaleness, snackbar: SnackbarController) {
+    init(
+        store: PendingOffersStore,
+        client: PartnerOrderClient,
+        staleness: OrdersStaleness,
+        snackbar: SnackbarController
+    ) {
         self.store = store
+        self.client = client
         self.staleness = staleness
         self.snackbar = snackbar
         super.init()
@@ -90,14 +99,37 @@ final class PendingOffersViewModel: ViewModel {
 
     func dismissContract() {
         contractRequest = nil
+        takenJob = nil
+    }
+
+    /// Open job: the panel closes onto the job, now hers.
+    func openTakenJob() {
+        guard case let .take(orderId) = contractRequest else { return }
+        dismissContract()
+        confirmed.send(orderId)
     }
 
     /// The sheet's verdict on the offer it was opened for, framed as the confirm it stands for.
     func onWorkContractOutcome(_ outcome: WorkContractOutcome) async {
-        contractRequest = nil
-        guard case let .take(orderId) = outcome.request else { return }
-        let displayOrderNumber = store.offer(forOrderId: orderId)?.displayOrderNumber
-        await run(orderId: orderId, displayOrderNumber: displayOrderNumber, action: .confirm) { outcome.result }
+        guard case let .take(orderId) = outcome.request else {
+            contractRequest = nil
+            return
+        }
+        let offer = store.offer(forOrderId: orderId)
+        let took = outcome == .taken(orderId: orderId)
+        if took {
+            takenJob = TakenJob(offer: offer)
+        } else {
+            contractRequest = nil
+        }
+        await run(orderId: orderId, displayOrderNumber: offer?.displayOrderNumber, action: .confirm) { outcome.result }
+        guard took, contractRequest == .take(orderId: orderId) else { return }
+        switch await client.getById(orderId: orderId) {
+        case let .success(order):
+            takenJob = TakenJob(detail: order, readBack: true)
+        case .failure:
+            takenJob?.strip = nil
+        }
     }
 
     func decline(_ offer: PendingOfferItem) async {
@@ -152,7 +184,6 @@ final class PendingOffersViewModel: ViewModel {
             case .confirm:
                 staleness.invalidatePanes(for: .takeOrder)
                 staleness.invalidateOrder(orderId)
-                confirmed.send(orderId)
             case .decline:
                 snackbar.showSuccess(L10n.Offers.declinedToast)
             }

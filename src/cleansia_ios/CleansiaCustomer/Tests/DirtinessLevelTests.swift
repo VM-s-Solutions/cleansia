@@ -1,5 +1,6 @@
 import CleansiaCore
 import CleansiaCustomerApi
+import SwiftUI
 import XCTest
 @testable import CleansiaCustomer
 
@@ -151,6 +152,117 @@ final class DirtinessLevelTests: XCTestCase {
         )
     }
 
+    // MARK: - The picker
+
+    /// Each level is one element naming its title, surcharge and when; only the picked one lists its signs, and
+    /// with none picked none does.
+    @MainActor
+    func testOnlyThePickedLevelListsItsSigns() async throws {
+        for picked in [nil] + Dirtiness.allCases.map(Optional.some) {
+            let picker = PickedLevel(picked)
+            let canvas = try HostedCanvas(size: CGSize(width: 375, height: 1400)) { PickerHost(model: picker) }
+            defer { canvas.close() }
+            await canvas.settle()
+            try assertCards(in: canvas, picked: picked)
+        }
+    }
+
+    @MainActor
+    func testChangingThePickMovesTheSigns() async throws {
+        let picker = PickedLevel(.normal)
+        let canvas = try HostedCanvas(size: CGSize(width: 375, height: 1400)) { PickerHost(model: picker) }
+        defer { canvas.close() }
+        await canvas.settle()
+        try assertCards(in: canvas, picked: .normal)
+
+        picker.level = .heavy
+        await canvas.settle()
+        try assertCards(in: canvas, picked: .heavy)
+
+        picker.level = .increased
+        await canvas.settle()
+        try assertCards(in: canvas, picked: .increased)
+    }
+
+    @MainActor
+    func testTheHintFollowsTheLevels() async throws {
+        let canvas = try HostedCanvas(size: CGSize(width: 375, height: 1400)) {
+            DirtinessPicker(selected: .heavy, onSelect: { _ in })
+        }
+        defer { canvas.close() }
+        await canvas.settle()
+        let elements = CustomerCapture.elements(of: canvas.window)
+        let hint = try XCTUnwrap(elements.first { $0.label == L10n.Booking.dirtinessHint }, "the hint is not drawn")
+        let lastCard = try XCTUnwrap(elements.first { $0.label.contains(L10n.Booking.dirtinessLead(.heavy)) })
+        XCTAssertGreaterThanOrEqual(hint.frame.minY, lastCard.frame.maxY, "the hint is not under the levels")
+    }
+
+    /// A pick opens the picked card's signs; on a short screen the step scrolls that card wholly into view, so the
+    /// bottom level's signs never open below the fold.
+    @MainActor
+    func testPickingTheBottomLevelScrollsItsSignsIntoView() async throws {
+        let vm = await CustomerCaptureFixture.booking()
+        let canvas = try HostedCanvas(size: CGSize(width: 375, height: 300)) { DirtinessStep(viewModel: vm) }
+        defer { canvas.close() }
+        await canvas.settle()
+        let scroll = try XCTUnwrap(canvas.views(of: UIScrollView.self).first, "the step does not scroll")
+        XCTAssertEqual(scroll.contentOffset.y, 0, "the step opens scrolled")
+
+        vm.setDirtiness(.heavy)
+        let lastSign = try XCTUnwrap(L10n.Booking.dirtinessSigns(.heavy).last)
+        let viewport = canvas.frame(of: scroll)
+        func heavyCard() -> CGRect? {
+            CustomerCapture.elements(of: canvas.window).first { $0.label.contains(lastSign) }?.frame
+        }
+        await canvas.settle {
+            heavyCard().map { $0.maxY <= viewport.maxY + 0.5 && $0.minY >= viewport.minY - 0.5 } ?? false
+        }
+        let card = try XCTUnwrap(heavyCard(), "the picked card does not list its signs")
+        XCTAssertLessThanOrEqual(card.maxY, viewport.maxY + 0.5, "the picked card's signs open below the fold")
+        XCTAssertGreaterThanOrEqual(card.minY, viewport.minY - 0.5, "the picked card is scrolled past its top")
+    }
+
+    @MainActor
+    private func assertCards(
+        in canvas: HostedCanvas,
+        picked: Dirtiness?,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) throws {
+        let labels = CustomerCapture.elements(of: canvas.window).map(\.label)
+        for level in Dirtiness.allCases {
+            let cards = labels.filter { $0.contains(L10n.Booking.dirtinessLead(level)) }
+            XCTAssertEqual(cards.count, 1, "\(level) is not one element", file: file, line: line)
+            let card = try XCTUnwrap(cards.first, file: file, line: line)
+            XCTAssertTrue(card.contains(L10n.Booking.dirtinessName(level)), "\(level) title", file: file, line: line)
+            XCTAssertTrue(
+                card.contains(L10n.Booking.dirtinessRate(level)),
+                "\(level) surcharge",
+                file: file,
+                line: line
+            )
+            for sign in L10n.Booking.dirtinessSigns(level) {
+                XCTAssertEqual(
+                    card.contains(sign),
+                    level == picked,
+                    "\(level)'s sign \"\(sign)\" with \(String(describing: picked)) picked",
+                    file: file,
+                    line: line
+                )
+            }
+        }
+        let shownSigns = Dirtiness.allCases.flatMap(L10n.Booking.dirtinessSigns).filter { sign in
+            labels.contains { $0.contains(sign) }
+        }
+        XCTAssertEqual(
+            shownSigns,
+            picked.map(L10n.Booking.dirtinessSigns) ?? [],
+            "signs drawn outside their card",
+            file: file,
+            line: line
+        )
+    }
+
     // MARK: - Helpers
 
     private static func integers(in text: String) -> [Int] {
@@ -192,5 +304,22 @@ final class DirtinessLevelTests: XCTestCase {
         let path = hosts.lazy.compactMap { $0.path(forResource: tag, ofType: "lproj") }.first
         let resolved = try XCTUnwrap(path, "no \(tag).lproj in the built bundle")
         return try XCTUnwrap(Bundle(path: resolved), "\(tag).lproj at \(resolved) is not a bundle")
+    }
+}
+
+@MainActor
+private final class PickedLevel: ObservableObject {
+    @Published var level: Dirtiness?
+
+    init(_ level: Dirtiness?) {
+        self.level = level
+    }
+}
+
+private struct PickerHost: View {
+    @ObservedObject var model: PickedLevel
+
+    var body: some View {
+        DirtinessPicker(selected: model.level, onSelect: { model.level = $0 })
     }
 }

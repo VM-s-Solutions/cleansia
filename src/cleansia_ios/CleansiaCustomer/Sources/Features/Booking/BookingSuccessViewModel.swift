@@ -1,9 +1,8 @@
 import CleansiaCustomerApi
 import Foundation
 
-/// The `BookingSuccessUiState` (Android) parity: the screen always renders the
-/// celebratory header + code pill; this state only drives the enrichment
-/// (summary card + timeline detail). `.error` degrades silently — the success
+/// The `BookingSuccessUiState` (Android) parity: the ticket renders from the submitted draft at once; this
+/// state only brings the order's own figures. `.error` keeps the ticket and offers Try again — the success
 /// moment is never blocked on a failed fetch.
 enum BookingSuccessUiState {
     case loading
@@ -39,6 +38,17 @@ final class BookingSuccessViewModel: ObservableObject {
         guard !didLoad else { return }
         didLoad = true
         async let warm: Void = warmOrders()
+        await read()
+        await warm
+    }
+
+    func retry() async {
+        if case .loading = state { return }
+        state = .loading
+        await read()
+    }
+
+    private func read() async {
         if orderId.isBlank {
             state = .error
         } else if let order = await fetch(orderId) {
@@ -46,6 +56,5 @@ final class BookingSuccessViewModel: ObservableObject {
         } else {
             state = .error
         }
-        await warm
     }
 }

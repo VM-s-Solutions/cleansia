@@ -40,6 +40,7 @@ public sealed class LegalDocumentSeederTests : IDisposable
         (LegalDocumentType.TermsOfService, new DateOnly(2026, 10, 6)),
         (LegalDocumentType.TermsOfService, new DateOnly(2026, 10, 7)),
         (LegalDocumentType.TermsOfService, new DateOnly(2026, 10, 27)),
+        (LegalDocumentType.TermsOfService, new DateOnly(2026, 11, 6)),
         (LegalDocumentType.PrivacyPolicy, new DateOnly(2026, 9, 14)),
         (LegalDocumentType.PrivacyPolicy, new DateOnly(2026, 9, 29)),
         (LegalDocumentType.PrivacyPolicy, new DateOnly(2026, 10, 3)),

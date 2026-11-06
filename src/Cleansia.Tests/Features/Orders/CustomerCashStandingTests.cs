@@ -28,7 +28,7 @@ namespace Cleansia.Tests.Features.Orders;
 /// <summary>
 /// Owner ruling 2026-09-28 on the recurring doors to cash: a schedule written as cash, and a cash
 /// occurrence confirmed, hold the customer to at most two cash bookings that are open and not yet paid,
-/// and to owing the company no open receivable. Owner ruling 2026-10-04: no saved card is asked for. The
+/// and to owing the company no open receivable. A usable captured card in the booking currency is required. The
 /// one-off booking is held to the same rules through the real pipeline in the integration suite.
 /// </summary>
 public sealed class CustomerCashStandingTests
@@ -49,6 +49,7 @@ public sealed class CustomerCashStandingTests
     private readonly Mock<IOrderRepository> _orders = new();
     private readonly Mock<IPendingDispatch> _pending = new();
     private readonly Mock<IReceivableRepository> _receivables = new();
+    private readonly ISavedCardRepository _savedCards = SavedCardTestData.Repository();
     private readonly List<Order> _customerOrders = [];
 
     public CustomerCashStandingTests()
@@ -70,7 +71,7 @@ public sealed class CustomerCashStandingTests
     }
 
     [Fact]
-    public async Task A_Cash_Schedule_Is_Written_For_A_Customer_With_No_Saved_Card()
+    public async Task A_Cash_Schedule_Is_Written_For_A_Customer_With_A_Usable_Saved_Card()
     {
         AssertValid(await ValidateCreate(PaymentType.Cash));
         AssertValid(await ValidateUpdate(PaymentType.Cash));
@@ -114,18 +115,33 @@ public sealed class CustomerCashStandingTests
         AssertValid(await ValidateUpdate(PaymentType.Card));
     }
 
-    /// <summary>The saved cards are never read: a strict double fails the confirmation if they are.</summary>
-    [Fact]
-    public async Task Confirming_A_Cash_Occurrence_Never_Asks_For_A_Saved_Card()
+    [Theory]
+    [InlineData("absent")]
+    [InlineData("pending")]
+    [InlineData("expired")]
+    [InlineData("removed")]
+    [InlineData("unverified")]
+    public async Task A_Cash_Schedule_And_Its_Confirmation_Require_A_Usable_Captured_Card(string state)
     {
+        var card = SavedCardTestData.Captured(UserId, Czk.Id);
+        if (state == "pending") card = Cleansia.Core.Domain.Users.SavedCard.Start(UserId, Czk.Id, "cus_pending", null, null);
+        if (state == "expired") card = SavedCardTestData.Captured(UserId, Czk.Id, expYear: 2020);
+        if (state == "removed") card.IsActive = false;
+        if (state == "unverified") card.Capture("", "visa", "4242", 12, 2035);
+        Mock.Get(_savedCards).Setup(r => r.GetCapturedForUserInCurrencyAsync(UserId, Czk.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(state == "absent" ? [] : [card]);
         var occurrence = ArrangeOccurrence();
 
-        var result = await ConfirmHandler(new Mock<ISavedCardRepository>(MockBehavior.Strict).Object)
+        AssertRefusedWith(BusinessErrorMessage.OrderCashRequiresSavedCard, await ValidateCreate(PaymentType.Cash));
+        AssertRefusedWith(BusinessErrorMessage.OrderCashRequiresSavedCard, await ValidateUpdate(PaymentType.Cash));
+        var result = await ConfirmHandler(stripe: new Mock<IStripeClient>(MockBehavior.Strict).Object,
+                consents: new Mock<IConsentService>(MockBehavior.Strict).Object)
             .Handle(new ConfirmRecurringOrder.Command(OccurrenceId), CancellationToken.None);
 
-        Assert.True(result.IsSuccess, result.Error?.Message);
-        Assert.NotNull(occurrence.CustomerConfirmedAt);
-        Assert.Equal(PaymentStatus.Pending, occurrence.PaymentStatus);
+        Assert.Equal(BusinessErrorMessage.OrderCashRequiresSavedCard, result.Error!.Message);
+        Assert.Equal(nameof(Order.PaymentType), result.Error.Code);
+        Assert.Null(occurrence.CustomerConfirmedAt);
+        _pending.VerifyNoOtherCalls();
     }
 
     [Fact]
@@ -256,7 +272,7 @@ public sealed class CustomerCashStandingTests
                 CatalogueDoubles.Packages(),
                 Cleansia.Tests.Features.Legal.CustomerConsentDoubles.Consented(),
                 Mock.Of<ILegalDocumentResolver>(),
-                _receivables.Object)
+                _receivables.Object, _savedCards)
             .ValidateAsync(new CreateRecurringBooking.Command(
                 Frequency: (int)RecurrenceFrequency.Weekly,
                 DayOfWeek: (int)System.DayOfWeek.Tuesday,
@@ -282,7 +298,7 @@ public sealed class CustomerCashStandingTests
                 OrderMarketDoubles.EveryCityServiced(),
                 CatalogueDoubles.Services(TwoHours),
                 CatalogueDoubles.Packages(),
-                _receivables.Object)
+                _receivables.Object, _savedCards)
             .ValidateAsync(new UpdateRecurringBooking.Command(
                 TemplateId: TemplateId,
                 Frequency: (int)RecurrenceFrequency.Weekly,
@@ -300,7 +316,7 @@ public sealed class CustomerCashStandingTests
         ISavedCardRepository? savedCards = null, IStripeClient? stripe = null, IConsentService? consents = null) => new(
         OrderAccessDoubles.Over(_orders, _session),
         _orders.Object,
-        savedCards ?? Mock.Of<ISavedCardRepository>(),
+        savedCards ?? _savedCards,
         _receivables.Object,
         Mock.Of<ICreditAccountRepository>(),
         Mock.Of<IUserRepository>(),

@@ -14,7 +14,7 @@ public record OrderItem(
     string CustomerPhone,
     OrderAddress? Address,
     /// <summary>
-    /// City + zip-prefix combo safe to show before the cleaner accepts the job, e.g. "Praha · 120".
+    /// Coarse location safe to show before the cleaner accepts the job, e.g. "Praha 2" or "Brno".
     /// The same value and the same builder as <c>OrderListItem.CustomerAddressApproximate</c>: the
     /// board row and the detail behind it describe one order to one caller, so the coarse location
     /// cannot be on one and missing from the other. Always populated when the address has a city;

@@ -165,7 +165,7 @@ public class Order : TenantAuditable
         && startUtc < windowEndUtc
         && startUtc.AddMinutes(estimatedTimeMinutes) > windowStartUtc;
 
-    public int AvailableSpots => MaxEmployees - _assignedEmployees.Count;
+    public int AvailableSpots => (PaymentType == PaymentType.Cash ? Math.Min(MaxEmployees, 1) : MaxEmployees) - _assignedEmployees.Count;
     public bool HasAvailableSpots => AvailableSpots > 0;
 
     /// <summary>

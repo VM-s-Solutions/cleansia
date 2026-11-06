@@ -24,47 +24,6 @@ struct OrderCardSurface<Content: View>: View {
     }
 }
 
-struct OrderSectionHeaderRow: View {
-    let title: String
-    var systemImage: String?
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.xs) {
-            HStack(spacing: Spacing.xs) {
-                if let systemImage {
-                    Image(systemName: systemImage)
-                        .font(.system(size: 18))
-                        .foregroundColor(CleansiaColors.primary)
-                }
-                Text(title)
-                    .font(CleansiaTypography.titleMedium)
-                    .foregroundColor(CleansiaColors.onBackground)
-            }
-            // The rule that separates a section from its content now that the cards carry no border —
-            // the partner sheet's `OrderSectionCard` arrangement.
-            Divider().overlay(CleansiaColors.outlineVariant)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-}
-
-struct OrderInfoRow: View {
-    let label: String
-    let value: String
-
-    var body: some View {
-        HStack {
-            Text(label)
-                .font(CleansiaTypography.bodyMedium)
-                .foregroundColor(CleansiaColors.onSurfaceVariant)
-            Spacer()
-            Text(value)
-                .font(CleansiaTypography.titleMedium)
-                .foregroundColor(CleansiaColors.onSurface)
-        }
-    }
-}
-
 /// The customer-side adapter onto the shared `OrderStatusBadge`: it turns a status `Code` into the
 /// badge's tint and tone so the three call sites (list, detail header, home recent-booking) can't drift
 /// into three different-looking pills again. `label` overrides the resolved text for the one caller

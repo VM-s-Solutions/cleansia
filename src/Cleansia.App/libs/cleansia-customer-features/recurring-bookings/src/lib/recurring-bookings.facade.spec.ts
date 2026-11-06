@@ -17,6 +17,7 @@ import {
   QuoteOrderResponse,
   RecurringBookingTemplateDto,
   SavedAddressDto,
+  SavedCardDto,
   ServiceClient,
   ServiceListItem,
   SetRecurringBookingActiveCommand,
@@ -53,6 +54,7 @@ describe('RecurringBookingsFacade', () => {
   let orderClient: { quote: jest.Mock; myServingCleaners: jest.Mock };
   let quoteRoute: jest.SpyInstance;
   let membershipClient: { getMine: jest.Mock };
+  let savedCardClient: { getMine: jest.Mock };
   let gdprClient: { consentsGet: jest.Mock };
   let savedAddressStore: {
     addresses: ReturnType<typeof signal<SavedAddressDto[]>>;
@@ -91,6 +93,10 @@ describe('RecurringBookingsFacade', () => {
     membershipClient = {
       getMine: jest.fn().mockReturnValue(of({ hasMembership: true, status: MembershipStatus.Active })),
     };
+    savedCardClient = { getMine: jest.fn().mockReturnValue(of([
+      SavedCardDto.fromJS({ id: 'card-czk', currencyCode: 'CZK', expMonth: 12, expYear: 2099 }),
+      SavedCardDto.fromJS({ id: 'card-eur', currencyCode: 'EUR', expMonth: 12, expYear: 2099 }),
+    ])) };
     gdprClient = { consentsGet: jest.fn().mockReturnValue(of([])) };
     savedAddressStore = {
       addresses: signal<SavedAddressDto[]>([]),
@@ -118,6 +124,7 @@ describe('RecurringBookingsFacade', () => {
             orderClient,
             membershipClient,
             gdprClient,
+            savedCardClient,
           },
         },
         { provide: SavedAddressStore, useValue: savedAddressStore },
@@ -1458,6 +1465,32 @@ describe('RecurringBookingsFacade', () => {
       expect(facade.cashEligibility()).toEqual({ kind: 'available' });
     });
 
+    it('requires a saved card after a successful current read', async () => {
+      savedCardClient.getMine.mockReturnValue(of([]));
+      orderClient.quote.mockReturnValue(of(crewOf(1)));
+      completeForm(PaymentType.Card);
+      await facade.quoteForm();
+      expect(facade.cashEligibility()).toEqual({ kind: 'needs_saved_card' });
+    });
+
+    it('holds cash while the current card read has failed', async () => {
+      savedCardClient.getMine.mockReturnValue(throwError(() => new Error('offline')));
+      orderClient.quote.mockReturnValue(of(crewOf(1)));
+      completeForm(PaymentType.Card);
+      await facade.quoteForm();
+      expect(facade.cashEligibility()).toEqual({ kind: 'pending' });
+    });
+
+    it('rechecks the card on cash submission and refuses a server-side removal', async () => {
+      orderClient.quote.mockReturnValue(of(crewOf(1)));
+      completeForm(PaymentType.Cash);
+      await facade.quoteForm();
+      savedCardClient.getMine.mockReturnValue(of([]));
+      expect(await facade.submit()).toBe(false);
+      expect(client.create).not.toHaveBeenCalled();
+      expect(facade.formData().paymentType).toBeNull();
+    });
+
     it('refuses cash when the quote says two cleaners are needed', async () => {
       orderClient.quote.mockReturnValue(of(crewOf(2)));
       facade.updateFormData({ selectedServiceIds: ['s1'] });
@@ -1595,6 +1628,8 @@ describe('RecurringBookingsFacade', () => {
       expect(ok).toBe(false);
       expect(snackbar.showError).not.toHaveBeenCalled();
       expect(facade.formData().paymentType).toBeNull();
+      expect(facade.cashEligibility()).toEqual({ kind: 'available' });
+      expect(facade.cashSelectable()).toBe(true);
       expect(facade.cashCleared()).toBe(true);
     });
 
@@ -1610,8 +1645,33 @@ describe('RecurringBookingsFacade', () => {
       expect(ok).toBe(false);
       expect(snackbar.showError).not.toHaveBeenCalled();
       expect(facade.formData().paymentType).toBeNull();
+      expect(facade.cashEligibility()).toEqual({ kind: 'available' });
+      expect(facade.cashSelectable()).toBe(true);
       expect(facade.cashCleared()).toBe(true);
       expect(facade.owesUnpaidAmount()).toBe(false);
+    });
+
+    it('invalidates the successful card read then resolves the POST removal with one new read', async () => {
+      const recovery = new Subject<SavedCardDto[]>();
+      orderClient.quote.mockReturnValue(of(crewOf(1)));
+      client.create.mockImplementation(() => {
+        savedCardClient.getMine.mockReturnValue(recovery);
+        return throwError(() => ({ errors: { PaymentType: 'order.cash_requires_saved_card' } }));
+      });
+      completeForm(PaymentType.Cash);
+
+      expect(await facade.submit()).toBe(false);
+      expect(client.create).toHaveBeenCalledTimes(1);
+      expect(facade.formData().paymentType).toBeNull();
+      expect(facade.cashEligibility()).toEqual({ kind: 'pending' });
+      expect(facade.cashSelectable()).toBe(false);
+
+      recovery.next([]);
+      recovery.complete();
+      await Promise.resolve();
+      expect(facade.cashEligibility()).toEqual({ kind: 'needs_saved_card' });
+      expect(facade.formData().paymentType).toBeNull();
+      expect(snackbar.showError).not.toHaveBeenCalled();
     });
 
     describe('a schedule refused while the customer owes an amount', () => {

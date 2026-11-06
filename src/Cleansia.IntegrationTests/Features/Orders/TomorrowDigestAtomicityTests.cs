@@ -150,7 +150,7 @@ public sealed class TomorrowDigestAtomicityTests(PostgresContainerFixture fixtur
                 var date = index == 0 ? start : index == 1 ? end : start.AddTicks(-10);
                 var order = Order.Create("Boundary Customer", "boundary@cleansia.test", "+420000000000",
                     Address.Create("Test St 1", "Brno", "60200", "tomorrow-notice-country"), 1, 1, date,
-                    PaymentType.Cash, 1000m, "tomorrow-notice-currency", PaymentStatus.Pending,
+                    PaymentType.Card, 1000m, "tomorrow-notice-currency", PaymentStatus.Paid,
                     cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
                 order.Id = $"tomorrow-boundary-{index}";
                 order.TenantId = TestTenants.Default;
@@ -215,7 +215,7 @@ public sealed class TomorrowDigestAtomicityTests(PostgresContainerFixture fixtur
                 seed.Users.Add(customer);
                 order = Order.Create("Customer Notice", customer.Email, "+420000000000",
                     Address.Create("Test St 1", "Brno", "60200", country.Id), 1, 1, TimeZoneInfo.ConvertTimeToUtc(TimeZoneInfo.ConvertTimeFromUtc(_now, _zone).Date.AddDays(1).AddHours(12), _zone),
-                    PaymentType.Cash, 1000m, currency.Id, PaymentStatus.Pending, userId: customer.Id,
+                    PaymentType.Card, 1000m, currency.Id, PaymentStatus.Paid, userId: customer.Id,
                     cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
                 order.Id = $"tomorrow-notice-order-{index/2}";
                 order.TenantId = tenant;

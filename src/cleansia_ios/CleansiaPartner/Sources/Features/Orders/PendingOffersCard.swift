@@ -70,7 +70,7 @@ struct PendingOffersCardContent: View {
                         .font(CleansiaTypography.labelLarge)
                         .foregroundColor(CleansiaColors.primaryText)
                     Image(systemName: "arrow.right")
-                        .font(.system(size: 13))
+                        .font(CleansiaTypography.labelLarge)
                         .foregroundColor(CleansiaColors.primaryText)
                 }
             }

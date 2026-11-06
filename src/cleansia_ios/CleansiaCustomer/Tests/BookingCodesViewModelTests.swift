@@ -43,7 +43,8 @@ final class BookingCodesViewModelTests: XCTestCase {
             referralClient: referral,
             countryResolver: FakeCountryResolver(),
             market: market?.statePublisher ?? Just(.unavailable).eraseToAnyPublisher(),
-            scheduler: TestScheduler.dispatch.eraseToAnyScheduler()
+            scheduler: TestScheduler.dispatch.eraseToAnyScheduler(),
+            savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])])
         )
     }
 
@@ -302,7 +303,8 @@ final class BookingCodesViewModelTests: XCTestCase {
             promoClient: promo,
             referralClient: FakeReferralClient(),
             countryResolver: FakeCountryResolver(),
-            scheduler: scheduler.eraseToAnyScheduler()
+            scheduler: scheduler.eraseToAnyScheduler(),
+            savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])])
         )
         let quoteLanded = expectation(description: "The expected quote has landed")
         let observation = vm.$quoteState.first { $0 == .quoted(quoted) }.sink { _ in quoteLanded.fulfill() }

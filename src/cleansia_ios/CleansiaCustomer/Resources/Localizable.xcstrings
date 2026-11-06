@@ -2249,31 +2249,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Platba hotově už pro tuto objednávku není možná, a proto není vybrán žádný způsob platby. Zvolte, jak chcete platit."
+            "value": "Hotovost není dostupná. Zvolte způsob platby."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cash is no longer available for this booking, so no payment method is selected. Choose how you want to pay."
+            "value": "Cash is unavailable. Choose a payment method."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Оплата наличными для этого заказа больше недоступна, поэтому способ оплаты не выбран. Выберите, как вы хотите платить."
+            "value": "Наличные недоступны. Выберите способ оплаты."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Platba v hotovosti už pre túto objednávku nie je možná, preto nie je vybraný žiadny spôsob platby. Zvoľte, ako chcete platiť."
+            "value": "Hotovosť nie je dostupná. Zvoľte spôsob platby."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Оплата готівкою для цього замовлення більше недоступна, тому спосіб оплати не обрано. Оберіть, як ви хочете платити."
+            "value": "Готівка недоступна. Оберіть спосіб оплати."
           }
         }
       }
@@ -3337,31 +3337,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zda můžete platit hotově, potvrdíme, jakmile bude známa cena."
+            "value": "Ověřujeme možnost platby hotově…"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Whether you can pay in cash is confirmed once the price is ready."
+            "value": "Checking cash payment availability…"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Можно ли платить наличными, мы подтвердим, как только будет известна цена."
+            "value": "Проверяем возможность оплаты наличными…"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Či môžete platiť v hotovosti, potvrdíme, keď bude známa cena."
+            "value": "Overujeme možnosť platby v hotovosti…"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Чи можна платити готівкою, ми підтвердимо, щойно буде відома ціна."
+            "value": "Перевіряємо можливість оплати готівкою…"
           }
         }
       }
@@ -6205,111 +6205,6 @@
         }
       }
     },
-    "booking_success_address_label": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Adresa"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Address"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Адрес"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Adresa"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Адреса"
-          }
-        }
-      }
-    },
-    "booking_success_arrival_label": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Příjezd"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Arrival"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Прибытие"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Príchod"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Прибуття"
-          }
-        }
-      }
-    },
-    "booking_success_confirmation_code": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Potvrzovací kód"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Confirmation code"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Код подтверждения"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Potvrdzovací kód"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Код підтвердження"
-          }
-        }
-      }
-    },
     "booking_success_go_home": {
       "extractionState": "stale",
       "localizations": {
@@ -6376,41 +6271,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Прогрес бронювання"
-          }
-        }
-      }
-    },
-    "booking_success_subtitle": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Máme vaši rezervaci — brzy ji potvrdíme."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "We've got your booking — we'll confirm it shortly."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Мы получили ваше бронирование — скоро подтвердим его."
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Máme vašu rezerváciu — čoskoro ju potvrdíme."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ми отримали ваше бронювання — скоро його підтвердимо."
           }
         }
       }
@@ -6761,41 +6621,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Усього"
-          }
-        }
-      }
-    },
-    "booking_success_whats_next": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Uklízeč si vaši objednávku brzy převezme — oznámíme vám, až bude na cestě."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "A cleaner will pick up your order soon — you'll get a notification when they're on the way."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Клинер скоро возьмёт ваш заказ — мы уведомим, когда он будет в пути."
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Upratovačka si vašu objednávku čoskoro prevezme — oznámime vám, keď bude na ceste."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Клінер скоро прийме ваше замовлення — ми сповістимо, коли він буде в дорозі."
           }
         }
       }
@@ -13388,31 +13213,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Klepnout pro objednání"
+            "value": "Objednat"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tap to book"
+            "value": "Book"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Нажмите для заказа"
+            "value": "Заказать"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Klepnúť na objednanie"
+            "value": "Objednať"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Натисніть для замовлення"
+            "value": "Замовити"
           }
         }
       }
@@ -21515,31 +21340,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Klepnutím vyberte"
+            "value": "Vybrat datum"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tap to pick"
+            "value": "Choose date"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Нажмите, чтобы выбрать"
+            "value": "Выбрать дату"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ťuknutím vyberte"
+            "value": "Vybrať dátum"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Торкніться, щоб обрати"
+            "value": "Обрати дату"
           }
         }
       }
@@ -29954,31 +29779,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Z karet uložených ve vašem účtu nic nestrhneme, pokud jimi sami nezaplatíte, a kartu můžete kdykoli odebrat."
+            "value": "Pro platbu hotově potřebujete uloženou kartu. Strhneme z ní peníze pouze při vaší platbě kartou."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cards saved to your account are never charged unless you pay with them, and you can remove one at any time."
+            "value": "Cash bookings require a saved card. We charge it only when you pay by card."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "С карт, сохранённых в вашем аккаунте, деньги списываются, только когда вы сами ими платите, и карту можно удалить в любой момент."
+            "value": "Для оплаты наличными нужна сохранённая карта. Мы списываем с неё деньги, только когда вы платите картой."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Z kariet uložených vo vašom účte nič nestrhneme, ak nimi sami nezaplatíte, a kartu môžete kedykoľvek odstrániť."
+            "value": "Na platbu v hotovosti potrebujete uloženú kartu. Peniaze z nej strhneme iba pri vašej platbe kartou."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "З карток, збережених у вашому акаунті, кошти списуються лише тоді, коли ви самі ними платите, і картку можна будь-коли видалити."
+            "value": "Для оплати готівкою потрібна збережена картка. Ми списуємо з неї кошти лише тоді, коли ви платите карткою."
           }
         }
       }
@@ -30059,31 +29884,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nemáte uloženou kartu. Uložit ji můžete při příští platbě kartou."
+            "value": "Nemáte uloženou kartu. Přidejte ji pro platby hotově."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No card saved. You can save one the next time you pay by card."
+            "value": "No saved card. Add one for cash bookings."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Карта не сохранена. Её можно сохранить при следующей оплате картой."
+            "value": "Нет сохранённой карты. Добавьте её для оплаты наличными."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nemáte uloženú kartu. Uložiť ju môžete pri ďalšej platbe kartou."
+            "value": "Nemáte uloženú kartu. Pridajte ju na platby v hotovosti."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Картку не збережено. Її можна зберегти під час наступної оплати карткою."
+            "value": "Немає збереженої картки. Додайте її для оплати готівкою."
           }
         }
       }
@@ -30339,31 +30164,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Kartu můžete znovu uložit při příští platbě kartou."
+            "value": "Pro platbu hotově potřebujete uloženou kartu. Kartu můžete kdykoli znovu přidat."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You can save a card again the next time you pay by card."
+            "value": "Cash bookings require a saved card. You can add one again at any time."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Карту можно снова сохранить при следующей оплате картой."
+            "value": "Для оплаты наличными нужна сохранённая карта. Её можно добавить снова в любой момент."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Kartu môžete znova uložiť pri ďalšej platbe kartou."
+            "value": "Na platbu v hotovosti potrebujete uloženú kartu. Kartu môžete kedykoľvek znova pridať."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Картку можна знову зберегти під час наступної оплати карткою."
+            "value": "Для оплати готівкою потрібна збережена картка. Її можна знову додати будь-коли."
           }
         }
       }
@@ -31144,31 +30969,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Máte novou zprávu k vaší reklamaci. Klepněte pro přečtení."
+            "value": "Máte novou zprávu k vaší reklamaci."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You have a new message about your dispute. Tap to read."
+            "value": "You have a new message about your dispute."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "У вас новое сообщение по вашей жалобе. Нажмите, чтобы прочитать."
+            "value": "У вас новое сообщение по вашей жалобе."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Máte novú správu k vašej reklamácii. Ťuknutím si ju prečítate."
+            "value": "Máte novú správu k vašej reklamácii."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "У вас нове повідомлення щодо вашої скарги. Натисніть, щоб прочитати."
+            "value": "У вас нове повідомлення щодо вашої скарги."
           }
         }
       }
@@ -31354,7 +31179,7 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nyní si můžete vzít nejvýše %1$@ zakázek týdně. Klepnutím zobrazíte podrobnosti."
+            "value": "Nyní si můžete vzít nejvýše %1$@ zakázek týdně."
           }
         },
         "en": {
@@ -31366,19 +31191,19 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Теперь вы можете брать не более %1$@ заказов в неделю. Нажмите, чтобы посмотреть."
+            "value": "Теперь вы можете брать не более %1$@ заказов в неделю."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Teraz si môžete vziať najviac %1$@ zakáziek týždenne. Ťuknutím zobrazíte podrobnosti."
+            "value": "Teraz si môžete vziať najviac %1$@ zakáziek týždenne."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Тепер ви можете брати щонайбільше %1$@ замовлень на тиждень. Торкніться, щоб переглянути."
+            "value": "Тепер ви можете брати щонайбільше %1$@ замовлень на тиждень."
           }
         }
       }
@@ -31704,31 +31529,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Byla vám přiřazena zakázka č. %1$@. Klepnutím zobrazíte podrobnosti."
+            "value": "Byla vám přiřazena zakázka č. %1$@."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You've been assigned job #%1$@. Tap to see the details."
+            "value": "You've been assigned job #%1$@."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Вам назначен заказ №%1$@. Нажмите, чтобы посмотреть детали."
+            "value": "Вам назначен заказ №%1$@."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Bola vám priradená zákazka č. %1$@. Ťuknutím zobrazíte podrobnosti."
+            "value": "Bola vám priradená zákazka č. %1$@."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Вам призначено замовлення №%1$@. Торкніться, щоб переглянути деталі."
+            "value": "Вам призначено замовлення №%1$@."
           }
         }
       }
@@ -31774,7 +31599,7 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zakázka, kterou jste přijali, byla zrušena: #%1$@. Klepnutím zobrazíte detaily."
+            "value": "Zakázka, kterou jste přijali, byla zrušena: #%1$@."
           }
         },
         "en": {
@@ -31786,19 +31611,19 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Заказ, который вы приняли, отменён: #%1$@. Нажмите, чтобы посмотреть детали."
+            "value": "Заказ, который вы приняли, отменён: #%1$@."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zákazka, ktorú ste prijali, bola zrušená: #%1$@. Ťuknutím zobrazíte detaily."
+            "value": "Zákazka, ktorú ste prijali, bola zrušená: #%1$@."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Замовлення, яке ви прийняли, скасовано: #%1$@. Торкніться, щоб переглянути деталі."
+            "value": "Замовлення, яке ви прийняли, скасовано: #%1$@."
           }
         }
       }
@@ -31844,7 +31669,7 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zakázka č. %1$@ byla přeřazena a už není ve vašem rozvrhu. Klepnutím zobrazíte podrobnosti."
+            "value": "Zakázka č. %1$@ byla přeřazena a už není ve vašem rozvrhu."
           }
         },
         "en": {
@@ -31856,19 +31681,19 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Заказ №%1$@ переназначен, его больше нет в вашем графике. Нажмите, чтобы посмотреть детали."
+            "value": "Заказ №%1$@ переназначен, его больше нет в вашем графике."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zákazka č. %1$@ bola preradená a už nie je vo vašom rozvrhu. Ťuknutím zobrazíte podrobnosti."
+            "value": "Zákazka č. %1$@ bola preradená a už nie je vo vašom rozvrhu."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Замовлення №%1$@ перепризначено, його більше немає у вашому графіку. Торкніться, щоб переглянути деталі."
+            "value": "Замовлення №%1$@ перепризначено, його більше немає у вашому графіку."
           }
         }
       }
@@ -31914,31 +31739,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Rezervace #%1$@ byla zrušena. Klepněte pro detaily."
+            "value": "Rezervace #%1$@ byla zrušena."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Booking #%1$@ was cancelled. Tap to see what happened."
+            "value": "Booking #%1$@ was cancelled."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Заказ #%1$@ был отменён. Нажмите для деталей."
+            "value": "Заказ #%1$@ был отменён."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Rezervácia #%1$@ bola zrušená. Ťuknutím zobrazíte detaily."
+            "value": "Rezervácia #%1$@ bola zrušená."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Замовлення #%1$@ було скасовано. Натисніть для деталей."
+            "value": "Замовлення #%1$@ було скасовано."
           }
         }
       }
@@ -32054,31 +31879,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "K vaší rezervaci #%1$@ je přiřazen uklízeč. Klepněte pro zobrazení detailů."
+            "value": "K vaší rezervaci #%1$@ je přiřazen uklízeč."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "A cleaner is assigned to your booking #%1$@. Tap to see the details."
+            "value": "A cleaner is assigned to your booking #%1$@."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "К вашему заказу #%1$@ назначен клинер. Нажмите, чтобы посмотреть подробности."
+            "value": "К вашему заказу #%1$@ назначен клинер."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "K vašej rezervácii #%1$@ je priradený upratovač. Ťuknutím zobrazíte detaily."
+            "value": "K vašej rezervácii #%1$@ je priradený upratovač."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "До вашого замовлення #%1$@ призначено клінера. Натисніть, щоб переглянути деталі."
+            "value": "До вашого замовлення #%1$@ призначено клінера."
           }
         }
       }
@@ -32264,31 +32089,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vaše rezervace #%1$@ je potvrzena. Klepněte pro zobrazení detailů."
+            "value": "Vaše rezervace #%1$@ je potvrzena."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your booking #%1$@ is confirmed. Tap to see the details."
+            "value": "Your booking #%1$@ is confirmed."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Заказ #%1$@ подтверждён. Нажмите, чтобы посмотреть подробности."
+            "value": "Заказ #%1$@ подтверждён."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vaša rezervácia #%1$@ je potvrdená. Ťuknutím zobrazíte detaily."
+            "value": "Vaša rezervácia #%1$@ je potvrdená."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Замовлення #%1$@ підтверджено. Натисніть, щоб переглянути деталі."
+            "value": "Замовлення #%1$@ підтверджено."
           }
         }
       }
@@ -32334,31 +32159,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Váš uklízeč pracuje na rezervaci #%1$@. Klepněte pro sledování."
+            "value": "Váš uklízeč pracuje na rezervaci #%1$@."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your cleaner is on it for booking #%1$@. Tap to follow along."
+            "value": "Your cleaner is on it for booking #%1$@."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Клинер работает над заказом #%1$@. Нажмите, чтобы следить."
+            "value": "Клинер работает над заказом #%1$@."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Váš upratovač pracuje na rezervácii #%1$@. Ťuknutím sledujte priebeh."
+            "value": "Váš upratovač pracuje na rezervácii #%1$@."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Клінер працює над замовленням #%1$@. Натисніть, щоб стежити."
+            "value": "Клінер працює над замовленням #%1$@."
           }
         }
       }
@@ -32404,31 +32229,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nové zakázky ve vašem okolí: %1$@. Klepnutím je zobrazíte."
+            "value": "Nové zakázky ve vašem okolí: %1$@."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "New jobs near you: %1$@. Tap to view."
+            "value": "New jobs near you: %1$@."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Новые заказы рядом с вами: %1$@. Нажмите, чтобы посмотреть."
+            "value": "Новые заказы рядом с вами: %1$@."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nové zákazky vo vašom okolí: %1$@. Ťuknutím ich zobrazíte."
+            "value": "Nové zákazky vo vašom okolí: %1$@."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Нові замовлення поруч із вами: %1$@. Торкніться, щоб переглянути."
+            "value": "Нові замовлення поруч із вами: %1$@."
           }
         }
       }
@@ -32822,31 +32647,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Rezervace #%1$@ už není vyhrazena uklízeči, kterého jste si vyžádali. Teď je otevřená celému našemu týmu — klepněte pro zobrazení detailů."
+            "value": "Rezervace #%1$@ už není vyhrazena uklízeči, kterého jste si vyžádali. Teď je otevřená celému našemu týmu."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Booking #%1$@ is no longer held for the cleaner you asked for. It's now open to our whole team — tap to see the details."
+            "value": "Booking #%1$@ is no longer held for the cleaner you asked for. It's now open to our whole team."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Заказ #%1$@ больше не закреплён за клинером, которого вы выбрали. Теперь он открыт для всей нашей команды — нажмите, чтобы посмотреть детали."
+            "value": "Заказ #%1$@ больше не закреплён за клинером, которого вы выбрали. Теперь он открыт для всей нашей команды."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Rezervácia #%1$@ už nie je vyhradená upratovačovi, ktorého ste si vyžiadali. Teraz je otvorená celému nášmu tímu — ťuknite pre zobrazenie detailov."
+            "value": "Rezervácia #%1$@ už nie je vyhradená upratovačovi, ktorého ste si vyžiadali. Teraz je otvorená celému nášmu tímu."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Замовлення #%1$@ більше не зарезервоване для клінера, якого ви обрали. Тепер воно відкрите для всієї нашої команди — натисніть, щоб переглянути деталі."
+            "value": "Замовлення #%1$@ більше не зарезервоване для клінера, якого ви обрали. Тепер воно відкрите для всієї нашої команди."
           }
         }
       }
@@ -33172,31 +32997,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zakázky na zítra: %1$@. Klepnutím je zobrazíte."
+            "value": "Zakázky na zítra: %1$@."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Jobs tomorrow: %1$@. Tap to see them."
+            "value": "Jobs tomorrow: %1$@."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Заказов на завтра: %1$@. Нажмите, чтобы посмотреть."
+            "value": "Заказов на завтра: %1$@."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zákazky na zajtra: %1$@. Klepnutím ich zobrazíte."
+            "value": "Zákazky na zajtra: %1$@."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Замовлень на завтра: %1$@. Торкніться, щоб переглянути."
+            "value": "Замовлень на завтра: %1$@."
           }
         }
       }
@@ -33310,31 +33135,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vaše rezervace #%1$@ začíná přibližně za hodinu. Klepněte pro zobrazení detailů."
+            "value": "Vaše rezervace #%1$@ začíná přibližně za hodinu."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your booking #%1$@ starts in about an hour. Tap to see the details."
+            "value": "Your booking #%1$@ starts in about an hour."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ваше бронирование #%1$@ начнётся примерно через час. Нажмите, чтобы посмотреть детали."
+            "value": "Ваше бронирование #%1$@ начнётся примерно через час."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vaša rezervácia #%1$@ začína približne o hodinu. Ťuknite pre zobrazenie podrobností."
+            "value": "Vaša rezervácia #%1$@ začína približne o hodinu."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ваше замовлення #%1$@ почнеться приблизно за годину. Натисніть, щоб переглянути деталі."
+            "value": "Ваше замовлення #%1$@ почнеться приблизно за годину."
           }
         }
       }
@@ -33380,31 +33205,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vaše faktura za poslední výplatní období byla proplacena. Klepnutím zobrazíte."
+            "value": "Vaše faktura za poslední výplatní období byla proplacena."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your invoice for the latest pay period has been paid. Tap to view."
+            "value": "Your invoice for the latest pay period has been paid."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ваш счёт за последний расчётный период оплачен. Нажмите, чтобы посмотреть."
+            "value": "Ваш счёт за последний расчётный период оплачен."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vaša faktúra za posledné výplatné obdobie bola uhradená. Ťuknutím zobrazíte."
+            "value": "Vaša faktúra za posledné výplatné obdobie bola uhradená."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ваш рахунок за останній розрахунковий період оплачено. Торкніться, щоб переглянути."
+            "value": "Ваш рахунок за останній розрахунковий період оплачено."
           }
         }
       }
@@ -37258,41 +37083,6 @@
         }
       }
     },
-    "booking_dirtiness_hint": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Choose the state that best fits the whole home. If you are torn between two levels, choose the higher one. The cleaner then has enough time and the result will be as expected."
-          }
-        },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vyberte stav, který nejlépe odpovídá celé domácnosti. Pokud váháte mezi dvěma stupni, zvolte vyšší. Uklízečka pak má dost času a výsledek bude odpovídat."
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vyberte stav, ktorý najlepšie zodpovedá celej domácnosti. Ak váhate medzi dvoma stupňami, zvoľte vyšší. Upratovačka potom bude mať dosť času a výsledok bude zodpovedať."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Оберіть стан, який найкраще відповідає всьому помешканню. Якщо вагаєтеся між двома рівнями, оберіть вищий. Тоді прибиральник матиме достатньо часу, і результат відповідатиме очікуванням."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Выберите состояние, которое лучше всего соответствует всему жилью. Если сомневаетесь между двумя уровнями, выберите более высокий. Тогда у клинера будет достаточно времени, и результат оправдает ожидания."
-          }
-        }
-      }
-    },
     "booking_dirtiness_normal_name": {
       "extractionState": "manual",
       "localizations": {
@@ -38724,6 +38514,818 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ваші прибиральники"
+          }
+        }
+      }
+    },
+    "booking_cash_card_check_failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uloženou kartu se nepodařilo ověřit. Zkuste to znovu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn’t check your saved card. Try again."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось проверить сохранённую карту. Повторите попытку."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uloženú kartu sa nepodarilo overiť. Skúste to znova."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не вдалося перевірити збережену картку. Спробуйте ще раз."
+          }
+        }
+      }
+    },
+    "booking_cash_needs_saved_card": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hotovost vyžaduje uloženou platnou kartu v této měně."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cash requires a saved, unexpired card in this currency."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Для оплаты наличными нужна сохранённая карта в этой валюте с действующим сроком."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hotovosť vyžaduje uloženú platnú kartu v tejto mene."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Для оплати готівкою потрібна збережена картка в цій валюті з чинним строком дії."
+          }
+        }
+      }
+    },
+    "auth_email_placeholder": {
+      "comment": "Example email address displayed as a placeholder in authentication forms.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "customer@example.com"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "customer@example.com"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "customer@example.com"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "customer@example.com"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "customer@example.com"
+          }
+        }
+      }
+    },
+    "booking_dirtiness_torn_hint": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Váháte mezi dvěma? Zvolte vyšší, ať má uklízečka dost času."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Torn between two? Choose the higher one, so your cleaner has enough time."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сомневаетесь между двумя? Выберите более высокий, чтобы у клинера хватило времени."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Váhate medzi dvoma? Zvoľte vyšší, nech má upratovačka dosť času."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вагаєтеся між двома? Оберіть вищий, щоб прибиральник мав достатньо часу."
+          }
+        }
+      }
+    },
+    "booking_success_cash_on_day": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaplaťte v hotovosti uklízeči v den úklidu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Please pay in cash to the cleaner on the day."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оплатите наличными клинеру в день уборки."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaplaťte v hotovosti upratovačovi v deň upratovania."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сплатіть готівкою клінеру в день прибирання."
+          }
+        }
+      }
+    },
+    "booking_success_cleaner_assigned": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uklízeč přiřazen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cleaner assigned"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Клинер назначен"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upratovač priradený"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Клінера призначено"
+          }
+        }
+      }
+    },
+    "booking_success_confirmed_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rezervace potvrzena"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Booking confirmed"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Бронирование подтверждено"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rezervácia potvrdená"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Бронювання підтверджено"
+          }
+        }
+      }
+    },
+    "booking_success_crew": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$lld uklízeči"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$lld uklízeče"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$lld uklízeč"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$lld uklízečů"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$lld cleaner"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$lld cleaners"
+                }
+              }
+            }
+          }
+        },
+        "ru": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$lld клинера"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$lld клинеров"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$lld клинер"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$lld клинера"
+                }
+              }
+            }
+          }
+        },
+        "sk": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$lld upratovači"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$lld upratovača"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$lld upratovač"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$lld upratovačov"
+                }
+              }
+            }
+          }
+        },
+        "uk": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$lld клінери"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$lld клінерів"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$lld клінер"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$lld клінера"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "booking_success_crew_needed": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Potřebuje %1$lld uklízeče."
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Potřebuje %1$lld uklízečů."
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Potřebuje %1$lld uklízeče."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Potřebuje %1$lld uklízečů."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It needs %1$lld cleaner."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It needs %1$lld cleaners."
+                }
+              }
+            }
+          }
+        },
+        "ru": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Нужно %1$lld клинера."
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Нужно %1$lld клинеров."
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Нужен %1$lld клинер."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Нужно %1$lld клинеров."
+                }
+              }
+            }
+          }
+        },
+        "sk": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Potrebuje %1$lld upratovačov."
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Potrebuje %1$lld upratovačov."
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Potrebuje %1$lld upratovača."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Potrebuje %1$lld upratovačov."
+                }
+              }
+            }
+          }
+        },
+        "uk": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Потрібно %1$lld клінери."
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Потрібно %1$lld клінерів."
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Потрібен %1$lld клінер."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Потрібно %1$lld клінерів."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "booking_success_details_loading": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Načítání údajů rezervace…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading booking details…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Загружаем детали бронирования…"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Načítanie údajov rezervácie…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Завантажуємо деталі бронювання…"
+          }
+        }
+      }
+    },
+    "booking_success_details_unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Údaje rezervace jsou dočasně nedostupné."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Booking details are temporarily unavailable."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Детали бронирования временно недоступны."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Údaje rezervácie sú dočasne nedostupné."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Деталі бронювання тимчасово недоступні."
+          }
+        }
+      }
+    },
+    "booking_success_finding": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zatím ji nepřevzal žádný uklízeč."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No cleaner has taken it yet."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пока ни один клинер его не взял."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zatiaľ ju neprevzal žiadny upratovač."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Поки що жоден клінер його не взяв."
+          }
+        }
+      }
+    },
+    "booking_success_finding_sub": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dáme vám vědět, jakmile ji někdo převezme."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We'll let you know as soon as one does."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сообщим вам, как только кто-то его возьмёт."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dáme vám vedieť, hneď ako ju niekto prevezme."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Повідомимо вас, щойно хтось його візьме."
+          }
+        }
+      }
+    },
+    "booking_success_free_until": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zrušení zdarma do %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Free cancellation until %@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Бесплатная отмена до %@"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zrušenie zadarmo do %@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Безкоштовне скасування до %@"
+          }
+        }
+      }
+    },
+    "booking_success_free_while": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zrušení zdarma, dokud ji nepřevezme žádný uklízeč."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Free to cancel while no cleaner has taken it."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отмена бесплатна, пока ни один клинер его не взял."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zrušenie zadarmo, kým ju neprevezme žiadny upratovač."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Скасування безкоштовне, поки жоден клінер його не взяв."
+          }
+        }
+      }
+    },
+    "booking_success_no_cleaner_card": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Když ji nikdo nepřevezme, zrušíme ji, vrátíme vám vše a přidáme kredit."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If no cleaner can take it, we cancel it and refund you in full, plus credit."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Если его никто не возьмёт, мы отменим его, вернём всю сумму и начислим кредит."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keď ju nikto neprevezme, zrušíme ju, vrátime vám všetko a pridáme kredit."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Якщо його ніхто не візьме, ми скасуємо його, повернемо всю суму й нарахуємо кредит."
+          }
+        }
+      }
+    },
+    "booking_success_no_cleaner_cash": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Když ji nikdo nepřevezme, zrušíme ji zdarma a přidáme vám kredit."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If no cleaner can take it, we cancel it free of charge and give you credit."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Если его никто не возьмёт, мы бесплатно отменим его и начислим вам кредит."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keď ju nikto neprevezme, zrušíme ju zadarmo a pridáme vám kredit."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Якщо його ніхто не візьме, ми безкоштовно скасуємо його й нарахуємо вам кредит."
           }
         }
       }

@@ -437,6 +437,7 @@ fun ConfirmStep(
         val cashReason = when (val cash = cashEligibility) {
             CashEligibility.NeedsAccount -> stringResource(R.string.booking_cash_needs_account)
             is CashEligibility.NeedsCard -> stringResource(R.string.booking_cash_needs_card, cash.requiredCleaners)
+            CashEligibility.NeedsSavedCard -> stringResource(R.string.booking_cash_needs_saved_card)
             CashEligibility.Pending -> stringResource(R.string.booking_cash_pending)
             CashEligibility.Available -> null
         }

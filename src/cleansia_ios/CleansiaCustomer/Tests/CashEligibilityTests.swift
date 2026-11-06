@@ -6,31 +6,48 @@ import XCTest
 /// is not a refusal.
 final class CashEligibilityTests: XCTestCase {
     func testASignedInCustomerWithOneRequiredCleanerMayPayCash() {
-        XCTAssertEqual(CashEligibility.resolve(signedIn: true, requiredEmployees: 1), .available)
+        XCTAssertEqual(
+            CashEligibility.resolve(signedIn: true, requiredEmployees: 1, hasUsableSavedCard: true),
+            .available
+        )
     }
 
     func testASignedInCustomerWithTwoRequiredCleanersPaysByCard() {
         XCTAssertEqual(
-            CashEligibility.resolve(signedIn: true, requiredEmployees: 2),
+            CashEligibility.resolve(signedIn: true, requiredEmployees: 2, hasUsableSavedCard: true),
             .needsCard(requiredCleaners: 2)
         )
     }
 
     func testAGuestWithOneRequiredCleanerNeedsAnAccount() {
-        XCTAssertEqual(CashEligibility.resolve(signedIn: false, requiredEmployees: 1), .needsAccount)
+        XCTAssertEqual(
+            CashEligibility.resolve(signedIn: false, requiredEmployees: 1, hasUsableSavedCard: true),
+            .needsAccount
+        )
     }
 
     func testAGuestWithTwoRequiredCleanersIsToldAboutTheCrewFirst() {
         XCTAssertEqual(
-            CashEligibility.resolve(signedIn: false, requiredEmployees: 2),
+            CashEligibility.resolve(signedIn: false, requiredEmployees: 2, hasUsableSavedCard: true),
             .needsCard(requiredCleaners: 2)
         )
     }
 
     func testNoQuoteForTheSelectionIsPendingNotARefusal() {
-        let pending = CashEligibility.resolve(signedIn: true, requiredEmployees: nil)
+        let pending = CashEligibility.resolve(signedIn: true, requiredEmployees: nil, hasUsableSavedCard: true)
         XCTAssertEqual(pending, .pending)
         XCTAssertFalse(pending.refusesCash)
+    }
+
+    func testOneCleanerStillRequiresACurrentVerifiedCard() {
+        XCTAssertEqual(
+            CashEligibility.resolve(signedIn: true, requiredEmployees: 1, hasUsableSavedCard: false),
+            .needsSavedCard
+        )
+        XCTAssertEqual(
+            CashEligibility.resolve(signedIn: true, requiredEmployees: 1, hasUsableSavedCard: nil),
+            .pending
+        )
     }
 
     func testOnlyTheAccountAndTheCrewRefuseCash() {

@@ -31,11 +31,11 @@ public sealed class CompleteOrderCrewNotDoneTests
     private CompleteOrder.Validator CreateValidator() =>
         new(_orderRepository.Object, _employeeRepository.Object, _orderPhotoRepository.Object, _accessService.Object, _acceptanceRepository.Object);
 
-    /// <summary>A two-seat in-progress cash job, paid, with its after photo, and both seats under contract.</summary>
+    /// <summary>A two-seat in-progress card job, paid, with its after photo, and both seats under contract.</summary>
     private Order ArrangeTwoSeatCrew(string caller)
     {
         var order = ValidatorTestHelpers.BuildOrder(
-            OrderId, OrderStatus.InProgress, CleanerA, PaymentType.Cash, PaymentStatus.Paid, maxEmployees: 2);
+            OrderId, OrderStatus.InProgress, CleanerA, PaymentType.Card, PaymentStatus.Paid, maxEmployees: 2);
         order.AddAssignedEmployee(OrderEmployee.Create(
             order, ValidatorTestHelpers.BuildEmployee(CleanerB, ContractStatus.Approved)));
 
@@ -108,7 +108,7 @@ public sealed class CompleteOrderCrewNotDoneTests
     {
         ArrangeTwoSeatCrew(CleanerA);
         var solo = ValidatorTestHelpers.BuildOrder(
-            OrderId, OrderStatus.InProgress, CleanerA, PaymentType.Cash, PaymentStatus.Paid, maxEmployees: 2);
+            OrderId, OrderStatus.InProgress, CleanerA, PaymentType.Card, PaymentStatus.Paid, maxEmployees: 2);
         _orderRepository.Setup(r => r.GetQueryable()).Returns(new[] { solo }.AsQueryable().BuildMock());
 
         var result = await CreateValidator().ValidateAsync(new CompleteOrder.Command(OrderId));

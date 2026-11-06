@@ -3,29 +3,44 @@ import SwiftUI
 
 struct DirtinessStep: View {
     @ObservedObject var viewModel: BookingViewModel
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        ScrollView {
-            DirtinessPicker(selected: viewModel.state.dirtiness, onSelect: viewModel.setDirtiness)
-                .padding(Spacing.l)
+        ScrollViewReader { proxy in
+            ScrollView {
+                DirtinessPicker(selected: viewModel.state.dirtiness, onSelect: viewModel.setDirtiness)
+                    .padding(.horizontal, Spacing.m)
+                    .padding(.vertical, Spacing.xs)
+            }
+            .onChange(of: viewModel.state.dirtiness) { level in
+                guard let level else { return }
+                Task {
+                    await Task.yield()
+                    withAnimation(reduceMotion ? nil : .default) {
+                        proxy.scrollTo(level)
+                    }
+                }
+            }
         }
     }
 }
 
-/// The three levels with what each looks like at home, mildest first, under the advice to pick the
-/// higher one when torn. Shared by the booking wizard and the recurring form.
+/// The three levels, mildest first, each with when it applies; only the picked one lists what it looks like at
+/// home, so the step fits a small phone. The advice to pick the higher one when torn follows them. Shared by the
+/// booking wizard and the recurring form.
 struct DirtinessPicker: View {
     let selected: Dirtiness?
     let onSelect: (Dirtiness) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.s) {
-            PaymentNote(systemImage: "info.circle", text: L10n.Booking.dirtinessHint)
+        VStack(alignment: .leading, spacing: Spacing.xs) {
             ForEach(Dirtiness.allCases, id: \.self) { level in
                 DirtinessCard(level: level, selected: level == selected) {
                     onSelect(level)
                 }
+                .id(level)
             }
+            PaymentNote(systemImage: "info.circle", text: L10n.Booking.dirtinessHint)
         }
     }
 }
@@ -37,35 +52,29 @@ private struct DirtinessCard: View {
 
     var body: some View {
         Button(action: onTap) {
-            VStack(alignment: .leading, spacing: Spacing.xs) {
-                HStack(spacing: Spacing.s) {
-                    Image(systemName: selected ? "checkmark.circle.fill" : "circle")
-                        .foregroundColor(selected ? CleansiaColors.primary : CleansiaColors.onSurfaceVariant)
-                    Text(L10n.Booking.dirtinessName(level))
-                        .font(CleansiaTypography.titleMedium)
-                        .foregroundColor(CleansiaColors.onSurface)
-                    Spacer(minLength: Spacing.xs)
-                    Text(L10n.Booking.dirtinessRate(level))
-                        .font(CleansiaTypography.labelLarge)
-                        .foregroundColor(CleansiaColors.primaryText)
-                }
-                Text(L10n.Booking.dirtinessLead(level))
-                    .font(CleansiaTypography.bodyMedium)
-                    .foregroundColor(CleansiaColors.onSurface)
-                    .fixedSize(horizontal: false, vertical: true)
-                ForEach(L10n.Booking.dirtinessSigns(level), id: \.self) { sign in
+            HStack(alignment: .firstTextBaseline, spacing: Spacing.xs) {
+                Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                    .foregroundColor(selected ? CleansiaColors.primary : CleansiaColors.onSurfaceVariant)
+                VStack(alignment: .leading, spacing: Spacing.xxs) {
                     HStack(alignment: .firstTextBaseline, spacing: Spacing.xs) {
-                        Image(systemName: "circle.fill")
-                            .font(.system(size: 5))
-                            .foregroundColor(CleansiaColors.onSurfaceVariant)
-                        Text(sign)
-                            .font(CleansiaTypography.bodyMedium)
-                            .foregroundColor(CleansiaColors.onSurfaceVariant)
-                            .fixedSize(horizontal: false, vertical: true)
+                        Text(L10n.Booking.dirtinessName(level))
+                            .font(CleansiaTypography.titleMedium)
+                            .foregroundColor(CleansiaColors.onSurface)
+                        Spacer(minLength: Spacing.xs)
+                        Text(L10n.Booking.dirtinessRate(level))
+                            .font(CleansiaTypography.labelLarge)
+                            .foregroundColor(CleansiaColors.primaryText)
+                    }
+                    Text(L10n.Booking.dirtinessLead(level))
+                        .font(CleansiaTypography.bodySmall)
+                        .foregroundColor(CleansiaColors.onSurfaceVariant)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if selected {
+                        signs
                     }
                 }
             }
-            .padding(Spacing.m)
+            .padding(Spacing.s)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(CleansiaColors.surface, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
             .overlay(
@@ -79,6 +88,23 @@ private struct DirtinessCard: View {
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(selected ? [.isSelected] : [])
+    }
+
+    private var signs: some View {
+        VStack(alignment: .leading, spacing: Spacing.hair) {
+            ForEach(L10n.Booking.dirtinessSigns(level), id: \.self) { sign in
+                HStack(alignment: .firstTextBaseline, spacing: Spacing.xs) {
+                    Image(systemName: "circle.fill")
+                        .font(.system(size: 5))
+                        .foregroundColor(CleansiaColors.primary)
+                    Text(sign)
+                        .font(CleansiaTypography.bodySmall)
+                        .foregroundColor(CleansiaColors.onSurface)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+        .padding(.top, Spacing.hair)
     }
 }
 

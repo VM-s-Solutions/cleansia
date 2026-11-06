@@ -81,43 +81,4 @@ final class OrderCrewPresentationTests: XCTestCase {
         XCTAssertEqual(try OrderDetail(fullyCrewed).crew, .full(crewSize: 2))
         XCTAssertNil(try OrderDetail(.wireComplete()).crew)
     }
-
-    // MARK: - The line the scope card renders
-
-    func testCrewLineNamesTheCrewThenTheOpenSeats() throws {
-        let restore = L10n.bundle
-        defer { L10n.bundle = restore }
-        L10n.bundle = try localeBundle("en")
-
-        XCTAssertEqual(
-            OrdersFormat.crewLine(.spotsOpen(crewSize: 2, openSpots: 1)),
-            "2 cleaners needed · 1 spot open"
-        )
-        XCTAssertEqual(OrdersFormat.crewLine(.full(crewSize: 2)), "2 cleaners needed · No spots left")
-    }
-
-    /// Through the BUILT bundle, not the `.xcstrings` source: a key present in the catalog but
-    /// absent from a shipped `.lproj` renders as its own name on screen.
-    func testCrewLineResolvesInEveryLanguage() throws {
-        let restore = L10n.bundle
-        defer { L10n.bundle = restore }
-        for language in ["en", "cs", "sk", "uk", "ru"] {
-            L10n.bundle = try localeBundle(language)
-            for crew in [OrderCrew.spotsOpen(crewSize: 2, openSpots: 1), .full(crewSize: 2)] {
-                let rendered = OrdersFormat.crewLine(crew)
-                XCTAssertTrue(rendered.contains(" · "), "\(language) dropped the separator: \(rendered)")
-                XCTAssertTrue(rendered.contains("2"), "\(language) dropped the crew size: \(rendered)")
-                for key in ["crew_size", "crew_spots_open", "crew_no_spots"] {
-                    XCTAssertFalse(rendered.contains(key), "\(language) left \(key) unresolved: \(rendered)")
-                }
-            }
-        }
-    }
-
-    private func localeBundle(_ tag: String) throws -> Bundle {
-        let hosts = [Bundle.main, Bundle(for: Self.self)]
-        let path = hosts.lazy.compactMap { $0.path(forResource: tag, ofType: "lproj") }.first
-        let resolved = try XCTUnwrap(path, "no \(tag).lproj in the built bundle")
-        return try XCTUnwrap(Bundle(path: resolved), "\(tag).lproj at \(resolved) is not a bundle")
-    }
 }

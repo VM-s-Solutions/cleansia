@@ -49,6 +49,8 @@ import cz.cleansia.partner.features.earnings.EarningsSummaryScreen
 import cz.cleansia.partner.features.invoices.InvoiceDetailScreen
 import cz.cleansia.partner.features.invoices.InvoicesListScreen
 import cz.cleansia.partner.features.main.MainScaffold
+import cz.cleansia.partner.features.main.MainTab
+import cz.cleansia.partner.features.main.PENDING_TAB_KEY
 import cz.cleansia.partner.features.notifications.NotificationsScreen
 import cz.cleansia.partner.features.onboarding.OnboardingScreen
 import cz.cleansia.partner.features.orders.OnboardingChainViewModel
@@ -270,14 +272,6 @@ fun PartnerNavHost(navController: NavHostController) {
         }
 
         composable<NavRoute.OrderDetail>(
-            // Slide-in/out (not fade) for this route specifically.
-            // The map is a SurfaceView/TextureView under the hood and
-            // doesn't respect Compose alpha during the default fade
-            // exit — the sheet content goes translucent first and
-            // reveals the still-fully-opaque map behind it, producing
-            // the "ghost panel over full-screen map" flash on back.
-            // Sliding moves all pixels together so the map slides
-            // off with the rest of the screen, no compositing fight.
             enterTransition = {
                 slideInHorizontally(
                     initialOffsetX = { it },
@@ -306,6 +300,15 @@ fun PartnerNavHost(navController: NavHostController) {
             OrderDetailScreen(
                 onNavigateBack = { navController.popBackStack() },
                 onOpenLegalDocuments = { navController.navigate(NavRoute.LegalDocuments) },
+                onOpenOrder = { id -> navController.navigate(NavRoute.OrderDetail(orderId = id)) },
+                // *See N open jobs* and *Browse jobs*: back to the Orders tab, as Earnings returns to Invoices.
+                onShowAvailable = {
+                    runCatching { navController.getBackStackEntry(NavRoute.Main) }.getOrNull()?.let { main ->
+                        main.savedStateHandle[PENDING_TAB_KEY] = MainTab.Orders.ordinal
+                        navController.popBackStack(main.destination.id, inclusive = false)
+                    } ?: navController.popBackStack()
+                },
+                onOpenEarnings = { navController.navigate(NavRoute.Earnings) },
             )
         }
 

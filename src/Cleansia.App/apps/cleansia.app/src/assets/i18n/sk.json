@@ -1028,10 +1028,10 @@
       "wizard": {
         "catalogue_changed_for_country": "Časť vášho výberu sa na tejto adrese neponúka, preto bola odobratá. Ceny sú uvedené v mene krajiny, v ktorej objednávate."
       },
-      "cash_needs_account": "V hotovosti môžu platiť len prihlásení zákazníci. Prihláste sa, ak chcete platiť v hotovosti, alebo zaplaťte kartou.",
-      "cash_needs_card": "Počet upratovačov potrebných pre túto objednávku: {{count}}. V hotovosti sa dá platiť len za objednávky, ktoré zvládne jeden upratovač, túto preto zaplatíte kartou.",
-      "cash_pending": "Či môžete platiť v hotovosti, potvrdíme, keď bude známa cena.",
-      "cash_cleared": "Platba v hotovosti už pre túto objednávku nie je možná, preto nie je vybraný žiadny spôsob platby. Zvoľte, ako chcete platiť.",
+      "cash_needs_account": "Pre platbu v hotovosti sa prihláste a uložte kartu.",
+      "cash_needs_card": "Táto objednávka vyžaduje {{count}} upratovačov. Zaplaťte kartou.",
+      "cash_pending": "Overujeme počet upratovačov a uloženú kartu.",
+      "cash_cleared": "Platba v hotovosti nie je dostupná. Vyberte iný spôsob platby.",
       "unpaid_owed": "Dlhujete sumu z predchádzajúcej rezervácie, preto túto rezerváciu zatiaľ nemožno vytvoriť, kartou ani v hotovosti. Zaplaťte ju nižšie a táto rezervácia na vás počká, keď sa vrátite.",
       "cash_sign_in": "Prihlásiť sa",
       "plus_perk_grace": "60 minút po každej objednávke na bezplatné zrušenie namiesto 15 minút",
@@ -1075,7 +1075,8 @@
       },
       "save_card": {
         "label": "Uložiť túto kartu na moje ďalšie objednávky."
-      }
+      },
+      "cash_needs_saved_card": "Pre platbu v hotovosti uložte platnú kartu v mene objednávky."
     },
     "orders": {
       "title": "Moje objednávky",
@@ -2028,7 +2029,8 @@
       "start_passed_cannot_cancel": "Čas začiatku už uplynul a upratovač je pridelený, takže rezerváciu už nemožno zrušiť. Ak upratovač neprišiel, dajte nám vedieť.",
       "cleaner_already_started": "Upratovač už s upratovaním začal.",
       "start_time_not_reached": "Objednaný čas začiatku ešte nenastal.",
-      "recurring_already_confirmed": "Toto upratovanie už máte potvrdené. Upratovačovi zaplatíte v hotovosti v deň upratovania."
+      "recurring_already_confirmed": "Toto upratovanie už máte potvrdené. Upratovačovi zaplatíte v hotovosti v deň upratovania.",
+      "cash_requires_saved_card": "Platba v hotovosti vyžaduje platnú uloženú kartu v mene objednávky."
     },
     "address": {
       "already_exists": "Túto adresu už máte uloženú.",
@@ -2299,7 +2301,7 @@
     "save_address": "Uložiť adresu",
     "address_loading": "Načítavame vaše adresy…",
     "cash_needs_card": "Počet upratovačov potrebných na každé upratovanie: {{count}}. V hotovosti sa dá platiť len za upratovania, ktoré zvládne jeden upratovač, tento rozvrh preto platíte kartou.",
-    "cash_pending": "Či sa dá tento rozvrh platiť v hotovosti, potvrdíme, keď bude známa cena.",
+    "cash_pending": "Overujeme počet upratovačov a uloženú kartu.",
     "cash_cleared": "Platba v hotovosti už pre tento rozvrh nie je možná, preto nie je vybraný žiadny spôsob platby. Zvoľte, ako chcete platiť.",
     "cash_unchecked": "Nepodarilo sa overiť, či sa dá tento rozvrh platiť v hotovosti. Uložte ho o chvíľu znova alebo zvoľte kartu.",
     "owed": "Dlhujete sumu z predchádzajúcej rezervácie, preto opakovanú rezerváciu nemožno uložiť, kým nebude uhradená, kartou ani v hotovosti. Zaplatiť ju môžete nižšie.",

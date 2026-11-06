@@ -125,6 +125,15 @@ class OrderDisclosurePresentationTest {
         assertFalse(disclosure.showsAccessCard(null))
     }
 
+    /** Floor, flat and the access mode arrive from Confirmed and show from then; the door code waits for On the way. */
+    @Test
+    fun `floor, flat and mode show from Confirmed, a step before the access text`() {
+        val disclosure = entitledNonAssignee.orderDisclosure()
+
+        assertEquals(listOf(OrderStatus._2, OrderStatus._3, OrderStatus._4), OrderStatus.entries.filter { disclosure.showsAccessFacts(it) })
+        assertFalse(disclosure.showsAccessFacts(null))
+    }
+
     @Test
     fun `a browsing cleaner gets no access card in any status`() {
         OrderStatus.entries.forEach { status ->

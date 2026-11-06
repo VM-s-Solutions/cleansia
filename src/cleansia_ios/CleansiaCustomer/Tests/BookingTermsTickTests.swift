@@ -27,7 +27,8 @@ final class BookingTermsTickTests: XCTestCase {
             tokenStore: tokenStore,
             isCardPaymentAvailable: false,
             quoteDebounce: .milliseconds(400),
-            scheduler: TestScheduler.dispatch.eraseToAnyScheduler()
+            scheduler: TestScheduler.dispatch.eraseToAnyScheduler(),
+            savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])])
         )
     }
 

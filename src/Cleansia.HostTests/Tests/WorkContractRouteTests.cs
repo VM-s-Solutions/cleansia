@@ -136,7 +136,7 @@ public sealed class WorkContractRouteTests(HostTestPostgresFixture db) : AuthzHo
         Assert.Equal("en", body.GetProperty("language").GetString());
         Assert.Equal("Contract for Work", body.GetProperty("title").GetString());
         Assert.Contains("CZK", body.GetProperty("contentHtml").GetString());
-        Assert.Equal("Brno · 602 xx", body.GetProperty("facts").GetProperty("locationApproximate").GetString());
+        Assert.Equal("Brno", body.GetProperty("facts").GetProperty("locationApproximate").GetString());
         // The price is the caller's reward for a seat: this order carries no service a rate covers, so
         // the reward is nothing, and the customer's 1500 never reaches the cleaner's contract.
         Assert.Equal(0m, body.GetProperty("facts").GetProperty("totalPrice").GetDecimal());
@@ -178,7 +178,7 @@ public sealed class WorkContractRouteTests(HostTestPostgresFixture db) : AuthzHo
         Assert.Equal(a.TextEnId, read.RootElement.GetProperty("legalDocumentTextId").GetString());
         Assert.Equal("en", read.RootElement.GetProperty("acceptance").GetProperty("acceptedLanguage").GetString());
         Assert.Equal(a.CleanerEmployeeId, read.RootElement.GetProperty("acceptance").GetProperty("employeeId").GetString());
-        Assert.Equal("Brno · 602 xx", read.RootElement.GetProperty("facts").GetProperty("locationApproximate").GetString());
+        Assert.Equal("Brno", read.RootElement.GetProperty("facts").GetProperty("locationApproximate").GetString());
 
         // Another cleaner is refused with the order's own not-found.
         var byOtherCleaner = await PartnerClient(OtherCleanerToken(PartnerAudience, a.OtherEmployeeId)).GetAsync(ReadRoute(acceptanceId));

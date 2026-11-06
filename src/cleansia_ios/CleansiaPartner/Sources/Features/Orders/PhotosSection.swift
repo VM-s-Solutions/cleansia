@@ -3,84 +3,78 @@ import CleansiaCore
 import CleansiaPartnerApi
 import SwiftUI
 
-struct PhotosSection: View {
-    @ObservedObject var vm: OrderPhotosViewModel
+/// The job's photos: *Before · 2* and *After · 0* in two fixed columns, so After starts at the same place on every
+/// state; each photo with the time it was taken. A rail whose server window is open ends in the dashed Add slot; the
+/// empty after slot says it is needed before she can complete. Kept on a finished job, read-only.
+struct DetailPhotos: View {
+    let photos: [OrderPhoto]
     let canUploadBefore: Bool
     let canUploadAfter: Bool
+    var afterSlotNote = false
+    @Binding var afterPhotoRequested: Bool
+    @ObservedObject var photosVM: OrderPhotosViewModel
     @StateObject private var imageCache = RemoteImageCache()
 
     var body: some View {
-        OrderSectionCard(title: L10n.Orders.photosSectionTitle, systemImage: "camera") {
-            switch vm.state {
-            case .loading:
-                ProgressView()
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, Spacing.m)
-            case .error:
-                PhotoRailsContent(
-                    photos: [],
-                    mutation: vm.mutation,
-                    canUploadBefore: false,
-                    canUploadAfter: false,
-                    imageCache: imageCache
-                ) { _, _ in } onDelete: { _ in }
-            case let .loaded(photos):
-                PhotoRailsContent(
-                    photos: photos,
-                    mutation: vm.mutation,
-                    canUploadBefore: canUploadBefore,
-                    canUploadAfter: canUploadAfter,
-                    imageCache: imageCache,
-                    onPick: { type, image in Task { await vm.upload(type: type, image: image) } },
-                    onDelete: { id in Task { await vm.delete(photoId: id) } }
-                )
+        VStack(alignment: .leading, spacing: Spacing.xs) {
+            DetailEyebrow(text: L10n.Orders.photosSectionTitle)
+            HStack(alignment: .top, spacing: Spacing.s) {
+                before.frame(maxWidth: .infinity, alignment: .leading)
+                after.frame(maxWidth: .infinity, alignment: .leading)
             }
         }
     }
-}
 
-private struct PhotoRailsContent: View {
-    let photos: [OrderPhoto]
-    let mutation: PhotoMutationState
-    let canUploadBefore: Bool
-    let canUploadAfter: Bool
-    let imageCache: RemoteImageCache
-    var onPick: (PhotoType, UIImage) -> Void
-    var onDelete: (String) -> Void
+    private var before: some View {
+        PhotoColumn(
+            title: L10n.Orders.photosBefore,
+            type: ._1,
+            photos: photos.filter { $0.photoType == ._1 },
+            canUpload: canUploadBefore,
+            mutation: photosVM.mutation,
+            imageCache: imageCache,
+            request: .constant(false),
+            onPick: pick,
+            onDelete: delete
+        )
+    }
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.m) {
-            PhotoRail(
-                title: L10n.Orders.photosBefore,
-                type: ._1,
-                photos: photos.filter { $0.photoType == ._1 },
-                isReadOnly: !canUploadBefore,
-                mutation: mutation,
-                imageCache: imageCache,
-                onPick: onPick,
-                onDelete: onDelete
-            )
-            PhotoRail(
-                title: L10n.Orders.photosAfter,
-                type: ._2,
-                photos: photos.filter { $0.photoType == ._2 },
-                isReadOnly: !canUploadAfter,
-                mutation: mutation,
-                imageCache: imageCache,
-                onPick: onPick,
-                onDelete: onDelete
-            )
-        }
+    private var after: some View {
+        PhotoColumn(
+            title: L10n.Orders.photosAfter,
+            type: ._2,
+            photos: photos.filter { $0.photoType == ._2 },
+            canUpload: canUploadAfter,
+            slotNote: afterSlotNote ? L10n.Orders.photosAfterNeeded : nil,
+            mutation: photosVM.mutation,
+            imageCache: imageCache,
+            request: $afterPhotoRequested,
+            onPick: pick,
+            onDelete: delete
+        )
+    }
+
+    private func pick(_ type: PhotoType, _ image: UIImage) {
+        Task { await photosVM.upload(type: type, image: image) }
+    }
+
+    private func delete(_ id: String) {
+        Task { await photosVM.delete(photoId: id) }
     }
 }
 
-struct PhotoRail: View {
+/// One kind of photo: "Before · 2", the photos with their times, and while the server takes more the dashed Add
+/// slot. The camera only: a gallery photo of a customer's home is already a copy on the device.
+struct PhotoColumn: View {
+    @Environment(\.locale) private var locale
     let title: String
     let type: PhotoType
     let photos: [OrderPhoto]
-    let isReadOnly: Bool
+    let canUpload: Bool
+    var slotNote: String?
     let mutation: PhotoMutationState
     let imageCache: RemoteImageCache
+    @Binding var request: Bool
     var onPick: (PhotoType, UIImage) -> Void
     var onDelete: (String) -> Void
 
@@ -89,18 +83,49 @@ struct PhotoRail: View {
     @State private var showNoCameraAlert = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.xs) {
-            Text(title)
-                .font(CleansiaTypography.labelSmall)
+        VStack(alignment: .leading, spacing: 6) {
+            Text(verbatim: "\(title)\(OrdersBoardRules.dot)\(photos.count)")
+                .font(CleansiaTypography.labelMedium)
                 .foregroundColor(CleansiaColors.onSurfaceVariant)
-
-            if isReadOnly, photos.isEmpty {
-                Text(L10n.Orders.photosNoneRecorded)
-                    .font(CleansiaTypography.bodyMedium)
-                    .foregroundColor(CleansiaColors.onSurfaceVariant)
-            } else {
-                rail
+            LazyVGrid(
+                columns: [GridItem(.fixed(64), spacing: Spacing.xs), GridItem(.fixed(64))],
+                alignment: .leading,
+                spacing: Spacing.xs
+            ) {
+                ForEach(photos) { photo in
+                    VStack(spacing: Spacing.hair) {
+                        PhotoTile(
+                            photo: photo,
+                            imageCache: imageCache,
+                            isDeleting: mutation.deletingId == photo.id,
+                            isReadOnly: !canUpload,
+                            onDelete: { onDelete(photo.id) }
+                        )
+                        if let captured = photo.capturedAt {
+                            Text(OrdersFormat.timeOnly(captured, locale: locale))
+                                .font(CleansiaTypography.labelMedium)
+                                .monospacedDigit()
+                                .foregroundColor(CleansiaColors.onSurfaceVariant)
+                        }
+                    }
+                }
+                if canUpload {
+                    AddPhotoSlot(isUploading: mutation.isUploading, onTap: openCamera)
+                }
             }
+            .frame(width: 136, alignment: .leading)
+            if canUpload, photos.isEmpty, let slotNote {
+                Text(L10n.tie(slotNote))
+                    .font(CleansiaTypography.labelMedium)
+                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .onChange(of: request) { asked in
+            guard asked else { return }
+            request = false
+            openCamera()
         }
         .sheet(isPresented: $showCamera) {
             CameraOrLibraryPicker(
@@ -123,25 +148,6 @@ struct PhotoRail: View {
             Button(L10n.close, role: .cancel) {}
         } message: {
             Text(L10n.Orders.jobPhotosCameraOnly)
-        }
-    }
-
-    private var rail: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: Spacing.s) {
-                if !isReadOnly {
-                    AddPhotoTile(isUploading: mutation.isUploading) { openCamera() }
-                }
-                ForEach(photos) { photo in
-                    PhotoTile(
-                        photo: photo,
-                        imageCache: imageCache,
-                        isDeleting: mutation.deletingId == photo.id,
-                        isReadOnly: isReadOnly,
-                        onDelete: { onDelete(photo.id) }
-                    )
-                }
-            }
         }
     }
 
@@ -176,30 +182,28 @@ extension UIImagePickerController.SourceType: Identifiable {
     }
 }
 
-private struct AddPhotoTile: View {
+/// The one dashed box: a camera and *Add*.
+private struct AddPhotoSlot: View {
     let isUploading: Bool
     let onTap: () -> Void
 
     var body: some View {
         Button(action: onTap) {
             ZStack {
-                RoundedRectangle(cornerRadius: CornerRadius.medium)
-                    .fill(CleansiaColors.primary.opacity(0.08))
-                RoundedRectangle(cornerRadius: CornerRadius.medium)
-                    .strokeBorder(CleansiaColors.primary.opacity(0.5), lineWidth: 1)
+                RoundedRectangle(cornerRadius: CornerRadius.small)
+                    .strokeBorder(CleansiaColors.quiet, style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
                 if isUploading {
-                    ProgressView().tint(CleansiaColors.primary)
+                    ProgressView().tint(CleansiaColors.primaryText)
                 } else {
-                    VStack(spacing: 2) {
-                        Image(systemName: "camera.fill")
-                            .font(.system(size: 20))
-                        Text(L10n.Orders.addPhoto)
-                            .font(CleansiaTypography.labelSmall)
+                    VStack(spacing: Spacing.hair) {
+                        Image(systemName: "camera").cleansiaFont(CleansiaTypography.scale.titleLarge)
+                        Text(L10n.Orders.photosAdd).font(CleansiaTypography.labelLarge)
                     }
                     .foregroundColor(CleansiaColors.primaryText)
                 }
             }
-            .frame(width: 80, height: 80)
+            .frame(width: 64, height: 64)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .disabled(isUploading)
@@ -214,7 +218,9 @@ private struct PhotoTile: View {
     let isReadOnly: Bool
     let onDelete: () -> Void
 
+    @Environment(\.locale) private var locale
     @State private var loadFailed = false
+    @State private var confirmsDeletion = false
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -222,6 +228,17 @@ private struct PhotoTile: View {
             if !isReadOnly {
                 deleteButton
             }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(photo.capturedAt.map { OrdersFormat.timeOnly($0, locale: locale) } ?? "")
+        .alert(L10n.Orders.deletePhoto, isPresented: $confirmsDeletion) {
+            Button(L10n.Orders.deletePhoto, role: .destructive) {
+                guard !isReadOnly, !isDeleting else { return }
+                onDelete()
+            }
+            Button(L10n.cancel, role: .cancel) {}
+        } message: {
+            Text(L10n.Orders.deletePhotoConfirmation)
         }
     }
 
@@ -240,8 +257,8 @@ private struct PhotoTile: View {
                 unavailable
             }
         }
-        .frame(width: 80, height: 80)
-        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
+        .frame(width: 64, height: 64)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.small))
     }
 
     @ViewBuilder
@@ -265,58 +282,22 @@ private struct PhotoTile: View {
     }
 
     private var deleteButton: some View {
-        Button(action: onDelete) {
+        Button { confirmsDeletion = true } label: {
             ZStack {
                 Circle().fill(CleansiaColors.surface)
                 if isDeleting {
                     ProgressView().scaleEffect(0.6)
                 } else {
                     Image(systemName: "xmark")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(CleansiaTypography.labelSmall)
                         .foregroundColor(CleansiaColors.onSurface)
                 }
             }
-            .frame(width: 24, height: 24)
-            .padding(4)
+            .frame(width: 22, height: 22)
+            .padding(3)
         }
         .buttonStyle(.plain)
         .disabled(isDeleting)
         .accessibilityLabel(L10n.Orders.deletePhoto)
     }
 }
-
-#if DEBUG
-    struct PhotosSection_Previews: PreviewProvider {
-        static var previews: some View {
-            Group {
-                PhotoRailsContent(
-                    photos: [
-                        OrderPhoto(id: "1", photoType: ._1, blobUrl: nil),
-                        OrderPhoto(id: "2", photoType: ._2, blobUrl: nil)
-                    ],
-                    mutation: PhotoMutationState(),
-                    canUploadBefore: true,
-                    canUploadAfter: true,
-                    imageCache: RemoteImageCache(),
-                    onPick: { _, _ in },
-                    onDelete: { _ in }
-                )
-                .padding()
-                .previewDisplayName("Active · both rails")
-
-                PhotoRailsContent(
-                    photos: [],
-                    mutation: PhotoMutationState(),
-                    canUploadBefore: false,
-                    canUploadAfter: false,
-                    imageCache: RemoteImageCache(),
-                    onPick: { _, _ in },
-                    onDelete: { _ in }
-                )
-                .padding()
-                .previewDisplayName("Read-only · empty")
-            }
-            .background(CleansiaColors.surface)
-        }
-    }
-#endif

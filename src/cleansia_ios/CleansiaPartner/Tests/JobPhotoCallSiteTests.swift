@@ -2,7 +2,7 @@ import XCTest
 
 final class JobPhotoCallSiteTests: XCTestCase {
     private static let photosSection = "CleansiaPartner/Sources/Features/Orders/PhotosSection.swift"
-    private static let detailContent = "CleansiaPartner/Sources/Features/Orders/OrderDetailContent.swift"
+    private static let runSheet = "CleansiaPartner/Sources/Features/Orders/JobRunSheet.swift"
 
     func testJobPhotosComeFromTheCameraOnly() throws {
         let source = try read(Self.photosSection)
@@ -10,6 +10,10 @@ final class JobPhotoCallSiteTests: XCTestCase {
             source.contains(".photoLibrary"),
             "the job-photo rails must not offer the photo library — a gallery photo of a customer's home "
                 + "is already a copy on the device"
+        )
+        XCTAssertFalse(
+            source.contains("import PhotosUI"),
+            "the job-photo rails must not open the system photo picker either"
         )
         XCTAssertTrue(
             source.contains("sourceType: .camera"),
@@ -36,7 +40,7 @@ final class JobPhotoCallSiteTests: XCTestCase {
     }
 
     func testTheRailsOpenAndCloseOnTheServerPhotoWindows() throws {
-        let source = try read(Self.detailContent)
+        let source = try read(Self.runSheet)
         XCTAssertTrue(
             source.contains("canUploadBefore: order.photoWindowOpen(for: ._1)"),
             "the before rail must follow OrderPhoto.MayBeAddedAt through photoWindowOpen — a local status "

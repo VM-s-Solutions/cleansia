@@ -38,10 +38,6 @@ extension L10n {
             format("work_contract_accepted_in_language", language)
         }
 
-        static func acceptedLine(_ date: String, _ version: String) -> String {
-            format("work_contract_accepted_line", date, version)
-        }
-
         static var pendingBanner: String {
             localized("work_contract_pending_banner")
         }
@@ -60,6 +56,72 @@ extension L10n {
 
         static var parties: String {
             localized("work_contract_parties")
+        }
+
+        // MARK: - Taking from the board, and the contract summary
+
+        static var takeSheetTitle: String {
+            localized("take_sheet_title")
+        }
+
+        static var loading: String {
+            localized("work_contract_loading")
+        }
+
+        static func cancelFreeUntil(_ when: String) -> String {
+            format("take_cancel_free_until", when)
+        }
+
+        static var cancelUnderWay: String {
+            localized("take_cancel_under_way")
+        }
+
+        static var cancelStartPassed: String {
+            localized("take_cancel_start_passed")
+        }
+
+        static func teamLine(_ crew: String) -> String {
+            format("take_team_line", crew)
+        }
+
+        static var doneCannotCancel: String {
+            localized("take_done_cannot_cancel")
+        }
+
+        static func cashLine(_ cash: String, _ reward: String) -> String {
+            format("take_cash_line", cash, reward)
+        }
+
+        static func payUpdated(_ previous: String) -> String {
+            format("take_pay_updated", previous)
+        }
+
+        static var doneTitle: String {
+            localized("take_done_title")
+        }
+
+        static var backToJobs: String {
+            localized("take_back_to_jobs")
+        }
+
+        static var summaryLead: String {
+            localized("work_contract_summary_lead")
+        }
+
+        static var summaryLockout: String {
+            localized("work_contract_summary_lockout")
+        }
+
+        static var summaryLateCancel: String {
+            localized("work_contract_summary_late_cancel")
+        }
+
+        static var summaryComplaint: String {
+            localized("work_contract_summary_complaint")
+        }
+
+        static var summaryEquipment: String {
+            localized("work_contract_summary_equipment")
         }
     }
 }

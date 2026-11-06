@@ -115,41 +115,45 @@ final class OrderDetailDropTests: XCTestCase {
         XCTAssertFalse(makeVM().canDropOrder)
     }
 
-    /// A Confirmed job's crew member sees it under "On my way"; a New one has no other action, so the link
-    /// gets a footer of its own.
-    func testTheLinkSitsUnderNotifyAndAloneOnAnAssignedNewJob() async {
+    /// Withdrawing is not the move: it sits on the ground under the job, so the pinned footer is the same
+    /// with or without it, and a New job she holds has no pinned move at all.
+    func testWithdrawSitsInThePagesFooterNotUnderTheThumb() async throws {
         let confirmed = await loaded(job(status: 2))
         XCTAssertEqual(confirmed.primaryAction, .notifyOnTheWay)
         let new = await loaded(job(status: 0))
         XCTAssertEqual(new.primaryAction, OrderPrimaryAction.none)
+        XCTAssertEqual(footerHeight(.none), 0)
 
-        XCTAssertEqual(footerHeight(.none, canDrop: false), 0)
-        XCTAssertGreaterThan(footerHeight(.none, canDrop: true), 0)
-        XCTAssertGreaterThan(
-            footerHeight(.notifyOnTheWay, canDrop: true),
-            footerHeight(.notifyOnTheWay, canDrop: false)
+        let page = try source("OrderDetailContent.swift")
+        XCTAssertTrue(
+            page.contains("ifcanDropOrder{VStack(spacing:6){CleansiaDangerButton(L10n.Orders.dropAction,"),
+            "Withdraw is the danger button at the sheet's end"
         )
+        XCTAssertTrue(page.contains("order.dropUntil(now:now,locale:locale)"), "possible until the start")
+        XCTAssertTrue(
+            page.contains("enabled:inFlightAction==nil){confirmingDrop=true}"),
+            "no second action while one is sent"
+        )
+        XCTAssertFalse(try source("StickyActionFooter.swift").contains("dropAction"))
     }
 
-    /// The spinner that replaces the link while the drop is sent takes the link's height.
-    func testTheFooterKeepsItsHeightWhileTheDropIsSent() {
-        XCTAssertEqual(
-            footerHeight(.notifyOnTheWay, canDrop: true, inFlight: .drop),
-            footerHeight(.notifyOnTheWay, canDrop: true),
-            accuracy: 0.5
-        )
-    }
-
-    private func footerHeight(_ action: OrderPrimaryAction, canDrop: Bool, inFlight: OrderAction? = nil) -> CGFloat {
-        let footer = StickyActionFooter(
-            action: action,
-            inFlightAction: inFlight,
-            onConfirm: { _ in },
-            canDropOrder: canDrop
-        )
+    private func footerHeight(_ action: OrderPrimaryAction) -> CGFloat {
+        let footer = StickyActionFooter(action: action, inFlightAction: nil, onConfirm: { _ in })
         return UIHostingController(rootView: footer)
             .sizeThatFits(in: CGSize(width: 390, height: CGFloat.greatestFiniteMagnitude))
             .height
+    }
+
+    private func source(_ file: String) throws -> String {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        return try String(
+            contentsOf: root.appendingPathComponent("CleansiaPartner/Sources/Features/Orders/\(file)"),
+            encoding: .utf8
+        )
+        .components(separatedBy: .whitespacesAndNewlines).joined()
     }
 
     // MARK: - Leaving

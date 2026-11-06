@@ -14,12 +14,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.CalendarToday
-import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProgressIndicatorDefaults
@@ -34,20 +30,22 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import cz.cleansia.core.format.formatOrderDateTime
+import cz.cleansia.core.format.formatOrderDate
 import cz.cleansia.core.format.formatOrderPrice
+import cz.cleansia.core.format.formatOrderTime
+import cz.cleansia.core.ui.components.OrderCalendarLine
+import cz.cleansia.core.ui.components.OrderStatusPill
 import cz.cleansia.core.ui.components.OrderTrackerBar as CoreOrderTrackerBar
 import cz.cleansia.core.ui.theme.Spacing
+import cz.cleansia.core.ui.theme.orderStatusColor
 import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.core.ui.theme.warningText
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.orders.OrderDetailDto
-import cz.cleansia.customer.ui.format.orderStatusColor
 import kotlinx.coroutines.delay
 import java.time.Instant
 import androidx.lifecycle.compose.LifecycleResumeEffect
@@ -82,9 +80,7 @@ internal fun OrderDetailCompactHeader(
     order: OrderDetailDto,
     modifier: Modifier = Modifier,
 ) {
-    val dateLabel = order.cleaningDateTime
-        ?.takeIf { it.isNotBlank() }
-        ?.let { formatOrderDateTime(it) }
+    val cleaningDateTime = order.cleaningDateTime?.takeIf { it.isNotBlank() }
 
     Column(
         modifier = modifier
@@ -104,9 +100,9 @@ internal fun OrderDetailCompactHeader(
                 ?.let { stringResource(it) }
                 ?: order.orderStatus?.name
             if (statusLabel != null) {
-                StatusPill(
+                OrderStatusPill(
                     label = statusLabel,
-                    color = orderStatusColor(order.orderStatus?.value),
+                    ink = orderStatusColor(order.orderStatus?.value),
                 )
             }
         }
@@ -117,22 +113,12 @@ internal fun OrderDetailCompactHeader(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        if (dateLabel != null) {
+        if (cleaningDateTime != null) {
             Spacer(Modifier.height(2.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Outlined.CalendarToday,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(14.dp),
-                )
-                Spacer(Modifier.width(6.dp))
-                Text(
-                    text = dateLabel,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+            OrderCalendarLine(
+                day = formatOrderDate(cleaningDateTime),
+                window = formatOrderTime(cleaningDateTime),
+            )
         }
     }
 }
@@ -317,32 +303,55 @@ private fun stepCounterLabel(status: OrderStatus?): String {
 internal fun OrderFactsStrip(
     order: OrderDetailDto,
     modifier: Modifier = Modifier,
+    marketLabel: String? = null,
 ) {
     val currencyCode = order.currency?.code
     val hasDiscount = order.appliedDiscountSource != 0 &&
         order.originalSubtotal > order.totalPrice
 
-    Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
-        androidx.compose.foundation.layout.FlowRow(
-            modifier = Modifier.weight(1f),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
+    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.XS)) {
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (hasDiscount) discountLabelsFor(order.appliedDiscountSource).forEach { DiscountChip(it) }
-        }
-        Column(horizontalAlignment = Alignment.End) {
-            Text(
-                text = formatOrderPrice(order.totalPrice, currencyCode),
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = primaryText(),
-            )
-            if (hasDiscount) {
+            if (!hasDiscount && marketLabel != null) {
                 Text(
-                    text = formatOrderPrice(order.originalSubtotal, currencyCode),
-                    style = MaterialTheme.typography.labelSmall.copy(textDecoration = TextDecoration.LineThrough),
+                    marketLabel,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
                 )
+            } else {
+                androidx.compose.foundation.layout.FlowRow(
+                    modifier = Modifier.weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    if (hasDiscount) discountLabelsFor(order.appliedDiscountSource).forEach { DiscountChip(it) }
+                }
             }
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = formatOrderPrice(order.totalPrice, currencyCode),
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = primaryText(),
+                )
+                if (hasDiscount) {
+                    Text(
+                        text = formatOrderPrice(order.originalSubtotal, currencyCode),
+                        style = MaterialTheme.typography.labelSmall.copy(textDecoration = TextDecoration.LineThrough),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+        if (hasDiscount && marketLabel != null) {
+            Text(
+                marketLabel,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
@@ -373,42 +382,15 @@ private fun DiscountChip(label: String) {
     )
 }
 
-@Composable
-private fun StatusPill(label: String, color: Color) {
-    Row(
-        modifier = Modifier
-            .clip(RoundedCornerShape(999.dp))
-            .background(color.copy(alpha = 0.16f))
-            .padding(horizontal = 10.dp, vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-            color = color,
-        )
-    }
-}
-
 /* ── Format helpers ── */
-
-internal data class CleaningEstimateProgress(val fraction: Float, val remainingMinutes: Long, val overrunMinutes: Long)
 
 internal fun cleaningEstimateProgress(
     statusHistory: List<cz.cleansia.customer.core.orders.OrderStatusTrackDto>?,
     estimatedMinutes: Int,
     nowEpoch: Long,
-): CleaningEstimateProgress? {
-    if (estimatedMinutes <= 0) return null
+): cz.cleansia.core.format.CleaningEstimateProgress? {
     val start = statusHistory.orEmpty().filter { it.status?.value == 4 }
         .mapNotNull { it.createdOn?.let { value -> runCatching { Instant.parse(value).epochSecond }.getOrNull() } }
-        .maxOrNull() ?: return null
-    if (start > nowEpoch) return null
-    val estimate = estimatedMinutes * 60L
-    val elapsed = nowEpoch - start
-    return CleaningEstimateProgress(
-        fraction = (elapsed.toFloat() / estimate).coerceIn(0f, 1f),
-        remainingMinutes = ((estimate - elapsed).coerceAtLeast(0) + 59) / 60,
-        overrunMinutes = ((elapsed - estimate).coerceAtLeast(0) + 59) / 60,
-    )
+        .maxOrNull()
+    return cz.cleansia.core.format.cleaningEstimateProgress(start, estimatedMinutes, nowEpoch)
 }

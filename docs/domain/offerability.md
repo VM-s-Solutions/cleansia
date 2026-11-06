@@ -102,7 +102,8 @@ flowchart TB
   G --> H["ContractStatus.Approved"]
   H --> I["not already assigned"]
   I --> J["weekly cap"]
-  J --> K["no time conflict"]
+  J --> JC["cash float cap — cash jobs only"]
+  JC --> K["no time conflict"]
   K --> L(["take"])
 
   classDef gate fill:#dbeafe,stroke:#1d4ed8,color:#1e3a8a
@@ -154,6 +155,34 @@ work in the order's market, or is busy at the time
 ([reassignment](/admin-app/order-management#order-reassignment)). An assignment made over the
 currency rule stays visible to the cleaner it was made for.
 → [Business rules](/product/business-rules#cleaner-currency)
+
+## The cash a cleaner holds {#cash-float-cap}
+
+The third (order, cleaner) question, and the only one that reads the cleaner's money rather than the
+order's. A cleaner who holds **strictly more** of the company's cash in a currency than the company's
+float cap (`cash.float_cap`, none by default) is not offered cash jobs (owner ruling 2026-09-28,
+decision 25). `OrderAccessService.CashJobsHiddenFromAsync` answers it from the cash ledger and the
+setting, and `OrderSpecification.HideCashFromEmployeeId` keeps every cash job off the read unless the
+cleaner is already on it. The board, its count, the dashboard count and preview, and the pending-offer
+list judge it in the cleaner's currency. The take judges it in the order's, after the weekly cap and
+before the time conflict. It refuses with **its own key**, `order.cash_float_cap_exceeded`, not
+`order.not_found`: the reason is the cleaner's own state and discloses nothing about the order or
+anyone else. Card jobs are never held back.
+
+Nothing is cached. The setting and the ledger sum are read on every request, so the cash jobs come back on
+the next read once a remittance, a write-off or an invoice's set-off brings the cleaner to the cap or
+below. The board carries no flag of its own; the partner apps learn why from
+`GET api/EmployeePayroll/GetCashHeld` (`floatCap`, `cashJobsHidden`, per currency).
+
+**Not every surface reads it.**
+- The new-jobs digest and the seat-open push do not, so a cleaner over the cap can be told about a
+  cash job their board will not show.
+- The order detail and the contract preview do not, so a cash job reached by a link or a stale list
+  still opens, and its take is refused.
+- A customer can name a cleaner over the cap as their preferred cleaner. On a cash order that hold
+  keeps the job from every other cleaner while its beneficiary cannot see it.
+
+→ [Business rules — the company's cash in a cleaner's hands](/product/business-rules#cash-held)
 
 ## Seat allocation
 

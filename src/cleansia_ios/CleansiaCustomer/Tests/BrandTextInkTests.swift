@@ -126,7 +126,7 @@ final class BrandTextInkTests: XCTestCase {
     }
 
     /// Dark mode: on the primary container (sky-700 there) the text ink's sky-400 read 2.77:1, so the
-    /// default-address badges, the "This device" chip and the cleaner's initial take the container's text ink,
+    /// default-address badges and the "This device" chip take the container's text ink,
     /// sky-100 in dark (5.17:1) and unchanged in light (finding 2026-10-05).
     @MainActor
     func testTheBadgesOnThePrimaryContainerTakeItsTextInk() throws {
@@ -136,8 +136,7 @@ final class BrandTextInkTests: XCTestCase {
                 "Booking/WhenWhere/AddressPicker/BookingSavedAddressChooser.swift",
                 "Text(L10n.AddressManager.defaultBadge)"
             ),
-            ("Profile/CustomerDevicesView.swift", "Text(L10n.Devices.thisDevice)"),
-            ("Orders/OrderDetailDetailsCards.swift", "Text(String(displayName.prefix(1)).uppercased())")
+            ("Profile/CustomerDevicesView.swift", "Text(L10n.Devices.thisDevice)")
         ]
         for site in sites {
             let source = try compactSource(site.path)

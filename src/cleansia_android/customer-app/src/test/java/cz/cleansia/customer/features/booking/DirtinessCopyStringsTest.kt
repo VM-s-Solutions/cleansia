@@ -5,6 +5,7 @@ import cz.cleansia.customer.core.booking.DirtinessLevel
 import cz.cleansia.customer.features.orders.bookedSurchargeLineRes
 import java.io.File
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -21,7 +22,7 @@ class DirtinessCopyStringsTest {
 
     private val bookedLines = listOf("dirtiness_surcharge_line_increased", "dirtiness_surcharge_line_heavy")
 
-    private val keys = listOf("dirtiness_title", "dirtiness_intro", "dirtiness_hint", "dirtiness_level_label") +
+    private val keys = listOf("dirtiness_title", "dirtiness_torn_hint", "dirtiness_level_label") +
         levels.flatMap { level ->
             listOf("title", "price", "when", "detail_1", "detail_2", "detail_3", "detail_4")
                 .map { "dirtiness_${level}_$it" }
@@ -128,6 +129,55 @@ class DirtinessCopyStringsTest {
             "the recurring wizard no longer renders the level picker",
             source("features/recurring/CreateRecurringScreen.kt").contains("DirtinessLevelPicker("),
         )
+    }
+
+    @Test
+    fun `only the chosen level lists its signs`() {
+        DirtinessLevel.entries.forEach { level ->
+            assertTrue("$level lists signs with nothing chosen", level.signsShownRes(selected = null).isEmpty())
+        }
+        DirtinessLevel.entries.forEach { chosen ->
+            DirtinessLevel.entries.forEach { level ->
+                val signs = level.signsShownRes(selected = chosen)
+                if (level == chosen) {
+                    assertEquals("$level chosen", 4, signs.size)
+                } else {
+                    assertTrue("$level lists signs while $chosen is chosen", signs.isEmpty())
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `changing the choice moves the signs to the new level`() {
+        assertEquals(4, DirtinessLevel.Normal.signsShownRes(selected = DirtinessLevel.Normal).size)
+        assertTrue(DirtinessLevel.Normal.signsShownRes(selected = DirtinessLevel.Heavy).isEmpty())
+        assertEquals(4, DirtinessLevel.Heavy.signsShownRes(selected = DirtinessLevel.Heavy).size)
+        assertTrue(
+            DirtinessLevel.Heavy.signsShownRes(selected = DirtinessLevel.Heavy)
+                .none { it in DirtinessLevel.Normal.signsShownRes(selected = DirtinessLevel.Normal) },
+        )
+    }
+
+    @Test
+    fun `each level card is one radio element reading its title, surcharge, when and only its own shown signs`() {
+        val card = source("features/booking/DirtinessLevelPicker.kt").substringAfter("private fun LevelCard(")
+        assertTrue("the card is no longer one selectable radio", card.contains(".selectable(selected = selected, role = Role.RadioButton"))
+        listOf("level.titleRes()", "level.priceRes()", "level.whenRes()", "level.signsShownRes(").forEach {
+            assertTrue("the card no longer reads $it", card.contains(it))
+        }
+        assertFalse("the card lists every sign whether chosen or not", card.contains("level.detailRes()"))
+    }
+
+    @Test
+    fun `the step opens on the levels and closes on the hint`() {
+        val picker = source("features/booking/DirtinessLevelPicker.kt")
+            .substringAfter("internal fun DirtinessLevelPicker(")
+            .substringBefore("private fun LevelCard(")
+        assertFalse("the intro line is back", picker.contains("dirtiness_intro"))
+        val hint = picker.indexOf("R.string.dirtiness_torn_hint")
+        assertTrue("the hint is missing", hint >= 0)
+        assertTrue("the hint comes before the levels", picker.indexOf("LevelCard(") in 0 until hint)
     }
 
     private fun source(relative: String): String =

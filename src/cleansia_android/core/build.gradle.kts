@@ -153,6 +153,10 @@ dependencies {
     api(libs.mapbox.maps)
     api(libs.mapbox.compose)
 
+    // Coil — the animated mascot both apps play (MascotAnimation).
+    implementation(libs.coil.compose)
+    implementation(libs.coil.gif)
+
     // libphonenumber — used by CleansiaPhoneInput for region-aware
     // format-as-you-type + validation. ~700kB APK cost, replaces any
     // hand-rolled phone mask.

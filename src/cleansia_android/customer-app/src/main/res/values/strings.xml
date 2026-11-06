@@ -95,7 +95,7 @@
 
     <!-- Home — upcoming order -->
     <string name="home_upcoming_empty_title">No upcoming cleaning</string>
-    <string name="home_upcoming_empty_subtitle">Tap to book your first session.</string>
+    <string name="home_upcoming_empty_subtitle">Book your first clean.</string>
 
     <!-- Home — reorder -->
     <string name="home_reorder_title">Order again</string>
@@ -166,7 +166,7 @@
 
     <!-- Home — popular packages (tap-to-book) -->
     <string name="home_popular_packages_title">Popular packages</string>
-    <string name="home_popular_packages_add_cta">Tap to book</string>
+    <string name="home_popular_packages_add_cta">Book</string>
 
     <!-- Home — Order again quick action -->
     <string name="home_order_again_title">ORDER AGAIN</string>
@@ -745,8 +745,7 @@
 
     <!-- Dirtiness level: booking step, recurring wizard, summaries -->
     <string name="dirtiness_title">How clean is your home?</string>
-    <string name="dirtiness_intro">Choose the state that best matches your whole home.</string>
-    <string name="dirtiness_hint">If you are torn between two levels, choose the higher one. Your cleaner will then have enough time and the result will be as it should.</string>
+    <string name="dirtiness_torn_hint">Torn between two? Choose the higher one, so your cleaner has enough time.</string>
     <string name="dirtiness_level_label">Dirtiness level</string>
     <string name="dirtiness_normal_title">Normal</string>
     <string name="dirtiness_normal_price">No surcharge</string>
@@ -834,20 +833,17 @@
     <string name="booking_pay_card">Card</string>
     <string name="booking_pay_card_desc">Pay securely via Stripe</string>
     <string name="booking_pay_cash">Cash</string>
-    <string name="booking_pay_cash_desc">Pay on delivery</string>
-    <string name="booking_cash_needs_account">Cash is only for signed-in customers. Sign in to pay in cash, or pay by card.</string>
-    <string name="booking_cash_needs_card">Cleaners needed for this booking: %1$d. Cash is only for bookings one cleaner handles alone, so this one is paid by card.</string>
-    <string name="booking_cash_pending">Whether you can pay in cash is confirmed once the price is ready.</string>
-    <string name="booking_cash_cleared">Cash is no longer available for this booking, so no payment method is selected. Choose how you want to pay.</string>
+    <string name="booking_pay_cash_desc">Pay your cleaner after the visit.</string>
+    <string name="booking_cash_needs_account">Sign in and save a card to pay in cash.</string>
+    <string name="booking_cash_needs_card">This booking needs %1$d cleaners. Pay by card.</string>
+    <string name="booking_cash_pending">Checking the cleaning team and saved card.</string>
+    <string name="booking_cash_cleared">Cash is unavailable. Choose another payment method.</string>
     <string name="booking_draft_time_changed">The time you picked is no longer available or its price has changed. Please pick a time again.</string>
     <string name="consent_saved_card_draft_2026_10_05">I agree that Cleansia saves this card to my account. It is never charged unless I pay with it, and I can remove it at any time.</string>
     <string name="booking_save_card_label">Save this card for my next bookings</string>
     <string name="booking_special_instructions_hint">Any special requests? (optional)</string>
     <string name="booking_access_instructions_hint">How do we get in? (optional)</string>
 
-    <string name="booking_success_title">Booking confirmed!</string>
-    <string name="booking_success_subtitle">Your cleaning is booked. Sit back and relax.</string>
-    <string name="booking_success_progress">Your booking progress</string>
     <string name="booking_success_t1_title">Booking received</string>
     <string name="booking_success_t1_desc">Just now</string>
     <string name="booking_success_t2_title">Cleaner being assigned</string>
@@ -858,11 +854,7 @@
     <string name="booking_success_t4_desc">We\'ll remind you 1 hour before</string>
     <string name="booking_success_view_orders">View order</string>
     <string name="booking_success_go_home">Back to home</string>
-    <string name="booking_success_confirmation_code">Confirmation code</string>
-    <string name="booking_success_arrival_label">Arrival</string>
-    <string name="booking_success_address_label">Address</string>
     <string name="booking_success_total_label">Total</string>
-    <string name="booking_success_whats_next">A cleaner will pick up your order soon — you\'ll get a notification when they\'re on the way.</string>
     <string name="error_booking_sign_in_required">Please sign in to complete your booking.</string>
     <string name="error_booking_pick_time">Please select a cleaning date and time.</string>
     <string name="error_booking_phone_missing">Please add a phone number to your profile so we can reach you about this booking.</string>
@@ -875,7 +867,7 @@
     <string name="onboarding_phone_label">Phone number</string>
     <string name="onboarding_phone_helper">Include your country code (e.g. +420). We\'ll only use this to reach you about your bookings.</string>
     <string name="onboarding_birthdate_label">Birth date</string>
-    <string name="onboarding_birthdate_placeholder">Tap to pick</string>
+    <string name="onboarding_birthdate_placeholder">Choose date</string>
     <string name="onboarding_birthdate_helper">Optional — for birthday perks.</string>
     <string name="onboarding_save">Save and continue</string>
     <string name="onboarding_skip">Skip for now</string>
@@ -1062,7 +1054,7 @@
     <string name="recurring_create_pay_cash">Cash</string>
     <string name="recurring_create_pay_card">Card</string>
     <string name="recurring_cash_needs_card">Cleaners needed for each clean: %1$d. Cash is only for cleans one cleaner handles alone, so this schedule is paid by card.</string>
-    <string name="recurring_cash_pending">Whether this schedule can be paid in cash is confirmed once the price is ready.</string>
+    <string name="recurring_cash_pending">Checking the cleaning team and saved card.</string>
     <string name="recurring_cash_cleared">Cash is no longer available for this schedule, so no payment method is selected. Choose how you want to pay.</string>
     <string name="recurring_cash_unchecked">We couldn\'t confirm whether this schedule can be paid in cash. Save it again in a moment, or choose card.</string>
     <string name="recurring_create_payment_missing">Choose how the schedule is paid.</string>
@@ -1399,7 +1391,7 @@
     <string name="notification_order_assignment_cancelled_title">Job cancelled</string>
     <string name="notification_order_assignment_cancelled_body">A job you accepted was cancelled: #%1$s. Tap for details.</string>
     <string name="notification_payroll_invoice_paid_title">You\'ve been paid</string>
-    <string name="notification_payroll_invoice_paid_body">Your invoice for the latest pay period has been paid. Tap to view.</string>
+    <string name="notification_payroll_invoice_paid_body">Your invoice for the latest pay period has been paid.</string>
     <!-- ── Payments ── -->
     <string name="profile_row_payments">Payments</string>
     <string name="payments_title">Payments</string>
@@ -1598,4 +1590,26 @@
     <string name="payments_card_setup_failed">Card setup failed. Please try again.</string>
     <string name="payments_card_saved">Card saved</string>
     <string name="order_photos_phase_count">%1$s · %2$d</string>
+    <string name="booking_cash_needs_saved_card">Save a valid card for this currency to pay in cash.</string>
+    <string name="error_order_cash_requires_saved_card">Cash requires a valid saved card in the booking currency.</string>
+    <string name="booking_success_confirmed_title">Booking confirmed</string>
+    <string name="booking_success_details_loading">Loading booking details…</string>
+    <string name="booking_success_details_unavailable">Booking details are temporarily unavailable.</string>
+    <string name="booking_success_cleaner_assigned">Cleaner assigned</string>
+    <string name="booking_success_finding">No cleaner has taken it yet.</string>
+    <string name="booking_success_finding_sub">We\'ll let you know as soon as one does.</string>
+    <plurals name="booking_success_crew">
+        <item quantity="one">%1$d cleaner</item>
+        <item quantity="other">%1$d cleaners</item>
+    </plurals>
+    <plurals name="booking_success_crew_needed">
+        <item quantity="one">It needs %1$d cleaner.</item>
+        <item quantity="other">It needs %1$d cleaners.</item>
+    </plurals>
+    <string name="booking_success_free_until">Free cancellation until %1$s</string>
+    <string name="booking_success_free_while">Free to cancel while no cleaner has taken it.</string>
+    <string name="booking_success_no_cleaner_card">If no cleaner can take it, we cancel it and refund you in full, plus credit.</string>
+    <string name="booking_success_no_cleaner_cash">If no cleaner can take it, we cancel it free of charge and give you credit.</string>
+    <string name="booking_success_cash_on_day">Please pay in cash to the cleaner on the day.</string>
+    <string name="auth_email_placeholder">customer@example.com</string>
 </resources>

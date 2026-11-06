@@ -3,6 +3,7 @@ package cz.cleansia.customer.ui.format
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.luminance
+import cz.cleansia.core.ui.theme.orderStatusInk
 import cz.cleansia.customer.ui.theme.DarkColors
 import cz.cleansia.customer.ui.theme.LightColors
 import org.junit.Assert.assertEquals

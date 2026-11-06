@@ -37,18 +37,21 @@ class WorkContractStringsTest {
     private val copy = listOf(
         "work_contract_title",
         "work_contract_version",
-        "work_contract_order_number",
         "work_contract_swipe_to_accept",
         "work_contract_accepting",
         "work_contract_load_error",
         "work_contract_accepted_on",
         "work_contract_accepted_in_language",
-        "work_contract_accepted_line",
         "work_contract_pending_banner",
         "work_contract_accept_cta",
         "work_contract_read",
         "work_contract_reward",
         "work_contract_parties",
+        "work_contract_summary_lead",
+        "work_contract_summary_lockout",
+        "work_contract_summary_late_cancel",
+        "work_contract_summary_complaint",
+        "work_contract_summary_equipment",
     )
 
     @Test
@@ -79,10 +82,8 @@ class WorkContractStringsTest {
     fun `every placeholder survives translation`() {
         val expected = mapOf(
             "work_contract_version" to listOf("%1\$s"),
-            "work_contract_order_number" to listOf("%1\$s"),
             "work_contract_accepted_on" to listOf("%1\$s", "%2\$s"),
             "work_contract_accepted_in_language" to listOf("%1\$s"),
-            "work_contract_accepted_line" to listOf("%1\$s", "%2\$s"),
         )
         locales.forEach { locale ->
             val declared = strings(locale)

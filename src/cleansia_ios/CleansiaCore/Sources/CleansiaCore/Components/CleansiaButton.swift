@@ -29,8 +29,12 @@ public struct CleansiaPrimaryButton: View {
     private let trailingIcon: String?
     private let loading: Bool
     private let enabled: Bool
+    private let disabledContainerColor: Color?
+    private let disabledContentColor: Color?
     private let action: () -> Void
 
+    /// `disabledContainerColor` and `disabledContentColor` replace the fill and the label ink while the button
+    /// cannot be pressed; left out, it draws the primary at half under the same label.
     public init(
         _ text: String,
         size: CleansiaButtonSize = .large,
@@ -38,6 +42,8 @@ public struct CleansiaPrimaryButton: View {
         trailingIcon: String? = nil,
         loading: Bool = false,
         enabled: Bool = true,
+        disabledContainerColor: Color? = nil,
+        disabledContentColor: Color? = nil,
         action: @escaping () -> Void
     ) {
         self.text = text
@@ -46,11 +52,24 @@ public struct CleansiaPrimaryButton: View {
         self.trailingIcon = trailingIcon
         self.loading = loading
         self.enabled = enabled
+        self.disabledContainerColor = disabledContainerColor
+        self.disabledContentColor = disabledContentColor
         self.action = action
     }
 
+    static func fill(pressable: Bool, disabled: Color?) -> Color {
+        if !pressable, let disabled { return disabled }
+        return CleansiaColors.primary.opacity(pressable ? 1 : 0.5)
+    }
+
+    static func ink(pressable: Bool, disabled: Color?) -> Color {
+        if !pressable, let disabled { return disabled }
+        return CleansiaColors.onPrimary
+    }
+
     public var body: some View {
-        Button(action: action) {
+        let pressable = enabled && !loading
+        return Button(action: action) {
             ZStack {
                 if loading {
                     ProgressView()
@@ -79,11 +98,11 @@ public struct CleansiaPrimaryButton: View {
             }
             .frame(maxWidth: .infinity, minHeight: size.minHeight)
             .padding(.horizontal, size.horizontalPadding)
-            .foregroundColor(CleansiaColors.onPrimary)
-            .background(CleansiaColors.primary.opacity(enabled && !loading ? 1 : 0.5))
+            .foregroundColor(Self.ink(pressable: pressable, disabled: disabledContentColor))
+            .background(Self.fill(pressable: pressable, disabled: disabledContainerColor))
             .clipShape(Capsule())
         }
-        .disabled(!enabled || loading)
+        .disabled(!pressable)
     }
 }
 
@@ -116,6 +135,8 @@ public struct CleansiaOutlinedButton: View {
     private let leadingIcon: String?
     private let contentColor: Color?
     private let borderColor: Color?
+    private let horizontalPadding: CGFloat?
+    private let maxLines: Int
     private let enabled: Bool
     private let action: () -> Void
 
@@ -125,6 +146,8 @@ public struct CleansiaOutlinedButton: View {
         leadingIcon: String? = nil,
         contentColor: Color? = nil,
         borderColor: Color? = nil,
+        horizontalPadding: CGFloat? = nil,
+        maxLines: Int = 1,
         enabled: Bool = true,
         action: @escaping () -> Void
     ) {
@@ -133,6 +156,8 @@ public struct CleansiaOutlinedButton: View {
         self.leadingIcon = leadingIcon
         self.contentColor = contentColor
         self.borderColor = borderColor
+        self.horizontalPadding = horizontalPadding
+        self.maxLines = maxLines
         self.enabled = enabled
         self.action = action
     }
@@ -143,12 +168,21 @@ public struct CleansiaOutlinedButton: View {
                 if let leadingIcon {
                     Image(systemName: leadingIcon).font(.system(size: 20))
                 }
-                Text(text)
-                    .font(CleansiaTypography.titleMedium)
-                    .lineLimit(1)
+                if maxLines == 1 {
+                    Text(text)
+                        .font(CleansiaTypography.titleMedium)
+                        .lineLimit(1)
+                } else {
+                    Text(text)
+                        .font(CleansiaTypography.titleMedium)
+                        .lineLimit(maxLines)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.vertical, Spacing.xs)
+                }
             }
             .frame(maxWidth: .infinity, minHeight: size.minHeight)
-            .padding(.horizontal, size.horizontalPadding)
+            .padding(.horizontal, horizontalPadding ?? size.horizontalPadding)
             .foregroundColor(CleansiaOutlinedButtonColors.content(contentColor))
             .overlay(
                 Capsule().stroke(
@@ -247,26 +281,81 @@ public struct CleansiaDangerButton: View {
 
 /// A text link. Its label takes the text ink, not the primary: sky-600 reads 4.10:1 on white, under the
 /// 4.5:1 floor for text (owner decision 2026-10-05); dark mode is unchanged.
+///
+/// An icon is sized with the label and sits on the cap band of its line, the visual centre of a capitalised word: a
+/// one-line link centres it on the line, and a link allowed to wrap puts a leading icon on its first line and a
+/// trailing one on its last.
 public struct CleansiaTextLink: View {
-    private let text: String
-    private let action: () -> Void
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
-    public init(_ text: String, action: @escaping () -> Void) {
+    private let text: String
+    private let leadingIcon: String?
+    private let trailingIcon: String?
+    private let maxLines: Int
+    private let action: () -> Void
+    private let style = CleansiaTypography.scale.labelLarge
+
+    public init(
+        _ text: String,
+        leadingIcon: String? = nil,
+        trailingIcon: String? = nil,
+        maxLines: Int = 1,
+        action: @escaping () -> Void
+    ) {
         self.text = text
+        self.leadingIcon = leadingIcon
+        self.trailingIcon = trailingIcon
+        self.maxLines = maxLines
         self.action = action
     }
 
     public var body: some View {
         Button(action: action) {
-            Text(text)
-                .font(CleansiaTypography.labelLarge)
-                .foregroundColor(CleansiaColors.primaryText)
-                .lineLimit(1)
+            label
                 .padding(Spacing.xxs)
                 .frame(minWidth: 44, minHeight: 44)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+
+    @ViewBuilder
+    private var label: some View {
+        if leadingIcon == nil, trailingIcon == nil {
+            words
+        } else if maxLines == 1 {
+            HStack(alignment: .center, spacing: Spacing.xs) {
+                if let leadingIcon { icon(leadingIcon) }
+                words
+                if let trailingIcon { icon(trailingIcon) }
+            }
+        } else {
+            HStack(alignment: .firstTextBaseline, spacing: Spacing.xs) {
+                if let leadingIcon {
+                    icon(leadingIcon).capBandAligned(of: style)
+                }
+                HStack(alignment: .lastTextBaseline, spacing: Spacing.xs) {
+                    words
+                    if let trailingIcon {
+                        icon(trailingIcon).capBandAligned(.lastTextBaseline, of: style)
+                    }
+                }
+            }
+        }
+    }
+
+    private var words: some View {
+        Text(text)
+            .font(CleansiaTypography.labelLarge)
+            .foregroundColor(CleansiaColors.primaryText)
+            .lineLimit(maxLines)
+    }
+
+    private func icon(_ name: String) -> some View {
+        Image(systemName: name)
+            .font(.system(size: CleansiaFont.scaledSize(style.size, for: dynamicTypeSize), weight: .semibold))
+            .foregroundColor(CleansiaColors.primaryText)
+            .accessibilityHidden(true)
     }
 }
 
@@ -285,6 +374,9 @@ public struct CleansiaTextLink: View {
                 ) {}
                 CleansiaDangerButton("Delete account", leadingIcon: "trash") {}
                 CleansiaTextLink("Forgot password?") {}
+                CleansiaTextLink("Job details", trailingIcon: "chevron.right") {}
+                CleansiaTextLink("Payouts are in Pay & Earnings", trailingIcon: "chevron.right", maxLines: 2) {}
+                    .frame(width: 160)
             }
             .padding()
         }

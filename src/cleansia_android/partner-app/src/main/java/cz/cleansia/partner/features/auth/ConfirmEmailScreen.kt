@@ -123,6 +123,7 @@ fun ConfirmEmailScreen(
                     code = uiState.code,
                     onCodeChange = viewModel::onCodeChange,
                     length = CONFIRMATION_CODE_LENGTH,
+                    showPasteAction = false,
                 )
 
                 if (uiState.asksForPassword) {

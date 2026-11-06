@@ -92,7 +92,8 @@ struct CreateRecurringScreen: View {
                     cash: vm.cashEligibility,
                     cashCleared: vm.cashCleared,
                     cardAvailable: vm.isCardPaymentAvailable,
-                    onSelect: vm.setPaymentType
+                    onSelect: vm.setPaymentType,
+                    onRetryCard: { Task { await vm.refreshCashCard() } }
                 )
                 StartsSection(
                     startsOn: vm.formState.startsOn,
@@ -477,6 +478,7 @@ private struct PaymentSection: View {
     let cashCleared: Bool
     let cardAvailable: Bool
     let onSelect: (Int) -> Void
+    let onRetryCard: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.s) {
@@ -502,6 +504,9 @@ private struct PaymentSection: View {
             }
             if let reason = L10n.Recurring.cashReason(cash) {
                 PaymentNote(systemImage: "info.circle", text: reason)
+            }
+            if cash == .cardCheckFailed {
+                CleansiaTextLink(L10n.retry, action: onRetryCard)
             }
         }
     }

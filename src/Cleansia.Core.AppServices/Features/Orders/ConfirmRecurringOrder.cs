@@ -217,6 +217,14 @@ public class ConfirmRecurringOrder
                     nameof(order.PaymentType), BusinessErrorMessage.OrderCashOpenBookingsLimitReached));
             }
 
+            if (order.PaymentType == PaymentType.Cash
+                && !await CustomerCashStanding.HoldsUsableCardAsync(
+                    savedCardRepository, sessionUserId, order.CurrencyId, DateTimeOffset.UtcNow, cancellationToken))
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(order.PaymentType), BusinessErrorMessage.OrderCashRequiresSavedCard));
+            }
+
             // Under the account's own company, before either tender moves to the order's: a consent row is
             // the account's, and a new one takes the company ambient when it is written.
             var (termsVersionAccepted, privacyVersionAccepted) = await CustomerLegalConsents.RecordAsync(

@@ -49,6 +49,7 @@ public class UpdateRecurringBooking
         private readonly IServiceRepository _serviceRepository;
         private readonly IPackageRepository _packageRepository;
         private readonly IReceivableRepository _receivableRepository;
+        private readonly ISavedCardRepository _savedCardRepository;
 
         public Validator(
             IRecurringBookingTemplateRepository templateRepository,
@@ -61,7 +62,8 @@ public class UpdateRecurringBooking
             IServiceCityRepository serviceCityRepository,
             IServiceRepository serviceRepository,
             IPackageRepository packageRepository,
-            IReceivableRepository receivableRepository)
+            IReceivableRepository receivableRepository,
+            ISavedCardRepository savedCardRepository)
         {
             _templateRepository = templateRepository;
             _userMembershipRepository = userMembershipRepository;
@@ -74,6 +76,7 @@ public class UpdateRecurringBooking
             _serviceRepository = serviceRepository;
             _packageRepository = packageRepository;
             _receivableRepository = receivableRepository;
+            _savedCardRepository = savedCardRepository;
 
             // The entitlement link is the LAST link of THIS chain, never a second RuleFor: the
             // class-level default is Continue, so a parallel chain would answer "you need Plus" for a
@@ -144,7 +147,9 @@ public class UpdateRecurringBooking
                 .WithMessage(BusinessErrorMessage.OrderCashNotAvailable)
                 .When(x => Enum.IsDefined(x.DirtinessLevel), ApplyConditionTo.CurrentValidator)
                 .MustAsync(CashLeavesRoomForAnotherOpenBookingAsync)
-                .WithMessage(BusinessErrorMessage.OrderCashOpenBookingsLimitReached);
+                .WithMessage(BusinessErrorMessage.OrderCashOpenBookingsLimitReached)
+                .MustAsync(CashHasUsableCardAsync)
+                .WithMessage(BusinessErrorMessage.OrderCashRequiresSavedCard);
 
             RuleFor(x => x)
                 .MustAsync(OwesNothingAsync)
@@ -252,6 +257,19 @@ public class UpdateRecurringBooking
                        command.SelectedServiceIds, command.SelectedPackageIds, cancellationToken))
                    .Allows(command.SelectedServiceIds, command.SelectedPackageIds,
                        command.Rooms, command.Bathrooms, command.DirtinessLevel);
+
+        private async Task<bool> CashHasUsableCardAsync(Command command, int paymentType, CancellationToken cancellationToken)
+        {
+            if (paymentType != (int)PaymentType.Cash) return true;
+            var userId = _userSessionProvider.GetUserId();
+            if (string.IsNullOrEmpty(userId)) return true;
+            var address = (await _savedAddressRepository.GetByUserAsync(userId, cancellationToken))
+                .FirstOrDefault(saved => saved.Id == command.SavedAddressId)?.Address;
+            if (address is null) return true;
+            var currency = await _currencyResolutionService.ResolveCurrencyForCountryAsync(address.CountryId, cancellationToken);
+            return await CustomerCashStanding.HoldsUsableCardAsync(
+                _savedCardRepository, userId, currency.Id, DateTimeOffset.UtcNow, cancellationToken);
+        }
 
         private async Task<bool> OwesNothingAsync(Command command, CancellationToken cancellationToken)
         {

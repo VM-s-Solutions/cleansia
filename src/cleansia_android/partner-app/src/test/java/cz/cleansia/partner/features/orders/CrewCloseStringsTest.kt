@@ -16,11 +16,15 @@ class CrewCloseStringsTest {
 
     private val keys = listOf(
         "slide_to_mark_my_part_done",
-        "order_complete_job",
         "marking_my_part_done",
-        "order_my_part_done_waiting",
         "order_my_part_done_toast",
+        "crew_both_parts",
+        "crew_all_marked",
+        "crew_mark_done_sub",
     )
+
+    /** The crew's lines that name a time or a crew-mate, each with its one slot. */
+    private val slotted = listOf("detail_waiting_for", "crew_done_at")
 
     private val resDir: File = sequenceOf(
         File("src/main/res"),
@@ -39,6 +43,18 @@ class CrewCloseStringsTest {
                 assertTrue("$locale/$key is missing or blank", value?.isNotBlank() == true)
                 if (locale != "values") assertNotEquals("$locale/$key is still English", valueOf(english, key), value)
                 assertFalse("$locale/$key takes no argument: $value", value!!.contains('%'))
+            }
+        }
+    }
+
+    @Test
+    fun `the crew lines that name a time or a crew-mate carry one slot in every locale`() {
+        locales.forEach { locale ->
+            val xml = stringsXml(locale)
+            slotted.forEach { key ->
+                val value = valueOf(xml, key)
+                assertTrue("$locale/$key is missing or blank", value?.isNotBlank() == true)
+                assertTrue("$locale/$key takes one argument: $value", value!!.contains("%1\$s") && !value.contains("%2"))
             }
         }
     }

@@ -239,7 +239,7 @@ public class TakeOrderOfferabilityGateTests
     [Fact]
     public async Task An_Already_Assigned_Cleaner_Returns_Exactly_One_Error()
     {
-        Arrange(ValidatorTestHelpers.BuildOrder(OrderId, OrderStatus.Confirmed, EmployeeId, maxEmployees: 2));
+        Arrange(ValidatorTestHelpers.BuildOrder(OrderId, OrderStatus.Confirmed, EmployeeId, paymentType: PaymentType.Card, paymentStatus: PaymentStatus.Paid, maxEmployees: 2));
 
         var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId, WorkContractTestData.TextIdEn));
 

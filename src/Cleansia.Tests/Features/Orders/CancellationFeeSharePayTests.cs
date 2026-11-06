@@ -146,7 +146,7 @@ public class CancellationFeeSharePayTests
         order.TenantId = TenantId;
         order.Created("tester", DateTime.UtcNow.AddDays(-2));
         order.SetCurrency(currency);
-        order.UpdateEstimatedTime(240).CalculateRequiredEmployees(spareSeats: 0);
+        order.UpdateEstimatedTime(paymentType == PaymentType.Cash ? 120 : 240).CalculateRequiredEmployees(spareSeats: 0);
         if (paymentType == PaymentType.Card)
         {
             order.AssignStripeSessionId("cs_fee_share");
@@ -161,7 +161,7 @@ public class CancellationFeeSharePayTests
             stamp = stamp.AddMinutes(1);
         }
 
-        foreach (var employeeId in Crew)
+        foreach (var employeeId in paymentType == PaymentType.Cash ? Crew.Take(1) : Crew)
         {
             order.AddAssignedEmployee(OrderEmployee.Create(
                 order, ValidatorTestHelpers.BuildEmployee(employeeId, ContractStatus.Approved)));

@@ -64,6 +64,7 @@ struct ConfirmStep: View {
             .padding(Spacing.l)
         }
         .task { await viewModel.loadExtras() }
+        .task { await viewModel.refreshCashCard() }
         .task { await extras.load(membership: viewModel.loadMembership()) }
         .sheet(isPresented: $showPromoSheet) {
             PromoCodeSheet(
@@ -152,6 +153,9 @@ struct ConfirmStep: View {
             }
             if let reason = L10n.Booking.cashReason(cash) {
                 PaymentNote(systemImage: "info.circle", text: reason)
+            }
+            if cash == .cardCheckFailed {
+                CleansiaTextLink(L10n.retry) { Task { await viewModel.refreshCashCard() } }
             }
         }
     }

@@ -1,7 +1,6 @@
 package cz.cleansia.customer.features.booking
 
 import android.util.Log
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cz.cleansia.customer.core.orders.OrderApi
@@ -15,14 +14,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 /**
- * UI state for [BookingSuccessScreen]'s enrichment block.
- *
- * The screen always renders its celebratory header + CTAs; this state only
- * drives the optional enrichment (confirmation code, arrival window, address,
- * total). On [Error], the screen silently drops the block rather than
- * surfacing a "we couldn't load your order" message — the user just booked,
- * the nav args already carry the confirmation code, and the OrdersTab will
- * show the full record on the next visit.
+ * The server's order behind [BookingSuccessScreen]: it confirms the submitted appointment and address and is
+ * the only source of the reference, the free-cancellation window, the total and the payment lines. On [Error]
+ * the sheet shows Total with a dash and the "temporarily unavailable" line with Try again; the appointment
+ * stays as submitted.
  */
 sealed interface BookingSuccessUiState {
     data object Loading : BookingSuccessUiState
@@ -31,9 +26,10 @@ sealed interface BookingSuccessUiState {
 }
 
 /**
- * Fetches the newly-created order's detail once for the success screen so
- * the user sees their arrival window, address and total without having to
- * bounce to the Orders tab.
+ * Fetches the newly-created order's detail for the success screen when the
+ * sheet starts it, and again on [retry] after a failure, so the user sees
+ * their arrival window, address and total without having to bounce to the
+ * Orders tab.
  *
  * Bypasses [OrderRepository.getById] on purpose: that helper surfaces a
  * snackbar on failure (by design for the Orders-tab flow), which would
@@ -50,10 +46,9 @@ sealed interface BookingSuccessUiState {
 class BookingSuccessViewModel @Inject constructor(
     private val orderApi: OrderApi,
     private val orderRepository: OrderRepository,
-    savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
-    private val orderId: String? = savedStateHandle.get<String>("orderId")
+    private var startedFor: String? = null
 
     private val _state = MutableStateFlow<BookingSuccessUiState>(BookingSuccessUiState.Loading)
     val state: StateFlow<BookingSuccessUiState> = _state.asStateFlow()
@@ -65,12 +60,21 @@ class BookingSuccessViewModel @Inject constructor(
         viewModelScope.launch {
             orderRepository.refresh()
         }
-        load()
     }
 
-    private fun load() {
-        val id = orderId
-        if (id.isNullOrBlank()) {
+    fun start(orderId: String) {
+        if (startedFor == orderId) return
+        startedFor = orderId
+        load(orderId)
+    }
+
+    fun retry() {
+        val id = startedFor ?: return
+        load(id)
+    }
+
+    private fun load(id: String) {
+        if (id.isBlank()) {
             _state.value = BookingSuccessUiState.Error
             return
         }

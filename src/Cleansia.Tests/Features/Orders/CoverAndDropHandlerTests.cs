@@ -67,7 +67,7 @@ public class CoverAndDropHandlerTests
 
     private static Order OrderAt(OrderStatus status, params string[] assignedEmployeeIds)
     {
-        var order = ValidatorTestHelpers.BuildEmptyOrder(OrderId, status, maxEmployees: 2);
+        var order = ValidatorTestHelpers.BuildEmptyOrder(OrderId, status, paymentType: PaymentType.Card, paymentStatus: PaymentStatus.Paid, maxEmployees: 2);
         order.TenantId = CompanyId;
 
         foreach (var id in assignedEmployeeIds)
@@ -83,7 +83,7 @@ public class CoverAndDropHandlerTests
     private static Order AccountOrderWith(params string[] assignedEmployeeIds)
     {
         var order = ValidatorTestHelpers.BuildOrder(
-            OrderId, OrderStatus.Confirmed, assignedEmployeeIds[0], maxEmployees: 2, userId: CustomerUserId);
+            OrderId, OrderStatus.Confirmed, assignedEmployeeIds[0], paymentType: PaymentType.Card, paymentStatus: PaymentStatus.Paid, maxEmployees: 2, userId: CustomerUserId);
         order.TenantId = CompanyId;
 
         foreach (var id in assignedEmployeeIds.Skip(1))

@@ -105,27 +105,87 @@ final class OrderDetailCashNotPaidTests: XCTestCase {
         XCTAssertFalse(makeVM().offersCashNotPaid)
     }
 
-    /// The confirmation states what the customer will owe: the price less any credit applied.
-    func testTheAmountOwedIsThePriceLessTheCreditApplied() throws {
+    /// The confirmation states what the customer will owe: the price less any credit applied, the server's
+    /// amount due, the same figure the button and the cash block say.
+    func testTheAmountOwedIsWhatTheCustomerStillOwes() throws {
         var item = cashJob()
         item.totalPrice = 1200
         item.creditAppliedAmount = 300
+        item.amountDueOnCard = 900
 
         let order = try OrderDetail(item)
 
         XCTAssertEqual(order.cashNotPaidOwedLabel, OrdersFormat.money(900, symbol: order.currencySymbol))
+        XCTAssertEqual(order.cashDueLabel, order.cashNotPaidOwedLabel)
     }
 
-    func testAMissingPriceOrCreditFigureNamesNoAmountRatherThanAGuessedOne() throws {
-        var noCredit = cashJob()
-        noCredit.totalPrice = 1200
-        noCredit.creditAppliedAmount = nil
-        var noPrice = cashJob()
-        noPrice.totalPrice = nil
-        noPrice.creditAppliedAmount = 0
+    /// The head's flag asks her to collect the cash until she marks it collected, then says it is collected.
+    func testTheHeadsCashFlagSaysCollectedOnceTheCashIsMarked() throws {
+        var item = cashJob(status: 4, paymentStatus: 2)
+        item.amountDueOnCard = 1240
+        let collected = try OrderDetail(item)
+        let amount = try OrdersBoardRules.nonBreaking(XCTUnwrap(collected.cashDueLabel))
+        XCTAssertEqual(collected.cashFlag, L10n.Orders.historyCashCollected(amount))
 
-        XCTAssertNil(try OrderDetail(noCredit).cashNotPaidOwedLabel)
-        XCTAssertNil(try OrderDetail(noPrice).cashNotPaidOwedLabel)
+        item.paymentStatus = Code(value: 1)
+        XCTAssertEqual(try OrderDetail(item).cashFlag, L10n.Orders.flagCashCollect(amount))
+        item.orderStatus = Code(value: 5)
+        XCTAssertNil(try OrderDetail(item).cashFlag, "a completed job has no flag in its head")
+        item.orderStatus = Code(value: 4)
+        item.paymentType = Code(value: 0)
+        XCTAssertNil(try OrderDetail(item).cashFlag, "a card job has no cash flag")
+    }
+
+    /// A job not hers says what became of its cash by the head's own rule: collected once the payment is Paid.
+    func testAJobNotTakenSaysItsCashIsCollectedOnceItIsPaid() async throws {
+        var item = cashJob(status: 4, isMine: false, paymentStatus: 2)
+        item.amountDueOnCard = 1240
+        let amount = try OrdersBoardRules.nonBreaking(XCTUnwrap(OrderDetail(item).cashDueLabel))
+        let collected = HostedSpeech.plain(L10n.Orders.historyCashCollected(amount))
+        let collect = HostedSpeech.plain(L10n.Orders.flagCashCollect(amount))
+
+        let paid = try await HostedSpeech.labels(of: ScopeSection(order: OrderDetail(item), board: true))
+        XCTAssertTrue(paid.contains { $0.contains(collected) }, "\(paid)")
+        XCTAssertFalse(paid.contains { $0.contains(collect) }, "\(paid)")
+
+        item.paymentStatus = Code(value: 1)
+        let pending = try await HostedSpeech.labels(of: ScopeSection(order: OrderDetail(item), board: true))
+        XCTAssertTrue(pending.contains { $0.contains(collect) }, "\(pending)")
+    }
+
+    /// The cash step keeps what is only there, the customer's word on where the money is, and its gates: the amount is
+    /// the head's flag (collected once marked) and the move's, and the rule is the Payment section's.
+    func testTheCashStepKeepsTheCustomersWordAndLeavesTheAmountAndTheRuleToTheirPlaces() async throws {
+        var item = cashJob(status: 4, paymentStatus: 2)
+        item.amountDueOnCard = 1240
+        item.estimatedCleanerPay = 650
+        item.specialInstructions = "Platím hotově, peníze nechám na stole."
+        let order = try OrderDetail(item)
+        let amount = try OrdersBoardRules.nonBreaking(XCTUnwrap(order.cashDueLabel))
+        let reward = OrdersBoardRules.nonBreaking(OrdersFormat.money(650, symbol: order.currencySymbol))
+
+        let marked = try await HostedSpeech.labels(of: VStack { CashBlock(order: order, afterPhoto: Date()) })
+        XCTAssertTrue(marked.contains("Platím hotově, peníze nechám na stole."), "\(marked)")
+        XCTAssertFalse(marked.contains { $0.contains(HostedSpeech.plain(amount)) }, "\(marked)")
+        XCTAssertFalse(marked.contains(HostedSpeech.plain(L10n.Orders.cashRule(reward))), "\(marked)")
+        XCTAssertEqual(order.cashFlag, L10n.Orders.historyCashCollected(amount))
+        XCTAssertEqual(
+            order.sectionPlan(myEmployeeId: nil, photos: []).payment?.cashRule,
+            L10n.Orders.cashRule(reward)
+        )
+
+        item.paymentStatus = Code(value: 1)
+        let unpaid = try OrderDetail(item)
+        XCTAssertEqual(unpaid.cashFlag, L10n.Orders.flagCashCollect(amount))
+    }
+
+    func testAMissingAmountDueNamesNoAmountRatherThanAGuessedOne() throws {
+        var noAmount = cashJob()
+        noAmount.totalPrice = 1200
+        noAmount.creditAppliedAmount = 0
+        noAmount.amountDueOnCard = nil
+
+        XCTAssertNil(try OrderDetail(noAmount).cashNotPaidOwedLabel)
     }
 
     /// The report alerts an administrator, and an administrator can reverse it (a manager writes the debt off, or the

@@ -7,6 +7,7 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.ServiceAreas;
 using Cleansia.Core.Domain.Services;
+using Cleansia.Core.Domain.Users;
 using Cleansia.HostTests.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
@@ -233,6 +234,9 @@ public sealed class RecurringBookingMembershipGateRouteTests(HostTestPostgresFix
             var customer = DomainSeed.Customer(CustomerEmail);
             customer.Id = CustomerId;
             ctx.Users.Add(customer);
+            var card = SavedCard.Start(CustomerId, DomainSeed.CurrencyId, "cus_recur_gate", null, null);
+            card.Capture("pm_recur_gate", "visa", "4242", 12, 2035);
+            ctx.SavedCards.Add(card);
 
             var (address, saved) = DomainSeed.SavedAddressFor(CustomerId);
             saved.Id = SavedAddressId;

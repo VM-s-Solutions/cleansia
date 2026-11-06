@@ -27,4 +27,13 @@ class PendingOffersCallSiteTest {
             ).containsMatchIn(screen),
         )
     }
+
+    @Test
+    fun `an offer's take ends on the taken panel, Open job to the job and Back to jobs onto the list`() {
+        val sheet = screen.substringAfter("WorkContractSheet(").substringBefore("pendingDecline?.let")
+        assertTrue("the sheet is not told the take succeeded", sheet.contains("taken = takenRow != null,"))
+        assertTrue("the sheet does not show the taken row", sheet.contains("takenRow = takenRow,"))
+        assertTrue("Open job does not open the taken job", sheet.contains("onOpenJob = viewModel::openTakenJob,"))
+        assertTrue("Back to jobs does not close onto the list", sheet.contains("onBackToJobs = viewModel::dismissContract,"))
+    }
 }

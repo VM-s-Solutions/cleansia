@@ -48,6 +48,29 @@ class OrderFormattersTest {
     }
 
     @Test
+    fun `formatOrderDate renders month-day only`() {
+        assertEquals("Apr 22", formatOrderDate("2026-04-22T10:00:00Z"))
+    }
+
+    @Test
+    fun `formatOrderDate returns dash for null or blank`() {
+        assertEquals("—", formatOrderDate(null))
+        assertEquals("—", formatOrderDate(""))
+    }
+
+    /** A calendar line that writes the day and the time apart draws the same text as the one string. */
+    @Test
+    fun `the day and the time joined by the separator are formatOrderDateTime in every app language`() {
+        listOf("en", "cs", "sk", "uk", "ru").map(Locale::forLanguageTag).forEach { locale ->
+            val iso = "2026-11-24T07:00:00Z"
+            assertEquals(
+                formatOrderDateTime(iso, locale),
+                "${formatOrderDate(iso, locale)} · ${formatOrderTime(iso, locale)}",
+            )
+        }
+    }
+
+    @Test
     fun `formatOrderTime renders 24h time only`() {
         assertEquals("10:00", formatOrderTime("2026-04-22T10:00:00Z"))
     }

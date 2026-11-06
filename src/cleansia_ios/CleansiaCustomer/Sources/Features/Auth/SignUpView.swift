@@ -112,9 +112,10 @@ private struct SignUpContent: View {
                 CleansiaTextField(
                     value: binding(form.email, onEmailChange),
                     label: L10n.Auth.email,
+                    placeholder: L10n.Auth.emailPlaceholder,
                     errorText: form.emailError,
                     keyboardType: .emailAddress,
-                    textContentType: .emailAddress,
+                    textContentType: .username,
                     enabled: !formDisabled
                 )
 

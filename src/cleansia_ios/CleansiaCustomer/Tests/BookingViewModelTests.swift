@@ -20,7 +20,8 @@ final class BookingViewModelTests: XCTestCase {
             countryResolver: country,
             market: market?.statePublisher ?? Just(.unavailable).eraseToAnyPublisher(),
             quoteDebounce: .milliseconds(400),
-            scheduler: scheduler.eraseToAnyScheduler()
+            scheduler: scheduler.eraseToAnyScheduler(),
+            savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])])
         )
     }
 
@@ -130,14 +131,14 @@ final class BookingViewModelTests: XCTestCase {
     }
 
     func testStartsOnStepOne() {
-        let vm = BookingViewModel()
+        let vm = BookingViewModel(savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])]))
         XCTAssertEqual(vm.currentStep, 1)
         XCTAssertTrue(vm.isFirstStep)
         XCTAssertFalse(vm.isLastStep)
     }
 
     func testAdvanceWalksEveryStepAndStopsAtTheLast() {
-        let vm = BookingViewModel()
+        let vm = BookingViewModel(savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])]))
 
         XCTAssertTrue(vm.advance())
         XCTAssertEqual(vm.currentStep, 2)
@@ -155,7 +156,7 @@ final class BookingViewModelTests: XCTestCase {
     }
 
     func testBackWalksThreeTwoOneAndStopsAtOne() {
-        let vm = BookingViewModel()
+        let vm = BookingViewModel(savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])]))
         vm.advance()
         vm.advance()
         XCTAssertEqual(vm.currentStep, 3)
@@ -171,7 +172,7 @@ final class BookingViewModelTests: XCTestCase {
     }
 
     func testBackOnStepOneDoesNotMoveSoTheViewCanClose() {
-        let vm = BookingViewModel()
+        let vm = BookingViewModel(savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])]))
         XCTAssertTrue(vm.isFirstStep)
         XCTAssertFalse(vm.back())
         XCTAssertEqual(vm.currentStep, 1)
@@ -180,7 +181,7 @@ final class BookingViewModelTests: XCTestCase {
     /// The leading control steps back past step one and closes on it. The swipe-down closes on any
     /// step, since closing keeps the draft — this no longer decides that.
     func testTheLeadingControlStepsBackPastTheFirstStep() {
-        let vm = BookingViewModel()
+        let vm = BookingViewModel(savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])]))
         XCTAssertFalse(vm.canStepBack)
 
         vm.advance()
@@ -196,7 +197,7 @@ final class BookingViewModelTests: XCTestCase {
 
     /// A booking placed, or an entry that starts its own flow, begins again on step one.
     func testResetReturnsTheDraftToTheFirstStep() {
-        let vm = BookingViewModel()
+        let vm = BookingViewModel(savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])]))
         vm.setRooms(3)
         vm.advance()
         vm.advance()
@@ -209,7 +210,7 @@ final class BookingViewModelTests: XCTestCase {
     }
 
     func testUpdateRebuildsStateViaCopy() {
-        let vm = BookingViewModel()
+        let vm = BookingViewModel(savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])]))
         vm.update { current in
             var next = current
             next.rooms = 3
@@ -220,7 +221,7 @@ final class BookingViewModelTests: XCTestCase {
 
     /// Every basket validator refuses a home above `BookingPolicy.MaxRooms` / `MaxBathrooms`.
     func testTheSizeSettersStopAtTheLargestHomeTheServerAccepts() {
-        let vm = BookingViewModel()
+        let vm = BookingViewModel(savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])]))
         vm.setRooms(PropertySize.maxRooms + 1)
         vm.setBathrooms(PropertySize.maxBathrooms + 1)
 
@@ -229,7 +230,7 @@ final class BookingViewModelTests: XCTestCase {
     }
 
     func testTheSizeSettersNeverGoBelowOne() {
-        let vm = BookingViewModel()
+        let vm = BookingViewModel(savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])]))
         vm.setRooms(0)
         vm.setBathrooms(0)
 
@@ -238,14 +239,14 @@ final class BookingViewModelTests: XCTestCase {
     }
 
     func testAccessInstructionsAreCappedAtTheBackendLimit() {
-        let vm = BookingViewModel()
+        let vm = BookingViewModel(savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])]))
         vm.setAccessInstructions(String(repeating: "a", count: BookingInstructions.maxUtf16Length + 250))
 
         XCTAssertEqual(vm.state.accessInstructions.utf16.count, BookingInstructions.maxUtf16Length)
     }
 
     func testSpecialInstructionsAreCappedAtTheBackendLimit() {
-        let vm = BookingViewModel()
+        let vm = BookingViewModel(savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])]))
         vm.setSpecialInstructions(String(repeating: "a", count: BookingInstructions.maxUtf16Length + 250))
 
         XCTAssertEqual(vm.state.specialInstructions.utf16.count, BookingInstructions.maxUtf16Length)
@@ -255,7 +256,7 @@ final class BookingViewModelTests: XCTestCase {
     /// measure, not Swift's: 1500 emoji are under Swift's 2000 and over the
     /// validator's.
     func testAstralInstructionsAreCappedByUtf16Width() {
-        let vm = BookingViewModel()
+        let vm = BookingViewModel(savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])]))
         vm.setAccessInstructions(String(repeating: "😀", count: 1500))
 
         XCTAssertLessThanOrEqual(
@@ -266,7 +267,7 @@ final class BookingViewModelTests: XCTestCase {
     }
 
     func testInstructionsUnderTheLimitAreStoredVerbatim() {
-        let vm = BookingViewModel()
+        let vm = BookingViewModel(savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])]))
         vm.setAccessInstructions("  Key box, code 4321 ")
         vm.setSpecialInstructions("Eco products only")
 
@@ -275,7 +276,7 @@ final class BookingViewModelTests: XCTestCase {
     }
 
     func testResetReturnsToStepOneAndCleanState() {
-        let vm = BookingViewModel()
+        let vm = BookingViewModel(savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])]))
         vm.update { current in
             var next = current
             next.selectedServiceIds = ["s-1"]
@@ -296,7 +297,7 @@ final class BookingViewModelTests: XCTestCase {
     }
 
     func testInitialSealedStatesAreIdle() {
-        let vm = BookingViewModel()
+        let vm = BookingViewModel(savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])]))
         XCTAssertEqual(vm.submitState, .idle)
         XCTAssertEqual(vm.quoteState, .idle)
         XCTAssertEqual(vm.promoState, .idle)
@@ -444,7 +445,7 @@ final class BookingViewModelTests: XCTestCase {
     }
 
     func testSelectionMutationsUpdateState() {
-        let vm = BookingViewModel()
+        let vm = BookingViewModel(savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])]))
         vm.update { var s = $0
             s.selectedServiceIds.insert("s-1")
             return s

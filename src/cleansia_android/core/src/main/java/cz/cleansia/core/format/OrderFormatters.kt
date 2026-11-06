@@ -17,7 +17,7 @@ import kotlin.time.Duration.Companion.minutes
  * defensive — malformed inputs never crash, they return a sensible fallback.
  *
  * Compose-typed helpers (anything returning a `Color` or annotated `@Composable`)
- * live in [cz.cleansia.customer.ui.format] so this package stays framework-pure
+ * live in [cz.cleansia.core.ui.theme] so this package stays framework-pure
  * and safe to depend on from ViewModels.
  */
 
@@ -43,6 +43,21 @@ fun formatOrderDateTime(iso: String?, locale: Locale = Locale.getDefault()): Str
         val instant = Instant.parse(iso)
         val local = instant.toLocalDateTime(TimeZone.currentSystemDefault()).toJavaLocalDateTime()
         local.format(shortDateTimeFormatter(locale))
+    } catch (_: Throwable) {
+        iso
+    }
+}
+
+/**
+ * Parse an ISO-8601 UTC instant and format just its day ("Apr 22") in the device timezone. Returns "—" if
+ * null/blank, or the raw input if parsing fails.
+ */
+fun formatOrderDate(iso: String?, locale: Locale = Locale.getDefault()): String {
+    if (iso.isNullOrBlank()) return "—"
+    return try {
+        val instant = Instant.parse(iso)
+        val local = instant.toLocalDateTime(TimeZone.currentSystemDefault()).toJavaLocalDateTime()
+        local.format(dateFormatter(locale))
     } catch (_: Throwable) {
         iso
     }

@@ -96,7 +96,7 @@ public class LockoutRewardPayTests
             rooms: 3,
             bathrooms: 0,
             cleaningDateTime: DateTime.UtcNow.AddHours(-1),
-            paymentType: paymentType,
+            paymentType: PaymentType.Card,
             totalPrice: 3000m,
             currencyId: currency.Id,
             paymentStatus: paymentStatus,
@@ -113,6 +113,8 @@ public class LockoutRewardPayTests
                 order, ValidatorTestHelpers.BuildEmployee(employeeId, ContractStatus.Approved)));
         }
 
+        // Rehydrate historical cash crews; new cash bookings cannot add a second seat.
+        typeof(Order).GetProperty(nameof(Order.PaymentType))!.GetSetMethod(true)!.Invoke(order, [paymentType]);
         return order;
     }
 

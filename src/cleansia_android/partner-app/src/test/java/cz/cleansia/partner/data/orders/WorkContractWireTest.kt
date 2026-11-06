@@ -190,6 +190,28 @@ class WorkContractWireTest {
         assertEquals(emptyList<String>(), contract.facts.extraSlugs)
     }
 
+    /**
+     * The take sheet swaps each facts name for the row's translated name of the same id, so index i of the
+     * ids must stay the id of name i when a blank-named line is dropped.
+     */
+    @Test
+    fun serviceAndPackageIdsStayAlignedWithTheirNamesWhenABlankLineIsDropped() = runTest {
+        val contract = loaded(
+            previewWithFacts { facts ->
+                facts + ("services" to Json.parseToJsonElement(
+                    """[{ "id": "svc-blank", "name": " " }, { "id": "svc-1", "name": "Standardní úklid" }, { "id": "svc-2", "name": "Okna" }]""",
+                )) + ("packages" to Json.parseToJsonElement(
+                    """[{ "id": "pkg-0", "name": null }, { "id": "pkg-1", "name": "Balíček Plus" }]""",
+                ))
+            },
+        )
+
+        assertEquals(listOf("Standardní úklid", "Okna"), contract.facts.services)
+        assertEquals(listOf("svc-1", "svc-2"), contract.facts.serviceIds)
+        assertEquals(listOf("Balíček Plus"), contract.facts.packages)
+        assertEquals(listOf("pkg-1"), contract.facts.packageIds)
+    }
+
     // --- rule 5: nullable-by-design stays nullable ---------------------------------
 
     @Test

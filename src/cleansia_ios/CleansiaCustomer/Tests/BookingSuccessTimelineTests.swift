@@ -16,8 +16,8 @@ final class BookingSuccessTimelineTests: XCTestCase {
         XCTAssertEqual(entries.map(\.step), [.received, .assigning, .confirmed, .cleaningDay])
     }
 
-    func testNoOrderLoadedFallsBackToJustPlaced() {
-        XCTAssertEqual(states(nil), [.done, .active, .pending, .pending])
+    func testNoOrderLoadedShowsOnlyTheReceivedAcknowledgement() {
+        XCTAssertEqual(states(nil), [.done, .pending, .pending, .pending])
     }
 
     func testNewAndPendingKeepAssignmentActiveUntilACleanerIsAssigned() {
@@ -40,8 +40,7 @@ final class BookingSuccessTimelineTests: XCTestCase {
         XCTAssertEqual(states(._5), [.done, .done, .done, .done])
     }
 
-    func testCancelledMirrorsAndroidsMapping() {
-        // computeTimelineSteps (BookingSuccessScreen.kt): Cancelled → t2 Done, t3/t4 Pending.
-        XCTAssertEqual(states(._6), [.done, .done, .pending, .pending])
+    func testCancelledShowsNoActiveOrFalselyCompletedAssignment() {
+        XCTAssertEqual(states(._6), [.done, .pending, .pending, .pending])
     }
 }

@@ -239,7 +239,7 @@ public class CollectedFeeSharePayTests(PostgresContainerFixture fixture) : BaseI
             rooms: 1,
             bathrooms: 0,
             cleaningDateTime: DateTime.UtcNow.AddHours(2),
-            paymentType: paymentType,
+            paymentType: paymentType == PaymentType.Cash && seats > 1 ? PaymentType.Card : paymentType,
             totalPrice: totalPrice,
             currencyId: CurrencyId,
             paymentStatus: paymentStatus,
@@ -255,6 +255,12 @@ public class CollectedFeeSharePayTests(PostgresContainerFixture fixture) : BaseI
             var second = NewEmployee(context, "fee-share-second@cleansia.test");
             order.AddAssignedEmployee(OrderEmployee.Create(order, second));
             _secondSeatEmployeeId = second.Id;
+        }
+
+        if (paymentType == PaymentType.Cash && seats > 1)
+        {
+            // Rehydrate the historical cash crew whose receivable still needs both payout recipients.
+            typeof(Order).GetProperty(nameof(Order.PaymentType))!.GetSetMethod(true)!.Invoke(order, [paymentType]);
         }
 
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Cancelled, order));

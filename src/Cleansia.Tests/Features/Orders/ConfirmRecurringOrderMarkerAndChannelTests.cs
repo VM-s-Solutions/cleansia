@@ -68,7 +68,7 @@ public sealed class ConfirmRecurringOrderMarkerAndChannelTests
     private ConfirmRecurringOrder.Handler Handler(OrderChannel channel) => new(
         OrderAccessDoubles.Over(_orderRepository, _session),
         _orderRepository.Object,
-        Mock.Of<ISavedCardRepository>(), Mock.Of<IReceivableRepository>(),
+        Cleansia.Tests.Common.SavedCardTestData.Repository(), Mock.Of<IReceivableRepository>(),
         _credits.Object,
         _users.Object,
         _session.Object,

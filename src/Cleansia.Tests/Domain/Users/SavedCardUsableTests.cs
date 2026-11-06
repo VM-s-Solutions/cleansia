@@ -20,6 +20,15 @@ public class SavedCardUsableTests
     }
 
     [Fact]
+    public void The_Expiry_Month_Is_Judged_In_Utc_When_The_Moment_Carries_Another_Offset()
+    {
+        var card = Captured(expMonth: 3, expYear: 2027);
+
+        Assert.True(card.IsUsableOn(LastMinuteOfMarch.ToOffset(TimeSpan.FromHours(2))));
+        Assert.False(card.IsUsableOn(LastMinuteOfMarch.AddMinutes(1).ToOffset(TimeSpan.FromHours(-3))));
+    }
+
+    [Fact]
     public void A_Later_Expiry_Year_Is_Usable_Whatever_Its_Month_And_An_Earlier_One_Is_Not()
     {
         Assert.True(Captured(expMonth: 1, expYear: 2028).IsUsableOn(LastMinuteOfMarch));
@@ -39,6 +48,17 @@ public class SavedCardUsableTests
     {
         var card = Captured(expMonth: 3, expYear: 2027);
         card.Deactivated("user-usable", LastMinuteOfMarch.AddDays(-1));
+
+        Assert.False(card.IsUsableOn(LastMinuteOfMarch));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void A_Captured_Row_Without_A_Payment_Method_Is_Not_A_Verified_Card(string paymentMethod)
+    {
+        var card = SavedCard.Start("user-usable", "currency-czk", "cus_usable", null, null);
+        card.Capture(paymentMethod, "visa", "4242", 3, 2027);
 
         Assert.False(card.IsUsableOn(LastMinuteOfMarch));
     }

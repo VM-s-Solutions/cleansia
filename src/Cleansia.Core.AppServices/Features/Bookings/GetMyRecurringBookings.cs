@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Features.Bookings.DTOs;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
@@ -17,7 +18,9 @@ public class GetMyRecurringBookings
         IUserSessionProvider userSessionProvider,
         IServiceRepository serviceRepository,
         IPackageRepository packageRepository,
-        ICountryConfigurationRepository countryConfigurationRepository) : IQueryHandler<Query, IReadOnlyList<RecurringBookingTemplateDto>>
+        ICountryConfigurationRepository countryConfigurationRepository,
+        ISavedCardRepository savedCardRepository,
+        ICurrencyResolutionService currencyResolutionService) : IQueryHandler<Query, IReadOnlyList<RecurringBookingTemplateDto>>
     {
         public async Task<BusinessResult<IReadOnlyList<RecurringBookingTemplateDto>>> Handle(Query query, CancellationToken cancellationToken)
         {
@@ -50,6 +53,18 @@ public class GetMyRecurringBookings
                     countryConfigurationRepository, countryId, cancellationToken)).Id;
             }
 
+            var usableCurrencies = cashTemplates.Count == 0
+                ? new HashSet<string>()
+                : (await savedCardRepository.GetCapturedForUserAsync(userId, cancellationToken))
+                    .Where(card => card.IsUsableOn(DateTimeOffset.UtcNow)).Select(card => card.CurrencyId).ToHashSet();
+            var currencyByCountry = new Dictionary<string, string>();
+            foreach (var countryId in cashTemplates
+                         .Select(template => addressById.GetValueOrDefault(template.SavedAddressId)?.Address?.CountryId)
+                         .OfType<string>().Distinct())
+            {
+                currencyByCountry[countryId] = (await currencyResolutionService.ResolveCurrencyForCountryAsync(countryId, cancellationToken)).Id;
+            }
+
             var dtos = templates.Select(t =>
             {
                 var addr = addressById.TryGetValue(t.SavedAddressId, out var sa) ? sa : null;
@@ -75,8 +90,11 @@ public class GetMyRecurringBookings
                     IsActive: t.IsActive,
                     PreferredEmployeeId: t.PreferredEmployeeId,
                     RequiresPaymentMethodChange: t.PaymentType == PaymentType.Cash
-                        && !cashEligibility!.Allows(
-                            t.SelectedServiceIds, t.SelectedPackageIds, t.Rooms, t.Bathrooms, t.DirtinessLevel),
+                        && (!cashEligibility!.Allows(
+                            t.SelectedServiceIds, t.SelectedPackageIds, t.Rooms, t.Bathrooms, t.DirtinessLevel)
+                            || addr?.Address is null
+                            || !currencyByCountry.TryGetValue(addr.Address.CountryId, out var currencyId)
+                            || !usableCurrencies.Contains(currencyId)),
                     TimeZoneId: addr?.Address == null ? null : zoneByCountry[addr.Address.CountryId],
                     DirtinessLevel: t.DirtinessLevel);
             }).ToList();

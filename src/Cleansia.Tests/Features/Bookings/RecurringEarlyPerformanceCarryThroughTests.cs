@@ -164,7 +164,7 @@ public class RecurringEarlyPerformanceCarryThroughTests
             Mock.Of<ITenantProvider>(),
             Mock.Of<IUnitOfWork>(),
             NullLogger<MaterializeRecurringBookingTemplate.Handler>.Instance,
-            Mock.Of<INotificationProducer>());
+            Mock.Of<INotificationProducer>(), Cleansia.Tests.Common.SavedCardTestData.Repository());
 
     private static MaterializeRecurringBookingTemplate.Command SweepCommand() =>
         new(TemplateId, DateTime.UtcNow, HorizonDays: 7);

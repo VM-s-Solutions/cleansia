@@ -83,6 +83,26 @@ class OrderWireTest {
 
     private suspend fun detailed(body: String): OrderDetailDto = serving(body) { it.getById("o-1") }.body()!!
 
+    @Test
+    fun assignedCleanerPhoto_crossesTheGeneratedWireWithoutChangingTheDisclosedName() = runTest {
+        val order = json.parseToJsonElement(CAPTURED_ORDER).jsonObject
+        val cleaner = order.getValue("assignedEmployees").jsonArray.first().jsonObject
+        val photo = JsonObject(mapOf(
+            "fileName" to JsonPrimitive("cleaner-photo.webp"),
+            "blobUrl" to JsonPrimitive("https://example.invalid/cleaner-photo.webp?synthetic=read"),
+        ))
+        val body = JsonObject(order + ("assignedEmployees" to JsonArray(listOf(
+            JsonObject(cleaner + mapOf("fullName" to JsonPrimitive("Jana"), "profilePhoto" to photo)),
+        ))))
+
+        val assigned = detailed(body.toString()).assignedEmployees!!.single()
+
+        assertEquals("Jana", assigned.fullName)
+        assertEquals("cleaner-photo.webp", assigned.avatarFileName)
+        assertEquals("https://example.invalid/cleaner-photo.webp?synthetic=read", assigned.avatarUrl)
+        assertNull(detailed(CAPTURED_ORDER).assignedEmployees!!.single().avatarUrl)
+    }
+
     private suspend fun cancelled(body: String) =
         serving(body) { it.cancel(CancelOrderRequest(orderId = "o-1", reason = "plans changed")) }.body()!!
 
@@ -372,6 +392,15 @@ class OrderWireTest {
         assertEquals(1, confirmed.paymentStatus?.value)
         assertTrue(awaiting.needsConfirmation)
         assertEquals(false, confirmed.needsConfirmation)
+    }
+
+    /** The confirmation's deadline is the order's own window; a missing one is never read as 24. */
+    @Test
+    fun theFreeCancellationWindowArrivesFromTheOrderAndIsNeverDefaulted() = runTest {
+        assertEquals(4, detailed(withKey(CAPTURED_ORDER, "freeCancellationHours", JsonPrimitive(4))).freeCancellationHours)
+        assertEquals(24, detailed(withKey(CAPTURED_ORDER, "freeCancellationHours", JsonPrimitive(24))).freeCancellationHours)
+        assertNull(detailed(withoutKey(CAPTURED_ORDER, "freeCancellationHours")).freeCancellationHours)
+        assertNull(detailed(withKey(CAPTURED_ORDER, "freeCancellationHours", JsonNull)).freeCancellationHours)
     }
 
     @Test
@@ -730,6 +759,7 @@ class OrderWireTest {
             "dirtinessLevel",
             "dirtinessSurchargeAmount",
             "isGuestBooking",
+            "homeDistanceBand",
         )
 
         val CURRENCY_SPEC_PROPERTIES = setOf("id", "code", "symbol", "name", "isDefault")

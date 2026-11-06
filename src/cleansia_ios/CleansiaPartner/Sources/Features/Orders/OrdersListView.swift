@@ -11,8 +11,9 @@ struct OrdersRootView: View {
     private let staleness: OrdersStaleness
     private let checklistStore: CleaningChecklistStore
     private let snackbar: SnackbarController
-    private let mapProvider: MapProvider
     private let pendingOffers: PendingOffersStore
+    private let boardStore: OrdersBoardStore?
+    private let onOpenEarnings: () -> Void
 
     init(
         client: PartnerOrderClient,
@@ -20,26 +21,34 @@ struct OrdersRootView: View {
         staleness: OrdersStaleness,
         checklistStore: CleaningChecklistStore,
         snackbar: SnackbarController,
-        mapProvider: MapProvider,
         pendingOffers: PendingOffersStore,
-        deepLinkRoute: Binding<OrderRoute?> = .constant(nil)
+        payrollClient: PartnerPayrollClient? = nil,
+        boardStore: OrdersBoardStore? = nil,
+        deepLinkRoute: Binding<OrderRoute?> = .constant(nil),
+        onOpenEarnings: @escaping () -> Void = {}
     ) {
-        _vm = StateObject(
-            wrappedValue: OrdersListViewModel(client: client, staleness: staleness, snackbar: snackbar)
-        )
+        _vm = StateObject(wrappedValue: OrdersListViewModel(
+            client: client,
+            staleness: staleness,
+            snackbar: snackbar,
+            payroll: payrollClient,
+            pendingOffers: pendingOffers,
+            boardStore: boardStore
+        ))
         _deepLinkRoute = deepLinkRoute
         self.client = client
         self.profileClient = profileClient
         self.staleness = staleness
         self.checklistStore = checklistStore
         self.snackbar = snackbar
-        self.mapProvider = mapProvider
         self.pendingOffers = pendingOffers
+        self.boardStore = boardStore
+        self.onOpenEarnings = onOpenEarnings
     }
 
     var body: some View {
         NavigationStack(path: $path) {
-            OrdersListView(vm: vm)
+            OrdersListView(vm: vm, onOpenEarnings: onOpenEarnings)
                 .navigationDestination(for: OrderRoute.self) { route in
                     switch route {
                     case let .detail(orderId, showRemovalReason):
@@ -49,10 +58,16 @@ struct OrdersRootView: View {
                             staleness: staleness,
                             checklistStore: checklistStore,
                             snackbar: snackbar,
-                            mapProvider: mapProvider,
                             pendingOffers: pendingOffers,
+                            boardStore: boardStore,
                             showRemovalReason: showRemovalReason,
-                            onOpenLegalDocuments: { path.append(OrderRoute.legalDocuments) }
+                            onOpenLegalDocuments: { path.append(OrderRoute.legalDocuments) },
+                            onOpenJob: { path.append(OrderRoute.detail(orderId: $0)) },
+                            onBrowseJobs: {
+                                path = NavigationPath()
+                                Task { await vm.selectTab(.available) }
+                            },
+                            onOpenEarnings: onOpenEarnings
                         )
                     case .legalDocuments:
                         LegalDocumentsView(client: profileClient, snackbar: snackbar)
@@ -63,14 +78,22 @@ struct OrdersRootView: View {
             WorkContractSheet(
                 request: request,
                 client: client,
+                board: vm.boardTake,
                 onDismiss: vm.dismissContract,
                 onOutcome: { outcome in Task { await vm.onWorkContractOutcome(outcome) } },
                 onOpenLegalDocuments: {
                     vm.dismissContract()
                     path.append(OrderRoute.legalDocuments)
-                }
+                },
+                onOpenJob: vm.openTakenJob
             )
         }
+        .offerDeclineAlert(
+            vm.declinePrompt,
+            onDismiss: { vm.declinePrompt = nil },
+            onConfirm: { offer in Task { await vm.decline(offer) } }
+        )
+        .offerRefusalAlert(vm.offerRefusal) { vm.offerRefusal = nil }
         .onReceive(vm.navigateToDetail) { orderId in
             path.append(OrderRoute.detail(orderId: orderId))
         }
@@ -94,131 +117,66 @@ struct OrdersRootView: View {
     }
 }
 
+/// The Orders tab: the header, the three-way switcher with the server's counts, and the chosen tab. The header is
+/// pinned on the ground and takes a rule once the pane scrolls under it. A 30-second timeline re-reads the clock for
+/// everything that depends on it — live flags, ended slots, the hero's line and its set-off gate, reservations that
+/// lapse.
 struct OrdersListView: View {
     @ObservedObject var vm: OrdersListViewModel
-    @Environment(\.locale) private var locale
-    @Environment(\.locationProvider) private var locationProvider
+    var onOpenEarnings: () -> Void = {}
+    @AccessibilityFocusState private var focusedSegment: OrdersTab?
+    @State private var scrolled = false
 
     var body: some View {
         VStack(spacing: 0) {
             header
-            tabPicker
-            if let inProgress = vm.inProgressOrder {
-                InProgressBanner(order: inProgress) { open(inProgress) }
-                    .padding(.horizontal, Spacing.m)
-                    .padding(.top, Spacing.xs)
+            TimelineView(.periodic(from: .now, by: 30)) { _ in
+                paneContent
             }
-            paneContent
         }
         .readableWidth()
         .background(CleansiaColors.background.ignoresSafeArea())
+        .onPreferenceChange(OrdersScrolledKey.self) { scrolled = $0 }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)
+        .background(InteractivePopGestureEnabler())
         .task { await vm.onAppear() }
-        // Silent — never prompts. Re-run on every tab change so a Settings-app
-        // grant lands without a relaunch and a cold null first fix gets retried.
-        .task { await vm.refreshLocationIfAuthorized(locationProvider) }
-        .onChange(of: vm.tab) { _ in
-            Task { await vm.refreshLocationIfAuthorized(locationProvider) }
+        .onChange(of: vm.contractRequest == nil) { closed in
+            if closed, vm.focusSwitcherAfterTake { focusedSegment = .available }
         }
     }
 
     private var header: some View {
-        HStack {
+        VStack(alignment: .leading, spacing: Spacing.xs) {
             Text(L10n.Orders.title)
                 .cleansiaFont(CleansiaTypography.headlineMedium)
                 .foregroundColor(CleansiaColors.onBackground)
-            Spacer()
+                .accessibilityAddTraits(.isHeader)
+            OrdersTabSwitcher(
+                selected: vm.tab,
+                counts: vm.badgeCount,
+                focus: $focusedSegment
+            ) { tab in
+                Task { await vm.selectTab(tab) }
+            }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, Spacing.m)
-        .padding(.vertical, Spacing.m)
-    }
-
-    private var tabPicker: some View {
-        // The segmented control caches its rendered segment titles, so it does
-        // not re-localize on an in-app language switch from a plain body re-run;
-        // keying it on the locale forces a fresh control with the new labels.
-        Picker("", selection: tabBinding) {
-            Text(L10n.Orders.available).tag(OrdersTab.available)
-            Text(L10n.Orders.active).tag(OrdersTab.active)
-            Text(L10n.Orders.history).tag(OrdersTab.history)
+        .padding(.top, Spacing.xxs)
+        .padding(.bottom, 7)
+        .background(CleansiaColors.background)
+        .overlay(alignment: .bottom) {
+            Rectangle().fill(CleansiaColors.outlineVariant).frame(height: 1).opacity(scrolled ? 1 : 0)
         }
-        .pickerStyle(.segmented)
-        .padding(.horizontal, Spacing.m)
-        .id(locale.identifier)
-    }
-
-    private var tabBinding: Binding<OrdersTab> {
-        Binding(
-            get: { vm.tab },
-            set: { newTab in Task { await vm.selectTab(newTab) } }
-        )
+        .zIndex(1)
     }
 
     @ViewBuilder
     private var paneContent: some View {
-        switch vm.currentState {
-        case .loading:
-            ProgressView()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-        case let .error(error):
-            OrdersErrorView(error: error) { Task { await vm.userRefresh() } }
-        case .loaded:
-            OrdersPaneView(
-                vm: vm,
-                onOpen: open,
-                onRequestLocation: { Task { await vm.requestLocationPermission(locationProvider) } }
-            )
-            .refreshable { await vm.userRefresh() }
+        switch vm.tab {
+        case .available: AvailablePane(vm: vm)
+        case .active: ActivePane(vm: vm)
+        case .history: HistoryPane(vm: vm, onOpenEarnings: onOpenEarnings)
         }
-    }
-
-    private func open(_ order: OrderListItem) {
-        guard let id = order.id else { return }
-        vm.openDetail(id)
     }
 }
-
-private struct OrdersErrorView: View {
-    let error: ApiError
-    let onRetry: () -> Void
-
-    var body: some View {
-        VStack(spacing: Spacing.m) {
-            Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 40))
-                .foregroundColor(CleansiaColors.error)
-            Text(ApiErrorLocalizer().message(for: error))
-                .font(CleansiaTypography.bodyMedium)
-                .foregroundColor(CleansiaColors.onSurfaceVariant)
-                .multilineTextAlignment(.center)
-            CleansiaOutlinedButton(L10n.retry, size: .medium, action: onRetry)
-                .fixedSize()
-        }
-        .padding(Spacing.xl)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-}
-
-#if DEBUG
-    struct OrdersListView_Previews: PreviewProvider {
-        static var previews: some View {
-            Group {
-                stateView(.loading).previewDisplayName("Loading")
-                stateView(.error(ApiError(httpStatus: 500))).previewDisplayName("Error")
-            }
-        }
-
-        @ViewBuilder
-        private static func stateView(_ state: UiState<[OrderListItem]>) -> some View {
-            switch state {
-            case .loading:
-                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
-            case let .error(error):
-                OrdersErrorView(error: error, onRetry: {})
-            case .loaded:
-                EmptyView()
-            }
-        }
-    }
-#endif

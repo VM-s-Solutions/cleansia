@@ -82,7 +82,7 @@ public sealed class CreateOrderOperatorAgreementTests
             CreateOrderTestData.Speaking(Constants.Language.English),
             Mock.Of<ICountryConfigurationRepository>(),
             Mock.Of<ILegalDocumentResolver>(),
-            Mock.Of<IReceivableRepository>());
+            Mock.Of<IReceivableRepository>(), Cleansia.Tests.Common.SavedCardTestData.Repository());
     }
 
     private static CreateOrder.Command AddressIn(string countryId) =>

@@ -1,3 +1,4 @@
+using Cleansia.Core.Blobs.Abstractions;
 using System.Security.Claims;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Orders;
@@ -117,7 +118,9 @@ public sealed class OrderDetailFreeCancellationHoursTests
             acceptances.Object,
             Mock.Of<IEmployeeActionAuditRepository>(),
             new CancellationPolicyResolver(_memberships.Object, Mock.Of<IOrderRepository>()),
-            Mock.Of<IAppConfigurationProvider>());
+            Mock.Of<IAppConfigurationProvider>(),
+            Mock.Of<IBlobContainerClientFactory>(),
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<GetOrderDetails.Handler>.Instance);
 
         var result = await handler.Handle(new GetOrderDetails.Query(OrderId), CancellationToken.None);
         Assert.True(result.IsSuccess, result.Error?.Message);

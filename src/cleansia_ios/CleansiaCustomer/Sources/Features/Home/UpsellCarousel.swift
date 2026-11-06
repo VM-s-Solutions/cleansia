@@ -27,15 +27,12 @@ struct UpsellCarousel: View {
     /// The quick-size slide's own steppers, starting where the booking wizard starts.
     @State private var quickRooms = 1
     @State private var quickBathrooms = 1
-    /// A page change this view made itself (auto-advance, a re-anchor); any other change is the customer.
-    @State private var programmaticPage: Int?
-    /// Set by the first swipe, tap or VoiceOver page action; auto-advance then stops for this visit.
-    @State private var userInteracted = false
+    @GestureState private var isTouching = false
+    @State private var isSettling = false
+    @State private var settlingTask: Task<Void, Never>?
+    @State private var reanchoredPage: Int?
     @State private var rotationStarted: Date?
     @State private var isVisible = false
-
-    /// Long enough for the page to finish settling before a clone is swapped for its real slide.
-    private static let reanchorDelayNanoseconds: UInt64 = 350_000_000
 
     init(inputs: UpsellSlide.Inputs, onAction: @escaping (UpsellSlide.Action) -> Void) {
         self.inputs = inputs
@@ -68,6 +65,9 @@ struct UpsellCarousel: View {
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .frame(height: upsellCardHeight)
+            .simultaneousGesture(DragGesture(minimumDistance: 0).updating($isTouching) { _, touching, _ in
+                touching = true
+            })
 
             if count > 1 {
                 dotRow(count: count, selected: UpsellSlide.logicalIndex(page: page, count: count))
@@ -90,15 +90,23 @@ struct UpsellCarousel: View {
             jump(to: target)
         }
         .onChange(of: page) { newPage in
-            if programmaticPage == newPage {
-                programmaticPage = nil
+            let didReanchor = reanchoredPage == newPage
+            reanchoredPage = nil
+            if !didReanchor { settle(from: newPage, count: count) }
+        }
+        .onChange(of: isTouching) { touching in
+            rotationStarted = nil
+            if touching {
+                settlingTask?.cancel()
+                isSettling = true
             } else {
-                userInteracted = true
+                settle(from: page, count: count)
             }
-            scheduleReanchor(from: newPage, count: count)
         }
         .onDisappear {
-            userInteracted = false
+            settlingTask?.cancel()
+            reanchoredPage = nil
+            isSettling = false
             isVisible = false
             rotationStarted = nil
         }
@@ -124,7 +132,7 @@ struct UpsellCarousel: View {
     private func card(_ slide: UpsellSlide, position: String, count: Int) -> some View {
         let page = PageAccessibility(position: position) { direction in
             guard count > 1 else { return }
-            userInteracted = true
+            restartAfterInteraction()
             switch direction {
             case .increment: show(page: self.page + 1)
             case .decrement: show(page: self.page - 1)
@@ -138,9 +146,9 @@ struct UpsellCarousel: View {
                 rooms: $quickRooms,
                 bathrooms: $quickBathrooms,
                 page: page,
-                onInteract: { userInteracted = true },
+                onInteract: { restartAfterInteraction() },
                 onSeePrice: {
-                    userInteracted = true
+                    restartAfterInteraction()
                     onAction(.bookSize(rooms: quickRooms, bathrooms: quickBathrooms))
                 }
             )
@@ -149,53 +157,58 @@ struct UpsellCarousel: View {
                 UpsellSlideFace(slide: slide)
             }
             .buttonStyle(.plain)
-            .simultaneousGesture(TapGesture().onEnded { userInteracted = true })
+            .simultaneousGesture(TapGesture().onEnded { restartAfterInteraction() })
             .modifier(page)
         default:
             UpsellSlideCard(slide: slide) {
-                userInteracted = true
+                restartAfterInteraction()
                 onAction(slide.action)
             }
             .modifier(page)
         }
     }
 
+    @ViewBuilder
     private func dotRow(count: Int, selected: Int) -> some View {
-        TimelineView(.animation(
-            minimumInterval: 1.0 / 30,
-            paused: rotationStarted == nil || rotationStopped
-        )) { context in
-            HStack(spacing: 0) {
-                ForEach(0 ..< count, id: \.self) { index in
-                    Capsule()
-                        .fill(index == selected ? CleansiaColors.primary.opacity(0.2) : CleansiaColors.outlineVariant)
-                        .overlay(alignment: .leading) {
-                            if index == selected {
-                                let fraction = rotationStarted.map { UpsellSlide.rotationFraction(
-                                    startedAt: $0,
-                                    now: context.date
-                                ) } ?? 1
-                                Capsule().fill(CleansiaColors.primary)
-                                    .frame(width: 24 * fraction)
-                            }
-                        }
-                        .frame(width: index == selected ? 24 : 8, height: 8)
-                        .padding(.horizontal, 3)
-                }
+        if rotationStopped {
+            indicators(count: count, selected: selected, fraction: 0.08)
+        } else {
+            TimelineView(.animation(minimumInterval: 1.0 / 60)) { context in
+                indicators(count: count, selected: selected, fraction: UpsellSlide.indicatorFraction(
+                    startedAt: rotationStarted, now: context.date
+                ))
             }
-            .frame(maxWidth: .infinity)
-            .animation(.default, value: selected)
         }
     }
 
-    private var rotationStopped: Bool {
-        userInteracted || voiceOverEnabled || reduceMotion || scenePhase != .active || !isVisible
+    private func indicators(count: Int, selected: Int, fraction: Double) -> some View {
+        HStack(spacing: 6) {
+            ForEach(0 ..< count, id: \.self) { index in
+                Capsule()
+                    .fill(index == selected ? CleansiaColors.primary.opacity(0.16) : CleansiaColors.surfaceVariant)
+                    .overlay(alignment: .leading) {
+                        if index == selected {
+                            Capsule().fill(CleansiaColors.primary)
+                                .frame(width: 30 * fraction)
+                        }
+                    }
+                    .clipShape(Capsule())
+                    .overlay(Capsule().strokeBorder(
+                        index == selected ? CleansiaColors.primaryText : CleansiaColors.outline,
+                        lineWidth: 0.75
+                    ))
+                    .frame(width: index == selected ? 30 : 6, height: 6)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.22), value: selected)
     }
 
-    /// The 6 s auto-advance, always forward: past the last slide it lands on the first slide's clone,
-    /// which then re-anchors, so it never rewinds across every slide. It is moving content, so it stops
-    /// for the rest of the visit once the customer swipes or taps (WCAG 2.2.2) and never runs under
-    /// VoiceOver or Reduce Motion. Keying the task on the page restarts the countdown after any change.
+    private var rotationStopped: Bool {
+        isTouching || isSettling || voiceOverEnabled || reduceMotion || scenePhase != .active || !isVisible
+    }
+
+    /// A fresh interval begins only after contact and page settling have finished.
     private func autoAdvance(count: Int) async {
         rotationStarted = nil
         guard count > 1, !rotationStopped else { return }
@@ -203,30 +216,38 @@ struct UpsellCarousel: View {
         try? await Task.sleep(nanoseconds: UInt64(UpsellSlide.rotationSeconds * 1_000_000_000))
         guard !Task.isCancelled, !rotationStopped, UpsellSlide.reanchor(page: page, count: count) == nil else { return }
         rotationStarted = nil
-        programmaticPage = page + 1
-        withAnimation { page += 1 }
+        withAnimation(.easeInOut(duration: UpsellSlide.pageTransitionSeconds)) { page += 1 }
     }
 
     private func show(page target: Int) {
         let pages = UpsellSlide.pageCount(slides: anchoredKinds.count)
         guard (0 ..< pages).contains(target) else { return }
-        withAnimation { page = target }
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: UpsellSlide.pageTransitionSeconds)) { page = target }
     }
 
-    /// A clone stands in for its real slide only until the page has settled on it.
-    private func scheduleReanchor(from settled: Int, count: Int) {
-        guard let target = UpsellSlide.reanchor(page: settled, count: count) else { return }
-        Task { @MainActor in
-            try? await Task.sleep(nanoseconds: Self.reanchorDelayNanoseconds)
-            guard page == settled else { return }
-            jump(to: target)
+    private func restartAfterInteraction() {
+        rotationStarted = nil
+        settle(from: page, count: anchoredKinds.count)
+    }
+
+    private func settle(from selected: Int, count: Int) {
+        settlingTask?.cancel()
+        isSettling = true
+        rotationStarted = nil
+        settlingTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: UInt64(UpsellSlide.reanchorDelaySeconds * 1_000_000_000))
+            guard !Task.isCancelled, page == selected, !isTouching else { return }
+            if let target = UpsellSlide.reanchor(page: selected, count: count) {
+                reanchoredPage = target
+                jump(to: target)
+            }
+            isSettling = false
         }
     }
 
     /// Unanimated, so the swap from a clone to the slide it copies is invisible.
     private func jump(to target: Int) {
         guard target != page else { return }
-        programmaticPage = target
         var transaction = Transaction()
         transaction.disablesAnimations = true
         withTransaction(transaction) { page = target }
@@ -282,6 +303,7 @@ private struct UpsellSlideFace: View {
         .padding(Spacing.ml)
         .frame(height: upsellCardHeight)
         .background(slide.gradient.linearGradient, in: RoundedRectangle(cornerRadius: 22))
+        .overlay(RoundedRectangle(cornerRadius: 22).strokeBorder(.white.opacity(0.28), lineWidth: 1))
         .padding(.horizontal, Spacing.ml)
     }
 
@@ -440,6 +462,7 @@ private struct QuickSizeSlideCard: View {
         .padding(Spacing.ml)
         .frame(height: upsellCardHeight)
         .background(slide.gradient.linearGradient, in: RoundedRectangle(cornerRadius: 22))
+        .overlay(RoundedRectangle(cornerRadius: 22).strokeBorder(.white.opacity(0.28), lineWidth: 1))
         .padding(.horizontal, Spacing.ml)
     }
 }

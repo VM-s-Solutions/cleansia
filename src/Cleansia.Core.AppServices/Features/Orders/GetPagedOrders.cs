@@ -49,6 +49,7 @@ public class GetPagedOrders
         ICurrencyResolutionService currencyResolutionService,
         IServiceScopeFactory serviceScopeFactory,
         IAppConfigurationProvider configurationProvider,
+        IEmployeeRepository employeeRepository,
         ILogger<Handler> logger)
         : IRequestHandler<Request, PagedData<OrderListItem>>
     {
@@ -61,6 +62,8 @@ public class GetPagedOrders
             string? callerEmployeeId = null;
             string? callerCurrencyId = null;
             var cashJobsHidden = false;
+            double? homeLatitude = null;
+            double? homeLongitude = null;
             if (!isAdmin)
             {
                 callerEmployeeId = await orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
@@ -73,6 +76,13 @@ public class GetPagedOrders
                     .ResolveCurrencyForEmployeeAsync(callerEmployeeId, cancellationToken)).Id;
                 cashJobsHidden = await orderAccessService.CashJobsHiddenFromAsync(
                     callerEmployeeId, callerCurrencyId, cancellationToken);
+
+                var home = await employeeRepository.GetQueryable()
+                    .Where(e => e.Id == callerEmployeeId)
+                    .Select(e => new { e.Address!.Latitude, e.Address.Longitude })
+                    .FirstOrDefaultAsync(cancellationToken);
+                homeLatitude = home?.Latitude;
+                homeLongitude = home?.Longitude;
             }
 
             DateTime? cleaningDateFrom = request.Filter?.CleaningDateFrom;
@@ -219,7 +229,13 @@ public class GetPagedOrders
                         : OrderPayEstimator.ContractReward(order, callerEmployeeId)
                             ?? OrderPayEstimator.Estimate(
                                 order, callerEmployeeId, serviceConfigsForCaller, packageConfigsForCaller, extrasSharePercent);
-                    dto = dto with { EstimatedCleanerPay = estimatedCleanerPay };
+                    // From the row, not the DTO: the browsing redaction below nulls the DTO's coordinates.
+                    dto = dto with
+                    {
+                        EstimatedCleanerPay = estimatedCleanerPay,
+                        HomeDistanceBand = JobProximity.Band(
+                            homeLatitude, homeLongitude, order.Address?.Latitude, order.Address?.Longitude),
+                    };
                 }
 
                 if (isAdmin)

@@ -116,7 +116,7 @@ public sealed class CompleteOrderWorkContractGateTests
     private Order ArrangeTwoSeatCrew(string caller)
     {
         var order = ValidatorTestHelpers.BuildOrder(
-            OrderId, OrderStatus.InProgress, CleanerA, PaymentType.Cash, PaymentStatus.Paid, maxEmployees: 2);
+            OrderId, OrderStatus.InProgress, CleanerA, PaymentType.Card, PaymentStatus.Paid, maxEmployees: 2);
         var userB = Core.Domain.Users.User.CreateWithPassword("b@example.com", "x", "Bea", "Placed");
         userB.Id = $"{CleanerB}-user";
         var employeeB = Core.Domain.Users.Employee.CreateWithUser(userB);

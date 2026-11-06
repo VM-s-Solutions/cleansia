@@ -122,7 +122,7 @@ public class RecurringBookingCityGateTests
             CatalogueDoubles.Packages(),
             Cleansia.Tests.Features.Legal.CustomerConsentDoubles.Consented(),
             Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.ILegalDocumentResolver>(),
-            Mock.Of<IReceivableRepository>());
+            Mock.Of<IReceivableRepository>(), Cleansia.Tests.Common.SavedCardTestData.Repository());
 
     private UpdateRecurringBooking.Validator UpdateValidator() =>
         new(
@@ -136,7 +136,7 @@ public class RecurringBookingCityGateTests
             _serviceCityRepository.Object,
             CatalogueDoubles.Services(),
             CatalogueDoubles.Packages(),
-            Mock.Of<IReceivableRepository>());
+            Mock.Of<IReceivableRepository>(), Cleansia.Tests.Common.SavedCardTestData.Repository());
 
     private static CreateRecurringBooking.Command CreateCommand(string savedAddressId) =>
         new(

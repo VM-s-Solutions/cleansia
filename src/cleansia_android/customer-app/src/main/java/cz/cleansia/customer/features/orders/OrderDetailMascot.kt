@@ -6,7 +6,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.offset
@@ -22,9 +21,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import cz.cleansia.core.ui.components.MascotAnimation
+import cz.cleansia.core.ui.components.MascotPuck
+import cz.cleansia.core.ui.components.MascotPuckScale
 import cz.cleansia.core.ui.components.SnapSheetDefaults
 import cz.cleansia.customer.R
-import cz.cleansia.customer.ui.components.MascotAnimation
 import kotlin.math.roundToInt
 
 /** Size the sheet content has to leave clear at its top-right for the mascot to land on. */
@@ -87,7 +88,7 @@ internal fun OrderFloatingMascot(
     ) {
         AnimatedContent(
             targetState = status,
-            // `clip = false` because a normalised character (see [mascotArtScale]) is drawn larger
+            // `clip = false` because a normalised character (see [MascotPuckScale]) is drawn larger
             // than the box that holds it, and AnimatedContent clips to its own bounds by default —
             // which would take the top off the head instead of the padding around it.
             transitionSpec = {
@@ -99,7 +100,7 @@ internal fun OrderFloatingMascot(
                 OrderStatus.InProgress -> MascotAnimation(
                     resId = R.raw.mascot_cleaning_in_progress,
                     size = size,
-                    modifier = Modifier.scale(1.04839f),
+                    modifier = Modifier.scale(MascotPuckScale.CleaningLoop),
                 )
                 OrderStatus.Confirmed, OrderStatus.OnTheWay -> MascotAnimation(
                     resId = R.raw.mascot_welcoming,
@@ -108,14 +109,8 @@ internal fun OrderFloatingMascot(
                     modifier = Modifier.scale(1.14706f),
                 )
                 else -> {
-                    val art = staticMascotFor(current)
-                    Image(
-                        painter = painterResource(art),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(size)
-                            .scale(mascotArtScale[art] ?: 1f),
-                    )
+                    val (art, scale) = staticMascotFor(current)
+                    MascotPuck(painter = painterResource(art), scale = scale, size = size)
                 }
             }
         }
@@ -133,16 +128,11 @@ internal fun OrderFloatingMascot(
 private fun mascotTopPx(sheetTopPx: () -> Float, contentScrollPx: () -> Float, sizePx: Float): Float =
     sheetTopPx() - sizePx / 2f - contentScrollPx()
 
-private val mascotArtScale: Map<Int, Float> = mapOf(
-    R.drawable.mascot_ready to 0.85773f,
-    R.drawable.mascot_leaning to 0.89752f,
-)
-
 /**
  *  - New / Pending: leaning — nothing to do yet, waiting on a cleaner
  *  - Completed: ready — the kit is packed up again
  */
-private fun staticMascotFor(status: OrderStatus?): Int = when (status) {
-    OrderStatus.Completed -> R.drawable.mascot_ready
-    else -> R.drawable.mascot_leaning
+private fun staticMascotFor(status: OrderStatus?): Pair<Int, Float> = when (status) {
+    OrderStatus.Completed -> R.drawable.mascot_ready to MascotPuckScale.Ready
+    else -> R.drawable.mascot_leaning to MascotPuckScale.Leaning
 }

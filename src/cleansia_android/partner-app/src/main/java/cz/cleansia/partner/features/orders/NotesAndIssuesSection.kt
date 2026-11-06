@@ -1,40 +1,30 @@
 package cz.cleansia.partner.features.orders
 
-import androidx.compose.foundation.BorderStroke
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material.icons.outlined.ReportProblem
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -53,7 +43,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cz.cleansia.core.ui.components.CleansiaOutlinedButton
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.core.ui.components.CleansiaTextField
@@ -61,6 +50,10 @@ import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.OrderIssueDto
 import cz.cleansia.partner.api.model.OrderNoteDto
+import cz.cleansia.core.format.formatOrderTime
+import androidx.compose.material.icons.outlined.Flag
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
 
 /**
  * Notes + issues block on Order Details.
@@ -125,76 +118,21 @@ fun NotesAndIssuesSection(
     // gated off (canAddNotes=false).
     if (!canAddNotes && notes.isEmpty() && issues.isEmpty()) return
 
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surface,
-        shape = MaterialTheme.shapes.medium,
-        tonalElevation = 1.dp,
-    ) {
-        Column(modifier = Modifier.padding(Spacing.M)) {
-            Text(
-                text = stringResource(R.string.notes_and_issues),
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.SemiBold,
-            )
-            HorizontalDivider(
-                modifier = Modifier.padding(vertical = Spacing.XS),
-                color = MaterialTheme.colorScheme.outlineVariant,
-            )
-
-            if (notes.isNotEmpty() || issues.isNotEmpty()) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = Spacing.XS),
-                    verticalArrangement = Arrangement.spacedBy(Spacing.S),
-                ) {
-                    notes.forEach { note ->
-                        NoteRow(
-                            note = note,
-                            isMine = note.employeeId != null && note.employeeId == currentEmployeeId,
-                            isMutating = uiState.mutatingId == note.id,
-                            editable = !isReadOnly,
-                            onEdit = { editingNote = note },
-                            onDelete = { deletingNote = note },
-                        )
-                    }
-                    issues.forEach { issue ->
-                        IssueRow(
-                            issue = issue,
-                            isMine = issue.reportedByEmployeeId != null && issue.reportedByEmployeeId == currentEmployeeId,
-                            isMutating = uiState.mutatingId == issue.id,
-                            editable = !isReadOnly,
-                            onEdit = { editingIssue = issue },
-                            onDelete = { deletingIssue = issue },
-                        )
-                    }
-                }
-            }
-
-            if (!isReadOnly && canAddNotes) {
-                Spacer(Modifier.height(Spacing.S))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.XS),
-                ) {
-                    CleansiaOutlinedButton(
-                        text = stringResource(R.string.add_note),
-                        onClick = { noteSheetOpen = true },
-                        leadingIcon = Icons.Outlined.Add,
-                        enabled = !uiState.isSavingNote && !uiState.isReportingIssue,
-                        modifier = Modifier.weight(1f),
-                    )
-                    IssueButton(
-                        onClick = { issueSheetOpen = true },
-                        enabled = !uiState.isSavingNote && !uiState.isReportingIssue,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-            }
-        }
-    }
+    NotesAndIssuesBody(
+        notes = notes,
+        issues = issues,
+        currentEmployeeId = currentEmployeeId,
+        mutatingId = uiState.mutatingId,
+        editable = !isReadOnly,
+        canAdd = !isReadOnly && canAddNotes,
+        addEnabled = !uiState.isSavingNote && !uiState.isReportingIssue,
+        onAddNote = { noteSheetOpen = true },
+        onAddIssue = { issueSheetOpen = true },
+        onEditNote = { editingNote = it },
+        onDeleteNote = { deletingNote = it },
+        onEditIssue = { editingIssue = it },
+        onDeleteIssue = { deletingIssue = it },
+    )
 
     if (noteSheetOpen) {
         TextEntryBottomSheet(
@@ -278,117 +216,118 @@ fun NotesAndIssuesSection(
     }
 }
 
-@Composable
-private fun NoteRow(
-    note: OrderNoteDto,
-    isMine: Boolean,
-    isMutating: Boolean,
-    editable: Boolean,
-    onEdit: () -> Unit,
-    onDelete: () -> Unit,
-) {
-    EntryRow(
-        text = note.content.orEmpty(),
-        accent = MaterialTheme.colorScheme.primary,
-        showActions = isMine && editable,
-        isMutating = isMutating,
-        onEdit = onEdit,
-        onDelete = onDelete,
-    )
+/** What she may add to the work record, in the order the buttons stand: Note in the app's tint, Issue in the error tone. */
+internal enum class RecordKind(@StringRes val label: Int, val tone: ChipTone) {
+    Note(R.string.add_note, ChipTone.Primary),
+    Issue(R.string.report_issue, ChipTone.Error),
 }
 
+/** Note and Issue in the photos' two columns, each filling its column; one column where the photos stack. */
 @Composable
-private fun IssueRow(
-    issue: OrderIssueDto,
-    isMine: Boolean,
-    isMutating: Boolean,
-    editable: Boolean,
-    onEdit: () -> Unit,
-    onDelete: () -> Unit,
-) {
-    EntryRow(
-        text = issue.description.orEmpty(),
-        accent = IssueRed,
-        showActions = isMine && editable,
-        isMutating = isMutating,
-        onEdit = onEdit,
-        onDelete = onDelete,
-    )
+private fun PairColumns(modifier: Modifier = Modifier, cell: @Composable (RecordKind, Modifier) -> Unit) {
+    BoxWithConstraints(modifier.fillMaxWidth()) {
+        if (maxWidth >= PhotoColumnsMinWidth) {
+            Row(horizontalArrangement = Arrangement.spacedBy(PhotoColumnGap)) {
+                RecordKind.entries.forEach { cell(it, Modifier.weight(1f)) }
+            }
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                RecordKind.entries.forEach { cell(it, Modifier.fillMaxWidth()) }
+            }
+        }
+    }
 }
 
 /**
- * Shared row chrome for notes and issues — left accent bar (brand for
- * notes, red for issues) + body text + right-aligned edit/delete on
- * the author's own entries. Resolved-issue + read-only paths just hide
- * the right-side actions.
+ * *Notes & issues*: the title with *Note* and *Issue* while she may add, then each record, *You · 14:40* or
+ * *Issue · 14:52 · not resolved*, over its text. Her own records keep their edit and delete.
  */
 @Composable
-private fun EntryRow(
+internal fun NotesAndIssuesBody(
+    notes: List<OrderNoteDto>,
+    issues: List<OrderIssueDto>,
+    currentEmployeeId: String?,
+    mutatingId: String?,
+    editable: Boolean,
+    canAdd: Boolean,
+    addEnabled: Boolean,
+    onAddNote: () -> Unit,
+    onAddIssue: () -> Unit,
+    onEditNote: (OrderNoteDto) -> Unit,
+    onDeleteNote: (OrderNoteDto) -> Unit,
+    onEditIssue: (OrderIssueDto) -> Unit,
+    onDeleteIssue: (OrderIssueDto) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier.fillMaxWidth()) {
+        PartHeading(stringResource(R.string.notes_and_issues))
+        if (canAdd) {
+            PairColumns(Modifier.padding(top = 8.dp)) { kind, slot ->
+                TonalChip(
+                    label = stringResource(kind.label),
+                    icon = if (kind == RecordKind.Note) Icons.Outlined.Edit else Icons.Outlined.Flag,
+                    onClick = if (kind == RecordKind.Note) onAddNote else onAddIssue,
+                    enabled = addEnabled,
+                    tone = kind.tone,
+                    modifier = slot,
+                )
+            }
+        }
+        val you = stringResource(R.string.crew_you)
+        notes.forEach { note ->
+            val mine = note.employeeId != null && note.employeeId == currentEmployeeId
+            Record(
+                head = listOfNotNull(you.takeIf { mine }?.let { AnnotatedString(it) }, note.createdOn?.let { AnnotatedString(formatOrderTime(it)) }),
+                text = note.content.orEmpty(),
+                actions = mine && editable,
+                isMutating = mutatingId == note.id,
+                onEdit = { onEditNote(note) },
+                onDelete = { onDeleteNote(note) },
+            )
+        }
+        val issueWord = stringResource(R.string.report_issue)
+        val open = stringResource(R.string.issue_not_resolved)
+        issues.forEach { issue ->
+            val mine = issue.reportedByEmployeeId != null && issue.reportedByEmployeeId == currentEmployeeId
+            Record(
+                head = listOfNotNull(
+                    styled(issueWord, SpanStyle(color = MaterialTheme.colorScheme.error)),
+                    issue.createdOn?.let { AnnotatedString(formatOrderTime(it)) },
+                    AnnotatedString(open).takeIf { issue.isResolved != true },
+                ),
+                text = issue.description.orEmpty(),
+                actions = mine && editable,
+                isMutating = mutatingId == issue.id,
+                onEdit = { onEditIssue(issue) },
+                onDelete = { onDeleteIssue(issue) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun Record(
+    head: List<AnnotatedString>,
     text: String,
-    accent: Color,
-    showActions: Boolean,
+    actions: Boolean,
     isMutating: Boolean,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
 ) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-        shape = RoundedCornerShape(10.dp),
-        tonalElevation = 0.dp,
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 4.dp, end = Spacing.XS, top = Spacing.XS, bottom = Spacing.XS),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            // Thin accent bar — gives the row a clear category tint
-            // without spending color on a full chip background.
-            Box(
-                modifier = Modifier
-                    .width(3.dp)
-                    .height(28.dp)
-                    .padding(end = 0.dp),
-            ) {
-                Surface(
-                    modifier = Modifier.fillMaxWidth().height(28.dp),
-                    color = accent,
-                    shape = RoundedCornerShape(2.dp),
-                    content = {},
-                )
-            }
-            Text(
-                text = text,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = Spacing.S),
-            )
-            if (showActions) {
-                if (isMutating) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        strokeWidth = 2.dp,
-                    )
-                } else {
-                    IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
-                        Icon(
-                            imageVector = Icons.Outlined.Edit,
-                            contentDescription = stringResource(R.string.edit_note),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(18.dp),
-                        )
-                    }
-                    IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
-                        Icon(
-                            imageVector = Icons.Outlined.Delete,
-                            contentDescription = stringResource(R.string.delete_note),
-                            tint = IssueRed,
-                            modifier = Modifier.size(18.dp),
-                        )
-                    }
+    Row(Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 2.dp), verticalAlignment = Alignment.Top) {
+        Column(Modifier.weight(1f)) {
+            DotFlow(items = head, style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum"), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(text = OrdersBoardRules.tie(text), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(top = 2.dp))
+        }
+        if (actions) {
+            if (isMutating) {
+                CircularProgressIndicator(modifier = Modifier.padding(8.dp).size(20.dp), strokeWidth = 2.dp)
+            } else {
+                IconButton(onClick = onEdit, modifier = Modifier.size(40.dp)) {
+                    Icon(Icons.Outlined.Edit, contentDescription = stringResource(R.string.edit_note), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                }
+                IconButton(onClick = onDelete, modifier = Modifier.size(40.dp)) {
+                    Icon(Icons.Outlined.Delete, contentDescription = stringResource(R.string.delete_note), tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
                 }
             }
         }
@@ -419,41 +358,6 @@ private fun ConfirmDeleteDialog(
             CleansiaTextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         },
     )
-}
-
-/**
- * Red-tinted Issue button. Matches PaymentCard's Failed pill so the
- * platform has one consistent "needs attention" hue.
- */
-@Composable
-private fun IssueButton(
-    onClick: () -> Unit,
-    enabled: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    OutlinedButton(
-        onClick = onClick,
-        modifier = modifier
-            .fillMaxWidth()
-            .height(48.dp),
-        enabled = enabled,
-        shape = CircleShape,
-        border = BorderStroke(1.5.dp, if (enabled) IssueRed else IssueRed.copy(alpha = 0.4f)),
-        contentPadding = PaddingValues(horizontal = 16.dp),
-    ) {
-        Icon(
-            imageVector = Icons.Outlined.ReportProblem,
-            contentDescription = null,
-            modifier = Modifier.size(20.dp),
-            tint = if (enabled) IssueRed else IssueRed.copy(alpha = 0.4f),
-        )
-        Spacer(Modifier.width(8.dp))
-        Text(
-            text = stringResource(R.string.report_issue),
-            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-            color = if (enabled) IssueRed else IssueRed.copy(alpha = 0.4f),
-        )
-    }
 }
 
 internal enum class SheetAccent { Brand, Danger }
@@ -529,5 +433,5 @@ internal fun TextEntryBottomSheet(
     }
 }
 
-/** Brand-consistent issue/danger red. Matches PaymentCard's Failed pill. */
+/** Brand-consistent issue/danger red. */
 private val IssueRed = Color(0xFFDC2626)

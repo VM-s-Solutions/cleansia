@@ -1,54 +1,26 @@
 package cz.cleansia.partner.features.orders
 
-import android.content.Context
-import android.content.Intent
-import android.net.Uri
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.Message
-import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.outlined.Phone
-import androidx.compose.material.icons.outlined.Place
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.layout.FirstBaseline
 import androidx.compose.ui.unit.dp
-import cz.cleansia.core.ui.theme.primaryText
-import cz.cleansia.partner.R
+import cz.cleansia.core.ui.theme.capBandAligned
 
 /**
- * Customer card. Shows the name and whichever location the server released
- * to this caller — a street address, or the coarse zone a browsing cleaner
- * gets. Phone + SMS chips appear when the server released a phone number,
- * which is [OrderDisclosure.showsCustomerContact] and never the assignment flag.
- *
- * Navigate is offered only against a street address: a maps app opened on a
- * city name is worse than no button. With coordinates the intent uses them;
- * without, it falls back to a free-text query of that street address.
+ * The customer on her own job: *Jana Nováková ‖ +420 604 218 377*, then *Navigate · Call · SMS* as tonal chips. The
+ * phone is whatever the server released to this caller ([OrderDisclosure.showsCustomerContact], never the assignment
+ * flag), and Navigate needs a street address: a maps app opened on a district is worse than none. [closedNote] stands
+ * under the line once the details close; [withNavigate] false on a finished job, where the section's title names her.
  */
 @Composable
 fun CustomerCard(
@@ -57,189 +29,52 @@ fun CustomerCard(
     location: OrderLocation,
     closedNote: String?,
     modifier: Modifier = Modifier,
+    withNavigate: Boolean = true,
 ) {
-    val context = LocalContext.current
-    val addressLine = location.line
-
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 0.dp,
-    ) {
-        Column(modifier = Modifier.padding(vertical = 8.dp)) {
-            if (!customerName.isNullOrBlank()) {
-                CustomerRow(
-                    icon = Icons.Outlined.Person,
-                    text = customerName,
-                    isPrimary = true,
-                )
-            }
-            if (addressLine != null) {
-                if (!customerName.isNullOrBlank()) Spacer(Modifier.height(6.dp))
-                CustomerRow(
-                    icon = Icons.Outlined.Place,
-                    text = addressLine,
-                    isPrimary = false,
-                )
-            }
-            if (closedNote != null) {
-                if (!customerName.isNullOrBlank() || addressLine != null) Spacer(Modifier.height(6.dp))
-                Text(
-                    text = closedNote,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-
-            val phoneNumber = disclosure.customerPhone
-            val showContact = disclosure.showsCustomerContact
-            val navigateTo = location.navigationTarget()
-
-            if (showContact || navigateTo != null) {
-                Spacer(Modifier.height(8.dp))
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                Spacer(Modifier.height(8.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    if (showContact) {
-                        ActionChip(
-                            icon = Icons.Outlined.Phone,
-                            label = stringResource(R.string.action_call),
-                            onClick = { launchCall(context, phoneNumber!!) },
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                    if (showContact) {
-                        ActionChip(
-                            icon = Icons.AutoMirrored.Outlined.Message,
-                            label = stringResource(R.string.action_sms),
-                            onClick = { launchSms(context, phoneNumber!!) },
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                    if (navigateTo != null) {
-                        ActionChip(
-                            icon = Icons.Outlined.Map,
-                            label = stringResource(R.string.action_navigate),
-                            onClick = {
-                                launchNavigation(
-                                    context = context,
-                                    latitude = navigateTo.latitude,
-                                    longitude = navigateTo.longitude,
-                                    addressFallback = navigateTo.line,
-                                )
-                            },
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun CustomerRow(
-    icon: ImageVector,
-    text: String,
-    isPrimary: Boolean,
-) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            modifier = Modifier.size(18.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(Modifier.width(10.dp))
-        Text(
-            text = text,
-            style = if (isPrimary)
-                MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
-            else
-                MaterialTheme.typography.bodyMedium,
-            color = if (isPrimary)
-                MaterialTheme.colorScheme.onSurface
-            else
-                MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-@Composable
-private fun ActionChip(
-    icon: ImageVector,
-    label: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Box(
-        modifier = modifier
-            .height(48.dp)
-            .clip(RoundedCornerShape(24.dp))
-            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.10f))
-            .clickable { onClick() }
-            .padding(horizontal = 12.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.size(16.dp),
-                tint = primaryText(),
-            )
-            Spacer(Modifier.width(6.dp))
+    val name = customerName?.trim()?.takeIf { it.isNotEmpty() }
+    val phone = disclosure.customerPhone.takeIf { disclosure.showsCustomerContact }
+    Column(modifier = modifier.fillMaxWidth()) {
+        if (name != null || phone != null) CustomerLine(name = name, phone = phone, withIcon = withNavigate)
+        closedNote?.let {
             Text(
-                text = label,
-                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                color = primaryText(),
-                // The pill is exactly 40.dp tall and clipped to a 20.dp radius, so a second line does
-                // not make it taller — it gets cut, with the rounded corners slicing both line ends.
-                // uk "Подзвонити" is 81dp against a ~64dp budget and is one word, so it has no break
-                // opportunity and wraps mid-word. Truncating keeps the pill a pill.
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+                text = OrdersBoardRules.tie(it),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 8.dp),
+            )
+        }
+        if (phone != null || (withNavigate && location.navigationTarget() != null)) {
+            ContactPills(
+                phone = phone,
+                navigateTo = location.navigationTarget()?.takeIf { withNavigate },
+                modifier = Modifier.padding(top = if (closedNote != null) 12.dp else 20.dp),
             )
         }
     }
 }
 
-private fun launchCall(context: Context, phoneNumber: String) {
-    // ACTION_DIAL (not ACTION_CALL) — opens the dialer pre-filled, doesn't
-    // place the call automatically. No CALL_PHONE permission required and
-    // gives the cleaner a chance to abort.
-    val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${phoneNumber.replace(" ", "")}"))
-        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-    runCatching { context.startActivity(intent) }
-}
-
-private fun launchSms(context: Context, phoneNumber: String) {
-    val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:${phoneNumber.replace(" ", "")}"))
-        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-    runCatching { context.startActivity(intent) }
-}
-
-private fun launchNavigation(
-    context: Context,
-    latitude: Double?,
-    longitude: Double?,
-    addressFallback: String,
-) {
-    // Prefer precise lat/lng when the order carries them — keeps the
-    // maps app from doing a fresh geocode round-trip (and from
-    // misresolving in places where the customer's address has typos).
-    // Falls back to a free-text query when coords are missing, which
-    // happens for older orders that pre-date the geocoding backfill.
-    val uri = if (latitude != null && longitude != null) {
-        Uri.parse("geo:$latitude,$longitude?q=$latitude,$longitude(${Uri.encode(addressFallback)})")
-    } else {
-        Uri.parse("geo:0,0?q=${Uri.encode(addressFallback)}")
+/** *Jana Nováková ‖ +420 604 218 377*: the name in the row's line, the phone at the end in the secondary ink. */
+@Composable
+internal fun CustomerLine(name: String?, phone: String?, withIcon: Boolean, modifier: Modifier = Modifier) {
+    val style = MaterialTheme.typography.bodyLarge
+    Row(modifier.fillMaxWidth()) {
+        if (withIcon) {
+            Icon(
+                imageVector = Icons.Outlined.Person,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = capBandAligned(style).padding(end = 10.dp).size(18.dp),
+            )
+        }
+        Text(text = name.orEmpty(), style = style, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f).alignBy(FirstBaseline))
+        phone?.let {
+            Text(
+                text = it,
+                style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                softWrap = false,
+                modifier = Modifier.padding(start = 10.dp).alignBy(FirstBaseline),
+            )
+        }
     }
-    val intent = Intent(Intent.ACTION_VIEW, uri)
-        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-    runCatching { context.startActivity(intent) }
 }

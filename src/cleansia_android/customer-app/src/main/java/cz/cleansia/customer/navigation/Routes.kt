@@ -40,13 +40,6 @@ object Routes {
     @Serializable
     data class Home(val tab: String? = null)
 
-    /** Post-booking celebration screen; both ids are required. */
-    @Serializable
-    data class BookingSuccess(
-        val confirmationCode: String,
-        val orderId: String,
-    )
-
     // ── Profile sub-screens ──
     @Serializable
     data object ProfileOnboarding

@@ -1,3 +1,4 @@
+using Cleansia.Core.Blobs.Abstractions;
 using System.Security.Claims;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
@@ -122,6 +123,8 @@ public sealed class OrderDetailListedGuestBookingTests
             Mock.Of<IWorkContractAcceptanceRepository>(),
             Mock.Of<IEmployeeActionAuditRepository>(),
             new CancellationPolicyResolver(memberships.Object, Mock.Of<IOrderRepository>()),
-            Mock.Of<IAppConfigurationProvider>());
+            Mock.Of<IAppConfigurationProvider>(),
+            Mock.Of<IBlobContainerClientFactory>(),
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<GetOrderDetails.Handler>.Instance);
     }
 }

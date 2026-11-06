@@ -17,7 +17,7 @@ enum OrderLocation: Equatable {
     }
 
     case precise(Precise)
-    /// City + ZIP prefix — enough to judge the travel, nothing to navigate to.
+    /// The district or the city — enough to judge the travel, nothing to navigate to.
     case approximate(String)
     case none
 
@@ -33,17 +33,6 @@ enum OrderLocation: Equatable {
     var navigationTarget: Precise? {
         guard case let .precise(precise) = self else { return nil }
         return precise
-    }
-
-    /// Where the map backdrop centres, or nil when there is nothing precise to point at.
-    ///
-    /// Status does not enter into it. A cancelled order used to be forced to nil here on the
-    /// reasoning that the visit never happened — but the job still had a place, and suppressing
-    /// the map read as a map that had failed to load rather than as a decision. Owner ruling,
-    /// 2026-08-27. Entitlement is still enforced upstream by `OrderPiiRedaction`, which withholds
-    /// the address itself from a cleaner who has not taken the job, in every status.
-    func mapPoint() -> Coordinate? {
-        navigationTarget?.coordinate
     }
 }
 

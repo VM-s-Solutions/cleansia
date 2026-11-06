@@ -60,12 +60,15 @@ final class PastJobDisclosureTests: XCTestCase {
         XCTAssertNil(try OrderDetail(item).customerDetailsClosedNote)
     }
 
-    func testAPastJobRowReadsItsOrderNumberNotAGuest() {
+    /// History's rows name the job's area and what it was (the street is redacted a day after completion), never
+    /// a name, so a blank one cannot read as a guest.
+    func testAPastJobRowReadsItsAreaNotAGuest() {
         var row = OrderListItem()
         row.displayOrderNumber = "ORD-2026-007"
         row.customerName = ""
         row.customerAddressApproximate = "Praha · 120"
 
-        XCTAssertEqual(OrdersFormat.compactSubtitle(row), "#ORD-2026-007")
+        XCTAssertEqual(OrdersBoardRules.areaLine(row), "Praha · 120")
+        XCTAssertNil(OrdersBoardRules.streetLine(row.customerAddress))
     }
 }

@@ -366,6 +366,8 @@ export function scheduleCashReason(
   switch (eligibility.kind) {
     case 'needs_card':
       return { key: 'recurring_booking.cash_needs_card', params: { count: eligibility.requiredCleaners } };
+    case 'needs_saved_card':
+      return { key: 'pages.order.cash_needs_saved_card', params: {} };
     case 'pending':
       return { key: 'recurring_booking.cash_pending', params: {} };
     default:

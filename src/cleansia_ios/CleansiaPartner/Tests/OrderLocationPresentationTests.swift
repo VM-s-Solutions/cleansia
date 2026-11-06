@@ -43,46 +43,29 @@ final class OrderLocationPresentationTests: XCTestCase {
         XCTAssertEqual(OrderLocation(browsing).line, "Praha · 120")
     }
 
-    func testBrowsingCleanerGetsNoMapAndNoNavigate() {
-        let location = OrderLocation(browsing)
-        XCTAssertNil(location.navigationTarget)
-        XCTAssertNil(location.mapPoint())
+    func testBrowsingCleanerGetsNoNavigate() {
+        XCTAssertNil(OrderLocation(browsing).navigationTarget)
     }
 
-    func testEntitledReaderKeepsTheStreetAddressTheMapAndNavigate() {
+    func testEntitledReaderKeepsTheStreetAddressAndNavigate() {
         let location = OrderLocation(entitled)
         XCTAssertEqual(location, .precise(.init(line: preciseLine, coordinate: preciseCoordinate)))
         XCTAssertEqual(location.navigationTarget?.line, preciseLine)
         XCTAssertEqual(location.navigationTarget?.coordinate, preciseCoordinate)
-        XCTAssertEqual(location.mapPoint(), preciseCoordinate)
     }
 
-    /// The mirror of the browsing case: the entitled reader's line, Navigate target and map
-    /// point are what they were in EVERY status the wire can carry — no exceptions now that
-    /// Cancelled is no longer one. Status is not an input to any of the three.
-    func testEntitledReaderSeesTheSameThreeFactsInEveryStatus() {
+    /// The mirror of the browsing case: the entitled reader's line and Navigate target are what they
+    /// were in EVERY status the wire can carry. Status is not an input to either.
+    func testEntitledReaderSeesTheSameTwoFactsInEveryStatus() {
         for status in OrderStatus.allCases {
             let location = OrderLocation(entitled)
             XCTAssertEqual(location.line, preciseLine, "\(status) dropped the street address")
             XCTAssertEqual(location.navigationTarget?.line, preciseLine, "\(status) dropped Navigate")
-            XCTAssertEqual(
-                location.mapPoint(),
-                preciseCoordinate,
-                "\(status) resolved the wrong map point"
-            )
         }
     }
 
-    /// Owner ruling 2026-08-27, reversing 2026-08-24: a cancelled job still had a place, and
-    /// withholding the map read as a map that had failed to load rather than as a decision.
-    func testCancelledOrderKeepsItsMapForAnEntitledReader() {
-        let location = OrderLocation(entitled)
-        XCTAssertEqual(location.mapPoint(), preciseCoordinate)
-        XCTAssertEqual(location.navigationTarget?.line, preciseLine)
-    }
-
     /// Orders that predate the geocoding backfill navigate by free-text query.
-    func testEntitledAddressWithoutCoordinatesStillNavigatesButShowsNoMap() {
+    func testEntitledAddressWithoutCoordinatesStillNavigates() {
         var address = precise
         address.latitude = nil
         address.longitude = nil
@@ -90,7 +73,6 @@ final class OrderLocationPresentationTests: XCTestCase {
         XCTAssertEqual(location.line, preciseLine)
         XCTAssertEqual(location.navigationTarget?.line, preciseLine)
         XCTAssertNil(location.navigationTarget?.coordinate)
-        XCTAssertNil(location.mapPoint())
     }
 
     /// `BuildApproximateAddress` returns an empty string, not null, for an order with no city —
@@ -100,14 +82,12 @@ final class OrderLocationPresentationTests: XCTestCase {
         XCTAssertEqual(location, .none)
         XCTAssertNil(location.line)
         XCTAssertNil(location.navigationTarget)
-        XCTAssertNil(location.mapPoint())
     }
 
     func testAddressRecordWithNoUsableTextFallsBackToTheZone() {
         let location = OrderLocation(item(address: OrderAddress(latitude: 50.0755, longitude: 14.4378)))
         XCTAssertEqual(location, .approximate("Praha · 120"))
         XCTAssertNil(location.navigationTarget)
-        XCTAssertNil(location.mapPoint())
     }
 
     func testNoAddressAndNoZoneRendersNothing() {
@@ -118,17 +98,15 @@ final class OrderLocationPresentationTests: XCTestCase {
 
     // MARK: - What the screen reads
 
-    func testDetailHandsTheBrowsingCleanerTheZoneAndNoMap() throws {
+    func testDetailHandsTheBrowsingCleanerTheZoneAndNoNavigate() throws {
         let detail = try OrderDetail(browsing)
         XCTAssertEqual(detail.location.line, "Praha · 120")
         XCTAssertNil(detail.location.navigationTarget)
-        XCTAssertNil(detail.mapCoordinate)
     }
 
-    func testDetailHandsTheEntitledReaderTheStreetAddressAndTheMap() throws {
+    func testDetailHandsTheEntitledReaderTheStreetAddressAndNavigate() throws {
         let detail = try OrderDetail(entitled)
         XCTAssertEqual(detail.location.line, preciseLine)
         XCTAssertEqual(detail.location.navigationTarget?.coordinate, preciseCoordinate)
-        XCTAssertEqual(detail.mapCoordinate, preciseCoordinate)
     }
 }

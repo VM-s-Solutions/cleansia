@@ -67,7 +67,7 @@ and only ever lands a saved card. Every host that runs the handler handles all t
 | `payment_intent.canceled` | `PaymentIntentCanceled` | Handled as an expired session — **except** an intent Stripe cancelled with the reason `duplicate`, which leaves the order as it is: `CreatePaymentIntent` cancels an order's old intent that way only when it has just handed the customer a new one to pay ([Payment and fiscal](/flows/payment-and-fiscal#saved-cards-and-receivables)) |
 | `payment_intent.payment_failed` | `PaymentIntentPaymentFailed` | Status left alone so the client can retry; the first decline on an order tells the administrators |
 | **Saved card** — found by the `SavedCardId` in the intent's metadata | | |
-| `setup_intent.succeeded` | `SetupIntentSucceeded` | A card saved on its own in the apps — a card-only SetupIntent confirmed in PaymentSheet, which since 2026-10-04 only iOS's *Save a card* under Profile → Payments starts — succeeded: the card lands on its `SavedCards` row and the customer's earlier card in that currency is retired. The card is optional and guarantees nothing. A SetupIntent with no `SavedCardId` (the Plus subscribe flow's) is ignored. A setup-mode Checkout Session raises it too, and whichever of the two arrives second changes nothing → [Payment and fiscal](/flows/payment-and-fiscal#saved-cards-and-receivables) |
+| `setup_intent.succeeded` | `SetupIntentSucceeded` | A card saved on its own in the customer apps — a card-only SetupIntent confirmed in PaymentSheet under Profile → Payments — succeeded: the card lands on its `SavedCards` row and the customer's earlier card in that currency is retired. A usable saved card is required to choose cash from 2026-10-29; saving it authorizes no automatic charge. A SetupIntent with no `SavedCardId` (the Plus subscribe flow's) is ignored. A setup-mode Checkout Session raises it too, and whichever of the two arrives second changes nothing → [Payment and fiscal](/flows/payment-and-fiscal#saved-cards-and-receivables) |
 | **Subscription** (Cleansia Plus) — found by the Stripe subscription id | | |
 | `customer.subscription.created` | `SubscriptionCreated` | Creates the local `UserMembership` — the only writer of that row for a web Plus checkout |
 | `customer.subscription.updated` | `SubscriptionUpdated` | Mirrors Stripe's status and the current period onto the membership; a renewal is recorded here |
@@ -180,11 +180,11 @@ its **own** `whsec_`, and a payload signed by one will never verify against the 
 | Web | `https://api-cleansia-customer-<region>-<env>.azurewebsites.net/api/Payment/webhook` | `checkout.session.completed`, `checkout.session.expired`, and the seven account-wide events below | `STRIPE_WEBHOOK_SECRET_WEB` | `Stripe--WebhookSecret` |
 | Mobile | `https://api-cleansia-customer-mobile-<region>-<env>.azurewebsites.net/api/Payment/webhook` | `payment_intent.succeeded`, `payment_intent.payment_failed`, `payment_intent.canceled`, `setup_intent.succeeded` | `STRIPE_WEBHOOK_SECRET_MOBILE` | `Stripe--WebhookSecretMobile` |
 
-**`setup_intent.succeeded` belongs on the mobile endpoint.** iOS's *Save a card* under Profile →
+**`setup_intent.succeeded` belongs on the mobile endpoint.** The customer apps' *Save a card* under Profile →
 Payments saves a card on its own through a SetupIntent confirmed in PaymentSheet
 (`POST api/SavedCard/CreateSetupIntent`, served by the customer-mobile host), and this event is the only
-report of it. Saving one is optional since 2026-10-04: a cash booking asks for no card and nothing
-charges one. **Left off, a card saved that way is never captured:** its row is never listed, so the
+report of it. Since the 2026-10-29 requirement, cash eligibility needs an already usable saved card;
+nothing automatically charges it. **Left off, a card saved that way is never captured:** its row is never listed, so the
 customer does not find the card they saved. The web endpoint does not need it — a setup-mode session is
 reported by its own `checkout.session.completed` — and if both carry it, the second delivery is a
 no-op. Stripe sends an event to every endpoint subscribed to its type, whichever channel raised it, so

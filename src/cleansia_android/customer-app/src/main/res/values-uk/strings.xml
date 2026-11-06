@@ -95,7 +95,7 @@
 
     <!-- Home — upcoming order -->
     <string name="home_upcoming_empty_title">Немає запланованих прибирань</string>
-    <string name="home_upcoming_empty_subtitle">Натисніть, щоб замовити перше прибирання.</string>
+    <string name="home_upcoming_empty_subtitle">Замовте перше прибирання.</string>
 
     <!-- Home — reorder -->
     <string name="home_reorder_title">Замовити знову</string>
@@ -168,7 +168,7 @@
 
     <!-- Home — popular packages -->
     <string name="home_popular_packages_title">Популярні пакети</string>
-    <string name="home_popular_packages_add_cta">Натисніть для замовлення</string>
+    <string name="home_popular_packages_add_cta">Замовити</string>
 
     <!-- Home — Order again quick action -->
     <string name="home_order_again_title">ЗАМОВИТИ ЗНОВУ</string>
@@ -738,8 +738,7 @@
 
     <!-- Dirtiness level: booking step, recurring wizard, summaries -->
     <string name="dirtiness_title">Наскільки у вас прибрано?</string>
-    <string name="dirtiness_intro">Оберіть стан, який найкраще відповідає всьому помешканню.</string>
-    <string name="dirtiness_hint">Якщо вагаєтеся між двома рівнями, оберіть вищий. Тоді прибиральник матиме достатньо часу, і результат буде таким, як слід.</string>
+    <string name="dirtiness_torn_hint">Вагаєтеся між двома? Оберіть вищий, щоб прибиральник мав достатньо часу.</string>
     <string name="dirtiness_level_label">Рівень забруднення</string>
     <string name="dirtiness_normal_title">Звичайний</string>
     <string name="dirtiness_normal_price">Без доплати</string>
@@ -827,20 +826,17 @@
     <string name="booking_pay_card">Карткою</string>
     <string name="booking_pay_card_desc">Безпечно через Stripe</string>
     <string name="booking_pay_cash">Готівкою</string>
-    <string name="booking_pay_cash_desc">Оплата при доставці</string>
-    <string name="booking_cash_needs_account">Готівкою можуть платити лише клієнти, які увійшли в акаунт. Увійдіть, щоб платити готівкою, або сплатіть карткою.</string>
-    <string name="booking_cash_needs_card">Кількість прибиральників для цього замовлення: %1$d. Готівкою можна платити лише за замовлення, з якими впорається один прибиральник, тож це замовлення сплачується карткою.</string>
-    <string name="booking_cash_pending">Чи можна платити готівкою, ми підтвердимо, щойно буде відома ціна.</string>
-    <string name="booking_cash_cleared">Оплата готівкою для цього замовлення більше недоступна, тому спосіб оплати не обрано. Оберіть, як ви хочете платити.</string>
+    <string name="booking_pay_cash_desc">Сплатіть клінеру після прибирання.</string>
+    <string name="booking_cash_needs_account">Для оплати готівкою увійдіть в акаунт і збережіть картку.</string>
+    <string name="booking_cash_needs_card">Для цього замовлення потрібно %1$d клінерів. Сплатіть карткою.</string>
+    <string name="booking_cash_pending">Перевіряємо команду та збережену картку.</string>
+    <string name="booking_cash_cleared">Оплата готівкою недоступна. Оберіть інший спосіб оплати.</string>
     <string name="booking_draft_time_changed">Обраний час більше недоступний або змінив ціну. Будь ласка, оберіть час знову.</string>
     <string name="consent_saved_card_draft_2026_10_05">Я погоджуюся, що Cleansia збереже цю картку в моєму акаунті. Кошти з неї списуються лише тоді, коли я нею плачу, і я можу будь-коли її видалити.</string>
     <string name="booking_save_card_label">Зберегти цю картку для моїх наступних замовлень</string>
     <string name="booking_special_instructions_hint">Особливі побажання? (необов’язково)</string>
     <string name="booking_access_instructions_hint">Як увійти? (необов’язково)</string>
 
-    <string name="booking_success_title">Бронювання підтверджено!</string>
-    <string name="booking_success_subtitle">Ваше прибирання заброньовано. Розслабтеся.</string>
-    <string name="booking_success_progress">Прогрес бронювання</string>
     <string name="booking_success_t1_title">Бронювання отримано</string>
     <string name="booking_success_t1_desc">Щойно</string>
     <string name="booking_success_t2_title">Призначаємо клінера</string>
@@ -851,11 +847,7 @@
     <string name="booking_success_t4_desc">Нагадаємо за годину</string>
     <string name="booking_success_view_orders">Переглянути замовлення</string>
     <string name="booking_success_go_home">На головну</string>
-    <string name="booking_success_confirmation_code">Код підтвердження</string>
-    <string name="booking_success_arrival_label">Прибуття</string>
-    <string name="booking_success_address_label">Адреса</string>
     <string name="booking_success_total_label">Усього</string>
-    <string name="booking_success_whats_next">Клінер скоро прийме ваше замовлення — ми сповістимо, коли він буде в дорозі.</string>
     <string name="error_booking_sign_in_required">Будь ласка, увійдіть, щоб завершити бронювання.</string>
     <string name="error_booking_pick_time">Будь ласка, виберіть дату та час прибирання.</string>
     <string name="error_booking_phone_missing">Будь ласка, додайте номер телефону до профілю, щоб ми могли зв’язатися з вами щодо цього бронювання.</string>
@@ -868,7 +860,7 @@
     <string name="onboarding_phone_label">Номер телефону</string>
     <string name="onboarding_phone_helper">Вкажіть код країни (напр. +420). Використовуватимемо лише для зв’язку щодо ваших бронювань.</string>
     <string name="onboarding_birthdate_label">Дата народження</string>
-    <string name="onboarding_birthdate_placeholder">Натисніть, щоб вибрати</string>
+    <string name="onboarding_birthdate_placeholder">Оберіть дату</string>
     <string name="onboarding_birthdate_helper">За бажанням — для бонусів до дня народження.</string>
     <string name="onboarding_save">Зберегти і продовжити</string>
     <string name="onboarding_skip">Пропустити</string>
@@ -1052,7 +1044,7 @@
     <string name="recurring_create_pay_cash">Готівкою</string>
     <string name="recurring_create_pay_card">Карткою</string>
     <string name="recurring_cash_needs_card">Кількість прибиральників для кожного прибирання: %1$d. Готівкою можна платити лише за прибирання, з якими впорається один прибиральник, тож цей розклад сплачується карткою.</string>
-    <string name="recurring_cash_pending">Чи можна платити за цей розклад готівкою, ми підтвердимо, щойно буде відома ціна.</string>
+    <string name="recurring_cash_pending">Перевіряємо команду та збережену картку.</string>
     <string name="recurring_cash_cleared">Оплата готівкою для цього розкладу більше недоступна, тому спосіб оплати не обрано. Оберіть, як ви хочете платити.</string>
     <string name="recurring_cash_unchecked">Не вдалося перевірити, чи можна платити за цей розклад готівкою. Збережіть його ще раз за хвилину або оберіть картку.</string>
     <string name="recurring_create_payment_missing">Оберіть, як оплачуватиметься розклад.</string>
@@ -1377,7 +1369,7 @@
     <string name="notification_order_assignment_cancelled_title">Замовлення скасовано</string>
     <string name="notification_order_assignment_cancelled_body">Замовлення, яке ви прийняли, скасовано: #%1$s. Торкніться, щоб переглянути деталі.</string>
     <string name="notification_payroll_invoice_paid_title">Вам виплачено</string>
-    <string name="notification_payroll_invoice_paid_body">Ваш рахунок за останній розрахунковий період оплачено. Торкніться, щоб переглянути.</string>
+    <string name="notification_payroll_invoice_paid_body">Ваш рахунок за останній розрахунковий період оплачено.</string>
     <!-- ── Payments ── -->
     <string name="profile_row_payments">Платежі</string>
     <string name="payments_title">Платежі</string>
@@ -1592,4 +1584,30 @@
     <string name="payments_card_setup_failed">Не вдалося налаштувати картку. Спробуйте знову.</string>
     <string name="payments_card_saved">Картку збережено</string>
     <string name="order_photos_phase_count">%1$s · %2$d</string>
+    <string name="booking_cash_needs_saved_card">Для оплати готівкою збережіть дійсну картку у валюті замовлення.</string>
+    <string name="error_order_cash_requires_saved_card">Для оплати готівкою потрібна дійсна збережена картка у валюті замовлення.</string>
+    <string name="booking_success_confirmed_title">Бронювання підтверджено</string>
+    <string name="booking_success_details_loading">Завантажуємо деталі бронювання…</string>
+    <string name="booking_success_details_unavailable">Деталі бронювання тимчасово недоступні.</string>
+    <string name="booking_success_cleaner_assigned">Клінера призначено</string>
+    <string name="booking_success_finding">Поки що жоден клінер його не взяв.</string>
+    <string name="booking_success_finding_sub">Повідомимо вас, щойно хтось його візьме.</string>
+    <plurals name="booking_success_crew">
+        <item quantity="one">%1$d клінер</item>
+        <item quantity="few">%1$d клінери</item>
+        <item quantity="many">%1$d клінерів</item>
+        <item quantity="other">%1$d клінера</item>
+    </plurals>
+    <plurals name="booking_success_crew_needed">
+        <item quantity="one">Потрібен %1$d клінер.</item>
+        <item quantity="few">Потрібно %1$d клінери.</item>
+        <item quantity="many">Потрібно %1$d клінерів.</item>
+        <item quantity="other">Потрібно %1$d клінерів.</item>
+    </plurals>
+    <string name="booking_success_free_until">Безкоштовне скасування до %1$s</string>
+    <string name="booking_success_free_while">Скасування безкоштовне, поки жоден клінер його не взяв.</string>
+    <string name="booking_success_no_cleaner_card">Якщо його ніхто не візьме, ми скасуємо його, повернемо всю суму й нарахуємо кредит.</string>
+    <string name="booking_success_no_cleaner_cash">Якщо його ніхто не візьме, ми безкоштовно скасуємо його й нарахуємо вам кредит.</string>
+    <string name="booking_success_cash_on_day">Сплатіть готівкою клінеру в день прибирання.</string>
+    <string name="auth_email_placeholder">customer@example.com</string>
 </resources>

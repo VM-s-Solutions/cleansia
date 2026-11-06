@@ -43,7 +43,7 @@ public sealed class ConfirmRecurringOrderAuditEvidenceTests
         new(
             OrderAccessDoubles.Over(_orderRepository, _session),
             _orderRepository.Object,
-            Mock.Of<ISavedCardRepository>(), Mock.Of<IReceivableRepository>(),
+            Cleansia.Tests.Common.SavedCardTestData.Repository(), Mock.Of<IReceivableRepository>(),
             new Mock<ICreditAccountRepository>().Object,
             new Mock<IUserRepository>().Object,
             _session.Object,

@@ -8136,6 +8136,7 @@ export class AssignedEmployeeDto implements IAssignedEmployeeDto {
     fullName!: string | undefined;
     phoneNumber!: string | undefined;
     completionConfirmedAt!: Date | undefined;
+    profilePhoto!: BlobFileDto;
 
     constructor(data?: IAssignedEmployeeDto) {
         if (data) {
@@ -8153,6 +8154,7 @@ export class AssignedEmployeeDto implements IAssignedEmployeeDto {
             this.fullName = Data["fullName"];
             this.phoneNumber = Data["phoneNumber"];
             this.completionConfirmedAt = Data["completionConfirmedAt"] ? new Date(Data["completionConfirmedAt"].toString()) : undefined as any;
+            this.profilePhoto = Data["profilePhoto"] ? BlobFileDto.fromJS(Data["profilePhoto"]) : undefined as any;
         }
     }
 
@@ -8170,6 +8172,7 @@ export class AssignedEmployeeDto implements IAssignedEmployeeDto {
         data["fullName"] = this.fullName;
         data["phoneNumber"] = this.phoneNumber;
         data["completionConfirmedAt"] = this.completionConfirmedAt ? this.completionConfirmedAt.toISOString() : undefined as any;
+        data["profilePhoto"] = this.profilePhoto ? this.profilePhoto.toJSON() : undefined as any;
         return data;
     }
 }
@@ -8180,6 +8183,7 @@ export interface IAssignedEmployeeDto {
     fullName: string | undefined;
     phoneNumber: string | undefined;
     completionConfirmedAt: Date | undefined;
+    profilePhoto: BlobFileDto;
 }
 
 export class BlobFileDto implements IBlobFileDto {
@@ -12742,6 +12746,14 @@ export interface IGrantConsentCommand {
     consentType: ConsentType;
 }
 
+export enum HomeDistanceBand {
+    Under3Km = 1,
+    From3To6Km = 2,
+    From6To10Km = 3,
+    From10To20Km = 4,
+    Over20Km = 5,
+}
+
 export class JwtTokenResponse implements IJwtTokenResponse {
     token!: string | undefined;
     isEmailConfirmed!: boolean;
@@ -14142,6 +14154,7 @@ export class OrderListItem implements IOrderListItem {
     dirtinessLevel!: DirtinessLevel;
     dirtinessSurchargeAmount!: number;
     isGuestBooking!: boolean | undefined;
+    homeDistanceBand!: HomeDistanceBand;
 
     constructor(data?: IOrderListItem) {
         if (data) {
@@ -14213,6 +14226,7 @@ export class OrderListItem implements IOrderListItem {
             this.dirtinessLevel = Data["dirtinessLevel"];
             this.dirtinessSurchargeAmount = Data["dirtinessSurchargeAmount"];
             this.isGuestBooking = Data["isGuestBooking"];
+            this.homeDistanceBand = Data["homeDistanceBand"];
         }
     }
 
@@ -14284,6 +14298,7 @@ export class OrderListItem implements IOrderListItem {
         data["dirtinessLevel"] = this.dirtinessLevel;
         data["dirtinessSurchargeAmount"] = this.dirtinessSurchargeAmount;
         data["isGuestBooking"] = this.isGuestBooking;
+        data["homeDistanceBand"] = this.homeDistanceBand;
         return data;
     }
 }
@@ -14330,6 +14345,7 @@ export interface IOrderListItem {
     dirtinessLevel: DirtinessLevel;
     dirtinessSurchargeAmount: number;
     isGuestBooking: boolean | undefined;
+    homeDistanceBand: HomeDistanceBand;
 }
 
 export class OrderNoteDto implements IOrderNoteDto {

@@ -4,6 +4,8 @@ using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
 using Cleansia.Core.AppServices.Features.TenantSettings;
+using Cleansia.Core.AppServices.Shared.DTOs.Files;
+using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Auditing;
@@ -15,6 +17,7 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Core.AppServices.Features.Orders;
 
@@ -50,7 +53,9 @@ public class GetOrderDetails
         IWorkContractAcceptanceRepository workContractAcceptanceRepository,
         IEmployeeActionAuditRepository employeeActionAuditRepository,
         ICancellationPolicyResolver cancellationPolicyResolver,
-        IAppConfigurationProvider configurationProvider) : IQueryHandler<Query, OrderItem>
+        IAppConfigurationProvider configurationProvider,
+        IBlobContainerClientFactory blobClientFactory,
+        ILogger<Handler> logger) : IQueryHandler<Query, OrderItem>
     {
         public async Task<BusinessResult<OrderItem>> Handle(Query query, CancellationToken cancellationToken)
         {
@@ -189,6 +194,16 @@ public class GetOrderDetails
                 return BusinessResult.Success(detail.RedactForPastJob(callerEmployeeId!));
             }
 
+            var photoNames = order.AssignedEmployees.ToDictionary(
+                seat => seat.Id, seat => seat.Employee?.User?.ProfilePhotoName);
+            detail = detail with
+            {
+                AssignedEmployees = detail.AssignedEmployees.Select(employee => employee with
+                {
+                    ProfilePhoto = ResolveProfilePhoto(photoNames.GetValueOrDefault(employee.Id)),
+                }).ToList(),
+            };
+
             // First read only: the partner app fetches this detail again on every resume and refresh.
             if (isAssignedToCurrentUser && !string.IsNullOrWhiteSpace(detail.AccessInstructions))
             {
@@ -210,6 +225,23 @@ public class GetOrderDetails
                     CashCollectedAmount = order.CashCollectedAmount,
                 }).WithholdAccessInstructions()
                 : detail);
+        }
+
+        private BlobFileDto? ResolveProfilePhoto(string? blobName)
+        {
+            if (string.IsNullOrWhiteSpace(blobName)) return null;
+
+            try
+            {
+                var url = blobClientFactory.GetBlobContainerClient(Constants.BlobContainers.UserFiles)
+                    .GenerateSasUri(blobName, TimeSpan.FromHours(1));
+                return blobName.MapToDto(url.ToString());
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to generate SAS URI for assigned cleaner photo {BlobName}", blobName);
+                return null;
+            }
         }
 
         private async Task<string?> ResolveCashCollectorNameAsync(Order order, CancellationToken cancellationToken) =>

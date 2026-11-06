@@ -95,7 +95,7 @@
 
     <!-- Home — upcoming order -->
     <string name="home_upcoming_empty_title">Žiadne plánované upratovanie</string>
-    <string name="home_upcoming_empty_subtitle">Klepnite na rezerváciu prvého upratovania.</string>
+    <string name="home_upcoming_empty_subtitle">Objednajte si prvé upratovanie.</string>
 
     <!-- Home — reorder -->
     <string name="home_reorder_title">Objednať znova</string>
@@ -168,7 +168,7 @@
 
     <!-- Home — popular packages -->
     <string name="home_popular_packages_title">Obľúbené balíky</string>
-    <string name="home_popular_packages_add_cta">Klepnúť na objednanie</string>
+    <string name="home_popular_packages_add_cta">Objednať</string>
 
     <!-- Home — Order again quick action -->
     <string name="home_order_again_title">OBJEDNAŤ ZNOVA</string>
@@ -738,8 +738,7 @@
 
     <!-- Dirtiness level: booking step, recurring wizard, summaries -->
     <string name="dirtiness_title">Ako veľmi je u vás upratané?</string>
-    <string name="dirtiness_intro">Vyberte stav, ktorý najlepšie zodpovedá celej domácnosti.</string>
-    <string name="dirtiness_hint">Ak váhate medzi dvoma stupňami, zvoľte vyšší. Upratovačka potom bude mať dosť času a výsledok bude zodpovedať.</string>
+    <string name="dirtiness_torn_hint">Váhate medzi dvoma? Zvoľte vyšší, nech má upratovačka dosť času.</string>
     <string name="dirtiness_level_label">Miera znečistenia</string>
     <string name="dirtiness_normal_title">Bežné</string>
     <string name="dirtiness_normal_price">Bez príplatku</string>
@@ -827,20 +826,17 @@
     <string name="booking_pay_card">Kartou</string>
     <string name="booking_pay_card_desc">Bezpečne cez Stripe</string>
     <string name="booking_pay_cash">Hotovosťou</string>
-    <string name="booking_pay_cash_desc">Platba pri dodaní</string>
-    <string name="booking_cash_needs_account">V hotovosti môžu platiť len prihlásení zákazníci. Prihláste sa, ak chcete platiť v hotovosti, alebo zaplaťte kartou.</string>
-    <string name="booking_cash_needs_card">Počet upratovačov potrebných pre túto objednávku: %1$d. V hotovosti sa dá platiť len za objednávky, ktoré zvládne jeden upratovač, túto preto zaplatíte kartou.</string>
-    <string name="booking_cash_pending">Či môžete platiť v hotovosti, potvrdíme, keď bude známa cena.</string>
-    <string name="booking_cash_cleared">Platba v hotovosti už pre túto objednávku nie je možná, preto nie je vybraný žiadny spôsob platby. Zvoľte, ako chcete platiť.</string>
+    <string name="booking_pay_cash_desc">Zaplaťte upratovačovi po upratovaní.</string>
+    <string name="booking_cash_needs_account">Pre platbu v hotovosti sa prihláste a uložte kartu.</string>
+    <string name="booking_cash_needs_card">Táto objednávka vyžaduje %1$d upratovačov. Zaplaťte kartou.</string>
+    <string name="booking_cash_pending">Overujeme počet upratovačov a uloženú kartu.</string>
+    <string name="booking_cash_cleared">Platba v hotovosti nie je dostupná. Vyberte iný spôsob platby.</string>
     <string name="booking_draft_time_changed">Vybraný čas už nie je dostupný alebo sa zmenila jeho cena. Vyberte si, prosím, čas znova.</string>
     <string name="consent_saved_card_draft_2026_10_05">Súhlasím, že Cleansia uloží túto kartu do môjho účtu. Nič z nej nestrhne, ak ňou nezaplatím, a kartu môžem kedykoľvek odstrániť.</string>
     <string name="booking_save_card_label">Uložiť túto kartu pre moje ďalšie objednávky</string>
     <string name="booking_special_instructions_hint">Špeciálne požiadavky? (nepovinné)</string>
     <string name="booking_access_instructions_hint">Pokyny ku vstupu? (nepovinné)</string>
 
-    <string name="booking_success_title">Rezervácia potvrdená!</string>
-    <string name="booking_success_subtitle">Vaše upratovanie je rezervované. Oddýchnite si.</string>
-    <string name="booking_success_progress">Priebeh rezervácie</string>
     <string name="booking_success_t1_title">Rezervácia prijatá</string>
     <string name="booking_success_t1_desc">Práve teraz</string>
     <string name="booking_success_t2_title">Prideľujeme upratovačku</string>
@@ -851,11 +847,7 @@
     <string name="booking_success_t4_desc">Pripomenieme hodinu vopred</string>
     <string name="booking_success_view_orders">Zobraziť objednávku</string>
     <string name="booking_success_go_home">Späť domov</string>
-    <string name="booking_success_confirmation_code">Potvrdzovací kód</string>
-    <string name="booking_success_arrival_label">Príchod</string>
-    <string name="booking_success_address_label">Adresa</string>
     <string name="booking_success_total_label">Celkom</string>
-    <string name="booking_success_whats_next">Upratovačka si vašu objednávku čoskoro prevezme — oznámime vám, keď bude na ceste.</string>
     <string name="error_booking_sign_in_required">Pre dokončenie rezervácie sa prosím prihláste.</string>
     <string name="error_booking_pick_time">Vyberte prosím dátum a čas upratovania.</string>
     <string name="error_booking_phone_missing">Pridajte si prosím do profilu telefónne číslo, aby sme vás mohli kontaktovať ohľadom tejto rezervácie.</string>
@@ -868,7 +860,7 @@
     <string name="onboarding_phone_label">Telefónne číslo</string>
     <string name="onboarding_phone_helper">Uveďte predvoľbu (napr. +420). Použijeme ho iba na to, aby sme vás kontaktovali ohľadom vašich rezervácií.</string>
     <string name="onboarding_birthdate_label">Dátum narodenia</string>
-    <string name="onboarding_birthdate_placeholder">Ťuknite pre výber</string>
+    <string name="onboarding_birthdate_placeholder">Vyberte dátum</string>
     <string name="onboarding_birthdate_helper">Voliteľné — pre narodeninové výhody.</string>
     <string name="onboarding_save">Uložiť a pokračovať</string>
     <string name="onboarding_skip">Preskočiť</string>
@@ -1052,7 +1044,7 @@
     <string name="recurring_create_pay_cash">Hotovosťou</string>
     <string name="recurring_create_pay_card">Kartou</string>
     <string name="recurring_cash_needs_card">Počet upratovačov potrebných na každé upratovanie: %1$d. V hotovosti sa dá platiť len za upratovania, ktoré zvládne jeden upratovač, tento rozvrh preto platíte kartou.</string>
-    <string name="recurring_cash_pending">Či sa dá tento rozvrh platiť v hotovosti, potvrdíme, keď bude známa cena.</string>
+    <string name="recurring_cash_pending">Overujeme počet upratovačov a uloženú kartu.</string>
     <string name="recurring_cash_cleared">Platba v hotovosti už pre tento rozvrh nie je možná, preto nie je vybraný žiadny spôsob platby. Zvoľte, ako chcete platiť.</string>
     <string name="recurring_cash_unchecked">Nepodarilo sa overiť, či sa dá tento rozvrh platiť v hotovosti. Uložte ho o chvíľu znova alebo zvoľte kartu.</string>
     <string name="recurring_create_payment_missing">Zvoľte, ako sa bude rozvrh platiť.</string>
@@ -1377,7 +1369,7 @@
     <string name="notification_order_assignment_cancelled_title">Zákazka zrušená</string>
     <string name="notification_order_assignment_cancelled_body">Zákazka, ktorú ste prijali, bola zrušená: #%1$s. Ťuknutím zobrazíte detaily.</string>
     <string name="notification_payroll_invoice_paid_title">Boli ste vyplatení</string>
-    <string name="notification_payroll_invoice_paid_body">Vaša faktúra za posledné výplatné obdobie bola uhradená. Ťuknutím zobrazíte.</string>
+    <string name="notification_payroll_invoice_paid_body">Vaša faktúra za posledné výplatné obdobie bola uhradená.</string>
     <!-- ── Payments ── -->
     <string name="profile_row_payments">Platby</string>
     <string name="payments_title">Platby</string>
@@ -1592,4 +1584,30 @@
     <string name="payments_card_setup_failed">Kartu sa nepodarilo nastaviť. Skúste to znova.</string>
     <string name="payments_card_saved">Karta bola uložená</string>
     <string name="order_photos_phase_count">%1$s · %2$d</string>
+    <string name="booking_cash_needs_saved_card">Pre platbu v hotovosti uložte platnú kartu v mene objednávky.</string>
+    <string name="error_order_cash_requires_saved_card">Platba v hotovosti vyžaduje platnú uloženú kartu v mene objednávky.</string>
+    <string name="booking_success_confirmed_title">Rezervácia potvrdená</string>
+    <string name="booking_success_details_loading">Načítanie údajov rezervácie…</string>
+    <string name="booking_success_details_unavailable">Údaje rezervácie sú dočasne nedostupné.</string>
+    <string name="booking_success_cleaner_assigned">Upratovač priradený</string>
+    <string name="booking_success_finding">Zatiaľ ju neprevzal žiadny upratovač.</string>
+    <string name="booking_success_finding_sub">Dáme vám vedieť, hneď ako ju niekto prevezme.</string>
+    <plurals name="booking_success_crew">
+        <item quantity="one">%1$d upratovač</item>
+        <item quantity="few">%1$d upratovači</item>
+        <item quantity="many">%1$d upratovača</item>
+        <item quantity="other">%1$d upratovačov</item>
+    </plurals>
+    <plurals name="booking_success_crew_needed">
+        <item quantity="one">Potrebuje %1$d upratovača.</item>
+        <item quantity="few">Potrebuje %1$d upratovačov.</item>
+        <item quantity="many">Potrebuje %1$d upratovačov.</item>
+        <item quantity="other">Potrebuje %1$d upratovačov.</item>
+    </plurals>
+    <string name="booking_success_free_until">Zrušenie zadarmo do %1$s</string>
+    <string name="booking_success_free_while">Zrušenie zadarmo, kým ju neprevezme žiadny upratovač.</string>
+    <string name="booking_success_no_cleaner_card">Keď ju nikto neprevezme, zrušíme ju, vrátime vám všetko a pridáme kredit.</string>
+    <string name="booking_success_no_cleaner_cash">Keď ju nikto neprevezme, zrušíme ju zadarmo a pridáme vám kredit.</string>
+    <string name="booking_success_cash_on_day">Zaplaťte v hotovosti upratovačovi v deň upratovania.</string>
+    <string name="auth_email_placeholder">customer@example.com</string>
 </resources>

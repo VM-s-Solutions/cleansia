@@ -4,6 +4,9 @@ import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.core.ui.state.ActionState
+import cz.cleansia.partner.api.model.Code
+import cz.cleansia.partner.api.model.OrderAddress
+import cz.cleansia.partner.api.model.OrderItem
 import cz.cleansia.partner.data.orders.PendingOffer
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.partner.data.orders.OrdersRepository
@@ -77,6 +80,14 @@ class PendingOffersViewModelTest {
         bathrooms = 1,
         currencyCode = "CZK",
         estimatedCleanerPay = 600.0,
+    )
+
+    private fun mineJob(id: String) = OrderItem(
+        id = id,
+        orderStatus = Code(value = 2),
+        isAssignedToCurrentUser = true,
+        customerAddressApproximate = "Praha 4 · 14000",
+        address = OrderAddress(street = "Mánesova 12", city = "Praha", latitude = 50.07, longitude = 14.44),
     )
 
     /**
@@ -200,9 +211,13 @@ class PendingOffersViewModelTest {
     }
 
     @Test
-    fun `a Taken verdict closes the sheet, hands the screen the id to open and re-asks the server`() = runTest {
+    fun `a Taken verdict keeps the sheet up on the taken panel with the offer's area and reward, opening nothing`() = runTest {
         val row = offer("a")
         serverHolds(row)
+        coEvery { ordersRepository.getById("a") } coAnswers {
+            delay(1_000)
+            ApiResult.Success(mineJob("a"))
+        }
         val vm = viewModel()
         advanceUntilIdle()
 
@@ -212,12 +227,101 @@ class PendingOffersViewModelTest {
         vm.confirm(row)
 
         vm.onWorkContractOutcome(taken("a"))
+        advanceTimeBy(500)
+
+        assertEquals(WorkContractRequest.Take("a"), vm.contractRequest.value)
+        val panel = vm.takenRow.value
+        assertEquals("a", panel?.id)
+        assertEquals("Praha 4 · 14000", panel?.customerAddressApproximate)
+        assertEquals(600.0, panel?.estimatedCleanerPay)
+        assertEquals("CZK", panel?.currency?.code)
+        assertEquals("2026-08-12T09:00:00Z", panel?.cleaningDateTime)
+        assertEquals(120, panel?.estimatedTime)
+        assertNull("the strip waits for the job read back as hers", panel?.customerAddressLatitude)
+        assertTrue(opened.isEmpty())
+        advanceUntilIdle()
+        job.cancel()
+    }
+
+    @Test
+    fun `the job read back as hers replaces the offer's row, so the strip pins the door`() = runTest {
+        val row = offer("a")
+        serverHolds(row)
+        coEvery { ordersRepository.getById("a") } returns ApiResult.Success(mineJob("a"))
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.confirm(row)
+
+        vm.onWorkContractOutcome(taken("a"))
         advanceUntilIdle()
 
-        assertNull(vm.contractRequest.value)
-        assertEquals(listOf("a"), opened)
+        val panel = vm.takenRow.value
+        assertEquals(50.07, panel?.customerAddressLatitude)
+        assertEquals(14.44, panel?.customerAddressLongitude)
+        assertEquals(2, panel?.orderStatus?.value)
+        assertEquals(WorkContractRequest.Take("a"), vm.contractRequest.value)
         coVerify(exactly = 2) { ordersRepository.refreshPendingOffers() }
         assertEquals(ActionState.Idle, vm.actionState.value)
+    }
+
+    @Test
+    fun `a failed read-back keeps the offer's row, so there is no strip`() = runTest {
+        val row = offer("a")
+        serverHolds(row)
+        coEvery { ordersRepository.getById("a") } returns ApiResult.Error(ApiError.Network("down"))
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.confirm(row)
+
+        vm.onWorkContractOutcome(taken("a"))
+        advanceUntilIdle()
+
+        assertEquals("Praha 4 · 14000", vm.takenRow.value?.customerAddressApproximate)
+        assertNull(vm.takenRow.value?.customerAddressLatitude)
+        assertEquals(WorkContractRequest.Take("a"), vm.contractRequest.value)
+    }
+
+    @Test
+    fun `Open job closes the panel and hands the screen the job to open`() = runTest {
+        val row = offer("a")
+        serverHolds(row)
+        coEvery { ordersRepository.getById("a") } returns ApiResult.Success(mineJob("a"))
+        val vm = viewModel()
+        advanceUntilIdle()
+        val opened = mutableListOf<String>()
+        val job = launch { vm.confirmed.collect { opened += it } }
+        vm.confirm(row)
+        vm.onWorkContractOutcome(taken("a"))
+        advanceUntilIdle()
+
+        vm.openTakenJob()
+        advanceUntilIdle()
+
+        assertEquals(listOf("a"), opened)
+        assertNull(vm.contractRequest.value)
+        assertNull(vm.takenRow.value)
+        job.cancel()
+    }
+
+    @Test
+    fun `Back to jobs closes the panel onto the offers list and opens nothing`() = runTest {
+        val row = offer("a")
+        serverHolds(row)
+        coEvery { ordersRepository.getById("a") } returns ApiResult.Success(mineJob("a"))
+        val vm = viewModel()
+        advanceUntilIdle()
+        val opened = mutableListOf<String>()
+        val job = launch { vm.confirmed.collect { opened += it } }
+        vm.confirm(row)
+        vm.onWorkContractOutcome(taken("a"))
+        advanceUntilIdle()
+
+        vm.dismissContract()
+        advanceUntilIdle()
+
+        assertTrue(opened.isEmpty())
+        assertNull(vm.contractRequest.value)
+        assertNull(vm.takenRow.value)
         job.cancel()
     }
 

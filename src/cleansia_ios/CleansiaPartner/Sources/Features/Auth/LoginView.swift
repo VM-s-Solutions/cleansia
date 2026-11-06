@@ -75,6 +75,7 @@ private struct LoginContent: View {
                 CleansiaTextField(
                     value: emailBinding,
                     label: L10n.email,
+                    placeholder: L10n.emailPlaceholder,
                     errorText: form.emailError,
                     keyboardType: .emailAddress,
                     textContentType: .username,

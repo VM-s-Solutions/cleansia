@@ -19,8 +19,8 @@ final class OrderDetailSummaryBindingTests: XCTestCase {
         let source = try read(Self.content)
         XCTAssertTrue(source.contains("OrderStatusHero(order: order)"))
         XCTAssertTrue(
-            source.contains("OrderHeroFactsStrip(order: order)"),
-            "the code is unreachable under the hero"
+            source.contains("OrderHeroFactsStrip(order: order,"),
+            "the facts strip is unreachable under the hero"
         )
     }
 

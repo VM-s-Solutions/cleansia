@@ -40,7 +40,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -73,9 +72,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.annotation.StringRes
+import cz.cleansia.core.location.canShowOrderMap
 import cz.cleansia.core.snackbar.SnackbarInsetScope
 import cz.cleansia.core.ui.components.CleansiaConsentCheckbox
 import cz.cleansia.core.ui.components.CleansiaErrorState
+import cz.cleansia.core.ui.components.FloatingCircleButton
 import cz.cleansia.core.ui.components.SnapAnchor
 import cz.cleansia.core.ui.components.SnapSheet
 import cz.cleansia.core.ui.components.SnapSheetState
@@ -496,7 +497,7 @@ private fun OrderDetailMapLayout(
                     .align(Alignment.TopStart),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                MapOverlayButton(
+                FloatingCircleButton(
                     icon = Icons.AutoMirrored.Outlined.ArrowBack,
                     contentDescription = stringResource(R.string.common_back),
                     onClick = onBack,
@@ -564,7 +565,7 @@ private fun MapFocusToggle(
     onToggle: (SnapAnchor) -> Unit,
 ) {
     val atMapFocus = sheetState.targetAnchor == SnapAnchor.MapFocus
-    MapOverlayButton(
+    FloatingCircleButton(
         icon = if (atMapFocus) Icons.AutoMirrored.Outlined.ListAlt else Icons.Outlined.Map,
         contentDescription = stringResource(
             if (atMapFocus) R.string.order_detail_show_details else R.string.order_detail_show_map,
@@ -704,11 +705,9 @@ private fun OrderDetailSheetContent(
 
             // Confirmation code and price. Everything that identifies the order is in the pinned
             // header above; this carries only what the header has no room for.
-            OrderFactsStrip(order = order)
-            Text(
-                text = orderMarketLabel(order.countryId, order.currency?.code, markets),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            OrderFactsStrip(
+                order = order,
+                marketLabel = orderMarketLabel(order.countryId, order.currency?.code, markets),
             )
 
             // Sits right under the hero so it's the first thing the customer
@@ -1118,7 +1117,7 @@ private fun LoadingState(onBack: () -> Unit) {
         )
         // The map layout has no top bar, so a slow fetch would otherwise leave
         // the user on a bare spinner with only the system gesture to leave on.
-        MapOverlayButton(
+        FloatingCircleButton(
             icon = Icons.AutoMirrored.Outlined.ArrowBack,
             contentDescription = stringResource(R.string.common_back),
             onClick = onBack,
@@ -1149,52 +1148,6 @@ internal fun Card(content: @Composable () -> Unit) {
             .background(MaterialTheme.colorScheme.surface)
             .padding(vertical = 8.dp),
     ) { content() }
-}
-
-@Composable
-internal fun SectionHeader(
-    title: String,
-    icon: (@Composable () -> Unit)? = null,
-) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        if (icon != null) {
-            icon()
-            Spacer(Modifier.width(8.dp))
-        }
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-            color = MaterialTheme.colorScheme.onBackground,
-        )
-    }
-    // The rule that separates a section from its content now that the cards carry no border —
-    // the partner sheet's `OrderSectionCard` spacing, to the pixel.
-    Spacer(Modifier.height(8.dp))
-    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-    Spacer(Modifier.height(12.dp))
-}
-
-@Composable
-internal fun InfoRow(label: String, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(1f),
-        )
-        Spacer(Modifier.width(12.dp))
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.weight(1f),
-            textAlign = androidx.compose.ui.text.style.TextAlign.End,
-        )
-    }
 }
 
 /* ── Previews ── */

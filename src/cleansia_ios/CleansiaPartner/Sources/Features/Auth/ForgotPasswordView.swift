@@ -83,6 +83,7 @@ private struct ForgotPasswordContent: View {
                     CleansiaTextField(
                         value: emailBinding,
                         label: L10n.email,
+                        placeholder: L10n.emailPlaceholder,
                         errorText: form.emailError,
                         keyboardType: .emailAddress,
                         enabled: !isLoading

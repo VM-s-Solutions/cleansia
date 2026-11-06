@@ -242,6 +242,7 @@ public sealed class MaterializeRecurringBookingsTenantStampingTests : IDisposabl
         services.AddScoped(_ => OrderMarketDoubles.Operators((CzechiaId, TenantA), (SlovakiaId, TenantB)));
         services.AddScoped<INotificationProducer>(_ => Mock.Of<INotificationProducer>());
         services.AddScoped<IReceivableRepository>(_ => Mock.Of<IReceivableRepository>());
+        services.AddSingleton(Cleansia.Tests.Common.SavedCardTestData.Repository());
         services.AddScoped<MaterializeRecurringBookingTemplate.Handler>();
 
         // Only the one command the sweep sends. Registering the real MediatR would drag the whole
@@ -302,7 +303,7 @@ public sealed class MaterializeRecurringBookingsTenantStampingTests : IDisposabl
             WorkContractResolvers.Resolver().Object,
             new Mock<INotificationProducer>().Object,
             Mock.Of<IAdminNotifier>(),
-            NullLogger<OrderFactory>.Instance);
+            NullLogger<OrderFactory>.Instance, Cleansia.Tests.Common.SavedCardTestData.Repository());
     }
 
     private static IOrderPricingCalculator PricingCalculator()

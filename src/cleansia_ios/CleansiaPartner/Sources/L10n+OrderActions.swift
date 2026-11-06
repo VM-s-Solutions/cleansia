@@ -3,10 +3,6 @@ import Foundation
 extension L10n.Orders {
     // Lifecycle actions (detail footer)
 
-    static var notifyOnTheWay: String {
-        L10n.localized("notify_on_the_way")
-    }
-
     static var slideToStart: String {
         L10n.localized("slide_to_start")
     }
@@ -107,10 +103,6 @@ extension L10n.Orders {
         L10n.localized("order_crew_done_toast")
     }
 
-    static var crewWaiting: String {
-        L10n.localized("order_crew_waiting")
-    }
-
     static var completeJob: String {
         L10n.localized("order_complete_job")
     }
@@ -149,10 +141,6 @@ extension L10n.Orders {
         L10n.localized("customer_notified_on_the_way")
     }
 
-    static var swipeToStart: String {
-        L10n.localized("swipe_to_start")
-    }
-
     static var swipeToComplete: String {
         L10n.localized("swipe_to_complete")
     }
@@ -187,10 +175,6 @@ extension L10n.Orders {
 
     static var checklistLockedHint: String {
         L10n.localized("checklist_locked_hint")
-    }
-
-    static var checklistAllDoneHint: String {
-        L10n.localized("checklist_all_done_hint")
     }
 
     static func checklistProgress(_ done: Int, _ total: Int) -> String {
@@ -261,12 +245,6 @@ extension L10n.Orders {
 
     static var issueDeletedToast: String {
         L10n.localized("issue_deleted_toast")
-    }
-
-    // Status timeline
-
-    static var statusTimelineSectionTitle: String {
-        L10n.localized("status_timeline_section_title")
     }
 
     // Cannot get in

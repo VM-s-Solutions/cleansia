@@ -1,3 +1,4 @@
+using Cleansia.Core.Blobs.Abstractions;
 using System.Security.Claims;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Orders;
@@ -44,7 +45,7 @@ public class OrderDetailBrowsingCleanerRedactionTests
     private const string Street = "Vinohradska 12";
     private const string City = "Praha";
     private const string ZipCode = "12000";
-    private const string ApproximateAddress = "Praha · 120 xx";
+    private const string ApproximateAddress = "Praha 2";
     private const double Latitude = 50.0755;
     private const double Longitude = 14.4378;
     private const string AccessInstructions = "Code 1234 at the gate.";
@@ -59,6 +60,8 @@ public class OrderDetailBrowsingCleanerRedactionTests
     private const string CleanerLastName = "Svobodova";
     private const string CleanerPhone = "+420602987654";
 
+    private readonly Mock<IBlobContainerClientFactory> _blobFactory = new();
+    private readonly Mock<IBlobContainerClient> _blob = new();
     private readonly Mock<IOrderRepository> _orderRepository = new();
     private readonly Mock<IOrderAccessService> _orderAccessService = new();
     private readonly Mock<IUserSessionProvider> _userSessionProvider = new();
@@ -69,6 +72,75 @@ public class OrderDetailBrowsingCleanerRedactionTests
     private readonly Mock<IExpressWaiverConsumer> _expressWaiverConsumer = ExpressWaiverMocks.NoConsumer();
     private readonly Mock<IEmployeeActionAuditRepository> _employeeActionAuditRepository = new();
     private readonly Mock<IWorkContractAcceptanceRepository> _acceptances = WorkContractTestData.AcceptanceRepository();
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Only_Entitled_Customers_And_Assigned_Cleaners_Get_The_Avatar_While_Name_And_Phone_Masking_Stays(bool customer)
+    {
+        var order = PhotoOrder();
+        ArrangeCommon(order);
+        ArrangeCaller(order, customer ? UserProfile.Customer : UserProfile.Employee,
+            customer ? null : AssignedEmployeeId, isEntitled: true, isCustomer: customer);
+        _blobFactory.Setup(f => f.GetBlobContainerClient(Cleansia.Core.AppServices.Common.Constants.BlobContainers.UserFiles)).Returns(_blob.Object);
+        _blob.Setup(b => b.GenerateSasUri("cleaner-photo.jpg", TimeSpan.FromHours(1)))
+            .Returns(new Uri("https://images.example.test/user-files/cleaner-photo.jpg?sig=test"));
+
+        var result = await CreateHandler().Handle(new GetOrderDetails.Query(OrderId), CancellationToken.None);
+
+        var cleaner = Assert.Single(result.Value!.AssignedEmployees);
+        Assert.Equal(customer ? CleanerFirstName : $"{CleanerFirstName} {CleanerLastName}", cleaner.FullName);
+        Assert.Equal(customer ? null : CleanerPhone, cleaner.PhoneNumber);
+        Assert.Equal("cleaner-photo.jpg", cleaner.ProfilePhoto?.FileName);
+        Assert.Equal("https://images.example.test/user-files/cleaner-photo.jpg?sig=test", cleaner.ProfilePhoto?.BlobUrl);
+        _blob.Verify(b => b.GenerateSasUri("cleaner-photo.jpg", TimeSpan.FromHours(1)), Times.Once);
+    }
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public async Task Browsing_Listed_Guest_And_Past_Job_Reads_Do_Not_Even_Sign_Crew_Photos(bool listedGuest, bool pastJob)
+    {
+        var order = PhotoOrder();
+        if (pastJob) typeof(Order).GetProperty(nameof(Order.CompletedAt))!.GetSetMethod(true)!.Invoke(order, [DateTime.UtcNow.AddHours(-25)]);
+        ArrangeCommon(order);
+        ArrangeCaller(order, listedGuest ? UserProfile.Customer : UserProfile.Employee,
+            pastJob ? AssignedEmployeeId : BrowsingEmployeeId, isEntitled: pastJob, isCustomer: listedGuest);
+        _orderAccessService.Setup(a => a.IsListedGuestBooking(order)).Returns(listedGuest);
+
+        var result = await CreateHandler().Handle(new GetOrderDetails.Query(OrderId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Null(Assert.Single(result.Value!.AssignedEmployees).ProfilePhoto);
+        _blobFactory.VerifyNoOtherCalls();
+        _blob.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task A_Storage_Signing_Failure_Still_Returns_The_Cleaners_Name_For_Initials()
+    {
+        var order = PhotoOrder();
+        ArrangeCommon(order);
+        ArrangeCaller(order, UserProfile.Customer, null, isEntitled: true, isCustomer: true);
+        _blobFactory.Setup(f => f.GetBlobContainerClient(Cleansia.Core.AppServices.Common.Constants.BlobContainers.UserFiles)).Returns(_blob.Object);
+        _blob.Setup(b => b.GenerateSasUri("cleaner-photo.jpg", TimeSpan.FromHours(1)))
+            .Throws(new InvalidOperationException("Storage unavailable"));
+
+        var result = await CreateHandler().Handle(new GetOrderDetails.Query(OrderId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        var cleaner = Assert.Single(result.Value!.AssignedEmployees);
+        Assert.Equal(CleanerFirstName, cleaner.FullName);
+        Assert.Null(cleaner.ProfilePhoto);
+    }
+
+    private static Order PhotoOrder()
+    {
+        var order = BuildFullyPopulatedOrder();
+        Assert.Single(order.AssignedEmployees).Employee!.User!.UpdateProfilePhotoName("cleaner-photo.jpg");
+        return order;
+    }
 
     // ── The browsing cleaner: admitted by the loose gate, entitled to nothing about the customer ──
 
@@ -498,7 +570,9 @@ public class OrderDetailBrowsingCleanerRedactionTests
             _acceptances.Object,
             _employeeActionAuditRepository.Object,
             new Cleansia.Core.AppServices.Services.CancellationPolicyResolver(Mock.Of<IUserMembershipRepository>(), Mock.Of<IOrderRepository>()),
-            Mock.Of<IAppConfigurationProvider>());
+            Mock.Of<IAppConfigurationProvider>(),
+            _blobFactory.Object,
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<GetOrderDetails.Handler>.Instance);
 
     private void ArrangeCommon(Order order)
     {

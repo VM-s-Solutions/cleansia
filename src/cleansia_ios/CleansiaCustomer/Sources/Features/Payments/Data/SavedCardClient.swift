@@ -14,6 +14,7 @@ struct SavedCard: Equatable, Identifiable {
 
     /// The server's `SavedCard.IsUsableOn`: good through the last day of its expiry month, in UTC.
     func isUsable(on date: Date) -> Bool {
+        guard (1 ... 12).contains(expMonth) else { return false }
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? calendar.timeZone
         let month = calendar.dateComponents([.year, .month], from: date)

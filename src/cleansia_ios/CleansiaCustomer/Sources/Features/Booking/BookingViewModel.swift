@@ -30,6 +30,10 @@ final class BookingViewModel: ViewModel {
     @Published private(set) var marketState: MarketState = .unavailable
     /// Set when a cash choice was taken away; cleared by the customer's next choice.
     @Published internal(set) var cashCleared = false
+    @Published internal(set) var cashCards: [SavedCard]?
+    @Published internal(set) var cashCardReadFailed = false
+    var cashCardsSession: SavedCardSessionIdentity?
+    var cashCardReadSequence = 0
 
     @Published private(set) var currentStep = 1
     /// A tap that would book a service twice, waiting for the customer to confirm or cancel it.
@@ -49,6 +53,8 @@ final class BookingViewModel: ViewModel {
     let countryResolver: CountryResolver
     let consentClient: ConsentStatusClient
     let tokenStore: TokenStore
+    let savedCardClient: SavedCardClient
+    let cashSessionGeneration: () -> UInt
     let languageTag: () -> String
     let isCardPaymentAvailable: Bool
     private let quoteDebounce: DispatchQueue.SchedulerTimeType.Stride
@@ -86,7 +92,9 @@ final class BookingViewModel: ViewModel {
         market: AnyPublisher<MarketState, Never> = Just(.unavailable).eraseToAnyPublisher(),
         isCardPaymentAvailable: Bool = StripeConfig.isCardPaymentAvailable,
         quoteDebounce: DispatchQueue.SchedulerTimeType.Stride = .milliseconds(400),
-        scheduler: AnySchedulerOf<DispatchQueue> = .main
+        scheduler: AnySchedulerOf<DispatchQueue> = .main,
+        savedCardClient: SavedCardClient = LiveSavedCardClient(),
+        cashSessionGeneration: @escaping () -> UInt = { 0 }
     ) {
         self.catalogClient = catalogClient
         self.quoteClient = quoteClient
@@ -100,6 +108,8 @@ final class BookingViewModel: ViewModel {
         self.countryResolver = countryResolver
         self.consentClient = consentClient
         self.tokenStore = tokenStore
+        self.savedCardClient = savedCardClient
+        self.cashSessionGeneration = cashSessionGeneration
         self.languageTag = languageTag
         self.isCardPaymentAvailable = isCardPaymentAvailable
         self.quoteDebounce = quoteDebounce
@@ -146,13 +156,6 @@ final class BookingViewModel: ViewModel {
     /// cancellation releases a slot.
     var expressUpgradesRemaining: Int {
         membership?.expressUpgradesRemaining ?? 0
-    }
-
-    /// The currency every wizard amount is labelled with. The quote's own code the moment one lands;
-    /// until then the catalogue's default, which is what the pre-quote catalogue prices are stated in.
-    /// Nil only before the catalogue has loaded, when there is no figure on screen to label.
-    var displayCurrencyCode: String? {
-        quoteState.quote?.currencyCode ?? catalogState.loadedValue?.currencyCode
     }
 
     /// Best of the server's own discounts and the promo code, the single input both the summary card
@@ -241,6 +244,10 @@ final class BookingViewModel: ViewModel {
         promoState = .idle
         referralState = .idle
         cashCleared = false
+        cashCards = nil
+        cashCardsSession = nil
+        cashCardReadFailed = false
+        cashCardReadSequence += 1
         currentStep = 1
         twiceBookedPick = nil
         lastQuoteRequest = nil

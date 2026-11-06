@@ -14,7 +14,8 @@ final class CreateRecurringCashTests: XCTestCase {
         editing: RecurringTemplate? = nil,
         recurringClient: FakeRecurringBookingClient = FakeRecurringBookingClient(),
         snackbar: SnackbarController? = nil,
-        quoteClient: QuoteClient? = nil
+        quoteClient: QuoteClient? = nil,
+        cards: FakeSavedCardClient = FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])])
     ) -> (CreateRecurringViewModel, FakeQuoteClient) {
         let quote = FakeQuoteClient(result: .success(Self.quote(requiredEmployees: requiredEmployees)))
         let vm = CreateRecurringViewModel(
@@ -30,7 +31,8 @@ final class CreateRecurringCashTests: XCTestCase {
             snackbar: snackbar ?? SnackbarController(),
             isCardPaymentAvailable: true,
             quoteDebounce: .milliseconds(400),
-            scheduler: scheduler.eraseToAnyScheduler()
+            scheduler: scheduler.eraseToAnyScheduler(),
+            savedCardClient: cards
         )
         return (vm, quote)
     }
@@ -70,6 +72,27 @@ final class CreateRecurringCashTests: XCTestCase {
         scheduler.advance(by: .milliseconds(400))
         await drain()
         await eventually { vm.formCrew?.selection == vm.pricedSelection }
+    }
+
+    func testAnOlderSavedCardSuccessCannotOverwriteANewerFailedRead() async {
+        let cards = FakeSavedCardClient(reads: [
+            .success([PaymentsFixtures.czkCard]), .failure(ApiError(httpStatus: 503))
+        ])
+        var held: CheckedContinuation<Void, Never>?
+        cards.beforeRead = {
+            if cards.readCount == 1 { await withCheckedContinuation { held = $0 } }
+        }
+        let (vm, _) = makeVM(requiredEmployees: 1, cards: cards)
+        let loading = Task { await vm.load() }
+        await eventually { held != nil }
+        await vm.refreshCashCard()
+        held?.resume()
+        await loading.value
+        fillValid(vm)
+        await settle(vm)
+        XCTAssertEqual(vm.cashEligibility, .cardCheckFailed)
+        vm.setPaymentType(RecurringPaymentType.cash)
+        XCTAssertNotEqual(vm.formState.paymentType, RecurringPaymentType.cash)
     }
 
     // MARK: - What the form offers
@@ -322,6 +345,39 @@ final class CreateRecurringCashTests: XCTestCase {
 
     /// The server's refusal is already a sentence the customer reads, so the choice is taken away
     /// without a second one.
+    func testDeferredPostCardRefusalLeavesCashPendingUntilOneRecoveryRead() async {
+        let client = FakeRecurringBookingClient()
+        client.updateResult = .failure(ApiError(code: "order.cash_requires_saved_card", httpStatus: 400))
+        let cards = FakeSavedCardClient(reads: [
+            .success([PaymentsFixtures.czkCard]), .success([PaymentsFixtures.czkCard]), .success([])
+        ])
+        let (vm, _) = makeVM(requiredEmployees: 1, editing: Self.cashSchedule, recurringClient: client, cards: cards)
+        await vm.load()
+        await settle(vm)
+        var post: CheckedContinuation<Void, Never>?
+        var recovery: CheckedContinuation<Void, Never>?
+        client.beforeUpdate = { await withCheckedContinuation { post = $0 } }
+        cards.beforeRead = {
+            if cards.readCount == 3 { await withCheckedContinuation { recovery = $0 } }
+        }
+        let submit = Task { await vm.submit() }
+        await eventually { post != nil }
+        XCTAssertEqual(vm.cashEligibility, .available)
+        post?.resume()
+        await eventually { recovery != nil }
+        XCTAssertEqual(vm.cashEligibility, .pending)
+        XCTAssertNil(vm.formState.paymentType)
+        vm.setPaymentType(RecurringPaymentType.cash)
+        XCTAssertNil(vm.formState.paymentType)
+        recovery?.resume()
+        let saved = await submit.value
+        await eventually { vm.cashEligibility == .needsSavedCard }
+        XCTAssertFalse(saved)
+        XCTAssertEqual(vm.cashEligibility, .needsSavedCard)
+        XCTAssertEqual(cards.readCount, 3)
+        XCTAssertEqual(client.updateInputs.count, 1)
+    }
+
     func testTheServersCashRefusalTakesTheChoiceAway() async {
         let client = FakeRecurringBookingClient()
         client.updateResult = .failure(ApiError(code: CashEligibility.refusalCode, httpStatus: 400))

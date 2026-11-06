@@ -92,7 +92,7 @@ phase on both app targets) rather than failing silently:
 
 | What is missing | Simulator / Debug | Release |
 |---|---|---|
-| `STRIPE_PUBLISHABLE_KEY` | warning; card payment hidden, cash only (fail-closed) | build **error** |
+| `STRIPE_PUBLISHABLE_KEY` | warning; card payment hidden. Cash still requires an already usable saved card in this currency and a one-cleaner booking; otherwise no payment method is available. | build **error** |
 | `DEVELOPMENT_TEAM` | no diagnostic — the simulator needs no signing | see below |
 
 A secret key (`sk_...`) pasted into the publishable slot is always a build error. Verify the
@@ -122,6 +122,29 @@ cd src/cleansia_ios
 (cd CleansiaCustomer && xcodegen generate)
 open Cleansia.xcworkspace
 ```
+
+### Building the current source and understanding the version
+
+Open the workspace inside the checkout containing your changes. Two copies of
+`Cleansia.xcworkspace` can look identical in Xcode while building different source. Check the full
+workspace path in Xcode's File inspector, select `CleansiaCustomer` or `CleansiaPartner` and the
+intended device, then use **Product → Run** (`⌘R`) to build and install that checkout. Launching the
+app from the phone's Home Screen opens its last installed copy; it does not build your changes.
+
+The version label does not identify a source revision. Both `project.yml` files currently set
+`MARKETING_VERSION: "1.0.0"` and `CURRENT_PROJECT_VERSION: "1"`, so ordinary local runs keep showing
+`1.0.0 (1)` even when Xcode recompiles changed code. The release lanes ask App Store Connect for the
+next build number and pass it to the archive; they do not rewrite the local project defaults.
+
+For a persistent local label change, edit `MARKETING_VERSION` or `CURRENT_PROJECT_VERSION` in the
+appropriate `project.yml` and regenerate that project. Change both specs when both apps need the
+same version. Editing the generated Xcode project's version fields is temporary. Uploads must use
+the release lane, which assigns a new build number. Cleaning caches alone changes neither source
+selection nor version numbers.
+
+If a run still appears stale after checking the workspace, scheme and device, stop it, use
+**Product → Clean Build Folder** (`⇧⌘K`) once, then Run again. Keep release archives, exported IPAs,
+dSYMs and signing configuration when removing old intermediates.
 
 The package builds and tests on an iOS simulator. `CleansiaCore` is iOS-only (`platforms: [.iOS(.v16)]`),
 so a bare `swift build` host-builds for macOS and fails the iOS-only SwiftUI availability checks — use an

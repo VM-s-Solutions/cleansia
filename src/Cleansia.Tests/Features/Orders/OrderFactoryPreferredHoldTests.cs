@@ -229,7 +229,7 @@ public class OrderFactoryPreferredHoldTests
             WorkContractResolvers.Resolver().Object,
             _notificationProducer.Object,
             Mock.Of<IAdminNotifier>(),
-            NullLogger<OrderFactory>.Instance);
+            NullLogger<OrderFactory>.Instance, Cleansia.Tests.Common.SavedCardTestData.Repository());
 
     /// <summary>
     /// A signed-in customer's one-off CASH booking by default — the one shape that is offerable the

@@ -405,6 +405,7 @@ public sealed class RecurringMaterializationDedupeTests : IDisposable
                 new UserRepository(ctx), NullLogger<NotificationProducer>.Instance);
         });
         services.AddScoped<IReceivableRepository>(_ => Mock.Of<IReceivableRepository>());
+        services.AddSingleton(Cleansia.Tests.Common.SavedCardTestData.Repository());
         services.AddScoped<MaterializeRecurringBookingTemplate.Handler>();
 
         return services.BuildServiceProvider();
@@ -451,7 +452,7 @@ public sealed class RecurringMaterializationDedupeTests : IDisposable
             WorkContractResolvers.Resolver().Object,
             new Mock<INotificationProducer>().Object,
             Mock.Of<IAdminNotifier>(),
-            NullLogger<OrderFactory>.Instance);
+            NullLogger<OrderFactory>.Instance, Cleansia.Tests.Common.SavedCardTestData.Repository());
     }
 
     private static IOrderPricingCalculator PricingCalculator()

@@ -16,14 +16,6 @@ final class SavedCardTests: XCTestCase {
     ]
 
     /// Android's `PaymentsCopyTest` holds the same words against the same strings.
-    private static let cashGuaranteeVocabulary = [
-        "en": ["cash", "guarantee", "fee"],
-        "cs": ["hotovost", "zaruč", "poplat"],
-        "sk": ["hotovos", "zaruč", "poplat"],
-        "uk": ["готівк", "гарант", "збор"],
-        "ru": ["наличн", "гарант", "сбор"]
-    ]
-
     private static let speedClaimVocabulary = [
         "en": ["quick", "fast", "speed"],
         "cs": ["rychl"],
@@ -56,14 +48,19 @@ final class SavedCardTests: XCTestCase {
         XCTAssertEqual(L10n.Booking.savedCardConsent, L10n.localized(key))
     }
 
-    /// Cash needs no saved card and nothing charges one (→ /product/business-rules#card-guarantee). The
-    /// consent sentence printed with the tick is read too, in the version the server records.
-    func testTheSavedCardCopyNeitherTiesTheCardToCashNorSaysFeesMayBeChargedToIt() throws {
-        let offending = try savedCardCopySaying(Self.cashGuaranteeVocabulary)
-        XCTAssertTrue(offending.isEmpty, "the saved card is still described as the cash guarantee: \(offending)")
+    func testThePaymentsCopyExplainsThatCashRequiresASavedCardInEveryLocale() throws {
+        let restore = L10n.bundle
+        defer { L10n.bundle = restore }
+        let cashWords = ["en": "cash", "cs": "hotov", "sk": "hotov", "uk": "готів", "ru": "налич"]
+        for (language, word) in cashWords {
+            L10n.bundle = try localeBundle(language)
+            for key in ["payments_card_intro", "payments_card_empty", "payments_card_remove_message"] {
+                XCTAssertTrue(L10n.localized(key).lowercased().contains(word), "\(language)/\(key)")
+            }
+        }
     }
 
-    /// The saved-card copy makes no cash, guarantee, fee or speed claim (meeting 2026-10-04)
+    /// Requiring a card for cash does not claim that saving it makes card payments faster.
     /// → /product/business-rules#saved-cards
     func testTheSavedCardCopyDoesNotPromiseQuickerCardPayments() throws {
         let offending = try savedCardCopySaying(Self.speedClaimVocabulary)

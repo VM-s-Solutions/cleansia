@@ -4,7 +4,6 @@ import SwiftUI
 struct ChecklistItem: Identifiable, Equatable {
     let id: String
     let label: String
-    let glyph: String?
 }
 
 struct ChecklistGroups: Equatable {
@@ -24,22 +23,20 @@ enum ChecklistBuilder {
         // name fallback for an id-less row stays the RAW snapshot name (never the
         // localized one) so ticks also survive a language switch.
         let services = order.services.map { svc in
-            ChecklistItem(id: "service:\(svc.id ?? svc.name)", label: svc.localizedName(for: locale), glyph: nil)
+            ChecklistItem(id: "service:\(svc.id ?? svc.name)", label: svc.localizedName(for: locale))
         }
         let packages = order.packages.map { pkg in
-            ChecklistItem(id: "package:\(pkg.id ?? pkg.name)", label: pkg.localizedName(for: locale), glyph: nil)
+            ChecklistItem(id: "package:\(pkg.id ?? pkg.name)", label: pkg.localizedName(for: locale))
         }
         let extras = order.extras.map { slug in
-            ChecklistItem(id: "extra:\(slug)", label: OrderExtras.name(slug), glyph: OrderExtras.emoji(slug))
+            ChecklistItem(id: "extra:\(slug)", label: OrderExtras.name(slug))
         }
         return ChecklistGroups(services: services, packages: packages, extras: extras)
     }
 }
 
-/// The cleaner's tick-list. Rendered for any status the parent allows (mine &
-/// Confirmed/OnTheWay/InProgress) but only INTERACTIVE once the job is actually
-/// InProgress — preventing pre-checking before the work is real (the
-/// `CleaningChecklist.kt` parity).
+/// The cleaner's tick-list, in the Cleaning step: the package with its rooms and baths, then each extra by its
+/// catalogue name. Ticks live on this phone only, and the list says so; it is no gate on completing.
 struct CleaningChecklistView: View {
     @Environment(\.locale) private var locale
     let order: OrderDetail
@@ -47,108 +44,65 @@ struct CleaningChecklistView: View {
     let interactive: Bool
     let onToggle: (String, Bool) -> Void
 
-    private var groups: ChecklistGroups {
-        ChecklistBuilder.items(for: order, locale: locale)
-    }
-
-    private var allItems: [ChecklistItem] {
-        groups.all
-    }
-
-    private var doneCount: Int {
-        allItems.filter { checkedIds.contains($0.id) }.count
+    private var items: [ChecklistItem] {
+        ChecklistBuilder.items(for: order, locale: locale).all
     }
 
     var body: some View {
-        if !allItems.isEmpty {
-            OrderSectionCard(title: L10n.Orders.checklistSectionTitle, systemImage: "checklist") {
-                VStack(alignment: .leading, spacing: Spacing.s) {
-                    progressRow
-                    group(L10n.Orders.checklistServicesLabel, groups.services)
-                    group(L10n.Orders.checklistPackagesLabel, groups.packages)
-                    group(L10n.Orders.checklistExtrasLabel, groups.extras)
+        let items = items
+        if !items.isEmpty {
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                HStack(alignment: .firstTextBaseline, spacing: Spacing.xs) {
+                    DetailEyebrow(text: L10n.Orders.checklistSectionTitle)
+                    Spacer(minLength: Spacing.xs)
+                    Text(L10n.Orders.checklistProgress(items.filter { checkedIds.contains($0.id) }.count, items.count))
+                        .font(CleansiaTypography.labelMedium)
+                        .monospacedDigit()
+                        .foregroundColor(CleansiaColors.onSurfaceVariant)
+                        .fixedSize()
                 }
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+                        ChecklistRow(
+                            labels: index == 0 ? [item.label] + roomsAndBaths : [item.label],
+                            checked: checkedIds.contains(item.id),
+                            interactive: interactive,
+                            onToggle: { onToggle(item.id, $0) }
+                        )
+                    }
+                }
+                OrdersCaption(text: L10n.Orders.checklistPhoneOnly)
             }
             .id(locale.identifier)
         }
     }
 
-    private var allDone: Bool {
-        doneCount == allItems.count
-    }
-
-    @ViewBuilder
-    private var progressRow: some View {
-        let progress = allItems.isEmpty ? 0 : Double(doneCount) / Double(allItems.count)
-        VStack(alignment: .leading, spacing: Spacing.xs) {
-            HStack {
-                Text(L10n.Orders.checklistProgress(doneCount, allItems.count))
-                    .font(CleansiaTypography.titleMedium)
-                    .foregroundColor(allDone ? CleansiaColors.primaryText : CleansiaColors.onSurface)
-                Spacer()
-                if allDone {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(CleansiaColors.primary)
-                }
-            }
-            ProgressView(value: progress)
-                .tint(CleansiaColors.primary)
-            if !interactive {
-                Text(L10n.Orders.checklistLockedHint)
-                    .font(CleansiaTypography.labelSmall)
-                    .foregroundColor(CleansiaColors.onSurfaceVariant)
-            } else if allDone {
-                Text(L10n.Orders.checklistAllDoneHint)
-                    .font(CleansiaTypography.labelSmall)
-                    .foregroundColor(CleansiaColors.primaryText)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func group(_ label: String, _ items: [ChecklistItem]) -> some View {
-        if !items.isEmpty {
-            VStack(alignment: .leading, spacing: Spacing.xxs) {
-                Text(label)
-                    .font(CleansiaTypography.labelSmall)
-                    .foregroundColor(CleansiaColors.onSurfaceVariant)
-                ForEach(items) { item in
-                    ChecklistRow(
-                        item: item,
-                        checked: checkedIds.contains(item.id),
-                        interactive: interactive,
-                        onToggle: { onToggle(item.id, $0) }
-                    )
-                }
-            }
-        }
+    private var roomsAndBaths: [String] {
+        [
+            order.rooms > 0 ? L10n.Orders.rooms(order.rooms) : nil,
+            order.bathrooms > 0 ? L10n.Orders.baths(order.bathrooms) : nil
+        ].compactMap { $0 }
     }
 }
 
+/// One line of the list: the Core box on the first line of its words, 44 high, no rule under it.
 private struct ChecklistRow: View {
-    let item: ChecklistItem
+    let labels: [String]
     let checked: Bool
     let interactive: Bool
     let onToggle: (Bool) -> Void
 
     var body: some View {
-        Button { onToggle(!checked) } label: {
-            HStack(spacing: Spacing.xs) {
-                Image(systemName: checked ? "checkmark.square.fill" : "square")
-                    .font(.system(size: 20))
-                    .foregroundColor(checked ? CleansiaColors.primary : CleansiaColors.outline)
-                if let glyph = item.glyph {
-                    Text(glyph)
-                }
-                Text(item.label)
-                    .font(CleansiaTypography.bodyMedium)
-                    .foregroundColor(checked ? CleansiaColors.onSurfaceVariant : CleansiaColors.onSurface)
-                    .strikethrough(checked)
-                Spacer()
-            }
-            .contentShape(Rectangle())
+        CleansiaCheckbox(
+            checked: Binding(get: { checked }, set: { onToggle($0) }),
+            enabled: interactive
+        ) {
+            OrdersDotFlow(items: labels.map { Text($0) }, style: CleansiaTypography.scale.bodyMedium, tiesLast: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .buttonStyle(.plain)
-        .disabled(!interactive)
+        .frame(minHeight: 44)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(labels.joined(separator: ", "))
+        .accessibilityAddTraits(checked ? [.isButton, .isSelected] : .isButton)
     }
 }

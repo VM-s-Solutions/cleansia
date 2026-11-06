@@ -109,6 +109,7 @@ fun ForgotPasswordScreen(
                     value = uiState.email,
                     onValueChange = viewModel::onEmailChange,
                     label = stringResource(R.string.email),
+                    placeholder = stringResource(R.string.auth_email_placeholder),
                     keyboardType = KeyboardType.Email,
                     errorText = uiState.emailError,
                     enabled = !uiState.isLoading,

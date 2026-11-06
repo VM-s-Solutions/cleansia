@@ -443,6 +443,12 @@ public partial class CreateOrderCallerCurrencyTests(PostgresContainerFixture fix
         user.Id = CustomerUserId;
         user.ConfirmEmail();
         context.Add(user);
+        foreach (var currencyId in new[] { Czk, Eur })
+        {
+            var card = SavedCard.Start(CustomerUserId, currencyId, "cus_caller_currency", null, null);
+            card.Capture($"pm_caller_{currencyId}", "visa", "4242", 12, 2035);
+            context.SavedCards.Add(card);
+        }
 
         // The guest case seeds where the provider answers null; every other case is a no-op here.
         StampUnstampedAdded(context, TestTenants.Default);

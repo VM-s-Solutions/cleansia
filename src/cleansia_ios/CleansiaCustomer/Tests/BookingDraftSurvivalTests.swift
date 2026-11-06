@@ -14,7 +14,8 @@ final class BookingDraftSurvivalTests: XCTestCase {
             catalogClient: FakeCatalogClient(),
             quoteClient: FakeQuoteClient(),
             quoteDebounce: .milliseconds(400),
-            scheduler: scheduler.eraseToAnyScheduler()
+            scheduler: scheduler.eraseToAnyScheduler(),
+            savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])])
         )
     }
 
@@ -320,7 +321,8 @@ final class BookingDraftSurvivalTests: XCTestCase {
             catalogClient: FakeCatalogClient(),
             quoteClient: FakeQuoteClient(),
             quoteDebounce: .milliseconds(400),
-            scheduler: scheduler.eraseToAnyScheduler()
+            scheduler: scheduler.eraseToAnyScheduler(),
+            savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])])
         )
         let before = Date()
 
@@ -361,7 +363,8 @@ final class BookingDraftSurvivalTests: XCTestCase {
             tokenStore: FakeTokenStore.signedIn(),
             isCardPaymentAvailable: false,
             quoteDebounce: .milliseconds(400),
-            scheduler: TestScheduler.dispatch.eraseToAnyScheduler()
+            scheduler: TestScheduler.dispatch.eraseToAnyScheduler(),
+            savedCardClient: FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])])
         )
     }
 

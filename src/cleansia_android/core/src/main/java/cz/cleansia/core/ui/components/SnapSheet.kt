@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -66,10 +67,14 @@ object SnapSheetDefaults {
 @OptIn(ExperimentalFoundationApi::class)
 class SnapSheetState internal constructor(
     internal val draggable: AnchoredDraggableState<SnapAnchor>,
-    private val minSheetHeight: Dp,
-    private val density: Density,
+    internal val minSheetHeight: Dp,
+    density: Density,
+    private val stops: Set<SnapAnchor> = SnapAnchor.entries.toSet(),
 ) {
     private var containerHeightPx by mutableFloatStateOf(0f)
+    private var minSheetHeightPx by mutableFloatStateOf(with(density) { minSheetHeight.toPx() })
+    private var minSheetTopPx by mutableFloatStateOf(0f)
+    private var mapFocusHeightPx by mutableStateOf<Float?>(null)
 
     val currentAnchor: SnapAnchor get() = draggable.currentValue
 
@@ -89,11 +94,14 @@ class SnapSheetState internal constructor(
         draggable.animateTo(anchor)
     }
 
-    internal fun onContainerHeight(heightPx: Float) {
-        containerHeightPx = heightPx
+    internal fun onLayout(containerHeightPx: Float, minSheetHeightPx: Float, minSheetTopPx: Float, mapFocusHeightPx: Float? = null) {
+        this.containerHeightPx = containerHeightPx
+        this.minSheetHeightPx = minSheetHeightPx
+        this.minSheetTopPx = minSheetTopPx
+        this.mapFocusHeightPx = mapFocusHeightPx
         draggable.updateAnchors(
             DraggableAnchors {
-                SnapAnchor.entries.forEach { anchor -> anchor at restingTopPx(anchor) }
+                SnapAnchor.entries.filter { it in stops }.forEach { anchor -> anchor at restingTopPx(anchor) }
             },
         )
     }
@@ -101,7 +109,9 @@ class SnapSheetState internal constructor(
     private fun restingTopPx(anchor: SnapAnchor): Float = snapSheetTopPx(
         anchor = anchor,
         containerHeightPx = containerHeightPx,
-        minSheetHeightPx = with(density) { minSheetHeight.toPx() },
+        minSheetHeightPx = minSheetHeightPx,
+        minSheetTopPx = minSheetTopPx,
+        mapFocusHeightPx = mapFocusHeightPx,
     )
 
     internal fun nestedScrollConnection(): NestedScrollConnection = object : NestedScrollConnection {
@@ -149,10 +159,11 @@ class SnapSheetState internal constructor(
 fun rememberSnapSheetState(
     initialAnchor: SnapAnchor = SnapAnchor.Peek,
     minSheetHeight: Dp = SnapSheetDefaults.MinSheetHeight,
+    stops: Set<SnapAnchor> = SnapAnchor.entries.toSet(),
 ): SnapSheetState {
     val density = LocalDensity.current
     val decay = rememberSplineBasedDecay<Float>()
-    return remember(density, minSheetHeight) {
+    return remember(density, minSheetHeight, stops) {
         SnapSheetState(
             draggable = AnchoredDraggableState(
                 initialValue = initialAnchor,
@@ -163,6 +174,7 @@ fun rememberSnapSheetState(
             ),
             minSheetHeight = minSheetHeight,
             density = density,
+            stops = stops,
         )
     }
 }
@@ -171,6 +183,9 @@ fun rememberSnapSheetState(
  * Non-modal sheet parked at one of three anchors over a full-bleed backdrop — the map layout.
  *
  * **Nothing here is ever dismissed**: the shallowest anchor still leaves the sheet on screen.
+ * [minSheetTop] keeps the sheet's top at or under that line; [minSheetHeight] replaces the state's floor while the
+ * host measures it, without resetting where the sheet rests. [mapFocusHeight] is the sheet's height at
+ * [SnapAnchor.MapFocus] in place of its share of the container; null keeps the share.
  * -> /flows/offerability-and-take
  */
 @Composable
@@ -180,14 +195,21 @@ fun SnapSheet(
     modifier: Modifier = Modifier,
     sheetShape: Shape = SnapSheetDefaults.Shape,
     sheetColor: Color = MaterialTheme.colorScheme.surface,
+    minSheetTop: Dp = 0.dp,
+    minSheetHeight: Dp? = null,
+    mapFocusHeight: Dp? = null,
     backdrop: @Composable BoxScope.() -> Unit,
     overlay: @Composable BoxScope.() -> Unit = {},
     sheetContent: @Composable ColumnScope.() -> Unit,
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val containerHeightPx = constraints.maxHeight.toFloat()
-        remember(state, containerHeightPx) {
-            state.onContainerHeight(containerHeightPx)
+        val density = LocalDensity.current
+        val floorPx = with(density) { (minSheetHeight ?: state.minSheetHeight).toPx() }
+        val topPx = with(density) { minSheetTop.toPx() }
+        val focusPx = mapFocusHeight?.let { with(density) { it.toPx() } }
+        remember(state, containerHeightPx, floorPx, topPx, focusPx) {
+            state.onLayout(containerHeightPx, floorPx, topPx, focusPx)
             containerHeightPx
         }
         val nestedScroll = remember(state) { state.nestedScrollConnection() }

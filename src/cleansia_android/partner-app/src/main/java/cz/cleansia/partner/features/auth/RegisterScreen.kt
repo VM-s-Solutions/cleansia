@@ -134,6 +134,7 @@ fun RegisterScreen(
                 value = uiState.email,
                 onValueChange = viewModel::onEmailChange,
                 label = stringResource(R.string.email),
+                placeholder = stringResource(R.string.auth_email_placeholder),
                 modifier = Modifier.semantics { contentType = ContentType.NewUsername },
                 keyboardType = KeyboardType.Email,
                 errorText = uiState.emailError,

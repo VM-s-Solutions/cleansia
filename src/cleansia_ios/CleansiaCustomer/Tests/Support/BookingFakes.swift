@@ -150,6 +150,7 @@ final class FakeOrderCreateClient: OrderCreateClient, @unchecked Sendable {
     var result: ApiResult<CreatedOrder>
     private(set) var callCount = 0
     private(set) var commands: [CreateOrderCommand] = []
+    var beforeCreate: (() async -> Void)?
 
     init(result: ApiResult<CreatedOrder> = .success(CreatedOrder(id: "order-1", confirmationCode: "CLN-001"))) {
         self.result = result
@@ -158,6 +159,7 @@ final class FakeOrderCreateClient: OrderCreateClient, @unchecked Sendable {
     func create(_ command: CreateOrderCommand) async -> ApiResult<CreatedOrder> {
         callCount += 1
         commands.append(command)
+        await beforeCreate?()
         return result
     }
 }
@@ -202,6 +204,7 @@ final class FakePaymentIntentClient: PaymentIntentClient, @unchecked Sendable {
 final class FakePaymentSheetPresenter: PaymentSheetPresenting, @unchecked Sendable {
     var outcome: PaymentSheetOutcome
     private(set) var presentations: [PaymentSheetPresentation] = []
+    var beforeReturning: (() async -> Void)?
 
     init(outcome: PaymentSheetOutcome = .completed) {
         self.outcome = outcome
@@ -209,6 +212,7 @@ final class FakePaymentSheetPresenter: PaymentSheetPresenting, @unchecked Sendab
 
     func present(_ presentation: PaymentSheetPresentation) async -> PaymentSheetOutcome {
         presentations.append(presentation)
+        await beforeReturning?()
         return outcome
     }
 }
@@ -235,7 +239,7 @@ final class FakeTokenStore: TokenStore, @unchecked Sendable {
         stored = tokens
     }
 
-    static func signedIn(accessToken: String = "token-1") -> FakeTokenStore {
+    static func signedIn(accessToken: String = FakeTokenStore.jwt()) -> FakeTokenStore {
         let future = Date(timeIntervalSinceNow: 9999)
         return FakeTokenStore(AuthTokens(
             accessToken: accessToken,
@@ -243,6 +247,12 @@ final class FakeTokenStore: TokenStore, @unchecked Sendable {
             refreshToken: "r-1",
             refreshTokenExpiresAt: future
         ))
+    }
+
+    static func jwt(userId: String = "customer-1", nonce: String = "original") -> String {
+        let payload = Data("{\"sub\":\"\(userId)\",\"nonce\":\"\(nonce)\"}".utf8)
+            .base64EncodedString().replacingOccurrences(of: "=", with: "")
+        return "e30.\(payload).signature"
     }
 
     static var guest: FakeTokenStore {

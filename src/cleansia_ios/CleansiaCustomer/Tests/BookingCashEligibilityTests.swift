@@ -16,8 +16,9 @@ final class BookingCashEligibilityTests: XCTestCase {
         requiredEmployees: Int,
         create: FakeOrderCreateClient = FakeOrderCreateClient(),
         tokenStore: FakeTokenStore = .signedIn(),
-        scheduler: TestScheduler<DispatchQueue.SchedulerTimeType, DispatchQueue.SchedulerOptions> = .dispatch
-    ) -> (BookingViewModel, FakeQuoteClient) {
+        scheduler: TestScheduler<DispatchQueue.SchedulerTimeType, DispatchQueue.SchedulerOptions> = .dispatch,
+        cards: FakeSavedCardClient = FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])])
+    ) async -> (BookingViewModel, FakeQuoteClient) {
         let quote = FakeQuoteClient(result: .success(Self.quote(requiredEmployees: requiredEmployees)))
         let vm = BookingViewModel(
             quoteClient: quote,
@@ -27,8 +28,10 @@ final class BookingCashEligibilityTests: XCTestCase {
             tokenStore: tokenStore,
             isCardPaymentAvailable: false,
             quoteDebounce: .milliseconds(400),
-            scheduler: scheduler.eraseToAnyScheduler()
+            scheduler: scheduler.eraseToAnyScheduler(),
+            savedCardClient: cards
         )
+        await vm.refreshCashCard()
         return (vm, quote)
     }
 
@@ -74,7 +77,7 @@ final class BookingCashEligibilityTests: XCTestCase {
     // MARK: - What the payment step offers
 
     func testCashIsOfferedOnceAOneCleanerQuoteDescribesTheSelection() async {
-        let (vm, _) = makeVM(requiredEmployees: 1)
+        let (vm, _) = await makeVM(requiredEmployees: 1)
         vm.update(readyState())
 
         XCTAssertEqual(vm.cashEligibility, .pending)
@@ -89,7 +92,7 @@ final class BookingCashEligibilityTests: XCTestCase {
     }
 
     func testTwoRequiredCleanersMeanCardOnly() async {
-        let (vm, _) = makeVM(requiredEmployees: 2)
+        let (vm, _) = await makeVM(requiredEmployees: 2)
         vm.update(readyState())
         await vm.refreshQuoteForTest()
 
@@ -101,7 +104,7 @@ final class BookingCashEligibilityTests: XCTestCase {
     }
 
     func testAGuestIsNeverOfferedCashEvenForOneCleaner() async {
-        let (vm, _) = makeVM(requiredEmployees: 1, tokenStore: .guest)
+        let (vm, _) = await makeVM(requiredEmployees: 1, tokenStore: .guest)
         vm.update(readyState())
         await vm.refreshQuoteForTest()
 
@@ -113,7 +116,7 @@ final class BookingCashEligibilityTests: XCTestCase {
     /// A quote for an earlier selection says nothing about this one: it reads as pending, which keeps a
     /// cash choice rather than flapping it away on every edit.
     func testAChangedSelectionIsPendingAndKeepsCashUntilItIsQuoted() async {
-        let (vm, _) = makeVM(requiredEmployees: 1)
+        let (vm, _) = await makeVM(requiredEmployees: 1)
         vm.update(readyState())
         await vm.refreshQuoteForTest()
         vm.selectPayment(.cash)
@@ -131,7 +134,7 @@ final class BookingCashEligibilityTests: XCTestCase {
     // MARK: - A stale cash choice is taken away, never switched
 
     func testAQuoteThatNeedsTwoCleanersTakesCashAwayWithoutChoosingCard() async {
-        let (vm, quote) = makeVM(requiredEmployees: 1)
+        let (vm, quote) = await makeVM(requiredEmployees: 1)
         let received = events(of: vm)
         vm.update(readyState())
         await vm.refreshQuoteForTest()
@@ -153,7 +156,7 @@ final class BookingCashEligibilityTests: XCTestCase {
     /// The path the wizard runs on every edit: the debounced re-quote, not the submit's own quote.
     func testAnEditThatNeedsTwoCleanersTakesCashAwayOnTheReQuote() async {
         let scheduler = TestScheduler.dispatch
-        let (vm, quote) = makeVM(requiredEmployees: 1, scheduler: scheduler)
+        let (vm, quote) = await makeVM(requiredEmployees: 1, scheduler: scheduler)
         let received = events(of: vm)
         vm.update(readyState())
         scheduler.advance(by: .milliseconds(400))
@@ -180,7 +183,7 @@ final class BookingCashEligibilityTests: XCTestCase {
     /// A heavier level lengthens the job, so the crew the server quotes for it can outgrow cash.
     func testALevelThatNeedsTwoCleanersTakesCashAwayOnTheReQuote() async {
         let scheduler = TestScheduler.dispatch
-        let (vm, quote) = makeVM(requiredEmployees: 1, scheduler: scheduler)
+        let (vm, quote) = await makeVM(requiredEmployees: 1, scheduler: scheduler)
         let received = events(of: vm)
         vm.update(readyState())
         vm.setDirtiness(.normal)
@@ -200,7 +203,7 @@ final class BookingCashEligibilityTests: XCTestCase {
     }
 
     func testTheNextChoiceClearsTheNotice() async {
-        let (vm, _) = makeVM(requiredEmployees: 2)
+        let (vm, _) = await makeVM(requiredEmployees: 2)
         vm.update(readyState(payment: .cash))
         await vm.refreshQuoteForTest()
         XCTAssertTrue(vm.cashCleared)
@@ -212,7 +215,7 @@ final class BookingCashEligibilityTests: XCTestCase {
     }
 
     func testTheCrewNeverTouchesACardChoice() async {
-        let (vm, _) = makeVM(requiredEmployees: 3)
+        let (vm, _) = await makeVM(requiredEmployees: 3)
         let received = events(of: vm)
         vm.update(readyState(payment: .card))
 
@@ -227,7 +230,7 @@ final class BookingCashEligibilityTests: XCTestCase {
 
     func testSubmittingCashForATwoCleanerBookingSendsNothing() async {
         let create = FakeOrderCreateClient()
-        let (vm, _) = makeVM(requiredEmployees: 2, create: create)
+        let (vm, _) = await makeVM(requiredEmployees: 2, create: create)
         let received = events(of: vm)
         vm.update(readyState(payment: .cash))
 
@@ -241,7 +244,7 @@ final class BookingCashEligibilityTests: XCTestCase {
 
     func testSubmittingCashForAOneCleanerBookingSendsCash() async {
         let create = FakeOrderCreateClient()
-        let (vm, _) = makeVM(requiredEmployees: 1, create: create)
+        let (vm, _) = await makeVM(requiredEmployees: 1, create: create)
         vm.update(readyState(payment: .cash))
 
         let outcome = await vm.submit()
@@ -250,11 +253,10 @@ final class BookingCashEligibilityTests: XCTestCase {
         XCTAssertEqual(create.commands.first?.paymentType, ._1)
     }
 
-    /// Cash is paid to the cleaner and no card stands behind it: the review step asks only the ticks every
-    /// booking asks, and the slide books with no card saved, read or captured first.
-    func testCashBooksWithNoCardSavedAndNoCardTick() async {
+    /// A previously verified guarantee card does not require a second card-saving consent tick.
+    func testCashWithASavedGuaranteeNeedsNoNewCardSavingTick() async {
         let create = FakeOrderCreateClient()
-        let (vm, _) = makeVM(requiredEmployees: 1, create: create)
+        let (vm, _) = await makeVM(requiredEmployees: 1, create: create)
         vm.update(readyState(payment: .cash))
         vm.update { current in
             var next = current
@@ -273,7 +275,7 @@ final class BookingCashEligibilityTests: XCTestCase {
 
     func testCardIsSentWhateverTheCrew() async {
         let create = FakeOrderCreateClient()
-        let (vm, _) = makeVM(requiredEmployees: 4, create: create)
+        let (vm, _) = await makeVM(requiredEmployees: 4, create: create)
         vm.update(readyState(payment: .card))
 
         _ = await vm.submit()
@@ -284,7 +286,7 @@ final class BookingCashEligibilityTests: XCTestCase {
     /// No choice is not cash: the command used to default a missing choice to cash.
     func testNoPaymentChoiceIsNeverSentAsCash() async {
         let create = FakeOrderCreateClient()
-        let (vm, _) = makeVM(requiredEmployees: 1, create: create)
+        let (vm, _) = await makeVM(requiredEmployees: 1, create: create)
         vm.update(readyState(payment: nil))
 
         let outcome = await vm.submit()
@@ -297,7 +299,7 @@ final class BookingCashEligibilityTests: XCTestCase {
     /// choice is taken away without a second one.
     func testTheServersCashRefusalTakesTheChoiceAwayQuietly() async {
         let refusal = ApiError(code: CashEligibility.refusalCode, httpStatus: 400)
-        let (vm, _) = makeVM(requiredEmployees: 1, create: FakeOrderCreateClient(result: .failure(refusal)))
+        let (vm, _) = await makeVM(requiredEmployees: 1, create: FakeOrderCreateClient(result: .failure(refusal)))
         let received = events(of: vm)
         vm.update(readyState(payment: .cash))
 
@@ -307,6 +309,88 @@ final class BookingCashEligibilityTests: XCTestCase {
         XCTAssertNil(vm.state.paymentMethod)
         XCTAssertTrue(vm.cashCleared)
         XCTAssertEqual(received(), [])
+    }
+
+    func testNoSavedCardKeepsCashUnavailableAndSendsNoOrder() async {
+        let create = FakeOrderCreateClient()
+        let (vm, _) = await makeVM(requiredEmployees: 1, create: create, cards: FakeSavedCardClient())
+        vm.update(readyState())
+        await vm.refreshQuoteForTest()
+        XCTAssertEqual(vm.cashEligibility, .needsSavedCard)
+        vm.selectPayment(.cash)
+        XCTAssertNil(vm.state.paymentMethod)
+        vm.update(readyState(payment: .cash))
+        let outcome = await vm.submit()
+        XCTAssertEqual(outcome, .paymentMethodCleared)
+        XCTAssertTrue(create.commands.isEmpty)
+    }
+
+    func testExpiredOrOtherCurrencyCardsDoNotGuaranteeCash() async {
+        for card in [
+            PaymentsFixtures.card(id: "expired", currencyCode: "CZK", expYear: 2020),
+            PaymentsFixtures.card(id: "eur", currencyCode: "EUR")
+        ] {
+            let cards = FakeSavedCardClient(reads: [.success([card])])
+            let (vm, _) = await makeVM(requiredEmployees: 1, cards: cards)
+            vm.update(readyState())
+            await vm.refreshQuoteForTest()
+            XCTAssertEqual(vm.cashEligibility, .needsSavedCard)
+        }
+    }
+
+    func testRemovingTheSavedCardAfterTheOptionWasShownPreventsCreate() async {
+        let create = FakeOrderCreateClient()
+        let cards = FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard]), .success([])])
+        let (vm, _) = await makeVM(requiredEmployees: 1, create: create, cards: cards)
+        vm.update(readyState())
+        await vm.refreshQuoteForTest()
+        vm.selectPayment(.cash)
+        XCTAssertEqual(vm.state.paymentMethod, .cash)
+        let outcome = await vm.submit()
+        XCTAssertEqual(outcome, .paymentMethodCleared)
+        XCTAssertEqual(cards.readCount, 2)
+        XCTAssertTrue(create.commands.isEmpty)
+    }
+
+    func testAFailedCardRecheckSendsNothingAndCanBeRetried() async {
+        let create = FakeOrderCreateClient()
+        let error = ApiError(httpStatus: 503)
+        let cards = FakeSavedCardClient(reads: [
+            .success([PaymentsFixtures.czkCard]), .failure(error), .success([PaymentsFixtures.czkCard])
+        ])
+        let (vm, _) = await makeVM(requiredEmployees: 1, create: create, cards: cards)
+        vm.update(readyState(payment: .cash))
+        let outcome = await vm.submit()
+        XCTAssertEqual(outcome, .failed(error))
+        XCTAssertTrue(create.commands.isEmpty)
+        XCTAssertEqual(vm.cashEligibility, .cardCheckFailed)
+        await vm.refreshCashCard()
+        XCTAssertEqual(vm.cashEligibility, .available)
+    }
+
+    func testAnOlderCardSuccessCannotOverwriteANewerFailedCheck() async {
+        let cards = FakeSavedCardClient(reads: [
+            .success([PaymentsFixtures.czkCard]), .failure(ApiError(httpStatus: 503))
+        ])
+        var held: CheckedContinuation<Void, Never>?
+        cards.beforeRead = {
+            if cards.readCount == 1 { await withCheckedContinuation { held = $0 } }
+        }
+        let vm = BookingViewModel(
+            quoteClient: FakeQuoteClient(result: .success(Self.quote(requiredEmployees: 1))),
+            tokenStore: FakeTokenStore.signedIn(),
+            savedCardClient: cards
+        )
+        vm.update(readyState())
+        await vm.refreshQuoteForTest()
+        let older = Task { await vm.refreshCashCard() }
+        await eventually { held != nil }
+        await vm.refreshCashCard()
+        held?.resume()
+        _ = await older.value
+        XCTAssertEqual(vm.cashEligibility, .cardCheckFailed)
+        vm.selectPayment(.cash)
+        XCTAssertNil(vm.state.paymentMethod)
     }
 
     // MARK: - The reason under the options

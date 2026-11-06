@@ -45,17 +45,23 @@ Client                    API
   |                        |
   |-- CreateOrder -------->|
   |   (paymentType: Cash)  |
-  |                        |-- OrderStatus: Confirmed
-  |                        |-- Queue receipt generation
+  |                        |-- OrderStatus: New
+  |                        |-- PaymentStatus: Pending
+  |                        |-- Queue booking e-mail
   |<-- order response -----|
 ```
 
-Cash orders are immediately confirmed without any payment gateway interaction.
+Cash orders become offerable immediately without payment-gateway interaction. They stay `New` with
+`PaymentStatus.Pending` until a cleaner takes the job, which writes `Confirmed`. Recording cash at
+the door writes `Paid`; the receipt is issued at completion.
 
-**Who may choose cash.** Only a signed-in customer whose selection needs exactly one cleaner
+**Who may choose cash.** Only a signed-in customer with a usable verified saved card in the booking's
+currency whose selection needs exactly one cleaner
 (`BookingPolicy.AllowsCash`); a guest, or a booking whose duration needs two cleaners or more, is
 refused with `order.cash_not_available` before anything is reserved, debited or dispatched, and pays by
-card. → [Paying in cash](/product/business-rules#cash)
+card. A missing usable saved card is `order.cash_requires_saved_card`; pending setup, removal,
+expiry or a different currency do not qualify. Cash does not charge the saved card.
+→ [Paying in cash](/product/business-rules#cash)
 
 ## Endpoints
 

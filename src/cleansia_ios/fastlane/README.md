@@ -52,6 +52,11 @@ FASTLANE_SKIP_DOCS=1 bundle exec fastlane partner  api_base_url:https://api-clea
 FASTLANE_SKIP_DOCS=1 bundle exec fastlane customer api_base_url:https://api-cleansia-customer-mobile-weu-dev.azurewebsites.net
 ```
 
+The test hosts use the loopback API `http://127.0.0.1:9`; `api_base_url:` controls the
+archived app. To run tests on a dedicated simulator, set `SCAN_DESTINATION` to
+`platform=iOS Simulator,id=<simulator-UUID>`. Without that override the destination
+remains the installed iPhone 17 simulator.
+
 Keep the `FASTLANE_SKIP_DOCS=1` prefix, or fastlane rewrites this hand-written
 README with its generated lane list, and the next run refuses the dirty tree.
 `bundle exec fastlane all` ships both apps in sequence, but takes no

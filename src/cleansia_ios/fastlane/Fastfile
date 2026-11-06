@@ -144,11 +144,11 @@ def preflight(key, options)
     run_tests(
       workspace: WORKSPACE,
       scheme: app[:scheme],
-      destination: "platform=iOS Simulator,name=iPhone 17",
+      destination: ENV.fetch("SCAN_DESTINATION", "platform=iOS Simulator,name=iPhone 17"),
       # scan otherwise picks a simulator of its own, the first listed once it rules the iPhone 17 out for
       # a runtime newer than the SDK, and runs its device setup there.
       skip_detect_devices: true,
-      xcargs: "SWIFT_OPTIMIZATION_LEVEL=-O SWIFT_COMPILATION_MODE=wholemodule",
+      xcargs: "SWIFT_OPTIMIZATION_LEVEL=-O SWIFT_COMPILATION_MODE=wholemodule API_BASE_URL=http://127.0.0.1:9",
       derived_data_path: File.join(IOS_ROOT, "build", "DerivedData-tests"),
       cloned_source_packages_path: SOURCE_PACKAGES,
       output_directory: File.join(IOS_ROOT, "build", "tests-#{key}"),

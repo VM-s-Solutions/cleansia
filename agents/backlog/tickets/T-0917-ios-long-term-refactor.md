@@ -4,7 +4,7 @@ title: iOS long-term refactor — shared Core pieces, one locale source, lag fix
 size: L
 owner: Michael Chaban
 created: 2026-11-07
-updated: 2026-11-07
+updated: 2026-11-08
 depends_on: []
 blocks: []
 stories: []
@@ -146,3 +146,23 @@ Where the verifier corrected an auditor, the verifier's note wins.
   work; Customer on iOS 26.3: 1960, none failing. Evidence in `ios-longterm-20261107/captures/lag/` and `lag/`.
 
 ### Cleanup
+
+- 2026-11-08 — Built, one commit per item. The dead code is gone from Core and both apps (`431b65239`): in Core the
+  section header, the secure field, the empty `Format` enum, the auth network boundary and its two tests, an empty
+  response type, `AvatarEdit.isPick` and a font registration nobody calls; in the customer app the placeholder tab
+  view, the post-booking timeline and its eleven tests, the referral status enum, the booking summary date formatter
+  and a sign-up test hook; in the partner app a confirm-code test hook and an error key no code reads. The partner's
+  placeholder tab destination and Core's grouped phone formatter, which only a preview and tests use, build for Debug
+  alone; a Release build of the partner app carries neither. The uncalled L10n accessors are gone (`0d97434dc`): 44 in
+  the partner app and 33 in the customer app, with the 73 catalog keys nothing else reads, in all five locales (43
+  partner, 30 customer); every key of the families built at runtime stays, and the catalog checks dropped two stale
+  exceptions. The partner's four identical error views are one `ErrorRetryView`, the dashboard passing a clear
+  background, and its two preview order clients are one `PreviewPartnerOrderClient` (`2d06e77d1`). Lines, net: Core
+  sources −139, Core tests −45, customer sources −248, customer tests −164, customer catalog −1050, partner sources
+  −356, partner catalog −1601; the partner tests gained the 71-line capture of the four failed loads. Captures in en,
+  light and dark at 393 × 852: the four failed loads, the dashboard with its bell, the invoices, the job photos and
+  the customer's booking success, order detail and order sheets are byte-identical, and so are their VoiceOver trees;
+  the dashboard's greeting and date follow the clock, so its frames were compared within one hour. Suites on the iOS
+  16.4 simulator: Core 970, Partner 1421, Customer 1949 with the iOS 16.4 failures known before this work; Customer on
+  iOS 26.3: 1949, none failing. Evidence in `ios-longterm-20261107/captures/cleanup/` and `cleanup/`; the deleted keys
+  are listed in `ios-longterm-20261107/deleted-catalog-keys.txt`.

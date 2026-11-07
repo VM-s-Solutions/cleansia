@@ -485,3 +485,75 @@ private final class CaptureLocation: LocationProvider {
         granted ? Coordinate(latitude: 50.0755, longitude: 14.4378) : nil
     }
 }
+
+/// The job's photos as the detail draws them, each a 1920 × 1440 upload read through the image cache: two before and
+/// one after, while she can still add more.
+extension PartnerScreenCaptureTests {
+    func testJobPhotos() async throws {
+        let photos = [("photo-1", PhotoType._1), ("photo-2", ._1), ("photo-3", ._2)].enumerated().map { index, entry in
+            OrderPhoto(
+                id: entry.0,
+                photoType: entry.1,
+                blobUrl: "https://example.invalid/\(entry.0)",
+                capturedAt: OrdersDesignFixture.at(12, 9, 4 + 2 * index)
+            )
+        }
+        let bytes = Dictionary(uniqueKeysWithValues: photos.enumerated().map { index, photo in
+            (photo.blobUrl ?? "", Self.photo(hue: CGFloat(index) / 3))
+        })
+        for theme in ["light", "dark"] {
+            try MockCapture.use("en", near: Self.self)
+            let cache = RemoteImageCache(loader: { url in bytes[url.absoluteString] ?? Data() })
+            let column = { (title: String, type: PhotoType) -> PhotoColumn in
+                PhotoColumn(
+                    title: title,
+                    type: type,
+                    photos: photos.filter { $0.photoType == type },
+                    canUpload: true,
+                    mutation: PhotoMutationState(),
+                    imageCache: cache,
+                    request: .constant(false),
+                    onPick: { _, _ in },
+                    onDelete: { _ in }
+                )
+            }
+            await MockCapture.shoot(
+                self,
+                name: name("photos", "loaded", theme),
+                size: phone,
+                statusBar: 54,
+                homeIndicator: 34,
+                scroll: .rest,
+                settle: 0.6
+            ) {
+                HStack(alignment: .top, spacing: Spacing.s) {
+                    column(L10n.Orders.photosBefore, ._1).frame(maxWidth: .infinity, alignment: .leading)
+                    column(L10n.Orders.photosAfter, ._2).frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .padding(Spacing.m)
+                .frame(maxHeight: .infinity, alignment: .top)
+                .background(CleansiaColors.surface)
+                .styled(theme)
+            }
+        }
+    }
+
+    /// A synthetic photo: hue bands under fine stripes, so a change in how it is decoded or scaled shows.
+    private static func photo(hue: CGFloat) -> Data {
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = 1
+        format.opaque = true
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 1920, height: 1440), format: format).image { context in
+            for band in 0 ..< 48 {
+                let shade = (hue + CGFloat(band) / 240).truncatingRemainder(dividingBy: 1)
+                UIColor(hue: shade, saturation: 0.55, brightness: 0.85, alpha: 1).setFill()
+                context.fill(CGRect(x: CGFloat(band) * 40, y: 0, width: 40, height: 1440))
+            }
+            UIColor(white: 1, alpha: 0.35).setFill()
+            for line in stride(from: 0, to: 1440, by: 6) {
+                context.fill(CGRect(x: 0, y: line, width: 1920, height: 2))
+            }
+        }
+        return image.jpegData(compressionQuality: 0.8) ?? Data()
+    }
+}

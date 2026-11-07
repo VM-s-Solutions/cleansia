@@ -5,7 +5,8 @@ import XCTest
 @testable import CleansiaPartner
 
 /// Native captures of the partner screens the Orders captures do not reach: the bank step of the onboarding chain,
-/// My documents, and the dashboard's last-month card on a rise and on a fall. Named
+/// My documents, the dashboard's last-month card on a rise and on a fall, and the take sheet's slide while its
+/// contract loads and while the take is sent. Named
 /// `<screen>-<state>-ios-<w>x<h>-<lang>-<theme>`; they run with the Orders captures
 /// (`TEST_RUNNER_PARTNER_ORDERS_CAPTURE=1`).
 @MainActor
@@ -122,6 +123,43 @@ final class PartnerScreenCaptureTests: XCTestCase {
                     .padding(.top, Spacing.m)
                     .background(CleansiaColors.background)
                     .styled(theme)
+                }
+            }
+        }
+    }
+
+    /// The take sheet's slide while the contract loads and while the take is sent, the two faces the Orders
+    /// captures do not show.
+    func testTakeSheetSlide() async throws {
+        let row = OrdersDesignFixture.available()[1]
+        let contract = OrdersDesignFixture.contract(for: row)
+        for theme in ["light", "dark"] {
+            try MockCapture.use("en", near: Self.self)
+            let sheets: [(String, WorkContractSheetContent)] = [
+                ("loading", WorkContractSheetContent(
+                    request: .take(orderId: "order-1"),
+                    state: .loading,
+                    board: BoardTake(snapshot: row),
+                    now: OrdersDesignFixture.now
+                )),
+                ("sending", WorkContractSheetContent(
+                    request: .take(orderId: "order-1"),
+                    state: .loaded(contract),
+                    board: BoardTake(snapshot: row),
+                    submitting: true,
+                    now: OrdersDesignFixture.now
+                ))
+            ]
+            for (state, sheet) in sheets {
+                await MockCapture.shoot(
+                    self,
+                    name: name("take", state, theme),
+                    size: phone,
+                    statusBar: 54,
+                    homeIndicator: 34,
+                    scroll: .rest
+                ) {
+                    sheet.styled(theme)
                 }
             }
         }

@@ -176,11 +176,6 @@ struct ActiveHero: View {
             thumbLanes: true,
             onConfirm: onAdvance
         )
-        .slideAccessibility(
-            label: OrdersAccessibility.slideLabel(idle: idle, busy: busy, isBusy: isBusy),
-            enabled: !isBusy,
-            onActivate: onAdvance
-        )
     }
 }
 

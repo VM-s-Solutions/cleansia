@@ -213,12 +213,7 @@ struct StickyActionFooter: View {
             detail: detail,
             onConfirm: commit
         )
-        .slideAccessibility(
-            label: [OrdersAccessibility.slideLabel(idle: idle, busy: busy, isBusy: busyNow), detail]
-                .compactMap { $0 }.joined(separator: ", "),
-            enabled: !busyNow && inFlightAction == nil,
-            onActivate: commit
-        )
+        .disabled(inFlightAction != nil)
     }
 
     private func setOffReason(_ opensAt: Date) -> String {

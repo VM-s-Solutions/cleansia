@@ -330,15 +330,6 @@ private struct LoadedContract: View {
                     thumbLanes: true,
                     onConfirm: onAccept
                 )
-                .slideAccessibility(
-                    label: OrdersAccessibility.slideLabel(
-                        idle: L10n.WorkContract.swipeToAccept,
-                        busy: L10n.WorkContract.accepting,
-                        isBusy: submitting
-                    ),
-                    enabled: !submitting,
-                    onActivate: onAccept
-                )
             }
         case .read:
             CleansiaPrimaryButton(L10n.close, action: onClose)
@@ -378,7 +369,6 @@ private struct BoardLoadingContract: View {
                 thumbLanes: true,
                 onConfirm: {}
             )
-            .slideAccessibility(label: L10n.WorkContract.loading, hint: L10n.WorkContract.loading, enabled: false) {}
         }
         .padding(.horizontal, Spacing.m)
         .padding(.top, Spacing.s)

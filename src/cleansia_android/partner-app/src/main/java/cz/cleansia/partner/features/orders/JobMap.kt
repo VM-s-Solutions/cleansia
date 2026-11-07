@@ -141,7 +141,8 @@ internal fun JobBandMap(
     BoxWithConstraints(modifier.fillMaxSize()) {
         val height = maxHeight
         val density = LocalDensity.current
-        val ornaments = { with(density) { height - sheetTopPx().toDp() } + 8.dp }
+        // A drag or a settle that runs through a resize keeps the panel's old top, which can sit below the map; negative padding throws.
+        val ornaments = { with(density) { (height - sheetTopPx().toDp()).coerceAtLeast(0.dp) } + 8.dp }
         when (mode) {
             is JobMapMode.Pin -> {
                 val tip = band - SheetOverBand - 8.dp

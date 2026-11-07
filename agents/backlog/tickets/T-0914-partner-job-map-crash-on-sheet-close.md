@@ -80,8 +80,7 @@ In Core, `PlaceMap.swift`:
 - The Android job map. It was checked on 2026-11-07 and is not affected by this crash: its camera padding is kept at
   zero or more and never follows the panel's edge, the keyboard does not change the map's height, and Mapbox does not
   reject padding the way MapKit rejects a region. A separate Android crash, the logo and attribution padding going
-  negative when the window shrinks while the panel moves, is reported for Mike to decide on; its emulator logs are in
-  `~/cleansia-work.noindex/crash-fix-20261107/`.
+  negative when the window shrinks while the panel moves, is T-0916.
 - A map she left alone that a resize with room reads as her move. It predates this fix and is filed as T-0915.
 
 ## Work record

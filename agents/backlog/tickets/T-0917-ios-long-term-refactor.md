@@ -124,4 +124,25 @@ Where the verifier corrected an auditor, the verifier's note wins.
 
 ### Lag
 
+- 2026-11-07 — Built, one commit per item, each measured before and after on the iOS 16.4 simulator with the machine
+  idle. The partner Available board is a lazy stack (`f2319095d`): one publish at 10, 30 and 100 rows costs 13.8,
+  21.0 and 45.7 ms at -O before and 13.4, 14.9 and 17.1 ms after (Debug 13.8, 24.4 and 57.1 before, 14.2, 16.9 and
+  15.9 after), first layout 32, 80 and 176 ms before and 21, 27 and 35 ms after, and a publish rebuilds 4, 6 and 7
+  cards where it rebuilt 9, 29 and 99. The cost moves to the moment a day enters the screen: scrolling 100 rows, a
+  step that builds a new day takes up to 34 ms (12 before), 13 of 565 steps over a frame. The reserved cards are
+  built as one block and the shared pay column keeps the widest need it has seen, so it holds at one width through a
+  scroll over pays of three to six digits; VoiceOver's targets after Load more and after a take are built and on
+  screen. Remote photos and avatars are decoded off the main thread (`fe5cf829d`): a 1920 × 1440 photo costs the
+  main thread 1.2 ms where it cost 35.8 ms, with memory unchanged. A signed-in partner's cold start asks for its
+  registration status during the splash (`7ec2c5f31`): with a 0.8 s hold and a 0.8 s answer the gate took 1.67 s
+  and takes 0.83 s, and a new test holds it. The customer Home carousel ticks its fill at 20 Hz (`a1381a891`): the
+  timeline updates 20 times a second where it updated 48 to 60, the main thread spends 26 to 30 ms a second on it
+  where it spent 45 to 51, and the fill's drawn edge moves the same. Captures in en, light and dark: the Home, the
+  splash and the board look the same; the board's frames differ by noise a second run with no change reproduces, by
+  a third of a point at the end of the page, and by one pixel at the right edges where a child measures wider than
+  its column, which the old stack passed on to every card; the photo tiles differ by the decode path, by up to 28 of
+  255 on a synthetic stripe photo and 1 of 255 on the crew photo. New captures: the job photos and the splash. Suites
+  on the iOS 16.4 simulator: Core 972, Partner 1420, Customer 1960 with the three iOS 16.4 failures known before this
+  work; Customer on iOS 26.3: 1960, none failing. Evidence in `ios-longterm-20261107/captures/lag/` and `lag/`.
+
 ### Cleanup

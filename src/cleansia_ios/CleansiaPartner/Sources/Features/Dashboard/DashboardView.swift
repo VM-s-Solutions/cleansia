@@ -94,7 +94,7 @@ struct DashboardView: View {
             ProgressView()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         case let .error(error):
-            DashboardErrorView(error: error) { Task { await vm.load() } }
+            ErrorRetryView(error: error, background: .clear) { Task { await vm.load() } }
         case let .loaded(data):
             DashboardContent(
                 data: data,
@@ -117,27 +117,6 @@ struct DashboardView: View {
             )
             .refreshable { await vm.userRefresh() }
         }
-    }
-}
-
-private struct DashboardErrorView: View {
-    let error: ApiError
-    let onRetry: () -> Void
-
-    var body: some View {
-        VStack(spacing: Spacing.m) {
-            Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 40))
-                .foregroundColor(CleansiaColors.error)
-            Text(ApiErrorLocalizer().message(for: error))
-                .font(CleansiaTypography.bodyMedium)
-                .foregroundColor(CleansiaColors.onSurfaceVariant)
-                .multilineTextAlignment(.center)
-            CleansiaOutlinedButton(L10n.retry, size: .medium, action: onRetry)
-                .fixedSize()
-        }
-        .padding(Spacing.xl)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
@@ -422,7 +401,7 @@ private struct HeroRowCard: View {
             case .loading:
                 ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
             case let .error(error):
-                DashboardErrorView(error: error, onRetry: {})
+                ErrorRetryView(error: error, background: .clear, onRetry: {})
             case let .loaded(data):
                 DashboardContent(data: data, onOpenEarnings: {}, onOpenOrders: {})
             }

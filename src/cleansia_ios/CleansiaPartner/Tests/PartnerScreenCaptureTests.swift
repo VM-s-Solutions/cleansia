@@ -11,7 +11,7 @@ import XCTest
 /// (`TEST_RUNNER_PARTNER_ORDERS_CAPTURE=1`).
 @MainActor
 final class PartnerScreenCaptureTests: XCTestCase {
-    private let phone = CGSize(width: 393, height: 852)
+    let phone = CGSize(width: 393, height: 852)
     private var restoreBundle: Bundle!
     private var restoreTag: String!
 
@@ -244,18 +244,18 @@ final class PartnerScreenCaptureTests: XCTestCase {
     }
 
     /// The page pushed onto a stack, as the app shows it. Hosted as the stack's root, it never ran its load.
-    private func pushed(@ViewBuilder page: @escaping () -> some View) -> some View {
+    func pushed(@ViewBuilder page: @escaping () -> some View) -> some View {
         NavigationStack(path: .constant(["page"])) {
             Color.clear.navigationDestination(for: String.self) { _ in page() }
         }
     }
 
-    private func name(_ screen: String, _ state: String, _ theme: String) -> String {
+    func name(_ screen: String, _ state: String, _ theme: String) -> String {
         "\(screen)-\(state)-ios-\(Int(phone.width))x\(Int(phone.height))-en-\(theme)"
     }
 }
 
-private extension View {
+extension View {
     func styled(_ theme: String) -> some View {
         tint(CleansiaColors.primaryText)
             .environment(\.locale, Locale(identifier: "en"))

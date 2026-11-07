@@ -313,7 +313,9 @@ enum StatusBarFade {
     }
 
     static func luminance(_ color: RGB) -> Double {
-        let linear = [color.x, color.y, color.z].map { $0 <= 0.04045 ? $0 / 12.92 : pow(($0 + 0.055) / 1.055, 2.4) }
+        let linear = [color.x, color.y, color.z].map { (channel: Double) -> Double in
+            channel <= 0.04045 ? channel / 12.92 : pow((channel + 0.055) / 1.055, 2.4)
+        }
         return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
     }
 

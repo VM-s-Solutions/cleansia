@@ -5,7 +5,8 @@ import UIKit
 import XCTest
 @testable import CleansiaCustomer
 
-/// The other customer screens that draw the status pill, the text link or a chip.
+/// The other customer screens that draw the status pill, the text link or a chip, and the disputes, which stamp
+/// their dates.
 extension CustomerCoreCaptureTests {
     func testOrdersList() async throws {
         for (language, theme, full) in [
@@ -180,6 +181,62 @@ extension CustomerCoreCaptureTests {
                 .frame(width: size.width, height: size.height)
                 .background(CleansiaColors.background)
                 .styled(language: language, theme: theme, text: text)
+            }
+        }
+    }
+
+    /// The dispute cards and one dispute's thread, each stamped with its date and time.
+    func testDisputes() async throws {
+        let opened = Date(timeIntervalSince1970: 1_762_340_400)
+        let cards = [DisputeFixtures.entry(id: "d-1"), DisputeFixtures.entry(id: "d-2", statusValue: 3)]
+        let thread = DisputeDetail(
+            id: "d-1", displayOrderNumber: "1042", reasonName: "Quality issue",
+            description: "Cleaner skipped the kitchen entirely", statusName: "Pending", statusValue: 1,
+            createdOn: opened,
+            messages: [DisputeMessage(
+                id: "m-1", body: "We are looking into it.", isStaffMessage: true,
+                createdOn: opened.addingTimeInterval(5400)
+            )],
+            evidence: [DisputeEvidence(
+                id: "e-1", fileName: "receipt.pdf", blobURL: nil, uploadedOn: opened.addingTimeInterval(600)
+            )]
+        )
+        for theme in ["light", "dark"] {
+            try use("en")
+            await CustomerCapture.shoot(
+                name("disputes", "list", Self.phone, "en", theme),
+                size: Self.phone,
+                to: self
+            ) {
+                tabFrame(theme: theme) {
+                    VStack(spacing: Spacing.s) {
+                        ForEach(cards) { DisputeRowCard(dispute: $0) }
+                        Spacer()
+                    }
+                    .padding(Spacing.m)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(CleansiaColors.background)
+                }
+                .styled(language: "en", theme: theme)
+            }
+            await CustomerCapture.shoot(
+                name("dispute", "thread", Self.phone, "en", theme),
+                size: Self.phone,
+                to: self
+            ) {
+                tabFrame(theme: theme) {
+                    DisputeThread(
+                        detail: thread,
+                        uploading: false,
+                        onAddEvidence: {},
+                        onImageTap: { _ in },
+                        onPdfTap: { _ in },
+                        onUnknownTap: { _ in }
+                    )
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(CleansiaColors.background)
+                }
+                .styled(language: "en", theme: theme)
             }
         }
     }

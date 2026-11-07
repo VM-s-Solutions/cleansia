@@ -1,3 +1,4 @@
+import CleansiaCore
 import Foundation
 
 enum BookingDateFormat {
@@ -7,7 +8,7 @@ enum BookingDateFormat {
         }
         let formatter = DateFormatter()
         formatter.calendar = calendar
-        formatter.locale = Locale.current
+        formatter.locale = CoreL10n.locale
         formatter.setLocalizedDateFormatFromTemplate("EEE")
         return formatter.string(from: date)
     }
@@ -15,7 +16,7 @@ enum BookingDateFormat {
     static func summaryDate(_ date: Date, calendar: Calendar = .current) -> String {
         let formatter = DateFormatter()
         formatter.calendar = calendar
-        formatter.locale = Locale.current
+        formatter.locale = CoreL10n.locale
         formatter.setLocalizedDateFormatFromTemplate("EEEMMMd")
         return formatter.string(from: date)
     }

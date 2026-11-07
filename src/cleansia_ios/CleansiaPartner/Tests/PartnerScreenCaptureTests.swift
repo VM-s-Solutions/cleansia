@@ -6,7 +6,7 @@ import XCTest
 
 /// Native captures of the partner screens the Orders captures do not reach: the bank step of the onboarding chain,
 /// My documents, the dashboard's last-month card on a rise and on a fall, the take sheet's slide while its contract
-/// loads and while the take is sent, and the Language and Theme pickers. Named
+/// loads and while the take is sent, the Language and Theme pickers, and the invoices with one invoice. Named
 /// `<screen>-<state>-ios-<w>x<h>-<lang>-<theme>`; they run with the Orders captures
 /// (`TEST_RUNNER_PARTNER_ORDERS_CAPTURE=1`).
 @MainActor
@@ -193,6 +193,50 @@ final class PartnerScreenCaptureTests: XCTestCase {
                     scroll: .rest
                 ) {
                     pushed { picker }
+                        .styled(theme)
+                }
+            }
+        }
+    }
+
+    /// The invoices and one invoice: their figures to the haléř and their dates.
+    func testInvoices() async throws {
+        let issued = Date(timeIntervalSince1970: 1_762_340_400)
+        let invoices = [
+            Invoice.stub(
+                id: "inv-2", invoiceNumber: "INV-2026-0042", payPeriodLabel: "1 – 15 Oct 2026", totalOrders: 9,
+                totalAmount: 4120.3, status: ._1, generatedAt: issued
+            ),
+            Invoice.stub(
+                id: "inv-1", invoiceNumber: "INV-2026-0041", payPeriodLabel: "16 – 30 Sep 2026", totalOrders: 12,
+                totalAmount: 5312.75, status: ._2, generatedAt: issued.addingTimeInterval(-15 * 86400),
+                paidAt: issued.addingTimeInterval(-10 * 86400)
+            )
+        ]
+        for theme in ["light", "dark"] {
+            try MockCapture.use("en", near: Self.self)
+            let pages: [(String, AnyView)] = [
+                ("invoices", AnyView(InvoicesListContent(invoices: invoices, onOpenInvoice: { _ in }))),
+                ("invoice", AnyView(InvoiceDetailContent(
+                    invoice: .stub(totalAmount: 4120.3),
+                    canOpenPdf: true,
+                    isDownloading: false,
+                    onOpenPeriodPay: nil,
+                    onOpenPdf: {},
+                    onCopy: { _ in }
+                )))
+            ]
+            for (screen, page) in pages {
+                await MockCapture.shoot(
+                    self,
+                    name: name(screen, "earnings", theme),
+                    size: phone,
+                    statusBar: 54,
+                    homeIndicator: 34,
+                    scroll: .rest
+                ) {
+                    page
+                        .background(CleansiaColors.background)
                         .styled(theme)
                 }
             }

@@ -99,6 +99,29 @@ Where the verifier corrected an auditor, the verifier's note wins.
 
 ### Core moves, part 2
 
+- 2026-11-07 — Built, one commit per item. The notifications inbox, its view model, the badge model, the feed
+  protocol with its models and the bell live once in Core's `Notifications` (`8dcf2754a`); each app passes its
+  words (its `L10n.NotificationsInbox` conforms to `NotificationsInboxCopy`), its empty-inbox mascot, how it
+  dates a row older than a week, its push templates, its feed keys and its destinations, from its own
+  `NotificationsInboxSheet.swift`. The iOS symbols gate learnt that an L10n namespace passed as a type names no
+  member, with a self-test on each side. The devices screen, its view model, model and client protocol live
+  once in Core's `Devices` (`dd5719d42`); each app keeps its words and its live client with its own answer to an
+  unsuccessful revoke. The address-picker map screen and its card live once in Core as `AddressPickerScreen` and
+  `AddressPickerConfirmCard` (`6a1ccf05d`); the customer's review-and-save step stays in
+  `BookingAddressPickerView`, which hands it to the screen, and the partner's DEBUG copy of `PreviewMapProvider`
+  is gone. Differences kept as they were, not unified: the inbox's Retry ("Retry" for the partner, "Try again"
+  for the customer), its empty subtitle and mascot, its date for a row older than a week (the partner's Orders
+  day and time, the customer's order date and time); the devices screen's name for a device with no platform
+  ("Not set", "Device"); the picker's two location snackbars. Tests moved with the code: the inbox, badge and
+  devices tests the two apps each carried are one set in Core, each app keeps the tests of its own wiring, and
+  a hosted Core test holds the picker's review step; by area the inbox went from 87 tests to 70, the devices
+  from 23 to 16 and the picker from 1 to 3, every behaviour still tested. Captures before and after, in en,
+  light and dark (the customer's picker also in Ukrainian and on a small phone): every frame byte-identical,
+  and every VoiceOver tree (customer 20 frames and 18 trees, partner 22 and 22), across the inbox with rows,
+  empty and failed, the dashboard and Home bells, the devices screens and both pickers. Suites on the iOS 16.4 simulator: Core 972, Partner 1417, Customer 1960 with the
+  three iOS 16.4 failures known before this work; Customer on iOS 26.3: 1960, none failing. Evidence in
+  `ios-longterm-20261107/captures/core-b/`.
+
 ### Lag
 
 ### Cleanup

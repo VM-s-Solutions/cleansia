@@ -341,7 +341,7 @@ final class PlaceMapCanvas: MKMapView {
     func keepMarks(inside margins: NSDirectionalEdgeInsets) {
         guard directionalLayoutMargins != margins else { return }
         directionalLayoutMargins = margins
-        setNeedsLayout()
+        if framedSize == .zero { setNeedsLayout() }
     }
 
     /// The veil sits right above the map's own drawing, under the logo and the legal link MapKit lays over it, so

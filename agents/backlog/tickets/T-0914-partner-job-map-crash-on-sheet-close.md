@@ -60,7 +60,8 @@ In Core, `PlaceMap.swift`:
 - `framed` gives no region when the margins leave the map no room, or when the region would pass the limits MapKit
   throws on; `frameNow` and `recentre` then hand MapKit nothing.
 - A map that could not frame the place frames it at the next layout that has room: after a new size, or once its
-  margins come down at the same size. `keepMarks` now asks for that layout, because new margins alone do not.
+  margins come down at the same size. `keepMarks` asks for that layout while the place waits for room, because new
+  margins alone do not.
 - While the margins leave no room, the map's delegate reads nothing MapKit draws as her move. Without this the movable
   job map read MapKit's drawing between such margins as moved away, showed the recentre button, and kept that view
   instead of framing the place once it had room.
@@ -76,7 +77,12 @@ In Core, `PlaceMap.swift`:
 
 ## Out of scope
 
-- The Android job map.
+- The Android job map. It was checked on 2026-11-07 and is not affected by this crash: its camera padding is kept at
+  zero or more and never follows the panel's edge, the keyboard does not change the map's height, and Mapbox does not
+  reject padding the way MapKit rejects a region. A separate Android crash, the logo and attribution padding going
+  negative when the window shrinks while the panel moves, is reported for Mike to decide on; its emulator logs are in
+  `~/cleansia-work.noindex/crash-fix-20261107/`.
+- A map she left alone that a resize with room reads as her move. It predates this fix and is filed as T-0915.
 
 ## Work record
 
@@ -94,3 +100,6 @@ In Core, `PlaceMap.swift`:
   machine, failed
   `PartnerOrdersVisualTests.testTheContractScrollsWithThePageAndTheSwipeStaysOnScreen` once (the contract's web view was
   measured before its text had laid out); it draws no map, and it passed alone and in the full run above.
+- 2026-11-07 — `keepMarks` asks for a layout only while the place waits for room. Asking on every new margin laid the
+  map out on every frame of a panel drag, with nothing to frame again. The fifteen PlaceMap tests pass on the iOS 16.4
+  and 26.3 simulators, and the CleansiaCore suite (930 tests) passes on iOS 16.4.

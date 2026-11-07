@@ -167,3 +167,53 @@ private final class QuietLanguageSync: LanguagePreferenceSync {
     func send(languageCode _: String) async {}
     func reconcile(languageCode _: String) async {}
 }
+
+/// The signed-in devices as Profile pushes them: this phone, another, a browser and one that names no platform; the
+/// empty list and a failed load.
+extension CustomerCoreCaptureTests {
+    func testDevices() async throws {
+        let devices = [
+            UserDevice(
+                id: "row-1", platform: "ios", deviceId: "device-current",
+                lastActiveAt: Date(timeIntervalSince1970: 1_762_340_400), isCurrent: true
+            ),
+            UserDevice(
+                id: "row-2", platform: "android", deviceId: "device-other",
+                lastActiveAt: Date(timeIntervalSince1970: 1_762_000_000), isCurrent: false
+            ),
+            UserDevice(id: "row-3", platform: "web", deviceId: "device-web", lastActiveAt: nil, isCurrent: false),
+            UserDevice(id: "row-4", platform: nil, deviceId: nil, lastActiveAt: nil, isCurrent: false)
+        ]
+        let results: [(String, ApiResult<[UserDevice]>)] = [
+            ("list", .success(devices)),
+            ("empty", .success([])),
+            ("error", .failure(ApiError(httpStatus: 500)))
+        ]
+        for theme in ["light", "dark"] {
+            for (state, result) in results {
+                try use("en")
+                let client = FakeCustomerDevicesClient()
+                client.myDevicesResult = result
+                await CustomerCapture.shoot(
+                    name("devices", state, Self.phone, "en", theme),
+                    size: Self.phone,
+                    to: self,
+                    hold: 0.3
+                ) {
+                    page(theme: theme) {
+                        NavigationStack(path: .constant(["devices"])) {
+                            Color.clear.navigationDestination(for: String.self) { _ in
+                                DevicesView(
+                                    client: client,
+                                    authClient: FakeAuthClient(),
+                                    snackbar: SnackbarController(),
+                                    onSignedOut: {}
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

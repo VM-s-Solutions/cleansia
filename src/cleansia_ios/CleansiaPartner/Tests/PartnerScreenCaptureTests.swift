@@ -352,3 +352,57 @@ extension PartnerScreenCaptureTests {
         }
     }
 }
+
+/// The signed-in devices as Profile pushes them: this phone, another, a browser and one that names no platform; the
+/// empty list and a failed load.
+extension PartnerScreenCaptureTests {
+    func testDevices() async throws {
+        let devices = [
+            UserDevice(
+                id: "row-1", platform: "ios", deviceId: "device-current",
+                lastActiveAt: Date(timeIntervalSince1970: 1_762_340_400), isCurrent: true
+            ),
+            UserDevice(
+                id: "row-2", platform: "android", deviceId: "device-other",
+                lastActiveAt: Date(timeIntervalSince1970: 1_762_000_000), isCurrent: false
+            ),
+            UserDevice(id: "row-3", platform: "web", deviceId: "device-web", lastActiveAt: nil, isCurrent: false),
+            UserDevice(id: "row-4", platform: nil, deviceId: nil, lastActiveAt: nil, isCurrent: false)
+        ]
+        let results: [(String, ApiResult<[UserDevice]>)] = [
+            ("list", .success(devices)),
+            ("empty", .success([])),
+            ("error", .failure(ApiError(httpStatus: 500)))
+        ]
+        for theme in ["light", "dark"] {
+            for (state, result) in results {
+                try MockCapture.use("en", near: Self.self)
+                let client = FakePartnerDevicesClient()
+                client.myDevicesResult = result
+                await MockCapture.shoot(
+                    self,
+                    name: name("devices", state, theme),
+                    size: phone,
+                    statusBar: 54,
+                    homeIndicator: 34,
+                    scroll: .rest
+                ) {
+                    pushed {
+                        DevicesView(
+                            client: client,
+                            authClient: CaptureAuthClient(),
+                            snackbar: SnackbarController(),
+                            onSignedOut: {}
+                        )
+                    }
+                    .styled(theme)
+                }
+            }
+        }
+    }
+}
+
+private final class CaptureAuthClient: AuthClient {
+    func signOutLocal() async {}
+    func logout() async {}
+}

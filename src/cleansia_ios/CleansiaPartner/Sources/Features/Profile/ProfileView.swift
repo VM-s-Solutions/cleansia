@@ -14,7 +14,7 @@ struct ProfileView: View {
     @State private var showLogoutDialog = false
 
     private let client: PartnerProfileClient
-    private let devicesClient: PartnerDevicesClient
+    private let devicesClient: DevicesClient
     private let deletionClient: PartnerGdprDeletionClient
     private let authClient: AuthClient
     private let snackbar: SnackbarController
@@ -25,7 +25,7 @@ struct ProfileView: View {
 
     init(
         client: PartnerProfileClient,
-        devicesClient: PartnerDevicesClient,
+        devicesClient: DevicesClient,
         authClient: AuthClient,
         snackbar: SnackbarController,
         geocoding: GeocodingService,

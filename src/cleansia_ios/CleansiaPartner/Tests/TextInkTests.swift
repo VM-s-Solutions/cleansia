@@ -93,10 +93,6 @@ final class TextInkTests: XCTestCase {
     /// Blue text on the primary container takes its text ink, which reads 4.5:1 in both modes (finding
     /// 2026-10-05: the primary read 3.57:1 on sky-100 in light mode and 2.77:1 on sky-700 in dark).
     func testTheBadgesOnThePrimaryContainerTakeItsTextInk() throws {
-        XCTAssertTrue(try compactSource("Devices/DevicesView.swift").contains(
-            "Text(L10n.Devices.thisDevice).font(CleansiaTypography.labelSmall)"
-                + ".foregroundColor(CleansiaColors.primaryTextOnContainer)"
-        ))
         let badge = try compactSource("Earnings/InvoiceStatusBadge.swift")
         XCTAssertTrue(badge.contains("case._1:CleansiaColors.primaryContainer"))
         XCTAssertTrue(badge
@@ -104,17 +100,14 @@ final class TextInkTests: XCTestCase {
     }
 
     /// Dark mode: an icon in the primary on the primary container (sky-400 on sky-700) read 2.77:1, under the
-    /// 3:1 a graphic needs, so the halo's icon and the devices' platform icon take the container's icon ink,
-    /// sky-100 in dark and the primary in light (finding 2026-10-05).
+    /// 3:1 a graphic needs, so the halo's icon takes the container's icon ink, sky-100 in dark and the primary in
+    /// light (finding 2026-10-05). The devices screen's platform icon is the shared one, pinned in Core.
     func testTheIconsOnThePrimaryContainerTakeItsIconInk() throws {
         XCTAssertTrue(try compactSource("Dashboard/DashboardCards.swift").contains(
             "Image(systemName:systemImage).font(.system(size:22))"
                 + ".foregroundColor(CleansiaColors.primaryIconOnContainer).frame(width:44,height:44)"
                 + ".background(CleansiaColors.primaryContainer)"
         ), "IconHalo")
-        XCTAssertTrue(try compactSource("Devices/DevicesView.swift").contains(
-            "Image(systemName:platformIcon(device.platform)).foregroundColor(CleansiaColors.primaryIconOnContainer)"
-        ))
     }
 
     /// Every invoice status pill's label reads 4.5:1 or more on its fill in both modes (finding 2026-10-05):

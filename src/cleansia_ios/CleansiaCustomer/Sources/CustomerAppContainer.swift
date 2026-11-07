@@ -107,7 +107,7 @@ final class CustomerAppContainer: AppContainer {
     }
 
     let avatarCache = RemoteImageCache()
-    let devicesClient: CustomerDevicesClient
+    let devicesClient: DevicesClient
     let notificationFeedClient: NotificationFeedClient
     let notificationBadge: NotificationBadgeModel
     let gdprDeleteClient: GdprDeleteClient = LiveGdprDeleteClient()

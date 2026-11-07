@@ -69,7 +69,7 @@ final class PartnerAppContainer: AppContainer {
     let marketClient: PartnerMarketClient = LivePartnerMarketClient()
     let profileClient: PartnerProfileClient = LivePartnerProfileClient()
     let userClient: PartnerUserClient = LivePartnerUserClient()
-    let devicesClient: PartnerDevicesClient
+    let devicesClient: DevicesClient
     lazy var orderClient: PartnerOrderClient = LivePartnerOrderClient(staleness: ordersStaleness)
     let ordersStaleness = OrdersStaleness()
     let invoicesStaleness = InvoicesStaleness()

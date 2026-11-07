@@ -163,12 +163,17 @@ final class ComponentTextInkTests: XCTestCase {
             try compactSource("Components/CleansiaSectionHeader.swift")
                 .contains(".foregroundColor(CleansiaColors.primaryTextOnContainer).padding(.horizontal,Spacing.s)")
         )
+        XCTAssertTrue(try compactSource("Devices/DevicesView.swift").contains(
+            "Text(copy.thisDevice).font(CleansiaTypography.labelSmall)"
+                + ".foregroundColor(CleansiaColors.primaryTextOnContainer)"
+        ), "the devices screen's This device chip")
     }
 
     /// An icon on the primary container reads 3:1 or more in both modes (finding 2026-10-05): in dark mode the
     /// container is sky-700, where the primary's sky-400 read 2.77:1, so icons on it take
-    /// `primaryIconOnContainer` (sky-100 in dark, 5.17:1; the primary itself in light, 3.57:1, unchanged).
-    func testIconsOnThePrimaryContainerReadInBothModes() {
+    /// `primaryIconOnContainer` (sky-100 in dark, 5.17:1; the primary itself in light, 3.57:1, unchanged). The
+    /// devices screen's platform icon is one.
+    func testIconsOnThePrimaryContainerReadInBothModes() throws {
         for style in [UIUserInterfaceStyle.light, .dark] {
             XCTAssertGreaterThanOrEqual(
                 contrast(
@@ -197,6 +202,9 @@ final class ComponentTextInkTests: XCTestCase {
             accuracy: 0.001,
             "light changed"
         )
+        XCTAssertTrue(try compactSource("Devices/DevicesView.swift").contains(
+            "Image(systemName:platformIcon(device.platform)).foregroundColor(CleansiaColors.primaryIconOnContainer)"
+        ))
     }
 
     /// The shared screens' text buttons: the notifications inbox's Close in its toolbar.

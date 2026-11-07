@@ -127,7 +127,7 @@ private struct OnboardingLanguageMenu: View {
 
     private var options: [PreferenceOption] {
         [PreferenceOption(id: PreferencesLabels.systemLanguageId, label: L10n.Profile.languageSystem)]
-            + PreferencesLabels.languages.map { PreferenceOption(id: $0.tag, label: $0.label) }
+            + LanguageLabels.languages.map { PreferenceOption(id: $0.tag, label: $0.label) }
     }
 
     var body: some View {

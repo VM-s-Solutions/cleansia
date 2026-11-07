@@ -5,8 +5,8 @@ import XCTest
 @testable import CleansiaPartner
 
 /// Native captures of the partner screens the Orders captures do not reach: the bank step of the onboarding chain,
-/// My documents, the dashboard's last-month card on a rise and on a fall, and the take sheet's slide while its
-/// contract loads and while the take is sent. Named
+/// My documents, the dashboard's last-month card on a rise and on a fall, the take sheet's slide while its contract
+/// loads and while the take is sent, and the Language and Theme pickers. Named
 /// `<screen>-<state>-ios-<w>x<h>-<lang>-<theme>`; they run with the Orders captures
 /// (`TEST_RUNNER_PARTNER_ORDERS_CAPTURE=1`).
 @MainActor
@@ -160,6 +160,40 @@ final class PartnerScreenCaptureTests: XCTestCase {
                     scroll: .rest
                 ) {
                     sheet.styled(theme)
+                }
+            }
+        }
+    }
+
+    /// The Language and Theme pickers as Profile pushes them, the chosen row checked.
+    func testPreferencePickers() async throws {
+        let suite = "PartnerScreenCaptureTests.pickers"
+        defer { UserDefaults(suiteName: suite)?.removePersistentDomain(forName: suite) }
+        for theme in ["light", "dark"] {
+            try MockCapture.use("en", near: Self.self)
+            let preferences = try PreferencesModel(
+                settings: UserDefaultsAppSettingsStore(
+                    defaults: XCTUnwrap(UserDefaults(suiteName: suite)),
+                    preferredLanguageTags: { ["en"] }
+                ),
+                languageSync: SilentLanguageSync(),
+                appGroup: suite
+            )
+            let pickers: [(String, AnyView)] = [
+                ("language", AnyView(LanguagePickerView(preferences: preferences, onSelected: {}))),
+                ("theme", AnyView(ThemePickerView(preferences: preferences, onSelected: {})))
+            ]
+            for (screen, picker) in pickers {
+                await MockCapture.shoot(
+                    self,
+                    name: name(screen, "picker", theme),
+                    size: phone,
+                    statusBar: 54,
+                    homeIndicator: 34,
+                    scroll: .rest
+                ) {
+                    pushed { picker }
+                        .styled(theme)
                 }
             }
         }

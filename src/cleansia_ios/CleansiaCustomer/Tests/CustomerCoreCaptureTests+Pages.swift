@@ -94,6 +94,43 @@ extension CustomerCoreCaptureTests {
         }
     }
 
+    /// The Language, Appearance and Market pickers as Profile pushes them, the chosen row checked.
+    func testPreferencePickers() async throws {
+        let suite = "CustomerCoreCaptureTests.pickers"
+        defer { UserDefaults(suiteName: suite)?.removePersistentDomain(forName: suite) }
+        let markets = await MarketFixtures.resolved()
+        for theme in ["light", "dark"] {
+            try use("en")
+            let preferences = try CustomerPreferencesModel(
+                settings: UserDefaultsAppSettingsStore(
+                    defaults: XCTUnwrap(UserDefaults(suiteName: suite)),
+                    preferredLanguageTags: { ["en"] }
+                ),
+                languageSync: QuietLanguageSync(),
+                appGroup: suite
+            )
+            let pickers: [(String, AnyView)] = [
+                ("language", AnyView(LanguagePickerView(preferences: preferences, onSelected: {}))),
+                ("appearance", AnyView(AppearancePickerView(preferences: preferences, onSelected: {}))),
+                ("market", AnyView(MarketPickerView(market: markets, onSelected: {})))
+            ]
+            for (screen, picker) in pickers {
+                await CustomerCapture.shoot(
+                    name(screen, "picker", Self.phone, "en", theme),
+                    size: Self.phone,
+                    to: self,
+                    hold: 0.3
+                ) {
+                    page(theme: theme) {
+                        NavigationStack(path: .constant(["picker"])) {
+                            Color.clear.navigationDestination(for: String.self) { _ in picker }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     /// A pushed page under the status bar's stand-in.
     private func page(theme: String, @ViewBuilder content: () -> some View) -> some View {
         VStack(spacing: 0) {
@@ -124,4 +161,9 @@ private struct PagerHost: View {
             onClose: {}
         )
     }
+}
+
+private final class QuietLanguageSync: LanguagePreferenceSync {
+    func send(languageCode _: String) async {}
+    func reconcile(languageCode _: String) async {}
 }

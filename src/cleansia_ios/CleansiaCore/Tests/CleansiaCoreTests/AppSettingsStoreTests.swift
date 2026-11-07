@@ -1,3 +1,4 @@
+import SwiftUI
 import XCTest
 @testable import CleansiaCore
 
@@ -192,5 +193,11 @@ final class AppSettingsStoreTests: XCTestCase {
             store.setTheme(theme)
             XCTAssertEqual(store.theme, theme)
         }
+    }
+
+    func testThemeColorSchemeMapping() {
+        XCTAssertNil(Theme.system.colorScheme)
+        XCTAssertEqual(Theme.light.colorScheme, .light)
+        XCTAssertEqual(Theme.dark.colorScheme, .dark)
     }
 }

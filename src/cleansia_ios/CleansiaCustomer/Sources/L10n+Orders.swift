@@ -77,10 +77,6 @@ extension L10n {
             localized("order_detail_view_order")
         }
 
-        static var back: String {
-            localized("common_back")
-        }
-
         static var marketUnknown: String {
             localized("order_market_unknown")
         }
@@ -117,10 +113,6 @@ extension L10n {
 
         static var yourReview: String {
             localized("order_detail_your_review")
-        }
-
-        static var leaveReview: String {
-            localized("order_detail_leave_review")
         }
 
         static var editReview: String {
@@ -195,14 +187,6 @@ extension L10n {
 
         static var notes: String {
             localized("order_detail_notes")
-        }
-
-        static var copy: String {
-            localized("order_detail_copy")
-        }
-
-        static var copied: String {
-            localized("order_detail_copied")
         }
 
         static var cleaners: String {
@@ -326,10 +310,6 @@ extension L10n {
 
         static func subheadInProgressEta(_ minutes: Int) -> String {
             format("order_detail_subhead_in_progress_eta", minutes)
-        }
-
-        static func progressPercent(_ percent: Int) -> String {
-            format("order_detail_progress_percent", percent)
         }
 
         static var stepBooked: String {

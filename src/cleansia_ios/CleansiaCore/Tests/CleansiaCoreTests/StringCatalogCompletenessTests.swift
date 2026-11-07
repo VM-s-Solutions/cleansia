@@ -76,8 +76,6 @@ final class StringCatalogCompletenessTests: XCTestCase {
         Exception("Partner", "devices_platform_android", allLocalized, "platform name"),
         Exception("Partner", "devices_platform_ios", allLocalized, "platform name"),
         Exception("Partner", "devices_platform_web", allLocalized, "platform name"),
-        Exception("Partner", "duration_hours_minutes", ["cs", "sk"], "\"h\"/\"m\" are the same abbreviations in cs/sk"),
-        Exception("Partner", "duration_minutes_only", ["cs", "sk"], "\"m\" is the same abbreviation in cs/sk"),
         Exception("Partner", "earnings_cash_held_limit", ["cs", "sk"], "\"Limit\" is the Czech and Slovak word"),
         Exception("Partner", "job_radius_value", ["cs", "sk"], "a specifier and the \"km\" symbol, Latin in cs/sk"),
         Exception("Partner", "orders_duration_h", ["cs", "sk"], "\"h\" is the same abbreviation in cs/sk"),

@@ -1366,41 +1366,6 @@
         }
       }
     },
-    "auth_referral_code": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doporučovací kód"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Referral code"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Реферальный код"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Odporúčací kód"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Реферальний код"
-          }
-        }
-      }
-    },
     "auth_resend_success": {
       "extractionState": "stale",
       "localizations": {
@@ -5575,41 +5540,6 @@
         }
       }
     },
-    "booking_referral_code_row_title": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kód doporučení"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Referral code"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Реферальный код"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kód odporúčania"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Реферальний код"
-          }
-        }
-      }
-    },
     "booking_rooms_short": {
       "extractionState": "manual",
       "localizations": {
@@ -6243,321 +6173,6 @@
         }
       }
     },
-    "booking_success_progress": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Průběh rezervace"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your booking progress"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Прогресс бронирования"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Priebeh rezervácie"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Прогрес бронювання"
-          }
-        }
-      }
-    },
-    "booking_success_t1_desc": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Právě teď"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Just now"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Только что"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Práve teraz"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Щойно"
-          }
-        }
-      }
-    },
-    "booking_success_t1_title": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rezervace přijata"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Booking received"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Бронирование получено"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rezervácia prijatá"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Бронювання отримано"
-          }
-        }
-      }
-    },
-    "booking_success_t2_desc": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dáme vám vědět, jakmile ho najdeme"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "We'll let you know as soon as we find one"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Сообщим, как только его найдём"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dáme vám vedieť, hneď ako ju nájdeme"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Повідомимо вас, щойно його знайдемо"
-          }
-        }
-      }
-    },
-    "booking_success_t2_title": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Přidělujeme uklízeče"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cleaner being assigned"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Назначаем клинера"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prideľujeme upratovačku"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Призначаємо клінера"
-          }
-        }
-      }
-    },
-    "booking_success_t3_desc": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zde uvidíte jeho profil"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "You'll see their profile here"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Здесь появится его профиль"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tu uvidíte jej profil"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Тут з’явиться його профіль"
-          }
-        }
-      }
-    },
-    "booking_success_t3_title": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Uklízeč potvrzen"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cleaner confirmed"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Клинер подтверждён"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Upratovačka potvrdená"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Клінер підтверджений"
-          }
-        }
-      }
-    },
-    "booking_success_t4_desc": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Připomeneme hodinu předem"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "We'll remind you 1 hour before"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Напомним за час"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pripomenieme hodinu vopred"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Нагадаємо за годину"
-          }
-        }
-      }
-    },
-    "booking_success_t4_title": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Den úklidu"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cleaning day"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "День уборки"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Deň upratovania"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "День прибирання"
-          }
-        }
-      }
-    },
     "booking_success_title": {
       "extractionState": "stale",
       "localizations": {
@@ -6799,41 +6414,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Експрес-слот — скасовано з Plus"
-          }
-        }
-      }
-    },
-    "booking_summary_items_label": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Položky"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Items"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Позиции"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Položky"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Позиції"
           }
         }
       }
@@ -7569,41 +7149,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Видалити"
-          }
-        }
-      }
-    },
-    "common_details": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Detaily"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Details"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Детали"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Detaily"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Деталі"
           }
         }
       }
@@ -11524,76 +11069,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Зачислим на ваш счёт для следующих заказов. Кредит не выплачивается и сгорает через 12 месяцев после последнего движения по кредиту."
-          }
-        }
-      }
-    },
-    "error_booking_pick_time": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vyberte prosím datum a čas úklidu."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Please select a cleaning date and time."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Пожалуйста, выберите дату и время уборки."
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vyberte prosím dátum a čas upratovania."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Будь ласка, виберіть дату та час прибирання."
-          }
-        }
-      }
-    },
-    "error_booking_sign_in_required": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pro dokončení rezervace se prosím přihlaste."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Please sign in to complete your booking."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Пожалуйста, войдите в систему, чтобы завершить бронирование."
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pre dokončenie rezervácie sa prosím prihláste."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Будь ласка, увійдіть, щоб завершити бронювання."
           }
         }
       }
@@ -22390,41 +21865,6 @@
         }
       }
     },
-    "order_cancel_notes_extra_placeholder": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Něco dalšího, co bychom měli vědět?"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Anything else we should know?"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Что-то ещё, что нам стоит знать?"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Niečo ďalšie, čo by sme mali vedieť?"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Щось ще, що нам слід знати?"
-          }
-        }
-      }
-    },
     "order_cancel_notes_optional_label": {
       "extractionState": "stale",
       "localizations": {
@@ -22456,41 +21896,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Додайте нотатку (необов’язково)"
-          }
-        }
-      }
-    },
-    "order_cancel_notes_other_placeholder": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Popište nám, co se stalo, ať se zlepšíme."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Please describe what happened so we can improve."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Опишите, что произошло, чтобы мы могли стать лучше."
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Popíšte nám, čo sa stalo, aby sme sa zlepšili."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Опишіть, що сталося, щоб ми могли покращитися."
           }
         }
       }
@@ -23230,76 +22635,6 @@
         }
       }
     },
-    "order_detail_copied": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zkopírováno"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Copied"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Скопировано"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Skopírované"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Скопійовано"
-          }
-        }
-      }
-    },
-    "order_detail_copy": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kopírovat"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Copy"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Копировать"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kopírovať"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Копіювати"
-          }
-        }
-      }
-    },
     "order_detail_discount_membership": {
       "extractionState": "stale",
       "localizations": {
@@ -23965,41 +23300,6 @@
         }
       }
     },
-    "order_detail_leave_review": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ohodnoťte úklid"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rate your experience"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Оцените впечатление"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ohodnoťte upratovanie"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Оцініть свій досвід"
-          }
-        }
-      }
-    },
     "order_detail_map_unavailable": {
       "extractionState": "manual",
       "localizations": {
@@ -24171,41 +23471,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Оплата"
-          }
-        }
-      }
-    },
-    "order_detail_progress_percent": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld %% hotovo"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld%% complete"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld%% готово"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld %% hotovo"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld%% виконано"
           }
         }
       }
@@ -25015,76 +24280,6 @@
         }
       }
     },
-    "order_photos_summary_after": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Po — %lld"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "After — %lld"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "После — %lld"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Po — %lld"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Після — %lld"
-          }
-        }
-      }
-    },
-    "order_photos_summary_before": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Před — %lld"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Before — %lld"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "До — %lld"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pred — %lld"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "До — %lld"
-          }
-        }
-      }
-    },
     "order_photos_view_button": {
       "extractionState": "stale",
       "localizations": {
@@ -25155,41 +24350,6 @@
         }
       }
     },
-    "order_receipt_no_viewer": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "V zařízení není nalezena žádná aplikace pro zobrazení PDF."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No PDF viewer found on your device."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "На устройстве не найдено приложение для просмотра PDF."
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "V zariadení nie je nájdená žiadna aplikácia na zobrazenie PDF."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "На пристрої не знайдено програму для перегляду PDF."
-          }
-        }
-      }
-    },
     "order_receipt_not_ready": {
       "extractionState": "stale",
       "localizations": {
@@ -25221,41 +24381,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Чек буде доступний після завершення прибирання."
-          }
-        }
-      }
-    },
-    "order_receipt_open_error": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nepodařilo se otevřít účtenku."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Couldn't open the receipt."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не удалось открыть чек."
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nepodarilo sa otvoriť účtenku."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не вдалося відкрити чек."
           }
         }
       }
@@ -36151,76 +35276,6 @@
         }
       }
     },
-    "register_referral_collapse_hint": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Skryje pole pro doporučovací kód a kód smaže"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hides the referral code field and clears the code"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Скрывает поле реферального кода и очищает код"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Skryje pole pre odporúčací kód a kód vymaže"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Приховує поле реферального коду та очищає код"
-          }
-        }
-      }
-    },
-    "register_referral_expand_hint": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Otevře nepovinné pole pro doporučovací kód"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Opens the optional referral code field"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Открывает необязательное поле реферального кода"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Otvorí nepovinné pole pre odporúčací kód"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Відкриває необов’язкове поле реферального коду"
-          }
-        }
-      }
-    },
     "register_referral_toggle": {
       "extractionState": "stale",
       "localizations": {
@@ -36777,41 +35832,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Надіслати код підтвердження"
-          }
-        }
-      }
-    },
-    "shell_tab_placeholder": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ — již brzy"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ — coming soon"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ — скоро"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ — už čoskoro"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ — незабаром"
           }
         }
       }
@@ -38703,76 +37723,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Сплатіть готівкою клінеру в день прибирання."
-          }
-        }
-      }
-    },
-    "booking_success_cleaner_assigned": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Uklízeč přiřazen"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cleaner assigned"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Клинер назначен"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Upratovač priradený"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Клінера призначено"
-          }
-        }
-      }
-    },
-    "booking_success_confirmed_title": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rezervace potvrzena"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Booking confirmed"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Бронирование подтверждено"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rezervácia potvrdená"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Бронювання підтверджено"
           }
         }
       }

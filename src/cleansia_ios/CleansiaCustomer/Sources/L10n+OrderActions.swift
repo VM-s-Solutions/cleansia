@@ -50,14 +50,6 @@ extension L10n {
             localized("order_cancel_notes_optional_label")
         }
 
-        static var notesOtherPlaceholder: String {
-            localized("order_cancel_notes_other_placeholder")
-        }
-
-        static var notesExtraPlaceholder: String {
-            localized("order_cancel_notes_extra_placeholder")
-        }
-
         static var feeChecking: String {
             localized("order_cancel_fee_checking")
         }
@@ -250,24 +242,6 @@ extension L10n {
 
         static var viewButton: String {
             localized("order_photos_view_button")
-        }
-
-        static func summaryBefore(_ count: Int) -> String {
-            format("order_photos_summary_before", count)
-        }
-
-        static func summaryAfter(_ count: Int) -> String {
-            format("order_photos_summary_after", count)
-        }
-    }
-
-    enum OrderReceipt {
-        static var noViewer: String {
-            localized("order_receipt_no_viewer")
-        }
-
-        static var openError: String {
-            localized("order_receipt_open_error")
         }
     }
 }

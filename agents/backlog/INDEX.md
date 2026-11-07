@@ -429,6 +429,7 @@
 | T-0914 | Partner job map — no crash when a sheet closes over it | S | `in_review` | — | Mike 2026-11-07: TestFlight build 19 crashed when the lockout or note sheet closed over the job map; MapKit threw "Invalid Region" from `PlaceMapCanvas`; fixed in Core, test-first on iOS 16.4 and 26.3 |
 | T-0915 | Partner job map — a resize is not read as her move | S | `todo` | — | Found 2026-11-07 while checking T-0914; master behaves the same; reported for Mike to decide on |
 | T-0916 | Partner job map on Android — no crash when the window shrinks while the panel moves | S | `in_review` | — | Found 2026-11-07 while checking T-0914 on Android; reproduced on the API 35 emulator; the wordmark and attribution inset is clamped at zero, as on iOS |
+| T-0919 | Partner job map — frames the place across the 180th meridian (iOS) and keeps the door on screen in windows shorter than the pin line (Android) | S | `in_progress` | — | Found 2026-11-07 while checking T-0914; Mike asked the same day for every bug found to be fixed; the Android half is fixed and measured on the API 35 emulator; the iOS half lands later in PR #366 |
 
 > **T-0785–T-0799 filed 2026-09-20** — the UI-polish and dead-code batch, on the owner's ruling of
 > that day (*"I want to polish alignments in admin app a bit on all of the overview/detail pages.
@@ -473,7 +474,7 @@
 > reported not absorbed. Owed: the DEV drop at the next DEV deploy (MS-2 / A1, `20260920204705`);
 > the merge order is #255 then #260. Open rows: none.
 
-*Next id: **T-0917**.*
+*Next id: **T-0920**.*
 
 
 Current startup checkpoint — 2026-10-16 UTC: PR #344 merged C12 `70d9c8b1ea82` as M5 `a8d308126dc4`; C12 local8, PR5 workflows/7 checks and M5 4/5 passed, all attempt 1/no reruns, with guarded manual skips and prior application limits retained. First read-only observation `38947741183/a1` failed before its baseline with a generic validation error; one POST, GET-only discovery, final artifact saved once, no resize/restart/B3 trial. T-0636 remains `in_progress`; safe diagnostic correction and the temporary comparison remain pending. The ticket's dated PR #344 closure and `pr344-closure-preparation001/CLAIMS-AND-PINS001.json` carry the bounds.

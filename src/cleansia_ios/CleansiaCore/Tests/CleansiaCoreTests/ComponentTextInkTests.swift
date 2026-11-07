@@ -199,6 +199,14 @@ final class ComponentTextInkTests: XCTestCase {
         )
     }
 
+    /// The shared screens' text buttons: the notifications inbox's Close in its toolbar.
+    func testTheSharedScreensTextButtonsTakeTheTextInk() throws {
+        XCTAssertTrue(
+            try compactSource("Notifications/NotificationsInboxSheet.swift")
+                .contains("Button(copy.close){dismiss()}.tint(CleansiaColors.primaryText)")
+        )
+    }
+
     // MARK: - Helpers
 
     private typealias RGB = SIMD3<Double>

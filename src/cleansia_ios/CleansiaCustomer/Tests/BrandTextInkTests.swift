@@ -76,10 +76,6 @@ final class BrandTextInkTests: XCTestCase {
         XCTAssertTrue(shell.contains(".tint(CleansiaColors.primaryText)"), "the tab bar's tint")
         XCTAssertFalse(shell.contains(".tint(CleansiaColors.primary)"))
         XCTAssertTrue(
-            try compactSource("Home/NotificationsInboxSheet.swift")
-                .contains("Button(L10n.NotificationsInbox.close){dismiss()}.tint(CleansiaColors.primaryText)")
-        )
-        XCTAssertTrue(
             try compactSource("Disputes/DisputesListView.swift")
                 .contains("systemImage:\"plus\")}.tint(CleansiaColors.primaryText)")
         )

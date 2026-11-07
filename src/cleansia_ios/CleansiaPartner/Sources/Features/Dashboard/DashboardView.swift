@@ -274,50 +274,9 @@ private struct GreetingBar: View {
                 .font(CleansiaTypography.bodyMedium)
             }
             Spacer()
-            NotificationBell(unreadCount: unreadCount, onTap: onNotificationTap)
+            NotificationBell(unreadCount: unreadCount, copy: L10n.NotificationsInbox.self, onTap: onNotificationTap)
         }
         .padding(.horizontal, Spacing.m)
-    }
-}
-
-/// The dashboard notification bell carrying the unread badge ("99+" capped,
-/// hidden at zero — FD-AC5); opens the notifications inbox.
-private struct NotificationBell: View {
-    let unreadCount: Int
-    let onTap: () -> Void
-
-    private var unreadBadge: String? {
-        NotificationBadgeModel.label(for: unreadCount)
-    }
-
-    var body: some View {
-        Button(action: onTap) {
-            Image(systemName: "bell")
-                .cleansiaBounce(onIncreaseOf: unreadCount)
-                .font(.system(size: 18))
-                .foregroundColor(CleansiaColors.onSurface)
-                .frame(width: 40, height: 40)
-                .background(Circle().fill(CleansiaColors.surface))
-                .overlay(Circle().stroke(CleansiaColors.outlineVariant, lineWidth: 1))
-                .overlay(alignment: .topTrailing) {
-                    if let unreadBadge {
-                        Text(verbatim: unreadBadge)
-                            .font(CleansiaTypography.labelSmall)
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 5)
-                            .padding(.vertical, 1)
-                            .background(CleansiaColors.error, in: Capsule())
-                            .offset(x: 4, y: -2)
-                    }
-                }
-                .padding(Spacing.xxs)
-                .contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(Text(verbatim: L10n.NotificationsInbox.title))
-        .accessibilityValue(
-            Text(verbatim: unreadBadge.map { L10n.NotificationsInbox.unreadA11y($0) } ?? "")
-        )
     }
 }
 

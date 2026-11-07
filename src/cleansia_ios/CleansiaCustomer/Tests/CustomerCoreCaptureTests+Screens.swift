@@ -292,3 +292,113 @@ private extension View {
             .dynamicTypeSize(text)
     }
 }
+
+/// The notifications inbox the Home bell opens: a page of rows (two unread, one more than a week old), the empty inbox
+/// and a failed load; and Home's top bar with the bell over three.
+extension CustomerCoreCaptureTests {
+    func testNotificationsInbox() async throws {
+        let now = Date()
+        let rows = [
+            UserNotification(
+                id: "n-1", eventKey: "order.cleaner_assigned", args: ["orderId": "order-1", "orderNumber": "A-1042"],
+                createdOn: now.addingTimeInterval(-600), readOn: nil
+            ),
+            UserNotification(
+                id: "n-2", eventKey: "dispute.reply", args: ["disputeId": "d-1"],
+                createdOn: now.addingTimeInterval(-3 * 3600), readOn: nil
+            ),
+            UserNotification(
+                id: "n-3", eventKey: "order.completed", args: ["orderId": "order-2", "orderNumber": "A-1041"],
+                createdOn: now.addingTimeInterval(-26 * 3600), readOn: now
+            ),
+            UserNotification(
+                id: "n-4", eventKey: "loyalty.tier_upgrade", args: ["tier": "SilverMopper"],
+                createdOn: Date(timeIntervalSince1970: 1_759_917_600), readOn: now
+            )
+        ]
+        let pages: [(String, ApiResult<UserNotificationPage>)] = [
+            ("list", .success(UserNotificationPage(items: rows, total: rows.count))),
+            ("empty", .success(UserNotificationPage(items: [], total: 0))),
+            ("error", .failure(ApiError(httpStatus: 500)))
+        ]
+        for theme in ["light", "dark"] {
+            for (state, page) in pages {
+                try use("en")
+                let client = FakeNotificationFeedClient()
+                client.pageResults = [page]
+                await CustomerCapture.shoot(
+                    name("inbox", state, Self.phone, "en", theme),
+                    size: Self.phone,
+                    to: self,
+                    hold: 0.3
+                ) {
+                    presented {
+                        NotificationsInboxSheet(
+                            client: client,
+                            badge: NotificationBadgeModel(client: client, feedEventKeys: CustomerFeedEventKeys.all),
+                            snackbar: SnackbarController(),
+                            onDestination: { _ in }
+                        )
+                    }
+                    .styled(language: "en", theme: theme)
+                }
+            }
+        }
+    }
+
+    /// Home holds its skeleton until its sources land or 1.5 s pass, so the frame waits past both; the top bar is
+    /// also cut out on its own, clear of the carousel's timing.
+    func testHomeBell() async throws {
+        for theme in ["light", "dark"] {
+            try use("en")
+            let feed = FakeNotificationFeedClient()
+            feed.unreadCountResult = .success(3)
+            let markets = await MarketFixtures.resolved()
+            let booking = BookingViewModel(
+                catalogClient: FakeCatalogClient(),
+                market: markets.statePublisher,
+                savedCardClient: FakeSavedCardClient()
+            )
+            await CustomerCapture.shoot(
+                name("home", "bell", Self.phone, "en", theme),
+                size: Self.phone,
+                to: self,
+                hold: 2.5,
+                crops: [("-topbar", CGRect(x: 0, y: 54, width: Self.phone.width, height: 72))]
+            ) {
+                tabFrame(theme: theme) {
+                    HomeTab(
+                        orderRepository: OrderRepository(client: FakeOrderClient()),
+                        recurringRepository: RecurringBookingRepository(client: FakeRecurringBookingClient()),
+                        loyaltyRepository: LoyaltyRepository(client: FakeLoyaltyClient()),
+                        membershipRepository: MembershipRepository(client: FakeMembershipManagementClient()),
+                        savedAddressRepository: SavedAddressRepository(client: FakeSavedAddressClient()),
+                        referralRepository: RewardsReferralRepository(client: FakeRewardsReferralClient()),
+                        marketStore: markets,
+                        notificationBadge: NotificationBadgeModel(
+                            client: feed,
+                            feedEventKeys: CustomerFeedEventKeys.all
+                        ),
+                        notificationFeedClient: feed,
+                        bookingVM: booking,
+                        snackbar: SnackbarController(),
+                        onBookCleaning: {},
+                        onOpenAddressManager: {},
+                        onOpenMarket: {},
+                        onOrderClick: { _ in },
+                        onSeeAllOrders: {},
+                        onSubscribePlus: {},
+                        onOpenReferral: {},
+                        onBookPackage: { _ in },
+                        onBookSize: { _, _ in },
+                        onRebookOrder: { _ in },
+                        onSetupRecurring: {},
+                        onManageRecurring: {},
+                        onNotificationDestination: { _ in }
+                    )
+                }
+                .styled(language: "en", theme: theme)
+            }
+        }
+    }
+}

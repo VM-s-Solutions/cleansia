@@ -14,14 +14,10 @@ import XCTest
 /// dropdown, the reveal panel) are pinned in Core.
 @MainActor
 final class TextInkTests: XCTestCase {
-    func testTheTabBarAndTheToolbarsTextButtonsTakeTheTextInk() throws {
+    func testTheTabBarTakesTheTextInk() throws {
         let shell = try compactSource("Shell/PartnerShellView.swift")
         XCTAssertTrue(shell.contains(".tint(CleansiaColors.primaryText)}}"), "the tab bar's tint")
         XCTAssertFalse(shell.contains(".tint(CleansiaColors.primary)"))
-        XCTAssertTrue(
-            try compactSource("Notifications/NotificationsInboxSheet.swift")
-                .contains("Button(L10n.NotificationsInbox.close){dismiss()}.tint(CleansiaColors.primaryText)")
-        )
     }
 
     /// The registration lock's stack is mounted beside the shell, not inside it, so it carries the shell's tint

@@ -263,3 +263,92 @@ private extension View {
             .dynamicTypeSize(.large)
     }
 }
+
+/// The notifications inbox the dashboard bell opens: a page of rows (two unread, one more than a week old), the empty
+/// inbox and a failed load; and the bell on the dashboard over three, over a hundred and over none.
+extension PartnerScreenCaptureTests {
+    func testNotificationsInbox() async throws {
+        let now = Date()
+        let rows = [
+            UserNotification(
+                id: "n-1", eventKey: "order.new_available", args: ["count": "3"],
+                createdOn: now.addingTimeInterval(-600), readOn: nil
+            ),
+            UserNotification(
+                id: "n-2", eventKey: "order.seat_open", args: ["orderNumber": "A-2201", "orderId": "order-1"],
+                createdOn: now.addingTimeInterval(-3 * 3600), readOn: nil
+            ),
+            UserNotification(
+                id: "n-3", eventKey: "payroll.invoice_paid", args: ["invoiceId": "inv-1"],
+                createdOn: now.addingTimeInterval(-26 * 3600), readOn: now
+            ),
+            UserNotification(
+                id: "n-4", eventKey: "order.preferred_offer", args: ["orderNumber": "A-2188", "orderId": "order-2"],
+                createdOn: Date(timeIntervalSince1970: 1_759_917_600), readOn: now
+            )
+        ]
+        let pages: [(String, ApiResult<UserNotificationPage>)] = [
+            ("list", .success(UserNotificationPage(items: rows, total: rows.count))),
+            ("empty", .success(UserNotificationPage(items: [], total: 0))),
+            ("error", .failure(ApiError(httpStatus: 500)))
+        ]
+        for theme in ["light", "dark"] {
+            for (state, page) in pages {
+                try MockCapture.use("en", near: Self.self)
+                let client = FakeNotificationFeedClient()
+                client.pageResults = [page]
+                await MockCapture.shoot(
+                    self,
+                    name: name("inbox", state, theme),
+                    size: phone,
+                    statusBar: 54,
+                    homeIndicator: 34,
+                    scroll: .rest
+                ) {
+                    NotificationsInboxSheet(
+                        client: client,
+                        badge: NotificationBadgeModel(client: client, feedEventKeys: PartnerFeedEventKeys.all),
+                        snackbar: SnackbarController(),
+                        onDestination: { _ in }
+                    )
+                    .styled(theme)
+                }
+            }
+        }
+    }
+
+    func testDashboardBell() async throws {
+        let data = DashboardData(
+            firstName: "Jana",
+            currencyCode: "CZK",
+            weekEarnings: 0,
+            weekCompletedCount: 0,
+            todayEarnings: 0,
+            payPeriod: nil,
+            lastMonthEarnings: 12480,
+            lastMonthCompletedOrders: 10,
+            thisMonthCompletedOrders: 13,
+            averageRating: 4.8,
+            ratingCount: 21,
+            todaysJobsCount: nil,
+            hero: .empty
+        )
+        for theme in ["light", "dark"] {
+            for (state, unread) in [("unread", 3), ("capped", 120), ("read", 0)] {
+                try MockCapture.use("en", near: Self.self)
+                await MockCapture.shoot(
+                    self,
+                    name: name("dashboard", "bell-\(state)", theme),
+                    size: phone,
+                    statusBar: 54,
+                    homeIndicator: 34,
+                    scroll: .rest
+                ) {
+                    DashboardContent(data: data, unreadCount: unread, onOpenEarnings: {}, onOpenOrders: {})
+                        .background(CleansiaColors.background)
+                        .styled(theme)
+                }
+            }
+        }
+    }
+}

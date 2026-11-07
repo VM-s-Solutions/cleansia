@@ -112,7 +112,10 @@ final class PartnerAppContainer: AppContainer {
         self.devicesClient = devicesClient
         let notificationFeedClient = LiveNotificationFeedClient()
         self.notificationFeedClient = notificationFeedClient
-        notificationBadge = NotificationBadgeModel(client: notificationFeedClient)
+        notificationBadge = NotificationBadgeModel(
+            client: notificationFeedClient,
+            feedEventKeys: PartnerFeedEventKeys.all
+        )
         let pushTokenRegistrar = PushTokenRegistrar(
             client: PartnerDeviceRegistrationClient(),
             deviceIdProvider: authStack.deviceIdProvider

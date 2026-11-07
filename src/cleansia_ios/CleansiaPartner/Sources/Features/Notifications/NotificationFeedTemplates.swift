@@ -1,3 +1,4 @@
+import CleansiaCore
 import Foundation
 
 /// The partner half of the backend's audience keysets (D2): everything the
@@ -15,14 +16,6 @@ enum PartnerFeedEventKeys {
     static func contains(_ eventKey: String) -> Bool {
         all.contains(eventKey)
     }
-}
-
-struct NotificationFeedRow: Equatable, Identifiable {
-    let id: String
-    let title: String
-    let body: String
-    let createdOn: Date
-    let isUnread: Bool
 }
 
 /// Renders feed rows from the SAME `push.<event_key>.title|body` catalog the
@@ -56,20 +49,5 @@ enum NotificationFeedTemplates {
         default:
             L10n.localized("push.\(eventKey).body")
         }
-    }
-}
-
-enum NotificationFeedFormat {
-    /// "now" / "2 hours ago" / "yesterday" within the last week, then the
-    /// absolute `OrdersFormat.relativeDateTime` — both rendering in the app locale.
-    static func timestamp(_ date: Date, relativeTo now: Date = Date(), locale: Locale) -> String {
-        let clamped = min(date, now)
-        guard now.timeIntervalSince(clamped) < 7 * 24 * 3600 else {
-            return OrdersFormat.relativeDateTime(clamped, locale: locale)
-        }
-        let formatter = RelativeDateTimeFormatter()
-        formatter.locale = locale
-        formatter.dateTimeStyle = .named
-        return formatter.localizedString(for: clamped, relativeTo: now)
     }
 }

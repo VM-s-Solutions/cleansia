@@ -883,6 +883,26 @@ scenario("the `extension L10n.Orders {` HEADER is not read as a usage of a membe
     rejectText: ["L10n.Orders —"],
 });
 
+scenario("an L10n namespace handed over as a type (`L10n.Orders.self`) names no member", {
+    edits: {
+        "CleansiaPartner/Sources/RegistrationLockView.swift": BASE[
+            "CleansiaPartner/Sources/RegistrationLockView.swift"
+        ].replace("Text(L10n.Splash.tagline)", "Text(String(describing: L10n.Orders.self))"),
+    },
+    expectExit: 0,
+    rejectText: ["l10n-members"],
+});
+
+scenario("a misspelt L10n namespace handed over as a type -> RED", {
+    edits: {
+        "CleansiaPartner/Sources/RegistrationLockView.swift": BASE[
+            "CleansiaPartner/Sources/RegistrationLockView.swift"
+        ].replace("Text(L10n.Splash.tagline)", "Text(String(describing: L10n.Ordrs.self))"),
+    },
+    expectExit: 1,
+    expectText: ["l10n-members", "L10n.Ordrs.self", "no such declared member in CleansiaPartner"],
+});
+
 scenario("an L10n member the PARTNER declares is not visible to the CUSTOMER", {
     edits: {
         "CleansiaCustomer/Sources/CustomerHome.swift": BASE["CleansiaCustomer/Sources/CustomerHome.swift"].replace(

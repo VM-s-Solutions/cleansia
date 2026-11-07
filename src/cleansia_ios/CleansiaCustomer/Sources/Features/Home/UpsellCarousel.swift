@@ -173,7 +173,8 @@ struct UpsellCarousel: View {
         if rotationStopped {
             indicators(count: count, selected: selected, fraction: 0.08)
         } else {
-            TimelineView(.animation(minimumInterval: 1.0 / 60)) { context in
+            // 20 Hz moves the fill a quarter of a point a tick, which reads as smooth at a third of the work.
+            TimelineView(.animation(minimumInterval: 1.0 / 20)) { context in
                 indicators(count: count, selected: selected, fraction: UpsellSlide.indicatorFraction(
                     startedAt: rotationStarted, now: context.date
                 ))

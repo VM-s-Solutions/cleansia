@@ -1717,6 +1717,7 @@
       }
     },
     "booking_bath_short": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "variations": {
@@ -3892,6 +3893,7 @@
       }
     },
     "booking_package_more": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "variations": {
@@ -5609,6 +5611,7 @@
       }
     },
     "booking_rooms_short": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "variations": {
@@ -12926,6 +12929,7 @@
       }
     },
     "home_milestone_subtitle_v2": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "variations": {
@@ -15626,6 +15630,7 @@
       }
     },
     "loyalty_bookings_completed": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "variations": {
@@ -16398,6 +16403,7 @@
       }
     },
     "loyalty_referral_stats_waiting": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "variations": {
@@ -25955,6 +25961,7 @@
       }
     },
     "order_review_star_content_desc": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "variations": {
@@ -27322,6 +27329,7 @@
       }
     },
     "orders_services_more": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "variations": {
@@ -32434,6 +32442,7 @@
       }
     },
     "push.order.no_cleaner_refunded.body": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -32468,6 +32477,7 @@
       }
     },
     "push.order.no_cleaner_refunded.title": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -33062,6 +33072,7 @@
       }
     },
     "push.order.seat_open.body": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -33096,6 +33107,7 @@
       }
     },
     "push.order.seat_open.title": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -34425,6 +34437,7 @@
       }
     },
     "recurring_confirm_cta_cash": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {

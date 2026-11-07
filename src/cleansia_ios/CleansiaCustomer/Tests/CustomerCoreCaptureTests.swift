@@ -266,6 +266,25 @@ final class CustomerCoreCaptureTests: XCTestCase {
         ((view as? UIScrollView).map { [$0] } ?? []) + view.subviews.flatMap { scrollViews(in: $0) }
     }
 
+    // MARK: - The booking's when-and-where step
+
+    /// The day chips run from today, so a pair of these frames compares only when both were taken on the same day.
+    func testBookingWhenWhere() async throws {
+        for theme in ["light", "dark"] {
+            try use("en")
+            let vm = await CustomerCaptureFixture.booking()
+            vm.back()
+            await CustomerCapture.shoot(
+                name("booking", "whenwhere", Self.phone, "en", theme),
+                size: Self.phone,
+                to: self,
+                hold: 0.5
+            ) {
+                bookingSheet(vm, size: Self.phone, theme: theme, language: "en", homeIndicator: 34)
+            }
+        }
+    }
+
     // MARK: - The order detail
 
     func testOrderDetail() async throws {

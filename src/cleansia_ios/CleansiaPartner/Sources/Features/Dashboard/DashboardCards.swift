@@ -201,7 +201,7 @@ private struct MonthDeltaChip: View {
         HStack(spacing: Spacing.xxs) {
             Image(systemName: isUp ? "arrow.up.right" : "arrow.down.right")
                 .font(.system(size: 12))
-            Text("\(isUp ? "+" : "")\(percent)%")
+            Text(verbatim: "\(isUp ? "+" : "")\(percent)%")
                 .font(CleansiaTypography.labelSmall)
         }
         .foregroundColor(color)

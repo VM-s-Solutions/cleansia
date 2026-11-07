@@ -156,7 +156,7 @@ public struct CleansiaBankAccountField: View {
         // An edit is read here, before the caller's binding sees it: callers sanitise to digits on write, so by
         // the time onChange below runs a pasted account's slash is gone and its bank code has been run into the
         // number.
-        TextField("", text: Binding(
+        TextField(String(), text: Binding(
             get: { text.wrappedValue },
             set: { raw in
                 let held = Boxes(prefix: prefix, number: number, bankCode: bankCode)

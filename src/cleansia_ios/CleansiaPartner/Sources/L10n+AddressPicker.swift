@@ -1,3 +1,4 @@
+import CleansiaCore
 import Foundation
 
 extension L10n {
@@ -47,3 +48,5 @@ extension L10n {
         }
     }
 }
+
+extension L10n.AddressPicker: AddressPickerCopy {}

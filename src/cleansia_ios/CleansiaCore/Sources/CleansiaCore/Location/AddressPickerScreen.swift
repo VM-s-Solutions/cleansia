@@ -1,43 +1,77 @@
-import CleansiaCore
 import MapKit
 import SwiftUI
 
-struct AddressPickerView: View {
+/// What the address picker says. Each app words it in its own catalog.
+public protocol AddressPickerCopy {
+    static var back: String { get }
+    static var searchHint: String { get }
+    static var clear: String { get }
+    static var searching: String { get }
+    static var noResults: String { get }
+    static var myLocation: String { get }
+    static var locationDenied: String { get }
+    static var locationUnavailable: String { get }
+    static var lookingUp: String { get }
+    static var dragToPick: String { get }
+    static var confirm: String { get }
+}
+
+/// The map that picks an address: a pin over the map, the search field, the my-location button and the card
+/// that confirms the address under the pin. A caller with a step after the pick passes it as `review`: it takes
+/// the map's place until it goes back, and the map keeps its place and its address meanwhile.
+public struct AddressPickerScreen<Review: View>: View {
     @StateObject private var vm: AddressPickerViewModel
+    /// Prague, until a location fix or a pick moves the map.
     @State private var region = MKCoordinateRegion(
-        center: CLLocationCoordinate2D(latitude: defaultLatitude, longitude: defaultLongitude),
-        span: MKCoordinateSpan(latitudeDelta: defaultSpan, longitudeDelta: defaultSpan)
+        center: CLLocationCoordinate2D(latitude: 50.0755, longitude: 14.4378),
+        span: MKCoordinateSpan(latitudeDelta: 0.012, longitudeDelta: 0.012)
     )
     @FocusState private var searchFocused: Bool
+    @State private var reviewing: GeocodedAddress?
     @State private var bottomCover: CGFloat = 0
     @Environment(\.locationProvider) private var location
     @Environment(\.snackbarController) private var snackbar
 
     private let mapProvider: MapProvider
+    private let copy: AddressPickerCopy.Type
+    private let review: ((GeocodedAddress, @escaping () -> Void) -> Review)?
     private let onConfirmed: (GeocodedAddress) -> Void
     private let onBack: () -> Void
 
-    private static let defaultLatitude = 50.0755
-    private static let defaultLongitude = 14.4378
-    private static let defaultSpan = 0.012
-
-    init(
+    public init(
         geocoding: GeocodingService,
         mapProvider: MapProvider,
-        serviceArea: ServiceAreaProvider,
+        serviceArea: ServiceAreaProvider?,
+        copy: AddressPickerCopy.Type,
+        review: ((GeocodedAddress, @escaping () -> Void) -> Review)?,
         onConfirmed: @escaping (GeocodedAddress) -> Void,
         onBack: @escaping () -> Void
     ) {
         _vm = StateObject(wrappedValue: AddressPickerViewModel(
             geocoding: geocoding,
-            servicedCountryCodesProvider: { await serviceArea.servicedCountryIsoCodes() }
+            servicedCountryCodesProvider: serviceArea.map { provider in
+                { await provider.servicedCountryIsoCodes() }
+            }
         ))
         self.mapProvider = mapProvider
+        self.copy = copy
+        self.review = review
         self.onConfirmed = onConfirmed
         self.onBack = onBack
     }
 
-    var body: some View {
+    public var body: some View {
+        Group {
+            if let reviewing, let review {
+                review(reviewing) { self.reviewing = nil }
+            } else {
+                mapContent
+            }
+        }
+        .navigationBarHidden(true)
+    }
+
+    private var mapContent: some View {
         ZStack {
             mapProvider.pickerMap(region: $region, showsUserLocation: false, bottomInset: bottomCover)
                 .ignoresSafeArea()
@@ -52,16 +86,17 @@ struct AddressPickerView: View {
                         Spacer()
                         FloatingCircleButton(
                             systemIcon: "location",
-                            accessibilityLabel: L10n.AddressPicker.myLocation,
+                            accessibilityLabel: copy.myLocation,
                             action: { Task { await vm.recenterOnMyLocation(location: location) } }
                         )
                     }
                     .padding(.horizontal, Spacing.s)
                     .padding(.bottom, Spacing.s)
-                    ConfirmCard(
+                    AddressPickerConfirmCard(
                         resolved: vm.resolved,
                         lookingUp: vm.lookingUp,
                         enabled: vm.canConfirm,
+                        copy: copy,
                         onConfirm: vm.confirm
                     )
                 }
@@ -75,7 +110,6 @@ struct AddressPickerView: View {
                 })
             }
         }
-        .navigationBarHidden(true)
         .task { await vm.autoCenterOnOpen(location: location) }
         .onReceive(vm.recenter) { coordinate in
             region.center = CLLocationCoordinate2D(latitude: coordinate.latitude, longitude: coordinate.longitude)
@@ -83,12 +117,18 @@ struct AddressPickerView: View {
         .onReceive(vm.locationFailed) { failure in
             switch failure {
             case .denied:
-                snackbar.showError(L10n.AddressPicker.locationDenied)
+                snackbar.showError(copy.locationDenied)
             case .unavailable:
-                snackbar.showError(L10n.AddressPicker.locationUnavailable)
+                snackbar.showError(copy.locationUnavailable)
             }
         }
-        .onReceive(vm.confirmed, perform: onConfirmed)
+        .onReceive(vm.confirmed) { address in
+            if review == nil {
+                onConfirmed(address)
+            } else {
+                reviewing = address
+            }
+        }
     }
 
     private var topBar: some View {
@@ -96,12 +136,13 @@ struct AddressPickerView: View {
             HStack(spacing: Spacing.s) {
                 FloatingCircleButton(
                     systemIcon: "chevron.left",
-                    accessibilityLabel: L10n.AddressPicker.back,
+                    accessibilityLabel: copy.back,
                     action: onBack
                 )
                 SearchField(
                     query: vm.searchQuery,
                     focused: $searchFocused,
+                    copy: copy,
                     onChange: vm.onSearchChange,
                     onClear: vm.clearSearch
                 )
@@ -110,6 +151,7 @@ struct AddressPickerView: View {
                 SearchDropdown(
                     searching: vm.searching,
                     results: vm.searchResults,
+                    copy: copy,
                     onSelect: { result in
                         vm.selectResult(result)
                         searchFocused = false
@@ -126,9 +168,31 @@ struct AddressPickerView: View {
     }
 }
 
+public extension AddressPickerScreen where Review == EmptyView {
+    init(
+        geocoding: GeocodingService,
+        mapProvider: MapProvider,
+        serviceArea: ServiceAreaProvider?,
+        copy: AddressPickerCopy.Type,
+        onConfirmed: @escaping (GeocodedAddress) -> Void,
+        onBack: @escaping () -> Void
+    ) {
+        self.init(
+            geocoding: geocoding,
+            mapProvider: mapProvider,
+            serviceArea: serviceArea,
+            copy: copy,
+            review: nil,
+            onConfirmed: onConfirmed,
+            onBack: onBack
+        )
+    }
+}
+
 private struct SearchField: View {
     let query: String
     @FocusState.Binding var focused: Bool
+    let copy: AddressPickerCopy.Type
     let onChange: (String) -> Void
     let onClear: () -> Void
 
@@ -137,7 +201,7 @@ private struct SearchField: View {
             Image(systemName: "magnifyingglass")
                 .foregroundColor(CleansiaColors.onSurfaceVariant)
             TextField(
-                L10n.AddressPicker.searchHint,
+                copy.searchHint,
                 text: Binding(get: { query }, set: onChange)
             )
             .focused($focused)
@@ -149,7 +213,7 @@ private struct SearchField: View {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
                 }
-                .accessibilityLabel(L10n.AddressPicker.clear)
+                .accessibilityLabel(copy.clear)
             }
         }
         .padding(.horizontal, Spacing.s)
@@ -163,14 +227,15 @@ private struct SearchField: View {
 private struct SearchDropdown: View {
     let searching: Bool
     let results: [GeocodedAddress]
+    let copy: AddressPickerCopy.Type
     let onSelect: (GeocodedAddress) -> Void
 
     var body: some View {
         VStack(spacing: 0) {
             if searching {
-                SearchStateRow(text: L10n.AddressPicker.searching, showProgress: true)
+                SearchStateRow(text: copy.searching, showProgress: true)
             } else if results.isEmpty {
-                SearchStateRow(text: L10n.AddressPicker.noResults, showProgress: false)
+                SearchStateRow(text: copy.noResults, showProgress: false)
             } else {
                 ForEach(results.indices, id: \.self) { index in
                     SearchResultRow(result: results[index]) { onSelect(results[index]) }
@@ -241,13 +306,28 @@ private struct SearchResultRow: View {
     }
 }
 
-struct ConfirmCard: View {
+public struct AddressPickerConfirmCard: View {
     let resolved: GeocodedAddress?
     let lookingUp: Bool
     let enabled: Bool
+    let copy: AddressPickerCopy.Type
     let onConfirm: () -> Void
 
-    var body: some View {
+    public init(
+        resolved: GeocodedAddress?,
+        lookingUp: Bool,
+        enabled: Bool,
+        copy: AddressPickerCopy.Type,
+        onConfirm: @escaping () -> Void
+    ) {
+        self.resolved = resolved
+        self.lookingUp = lookingUp
+        self.enabled = enabled
+        self.copy = copy
+        self.onConfirm = onConfirm
+    }
+
+    public var body: some View {
         VStack(alignment: .leading, spacing: Spacing.s) {
             HStack(spacing: Spacing.xs) {
                 Image(systemName: "mappin.and.ellipse")
@@ -275,7 +355,7 @@ struct ConfirmCard: View {
                     ProgressView().scaleEffect(0.8)
                 }
             }
-            CleansiaPrimaryButton(L10n.AddressPicker.confirm, enabled: enabled, action: onConfirm)
+            CleansiaPrimaryButton(copy.confirm, enabled: enabled, action: onConfirm)
         }
         .padding(Spacing.m)
         .background(CleansiaColors.surface)
@@ -286,8 +366,8 @@ struct ConfirmCard: View {
     }
 
     private var title: String {
-        if lookingUp { return L10n.AddressPicker.lookingUp }
-        guard let resolved else { return L10n.AddressPicker.dragToPick }
+        if lookingUp { return copy.lookingUp }
+        guard let resolved else { return copy.dragToPick }
         return resolved.street.isEmpty ? resolved.formatted : resolved.street
     }
 
@@ -299,34 +379,21 @@ struct ConfirmCard: View {
 }
 
 #if DEBUG
-    private struct PreviewMapProvider: MapProvider {
-        func pickerMap(
-            region _: Binding<MKCoordinateRegion>,
-            showsUserLocation _: Bool,
-            bottomInset _: CGFloat
-        ) -> AnyView {
-            AnyView(CleansiaColors.surfaceVariant)
-        }
-
-        func fullBleedMap(coordinate _: Coordinate) -> AnyView {
-            AnyView(CleansiaColors.surfaceVariant)
-        }
+    private enum PreviewAddressPickerCopy: AddressPickerCopy {
+        static let back = "Back"
+        static let searchHint = "Search address…"
+        static let clear = "Clear"
+        static let searching = "Searching…"
+        static let noResults = "No results"
+        static let myLocation = "My location"
+        static let locationDenied = "Location permission denied."
+        static let locationUnavailable = "Couldn't get your location."
+        static let lookingUp = "Looking up address…"
+        static let dragToPick = "Drag the map to place the pin"
+        static let confirm = "Use this address"
     }
 
-    private func previewAddress() -> GeocodedAddress {
-        GeocodedAddress(
-            latitude: 50.0755,
-            longitude: 14.4378,
-            street: "Vinohradská 12",
-            city: "Praha",
-            zipCode: "120 00",
-            country: "Czechia",
-            countryIsoCode: "cz",
-            formatted: "Vinohradská 12, Praha"
-        )
-    }
-
-    struct AddressPickerView_Previews: PreviewProvider {
+    struct AddressPickerScreen_Previews: PreviewProvider {
         static var previews: some View {
             Group {
                 ZStack {
@@ -338,7 +405,13 @@ struct ConfirmCard: View {
                     .ignoresSafeArea()
                     VStack {
                         Spacer()
-                        ConfirmCard(resolved: nil, lookingUp: false, enabled: false, onConfirm: {})
+                        AddressPickerConfirmCard(
+                            resolved: nil,
+                            lookingUp: false,
+                            enabled: false,
+                            copy: PreviewAddressPickerCopy.self,
+                            onConfirm: {}
+                        )
                     }
                 }
                 .previewDisplayName("Empty · drag to pick")
@@ -352,7 +425,22 @@ struct ConfirmCard: View {
                     .ignoresSafeArea()
                     VStack {
                         Spacer()
-                        ConfirmCard(resolved: previewAddress(), lookingUp: false, enabled: true, onConfirm: {})
+                        AddressPickerConfirmCard(
+                            resolved: GeocodedAddress(
+                                latitude: 50.0755,
+                                longitude: 14.4378,
+                                street: "Vinohradská 12",
+                                city: "Praha",
+                                zipCode: "120 00",
+                                country: "Czechia",
+                                countryIsoCode: "cz",
+                                formatted: "Vinohradská 12, Praha"
+                            ),
+                            lookingUp: false,
+                            enabled: true,
+                            copy: PreviewAddressPickerCopy.self,
+                            onConfirm: {}
+                        )
                     }
                 }
                 .previewDisplayName("Resolved · confirm enabled")

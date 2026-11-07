@@ -406,3 +406,82 @@ private final class CaptureAuthClient: AuthClient {
     func signOutLocal() async {}
     func logout() async {}
 }
+
+/// The address picker as the address step opens it: with no location to centre on, the card asks for a drag; with
+/// one, it shows the address under the pin.
+extension PartnerScreenCaptureTests {
+    func testAddressPicker() async throws {
+        for theme in ["light", "dark"] {
+            for (state, location) in [
+                ("pick", CaptureLocation(granted: false)),
+                ("resolved", CaptureLocation(granted: true))
+            ] {
+                try MockCapture.use("en", near: Self.self)
+                await MockCapture.shoot(
+                    self,
+                    name: name("picker", state, theme),
+                    size: phone,
+                    statusBar: 54,
+                    homeIndicator: 34,
+                    scroll: .rest,
+                    settle: 1.2
+                ) {
+                    NavigationStack {
+                        AddressPickerScreen(
+                            geocoding: CaptureGeocoder(),
+                            mapProvider: PreviewMapProvider(),
+                            serviceArea: ServiceAreaProvider(
+                                dataSource: PartnerServiceAreaDataSource(client: FakePartnerProfileClient())
+                            ),
+                            copy: L10n.AddressPicker.self,
+                            onConfirmed: { _ in },
+                            onBack: {}
+                        )
+                    }
+                    .environment(\.locationProvider, location)
+                    .styled(theme)
+                }
+            }
+        }
+    }
+}
+
+private final class CaptureGeocoder: GeocodingService, @unchecked Sendable {
+    func reverseGeocode(_: Coordinate) async -> GeocodedAddress? {
+        GeocodedAddress(
+            latitude: 50.0755,
+            longitude: 14.4378,
+            street: "Vinohradská 12",
+            city: "Praha",
+            zipCode: "120 00",
+            country: "Czechia",
+            countryIsoCode: "cz",
+            formatted: "Vinohradská 12, Praha"
+        )
+    }
+
+    func forwardGeocode(query _: String, countryIsoCodes _: [String]) async -> [GeocodedAddress] {
+        []
+    }
+}
+
+@MainActor
+private final class CaptureLocation: LocationProvider {
+    private let granted: Bool
+
+    init(granted: Bool) {
+        self.granted = granted
+    }
+
+    var authorizationStatus: LocationAuthorizationStatus {
+        granted ? .authorized : .denied
+    }
+
+    func requestWhenInUseAuthorization() async -> LocationAuthorizationStatus {
+        authorizationStatus
+    }
+
+    func currentLocation() async -> Coordinate? {
+        granted ? Coordinate(latitude: 50.0755, longitude: 14.4378) : nil
+    }
+}

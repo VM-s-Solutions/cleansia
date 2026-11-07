@@ -78,6 +78,25 @@ Where the verifier corrected an auditor, the verifier's note wins.
 
 ### Core moves, part 1
 
+- 2026-11-07 — Built, one commit per item. The slide is one VoiceOver button, in Core (`2ea1d891d`): the open
+  `SlideToConfirm` is named by its words and detail, carries the button trait, confirms when activated while enabled
+  and not busy, and reads as dimmed otherwise; the partner's own `slideAccessibility` and its four call sites are
+  gone. A Core test proves the action (before the change it found the words and a "Forward" image, and no button), a
+  hosted customer test books from the booking footer's slide through the accessibility tree on iOS 16.4 and 26.3, and
+  the partner test that starts a job from the footer's sheet through VoiceOver now runs through Core. The picker list,
+  the five-language table and `Theme.colorScheme` live once in Core's `Settings`, and both apps use them
+  (`33b9571d3`). Money and dates follow the in-app language (`5d811ffbe`): the customer's `OrdersFormat`, Core's
+  `EarningsFormat` and the booking's `BookingDateFormat` default to `CoreL10n.locale`; a test that picks Czech, then
+  English, failed on the old formatters (412.30 for 412,30, Thu for čt) and passes. Captures in en, light and dark:
+  every English customer frame is byte-identical across the three items, as are the partner's picker, slide and
+  invoice frames; the booking footer's VoiceOver tree has one button where it had the words and an image; the frames
+  that run in Czech, Slovak, Ukrainian or Russian on the English simulator now group money that language's way
+  (1 150 Kč for 1,150 Kč), which is the fix. The other partner frames differ only in map tiles or a spinner's phase,
+  and their VoiceOver trees only by the no-break space the visible slide label carries. Suites on the iOS 16.4
+  simulator: Core 932, Partner 1444, Customer 1988 with the three iOS 16.4 failures known before this work, and one
+  timing failure in `AppointmentConfirmationVisualTests` that passed on its rerun and in three earlier runs; Customer
+  on iOS 26.3: 1988, none failing. Evidence in `ios-longterm-20261107/captures/`.
+
 ### Core moves, part 2
 
 ### Lag

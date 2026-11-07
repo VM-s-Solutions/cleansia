@@ -557,3 +557,36 @@ extension PartnerScreenCaptureTests {
         return image.jpegData(compressionQuality: 0.8) ?? Data()
     }
 }
+
+/// The cold-start splash while the gate asks whether her registration is complete.
+extension PartnerScreenCaptureTests {
+    func testSplash() async throws {
+        for theme in ["light", "dark"] {
+            try MockCapture.use("en", near: Self.self)
+            await MockCapture.shoot(
+                self,
+                name: name("splash", "resolving", theme),
+                size: phone,
+                statusBar: 54,
+                homeIndicator: 34,
+                scroll: .rest,
+                settle: 1.2
+            ) {
+                SplashGateView(
+                    hasValidSession: true,
+                    settings: UserDefaultsAppSettingsStore(),
+                    client: CaptureRegistrationClient(),
+                    onSignOut: {},
+                    onResolved: { _ in }
+                )
+                .styled(theme)
+            }
+        }
+    }
+}
+
+private struct CaptureRegistrationClient: PartnerRegistrationClient {
+    func checkRegistrationStatus() async -> ApiResult<RegistrationCompletionStatus> {
+        .success(RegistrationCompletionStatus())
+    }
+}

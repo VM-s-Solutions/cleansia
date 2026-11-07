@@ -128,12 +128,3 @@ public enum CleansiaFont {
         contentSizeCategories[size] ?? .large
     }
 }
-
-public extension CleansiaFont {
-    static func registerBundledFonts(in bundle: Bundle) {
-        for face in BundledFace.allCases {
-            guard let url = bundle.url(forResource: face.rawValue, withExtension: "ttf") else { continue }
-            CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
-        }
-    }
-}

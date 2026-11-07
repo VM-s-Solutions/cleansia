@@ -12,12 +12,4 @@ enum BookingDateFormat {
         formatter.setLocalizedDateFormatFromTemplate("EEE")
         return formatter.string(from: date)
     }
-
-    static func summaryDate(_ date: Date, calendar: Calendar = .current) -> String {
-        let formatter = DateFormatter()
-        formatter.calendar = calendar
-        formatter.locale = CoreL10n.locale
-        formatter.setLocalizedDateFormatFromTemplate("EEEMMMd")
-        return formatter.string(from: date)
-    }
 }

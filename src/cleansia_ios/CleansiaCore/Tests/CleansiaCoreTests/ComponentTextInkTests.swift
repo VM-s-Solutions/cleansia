@@ -129,8 +129,8 @@ final class ComponentTextInkTests: XCTestCase {
 
     /// Blue text on the primary container reads 4.5:1 in both modes (finding 2026-10-05): in dark mode the
     /// container is sky-700, where the text ink's sky-400 read 2.77:1, so badge text takes
-    /// `primaryTextOnContainer` (sky-100 in dark, the text ink's sky-700 in light). The section header's badge
-    /// is one.
+    /// `primaryTextOnContainer` (sky-100 in dark, the text ink's sky-700 in light). The devices screen's This
+    /// device chip is one.
     func testBadgeTextOnThePrimaryContainerReadsInBothModes() throws {
         for style in [UIUserInterfaceStyle.light, .dark] {
             let container = resolved(CleansiaColors.primaryContainer, style)
@@ -158,10 +158,6 @@ final class ComponentTextInkTests: XCTestCase {
             1,
             accuracy: 0.001,
             "light changed"
-        )
-        XCTAssertTrue(
-            try compactSource("Components/CleansiaSectionHeader.swift")
-                .contains(".foregroundColor(CleansiaColors.primaryTextOnContainer).padding(.horizontal,Spacing.s)")
         )
         XCTAssertTrue(try compactSource("Devices/DevicesView.swift").contains(
             "Text(copy.thisDevice).font(CleansiaTypography.labelSmall)"

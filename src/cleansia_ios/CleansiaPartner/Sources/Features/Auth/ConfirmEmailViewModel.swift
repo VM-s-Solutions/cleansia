@@ -111,11 +111,3 @@ final class ConfirmEmailViewModel: ViewModel {
         }
     }
 }
-
-#if DEBUG
-    extension ConfirmEmailViewModel {
-        func setCodeForTest(_ value: String) {
-            code = value
-        }
-    }
-#endif

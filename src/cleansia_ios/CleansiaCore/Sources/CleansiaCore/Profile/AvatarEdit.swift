@@ -16,10 +16,6 @@
         public var isRemoval: Bool {
             self == .removed
         }
-
-        public var isPick: Bool {
-            upload != nil
-        }
     }
 
     /// What to confirm once the server has accepted a save carrying this edit. Nil for `.unchanged`:

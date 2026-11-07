@@ -22,9 +22,3 @@ struct ReferralListPage: Equatable {
     let items: [ReferralListItem]
     let total: Int
 }
-
-enum RewardsReferralStatus: Int {
-    case accepted = 1
-    case qualified = 2
-    case expired = 3
-}

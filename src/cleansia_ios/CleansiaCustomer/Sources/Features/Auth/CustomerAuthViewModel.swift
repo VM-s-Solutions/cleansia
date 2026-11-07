@@ -580,10 +580,6 @@ let resetCodeLength = 6
             signInState = .submitting
         }
 
-        func forceSignUpSubmittingForTest() {
-            signUpState = .submitting
-        }
-
         func forceSocialSubmittingForTest() {
             socialState = .submitting
         }

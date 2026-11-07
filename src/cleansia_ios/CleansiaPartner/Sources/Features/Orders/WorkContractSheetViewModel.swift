@@ -85,7 +85,6 @@ enum WorkContractOutcome: Equatable {
 }
 
 enum WorkContractErrorKey {
-    static let notAccepted = "contract.not_accepted"
     static let textMismatch = "contract.text_mismatch"
     static let acceptanceRequired = "contract.acceptance_required"
     static let documentNotFound = "legal.document_not_found"

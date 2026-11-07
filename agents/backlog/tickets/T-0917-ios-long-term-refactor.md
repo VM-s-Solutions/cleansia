@@ -61,6 +61,21 @@ Where the verifier corrected an auditor, the verifier's note wins.
 
 ### Build health
 
+- 2026-11-07 — Built, one commit per item. Stripe resolves from `stripe-ios-spm`, still at 25.17.0 (`ab36c3299`):
+  a fresh resolve with no package cache, as CI and a new clone run it, took 166 s and 4.6 GB and takes 34 s and
+  1.5 GB; with the local cache, 29 s and 22 s. The four slow type-check sites are typed (`9770615c9`): the onboarding
+  step node's body 2350 → 77 ms, `ContactRows.sizeThatFits` 1011 → 17 ms, `StatusBarFade.luminance` 617 → 9 ms,
+  `ChipFlow.sizeThatFits` 308 → 36 ms, and none warns at 150 ms. No string literal reaches SwiftUI as a catalog key
+  and every key carries an `extractionState` (`e1d3148ab`): a build with extraction on found fifteen literal keys
+  (the audit's eleven, the recurring start date and three Core previews) and twenty-six unmarked keys; replaying an
+  IDE build's catalog sync now leaves all three catalogs byte for byte the same, and two checks in
+  `StringCatalogCompletenessTests` keep it so. Captures in en, light and dark: the customer frames are byte-identical
+  (48), as are the new partner frames (the bank step, My documents, the last-month card); the partner Orders and
+  job-detail frames read the same to VoiceOver (222 of 222), and their pixels differ only by map tiles and
+  anti-aliasing, which a second run with no code change reproduces on 91 frames. Suites on the iOS 16.4 simulator:
+  Core 927, Partner 1445, Customer 1984 with the three iOS 16.4 failures known before this work, which pass on
+  iOS 26.3 (the customer suite there: 1984, none failing). Evidence in `ios-longterm-20261107/`.
+
 ### Core moves, part 1
 
 ### Core moves, part 2

@@ -245,7 +245,9 @@ struct PlaceMapView: UIViewRepresentable {
         }
 
         private func report(_ mapView: MKMapView) {
-            guard movedAway != nil, let canvas = mapView as? PlaceMapCanvas, !canvas.isRecentring else { return }
+            guard movedAway != nil, let canvas = mapView as? PlaceMapCanvas, !canvas.isRecentring,
+                  PlaceMapCanvas.hasRoom(in: canvas.bounds.size, margins: canvas.layoutMargins)
+            else { return }
             let isAway = canvas.isAway
             if isAway != away { say(isAway, on: canvas) }
         }
@@ -309,13 +311,14 @@ final class PlaceMapCanvas: MKMapView {
         return Self.isAway(look(at: place), from: framedLook)
     }
 
-    /// Animated, unless the map has changed size since it last framed the place.
+    /// Animated, unless the map has changed size since it last framed the place or has no room to frame it now.
     func recentre(animated: Bool = true) {
         guard let target, isAway else { return }
         keepsHerView = false
-        guard animated, !framingIsStale else { return frameNow(target) }
+        guard animated, !framingIsStale, let region = Self.framed(target, in: bounds.size, margins: layoutMargins)
+        else { return frameNow(target) }
         isRecentring = true
-        setRegion(Self.framed(target, in: bounds.size, margins: layoutMargins), animated: true)
+        setRegion(region, animated: true)
     }
 
     /// Moved further than a fingertip slips, 8, or zoomed by more than 5 %.
@@ -333,10 +336,12 @@ final class PlaceMapCanvas: MKMapView {
         )
     }
 
-    /// Moves the logo and the legal link alone: MapKit keeps its drawing still when only the margins change.
+    /// Moves the logo and the legal link alone: MapKit keeps its drawing still when only the margins change. A place
+    /// still waiting for room is framed at the next layout, which new margins do not ask for themselves.
     func keepMarks(inside margins: NSDirectionalEdgeInsets) {
         guard directionalLayoutMargins != margins else { return }
         directionalLayoutMargins = margins
+        setNeedsLayout()
     }
 
     /// The veil sits right above the map's own drawing, under the logo and the legal link MapKit lays over it, so
@@ -358,16 +363,29 @@ final class PlaceMapCanvas: MKMapView {
         }
     }
 
+    /// With no room to frame the place in, the next layout that has room frames it.
     private func frameNow(_ target: MKCoordinateRegion) {
         framedLook = nil
-        setRegion(Self.framed(target, in: bounds.size, margins: layoutMargins), animated: false)
+        guard let region = Self.framed(target, in: bounds.size, margins: layoutMargins) else {
+            framedSize = .zero
+            return
+        }
+        setRegion(region, animated: false)
         framedLook = place.map { look(at: $0) }
         framingIsStale = false
     }
 
+    /// Whether the margins leave MapKit room to draw in: without it there is nothing to frame, and nothing it draws is
+    /// her move.
+    static func hasRoom(in size: CGSize, margins: UIEdgeInsets) -> Bool {
+        margins.left + margins.right < size.width && margins.top + margins.bottom < size.height
+    }
+
     /// MapKit fits a region inside the layout margins, centred there. This is the region that, so fitted, draws
-    /// `region` as it would fill the whole `size`: the same scale, the same point at the map's centre.
-    static func framed(_ region: MKCoordinateRegion, in size: CGSize, margins: UIEdgeInsets) -> MKCoordinateRegion {
+    /// `region` as it would fill the whole `size`: the same scale, the same point at the map's centre. None without
+    /// room inside the margins, or past the limits MapKit throws on.
+    static func framed(_ region: MKCoordinateRegion, in size: CGSize, margins: UIEdgeInsets) -> MKCoordinateRegion? {
+        guard hasRoom(in: size, margins: margins) else { return nil }
         let topLeft = MKMapPoint(CLLocationCoordinate2D(
             latitude: region.center.latitude + region.span.latitudeDelta / 2,
             longitude: region.center.longitude - region.span.longitudeDelta / 2
@@ -385,16 +403,18 @@ final class PlaceMapCanvas: MKMapView {
         let midY = topLeft.y + height / 2 + Double(margins.top - margins.bottom) / 2 * scale
         let top = MKMapPoint(x: midX - innerWidth / 2, y: midY - innerHeight / 2).coordinate
         let bottom = MKMapPoint(x: midX + innerWidth / 2, y: midY + innerHeight / 2).coordinate
-        return MKCoordinateRegion(
-            center: CLLocationCoordinate2D(
-                latitude: (top.latitude + bottom.latitude) / 2,
-                longitude: (top.longitude + bottom.longitude) / 2
-            ),
-            span: MKCoordinateSpan(
-                latitudeDelta: top.latitude - bottom.latitude,
-                longitudeDelta: bottom.longitude - top.longitude
-            )
+        let centre = CLLocationCoordinate2D(
+            latitude: (top.latitude + bottom.latitude) / 2,
+            longitude: (top.longitude + bottom.longitude) / 2
         )
+        let span = MKCoordinateSpan(
+            latitudeDelta: top.latitude - bottom.latitude,
+            longitudeDelta: bottom.longitude - top.longitude
+        )
+        guard CLLocationCoordinate2DIsValid(centre), span.latitudeDelta > 0, span.latitudeDelta <= 180,
+              span.longitudeDelta > 0, span.longitudeDelta <= 360
+        else { return nil }
+        return MKCoordinateRegion(center: centre, span: span)
     }
 
     private static func makeVeil() -> UIView {

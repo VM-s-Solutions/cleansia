@@ -6,7 +6,7 @@ import XCTest
 final class PlaceMapFramingTests: XCTestCase {
     /// MapKit fits a region inside the map's layout margins, so the region it is handed is chosen to draw the place
     /// where the whole map would, at the same scale.
-    func testAMarginedMapDrawsThePlaceWhereTheWholeMapWould() {
+    func testAMarginedMapDrawsThePlaceWhereTheWholeMapWould() throws {
         let place = Coordinate(latitude: 50.0755, longitude: 14.4378)
         let region = PlaceMap.region(for: place, metres: 700, anchor: 0.71)
         let size = CGSize(width: 393, height: 214)
@@ -14,7 +14,7 @@ final class PlaceMapFramingTests: XCTestCase {
         let inner = CGRect(x: 12, y: 0, width: 393 - 168, height: 214 - 32)
 
         let whole = Self.draw(region, in: CGRect(origin: .zero, size: size))
-        let margined = Self.draw(PlaceMapCanvas.framed(region, in: size, margins: margins), in: inner)
+        let margined = try Self.draw(XCTUnwrap(PlaceMapCanvas.framed(region, in: size, margins: margins)), in: inner)
 
         XCTAssertEqual(margined.scale, whole.scale, accuracy: whole.scale * 1e-6)
         let point = MKMapPoint(CLLocationCoordinate2D(latitude: place.latitude, longitude: place.longitude))
@@ -22,14 +22,53 @@ final class PlaceMapFramingTests: XCTestCase {
         XCTAssertEqual(margined.screen(point).y, whole.screen(point).y, accuracy: 0.01)
     }
 
-    func testNoMarginsLeaveTheRegionAsItIs() {
+    func testNoMarginsLeaveTheRegionAsItIs() throws {
         let region = PlaceMap.region(for: Coordinate(latitude: 50.0755, longitude: 14.4378), metres: 700, anchor: 0.5)
-        let framed = PlaceMapCanvas.framed(region, in: CGSize(width: 393, height: 214), margins: .zero)
+        let framed = try XCTUnwrap(PlaceMapCanvas.framed(region, in: CGSize(width: 393, height: 214), margins: .zero))
         let whole = Self.draw(region, in: CGRect(x: 0, y: 0, width: 393, height: 214))
         let same = Self.draw(framed, in: CGRect(x: 0, y: 0, width: 393, height: 214))
         XCTAssertEqual(same.scale, whole.scale, accuracy: whole.scale * 1e-6)
         XCTAssertEqual(same.centre.x, whole.centre.x, accuracy: 1)
         XCTAssertEqual(same.centre.y, whole.centre.y, accuracy: 1)
+    }
+
+    /// A sheet closing over the job can lay the map out shorter than the panel's edge it is framed above: no room is
+    /// left inside the margins, so there is nothing to frame.
+    func testMarginsTallerThanTheMapLeaveNothingToFrame() {
+        let region = PlaceMap.region(for: Coordinate(latitude: 50.0755, longitude: 14.4378), metres: 700, anchor: 0.71)
+        let margins = UIEdgeInsets(top: 0, left: 12, bottom: 600, right: 156)
+        XCTAssertNil(PlaceMapCanvas.framed(region, in: CGSize(width: 393, height: 214), margins: margins))
+    }
+
+    /// Whatever the map's size and margins, framing gives a region MapKit draws, or none.
+    func testEveryFramedRegionIsOneMapKitDraws() {
+        let place = Coordinate(latitude: 50.0755, longitude: 14.4378)
+        let lengths: [CGFloat] = [0, 0.001, 1, 10, 100, 214, 393, 600, 900]
+        let insets: [CGFloat] = [0, 8, 100, 300, 600, 900, 1200]
+        let sizes = lengths.flatMap { width in lengths.map { CGSize(width: width, height: $0) } }
+        let margins = insets.flatMap { vertical in
+            insets.map { UIEdgeInsets(top: vertical / 4, left: $0 / 4, bottom: vertical, right: $0) }
+        }
+        var rejected: [String] = []
+        for metres in [700.0, 6000] {
+            let region = PlaceMap.region(for: place, metres: metres, anchor: 0.71)
+            for size in sizes {
+                for inset in margins {
+                    let framed: MKCoordinateRegion? = PlaceMapCanvas.framed(region, in: size, margins: inset)
+                    if let framed, !Self.mapKitDraws(framed) {
+                        rejected.append("\(size) \(inset) -> \(framed.center) \(framed.span)")
+                    }
+                }
+            }
+        }
+        XCTAssertTrue(rejected.isEmpty, "\(rejected.count) regions MapKit throws on, among them \(rejected.prefix(3))")
+    }
+
+    /// MapKit's `setRegion` throws "Invalid Region" on any other.
+    private static func mapKitDraws(_ region: MKCoordinateRegion) -> Bool {
+        (-90 ... 90).contains(region.center.latitude) && (-180 ... 180).contains(region.center.longitude)
+            && region.span.latitudeDelta > 0 && region.span.latitudeDelta <= 180
+            && region.span.longitudeDelta > 0 && region.span.longitudeDelta <= 360
     }
 
     /// A region drawn as MapKit draws it into a rect: fitted whole, its centre on the rect's.
@@ -66,6 +105,7 @@ final class PlaceMapFramingTests: XCTestCase {
 final class PlaceMapMotionTests: XCTestCase {
     private let place = Coordinate(latitude: 50.0755, longitude: 14.4378)
     private let margins = EdgeInsets(top: 0, leading: 12, bottom: 300, trailing: 12)
+    private let anchor: CGFloat = 0.25
 
     func testAStillMapTakesNoTouch() {
         let mapView = map().makeMapView(placement: PlaceMapView.Placement())
@@ -132,6 +172,47 @@ final class PlaceMapMotionTests: XCTestCase {
         mapView.recentre()
         XCTAssertFalse(mapView.isAway, "framed at once at the size it has now")
         XCTAssertFalse(mapView.isRecentring)
+    }
+
+    func testAStillMapLaidOutShorterThanItsMarginsFramesThePlaceOnceItHasRoom() {
+        waitsForRoom(map())
+    }
+
+    func testAMovableMapLaidOutShorterThanItsMarginsFramesThePlaceOnceItHasRoom() {
+        waitsForRoom(map(movedAway: .constant(false)))
+    }
+
+    /// Recentred while the panel's edge stands over the whole map, at the size it framed the place at or at a new one,
+    /// the map waits, and frames the place once the edge comes down.
+    func testRecentringAMapWithNoRoomFramesThePlaceOnceTheEdgeComesDown() {
+        let (mapView, window) = hosted(map(movedAway: .constant(false)))
+        defer { window.isHidden = true }
+        let low = NSDirectionalEdgeInsets(top: 0, leading: 12, bottom: 80, trailing: 12)
+        let over = NSDirectionalEdgeInsets(top: 0, leading: 12, bottom: 300, trailing: 12)
+        mapView.frame = CGRect(x: 0, y: 0, width: 680, height: 200)
+        mapView.keepMarks(inside: low)
+        mapView.layoutIfNeeded()
+        assertFramed(mapView)
+
+        pan(mapView, by: CGVector(dx: 0, dy: 40))
+        mapView.keepsHerView = true
+        mapView.keepMarks(inside: over)
+        mapView.layoutIfNeeded()
+        mapView.recentre()
+        XCTAssertFalse(mapView.isRecentring)
+        mapView.keepMarks(inside: low)
+        mapView.layoutIfNeeded()
+        assertFramed(mapView)
+
+        pan(mapView, by: CGVector(dx: 0, dy: 40))
+        mapView.keepsHerView = true
+        mapView.keepMarks(inside: over)
+        mapView.frame = CGRect(x: 0, y: 0, width: 680, height: 210)
+        mapView.layoutIfNeeded()
+        mapView.recentre()
+        mapView.keepMarks(inside: low)
+        mapView.layoutIfNeeded()
+        assertFramed(mapView)
     }
 
     func testANudgeTooSmallToSeeIsNoMove() {
@@ -201,6 +282,38 @@ final class PlaceMapMotionTests: XCTestCase {
         mapView.setCenter(mapView.convert(next, toCoordinateFrom: mapView), animated: false)
     }
 
+    /// A sheet closing over the job lays the map out shorter than the panel's edge before the edge follows. The map
+    /// frames nothing then and reads nothing MapKit draws as her move; it frames the place once the edge comes down,
+    /// and once a new size gives it room.
+    private func waitsForRoom(_ view: PlaceMapView) {
+        let placement = PlaceMapView.Placement()
+        let (mapView, window) = hosted(view, placement: placement)
+        defer { window.isHidden = true }
+
+        mapView.frame = CGRect(x: 0, y: 0, width: 680, height: 200)
+        mapView.layoutIfNeeded()
+        placement.mapViewDidChangeVisibleRegion(mapView)
+        XCTAssertFalse(mapView.keepsHerView)
+        mapView.keepMarks(inside: NSDirectionalEdgeInsets(top: 0, leading: 12, bottom: 80, trailing: 12))
+        mapView.layoutIfNeeded()
+        assertFramed(mapView)
+
+        mapView.keepMarks(inside: NSDirectionalEdgeInsets(top: 0, leading: 12, bottom: 300, trailing: 12))
+        mapView.frame = CGRect(x: 0, y: 0, width: 680, height: 190)
+        mapView.layoutIfNeeded()
+        mapView.frame = CGRect(x: 0, y: 0, width: 680, height: 600)
+        mapView.layoutIfNeeded()
+        assertFramed(mapView)
+    }
+
+    /// The place where the map's region puts it on a map wider than tall: centred across, `anchor` of the way down.
+    private func assertFramed(_ mapView: PlaceMapCanvas, line: UInt = #line) {
+        let pin = mapView.convert(location, toPointTo: mapView)
+        XCTAssertEqual(pin.x, mapView.bounds.midX, accuracy: 1, line: line)
+        XCTAssertEqual(pin.y, mapView.bounds.height * anchor, accuracy: 1, line: line)
+        XCTAssertFalse(mapView.isAway, line: line)
+    }
+
     private var location: CLLocationCoordinate2D {
         CLLocationCoordinate2D(latitude: place.latitude, longitude: place.longitude)
     }
@@ -209,7 +322,7 @@ final class PlaceMapMotionTests: XCTestCase {
         PlaceMapView(
             coordinate: place,
             metres: 2500,
-            anchor: 0.25,
+            anchor: anchor,
             pinned: true,
             label: label,
             veiled: false,

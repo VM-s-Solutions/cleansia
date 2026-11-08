@@ -138,6 +138,35 @@ Not done, even where a problem is visible; it is reported instead.
 
 ### Shared pieces in :core, second part
 
+- 2026-11-08 — AND-CM-04 (`1f48b3e7d`), AND-CM-07 (`cbffb7119`), AND-CM-09 (`92a6a5cb9`) and AND-PO-03 (`790fa02be`)
+  done. The notifications feed's Retrofit interface, wire shapes and repository, and the devices interface and wire
+  shapes, exist once, in `cz.cleansia.core.notifications` and `cz.cleansia.core.devices`; each app keeps its own
+  `@Provides` from its authenticated Retrofit and its session-wipe binding. The devices repository is the customer's
+  `DeviceManagementRepository`, and the partner's interface and implementation are deleted, with the `currentDeviceId`
+  nothing read. The two copies differed on one response the server never sends (a revoke answered 200 with `success`
+  false was a success for the partner and an error for the customer; `RevokeDevice` answers `Success(true)` or an error
+  body), so that difference is dropped rather than made a parameter. One copy of each repository test is kept.
+  `FloatingIslandBar` and `FloatingIslandSlot` in `:core` replace the partner's bar body and both apps' private
+  `NavSlot`; the customer passes its Book button as the bar's overlay, drawn in the bar's box so the pill's clip does
+  not cut it and the box keeps its 98 dp. The customer's four private status pills call `OrderStatusPill` with a
+  `washAlpha` of 14 %, the wash they drew, where the pill's default stays 16 %. One `formatMoney` in
+  `cz.cleansia.core.money` replaces the partner's four identical copies and backs its three variants: `fractionDigits`
+  2 by default, 0 for the earnings figures (`formatWholeMoney`, a dash for no stats) and the dashboard
+  (`formatMoneyWithSymbol`, an English comma drawn as a space, a fallback for nothing earned), and null for the board's
+  rule, moved in unchanged. Compared on the JVM with the old functions over 4,028 amounts, every JDK currency's symbol
+  and the five locales, every figure is the same. The three `d MMM yyyy` date helpers are one partner `formatShortDate`,
+  whose `inDeviceZone` keeps the period pay's difference: the day on the phone's clock, and a timestamp with no offset
+  read as local. Captures (en, light and dark, 412x915) of every touched screen: the partner's 58 frames (the bar with
+  each tab selected, every money and date card, the devices list, the Orders board, the take sheet and three job detail
+  cash states) are byte-identical within one emulator session, and so are the customer's 12 (the bar, the four pill
+  screens, the devices list); in another session the six dark customer frames differed in 17 pixels of the system
+  gesture handle. Signed in against a local stand-in, both apps' minified staging builds list the devices and the
+  notification feed, show the unread badge and remove a device through the `:core` classes, with no crash. Unit tests:
+  core 419/0, partner 1267/0, customer 1852/0; per area, the feed repository tests go from 20 to 10 (one copy), the
+  devices repository's stay 9, the bar's go from 8 to 7, and 6 are added for the money and date helpers. Both staging
+  builds assemble and start; `check-consistency.mjs` reports what origin/master reports. Evidence in
+  `android-longterm-20261108/` (`core-b/`, `captures/core-b/`).
+
 ### Cleanup
 
 ### Docs

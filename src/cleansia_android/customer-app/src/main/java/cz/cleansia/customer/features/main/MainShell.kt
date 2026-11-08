@@ -1,6 +1,7 @@
 package cz.cleansia.customer.features.main
 
 import cz.cleansia.core.snackbar.SnackbarInsetScope
+import cz.cleansia.core.ui.showTab
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
@@ -111,7 +112,7 @@ fun MainShell(
     shellViewModel: MainShellViewModel = hiltViewModel(),
 ) {
     // Pager-driven tab state — `selected` is derived from `pagerState.currentPage`
-    // and changing it animates the pager. rememberSaveable on the initial-page
+    // and changing it moves the pager. rememberSaveable on the initial-page
     // index so the tab survives process death + nav-back recompositions.
     val initialTabOrdinal = rememberSaveable {
         MainTab.entries.firstOrNull { it.name == initialTabName }?.ordinal ?: MainTab.Home.ordinal
@@ -120,7 +121,7 @@ fun MainShell(
     val selected = MainTab.entries[pagerState.currentPage]
     val tabScope = rememberCoroutineScope()
     val selectTab: (MainTab) -> Unit = { target ->
-        tabScope.launch { pagerState.animateScrollToPage(target.ordinal) }
+        tabScope.launch { pagerState.showTab(target.ordinal) }
     }
     var bookingSheetOpen by remember { mutableStateOf(false) }
     // Tracks the order id whose data should pre-fill the booking sheet. Set by

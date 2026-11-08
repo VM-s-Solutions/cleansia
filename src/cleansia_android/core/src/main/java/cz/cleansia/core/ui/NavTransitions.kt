@@ -38,3 +38,19 @@ val popExit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransit
         animationSpec = tween(PUSH_TRANSITION_MILLIS),
     ) + fadeOut(tween(PUSH_TRANSITION_MILLIS))
 }
+
+/** The tab shell fades in place, under a push and back to it, instead of sliding. */
+val fadeEnter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
+    fadeIn(tween(PUSH_TRANSITION_MILLIS))
+}
+val fadeExit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
+    fadeOut(tween(PUSH_TRANSITION_MILLIS))
+}
+
+/** The splash fades in and out, more slowly than a push. */
+val fadeEnterLong: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
+    fadeIn(tween(400))
+}
+val fadeExitLong: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
+    fadeOut(tween(400))
+}

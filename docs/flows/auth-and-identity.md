@@ -262,7 +262,10 @@ field on those two commands, which the owner left out of the 2026-10-01 change (
 Both customer apps send a missing phone as `""` on every profile save, not only on the language
 update. A `null` used to be dropped from the body, and the binder refuses a command without its
 non-nullable `PhoneNumber`, so a customer with no phone could not save a profile edit at all. Now the
-edit saves and the stored phone, if any, is kept.
+edit saves and the stored phone, if any, is kept. Since 2026-11-09 a phone that differs from the
+stored one has to be valid in international form, the check the cleaner's
+[Personal save](/product/business-rules#cleaner-profile-fields) makes
+(`validation.invalid_phone_number`); the stored phone sent back unchanged still saves, whatever its form.
 :::
 
 ## Sign-in and session acts leave a row {#session-rows}

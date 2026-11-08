@@ -2,8 +2,8 @@
 #
 # Started from the customer app's catalog (it has the broader dependency set —
 # Firebase, Mapbox, Stripe, Sentry, Credential Manager, etc.) and added the
-# partner-specific entries it didn't have (Room, biometric, Lottie, splashscreen,
-# the legacy espresso testing kit). Naming follows customer's conventions
+# partner-specific entries it didn't have (splashscreen, the legacy espresso
+# testing kit). Naming follows customer's conventions
 # (camelCase keys) so every existing import in customer-app keeps resolving.
 #
 # When in doubt, add to this catalog rather than declaring inline in a module —
@@ -51,10 +51,7 @@ firebaseBom = "33.7.0"
 googleServices = "4.4.2"
 credentials = "1.3.0"
 googleid = "1.1.1"
-# Partner-only additions (Room database, biometric auth, splashscreen, Lottie, legacy espresso).
-room = "2.6.1"
-biometric = "1.2.0-alpha05"
-lottie = "6.6.2"
+# Partner-only additions (splashscreen, legacy espresso).
 desugarJdkLibs = "2.1.4"
 espressoCore = "3.6.1"
 androidxJunit = "1.2.1"
@@ -143,12 +140,7 @@ androidx-credentials = { module = "androidx.credentials:credentials", version.re
 androidx-credentials-play-services-auth = { module = "androidx.credentials:credentials-play-services-auth", version.ref = "credentials" }
 googleid = { module = "com.google.android.libraries.identity.googleid:googleid", version.ref = "googleid" }
 
-# Partner-only: Room, biometric, Lottie, desugaring
-androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
-androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
-androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
-androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "biometric" }
-lottie-compose = { module = "com.airbnb.android:lottie-compose", version.ref = "lottie" }
+# Partner-only: desugaring
 desugar-jdk-libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugarJdkLibs" }
 libphonenumber = { module = "com.googlecode.libphonenumber:libphonenumber", version.ref = "libphonenumber" }
 

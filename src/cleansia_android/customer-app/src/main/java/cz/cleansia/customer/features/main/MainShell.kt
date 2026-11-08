@@ -190,10 +190,6 @@ fun MainShell(
         val emailOk = refreshed.email.isNotBlank()
         val complete = phoneOk && nameOk && emailOk
         val seen = shellViewModel.appSettings.hasSeenOnboarding(refreshed.id)
-        android.util.Log.d(
-            "OnboardingGate",
-            "decision: phoneOk=$phoneOk nameOk=$nameOk emailOk=$emailOk complete=$complete hasSeen=$seen",
-        )
         if (!complete && !seen) {
             onNavigateToOnboarding()
         }

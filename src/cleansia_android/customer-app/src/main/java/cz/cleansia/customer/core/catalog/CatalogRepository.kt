@@ -1,7 +1,6 @@
 package cz.cleansia.customer.core.catalog
 
 import android.content.Context
-import android.util.Log
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.auth.ApiErrorParser
 import cz.cleansia.core.network.ApiError
@@ -62,11 +61,9 @@ class CatalogRepository @Inject constructor(
      */
     suspend fun refresh(countryId: String? = null): ApiResult<Unit> = wireResult {
         if (_loading.value) {
-            Log.d(TAG, "refresh: already loading, skipping")
             return ApiResult.Success(Unit)
         }
         _loading.value = true
-        Log.d(TAG, "refresh: start")
         try {
             val servicesResp = networkCall(TAG) { api.getServices(countryId) }
                 ?: return networkError()
@@ -82,11 +79,6 @@ class CatalogRepository @Inject constructor(
             // still functions, just without the add-on section. Don't fail
             // the whole catalog refresh on this one.
             val extrasResp = networkCall(TAG) { api.getExtras(countryId) }
-
-            Log.d(TAG, "refresh: services http=${servicesResp.code()} ok=${servicesResp.isSuccessful}")
-            Log.d(TAG, "refresh: packages http=${packagesResp.code()} ok=${packagesResp.isSuccessful}")
-            Log.d(TAG, "refresh: extras http=${extrasResp?.code()} ok=${extrasResp?.isSuccessful}")
-            Log.d(TAG, "refresh: currencies http=${currenciesResp.code()} ok=${currenciesResp.isSuccessful}")
 
             if (!servicesResp.isSuccessful) {
                 return httpError(servicesResp.errorBody(), servicesResp.code())
@@ -115,7 +107,6 @@ class CatalogRepository @Inject constructor(
             // section, which is the same thing the customer sees when the endpoint is down, and never
             // a wrong add-on price.
             val extrasBody = if (extrasResp?.isSuccessful == true) extrasResp.body() else null
-            Log.d(TAG, "refresh: parsed servicesBody=${servicesBody.size} packagesBody=${packagesBody.size} extrasBody=${extrasBody?.size}")
 
             _services.value = servicesBody
             _packages.value = packagesBody
@@ -123,7 +114,6 @@ class CatalogRepository @Inject constructor(
             _currencyCode.value = defaultCurrency.code
             _countryId.value = countryId
             _loaded.value = true
-            Log.d(TAG, "refresh: DONE, _services=${_services.value.size} _packages=${_packages.value.size} _extras=${_extras.value.size} currency=${defaultCurrency.code} _loaded=true")
             return ApiResult.Success(Unit)
         } finally {
             _loading.value = false

@@ -80,7 +80,7 @@ struct OrderPhotosScreen: View {
                         ForEach(gallery.phases) { phase in
                             let photos = gallery.photos(for: phase)
                             VStack(alignment: .leading, spacing: Spacing.xs) {
-                                Text("\(phase.label) · \(photos.count)")
+                                Text(verbatim: "\(phase.label) · \(photos.count)")
                                     .font(CleansiaTypography.titleMedium)
                                     .foregroundColor(CleansiaColors.onSurface)
                                 if photos.isEmpty {

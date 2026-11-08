@@ -22,18 +22,9 @@ final class AppointmentConfirmationVisualTests: XCTestCase {
     private var restoreBundle = L10n.bundle
     private var restoreTag = CoreL10n.languageTag
 
-    /// The measurements read the sheet's accessibility tree, which SwiftUI builds only while the process has
-    /// accessibility on; a simulator that has never run an assistive tool has it off. This flips libAccessibility's
-    /// own switch for the test process, as VoiceOver or Accessibility Inspector would.
     override static func setUp() {
         super.setUp()
-        typealias SetEnabled = @convention(c) (Bool) -> Void
-        let library = "/usr/lib/libAccessibility.dylib"
-        let root = ProcessInfo.processInfo.environment["IPHONE_SIMULATOR_ROOT"] ?? ""
-        guard let handle = dlopen(root + library, RTLD_NOW) ?? dlopen(library, RTLD_NOW),
-              let symbol = dlsym(handle, "_AXSApplicationAccessibilitySetEnabled")
-        else { return }
-        unsafeBitCast(symbol, to: SetEnabled.self)(true)
+        ApplicationAccessibility.enable()
     }
 
     override func setUp() {

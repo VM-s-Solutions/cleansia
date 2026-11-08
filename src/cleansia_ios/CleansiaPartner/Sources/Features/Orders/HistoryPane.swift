@@ -93,7 +93,7 @@ struct HistoryPane: View {
                 let totals = OrdersBoardRules.historyTotals(rows, emptySymbol: vm.knownCurrencySymbol)
                 let jobs = vm.pane(.history).total ?? rows.count
                 HistoryTotal(amount: totals.pay)
-                    .accessibilityLabel("\(L10n.Orders.rewardsTitle), \(periodName): \(totals.pay)")
+                    .accessibilityLabel(Text(verbatim: "\(L10n.Orders.rewardsTitle), \(periodName): \(totals.pay)"))
                 OrdersDotFlow(items: summaryItems(jobs: jobs, hours: totals.hours, rows: rows).map { Text($0) })
                     .foregroundColor(CleansiaColors.onSurfaceVariant)
             } else {

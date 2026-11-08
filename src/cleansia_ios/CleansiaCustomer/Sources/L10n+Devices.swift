@@ -1,3 +1,4 @@
+import CleansiaCore
 import Foundation
 
 extension L10n {
@@ -188,5 +189,15 @@ extension L10n {
         static var disputeReplyDesc: String {
             localized("notifications_dispute_reply_desc")
         }
+    }
+}
+
+extension L10n.Devices: DevicesCopy {
+    static var retry: String {
+        L10n.retry
+    }
+
+    static var cancel: String {
+        L10n.cancel
     }
 }

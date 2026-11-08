@@ -35,6 +35,10 @@ final class SplashViewModel: ViewModel {
     }
 
     func resolve() async {
+        // Asked before the hold, so a cold start waits for the longer of the two rather than both in turn.
+        let asking = hasValidSession ? client : nil
+        async let status = asking?.checkRegistrationStatus()
+
         // The hold exists to let the branded reveal play on a cold start. A RETRY is not a cold
         // start — the reveal already played — so it would be 1.8s of staring at a splash the user
         // has just asked to leave.
@@ -45,12 +49,12 @@ final class SplashViewModel: ViewModel {
 
         outcome = nil
 
-        guard hasValidSession else {
+        guard hasValidSession, let answer = await status else {
             outcome = settings.hasSeenOnboarding ? .unauthenticated : .needsOnboarding
             return
         }
 
-        switch await client.checkRegistrationStatus() {
+        switch answer {
         case let .success(status):
             outcome = isRegistrationComplete(status) ? .authenticated : .needsRegistrationLock
         case let .failure(error):

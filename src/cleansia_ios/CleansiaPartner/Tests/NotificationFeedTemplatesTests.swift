@@ -133,16 +133,6 @@ final class NotificationFeedTemplatesTests: XCTestCase {
         XCTAssertEqual(rows.map(\.isUnread), [true, false])
     }
 
-    func testTimestampIsRelativeWithinAWeekAndAbsoluteBeyond() {
-        let now = Date(timeIntervalSince1970: 1_750_000_000)
-        let locale = Locale(identifier: "en")
-        let recent = NotificationFeedFormat.timestamp(now.addingTimeInterval(-3600), relativeTo: now, locale: locale)
-        XCTAssertFalse(recent.isEmpty)
-        let oldDate = now.addingTimeInterval(-30 * 24 * 3600)
-        let old = NotificationFeedFormat.timestamp(oldDate, relativeTo: now, locale: locale)
-        XCTAssertEqual(old, OrdersFormat.relativeDateTime(oldDate, locale: locale))
-    }
-
     func testNewInboxKeysShipInEveryLanguageTable() throws {
         let keys = [
             "notifications_inbox_title",

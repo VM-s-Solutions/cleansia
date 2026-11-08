@@ -57,19 +57,12 @@ final class ProfileAvatarViewModel: ViewModel {
     /// Downscaled to the same 1920px / JPEG-0.7 bound every other upload on this platform uses, and
     /// stripped of EXIF/GPS, before it is base64'd into the save. The backend validates the decoded
     /// bytes are a real image but caps no size, so the bound is ours.
-    func pick(_ image: UIImage) {
-        guard let encoded = ImageCompressor.encode(image) else {
+    func pick(_ image: UIImage) async {
+        guard let picked = await AvatarEdit.pick(image) else {
             snackbar.showError(L10n.Profile.photoUnreadable)
             return
         }
-        edit = .picked(
-            image: image,
-            upload: ProfilePhotoUpload(
-                base64: encoded.base64,
-                contentType: encoded.contentType,
-                fileName: encoded.fileName
-            )
-        )
+        edit = picked
     }
 
     /// Remove is also how a pick is undone, so it is offered for an image the server has never seen.

@@ -2,32 +2,6 @@ import CleansiaCore
 import CleansiaCustomerApi
 import Foundation
 
-struct UserNotification: Equatable, Identifiable {
-    let id: String
-    let eventKey: String
-    let args: [String: String]
-    let createdOn: Date
-    let readOn: Date?
-
-    func markedRead(on date: Date) -> UserNotification {
-        UserNotification(id: id, eventKey: eventKey, args: args, createdOn: createdOn, readOn: readOn ?? date)
-    }
-}
-
-struct UserNotificationPage: Equatable {
-    let items: [UserNotification]
-    let total: Int
-}
-
-/// The `audience` wire field is enriched server-side from the calling host;
-/// the client never sends or reads it.
-protocol NotificationFeedClient: Sendable {
-    func page(offset: Int, limit: Int) async -> ApiResult<UserNotificationPage>
-    func unreadCount() async -> ApiResult<Int>
-    func markRead(id: String) async -> ApiResult<Void>
-    func markAllRead(upToCreatedOn: Date) async -> ApiResult<Void>
-}
-
 struct LiveNotificationFeedClient: NotificationFeedClient {
     func page(offset: Int, limit: Int) async -> ApiResult<UserNotificationPage> {
         let result = await apiResult(mapError: ApiError.fromGenerated) {

@@ -76,8 +76,6 @@ final class StringCatalogCompletenessTests: XCTestCase {
         Exception("Partner", "devices_platform_android", allLocalized, "platform name"),
         Exception("Partner", "devices_platform_ios", allLocalized, "platform name"),
         Exception("Partner", "devices_platform_web", allLocalized, "platform name"),
-        Exception("Partner", "duration_hours_minutes", ["cs", "sk"], "\"h\"/\"m\" are the same abbreviations in cs/sk"),
-        Exception("Partner", "duration_minutes_only", ["cs", "sk"], "\"m\" is the same abbreviation in cs/sk"),
         Exception("Partner", "earnings_cash_held_limit", ["cs", "sk"], "\"Limit\" is the Czech and Slovak word"),
         Exception("Partner", "job_radius_value", ["cs", "sk"], "a specifier and the \"km\" symbol, Latin in cs/sk"),
         Exception("Partner", "orders_duration_h", ["cs", "sk"], "\"h\" is the same abbreviation in cs/sk"),
@@ -126,6 +124,51 @@ final class StringCatalogCompletenessTests: XCTestCase {
             junk,
             "auto-extracted junk keys (delete them; they are the fingerprint of Xcode dropping real keys)"
         )
+    }
+
+    /// The cause of those junk keys, caught in the source before a build can write one: a string literal handed to a
+    /// SwiftUI view or modifier is a localization key, so the next IDE build adds it to the catalog untranslated. The
+    /// apps localize through `L10n`, so shipped code hands these a `String` or a `Text(verbatim:)`.
+    func testNoStringLiteralReachesSwiftUIAsAKey() throws {
+        let root = try iosSourceRoot()
+        let call = try NSRegularExpression(pattern: Self.localizedKeyCall)
+        var literals: [String] = []
+        for folder in Self.sourceFolders {
+            let files = try swiftFiles(under: root.appendingPathComponent(folder))
+            XCTAssertFalse(files.isEmpty, "\(folder): no Swift sources found")
+            for file in files {
+                let source = try String(contentsOf: file, encoding: .utf8)
+                for match in call.matches(in: source, range: NSRange(source.startIndex..., in: source)) {
+                    guard let opening = Range(match.range, in: source) else { continue }
+                    let before = source[..<opening.lowerBound]
+                    let lineStart = before.lastIndex(of: "\n").map { source.index(after: $0) } ?? source.startIndex
+                    guard !source[lineStart ..< opening.lowerBound].contains("//"),
+                          let closing = Self.literalEnd(in: source, from: opening.upperBound),
+                          source[closing...].first(where: { !$0.isWhitespace }).map({ $0 == ")" || $0 == "," }) == true
+                    else { continue }
+                    let line = before.filter { $0 == "\n" }.count + 1
+                    let literal = source[opening.lowerBound ..< closing]
+                    literals.append("\(folder)/\(file.lastPathComponent):\(line) · \(literal)")
+                }
+            }
+        }
+        assertNoViolations(literals, "string literals SwiftUI takes as catalog keys (use Text(verbatim:) or a String)")
+    }
+
+    /// The other half of keeping an IDE build off the catalogs: it marks a key that has no `extractionState` stale,
+    /// and writes the whole file back in Xcode's own layout to do it. A key the apps read through `L10n` is `manual`.
+    func testEveryKeyCarriesAnExtractionState() throws {
+        let root = try iosSourceRoot()
+        var unmarked: [String] = []
+        for catalog in Self.catalogs {
+            let data = try Data(contentsOf: root.appendingPathComponent(catalog.path))
+            let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+            let strings = try XCTUnwrap(json?["strings"] as? [String: Any], "\(catalog.name): no strings table")
+            for (key, entry) in strings where (entry as? [String: Any])?["extractionState"] == nil {
+                unmarked.append("\(catalog.name) · \(key)")
+            }
+        }
+        assertNoViolations(unmarked, "keys with no extractionState (mark them \"manual\")")
     }
 
     func testOnlyAllowListedKeysMayReadIdenticalToEnglish() throws {
@@ -233,6 +276,58 @@ final class StringCatalogCompletenessTests: XCTestCase {
             directory = directory.deletingLastPathComponent()
         }
         throw CatalogLookupError.rootNotFound(from: #filePath, expecting: Self.catalogs.map(\.path))
+    }
+
+    /// Every folder whose code builds against one of the catalogs; their `Tests` folders and projects are skipped.
+    private static let sourceFolders = ["CleansiaCore/Sources", "CleansiaCustomer", "CleansiaPartner"]
+
+    /// A SwiftUI view or modifier that takes a `LocalizedStringKey`, up to the opening quote of a literal first
+    /// argument. The literal counts only when it is the whole argument: `Text(" " + name)` is a `String`.
+    private static let localizedKeyCall = #"(?<![\w.])(?:Text|TextField|SecureField|DatePicker|Toggle|Button|Label|"#
+        + #"Link|Picker|Section|Menu|Stepper|LabeledContent|ProgressView)\(\s*"|\.(?:accessibilityLabel|"#
+        + #"accessibilityHint|accessibilityValue|navigationTitle|help)\(\s*""#
+
+    private func swiftFiles(under folder: URL) throws -> [URL] {
+        let keys: [URLResourceKey] = [.isDirectoryKey]
+        guard let walk = FileManager.default.enumerator(at: folder, includingPropertiesForKeys: keys) else { return [] }
+        var files: [URL] = []
+        for case let url as URL in walk {
+            if try url.resourceValues(forKeys: Set(keys)).isDirectory == true {
+                if url.lastPathComponent == "Tests" || url.pathExtension == "xcodeproj" { walk.skipDescendants() }
+            } else if url.pathExtension == "swift" {
+                files.append(url)
+            }
+        }
+        return files
+    }
+
+    /// Just past the closing quote of the literal whose text starts at `start`, stepping over escapes and over each
+    /// interpolation, whose own literals hold quotes of their own.
+    private static func literalEnd(in source: String, from start: String.Index) -> String.Index? {
+        var index = start
+        while index < source.endIndex {
+            let character = source[index]
+            index = source.index(after: index)
+            if character == "\"" { return index }
+            guard character == "\\", index < source.endIndex else { continue }
+            let escaped = source[index]
+            index = source.index(after: index)
+            guard escaped == "(" else { continue }
+            var depth = 1
+            while depth > 0, index < source.endIndex {
+                let inner = source[index]
+                index = source.index(after: index)
+                if inner == "(" {
+                    depth += 1
+                } else if inner == ")" {
+                    depth -= 1
+                } else if inner == "\"" {
+                    guard let end = literalEnd(in: source, from: index) else { return nil }
+                    index = end
+                }
+            }
+        }
+        return nil
     }
 
     private static func localizations(_ entry: Any) -> [String: LocalizedValue] {

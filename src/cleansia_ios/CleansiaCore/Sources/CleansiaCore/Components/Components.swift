@@ -1,42 +1,5 @@
 import SwiftUI
 
-public struct CleansiaSecureField: View {
-    @Binding private var value: String
-    private let label: String
-    private let helper: String?
-    private let errorText: String?
-    private let enabled: Bool
-    private let transparentContainer: Bool
-
-    public init(
-        value: Binding<String>,
-        label: String,
-        helper: String? = nil,
-        errorText: String? = nil,
-        enabled: Bool = true,
-        transparentContainer: Bool = false
-    ) {
-        _value = value
-        self.label = label
-        self.helper = helper
-        self.errorText = errorText
-        self.enabled = enabled
-        self.transparentContainer = transparentContainer
-    }
-
-    public var body: some View {
-        CleansiaTextField(
-            value: $value,
-            label: label,
-            helper: helper,
-            errorText: errorText,
-            isPassword: true,
-            enabled: enabled,
-            transparentContainer: transparentContainer
-        )
-    }
-}
-
 public struct LabelledDivider: View {
     private let label: String
 
@@ -66,13 +29,8 @@ public struct LabelledDivider: View {
 #if DEBUG
     struct Components_Previews: PreviewProvider {
         static var previews: some View {
-            StatefulPreviewWrapper("secret") { binding in
-                VStack(spacing: Spacing.m) {
-                    CleansiaSecureField(value: binding, label: "Password")
-                    LabelledDivider("OR")
-                }
+            LabelledDivider("OR")
                 .padding()
-            }
         }
     }
 #endif

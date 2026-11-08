@@ -75,33 +75,11 @@ final class CustomerPreferencesModel: ObservableObject {
     }
 }
 
-extension Theme {
-    var colorScheme: ColorScheme? {
-        switch self {
-        case .system: nil
-        case .light: .light
-        case .dark: .dark
-        }
-    }
-}
-
 enum CustomerPreferencesLabels {
     static let systemLanguageId = "__system__"
 
-    static let languages: [(tag: String, label: String)] = [
-        ("en", "English"),
-        ("cs", "Čeština"),
-        ("sk", "Slovenčina"),
-        ("uk", "Українська"),
-        ("ru", "Русский")
-    ]
-
-    static func languageLabel(_ tag: String) -> String {
-        languages.first { $0.tag == tag }?.label ?? tag
-    }
-
     static func languageSummary(isFollowingSystem: Bool, tag: String) -> String {
-        isFollowingSystem ? L10n.Preferences.languageSystem : languageLabel(tag)
+        isFollowingSystem ? L10n.Preferences.languageSystem : LanguageLabels.label(tag)
     }
 
     static let themes: [Theme] = [.system, .light, .dark]

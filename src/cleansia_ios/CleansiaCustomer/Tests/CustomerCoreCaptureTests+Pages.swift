@@ -1,0 +1,219 @@
+import CleansiaCore
+import CleansiaCustomerApi
+import SwiftUI
+import UIKit
+import XCTest
+@testable import CleansiaCustomer
+
+/// The pushed customer pages that put a figure or a separator inside a line of their own: the photo gallery's phase
+/// headings, the full-screen pager's title and the delete-account lists.
+extension CustomerCoreCaptureTests {
+    func testOrderPhotos() async throws {
+        let gallery = OrderPhotos(
+            photos: [
+                GetOrderPhotosOrderPhotoDto(id: "before-1", photoType: ._1),
+                GetOrderPhotosOrderPhotoDto(id: "before-2", photoType: ._1)
+            ],
+            beforeCount: 2,
+            afterCount: 0
+        )
+        for theme in ["light", "dark"] {
+            try use("en")
+            let client = FakeOrderClient()
+            client.photosResults = [.success(gallery)]
+            await CustomerCapture.shoot(
+                name("photos", "gallery", Self.phone, "en", theme),
+                size: Self.phone,
+                to: self,
+                hold: 1
+            ) {
+                page(theme: theme) {
+                    NavigationStack(path: .constant(["order-1"])) {
+                        Color.clear
+                            .toolbar(.hidden, for: .navigationBar)
+                            .navigationDestination(for: String.self) { id in
+                                OrderPhotosScreen(orderId: id, client: client, snackbar: SnackbarController())
+                            }
+                    }
+                }
+            }
+        }
+    }
+
+    /// The photos load from a file, so the frame holds the picture rather than a spinner caught mid-turn.
+    func testPhotoPager() async throws {
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent("customer-capture-photo.png")
+        let picture = UIGraphicsImageRenderer(size: CGSize(width: 120, height: 90)).image { context in
+            UIColor(red: 0.55, green: 0.7, blue: 0.85, alpha: 1).setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 120, height: 90))
+        }
+        try XCTUnwrap(picture.pngData()).write(to: file)
+        let photos = (1 ... 3).map {
+            GetOrderPhotosOrderPhotoDto(id: "before-\($0)", photoType: ._1, blobUrl: file.absoluteString)
+        }
+        for theme in ["light", "dark"] {
+            try use("en")
+            await CustomerCapture.shoot(
+                name("photos", "pager", Self.phone, "en", theme),
+                size: Self.phone,
+                to: self,
+                hold: 1
+            ) {
+                PagerHost(photos: photos)
+                    .frame(width: Self.phone.width, height: Self.phone.height)
+                    .preferredColorScheme(theme == "dark" ? .dark : .light)
+                    .environment(\.locale, Locale(identifier: "en"))
+            }
+        }
+    }
+
+    func testDeleteAccount() async throws {
+        for theme in ["light", "dark"] {
+            for end in [false, true] {
+                try use("en")
+                await CustomerCapture.shoot(
+                    name("delete-account", "form", Self.phone, "en", theme) + (end ? "-end" : ""),
+                    size: Self.phone,
+                    to: self,
+                    hold: 0.3,
+                    end: end
+                ) {
+                    page(theme: theme) {
+                        NavigationStack {
+                            DeleteAccountView(
+                                userEmail: "jana@example.test",
+                                client: FakeGdprDeleteClient(),
+                                authClient: FakeAuthClient(),
+                                snackbar: SnackbarController(),
+                                onDeleted: {}
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// The Language, Appearance and Market pickers as Profile pushes them, the chosen row checked.
+    func testPreferencePickers() async throws {
+        let suite = "CustomerCoreCaptureTests.pickers"
+        defer { UserDefaults(suiteName: suite)?.removePersistentDomain(forName: suite) }
+        let markets = await MarketFixtures.resolved()
+        for theme in ["light", "dark"] {
+            try use("en")
+            let preferences = try CustomerPreferencesModel(
+                settings: UserDefaultsAppSettingsStore(
+                    defaults: XCTUnwrap(UserDefaults(suiteName: suite)),
+                    preferredLanguageTags: { ["en"] }
+                ),
+                languageSync: QuietLanguageSync(),
+                appGroup: suite
+            )
+            let pickers: [(String, AnyView)] = [
+                ("language", AnyView(LanguagePickerView(preferences: preferences, onSelected: {}))),
+                ("appearance", AnyView(AppearancePickerView(preferences: preferences, onSelected: {}))),
+                ("market", AnyView(MarketPickerView(market: markets, onSelected: {})))
+            ]
+            for (screen, picker) in pickers {
+                await CustomerCapture.shoot(
+                    name(screen, "picker", Self.phone, "en", theme),
+                    size: Self.phone,
+                    to: self,
+                    hold: 0.3
+                ) {
+                    page(theme: theme) {
+                        NavigationStack(path: .constant(["picker"])) {
+                            Color.clear.navigationDestination(for: String.self) { _ in picker }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// A pushed page under the status bar's stand-in.
+    private func page(theme: String, @ViewBuilder content: () -> some View) -> some View {
+        VStack(spacing: 0) {
+            CleansiaColors.background.frame(height: 54)
+            content()
+        }
+        .frame(width: Self.phone.width, height: Self.phone.height)
+        .background(CleansiaColors.background)
+        .tint(CleansiaColors.primaryText)
+        .environment(\.locale, Locale(identifier: "en"))
+        .preferredColorScheme(theme == "dark" ? .dark : .light)
+        .dynamicTypeSize(.large)
+    }
+}
+
+/// The pager as the gallery presents it, on its second photo.
+private struct PagerHost: View {
+    let photos: [GetOrderPhotosOrderPhotoDto]
+    @Namespace private var zoom
+
+    var body: some View {
+        FullscreenPager(
+            photos: photos,
+            startIndex: 1,
+            zoom: zoom,
+            zoomPrefix: "1-",
+            collectionTitle: OrderPhotoPhase.before.label,
+            onClose: {}
+        )
+    }
+}
+
+private final class QuietLanguageSync: LanguagePreferenceSync {
+    func send(languageCode _: String) async {}
+    func reconcile(languageCode _: String) async {}
+}
+
+/// The signed-in devices as Profile pushes them: this phone, another, a browser and one that names no platform; the
+/// empty list and a failed load.
+extension CustomerCoreCaptureTests {
+    func testDevices() async throws {
+        let devices = [
+            UserDevice(
+                id: "row-1", platform: "ios", deviceId: "device-current",
+                lastActiveAt: Date(timeIntervalSince1970: 1_762_340_400), isCurrent: true
+            ),
+            UserDevice(
+                id: "row-2", platform: "android", deviceId: "device-other",
+                lastActiveAt: Date(timeIntervalSince1970: 1_762_000_000), isCurrent: false
+            ),
+            UserDevice(id: "row-3", platform: "web", deviceId: "device-web", lastActiveAt: nil, isCurrent: false),
+            UserDevice(id: "row-4", platform: nil, deviceId: nil, lastActiveAt: nil, isCurrent: false)
+        ]
+        let results: [(String, ApiResult<[UserDevice]>)] = [
+            ("list", .success(devices)),
+            ("empty", .success([])),
+            ("error", .failure(ApiError(httpStatus: 500)))
+        ]
+        for theme in ["light", "dark"] {
+            for (state, result) in results {
+                try use("en")
+                let client = FakeCustomerDevicesClient()
+                client.myDevicesResult = result
+                await CustomerCapture.shoot(
+                    name("devices", state, Self.phone, "en", theme),
+                    size: Self.phone,
+                    to: self,
+                    hold: 0.3
+                ) {
+                    page(theme: theme) {
+                        NavigationStack(path: .constant(["devices"])) {
+                            Color.clear.navigationDestination(for: String.self) { _ in
+                                DevicesView(
+                                    client: client,
+                                    authClient: FakeAuthClient(),
+                                    snackbar: SnackbarController(),
+                                    onSignedOut: {}
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1227,6 +1227,7 @@
       }
     },
     "bank_account": {
+      "extractionState": "manual",
       "localizations": {
         "cs": {
           "stringUnit": {
@@ -1261,6 +1262,7 @@
       }
     },
     "bank_account_helper": {
+      "extractionState": "manual",
       "localizations": {
         "cs": {
           "stringUnit": {
@@ -1364,41 +1366,6 @@
         }
       }
     },
-    "bank_account_number_helper": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Část před lomítkem, například 5885638003."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The part before the slash, e.g. 5885638003."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Часть перед косой чертой, например 5885638003."
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Časť pred lomkou, napríklad 5885638003."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Частина перед скісною рискою, наприклад 5885638003."
-          }
-        }
-      }
-    },
     "bank_account_number_placeholder": {
       "extractionState": "manual",
       "localizations": {
@@ -1430,76 +1397,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Номер рахунку"
-          }
-        }
-      }
-    },
-    "bank_account_prefix": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Předčíslí"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Account prefix"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Префикс счёта"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Predčíslie"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Префікс рахунку"
-          }
-        }
-      }
-    },
-    "bank_account_prefix_helper": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nepovinné — krátké číslo před pomlčkou, pokud ho váš účet má."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Optional — the short number before the dash, if your account has one."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Необязательно — короткое число перед дефисом, если у вашего счёта оно есть."
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nepovinné — krátke číslo pred pomlčkou, ak ho váš účet má."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Необов'язково — коротке число перед дефісом, якщо ваш рахунок його має."
           }
         }
       }
@@ -1570,41 +1467,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Код банку"
-          }
-        }
-      }
-    },
-    "bank_code_helper": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Čtyři číslice za lomítkem, například 5500."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The four digits after the slash, e.g. 5500."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Четыре цифры после косой черты, например 5500."
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Štyri číslice za lomkou, napríklad 5500."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Чотири цифри після скісної риски, наприклад 5500."
           }
         }
       }
@@ -2029,111 +1891,6 @@
         }
       }
     },
-    "checklist_extras_label": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doplňky"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Extras"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Дополнения"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doplnky"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Додатки"
-          }
-        }
-      }
-    },
-    "checklist_locked_hint": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Začněte úklid pro sledování postupu"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Start the job to track progress"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Начните работу, чтобы отслеживать прогресс"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Začnite upratovanie pre sledovanie postupu"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Почніть роботу, щоб відстежувати прогрес"
-          }
-        }
-      }
-    },
-    "checklist_packages_label": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Balíčky"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Packages"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Пакеты"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Balíky"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Пакети"
-          }
-        }
-      }
-    },
     "checklist_progress": {
       "extractionState": "stale",
       "localizations": {
@@ -2200,41 +1957,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Чек-лист прибирання"
-          }
-        }
-      }
-    },
-    "checklist_services_label": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Služby"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Services"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Услуги"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Služby"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Послуги"
           }
         }
       }
@@ -6780,76 +6502,6 @@
         }
       }
     },
-    "duration_hours_minutes": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$dh %2$dm"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$dh %2$dm"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$dч %2$dм"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$dh %2$dm"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$dг %2$dхв"
-          }
-        }
-      }
-    },
-    "duration_minutes_only": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$dm"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$dm"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$dм"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$dm"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$dхв"
-          }
-        }
-      }
-    },
     "earnings_cash_held_jobs_hidden": {
       "extractionState": "manual",
       "localizations": {
@@ -7616,41 +7268,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Щось пішло не так. Спробуйте ще раз."
-          }
-        }
-      }
-    },
-    "error_key_order_after_photos_required": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Před dokončením zakázky pořiďte alespoň jednu fotografii \"po\"."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Take at least one \"after\" photo before completing the order."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Перед завершением заказа сделайте хотя бы одну фотографию \"после\"."
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pred dokončením zákazky urobte aspoň jednu fotografiu \"po\"."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Перед завершенням замовлення зробіть принаймні одне фото \"після\"."
           }
         }
       }
@@ -11820,41 +11437,6 @@
         }
       }
     },
-    "no_completed_orders": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Žádné dokončené objednávky"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No completed orders"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Нет выполненных заказов"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Žiadne dokončené zákazky"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Немає завершених замовлень"
-          }
-        }
-      }
-    },
     "no_data": {
       "extractionState": "stale",
       "localizations": {
@@ -11921,41 +11503,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Рахунків не знайдено"
-          }
-        }
-      }
-    },
-    "no_matching_orders": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Žádné zakázky neodpovídají hledání"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No orders match your search"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Нет заказов по запросу"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Žiadne zákazky nezodpovedajú hľadaniu"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Немає замовлень, що відповідають пошуку"
           }
         }
       }
@@ -14375,111 +13922,6 @@
         }
       }
     },
-    "payment_membership_discount": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Plus sleva"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Plus discount"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Скидка Plus"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Plus zľava"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Знижка Plus"
-          }
-        }
-      }
-    },
-    "payment_method_cash": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hotově"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cash"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Наличными"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hotovosťou"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Готівкою"
-          }
-        }
-      }
-    },
-    "payment_promo_discount": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Promo sleva"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Promo discount"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Промо скидка"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Promo zľava"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Промо знижка"
-          }
-        }
-      }
-    },
     "payment_section_title": {
       "extractionState": "stale",
       "localizations": {
@@ -14511,321 +13953,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Оплата"
-          }
-        }
-      }
-    },
-    "payment_status_disputed": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sporná platba"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Disputed"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Оспорено"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sporná platba"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Оскаржено"
-          }
-        }
-      }
-    },
-    "payment_status_failed": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Selhalo"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Failed"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не удалось"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zlyhalo"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не вдалося"
-          }
-        }
-      }
-    },
-    "payment_status_paid": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zaplaceno"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Paid"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Оплачено"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zaplatené"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Оплачено"
-          }
-        }
-      }
-    },
-    "payment_status_partially_refunded": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Částečně vráceno"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Partially refunded"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Частично возвращено"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Čiastočne vrátené"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Частково повернено"
-          }
-        }
-      }
-    },
-    "payment_status_pending": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Čeká"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pending"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ожидает"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Čaká"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Очікує"
-          }
-        }
-      }
-    },
-    "payment_status_refunded": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vráceno"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Refunded"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Возвращено"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vrátené"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Повернено"
-          }
-        }
-      }
-    },
-    "payment_subtotal": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mezisoučet"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Subtotal"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Промежуточный итог"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Medzisúčet"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Проміжний підсумок"
-          }
-        }
-      }
-    },
-    "payment_tier_discount": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Věrnostní sleva"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Loyalty discount"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Скидка за лояльность"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vernostná zľava"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Знижка за лояльність"
-          }
-        }
-      }
-    },
-    "payment_total": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Celkem"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Total"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Итого"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Spolu"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Разом"
           }
         }
       }
@@ -15495,41 +14622,6 @@
         }
       }
     },
-    "photos_none_recorded": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Žádné fotografie nebyly zaznamenány"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No photos recorded"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Фотографии не записаны"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Žiadne fotky neboli zaznamenané"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Фотографій не записано"
-          }
-        }
-      }
-    },
     "profile": {
       "extractionState": "stale",
       "localizations": {
@@ -15631,41 +14723,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Місто"
-          }
-        }
-      }
-    },
-    "profile_country": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Země"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Country"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Страна"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Krajina"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Країна"
           }
         }
       }
@@ -17700,41 +16757,6 @@
         }
       }
     },
-    "profile_street": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ulice"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Street"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Улица"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ulica"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Вулиця"
-          }
-        }
-      }
-    },
     "profile_terms": {
       "extractionState": "manual",
       "localizations": {
@@ -17871,41 +16893,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Причина: %1$@"
-          }
-        }
-      }
-    },
-    "profile_zip_code": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "PSČ"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ZIP code"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Почтовый индекс"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "PSČ"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Поштовий індекс"
           }
         }
       }
@@ -19381,6 +18368,7 @@
       }
     },
     "push.order.no_cleaner_refunded.body": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -19415,6 +18403,7 @@
       }
     },
     "push.order.no_cleaner_refunded.title": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -20009,6 +18998,7 @@
       }
     },
     "push.order.seat_open.body": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -20043,6 +19033,7 @@
       }
     },
     "push.order.seat_open.title": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -20846,41 +19837,6 @@
         }
       }
     },
-    "registration_lock_action_complete_profile": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dokončit profil"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Complete profile"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Заполнить профиль"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dokončiť profil"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Заповнити профіль"
-          }
-        }
-      }
-    },
     "registration_lock_action_contact_support": {
       "extractionState": "stale",
       "localizations": {
@@ -20912,41 +19868,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Звернутися до підтримки"
-          }
-        }
-      }
-    },
-    "registration_lock_action_upload_documents": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nahrát dokumenty"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Upload documents"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Загрузить документы"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nahrať dokumenty"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Завантажити документи"
           }
         }
       }
@@ -21922,137 +20843,6 @@
         }
       }
     },
-    "scope_extras": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "variations": {
-            "plural": {
-              "few": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "+%1$ld extra"
-                }
-              },
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "+%1$ld extra"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "+%1$ld extra"
-                }
-              }
-            }
-          }
-        },
-        "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "+%1$ld extra"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "+%1$ld extras"
-                }
-              }
-            }
-          }
-        },
-        "ru": {
-          "variations": {
-            "plural": {
-              "few": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "+%1$ld дополнительно"
-                }
-              },
-              "many": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "+%1$ld дополнительно"
-                }
-              },
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "+%1$ld дополнительно"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "+%1$ld дополнительно"
-                }
-              }
-            }
-          }
-        },
-        "sk": {
-          "variations": {
-            "plural": {
-              "few": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "+%1$ld extra"
-                }
-              },
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "+%1$ld extra"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "+%1$ld extra"
-                }
-              }
-            }
-          }
-        },
-        "uk": {
-          "variations": {
-            "plural": {
-              "few": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "+%1$ld додатково"
-                }
-              },
-              "many": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "+%1$ld додатково"
-                }
-              },
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "+%1$ld додатково"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "+%1$ld додатково"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "scope_extras_label": {
       "extractionState": "stale",
       "localizations": {
@@ -22285,41 +21075,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Послуги та пакети"
-          }
-        }
-      }
-    },
-    "shell_tab_placeholder": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ — již brzy (%2$@)"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ — coming in %2$@"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ — скоро (%2$@)"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ — už čoskoro (%2$@)"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ — незабаром (%2$@)"
           }
         }
       }
@@ -23094,41 +21849,6 @@
         }
       }
     },
-    "swipe_to_complete": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Potáhněte pro dokončení"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Swipe to Complete"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Проведите, чтобы завершить"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Potiahnite pre dokončenie"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Проведіть, щоб завершити"
-          }
-        }
-      }
-    },
     "swipe_to_notify_on_the_way": {
       "extractionState": "stale",
       "localizations": {
@@ -23409,111 +22129,6 @@
         }
       }
     },
-    "tracker_finished_at": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dokončeno v %1$@"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Finished at %1$@"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Завершено в %1$@"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dokončené o %1$@"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Завершено о %1$@"
-          }
-        }
-      }
-    },
-    "tracker_headline_confirmed": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Potvrzeno"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Confirmed"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Подтверждено"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Potvrdená"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Підтверджено"
-          }
-        }
-      }
-    },
-    "tracker_headline_confirmed_soon": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Brzy vyrazíte"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Heading out soon"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Скоро выезжать"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Čoskoro vyrazíte"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Скоро вирушаєте"
-          }
-        }
-      }
-    },
     "tracker_headline_done": {
       "extractionState": "stale",
       "localizations": {
@@ -23545,76 +22160,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Готово"
-          }
-        }
-      }
-    },
-    "tracker_headline_new": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nová nabídka"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "New offer"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Новое предложение"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nová ponuka"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Нова пропозиція"
-          }
-        }
-      }
-    },
-    "tracker_headline_on_the_way": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Na cestě"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "On the way"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "В пути"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Na ceste"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "У дорозі"
           }
         }
       }
@@ -24980,41 +23525,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "через %1$@"
-          }
-        }
-      }
-    },
-    "active_hero_next": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Další zakázka"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Next up"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Следующий заказ"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ďalšia zákazka"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Наступне замовлення"
           }
         }
       }
@@ -29136,111 +27646,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "клієнт не підтвердив повторне бронювання"
-          }
-        }
-      }
-    },
-    "orders_a11y_collapsed": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sbaleno"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Collapsed"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Свёрнуто"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zbalené"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Згорнуто"
-          }
-        }
-      }
-    },
-    "orders_a11y_expanded": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rozbaleno"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Expanded"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Развёрнуто"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rozbalené"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Розгорнуто"
-          }
-        }
-      }
-    },
-    "orders_a11y_toggle_hint": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zobrazí nebo skryje, proč jsou zakázky za hotové skryté."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Shows or hides why cash jobs are hidden."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Показывает или скрывает, почему заказы с наличными скрыты."
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zobrazí alebo skryje, prečo sú zákazky za hotovosť skryté."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Показує або приховує, чому замовлення з готівкою приховані."
           }
         }
       }

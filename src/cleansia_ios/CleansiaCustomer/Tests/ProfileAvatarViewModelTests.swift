@@ -54,11 +54,27 @@ final class ProfileAvatarViewModelTests: XCTestCase {
         await vm.refresh()
 
         let picked = ProfileFixtures.image()
-        vm.pickAvatar(picked)
+        await vm.pickAvatar(picked)
 
         XCTAssertEqual(vm.editorAvatar, .picked(picked))
         XCTAssertTrue(vm.canRemoveAvatar)
         XCTAssertFalse(vm.avatarEdit.upload?.base64.isEmpty ?? true)
+        XCTAssertEqual(vm.avatarEdit.upload?.contentType, "image/jpeg")
+    }
+
+    /// The main actor runs the first check while a camera-size photo is still encoding, so the encode is off it.
+    func testTheStoredPhotoStaysOnScreenUntilAPickHasEncoded() async {
+        client.currentUserResult = .success(ProfileFixtures.user(profilePhoto: ProfileFixtures.photo()))
+        let vm = makeVM()
+        await vm.refresh()
+        let picked = ProfileFixtures.image(width: 4032, height: 3024)
+
+        let pick = Task { await vm.pickAvatar(picked) }
+        await Task.yield()
+        XCTAssertEqual(vm.editorAvatar, .remote(ProfileFixtures.photo()), "the encode held the main actor")
+
+        await pick.value
+        XCTAssertEqual(vm.editorAvatar, .picked(picked))
         XCTAssertEqual(vm.avatarEdit.upload?.contentType, "image/jpeg")
     }
 
@@ -67,7 +83,7 @@ final class ProfileAvatarViewModelTests: XCTestCase {
         let vm = makeVM()
         await vm.refresh()
 
-        vm.pickAvatar(UIImage())
+        await vm.pickAvatar(UIImage())
 
         XCTAssertEqual(vm.avatarEdit, .unchanged)
         XCTAssertNotNil(snackbar.current)
@@ -102,7 +118,7 @@ final class ProfileAvatarViewModelTests: XCTestCase {
         client.updateResult = .success(())
         let vm = makeVM()
         await vm.refresh()
-        vm.pickAvatar(ProfileFixtures.image())
+        await vm.pickAvatar(ProfileFixtures.image())
 
         await save(vm)
 
@@ -119,7 +135,7 @@ final class ProfileAvatarViewModelTests: XCTestCase {
         client.updateResult = .success(())
         let vm = makeVM()
         await vm.refresh()
-        vm.pickAvatar(ProfileFixtures.image(width: 4000, height: 2000))
+        await vm.pickAvatar(ProfileFixtures.image(width: 4000, height: 2000))
 
         await save(vm)
 
@@ -176,7 +192,7 @@ final class ProfileAvatarViewModelTests: XCTestCase {
         client.updateResult = .success(())
         let vm = makeVM()
         await vm.refresh()
-        vm.pickAvatar(ProfileFixtures.image())
+        await vm.pickAvatar(ProfileFixtures.image())
 
         await save(vm)
         XCTAssertEqual(vm.avatarEdit, .unchanged)
@@ -192,7 +208,7 @@ final class ProfileAvatarViewModelTests: XCTestCase {
         let vm = makeVM()
         await vm.refresh()
         let picked = ProfileFixtures.image()
-        vm.pickAvatar(picked)
+        await vm.pickAvatar(picked)
 
         await save(vm)
 
@@ -250,7 +266,7 @@ final class ProfileAvatarViewModelTests: XCTestCase {
         let vm = makeVM()
         await vm.refresh()
         let log = record()
-        vm.pickAvatar(ProfileFixtures.image())
+        await vm.pickAvatar(ProfileFixtures.image())
 
         await save(vm)
 
@@ -279,7 +295,7 @@ final class ProfileAvatarViewModelTests: XCTestCase {
         let vm = makeVM()
         await vm.refresh()
         let log = record()
-        vm.pickAvatar(ProfileFixtures.image())
+        await vm.pickAvatar(ProfileFixtures.image())
 
         await save(vm)
 
@@ -294,7 +310,7 @@ final class ProfileAvatarViewModelTests: XCTestCase {
         client.updateResult = .success(())
         let vm = makeVM()
         await vm.refresh()
-        vm.pickAvatar(ProfileFixtures.image())
+        await vm.pickAvatar(ProfileFixtures.image())
         let log = record()
 
         vm.removeAvatar()
@@ -328,7 +344,7 @@ final class ProfileAvatarViewModelTests: XCTestCase {
         let vm = makeVM()
         await vm.refresh()
         let log = record()
-        vm.pickAvatar(ProfileFixtures.image())
+        await vm.pickAvatar(ProfileFixtures.image())
 
         await save(vm)
 

@@ -18,7 +18,7 @@ src/cleansia_ios/
 │   │   ├── DesignSystem/        # design tokens (later ticket)
 │   │   ├── Components/          # Cleansia* SwiftUI components (later ticket)
 │   │   ├── Snackbar/            # global snackbar bus (later ticket)
-│   │   ├── DI/                  # AppContainer protocol + AuthNetworkBoundary (lazy refresh/authed seam)
+│   │   ├── DI/                  # AppContainer protocol and its seams
 │   │   ├── Location/            # map/geocoding seam (later ticket)
 │   │   ├── Push/                # APNs registration (later ticket)
 │   │   └── Format/              # order/dispute formatters (later ticket)

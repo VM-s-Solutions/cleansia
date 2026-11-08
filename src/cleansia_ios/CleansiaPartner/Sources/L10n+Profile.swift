@@ -173,20 +173,8 @@ extension L10n {
             localized("email_readonly_helper")
         }
 
-        static var street: String {
-            localized("profile_street")
-        }
-
         static var city: String {
             localized("profile_city")
-        }
-
-        static var zipCode: String {
-            localized("profile_zip_code")
-        }
-
-        static var country: String {
-            localized("profile_country")
         }
 
         static var nationality: String {
@@ -233,14 +221,6 @@ extension L10n {
             localized("bank_account_helper")
         }
 
-        static var bankAccountPrefix: String {
-            localized("bank_account_prefix")
-        }
-
-        static var bankAccountPrefixHelper: String {
-            localized("bank_account_prefix_helper")
-        }
-
         /// Short in-field hints, deliberately not the `*_prefix` / `*_number` / `bank_code` labels: those
         /// are full sentences-worth ("Account prefix", "Номер рахунку") and the segments are narrow.
         static var bankAccountPrefixPlaceholder: String {
@@ -259,16 +239,8 @@ extension L10n {
             localized("account_number")
         }
 
-        static var bankAccountNumberHelper: String {
-            localized("bank_account_number_helper")
-        }
-
         static var bankCode: String {
             localized("bank_code")
-        }
-
-        static var bankCodeHelper: String {
-            localized("bank_code_helper")
         }
 
         static var swiftCode: String {

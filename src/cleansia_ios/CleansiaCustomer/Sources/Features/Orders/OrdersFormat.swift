@@ -1,3 +1,4 @@
+import CleansiaCore
 import CleansiaCustomerApi
 import Foundation
 
@@ -11,7 +12,7 @@ enum OrdersFormat {
     /// discount can leave haléře, and rounding them away shows a figure the card is not charged (Stripe's
     /// sheet shows the decimals). Under half a minor unit from a whole number is whole (319.999 is
     /// "320 Kč"); a blank or unknown code takes two digits.
-    static func price(_ amount: Double, currencyCode: String?, locale: Locale = .current) -> String {
+    static func price(_ amount: Double, currencyCode: String?, locale: Locale = CoreL10n.locale) -> String {
         let rounded = amount.rounded()
         let isWhole = abs(amount - rounded) < 0.005
         let digits = isWhole ? 0 : minorUnits(currencyCode)
@@ -48,7 +49,7 @@ enum OrdersFormat {
     /// "Mon 1 Jul · 10:00–12:00" — date + start–end window (`estimatedMinutes`
     /// drives the end). No estimate → just the start date-time. Weekday/month
     /// names render in `locale` (the app-selected language, not the device one).
-    static func dateRange(_ date: Date?, estimatedMinutes: Int, locale: Locale = .current) -> String {
+    static func dateRange(_ date: Date?, estimatedMinutes: Int, locale: Locale = CoreL10n.locale) -> String {
         guard let date else { return "—" }
         if estimatedMinutes <= 0 {
             return formatter(template: shortDateTimeTemplate, locale: locale).string(from: date)
@@ -59,7 +60,7 @@ enum OrdersFormat {
         return "\(datePart) · \(time.string(from: date))–\(time.string(from: end))"
     }
 
-    static func dateTime(_ date: Date?, locale: Locale = .current) -> String {
+    static func dateTime(_ date: Date?, locale: Locale = CoreL10n.locale) -> String {
         guard let date else { return "—" }
         return formatter(template: shortDateTimeTemplate, locale: locale).string(from: date)
     }
@@ -78,7 +79,7 @@ enum OrdersFormat {
     /// Up to 2 package names then service names, "+ N more" suffix. Names resolve
     /// to `locale`'s translation when the snapshot carries one, else the frozen
     /// English name.
-    static func servicesSummary(_ order: CustomerOrderSummary, locale: Locale = .current) -> String {
+    static func servicesSummary(_ order: CustomerOrderSummary, locale: Locale = CoreL10n.locale) -> String {
         let languageCode = locale.language.languageCode?.identifier ?? "en"
         let packages = order.packages.compactMap {
             localizedName($0.name, translations: $0.translations, languageCode: languageCode)
@@ -101,7 +102,7 @@ enum OrdersFormat {
     static func localizedCatalogName(
         _ fallback: String?,
         translations: [String: Translation]?,
-        locale: Locale = .current
+        locale: Locale = CoreL10n.locale
     ) -> String {
         let languageCode = locale.language.languageCode?.identifier ?? "en"
         return localizedName(fallback, translations: translations, languageCode: languageCode) ?? "—"
@@ -110,7 +111,7 @@ enum OrdersFormat {
     static func localizedCatalogDescription(
         _ fallback: String?,
         translations: [String: Translation]?,
-        locale: Locale = .current
+        locale: Locale = CoreL10n.locale
     ) -> String? {
         let languageCode = locale.language.languageCode?.identifier ?? "en"
         return translations?[languageCode]?.description?.nonBlank ?? fallback?.nonBlank

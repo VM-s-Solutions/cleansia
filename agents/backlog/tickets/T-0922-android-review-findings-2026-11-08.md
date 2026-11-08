@@ -63,3 +63,9 @@ Any finding not listed above. The rest of #370's out-of-scope list stays reporte
   `agents/tools/check-r8-monitor.py` over their dex after its self-test, `check-r8-monitor.test.py`. Run locally:
   assembleStaging 2 m 28 s with a warm cache, the check 10 s; partner 41,006 methods, 828 with monitor-enter, 0
   rejected; customer 63,103, 907, 0.
+- 2026-11-09 — After review, android-ci's comment and the overview's CI row claim only what its two R8 steps prove
+  (`ed590a7de`): a build R8 cannot finish, or a method ART's monitor rule refuses, fails android-ci; a serializer R8
+  strips still shows only when the minified app starts. `check-r8-monitor.py` does not walk code that only a switch
+  reaches, and its last line now counts those methods (`52386d4b4`): at `97a7ce140`, partner 99 and customer 107 of
+  828 and 907 lock-holding methods, 0 rejected. There both minified staging builds start on the API 35 emulator, F9
+  to F11 included, with an empty crash buffer and no FATAL, VerifyError or Serializer line.

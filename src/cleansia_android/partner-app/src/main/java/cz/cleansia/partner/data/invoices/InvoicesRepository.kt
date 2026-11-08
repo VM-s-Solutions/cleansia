@@ -28,14 +28,6 @@ interface InvoicesRepository {
      * the user's intent outranks cache age. -> /mobile-app/patterns#session-wipe
      */
     fun getMyInvoicesStaleness(): Staleness
-
-    /**
-     * Forget the my-invoices watermark. Call after a mutation that
-     * could change the list (e.g. an invoice-related action elsewhere)
-     * so the next [getMyInvoices] call refetches even though the
-     * staleness window hasn't elapsed.
-     */
-    fun invalidateMyInvoices()
 }
 
 /**
@@ -155,10 +147,6 @@ class InvoicesRepositoryImpl @Inject constructor(
         safeApiCall(json) { payrollApi.employeePayrollDownloadInvoice(invoiceId) }
 
     override fun getMyInvoicesStaleness(): Staleness = myInvoicesStaleness
-
-    override fun invalidateMyInvoices() {
-        myInvoicesStaleness.reset()
-    }
 
     override suspend fun clear() {
         myInvoicesStaleness.reset()

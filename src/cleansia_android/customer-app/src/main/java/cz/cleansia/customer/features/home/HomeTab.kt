@@ -144,10 +144,6 @@ import cz.cleansia.core.ui.components.statusBarFade
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
 
-/* ── Presentation models ── */
-
-private data class PastCleaner(val id: String, val name: String, val rating: Float, val jobs: Int)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeTab(

@@ -286,7 +286,7 @@ class PrimaryTextTest {
     /**
      * The argument lists of the [name] calls (texts, icons) drawn on the fill at [at]: those in the trailing
      * lambda of the call whose argument list holds it — or, when that call is itself a [name] wearing the fill
-     * in its own `Modifier.background(...)` (CleansiaSectionHeader's badge), that call.
+     * in its own `Modifier.background(...)`, that call.
      */
     private fun drawnOnFill(name: String, text: String, at: Int): List<String> {
         var open = enclosingParen(text, at)

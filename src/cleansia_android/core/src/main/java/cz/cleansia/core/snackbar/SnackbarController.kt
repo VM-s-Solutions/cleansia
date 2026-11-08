@@ -53,7 +53,6 @@ class SnackbarController @Inject constructor() {
     fun showInfo(text: String) = show(SnackbarMessage.FromString(text, Severity.Info))
     fun showInfoKey(key: Int) = show(SnackbarMessage.FromRes(key, Severity.Info))
 
-    fun showWarning(text: String) = show(SnackbarMessage.FromString(text, Severity.Warning))
     fun showWarningKey(key: Int) = show(SnackbarMessage.FromRes(key, Severity.Warning))
 }
 

@@ -122,12 +122,18 @@ internal fun usablePoint(latitude: Double?, longitude: Double?): MapPoint? =
 internal fun takenStripPoint(row: OrderListItem?): MapPoint? = row?.let { usablePoint(it.customerAddressLatitude, it.customerAddressLongitude) }
 
 /**
+ * Where the door's pin tip sits on a map [height] tall: on the band's pin [line], or mid-map when the map is no taller
+ * than the line, because framing it on the line would then leave the camera no room and put the door off the map.
+ */
+internal fun pinTip(line: Dp, height: Dp): Dp = if (height > line) line else height / 2
+
+/**
  * The detail's map behind the panel, at full height: before the take the job's area blurred and dimmed under the lock
  * chip, still; once taken the door with its pin and street, which she can pan and zoom (never rotate or tilt) while the
- * panel stays where it is. The point sits where the [band] (its height from the top of the screen) had it, at the band's
- * zoom, and the wordmark and attribution ride the panel's live top. Once she has moved the door off that framing, a
- * button beside the back button brings it back; a new size of the map keeps her view until then. [areaCentre] is null
- * until the area is placed; the band keeps its colour until then.
+ * panel stays where it is. The point sits where the [band] (its height from the top of the screen) had it, or mid-map
+ * on a map too short for that, at the band's zoom, and the wordmark and attribution ride the panel's live top. Once she
+ * has moved the door off that framing, a button beside the back button brings it back; a new size of the map keeps her
+ * view until then. [areaCentre] is null until the area is placed; the band keeps its colour until then.
  */
 @Composable
 internal fun JobBandMap(
@@ -141,10 +147,11 @@ internal fun JobBandMap(
     BoxWithConstraints(modifier.fillMaxSize()) {
         val height = maxHeight
         val density = LocalDensity.current
-        val ornaments = { with(density) { height - sheetTopPx().toDp() } + 8.dp }
+        // A drag or a settle that runs through a resize keeps the panel's old top, which can sit below the map; negative padding throws.
+        val ornaments = { with(density) { (height - sheetTopPx().toDp()).coerceAtLeast(0.dp) } + 8.dp }
         when (mode) {
             is JobMapMode.Pin -> {
-                val tip = band - SheetOverBand - 8.dp
+                val tip = pinTip(line = band - SheetOverBand - 8.dp, height = height)
                 val framing = rememberFraming(
                     centre = mode.point,
                     zoom = PinZoom,

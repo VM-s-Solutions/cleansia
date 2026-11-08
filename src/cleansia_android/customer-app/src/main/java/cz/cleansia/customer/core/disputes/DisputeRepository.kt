@@ -66,7 +66,7 @@ class DisputeRepository @Inject constructor(
      * Fetch page 0 and replace the cache. Intended for pull-to-refresh and
      * initial screen loads.
      */
-    suspend fun refresh(): ApiResult<Unit> {
+    suspend fun refresh(): ApiResult<Unit> = wireResult {
         if (_loading.value) return ApiResult.Success(Unit)
         _loading.value = true
         try {
@@ -91,7 +91,7 @@ class DisputeRepository @Inject constructor(
      * [totalRecords]. Silent on failure — the consuming VM maps the Error to a
      * no-op, so scrolling again retries.
      */
-    suspend fun loadNextPage(): ApiResult<Unit> {
+    suspend fun loadNextPage(): ApiResult<Unit> = wireResult {
         if (_loadingMore.value) return ApiResult.Success(Unit)
         if (exhausted || receivedSoFar >= _totalRecords.value) return ApiResult.Success(Unit)
         _loadingMore.value = true
@@ -113,7 +113,7 @@ class DisputeRepository @Inject constructor(
     }
 
     /** Fetch a single dispute's details (including messages + evidence). */
-    suspend fun getById(id: String): ApiResult<DisputeDetailsDto> {
+    suspend fun getById(id: String): ApiResult<DisputeDetailsDto> = wireResult {
         val resp = networkCall { api.getById(id) } ?: return networkError()
         if (!resp.isSuccessful) {
             return httpError(resp.errorBody(), resp.code())
@@ -179,7 +179,7 @@ class DisputeRepository @Inject constructor(
         fileBytes: ByteArray,
         fileName: String,
         mimeType: String,
-    ): ApiResult<UploadDisputeEvidenceResponse> {
+    ): ApiResult<UploadDisputeEvidenceResponse> = wireResult {
         val disputeIdPart = disputeId.toRequestBody("text/plain".toMediaTypeOrNull())
         val fileBody: RequestBody = fileBytes.toRequestBody(mimeType.toMediaTypeOrNull())
         val filePart = MultipartBody.Part.createFormData("file", fileName, fileBody)

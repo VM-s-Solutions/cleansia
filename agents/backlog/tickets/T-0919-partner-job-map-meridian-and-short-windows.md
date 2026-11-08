@@ -84,3 +84,8 @@ is framed by exactly the same math as before. The rule is tested in `PlaceMapFra
     one of the 759,355 cases whose region does not cross the meridian came out the same, or with no region from
     either. All 16,524 cases that changed run across it. The same sweep gave the same totals on 26.3. The probe and
     the logs are in `~/cleansia-work.noindex/fixes-20261107/step2/` (`t0919-*`).
+  - Both places' framed regions are centred west of the meridian, so the test still passed with the step that brings
+    the centre back inside ±180 deleted. The test now also frames a place at -179.95, whose framed region runs
+    across the meridian centred east of it. With that step deleted the place is not framed and the test fails on the
+    iOS 16.4 simulator; with it the 18 PlaceMap tests pass on 16.4 and 26.3. The logs are in
+    `~/cleansia-work.noindex/fixes-20261107/step2/fix-366/`.

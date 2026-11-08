@@ -10,9 +10,10 @@ final class PlaceMapFramingTests: XCTestCase {
         assertDrawnWhereTheWholeMapWould(Coordinate(latitude: 50.0755, longitude: 14.4378), metres: 700)
     }
 
-    /// The area map of a place by the 180th meridian: its region, and the region MapKit is handed, run across it.
+    /// The area map of a place by the 180th meridian: the region MapKit is handed runs across it, and so does the
+    /// place's own region except at -179.95, where the handed region is centred east of the meridian.
     func testAPlaceByThe180thMeridianIsDrawnWhereTheWholeMapWould() {
-        for longitude in [179.99, -179.99] {
+        for longitude in [179.99, -179.99, -179.95] {
             assertDrawnWhereTheWholeMapWould(Coordinate(latitude: 50.0755, longitude: longitude), metres: 6000)
         }
     }

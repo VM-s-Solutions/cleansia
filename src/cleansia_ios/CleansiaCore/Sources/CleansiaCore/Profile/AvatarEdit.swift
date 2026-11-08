@@ -8,6 +8,23 @@
         case removed
         case picked(image: UIImage, upload: ProfilePhotoUpload)
 
+        /// The edit a picked photo stages, or nil for an image that cannot be encoded. The encode runs off the main
+        /// actor because a camera photo takes long enough to downscale and compress to freeze the screen.
+        public static func pick(_ image: UIImage) async -> AvatarEdit? {
+            let encoded = await Task.detached(priority: .userInitiated) {
+                ImageCompressor.encode(image)
+            }.value
+            guard let encoded else { return nil }
+            return .picked(
+                image: image,
+                upload: ProfilePhotoUpload(
+                    base64: encoded.base64,
+                    contentType: encoded.contentType,
+                    fileName: encoded.fileName
+                )
+            )
+        }
+
         public var upload: ProfilePhotoUpload? {
             guard case let .picked(_, upload) = self else { return nil }
             return upload

@@ -348,7 +348,7 @@ sealed interface DevicesUiState {
 
 @HiltViewModel
 class DevicesViewModel @Inject constructor(
-    private val devicesRepository: DevicesRepository,
+    private val devicesRepository: DeviceManagementRepository,
     private val errorTranslator: ApiErrorTranslator,
     private val snackbar: SnackbarController,
     /* … */

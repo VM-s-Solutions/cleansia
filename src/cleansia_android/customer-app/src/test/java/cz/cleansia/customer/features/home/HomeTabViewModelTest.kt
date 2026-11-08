@@ -11,7 +11,7 @@ import cz.cleansia.customer.core.market.MarketState
 import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
 import cz.cleansia.customer.core.memberships.MembershipPlanDto
 import cz.cleansia.customer.core.memberships.MembershipRepository
-import cz.cleansia.customer.core.notifications.NotificationFeedRepository
+import cz.cleansia.core.notifications.NotificationFeedRepository
 import cz.cleansia.customer.core.orders.OrderRepository
 import cz.cleansia.customer.core.recurring.RecurringBookingRepository
 import cz.cleansia.customer.testing.MainDispatcherRule

@@ -1,4 +1,4 @@
-package cz.cleansia.customer.core.devices
+package cz.cleansia.core.devices
 
 import cz.cleansia.core.auth.DeviceIdProvider
 import cz.cleansia.core.network.ApiError

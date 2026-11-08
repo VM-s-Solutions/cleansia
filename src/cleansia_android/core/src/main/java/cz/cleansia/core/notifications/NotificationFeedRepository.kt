@@ -1,4 +1,4 @@
-package cz.cleansia.partner.core.notifications
+package cz.cleansia.core.notifications
 
 import cz.cleansia.core.auth.SessionScopedCache
 import cz.cleansia.core.network.ApiResult
@@ -12,9 +12,8 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Server-backed notifications feed (paged list, unread badge, read state) —
- * the single source of truth that replaced the interim Room store. Holds the
- * per-user unread count as a hot flow so the dashboard bell, the feed screen
+ * Server-backed notifications feed (paged list, unread badge, read state).
+ * Holds the per-user unread count as a hot flow so the app's bell, its feed
  * and the FCM receive path share one badge source — which makes it a
  * [SessionScopedCache] member (wiped on every wipe trigger).
  * -> /mobile-app/patterns#session-wipe

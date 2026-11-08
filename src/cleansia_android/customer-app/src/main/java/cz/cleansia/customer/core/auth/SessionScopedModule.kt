@@ -8,7 +8,7 @@ import cz.cleansia.customer.core.disputes.DisputeRepository
 import cz.cleansia.customer.core.loyalty.LoyaltyRepository
 import cz.cleansia.customer.core.memberships.MembershipRepository
 import cz.cleansia.core.notifications.PushTokenRepository
-import cz.cleansia.customer.core.notifications.NotificationFeedRepository
+import cz.cleansia.core.notifications.NotificationFeedRepository
 import cz.cleansia.customer.core.notifications.NotificationPreferencesRepository
 import cz.cleansia.customer.core.orders.OrderRepository
 import cz.cleansia.customer.core.payments.SavedCardRepository

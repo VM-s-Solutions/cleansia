@@ -1,4 +1,4 @@
-package cz.cleansia.customer.core.notifications
+package cz.cleansia.core.notifications
 
 import cz.cleansia.core.network.ApiError
 import io.mockk.coEvery

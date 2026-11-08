@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
 import cz.cleansia.core.notifications.DeviceRegistrationClient
+import cz.cleansia.core.notifications.NotificationFeedApi
 import cz.cleansia.core.notifications.PushTokenDataStore
 import cz.cleansia.customer.api.client.DeviceApi as GenDeviceApi
 import cz.cleansia.customer.api.client.NotificationPreferencesApi as GenNotificationPreferencesApi

@@ -9,8 +9,8 @@ import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.auth.ApiErrorParser
 import cz.cleansia.customer.core.auth.AuthRepository
-import cz.cleansia.customer.core.devices.DeviceManagementRepository
-import cz.cleansia.customer.core.devices.UserDeviceDto
+import cz.cleansia.core.devices.DeviceManagementRepository
+import cz.cleansia.core.devices.UserDeviceDto
 import cz.cleansia.core.ui.state.ActionState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext

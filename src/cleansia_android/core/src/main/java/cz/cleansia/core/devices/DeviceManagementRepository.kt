@@ -1,4 +1,4 @@
-package cz.cleansia.customer.core.devices
+package cz.cleansia.core.devices
 
 import cz.cleansia.core.auth.DeviceIdProvider
 import cz.cleansia.core.network.ApiError
@@ -34,7 +34,7 @@ class DeviceManagementRepository @Inject constructor(
      * Revoke by the server-side row id - kills push + that device's session.
      * A `200 { success = false }` is a soft failure the backend reports without
      * an error body; it carries no surfaceable message (legacy showed none), so
-     * it maps to the silent [ApiError.Network] channel the ViewModel no-ops.
+     * it maps to an [ApiError.Network] with no text.
      */
     suspend fun revoke(deviceRowId: String): ApiResult<Unit> =
         when (val result = safeApiCall(json) { api.revoke(deviceRowId) }) {

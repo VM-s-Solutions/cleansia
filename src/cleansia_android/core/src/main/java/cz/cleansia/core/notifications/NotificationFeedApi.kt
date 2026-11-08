@@ -1,4 +1,4 @@
-package cz.cleansia.partner.core.notifications
+package cz.cleansia.core.notifications
 
 import kotlinx.serialization.Serializable
 import retrofit2.Response
@@ -8,10 +8,12 @@ import retrofit2.http.POST
 import retrofit2.http.Query
 
 /**
- * Hand-written Retrofit interface for the notifications feed endpoints — the
- * generated client lags the spec, so the wire shapes live here (same precedent
- * as [DeviceApiClient]). The `audience` field on the mark commands is enriched
- * server-side from the calling host, so requests omit it.
+ * Hand-written Retrofit interface for the notifications feed endpoints —
+ * same precedent as [cz.cleansia.core.devices.DeviceManagementApi]:
+ * the generated client lags the spec, so the wire shapes live here. The
+ * `audience` field on the mark commands is enriched server-side from the
+ * calling host, so requests omit it. Each app creates it from its own
+ * authenticated Retrofit.
  */
 interface NotificationFeedApi {
 

@@ -58,7 +58,7 @@ import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.core.ui.theme.primaryTextOnContainer
 import cz.cleansia.partner.R
-import cz.cleansia.partner.core.devices.UserDeviceDto
+import cz.cleansia.core.devices.UserDeviceDto
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime

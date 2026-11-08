@@ -1,4 +1,4 @@
-package cz.cleansia.customer.core.devices
+package cz.cleansia.core.devices
 
 import kotlinx.serialization.Serializable
 import retrofit2.Response
@@ -11,7 +11,8 @@ import retrofit2.http.Query
  * Hand-written Retrofit interface for the device self-service endpoints
  * (list my devices + revoke one). Hand-written rather than generated because
  * the checked-in OpenAPI spec is refreshed by the owner from a running host
- * and doesn't carry these endpoints yet — same precedent as [cz.cleansia.customer.core.auth.AuthApi].
+ * and doesn't carry these endpoints yet — same precedent as the customer app's
+ * hand-written AuthApi. Each app creates it from its own authenticated Retrofit.
  */
 interface DeviceManagementApi {
 

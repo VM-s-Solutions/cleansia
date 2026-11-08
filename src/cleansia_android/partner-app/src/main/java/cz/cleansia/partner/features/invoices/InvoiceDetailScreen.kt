@@ -23,7 +23,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -47,7 +46,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
@@ -58,8 +56,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.money.CurrencySymbols
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.components.CleansiaOutlinedButton
+import cz.cleansia.core.ui.components.IconHalo
 import cz.cleansia.core.ui.theme.Spacing
-import cz.cleansia.core.ui.theme.primaryIconOnContainer
 import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.R
 import cz.cleansia.partner.data.invoices.InvoiceDetail
@@ -634,23 +632,6 @@ private fun CopyableField(label: String, value: String, onClick: () -> Unit) {
             contentDescription = stringResource(R.string.invoice_field_copy),
             tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(18.dp),
-        )
-    }
-}
-
-@Composable
-private fun IconHalo(icon: ImageVector) {
-    Box(
-        modifier = Modifier
-            .size(44.dp)
-            .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primaryIconOnContainer,
-            modifier = Modifier.size(22.dp),
         )
     }
 }

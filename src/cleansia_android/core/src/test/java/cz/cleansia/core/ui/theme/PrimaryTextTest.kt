@@ -94,7 +94,7 @@ class PrimaryTextTest {
             }.map { match -> "${file.module}/${file.rel}:${file.text.substring(0, match.range.first).count { it == '\n' } + 1}" }
         }
         assertEquals(emptyList<String>(), offenders)
-        assertTrue(sources.count { it.text.contains("tint = MaterialTheme.colorScheme.primaryIconOnContainer") } >= 15)
+        assertTrue(sources.count { it.text.contains("tint = MaterialTheme.colorScheme.primaryIconOnContainer") } >= 10)
     }
 
     @Test

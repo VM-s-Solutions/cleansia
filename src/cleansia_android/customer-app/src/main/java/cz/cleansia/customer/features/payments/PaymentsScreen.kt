@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
@@ -46,7 +45,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -62,9 +60,9 @@ import cz.cleansia.core.ui.components.CleansiaButtonSize
 import cz.cleansia.core.ui.components.CleansiaOutlinedButton
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.components.CleansiaTextButton
+import cz.cleansia.core.ui.components.IconHalo
 import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.core.ui.theme.Poppins
-import cz.cleansia.core.ui.theme.primaryIconOnContainer
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.payments.Receivable
 import cz.cleansia.customer.core.payments.SavedCard
@@ -354,7 +352,7 @@ private fun ReceivableCard(receivable: Receivable, paying: Boolean, onPay: () ->
             .padding(16.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            LeadingIcon(Icons.AutoMirrored.Outlined.ReceiptLong)
+            IconHalo(Icons.AutoMirrored.Outlined.ReceiptLong)
             Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
@@ -401,7 +399,7 @@ private fun SavedCardRow(
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        LeadingIcon(Icons.Outlined.CreditCard)
+        IconHalo(Icons.Outlined.CreditCard)
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
@@ -436,23 +434,6 @@ private fun SavedCardRow(
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun LeadingIcon(icon: ImageVector) {
-    Box(
-        modifier = Modifier
-            .size(44.dp)
-            .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primaryIconOnContainer,
-            modifier = Modifier.size(22.dp),
-        )
     }
 }
 

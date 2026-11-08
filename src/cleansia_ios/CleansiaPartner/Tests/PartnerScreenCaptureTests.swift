@@ -4,9 +4,7 @@ import SwiftUI
 import XCTest
 @testable import CleansiaPartner
 
-/// Native captures of the partner screens the Orders captures do not reach: the bank step of the onboarding chain,
-/// My documents, the dashboard's last-month card on a rise and on a fall, the take sheet's slide while its contract
-/// loads and while the take is sent, the Language and Theme pickers, and the invoices with one invoice. Named
+/// Native captures of partner screens the Orders captures do not reach. Named
 /// `<screen>-<state>-ios-<w>x<h>-<lang>-<theme>`; they run with the Orders captures
 /// (`TEST_RUNNER_PARTNER_ORDERS_CAPTURE=1`).
 @MainActor

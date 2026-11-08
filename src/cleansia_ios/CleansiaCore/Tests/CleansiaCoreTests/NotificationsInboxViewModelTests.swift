@@ -195,25 +195,21 @@ final class NotificationsInboxViewModelTests: XCTestCase {
 }
 
 final class NotificationFeedFormatTests: XCTestCase {
-    func testTimestampIsRelativeWithinAWeekAndTheAppsRuleBeyond() {
+    func testTimestampIsRelativeWithinAWeekAndTheDayAndTimeBeyond() {
         let now = Date(timeIntervalSince1970: 1_750_000_000)
-        let locale = Locale(identifier: "en")
-        let older: (Date, Locale) -> String = { date, locale in
-            "older \(date.timeIntervalSince1970) \(locale.identifier)"
-        }
+        let locale = Locale(identifier: "cs")
+        let dayAndTime = DateFormatter()
+        dayAndTime.locale = locale
+        dayAndTime.setLocalizedDateFormatFromTemplate("EEE d MMM HH:mm")
 
-        let recent = NotificationFeedFormat.timestamp(
-            now.addingTimeInterval(-3600),
-            relativeTo: now,
-            locale: locale,
-            olderThanAWeek: older
+        let recent = NotificationFeedFormat.timestamp(now.addingTimeInterval(-3600), relativeTo: now, locale: locale)
+        XCTAssertEqual(recent, "před 1 hodinou")
+
+        let old = now.addingTimeInterval(-30 * 24 * 3600)
+        XCTAssertEqual(
+            NotificationFeedFormat.timestamp(old, relativeTo: now, locale: locale),
+            dayAndTime.string(from: old)
         )
-        XCTAssertFalse(recent.isEmpty)
-        XCTAssertFalse(recent.hasPrefix("older"))
-
-        let oldDate = now.addingTimeInterval(-30 * 24 * 3600)
-        let old = NotificationFeedFormat.timestamp(oldDate, relativeTo: now, locale: locale, olderThanAWeek: older)
-        XCTAssertEqual(old, older(oldDate, locale))
     }
 }
 

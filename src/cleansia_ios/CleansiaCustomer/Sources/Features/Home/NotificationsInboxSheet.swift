@@ -1,8 +1,7 @@
 import CleansiaCore
 import SwiftUI
 
-/// The customer's inbox: its words, the leaning mascot when it is empty, older rows dated as an order's date
-/// and time, its push templates and its destinations.
+/// The customer's inbox: its words, the leaning mascot when it is empty, its push templates and its destinations.
 extension NotificationsInboxSheet where Destination == CustomerNotificationDestination {
     init(
         client: NotificationFeedClient,
@@ -16,7 +15,6 @@ extension NotificationsInboxSheet where Destination == CustomerNotificationDesti
             snackbar: snackbar,
             copy: L10n.NotificationsInbox.self,
             emptyMascot: .leaning,
-            olderThanAWeek: { OrdersFormat.dateTime($0, locale: $1) },
             rows: NotificationFeedTemplates.rows(from:),
             destination: CustomerNotificationDeepLink.resolve,
             onDestination: onDestination

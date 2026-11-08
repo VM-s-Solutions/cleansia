@@ -15,14 +15,13 @@ public protocol NotificationsInboxCopy {
 /// pages of 20 with load-more; opening fires the watermarked mark-all; the mascot
 /// empty state is the zero-rows state. Tapping a row that resolves a destination
 /// dismisses the sheet and hands it to the shell; a target-less row just marks
-/// read and stays put. Each app supplies its words, its mascot, how it dates a
-/// row older than a week, its row templates and its destinations.
+/// read and stays put. Each app supplies its words, its mascot, its row templates
+/// and its destinations.
 public struct NotificationsInboxSheet<Destination>: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var vm: NotificationsInboxViewModel<Destination>
     private let copy: NotificationsInboxCopy.Type
     private let emptyMascot: Mascot
-    private let olderThanAWeek: (Date, Locale) -> String
     private let rows: ([UserNotification]) -> [NotificationFeedRow]
     private let onDestination: (Destination) -> Void
 
@@ -32,7 +31,6 @@ public struct NotificationsInboxSheet<Destination>: View {
         snackbar: SnackbarController,
         copy: NotificationsInboxCopy.Type,
         emptyMascot: Mascot,
-        olderThanAWeek: @escaping (Date, Locale) -> String,
         rows: @escaping ([UserNotification]) -> [NotificationFeedRow],
         destination: @escaping (UserNotification) -> Destination?,
         onDestination: @escaping (Destination) -> Void
@@ -45,7 +43,6 @@ public struct NotificationsInboxSheet<Destination>: View {
         ))
         self.copy = copy
         self.emptyMascot = emptyMascot
-        self.olderThanAWeek = olderThanAWeek
         self.rows = rows
         self.onDestination = onDestination
     }
@@ -86,7 +83,7 @@ public struct NotificationsInboxSheet<Destination>: View {
             if feedRows.isEmpty {
                 NotificationsInboxEmptyView(copy: copy, mascot: emptyMascot)
             } else {
-                NotificationsInboxList(vm: vm, rows: feedRows, olderThanAWeek: olderThanAWeek)
+                NotificationsInboxList(vm: vm, rows: feedRows)
             }
         }
     }
@@ -95,7 +92,6 @@ public struct NotificationsInboxSheet<Destination>: View {
 private struct NotificationsInboxList<Destination>: View {
     @ObservedObject var vm: NotificationsInboxViewModel<Destination>
     let rows: [NotificationFeedRow]
-    let olderThanAWeek: (Date, Locale) -> String
 
     var body: some View {
         ScrollView {
@@ -104,7 +100,7 @@ private struct NotificationsInboxList<Destination>: View {
                     Button {
                         Task { await vm.tap(id: row.id) }
                     } label: {
-                        NotificationFeedRowCard(row: row, olderThanAWeek: olderThanAWeek)
+                        NotificationFeedRowCard(row: row)
                     }
                     .buttonStyle(.plain)
                     .onAppear {
@@ -131,7 +127,6 @@ private struct NotificationsInboxList<Destination>: View {
 struct NotificationFeedRowCard: View {
     @Environment(\.locale) private var locale
     let row: NotificationFeedRow
-    let olderThanAWeek: (Date, Locale) -> String
 
     var body: some View {
         HStack(alignment: .top, spacing: Spacing.s) {
@@ -147,14 +142,10 @@ struct NotificationFeedRowCard: View {
                 Text(verbatim: row.body)
                     .font(CleansiaTypography.bodyMedium)
                     .foregroundColor(CleansiaColors.onSurfaceVariant)
-                Text(verbatim: NotificationFeedFormat.timestamp(
-                    row.createdOn,
-                    locale: locale,
-                    olderThanAWeek: olderThanAWeek
-                ))
-                .font(CleansiaTypography.labelSmall)
-                .foregroundColor(CleansiaColors.onSurfaceVariant)
-                .padding(.top, Spacing.xxs)
+                Text(verbatim: NotificationFeedFormat.timestamp(row.createdOn, locale: locale))
+                    .font(CleansiaTypography.labelSmall)
+                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+                    .padding(.top, Spacing.xxs)
             }
             Spacer(minLength: 0)
         }
@@ -205,17 +196,15 @@ private struct NotificationsInboxEmptyView: View {
 }
 
 enum NotificationFeedFormat {
-    /// "now" / "2 hours ago" / "yesterday" within the last week, then the app's
-    /// own absolute rule — both rendering in the app locale.
-    static func timestamp(
-        _ date: Date,
-        relativeTo now: Date = Date(),
-        locale: Locale,
-        olderThanAWeek: (Date, Locale) -> String
-    ) -> String {
+    /// "now" / "2 hours ago" / "yesterday" within the last week, then the weekday,
+    /// day, month and time — both rendering in the app locale.
+    static func timestamp(_ date: Date, relativeTo now: Date = Date(), locale: Locale) -> String {
         let clamped = min(date, now)
         guard now.timeIntervalSince(clamped) < 7 * 24 * 3600 else {
-            return olderThanAWeek(clamped, locale)
+            let formatter = DateFormatter()
+            formatter.locale = locale
+            formatter.setLocalizedDateFormatFromTemplate("EEE d MMM HH:mm")
+            return formatter.string(from: clamped)
         }
         let formatter = RelativeDateTimeFormatter()
         formatter.locale = locale
@@ -235,8 +224,7 @@ enum NotificationFeedFormat {
                         body: "New jobs near you: 3. Tap to view.",
                         createdOn: Date().addingTimeInterval(-3600),
                         isUnread: true
-                    ),
-                    olderThanAWeek: { date, _ in date.formatted() }
+                    )
                 )
                 NotificationFeedRowCard(
                     row: NotificationFeedRow(
@@ -245,8 +233,7 @@ enum NotificationFeedFormat {
                         body: "New jobs near you: 1. Tap to view.",
                         createdOn: Date().addingTimeInterval(-90000),
                         isUnread: false
-                    ),
-                    olderThanAWeek: { date, _ in date.formatted() }
+                    )
                 )
             }
             .padding()

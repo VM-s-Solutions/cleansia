@@ -7,8 +7,6 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-private val shortDateFormatter = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.getDefault())
-
 /**
  * "20 Oct 2026" for a server timestamp or date, null when it is blank or cannot be read. The day is the one the
  * timestamp's own offset names, as the invoices show it. [inDeviceZone] is the day on the phone's clock instead, and a
@@ -23,5 +21,6 @@ internal fun formatShortDate(iso: String?, inDeviceZone: Boolean = false): Strin
         ?: (if (inDeviceZone) runCatching { LocalDateTime.parse(iso).toLocalDate() }.getOrNull() else null)
         ?: runCatching { LocalDate.parse(iso) }.getOrNull()
         ?: return null
-    return date.format(shortDateFormatter)
+    // Built per call: the in-app language can change while the process lives.
+    return date.format(DateTimeFormatter.ofPattern("d MMM yyyy", Locale.getDefault()))
 }

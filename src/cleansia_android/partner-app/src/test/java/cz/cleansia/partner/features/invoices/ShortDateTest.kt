@@ -1,5 +1,6 @@
 package cz.cleansia.partner.features.invoices
 
+import java.util.Locale
 import java.util.TimeZone
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -28,6 +29,20 @@ class ShortDateTest {
             assertNull(formatShortDate("yesterday", inDeviceZone = true))
         } finally {
             TimeZone.setDefault(original)
+        }
+    }
+
+    /** A language picked in Settings keeps the process, so a date drawn after it takes its month names. */
+    @Test
+    fun `a date takes the month names of the language set when it is drawn`() {
+        val original = Locale.getDefault()
+        try {
+            Locale.setDefault(Locale.forLanguageTag("cs"))
+            val czech = formatShortDate("2026-11-12")
+            Locale.setDefault(Locale.ENGLISH)
+            assertNotEquals(czech, formatShortDate("2026-11-12"))
+        } finally {
+            Locale.setDefault(original)
         }
     }
 }

@@ -99,6 +99,7 @@ import cz.cleansia.customer.R
 import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
+import cz.cleansia.core.ui.components.slideSemantics
 import cz.cleansia.core.ui.theme.Poppins
 import cz.cleansia.customer.core.booking.CreateOrderResponse
 import cz.cleansia.customer.core.data.UserAddress
@@ -321,7 +322,7 @@ private fun SheetContent(
     // Derive the boolean here so the rest of this composable's enable/loading
     // logic stays untouched.
     val submitState by bookingVm.submitState.collectAsStateWithLifecycle()
-    val submitting = submitState is cz.cleansia.customer.ui.state.ActionState.Submitting
+    val submitting = submitState is cz.cleansia.core.ui.state.ActionState.Submitting
     val expressWaiver by bookingVm.expressWaiver.collectAsStateWithLifecycle()
     val currentStep by bookingVm.step.collectAsStateWithLifecycle()
     val canStepBack by bookingVm.canStepBack.collectAsStateWithLifecycle()
@@ -485,7 +486,7 @@ private fun SheetContent(
     var stopped by remember { mutableStateOf(false) }
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) { stopped = true }
     LifecycleEventEffect(Lifecycle.Event.ON_START) {
-        val placing = bookingVm.submitState.value is cz.cleansia.customer.ui.state.ActionState.Submitting
+        val placing = bookingVm.submitState.value is cz.cleansia.core.ui.state.ActionState.Submitting
         if (stopped && visible && !placing && pendingCardOrder == null) {
             bookingVm.revalidateResumedTime()
             bookingVm.refreshCashEligibility()
@@ -860,47 +861,55 @@ private fun SheetContent(
                         } else {
                             stringResource(R.string.booking_slide_to_confirm)
                         }
-                        cz.cleansia.core.ui.components.SwipeToConfirmButton(
-                            text = confirmText,
-                            onConfirmed = {
-                                scope.launch {
-                                    overlaySince = SystemClock.uptimeMillis()
-                                    when (val outcome = bookingVm.submit()) {
-                                        is BookingSubmitOutcome.Success -> {
-                                            // Cash flow — the order is created. The confirmation is filled from
-                                            // the draft before it is cleared for the next Book Now tap.
-                                            val booked = holdForArrival(outcome.response)
-                                            bookingVm.reset()
-                                            onComplete(booked)
-                                        }
-                                        is BookingSubmitOutcome.CardPending -> {
-                                            // Card flow — order is created in Pending. Open
-                                            // PaymentSheet to confirm payment. Navigation
-                                            // happens in the PaymentSheetResult callback above
-                                            // when the user successfully completes payment.
-                                            pendingCardOrder = outcome.response
-                                            paymentSheet.presentWithPaymentIntent(
-                                                paymentIntentClientSecret = outcome.paymentSheet.clientSecret,
-                                                configuration = outcome.paymentSheet.toConfiguration(),
-                                            )
-                                        }
-                                        BookingSubmitOutcome.ProfileIncomplete -> {
-                                            onDismiss()
-                                            onNavigateToEditProfile()
-                                        }
-                                        BookingSubmitOutcome.OwesMoney -> {
-                                            submitFailedCount++
-                                            owesMoney = true
-                                        }
-                                        BookingSubmitOutcome.Failed -> {
-                                            // Bump the reset counter so the slide button
-                                            // snaps back to the start. The user sees the
-                                            // error in the snackbar and can re-swipe.
-                                            submitFailedCount++
-                                        }
+                        val confirm: () -> Unit = {
+                            scope.launch {
+                                overlaySince = SystemClock.uptimeMillis()
+                                when (val outcome = bookingVm.submit()) {
+                                    is BookingSubmitOutcome.Success -> {
+                                        // Cash flow — the order is created. The confirmation is filled from
+                                        // the draft before it is cleared for the next Book Now tap.
+                                        val booked = holdForArrival(outcome.response)
+                                        bookingVm.reset()
+                                        onComplete(booked)
+                                    }
+                                    is BookingSubmitOutcome.CardPending -> {
+                                        // Card flow — order is created in Pending. Open
+                                        // PaymentSheet to confirm payment. Navigation
+                                        // happens in the PaymentSheetResult callback above
+                                        // when the user successfully completes payment.
+                                        pendingCardOrder = outcome.response
+                                        paymentSheet.presentWithPaymentIntent(
+                                            paymentIntentClientSecret = outcome.paymentSheet.clientSecret,
+                                            configuration = outcome.paymentSheet.toConfiguration(),
+                                        )
+                                    }
+                                    BookingSubmitOutcome.ProfileIncomplete -> {
+                                        onDismiss()
+                                        onNavigateToEditProfile()
+                                    }
+                                    BookingSubmitOutcome.OwesMoney -> {
+                                        submitFailedCount++
+                                        owesMoney = true
+                                    }
+                                    BookingSubmitOutcome.Failed -> {
+                                        // Bump the reset counter so the slide button
+                                        // snaps back to the start. The user sees the
+                                        // error in the snackbar and can re-swipe.
+                                        submitFailedCount++
                                     }
                                 }
-                            },
+                            }
+                        }
+                        cz.cleansia.core.ui.components.SwipeToConfirmButton(
+                            text = confirmText,
+                            onConfirmed = confirm,
+                            modifier = Modifier.slideSemantics(
+                                label = confirmText,
+                                busyLabel = stringResource(R.string.busy_booking),
+                                enabled = canContinue && !submitting,
+                                isBusy = submitting,
+                                onCommit = confirm,
+                            ),
                             enabled = canContinue && !submitting,
                             resetTrigger = submitFailedCount,
                         )

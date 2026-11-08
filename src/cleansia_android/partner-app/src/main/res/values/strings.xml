@@ -5,7 +5,6 @@
 
     <!-- Common -->
     <string name="loading">Loading…</string>
-    <string name="error">Error</string>
     <string name="retry">Retry</string>
     <string name="cancel">Cancel</string>
     <string name="save">Save</string>
@@ -19,10 +18,8 @@
     <string name="onboarding_step_state_current">current step</string>
     <string name="onboarding_step_state_done">completed</string>
     <string name="onboarding_step_state_upcoming">not started</string>
-    <string name="saving">Saving…</string>
     <string name="no_data">Not provided</string>
     <string name="delete">Delete</string>
-    <string name="see_all">See all</string>
     <string name="confirm">Confirm</string>
     <string name="ok">OK</string>
 
@@ -32,7 +29,6 @@
     <string name="logout">Logout</string>
     <string name="profile_group_account">Account</string>
     <string name="profile_group_work_legal">Work &amp; legal</string>
-    <string name="profile_group_schedule">Schedule</string>
     <string name="profile_group_preferences">Preferences</string>
     <string name="contract_status_pending">Pending approval</string>
     <string name="contract_status_active">Active</string>
@@ -65,7 +61,6 @@
     <string name="forgot_password">Forgot Password?</string>
     <string name="dont_have_account">Don\'t have an account?</string>
     <string name="already_have_account">Already have an account?</string>
-    <string name="sign_in">Sign In</string>
     <string name="sign_in_here">Sign in here</string>
     <string name="sign_up_here">Sign up here</string>
     <string name="welcome_back">Welcome back!</string>
@@ -76,7 +71,6 @@
     <string name="first_name">First Name</string>
     <string name="last_name">Last Name</string>
     <string name="phone">Phone Number</string>
-    <string name="phone_number">Phone Number</string>
     <string name="accept_terms"><![CDATA[I accept the <a href="cleansia://terms">Terms and Conditions</a> and the <a href="cleansia://privacy">Privacy Policy</a>]]></string>
     <string name="back">Back</string>
 
@@ -86,40 +80,24 @@
     <string name="register_pw_number">Contains a number</string>
     <string name="register_pw_match">Passwords match</string>
 
-    <!-- Or-divider between email/password sign-in and biometric option. -->
-    <string name="login_or">OR</string>
-
     <!-- Email Confirmation -->
-    <string name="confirm_email">Confirm Email</string>
     <string name="verify_email">Verify Your Email</string>
     <string name="verify_email_subtitle">We\'ve sent a verification code to your email. Please enter it below.</string>
     <string name="confirm_email_password_prompt">Choose the password you\'ll sign in with once your email is confirmed.</string>
     <string name="confirm_email_subtitle">Please enter the confirmation code sent to your email</string>
-    <string name="confirmation_code">Confirmation Code</string>
-    <string name="verification_code">Verification Code</string>
     <string name="resend_code">Resend</string>
-    <string name="didnt_receive_code">Didn\'t receive the code?</string>
     <string name="verify">Verify</string>
 
     <!-- Forgot Password -->
     <string name="forgot_password_title">Forgot Password</string>
     <string name="forgot_password_subtitle">Enter your email address and we\'ll send you a link to reset your password</string>
-    <string name="send_reset_link">Send Reset Link</string>
-    <string name="back_to_login">Back to Login</string>
 
     <!-- Dashboard -->
     <string name="dashboard">Dashboard</string>
-    <string name="dashboard_subtitle">Here\'s your activity overview</string>
     <string name="dash_available_now_count">%1$d jobs available</string>
-    <string name="dash_available_now_subtitle">Jobs ready to take</string>
     <string name="dash_no_jobs_yet_title">No jobs yet</string>
     <string name="dash_no_jobs_yet_subtitle">Check available work or update your availability</string>
-    <string name="dash_todays_schedule">Today</string>
     <string name="dash_current_period">This pay period</string>
-    <string name="dash_tap_for_invoices">Invoices</string>
-    <string name="dash_completed_this_month">This month</string>
-    <string name="dash_avg_rating">Rating</string>
-    <string name="dash_vs_last_month">vs last month</string>
     <string name="dash_state_free_today">You\'re free today</string>
     <string name="dash_state_one_today">1 job today</string>
     <string name="dash_state_many_today">%1$d jobs today</string>
@@ -128,7 +106,6 @@
     <string name="dash_on_the_way">On the way</string>
     <string name="dash_browse_jobs">Browse jobs</string>
     <string name="dash_available_work_label">Available work</string>
-    <string name="dash_browse_jobs_subtitle">Find your next job</string>
     <string name="dash_open">Open</string>
     <string name="dash_continue">Continue</string>
     <string name="dash_earn_up_to">Earn up to %1$s</string>
@@ -157,87 +134,16 @@
     <string name="good_morning_name">Good morning, %1$s</string>
     <string name="good_afternoon_name">Good afternoon, %1$s</string>
     <string name="good_evening_name">Good evening, %1$s</string>
-    <string name="todays_schedule">Today\'s Schedule</string>
-    <string name="no_orders_today">No orders scheduled for today</string>
-    <string name="your_performance">Your Performance</string>
-    <string name="statistics">Statistics</string>
-    <string name="available_orders">Available Orders</string>
-    <string name="my_active_orders">My Active Orders</string>
-    <string name="completed_this_month">Completed This Month</string>
-    <string name="pending_earnings">Pending Earnings</string>
-    <string name="upcoming_orders">Upcoming Orders</string>
-    <string name="earnings_overview">Earnings Overview</string>
-    <string name="order_distribution">Order Distribution</string>
-    <string name="no_upcoming_orders">No upcoming orders</string>
-    <string name="quick_actions">Quick Actions</string>
-    <string name="browse_orders">Orders</string>
-    <string name="view_all">View All</string>
-    <string name="this_week">This Week</string>
-    <string name="this_month">This Month</string>
-    <string name="last_month">Last Month</string>
-    <string name="next_up">Next Up</string>
-    <string name="starts_in">Starts in %1$s</string>
-    <string name="today_at">Today at %1$s</string>
-    <string name="tomorrow_at">Tomorrow at %1$s</string>
-    <string name="completion_rate">Completion Rate</string>
-    <string name="completed_vs_total">%1$d of %2$d orders</string>
-
-    <!-- Analytics -->
-    <string name="analytics_title">Analytics</string>
-    <string name="period_comparison">Period Comparison</string>
-    <string name="current_period">Current Period</string>
-    <string name="previous_period">Previous Period</string>
-    <string name="daily_average">Daily Avg</string>
-    <string name="best_day">Best Day</string>
-    <string name="worst_day">Lowest Day</string>
-    <string name="earnings_by_day">Earnings by Day</string>
-    <string name="day_mon">Mon</string>
-    <string name="day_tue">Tue</string>
-    <string name="day_wed">Wed</string>
-    <string name="day_thu">Thu</string>
-    <string name="day_fri">Fri</string>
-    <string name="day_sat">Sat</string>
-    <string name="day_sun">Sun</string>
-
-    <!-- Analytics Extensions -->
-    <string name="order_status_title">Order Distribution</string>
-    <string name="completed_orders">Completed</string>
-    <string name="in_progress_orders">In Progress</string>
-    <string name="cancelled_orders">Cancelled</string>
-    <string name="pending_orders">Pending</string>
-    <string name="performance_score">Performance Score</string>
-    <string name="customer_rating">Customer Rating</string>
-    <string name="avg_response_time">Avg Response</string>
-    <string name="minutes_short">%1$d min</string>
-    <string name="monthly_earnings_trend">Monthly Earnings Trend</string>
-    <string name="total_this_year">Total This Year</string>
-    <string name="month_over_month">vs Last Month</string>
-    <string name="revenue_by_service">Revenue by Service</string>
-    <string name="orders_count">%1$d orders</string>
-    <string name="schedule_utilization">Schedule Utilization</string>
-    <string name="available_hours_label">Available</string>
-    <string name="booked_hours_label">Booked</string>
-    <string name="utilization_rate">Utilization</string>
-    <string name="hours_short">%1$.1fh</string>
 
     <!-- Orders -->
     <string name="orders">Orders</string>
-    <string name="order_details">Order Details</string>
     <string name="order_detail_error_message">Check your internet connection and try again.</string>
     <string name="active">Active</string>
     <string name="available">Available</string>
-    <string name="my_orders">My Orders</string>
     <string name="take_order">Take this job</string>
-    <string name="swipe_to_take">Swipe to Take</string>
-    <string name="start_order">Start Order</string>
     <string name="swipe_to_notify_on_the_way">Swipe to mark on the way</string>
     <string name="customer_notified_on_the_way">Customer notified · on the way</string>
-    <string name="waiting_for_other_employees">You\'re assigned! Waiting for other partners to confirm before the order can start.</string>
-    <string name="order_started">Started!</string>
-    <string name="complete_order">Complete Order</string>
     <string name="no_active_orders">No active jobs</string>
-    <string name="no_services">No services</string>
-    <string name="order_id">Order #%1$s</string>
     <string name="customer">Customer</string>
     <string name="address">Address</string>
     <!-- Address picker (map) -->
@@ -263,74 +169,21 @@
     <string name="address_service_area_in_serviced_city">We service jobs in %1$s</string>
     <string name="address_service_area_outside_serviced_city">You can still take jobs in nearby serviced cities</string>
     <string name="address_service_area_country_not_serviced">We don\'t service this country yet</string>
-    <string name="navigate">Navigate</string>
-    <string name="services">Services</string>
-    <string name="notes">Notes</string>
     <string name="total">Total</string>
-    <string name="scheduled_date">Scheduled Date</string>
-    <string name="upload_photos">Upload Photos</string>
     <string name="photos">Photos</string>
-    <string name="no_photos">No photos uploaded</string>
     <string name="take_photo">Take Photo</string>
     <string name="choose_from_gallery">Choose from Gallery</string>
     <string name="document_choose_file">Choose File</string>
     <string name="delete_photo">Delete Photo</string>
     <string name="delete_photo_confirm">Delete this photo?</string>
-    <string name="estimated_time">Estimated Time</string>
-    <string name="completion_notes">Completion notes (optional)</string>
     <string name="rooms">Rooms</string>
     <string name="bathrooms">Bathrooms</string>
-    <string name="payment_info">Payment</string>
-    <string name="payment_type">Payment Type</string>
-    <string name="payment_status_label">Payment Status</string>
-    <string name="notes_instructions">Notes &amp; Instructions</string>
-    <string name="customer_notes">Customer Notes</string>
-    <string name="special_instructions">Special Instructions</string>
-    <string name="access_instructions">Access Instructions</string>
-    <string name="order_info">Order Info</string>
-    <string name="created_on">Created</string>
-    <string name="updated_on">Updated</string>
-    <string name="order_completed_message">This order has been completed</string>
-    <string name="order_cancelled_message">This order has been cancelled</string>
-    <string name="sort">Sort</string>
-    <string name="filter">Filter</string>
-    <string name="filters">Filters</string>
     <string name="reset">Reset</string>
-    <string name="clear_all">Clear All</string>
     <string name="close">Close</string>
-    <string name="search">Search</string>
-    <string name="search_orders">Search orders…</string>
-    <string name="search_invoices">Search invoices…</string>
-    <string name="no_results">No results found</string>
-    <string name="coming_soon">Coming Soon</string>
-    <string name="coming_soon_desc">This feature is under development and will be available soon.</string>
-    <string name="search_customer">Search by customer name</string>
-    <string name="search_invoice">Search by invoice number</string>
-    <string name="order_status_filter">Order Status</string>
-    <string name="payment_status_filter">Payment Status</string>
-    <string name="invoice_status_filter">Invoice Status</string>
-    <string name="date_range">Date Range</string>
-    <string name="start_date">Start Date</string>
-    <string name="end_date">End Date</string>
-    <string name="select_date">Select Date</string>
-    <string name="all_statuses">All Statuses</string>
-    <string name="apply">Apply</string>
 
     <!-- Sort Options -->
-    <string name="sort_date_newest">Date (Newest)</string>
-    <string name="sort_date_oldest">Date (Oldest)</string>
-    <string name="sort_price_low_high">Price (Low to High)</string>
-    <string name="sort_price_high_low">Price (High to Low)</string>
-    <string name="sort_amount_low_high">Amount (Low to High)</string>
-    <string name="sort_amount_high_low">Amount (High to Low)</string>
 
     <string name="property">Property</string>
-    <string name="rooms_count">%1$d rooms</string>
-    <string name="bathrooms_count">%1$d bathrooms</string>
-    <string name="extras_label">Extras: %1$s</string>
-    <string name="customer_notes_section">Customer notes</string>
-    <string name="access_label">Access</string>
-    <string name="special_label">Special instructions</string>
     <string name="order_completed_toast">Order marked as completed</string>
     <string name="order_my_part_done_toast">Your part is marked as done</string>
     <string name="before">Before</string>
@@ -354,21 +207,13 @@
     <string name="invoice_status_disputed">Disputed</string>
     <string name="invoice_status_rejected">Rejected</string>
     <string name="invoice_status_cancelled">Cancelled</string>
-    <string name="deduction">Deduction</string>
     <string name="open_invoice_pdf">Open invoice PDF</string>
     <string name="no_pdf_viewer">No PDF viewer installed on this device.</string>
     <string name="status_on_the_way">On the way</string>
 
-    <!-- Payment Status -->
-    <string name="payment_pending">Pending</string>
-    <string name="payment_paid">Paid</string>
-    <string name="payment_failed">Failed</string>
-    <string name="payment_refunded">Refunded</string>
-
     <!-- Invoices -->
     <string name="invoices">Invoices</string>
     <string name="invoice_details">Invoice Details</string>
-    <string name="download_invoice">Download Invoice</string>
     <string name="no_invoices">No invoices found</string>
     <string name="invoices_summary_label">Total earned</string>
     <string name="invoices_summary_count">Across %1$d invoices</string>
@@ -376,35 +221,16 @@
     <string name="invoice_card_jobs_count">%1$d jobs included</string>
     <string name="invoice_card_paid_on">Paid on %1$s</string>
     <string name="invoice_card_generated_on">Generated %1$s</string>
-    <string name="invoice_number">Invoice #%1$s</string>
-    <string name="period">Period</string>
-    <string name="issue_date">Issue Date</string>
-    <string name="due_date">Due Date</string>
-    <string name="orders_included">Orders Included</string>
-
-    <!-- Invoice Status -->
-    <string name="invoice_pending">Pending</string>
-    <string name="invoice_approved">Approved</string>
-    <string name="invoice_paid">Paid</string>
-    <string name="invoice_disputed">Disputed</string>
-    <string name="invoice_rejected">Rejected</string>
-    <string name="invoice_cancelled">Cancelled</string>
 
     <!-- Profile -->
     <string name="profile">Profile</string>
-    <string name="personal_info">Personal Info</string>
-    <string name="identification_info">Identification</string>
-    <string name="address_info">Address</string>
     <string name="bank_details">Bank Details</string>
     <string name="documents">Documents</string>
     <string name="personal">Personal</string>
     <string name="birth_date">Date of birth</string>
     <string name="birth_date_placeholder">Pick a date</string>
-    <string name="street_address">Street address</string>
     <string name="emergency_name">Emergency contact name</string>
     <string name="emergency_phone">Emergency contact phone</string>
-    <string name="state">State</string>
-    <string name="state_optional_helper">Optional — used for US / CA only</string>
     <string name="identification_title">Identification</string>
     <string name="my_documents">My Documents</string>
     <string name="documents_summary_view">View, upload or remove</string>
@@ -441,13 +267,8 @@
     <string name="document_type_tax">Tax document</string>
     <string name="document_type_insurance">Insurance document</string>
     <string name="document_type_other">Other</string>
-    <string name="edit_profile">Edit Profile</string>
-    <string name="missing_fields">Missing:</string>
-    <string name="date_of_birth">Date of Birth</string>
     <string name="nationality">Nationality</string>
-    <string name="national_id">National ID</string>
     <string name="passport_id">Passport ID</string>
-    <string name="tax_id">Tax ID</string>
     <!-- Identification & business section -->
     <string name="identification_header_person">Identity</string>
     <string name="identification_header_business">Business</string>
@@ -455,22 +276,12 @@
     <string name="registration_number_label">Registration number</string>
     <string name="registration_number_helper">The format depends on the country you selected.</string>
     <string name="legal_entity_name_label">Legal entity name</string>
-    <string name="street">Street</string>
-    <string name="city">City</string>
-    <string name="zip_code">ZIP Code</string>
-    <string name="state_region">State / Region</string>
     <string name="country">Country</string>
     <string name="bank_name">Bank Name</string>
-    <string name="account_number">Account Number</string>
     <string name="iban">IBAN</string>
     <string name="swift_code">SWIFT Code</string>
     <!-- Payout destination -->
     <string name="bank_country">Bank country</string>
-    <string name="bank_account_prefix">Account prefix</string>
-    <string name="bank_account_prefix_helper">Optional — the short number before the dash, if your account has one.</string>
-    <string name="bank_account_number_helper">The part before the slash, e.g. 5885638003.</string>
-    <string name="bank_code">Bank code</string>
-    <string name="bank_code_helper">The four digits after the slash, e.g. 5500.</string>
     <string name="iban_helper">Your full IBAN, starting with your bank\'s country code. You\'ll find it on your bank statement or in your banking app.</string>
     <string name="iban_wrong_length">This IBAN has the wrong length for your bank\'s country — the length there is %1$d. Check for a missing or extra character.</string>
     <string name="swift_code_helper">Only needed when your bank is in a different country than the one you work in.</string>
@@ -479,72 +290,14 @@
 
     <!-- Emergency Contact -->
     <string name="emergency_contact">Emergency Contact</string>
-    <string name="emergency_contact_desc">Someone we can reach in case of an emergency</string>
-    <string name="contact_name">Contact Name</string>
-    <string name="relationship">Relationship</string>
-    <string name="contact_phone">Phone Number</string>
-    <string name="contact_email">Email Address</string>
 
     <!-- Settings -->
-    <string name="settings">Settings</string>
     <string name="language">Language</string>
     <string name="theme">Theme</string>
     <string name="theme_system">Follow system</string>
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
     <string name="notifications">Notifications</string>
-    <string name="biometric_login">Biometric Login</string>
-    <string name="biometric_login_desc">Use fingerprint or face recognition to log in</string>
-    <string name="security">Security</string>
-    <string name="app_version">App Version</string>
-
-    <!-- Biometric -->
-    <string name="biometric_prompt_title">Biometric Login</string>
-    <string name="biometric_prompt_subtitle">Use your biometric credential to log in</string>
-    <string name="biometric_prompt_negative">Use Password</string>
-    <string name="biometric_not_available">Biometric authentication not available on this device</string>
-    <string name="biometric_not_enrolled">No biometric credentials enrolled. Please set up fingerprint or face recognition in device settings.</string>
-    <string name="biometric_auth_failed">Biometric authentication failed</string>
-    <string name="biometric_auth_error">Authentication error: %1$s</string>
-    <string name="biometric_enabled">Biometric login enabled</string>
-    <string name="biometric_disabled">Biometric login disabled</string>
-
-    <!-- Document Types -->
-    <string name="doc_id_card">ID Card</string>
-    <string name="doc_passport">Passport</string>
-    <string name="doc_driving_license">Driving License</string>
-    <string name="doc_work_permit">Work Permit</string>
-    <string name="doc_contract">Contract</string>
-    <string name="doc_certificate">Certificate</string>
-    <string name="doc_bank_statement">Bank Statement</string>
-    <string name="doc_tax_document">Tax Document</string>
-    <string name="doc_insurance_document">Insurance Document</string>
-    <string name="doc_other">Other</string>
-
-    <!-- Document Management -->
-    <string name="document_type_label">Document Type</string>
-    <string name="select_files">Select Files</string>
-    <string name="upload_requirements">PDF, DOC, DOCX, JPG, JPEG, PNG — max 10 MB</string>
-    <string name="delete_document_confirm">Are you sure you want to delete \"%1$s\"?</string>
-    <string name="download">Download</string>
-    <string name="pending_documents">Pending</string>
-    <string name="approved_documents">Approved</string>
-    <string name="rejected_documents">Rejected</string>
-    <string name="expired_documents">Expired</string>
-    <string name="review_notes">Review Notes</string>
-
-    <!-- Help Cards -->
-    <string name="orders_help_title">How Orders Work</string>
-    <string name="orders_help_step1_title">Browse Available Orders</string>
-    <string name="orders_help_step1_desc">View orders that are available for you to take</string>
-    <string name="orders_help_step2_title">Take an Order</string>
-    <string name="orders_help_step2_desc">Accept an order to add it to your schedule</string>
-    <string name="orders_help_step3_title">Start the Order</string>
-    <string name="orders_help_step3_desc">Mark the order as started when you begin working</string>
-    <string name="orders_help_step4_title">Complete the Order</string>
-    <string name="orders_help_step4_desc">Mark as complete when finished and add notes</string>
-    <string name="invoices_help_title">Understanding Invoices</string>
-    <string name="invoices_help_desc">Invoices are generated for completed orders. Once approved, you\'ll receive payment according to your payment schedule.</string>
 
     <!-- Validation -->
     <string name="error_email_required">Email is required</string>
@@ -575,66 +328,16 @@
     <!-- Profile Validation -->
     <string name="validation_required">This field is required</string>
     <string name="validation_max_50">Maximum 50 characters allowed</string>
-    <string name="validation_max_20">Maximum 20 characters allowed</string>
-    <string name="validation_max_100">Maximum 100 characters allowed</string>
-    <string name="validation_date_past">Date must be in the past</string>
     <string name="validation_min_age_18">You must be at least 18 years old</string>
-    <string name="validation_invalid_date">Invalid date format</string>
-    <string name="validation_invalid_phone">Invalid phone number format</string>
-    <string name="validation_invalid_email">Invalid email format</string>
-    <string name="validation_length_5_20">Must be between 5 and 20 characters</string>
-    <string name="validation_alphanumeric">Only letters and numbers are allowed</string>
-    <string name="validation_length_5_255">Must be between 5 and 255 characters</string>
-    <string name="validation_length_2_100">Must be between 2 and 100 characters</string>
-    <string name="validation_length_3_20">Must be between 3 and 20 characters</string>
-    <string name="validation_invalid_zip">Invalid ZIP code format</string>
-    <string name="validation_length_15_34">Must be between 15 and 34 characters</string>
-    <string name="validation_invalid_iban">Invalid IBAN format</string>
 
     <!-- Onboarding -->
     <string name="onboarding_welcome_title">Welcome to Cleansia Partner</string>
     <string name="onboarding_welcome_body">Manage your cleaning jobs, track your earnings, and grow your client base — all in one place.</string>
     <string name="onboarding_ready_title">Ready to clean?</string>
     <string name="onboarding_ready_body">Sign in or create an account to see available jobs near you.</string>
-    <string name="onboarding_welcome_desc">Your partner app for managing cleaning orders and earnings</string>
-    <string name="onboarding_orders_title">Manage Your Orders</string>
-    <string name="onboarding_orders_desc">Browse available orders, accept jobs, and track your progress in real-time</string>
-    <string name="onboarding_earnings_title">Track Your Earnings</string>
-    <string name="onboarding_earnings_desc">View your invoices, monitor payments, and download reports</string>
-    <string name="onboarding_profile_title">Complete Your Profile</string>
-    <string name="onboarding_profile_desc">Keep your information up to date for smooth operations and timely payments</string>
     <string name="onboarding_get_started">Get Started</string>
     <string name="onboarding_next">Next</string>
     <string name="onboarding_skip">Skip</string>
-    <!-- Onboarding highlights -->
-    <string name="onboarding_highlight_orders">Manage Orders</string>
-    <string name="onboarding_highlight_earnings">Track Earnings</string>
-    <string name="onboarding_highlight_schedule">Set Schedule</string>
-    <string name="onboarding_highlight_realtime">Real-time Updates</string>
-    <string name="onboarding_highlight_location">Map View</string>
-    <string name="onboarding_highlight_tracking">Progress Tracking</string>
-    <string name="onboarding_highlight_invoices">Invoices</string>
-    <string name="onboarding_highlight_analytics">Analytics</string>
-    <string name="onboarding_highlight_reports">Reports</string>
-    <string name="onboarding_highlight_documents">Documents</string>
-    <string name="onboarding_highlight_ratings">Ratings</string>
-
-    <!-- Profile Completion -->
-    <string name="complete_your_profile">Complete Your Profile</string>
-    <string name="profile_completion_subtitle">Fill in your details to get started with Cleansia</string>
-    <string name="step_personal">Personal</string>
-    <string name="step_address">Address</string>
-    <string name="step_bank">Banking</string>
-    <string name="step_schedule">Schedule</string>
-    <string name="profile_next_step">Next</string>
-    <string name="profile_prev_step">Back</string>
-    <string name="profile_finish">Finish</string>
-    <string name="profile_skip_for_now">Skip for now</string>
-    <string name="personal_details">Personal Details</string>
-    <string name="address_details">Address Details</string>
-    <string name="banking_details">Banking Details</string>
-    <string name="schedule_setup">Schedule Setup</string>
-    <string name="schedule_setup_desc">Set the days and times you\'re available to work.</string>
 
     <!-- API Errors -->
     <string name="error_network">Unable to connect to server. Please check your internet connection.</string>
@@ -643,36 +346,11 @@
     <string name="error_generic">Something went wrong. Please try again.</string>
 
     <!-- Session Expiration -->
-    <string name="session_expired_title">Session Expired</string>
-    <string name="session_expired_message">Your session has expired. Please sign in again to continue.</string>
     <string name="error_not_found">The requested resource was not found.</string>
     <string name="error_server">Server error. Please try again later.</string>
     <string name="error_unknown">An unexpected error occurred.</string>
 
-    <!-- Timer -->
-    <string name="timer_minute">minute</string>
-    <string name="timer_minutes">minutes</string>
-    <string name="timer_seconds">seconds</string>
-    <string name="timer_remaining">remaining</string>
-    <string name="timer_overtime">overtime</string>
-    <string name="timer_cleaning_in_progress">Cleaning in Progress</string>
-    <string name="timer_time_left">Time Left</string>
-
     <!-- Order Details - Redesigned -->
-    <string name="quick_info">Quick Info</string>
-    <string name="order_workflow">Order Workflow</string>
-    <string name="step_take_order">Take Order</string>
-    <string name="step_start_cleaning">Start Cleaning</string>
-    <string name="step_complete">Complete</string>
-    <string name="current_step">Current</string>
-    <string name="step_done">Done</string>
-    <string name="step_pending">Pending</string>
-    <string name="view_details">View Details</string>
-    <string name="hide_details">Hide Details</string>
-    <string name="cleaning_timer">Cleaning Timer</string>
-    <string name="open_in_maps">Open in Maps</string>
-    <string name="call_customer">Call Customer</string>
-    <string name="navigate_to_address">Navigate to Address</string>
     <string name="report_issue">Issue</string>
     <string name="lockout_card_title">Cannot get in?</string>
     <string name="lockout_card_not_yet">If nobody opens the door, you can report it from %1$s, %2$d minutes after the start.</string>
@@ -688,50 +366,19 @@
     <string name="lockout_reported_body">Reported at %1$s. An administrator will confirm it; until then the job stays as it is.</string>
     <string name="lockout_reported_calls">Calls: %1$s</string>
     <string name="report_issue_desc">Describe the issue you encountered during this cleaning session.</string>
-    <string name="describe_issue">Describe the issue</string>
-    <string name="submit">Submit</string>
     <string name="add_note">Note</string>
     <string name="add_note_desc">Add a note about this cleaning session.</string>
-    <string name="your_note">Your note</string>
-    <string name="call">Call</string>
-    <string name="message">Message</string>
-    <string name="employee_notes_issues">Notes &amp; Issues</string>
-    <string name="no_notes_or_issues">No notes or issues yet</string>
-    <string name="issue_resolved">Resolved</string>
-    <string name="issue_open">Open</string>
 
     <!-- Account Hub -->
-    <string name="account">Account</string>
-    <string name="quick_access">Quick Access</string>
-    <string name="recent_orders">Recent Orders</string>
-    <string name="help_support">Help &amp; Support</string>
-    <string name="logout_confirm">Are you sure you want to logout?</string>
     <string name="profile_logout_dialog_title">Sign out?</string>
     <string name="profile_logout_dialog_message">You\'ll need to sign in again to continue.</string>
     <string name="profile_logout_dialog_confirm">Sign out</string>
     <string name="profile_logout_dialog_cancel">Cancel</string>
-    <string name="member_since">Member since %1$s</string>
-    <string name="inactive_account">Inactive</string>
 
     <!-- Invoice Details - Redesigned -->
-    <string name="invoice_summary">Summary</string>
-    <string name="invoice_information">Invoice Information</string>
-    <string name="amount_breakdown">Amount Breakdown</string>
-    <string name="status_timeline">Status Timeline</string>
-    <string name="employee">Partner</string>
-    <string name="variable_symbol">Variable Symbol</string>
-    <string name="payment_reference">Payment Reference</string>
-    <string name="total_orders">Total Orders</string>
-    <string name="pay_period">Pay Period</string>
-    <string name="paid_date">Paid Date</string>
     <string name="subtotal">Subtotal</string>
     <string name="bonus">Bonus</string>
     <string name="deductions">Deductions</string>
-    <string name="admin_notes">Admin Notes</string>
-    <string name="bank_transfer_note">Bank Transfer Note</string>
-    <string name="generated">Generated</string>
-    <string name="approved">Approved</string>
-    <string name="paid">Paid</string>
     <string name="invoice_notes">Notes</string>
     <!-- Invoice Details v2 — redesign cards -->
     <string name="invoice_hero_total">Invoice total</string>
@@ -750,73 +397,9 @@
     <string name="invoice_notes_admin">Admin notes</string>
     <string name="invoice_notes_bank">Bank transfer note</string>
 
-    <string name="remove">Remove</string>
-    <string name="edit">Edit</string>
-
-    <!-- Quick Setup Presets -->
-    <string name="quick_setup">Quick Setup</string>
-    <string name="mon_fri_9_5">Mon-Fri 9-17</string>
-    <string name="mon_sat_8_4">Mon-Sat 8-16</string>
-    <string name="custom">Custom</string>
-    <string name="custom_schedule">Custom Schedule</string>
-    <string name="working_hours">Working Hours</string>
-    <string name="working_days">Working Days</string>
-
-    <!-- Dashboard Working Hours -->
-    <string name="todays_working_hours">Today\'s Working Hours</string>
-    <string name="day_complete">Day Complete</string>
-    <string name="day_off_today">Day Off Today</string>
-    <string name="off_today">Off Today</string>
-    <string name="remaining_time">%1$s remaining</string>
-
-    <!-- Before/After Photos -->
-    <string name="photos_before">Before</string>
-    <string name="photos_after">After</string>
-    <string name="no_before_photos">No before photos yet</string>
-    <string name="no_after_photos">No after photos yet</string>
-    <string name="photos_required_warning">Before and after photos are required to complete the order</string>
-    <string name="photos_before_required">Please add at least one before photo</string>
-    <string name="photos_after_required">Please add at least one after photo</string>
-
-    <!-- Notifications -->
-    <string name="notification_channel_timer">Order Timer</string>
-    <string name="notification_channel_timer_desc">Ongoing notification showing order timer progress</string>
-    <string name="notification_channel_alerts">Order Alerts</string>
-    <string name="notification_channel_alerts_desc">Important alerts about order time limits</string>
-    <string name="notification_order_timer">Order #%1$s</string>
-    <string name="notification_time_remaining">%1$d min remaining</string>
-    <string name="notification_overtime">%1$d min over estimated time</string>
-    <string name="notification_caution_title">Time Running Low</string>
-    <string name="notification_caution_message">Order #%1$s has about %2$d min remaining</string>
-    <string name="notification_urgent_title">Almost Out of Time!</string>
-    <string name="notification_urgent_message">Order #%1$s has only %2$d min left</string>
-    <string name="notification_overtime_title">Time Exceeded</string>
-    <string name="notification_overtime_message">Order #%1$s has exceeded the estimated time</string>
-    <string name="notification_caution_subtitle">%1$d min left — hurry up</string>
-    <string name="notification_urgent_subtitle">Only %1$d min left!</string>
-    <string name="notification_elapsed">%1$d min elapsed</string>
-    <string name="notification_elapsed_detailed">%1$d:%2$02d elapsed</string>
-    <string name="notification_estimated">Est. %1$d min</string>
-    <string name="notification_in_progress">In Progress</string>
-    <string name="notification_overtime_elapsed">+%1$d min overtime</string>
-    <string name="notification_enable_title">Enable Notifications</string>
-    <string name="notification_enable_message">Notifications are disabled. Please enable them to receive order timer updates and alerts.</string>
-    <string name="notification_enable_open_settings">Open Settings</string>
-
     <!-- Urgency -->
-    <string name="urgency_overdue">Overdue</string>
     <string name="urgency_in_minutes">In %1$dm</string>
     <string name="urgency_in_hours_minutes">In %1$dh %2$dm</string>
-    <string name="urgency_in_hours">In %1$dh</string>
-
-    <!-- Tier 3 -->
-    <string name="scroll_to_top">Scroll to top</string>
-    <string name="view_mode_list">List view</string>
-    <string name="view_mode_week">Week view</string>
-    <string name="no_orders_for_day">No orders for this day</string>
-    <string name="offline_mode">You are offline</string>
-    <string name="last_updated_ago">Last updated %1$s</string>
-    <string name="syncing">Syncing…</string>
 
     <!-- Orders redesign -->
     <string name="sort_earnings_high_to_low">Earnings high → low</string>
@@ -825,11 +408,6 @@
     <string name="day_tomorrow">Tomorrow</string>
     <string name="day_later">Later</string>
     <string name="period_this_week">This week</string>
-    <string name="action_on_the_way">On the way</string>
-    <string name="action_start">Start</string>
-    <string name="action_complete">Complete</string>
-    <string name="complete_now">Complete</string>
-    <string name="rating">Rating</string>
     <plurals name="scope_rooms">
         <item quantity="one">%1$d room</item>
         <item quantity="other">%1$d rooms</item>
@@ -844,7 +422,6 @@
     </plurals>
     <string name="history">History</string>
     <string name="you_earn">you earn</string>
-    <string name="distance_unknown">Location unknown</string>
     <!-- Contract for work: the sheet under the take, the standalone acceptance, the detail line and banner. -->
     <string name="work_contract_title">Contract for work</string>
     <string name="work_contract_version">Version %1$s</string>
@@ -904,7 +481,6 @@
          `error_key_<dot-replaced-with-underscore>` per
          ApiErrorTranslator.lookupKey. -->
     <string name="error_key_order_after_photos_required">Take at least one \"after\" photo before completing the order.</string>
-    <string name="enable_location_for_distance">Enable location for distance</string>
 
     <!-- Order details redesign (partner-android-order-detail-redesign.md) -->
     <string name="action_call">Call</string>
@@ -929,25 +505,11 @@
     <string name="from_customer_section_title">From customer</string>
     <string name="note_general_label">Notes</string>
     <string name="note_special_label">Special instructions</string>
-    <string name="order_on_the_way_encouragement">On your way — see you soon!</string>
 
     <!-- Order details v2 — access / checklist / timer -->
     <string name="access_section_title">How to get in</string>
     <string name="checklist_section_title">Cleaning checklist</string>
     <string name="checklist_progress">%1$d of %2$d done</string>
-    <string name="timer_section_title">Time</string>
-    <string name="timer_elapsed_label">Elapsed</string>
-    <string name="timer_estimated_label">Estimated %1$s</string>
-    <string name="timer_ahead">%1$s ahead of schedule</string>
-    <string name="timer_over">%1$s over the estimate</string>
-    <string name="timer_on_track">On track</string>
-
-    <!-- Order tracker hero (top-of-sheet live status block) -->
-    <string name="tracker_subtitle_new">Slide below to take this job</string>
-    <string name="tracker_subtitle_confirmed_far">Cleaning is scheduled for %1$s</string>
-    <string name="tracker_subtitle_confirmed_soon">Time to head out!</string>
-    <string name="tracker_subtitle_on_the_way_action">Slide to start once you arrive</string>
-    <string name="tracker_completed_subtitle">Nice work!</string>
 
     <!-- Hero headline strings (Foodora-style "Got your order!" tone) -->
     <string name="tracker_headline_done">Done</string>
@@ -970,13 +532,9 @@
     <string name="registration_lock_action_contact_support">Contact support</string>
     <string name="registration_lock_category_legal_documents">Contract documents</string>
     <string name="registration_lock_action_accept_documents">Read and accept</string>
-    <string name="registration_lock_documents_required">Upload your identification documents.</string>
     <string name="registration_lock_approval_awaiting_review">Application under review by an administrator.</string>
-    <string name="registration_lock_approval_complete_profile_first">Finish the steps above first — then admin can approve you.</string>
     <string name="registration_lock_approval_rejected">Your application was rejected. Contact support for details.</string>
     <string name="registration_lock_retry">Retry</string>
-    <string name="registration_lock_error_loading">Failed to load setup status. Check your connection and try again.</string>
-    <string name="registration_lock_pull_to_refresh">Pull down to refresh</string>
 
     <!-- Profile-field missing detail labels (mirror backend BusinessErrorMessage keys "profile.fields.*") -->
     <string name="profile_fields_firstName">First name</string>
@@ -1443,11 +1001,7 @@
     <string name="orders_load_more_failed">Couldn\'t load more jobs.</string>
     <string name="orders_check_again">Check again</string>
     <string name="orders_sort_a11y">Sort: %1$s</string>
-    <string name="orders_a11y_expanded">Expanded</string>
-    <string name="orders_a11y_collapsed">Collapsed</string>
-    <string name="orders_a11y_toggle_hint">Shows or hides why cash jobs are hidden.</string>
     <string name="available_cash_hidden">Cash jobs hidden · over your cash limit</string>
-    <string name="active_hero_next">Next up</string>
     <string name="active_hero_in">in %1$s</string>
     <string name="active_hero_due">was due at %1$s</string>
     <string name="active_hero_until">booked until %1$s</string>

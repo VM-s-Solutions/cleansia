@@ -365,7 +365,7 @@ class OrderDetailCallSiteTest {
 
     @Test
     fun `one after-photo fact feeds the step, the status line, the run sheet, the gate and the pinned move`() {
-        val own = body("OwnJobDetail")
+        val own = body("ownJobDetail")
         assertTrue(own.contains("val afterPhoto = order.hasAfterPhotos == true || afterPhotos.isNotEmpty()"))
         assertTrue(Regex("""afterPhoto = afterPhoto""").findAll(own).count() >= 4)
         assertTrue(own.contains("afterNeeded = slot && !afterPhoto"))
@@ -415,15 +415,15 @@ class OrderDetailCallSiteTest {
 
     @Test
     fun `a cancelled job always draws its day line, the freed slot only while some is left`() {
-        val cancelled = body("CancelledDetail")
+        val cancelled = body("cancelledDetail")
         assertTrue(cancelled.contains("rules.freedSlot(row, now, zone)"))
         assertFalse(cancelled.contains("bookedEnd(row)?.let { it > now }"))
     }
 
     @Test
     fun `from the board's row a job not hers draws the not-taken page, and the head its own figure and pin`() {
-        val rowDetail = body("RowDetail")
-        assertTrue(rowDetail.contains("NotTakenPage("))
+        val rowDetail = body("rowDetail")
+        assertTrue(rowDetail.contains("notTakenPage("))
         assertTrue(rowDetail.contains("rowDetailPin(move, failed)"))
         assertTrue(rowDetail.contains("detailMascot("))
         assertFalse(rowDetail.contains("R.drawable.mascot_waving"))
@@ -432,17 +432,25 @@ class OrderDetailCallSiteTest {
     @Test
     fun `a job the server refused is never drawn from the board's row`() {
         assertTrue(
-            Regex("""is OrderDetailUiState\.Error -> boardRow\?\.takeUnless \{ uiState\.refused \}\?\.let \{ RowDetail\(""")
+            Regex("""is OrderDetailUiState\.Error -> boardRow\?\.takeUnless \{ uiState\.refused \}\?\.let \{ rowDetail\(""")
                 .containsMatchIn(body("OrderDetailContent")),
         )
     }
 
+    /** A job opened from the board is drawn from its row, then loaded: one frame keeps its map, sheet and figure across both. */
+    @Test
+    fun `every state fills the one frame, which draws the one map`() {
+        assertEquals(1, Regex("""JobDetailFrame\(""").findAll(detailScreen).count())
+        assertEquals(1, Regex("""JobBandMap\(""").findAll(detailScreen).count())
+        assertTrue(body("OrderDetailContent").contains("JobDetailFrame("))
+    }
+
     @Test
     fun `from the board's row the pinned move knows the action in flight`() {
-        val rowDetail = body("RowDetail")
+        val rowDetail = body("rowDetail")
         assertTrue(Regex("""OrderPrimaryAction\(\s*move = move, inFlight = inFlight,""").containsMatchIn(rowDetail))
         assertFalse(rowDetail.contains("inFlight = null"))
-        assertEquals(2, Regex("""RowDetail\(it, lists, preferredOffer, inFlight, now,""").findAll(body("OrderDetailContent")).count())
+        assertEquals(2, Regex("""rowDetail\(it, lists, preferredOffer, inFlight, now,""").findAll(body("OrderDetailContent")).count())
     }
 
     @Test
@@ -464,7 +472,7 @@ class OrderDetailCallSiteTest {
     fun `the detail offers See N open jobs as the board does, only for an Available total above 0`() {
         val rule = "availableBadge(lists.open.hasLoaded, lists.open.total, lists.open.rows, lists.now)"
         assertTrue(body("OpenWeek").contains("openTotal = OrdersBoardRules.$rule,"))
-        assertTrue(body("CancelledDetail").contains("rules.$rule?.let { total ->"))
+        assertTrue(body("cancelledDetail").contains("rules.$rule?.let { total ->"))
         assertFalse(detailScreen.contains("lists.open.total ?:"))
     }
 

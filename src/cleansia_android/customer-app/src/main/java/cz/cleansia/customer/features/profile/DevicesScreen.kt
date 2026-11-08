@@ -59,8 +59,8 @@ import cz.cleansia.core.ui.theme.Poppins
 import cz.cleansia.core.ui.theme.primaryIconOnContainer
 import cz.cleansia.core.ui.theme.primaryTextOnContainer
 import cz.cleansia.customer.R
-import cz.cleansia.customer.core.devices.UserDeviceDto
-import cz.cleansia.customer.ui.state.ActionState
+import cz.cleansia.core.devices.UserDeviceDto
+import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.customer.ui.theme.CleansiaTheme
 import java.time.LocalDate
 import java.time.ZoneId

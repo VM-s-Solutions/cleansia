@@ -64,6 +64,7 @@ import cz.cleansia.core.ui.theme.orderStatusColor
 import cz.cleansia.customer.core.orders.OrderListItemDto
 import cz.cleansia.customer.features.booking.localizedName
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
+import cz.cleansia.core.ui.components.OrderStatusPill
 import cz.cleansia.core.ui.components.SudsRefreshIndicator
 import cz.cleansia.core.ui.theme.Poppins
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -403,9 +404,10 @@ private fun OrderCard(
             val statusLabelRes = orderStatusLabelRes(order.orderStatus?.value)
             val statusLabel = statusLabelRes?.let { stringResource(it) }
                 ?: order.orderStatus?.name ?: "—"
-            StatusPill(
+            OrderStatusPill(
                 label = statusLabel,
-                color = statusColor,
+                ink = statusColor,
+                washAlpha = 0.14f,
             )
         }
         if (order.isGuestBooking) {
@@ -475,23 +477,6 @@ private fun OrderCard(
             color = MaterialTheme.colorScheme.onBackground,
         )
     }
-    }
-}
-
-@Composable
-private fun StatusPill(label: String, color: Color) {
-    Row(
-        modifier = Modifier
-            .clip(RoundedCornerShape(999.dp))
-            .background(color.copy(alpha = 0.14f))
-            .padding(horizontal = 10.dp, vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-            color = color,
-        )
     }
 }
 

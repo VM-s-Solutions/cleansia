@@ -15,11 +15,19 @@ import org.junit.Test
  */
 class TabRootFabClearanceTest {
 
-    /** The box is as tall as its tallest child, and the FAB is taller than the pill. */
+    /**
+     * The box is as tall as its tallest child, and the FAB is taller than the pill. The box and the pill are
+     * `:core`'s `FloatingIslandBar`; the FAB is a child of its box because the shell passes it as the overlay.
+     */
     @Test
     fun `the clearance is the bar box plus a 16dp gap`() {
         val shell = source("features/main/MainShell.kt")
-        val bar = shell.substringAfter("private fun CustomBottomBar(")
+        assertTrue(
+            "the Book FAB must be the bar's overlay, a child of its box, for the box to be as tall as the FAB",
+            shell.substringAfter("private fun CustomBottomBar(").substringBefore("FloatingIslandSlot(")
+                .let { it.contains("overlay = {") && it.contains("BookFab(onBookClick)") },
+        )
+        val bar = coreSource("ui/components/FloatingIslandBar.kt").substringAfter("fun FloatingIslandBar(")
         val padding = Regex("""vertical = (\d+)\.dp""").find(bar)!!.groupValues[1].toInt()
         val pill = Regex("""\.height\((\d+)\.dp\)""").find(bar)!!.groupValues[1].toInt()
         val fab = Regex("""\.size\((\d+)\.dp\)""")
@@ -70,6 +78,15 @@ class TabRootFabClearanceTest {
         File("customer-app"),
         File("src/cleansia_android/customer-app"),
     ).map { File(it, "src/main/java/cz/cleansia/customer/$path") }
+        .firstOrNull { it.isFile }
+        ?.readText()
+        ?: error("$path not found from working dir ${File(".").absolutePath}")
+
+    private fun coreSource(path: String): String = sequenceOf(
+        File("../core"),
+        File("core"),
+        File("src/cleansia_android/core"),
+    ).map { File(it, "src/main/java/cz/cleansia/core/$path") }
         .firstOrNull { it.isFile }
         ?.readText()
         ?: error("$path not found from working dir ${File(".").absolutePath}")

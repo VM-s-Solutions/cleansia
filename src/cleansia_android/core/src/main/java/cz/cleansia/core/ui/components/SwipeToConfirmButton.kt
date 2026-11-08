@@ -42,6 +42,13 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.disabled
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextAlign
@@ -281,6 +288,34 @@ fun LockedSwipeToConfirm(reason: String, detail: String? = null, modifier: Modif
         ) {
             Icon(imageVector = Icons.Outlined.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
+    }
+}
+
+/**
+ * The slide as one button TalkBack can activate: a double tap commits, as the swipe does. Disabled, it is
+ * announced so with its reason; busy, it says what is happening. Each caller applies it through the slide's
+ * modifier, so the slide itself stays as it was.
+ */
+fun Modifier.slideSemantics(
+    label: String,
+    busyLabel: String,
+    enabled: Boolean,
+    isBusy: Boolean,
+    onCommit: () -> Unit,
+    disabledReason: String? = null,
+): Modifier {
+    return this.semantics(mergeDescendants = true) {
+        role = Role.Button
+        contentDescription = label
+        onClick(label) {
+            if (enabled && !isBusy) onCommit()
+            true
+        }
+        if (!enabled) {
+            disabled()
+            disabledReason?.let { stateDescription = it }
+        }
+        if (isBusy) stateDescription = busyLabel
     }
 }
 

@@ -1,7 +1,5 @@
 package cz.cleansia.partner.features.orders
 
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalConfiguration
 import cz.cleansia.partner.api.model.Translation
 
 fun resolveTranslatedName(
@@ -14,13 +12,3 @@ fun resolveTranslatedName(
     // self-sufficient rather than relying on call-site isNotBlank guards.
     return translations[lang]?.name?.takeIf { it.isNotBlank() } ?: fallback
 }
-
-@Composable
-fun localizedScopeName(
-    translations: Map<String, Translation>?,
-    fallback: String?,
-): String? = resolveTranslatedName(
-    translations = translations,
-    lang = LocalConfiguration.current.locales.get(0)?.language,
-    fallback = fallback,
-)

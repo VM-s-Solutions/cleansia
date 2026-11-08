@@ -104,8 +104,12 @@ android {
             buildConfigField("String", "API_BASE_URL", "\"$url\"")
         }
         create("staging") {
+            // :core has only debug and release build types.
+            matchingFallbacks += listOf("release")
             isMinifyEnabled = true
-            applicationIdSuffix = ".staging"
+            // The debug package, because google-services.json has a Firebase client for it and none for a
+            // staging package, which fails the build. A staging install replaces the debug one.
+            applicationIdSuffix = ".debug"
             versionNameSuffix = "-staging"
             // `staging-api.cleansia.cz` never existed — no DNS, no Azure resource, no bicep binding.
             // Until a real staging host is provisioned this points where debug points, so a staging

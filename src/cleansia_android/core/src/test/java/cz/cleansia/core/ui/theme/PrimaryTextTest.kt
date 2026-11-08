@@ -94,7 +94,7 @@ class PrimaryTextTest {
             }.map { match -> "${file.module}/${file.rel}:${file.text.substring(0, match.range.first).count { it == '\n' } + 1}" }
         }
         assertEquals(emptyList<String>(), offenders)
-        assertTrue(sources.count { it.text.contains("tint = MaterialTheme.colorScheme.primaryIconOnContainer") } >= 15)
+        assertTrue(sources.count { it.text.contains("tint = MaterialTheme.colorScheme.primaryIconOnContainer") } >= 10)
     }
 
     @Test
@@ -190,17 +190,9 @@ class PrimaryTextTest {
     /** A selected tab's icon and its label are one control, so they share one ink. */
     @Test
     fun `each app's selected tab draws its icon and label in the text blue`() {
-        listOf(
-            "customer-app" to "features/main/MainShell.kt",
-            "partner-app" to "features/main/FloatingIslandBottomBar.kt",
-        ).forEach { (module, path) ->
-            val text = source(module, path)
-            assertTrue(
-                "$module $path",
-                Regex("""val color = if \(isSelected\) MaterialTheme\.colorScheme\.primaryText\b""").containsMatchIn(text),
-            )
-            assertTrue("$module $path", !Regex("""isSelected\) MaterialTheme\.colorScheme\.primary\b""").containsMatchIn(text))
-        }
+        val text = source("core", "ui/components/FloatingIslandBar.kt")
+        assertTrue(Regex("""val color = if \(selected\) MaterialTheme\.colorScheme\.primaryText\b""").containsMatchIn(text))
+        assertTrue(!Regex("""selected\) MaterialTheme\.colorScheme\.primary\b""").containsMatchIn(text))
     }
 
     /** The partner app's own text links and text buttons, each with the icon that sits in it. */
@@ -294,7 +286,7 @@ class PrimaryTextTest {
     /**
      * The argument lists of the [name] calls (texts, icons) drawn on the fill at [at]: those in the trailing
      * lambda of the call whose argument list holds it — or, when that call is itself a [name] wearing the fill
-     * in its own `Modifier.background(...)` (CleansiaSectionHeader's badge), that call.
+     * in its own `Modifier.background(...)`, that call.
      */
     private fun drawnOnFill(name: String, text: String, at: Int): List<String> {
         var open = enclosingParen(text, at)

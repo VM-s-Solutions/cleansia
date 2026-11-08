@@ -38,7 +38,7 @@ import cz.cleansia.customer.core.user.UserRepository
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.settings.AppLocale
 import cz.cleansia.core.snackbar.SnackbarController
-import cz.cleansia.customer.ui.state.ActionState
+import cz.cleansia.core.ui.state.ActionState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject

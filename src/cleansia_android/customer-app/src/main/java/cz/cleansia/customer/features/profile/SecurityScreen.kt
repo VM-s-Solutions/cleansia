@@ -1,22 +1,15 @@
 package cz.cleansia.customer.features.profile
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.Check
-import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -30,7 +23,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.res.stringResource
@@ -44,10 +36,9 @@ import cz.cleansia.customer.R
 import cz.cleansia.core.ui.components.CleansiaOutlinedButton
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.components.CleansiaTextField
+import cz.cleansia.core.ui.components.PasswordRuleList
 import cz.cleansia.core.validation.PasswordPolicy
 import cz.cleansia.customer.ui.theme.CleansiaTheme
-import cz.cleansia.customer.ui.theme.ErrorText
-import cz.cleansia.customer.ui.theme.SuccessText
 import cz.cleansia.core.ui.theme.Poppins
 
 /**
@@ -150,7 +141,7 @@ private fun ChangePasswordForm(
         modifier = Modifier.semantics { contentType = ContentType.NewPassword },
         isPassword = true,
     )
-    RuleList(
+    PasswordRuleList(
         rules = listOf(
             stringResource(R.string.register_pw_min_length) to hasMinLength,
             stringResource(R.string.register_pw_letter) to hasLetter,
@@ -167,7 +158,7 @@ private fun ChangePasswordForm(
         modifier = Modifier.semantics { contentType = ContentType.NewPassword },
         isPassword = true,
     )
-    RuleList(
+    PasswordRuleList(
         rules = listOf(stringResource(R.string.register_pw_match) to passwordsMatch),
         hasInput = hasConfirmInput,
     )
@@ -186,40 +177,6 @@ private fun ChangePasswordForm(
         onClick = onResend,
         leadingIcon = Icons.Outlined.Refresh,
     )
-}
-
-@Composable
-private fun RuleList(rules: List<Pair<String, Boolean>>, hasInput: Boolean) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 4.dp, vertical = 4.dp),
-        verticalArrangement = Arrangement.spacedBy(2.dp),
-    ) {
-        rules.forEach { (text, valid) ->
-            val (icon, tint) = when {
-                valid -> Icons.Outlined.Check to SuccessText
-                hasInput -> Icons.Outlined.Close to ErrorText
-                else -> Icons.Outlined.RadioButtonUnchecked to MaterialTheme.colorScheme.onSurfaceVariant
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = tint,
-                    modifier = Modifier.size(14.dp),
-                )
-                Text(
-                    text = text,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (valid || !hasInput) MaterialTheme.colorScheme.onSurfaceVariant else ErrorText,
-                )
-            }
-        }
-    }
 }
 
 @Preview(widthDp = 390, heightDp = 844)

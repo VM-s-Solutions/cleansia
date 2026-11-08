@@ -34,10 +34,10 @@
     kotlinx.serialization.KSerializer serializer(...);
 }
 
-# Keep `INSTANCE.serializer()` of serializable objects.
--if @kotlinx.serialization.Serializable class ** {
-    public static ** INSTANCE;
-}
+# Keep `INSTANCE.serializer()` of serializable objects. The condition is the class alone, not a read of INSTANCE:
+# a route object that no code navigates to is reached only through serializer(KType), so R8 full mode removed both
+# members and the NavHost threw "Serializer for class ... is not found" while building its graph.
+-if @kotlinx.serialization.Serializable class **
 -keepclassmembers class <1> {
     public static <1> INSTANCE;
     kotlinx.serialization.KSerializer serializer(...);

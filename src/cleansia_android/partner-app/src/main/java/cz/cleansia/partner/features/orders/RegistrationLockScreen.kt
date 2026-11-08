@@ -58,7 +58,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -71,6 +70,8 @@ import androidx.lifecycle.Lifecycle
 import cz.cleansia.core.config.CleansiaWeb
 import cz.cleansia.core.settings.AppLocale
 import cz.cleansia.core.ui.components.CleansiaTextButton
+import cz.cleansia.core.ui.components.IconHalo
+import cz.cleansia.core.ui.components.IconHaloSize
 import cz.cleansia.core.ui.components.SudsRefreshIndicator
 import cz.cleansia.core.ui.openOrCopy
 import cz.cleansia.core.ui.theme.Spacing
@@ -399,32 +400,6 @@ private fun ProgressCard(
     }
 }
 
-/** The step row's leading halo; the row's detail lines are indented past it. */
-private val StepHaloSize = 44.dp
-
-/**
- * Brand-tinted icon halo — shared shape recipe with
- * [EarningsSummaryScreen.IconHalo]. Local copy keeps the lock screen
- * self-contained (no cross-feature dependency just for a 44dp circle)
- * while staying visually identical.
- */
-@Composable
-private fun IconHalo(icon: ImageVector) {
-    Box(
-        modifier = Modifier
-            .size(StepHaloSize)
-            .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primaryIconOnContainer,
-            modifier = Modifier.size(22.dp),
-        )
-    }
-}
-
 @Composable
 private fun StepRowView(step: StepRow, onFixStep: (NavRoute) -> Unit, onSupportEmailUnavailable: () -> Unit) {
     val (categoryIcon, categoryLabelRes, ctaLabelRes) = when (step.category) {
@@ -510,9 +485,6 @@ private fun StepRowView(step: StepRow, onFixStep: (NavRoute) -> Unit, onSupportE
         // centred on it. The details hang below at the title's indent: centred on the whole row, a
         // list of missing fields drew the icon and the status down beside the list, away from the title.
         Row(verticalAlignment = Alignment.CenterVertically) {
-            // Leading category icon — brand-tinted halo matching the
-            // earnings screen's IconHalo recipe (44dp primaryContainer
-            // circle with a 22dp tinted glyph).
             IconHalo(icon = categoryIcon)
             Spacer(Modifier.size(Spacing.S))
 
@@ -575,7 +547,7 @@ private fun StepRowView(step: StepRow, onFixStep: (NavRoute) -> Unit, onSupportE
         // Optional detail lines (Profile missing fields or the rejection note), as wide as the title
         // column above them: indented past the halo, stopping short of the trailing cluster.
         val detailsModifier = Modifier.padding(
-            start = StepHaloSize + Spacing.S,
+            start = IconHaloSize + Spacing.S,
             end = Spacing.S + statusIconSize + gapBetween + chevronSize,
         )
         if (step.category == StepCategory.Profile && step.detailKeys.isNotEmpty()) {

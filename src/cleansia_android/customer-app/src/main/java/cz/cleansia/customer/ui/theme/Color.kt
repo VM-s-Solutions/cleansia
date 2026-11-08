@@ -56,3 +56,8 @@ val WarningStar = Color(0xFFF59E0B) // amber-500
 val Amber800 = Color(0xFF92400E)
 val Green800 = Color(0xFF166534)
 val Green400 = Color(0xFF4ADE80)
+
+// ─── The rest of that amber, for the scheme's tertiary roles: what the app means by an advisory note ───
+val Amber100 = Color(0xFFFEF3C7)
+val Amber900 = Color(0xFF78350F)
+val Amber950 = Color(0xFF451A03)

@@ -47,13 +47,6 @@ data class UserAddress(
             street.takeIf { it.isNotBlank() },
             city.takeIf { it.isNotBlank() },
         ).joinToString(", ")
-
-    /** Secondary line (zip + country), empty string when both are blank. */
-    val secondLine: String
-        get() = listOfNotNull(
-            zipCode.takeIf { it.isNotBlank() },
-            country.takeIf { it.isNotBlank() },
-        ).joinToString(" · ")
 }
 
 internal fun SavedAddressDto.toUserAddress(): UserAddress = UserAddress(

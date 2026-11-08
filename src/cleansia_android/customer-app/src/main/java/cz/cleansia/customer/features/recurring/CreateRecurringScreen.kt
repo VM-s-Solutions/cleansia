@@ -94,7 +94,7 @@ import cz.cleansia.customer.features.booking.SlotState
 import cz.cleansia.customer.features.booking.TimeSlot
 import cz.cleansia.customer.features.booking.localizedDescription
 import cz.cleansia.customer.features.booking.localizedName
-import cz.cleansia.customer.ui.state.ActionState
+import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.core.ui.components.CleansiaConsentCheckbox
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit

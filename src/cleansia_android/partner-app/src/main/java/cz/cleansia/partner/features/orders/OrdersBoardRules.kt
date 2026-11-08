@@ -4,6 +4,7 @@ import android.content.res.Resources
 import androidx.annotation.PluralsRes
 import androidx.annotation.StringRes
 import cz.cleansia.core.money.CurrencySymbols
+import cz.cleansia.core.money.formatMoney
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.HomeDistanceBand
 import cz.cleansia.partner.api.model.OrderListItem
@@ -322,7 +323,8 @@ object OrdersBoardRules {
         row.requiredEmployees?.takeIf { it > 1 }?.let { BoardText.Plural(R.plurals.active_hero_team, it) }
 
     /** Orders' money format with every space a no-break space, so a figure never splits from its unit. */
-    fun money(amount: Double, symbol: String?, locale: Locale): String = formatMoney(amount, symbol, locale).replace(' ', ' ')
+    fun money(amount: Double, symbol: String?, locale: Locale): String =
+        formatMoney(amount, symbol, fractionDigits = null, locale = locale).replace(' ', ' ')
 
     /** The row's own currency symbol, else the one its code names: the unit of every money figure on the board and the detail. */
     fun symbolOf(row: OrderListItem): String =

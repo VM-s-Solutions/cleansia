@@ -6,10 +6,10 @@ import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.auth.AuthRepository
-import cz.cleansia.customer.core.devices.DeviceManagementRepository
-import cz.cleansia.customer.core.devices.UserDeviceDto
+import cz.cleansia.core.devices.DeviceManagementRepository
+import cz.cleansia.core.devices.UserDeviceDto
 import cz.cleansia.customer.testing.MainDispatcherRule
-import cz.cleansia.customer.ui.state.ActionState
+import cz.cleansia.core.ui.state.ActionState
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every

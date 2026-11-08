@@ -14,17 +14,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
-/** An order's status, its label in [ink] on a 16 % wash of the same ink; [ink] is `orderStatusColor`'s. */
+/**
+ * An order's status, its label in [ink] on a [washAlpha] wash of the same ink, 16 % unless a caller keeps its own (the
+ * customer's orders list, tier ladder and disputes draw 14 %); [ink] is `orderStatusColor`'s.
+ */
 @Composable
 fun OrderStatusPill(
     label: String,
     ink: Color,
     modifier: Modifier = Modifier,
+    washAlpha: Float = 0.16f,
 ) {
     Row(
         modifier = modifier
             .clip(RoundedCornerShape(999.dp))
-            .background(ink.copy(alpha = 0.16f))
+            .background(ink.copy(alpha = washAlpha))
             .padding(horizontal = 10.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

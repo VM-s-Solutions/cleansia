@@ -7,36 +7,44 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * The Core slide commits from a drag only, so TalkBack could never take a job or set off. Every caller — the take
- * sheet, the Active hero and the detail's pinned move — passes one merged button with a click action through
- * `slideSemantics`; the slide itself gains no semantics. The partner opts into the thumb lanes and two lines, and
- * every locked slide is Core's own locked face. No Compose test harness here, so the call sites are read as source, as
- * `OrdersSegmentSelectionTest` does.
+ * The Core slide commits from a drag only, so TalkBack could never take a job, set off or book. Every caller in both
+ * apps — the take sheet, the Active hero, the detail's pinned move and the customer's booking slide — passes one
+ * merged button with a click action through Core's `slideSemantics`; the slide itself gains no semantics. The partner
+ * opts into the thumb lanes and two lines, and every locked slide is Core's own locked face. No Compose test harness
+ * here, so the call sites are read as source, as `OrdersSegmentSelectionTest` does.
  */
 class SlideSemanticsCallSiteTest {
 
     @Test
-    fun `the slide semantics are one merged button with a click action`() {
-        val helper = braceBlock(source("OrdersAccessibility.kt"), "fun Modifier.slideSemantics(")
+    fun `every slide in both apps passes the semantics into its modifier`() {
+        val slides = appSources().flatMap { (path, text) ->
+            (calls(text, "SwipeToConfirmButton(") + calls(text, "LockedSwipeToConfirm(")).map { path to it }
+        }
         listOf(
-            "semantics(mergeDescendants = true)",
-            "role = Role.Button",
-            "contentDescription =",
-            "onClick(",
-            "disabled()",
-            "stateDescription =",
-        ).forEach { piece -> assertTrue("slideSemantics lost `$piece`: $helper", helper.contains(piece)) }
+            "partner/features/orders/WorkContractSheet.kt",
+            "partner/features/orders/ActiveHero.kt",
+            "partner/features/orders/OrderPrimaryAction.kt",
+            "partner/features/orders/OrderDetailScreen.kt",
+            "customer/features/booking/BookingBottomSheet.kt",
+        ).forEach { file -> assertTrue("$file has no slide", slides.any { (path, _) -> path.endsWith(file) }) }
+        slides.forEach { (path, args) -> assertTrue("$path passes no slideSemantics: $args", args.contains(".slideSemantics(")) }
     }
 
+    /**
+     * The customer's double tap books with the swipe's own action, and only while the swipe could. While the order is
+     * placed, the slide says so with the busy overlay's words rather than repeating its label.
+     */
     @Test
-    fun `the take sheet and the hero pass the semantics into their slides`() {
-        listOf("WorkContractSheet.kt", "ActiveHero.kt").forEach { file ->
-            val slides = calls(source(file), "SwipeToConfirmButton(") + calls(source(file), "LockedSwipeToConfirm(")
-            assertTrue("$file has no slide", slides.isNotEmpty())
-            slides.forEach { args ->
-                assertTrue("$file passes no slideSemantics: $args", args.contains(".slideSemantics("))
-            }
-        }
+    fun `the booking slide's double tap places the order as its swipe does`() {
+        val slide = appSources().single { (path, _) -> path.endsWith("booking/BookingBottomSheet.kt") }.second
+            .let { calls(it, "SwipeToConfirmButton(").single() }
+        listOf(
+            "onConfirmed = confirm",
+            "onCommit = confirm",
+            "isBusy = submitting",
+            "busyLabel = stringResource(R.string.busy_booking)",
+        ).forEach { assertTrue("booking slide lacks `$it`: $slide", slide.contains(it)) }
+        assertEquals("the semantics and the swipe are enabled alike: $slide", 2, Regex("""enabled = canContinue && !submitting""").findAll(slide).count())
     }
 
     /**
@@ -88,9 +96,24 @@ class SlideSemanticsCallSiteTest {
         .map { File(it, "src/main/java/cz/cleansia/partner/features/orders/$name") }
         .firstOrNull { it.isFile }
         ?.readText()
-        ?.replace("\r\n", "\n")
-        ?.replace(Regex("""/\*[\s\S]*?\*/|(?<![:"])//[^\n]*"""), "")
+        ?.let(::withoutComments)
         ?: error("$name not found from working dir ${File(".").absolutePath}")
+
+    /** Every main Kotlin file of both apps, by its path from the Android root, comments removed. */
+    private fun appSources(): List<Pair<String, String>> {
+        val root = sequenceOf(File(".."), File("."), File("src/cleansia_android"))
+            .map { it.absoluteFile.normalize() }
+            .firstOrNull { File(it, "customer-app").isDirectory && File(it, "partner-app").isDirectory }
+            ?: error("cleansia_android not found from ${File(".").absolutePath}")
+        return listOf("partner-app", "customer-app").flatMap { module ->
+            File(root, "$module/src/main/java").walkTopDown().filter { it.isFile && it.extension == "kt" }
+                .map { it.relativeTo(root).invariantSeparatorsPath to withoutComments(it.readText()) }
+                .toList()
+        }
+    }
+
+    private fun withoutComments(text: String): String =
+        text.replace("\r\n", "\n").replace(Regex("""/\*[\s\S]*?\*/|(?<![:"])//[^\n]*"""), "")
 
     /** The argument list of every [marker] call in [text]. */
     private fun calls(text: String, marker: String): List<String> {
@@ -102,12 +125,6 @@ class SlideSemanticsCallSiteTest {
             at = text.indexOf(marker, at + marker.length)
         }
         return out
-    }
-
-    private fun braceBlock(text: String, marker: String): String {
-        val start = text.indexOf(marker)
-        assertTrue("no `$marker`", start >= 0)
-        return matched(text, text.indexOf('{', start), '{', '}')
     }
 
     private fun matched(text: String, open: Int, opener: Char, closer: Char): String {

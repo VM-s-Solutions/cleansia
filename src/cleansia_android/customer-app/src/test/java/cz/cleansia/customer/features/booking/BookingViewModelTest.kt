@@ -45,7 +45,7 @@ import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
-import cz.cleansia.customer.ui.state.ActionState
+import cz.cleansia.core.ui.state.ActionState
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every

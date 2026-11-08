@@ -149,6 +149,20 @@ android {
                 ?: "https://api-cleansia-customer-mobile-weu-dev.azurewebsites.net/"
             buildConfigField("String", "API_BASE_URL", "\"$url\"")
         }
+        // Debug's package (the one google-services.json has a Firebase client for), DEV host and signing key,
+        // minified like release, so lag is measured without debug overhead. A staging install replaces the debug one.
+        create("staging") {
+            initWith(getByName("debug"))
+            isDebuggable = false
+            isMinifyEnabled = true
+            versionNameSuffix = "-staging"
+            // :core has only debug and release build types.
+            matchingFallbacks += listOf("release")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true

@@ -6,9 +6,9 @@ import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.R
-import cz.cleansia.customer.core.notifications.NotificationFeedRepository
-import cz.cleansia.customer.core.notifications.PagedNotificationsDto
-import cz.cleansia.customer.core.notifications.UserNotificationDto
+import cz.cleansia.core.notifications.NotificationFeedRepository
+import cz.cleansia.core.notifications.PagedNotificationsDto
+import cz.cleansia.core.notifications.UserNotificationDto
 import cz.cleansia.customer.core.settings.AppSettings
 import cz.cleansia.customer.core.settings.AppSettingsRepository
 import cz.cleansia.customer.core.settings.LanguagePreference

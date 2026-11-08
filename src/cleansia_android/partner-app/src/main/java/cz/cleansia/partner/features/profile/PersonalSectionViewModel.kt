@@ -124,10 +124,6 @@ class PersonalSectionViewModel @Inject constructor(
         _avatarDraft.value = PartnerAvatarDraft.Removed
     }
 
-    fun discardAvatarDraft() {
-        _avatarDraft.value = PartnerAvatarDraft.Unchanged
-    }
-
     init { load() }
 
     fun retry() = load()

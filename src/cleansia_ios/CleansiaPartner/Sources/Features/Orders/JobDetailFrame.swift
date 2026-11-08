@@ -270,9 +270,12 @@ final class JobAreaLocator: ObservableObject {
         JobBandMap.marketCity
     }
 
+    /// Shared by every map, since a detail opened again is a new map. Only a found area is kept: a lookup made offline
+    /// or while throttled finds nothing, and keeping that would hold the area on the city for the rest of the run.
+    private static var known: [String: Coordinate] = [:]
+
     @Published private(set) var centre: Coordinate?
     private let geocode: (String) async -> Coordinate?
-    private var known: [String: Coordinate?] = [:]
 
     init(geocode: @escaping (String) async -> Coordinate? = JobAreaLocator.lookUp) {
         self.geocode = geocode
@@ -283,12 +286,14 @@ final class JobAreaLocator: ObservableObject {
             centre = Self.marketCity
             return
         }
-        if let known = known[area] {
-            centre = known ?? Self.marketCity
+        if let known = Self.known[area] {
+            centre = known
             return
         }
         let found = await geocode(area)
-        known[area] = .some(found)
+        if let found {
+            Self.known[area] = found
+        }
         centre = found ?? Self.marketCity
     }
 

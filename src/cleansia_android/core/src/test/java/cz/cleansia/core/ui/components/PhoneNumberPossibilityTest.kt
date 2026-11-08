@@ -26,7 +26,7 @@ class PhoneNumberPossibilityTest {
 
     @Test
     fun `a number without its country code, a bare plus, or one too short or too long does not`() {
-        listOf("777123456", "420777123456", "+", "+1", "+4201", "+42077712345", "+4207771234567890", "").forEach {
+        listOf("777123456", "420777123456", "+", "+1", "+4201", "+42077712", "+42077712345", "+4207771234567890", "").forEach {
             assertFalse(it, isPossiblePhoneNumber(it))
         }
     }

@@ -115,13 +115,16 @@ green; and Mike gets a customer TestFlight build.
   sheet and closes it with Done or a swipe down without moving a wheel, Then no birth date is stored and the row still
   reads "Not set". When she moves a wheel, Then the day on the wheels is stored and the row shows it. On Android a JVM
   test covers this through the view model. See open point 1: iOS stores the day shown on Done today.
-- [ ] **AC7 — the name step for a hidden-name Apple account.** Given an Apple account whose stored name the server
-  made up because Apple sent none, When she reaches onboarding, Then the server tells the app that the name is made
-  up, and the Name step is open with empty First name and Last name fields. The made-up name shows nowhere: not in the
-  fields, the row, the example, or the greeting, which reads "Welcome aboard!". Save and continue stays disabled until
-  her name and a valid phone number are in. When she saves her name, Then the server stores it and no longer reports
-  the name as made up. Given an account whose name the person typed or Apple sent, When onboarding appears, Then the
-  Name row is done and shows that name.
+- [ ] **AC7 — the name step for a hidden-name Apple account.** Given an Apple account whose stored first name is
+  Cleansia or whose stored last name is Customer, the words the server writes for a part that neither Apple nor the
+  e-mail gave, When she reaches onboarding, Then the server tells the app that the name is made up, and the Name step
+  is open with empty First name and Last name fields. The stored name shows nowhere: not in the fields, the row, the
+  example, or the greeting, which reads "Welcome aboard!". Save and continue stays disabled until her name and a valid
+  phone number are in. When she saves her name, Then the server stores it and no longer reports the name as made up.
+  Given an account whose name the person typed or Apple sent, When onboarding appears, Then the Name row is done and
+  shows that name. A hidden-name Apple account whose e-mail gives two name-shaped pieces keeps that guess and is not
+  asked: `jana.novakova@seznam.cz` is stored as Jana Novakova, and its Name row is done. That is the accepted limit of
+  ADR-0081 D4, and lifting it changes only what the server computes.
 - [ ] **AC8 — screen-reader row states.** Given VoiceOver on iOS or TalkBack on Android, When focus reaches a row of
   the card, Then it reads the label and the value and ends with the row's state: "done", "current step" or "not done"
   (cs "hotovo", "aktuální krok", "nevyplněno"), with the three state words in all five locales. The drawn marks are
@@ -229,3 +232,21 @@ green; and Mike gets a customer TestFlight build.
   record count read 75 while 80 records existed, so it now reads 81 rather than 76. Before the commit,
   `check-docs-refs` (445 references, 0 unresolved), `check-catalog-claims`, `check-backlog-consistency` and the
   VitePress site build passed.
+- 2026-11-08 — Brought the ticket, ADR-0081 and the auth flow page in line with the decided rule, and fixed one
+  test row. AC7 now names the rule, an Apple account whose stored first name is Cleansia or last name is Customer,
+  and its accepted limit from ADR-0081 D4: a hidden-name account whose e-mail gives two name-shaped pieces keeps
+  that guess and is not asked. ADR-0081 and the flow page now say that `true` means at least one stored part is a
+  word the server wrote, that the onboarding, not Edit profile, leaves the whole stored name out, and that only the
+  iOS onboarding greets a hidden-name Apple customer as Cleansia, because Android has no Sign in with Apple. The
+  theory on `User.IsNamePlaceholder()` builds its two-word row on `jane.doe@example.com`, whose derived name is Jane
+  Doe, so the row pins an e-mail-built name as given. The citations this branch moved now read `User.cs:409` on the
+  security law, the flow page and the owner plate, and `UserMappers.cs:23,67` in the user-uploaded-artifacts note;
+  ADR-0043 keeps its own as an accepted record. Part 1 also edited two Android test sources by hand, besides the
+  regenerated client code: `ProfileWireTest` and `UserProfileWireTest` each gained the member in their pinned
+  property set and captured payload, because both pin the re-dumped spec. On the final tree the Release build had 0
+  errors; `Cleansia.Tests` passed 9195 of 9195, `Cleansia.IntegrationTests` 1042 of 1042 and `Cleansia.HostTests`
+  518 of 518; `has-pending-model-changes` reported none; the three web typechecks passed; the affected web tests
+  (5325 of 5325 over 71 projects) and the three web production builds were replayed from the Nx cache, and the two
+  Android wire tests (10 of 10 and 7 of 7) were up to date, because none of their inputs changed; and
+  `check-docs-refs`, `check-catalog-claims`, `check-backlog-consistency`, `check-module-boundaries`, their
+  self-tests and the VitePress site build passed.

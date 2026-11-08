@@ -96,6 +96,13 @@ Where the verifier corrected an auditor, the verifier's note wins.
   simulator: Core 932, Partner 1444, Customer 1988 with the three iOS 16.4 failures known before this work, and one
   timing failure in `AppointmentConfirmationVisualTests` that passed on its rerun and in three earlier runs; Customer
   on iOS 26.3: 1988, none failing. Evidence in `ios-longterm-20261107/captures/`.
+- 2026-11-08 — Two things the record above left out. The contract sheet's loading slide no longer reads a VoiceOver
+  hint: the partner's own slide gave it one that repeated its label, Core's slide carries none, and the captures'
+  VoiceOver trees record no hints, so no capture shows it. And no guard keeps the locale fix's class of bug out: a lint
+  rule against a formatter that defaults to `Locale.current` would have to exempt the ones that still read the phone's
+  language (the partner's `OrdersFormat`, `DashboardFormat`, `DashboardGreeting`, `PendingOfferPresentation` and
+  `OrdersBoardRules`, the customer's `HomeSections`, `RewardsComponents` and `BookingSheetView`, and Core's
+  `EarningsFormat.currencySymbol`), and moving those is outside the agreed scope, so they are listed for Mike instead.
 
 ### Core moves, part 2
 
@@ -166,3 +173,22 @@ Where the verifier corrected an auditor, the verifier's note wins.
   16.4 simulator: Core 970, Partner 1421, Customer 1949 with the iOS 16.4 failures known before this work; Customer on
   iOS 26.3: 1949, none failing. Evidence in `ios-longterm-20261107/captures/cleanup/` and `cleanup/`; the deleted keys
   are listed in `ios-longterm-20261107/deleted-catalog-keys.txt`.
+
+### Follow-up fixes
+
+- 2026-11-08 — Built, one commit per fix. The inbox dates a row older than a week itself, with the template both apps
+  used, so the per-app date rule Core took is gone, and a Core test asserts that text in Czech; no test had checked it
+  since the two apps' date tests were merged (`bc25e4113`). The Available board's pay column narrows again when its
+  widest reserved job leaves, and still holds one width through a scroll (`7bb79ccd0`): with six reserved jobs, once
+  the 124 800.50 Kč one leaves, the other five tiles were 124 pt and are 115 pt at every scroll position, and a test
+  pins the rule. Core's `AddressPickerConfirmCard` is internal (`bc7aa28a9`). Each test target has one accessibility
+  switch, and Core's tests one element walker (`80d67b1e2`); the booking review capture passes a closure literal to
+  `filter` (`40a44b261`); the partner capture suite's header no longer lists its captures (`358c1ebda`). Captures in
+  en, light and dark of both apps' inbox and picker and the partner board: all 80 VoiceOver trees are the same, the 10
+  customer frames are byte-identical, and so are 66 of the 70 partner frames; the other four differ by one to three
+  pixels, each by one or two levels in one colour channel at an anti-aliased edge; one of them is the Active tab's job
+  card, which no fix reaches, and another differs by the same pixels between two runs of the same build. Suites on the
+  iOS 16.4 simulator: Core 970, Partner 1422, Customer 1949 with the iOS 16.4 failures known before this work (two in
+  `CustomerReadableWidthTests`, one in `LiveActivitySessionCleanupTests`); Customer on iOS 26.3: 1949, none failing.
+  The same four runs at -O whole-module with MallocScribble, on `7bb79ccd0`, give the same results. Evidence in
+  `ios-longterm-20261107/fix/`.

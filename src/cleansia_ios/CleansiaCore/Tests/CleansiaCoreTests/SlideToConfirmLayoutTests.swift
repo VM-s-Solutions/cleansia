@@ -108,7 +108,7 @@ final class SlideToConfirmLayoutTests: XCTestCase {
             let canvas = HostedCanvas(size: CGSize(width: 375, height: 200)) { slide.frame(width: 335) }
             defer { canvas.close() }
             await canvas.settle()
-            let elements = Self.elements(under: canvas.window)
+            let elements = ApplicationAccessibility.elements(under: canvas.window)
             let element = try XCTUnwrap(elements.first)
 
             XCTAssertEqual(elements.count, 1)
@@ -119,19 +119,5 @@ final class SlideToConfirmLayoutTests: XCTestCase {
             await canvas.settle()
             XCTAssertEqual(confirmed, confirms, "enabled \(enabled), busy \(busy)")
         }
-    }
-
-    private static func elements(under view: NSObject, depth: Int = 0) -> [NSObject] {
-        guard depth < 60 else { return [] }
-        if view.isAccessibilityElement { return [view] }
-        if let children = view.accessibilityElements as? [NSObject], !children.isEmpty {
-            return children.flatMap { elements(under: $0, depth: depth + 1) }
-        }
-        let count = view.accessibilityElementCount()
-        if count != NSNotFound, count > 0 {
-            return (0 ..< count).compactMap { view.accessibilityElement(at: $0) as? NSObject }
-                .flatMap { elements(under: $0, depth: depth + 1) }
-        }
-        return ((view as? UIView)?.subviews ?? []).flatMap { elements(under: $0, depth: depth + 1) }
     }
 }

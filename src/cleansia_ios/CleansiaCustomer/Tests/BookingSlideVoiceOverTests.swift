@@ -8,17 +8,9 @@ import XCTest
 /// books, as the slide does.
 @MainActor
 final class BookingSlideVoiceOverTests: XCTestCase {
-    /// SwiftUI builds a hosted view's accessibility tree only while the process has accessibility on, which a
-    /// simulator that has never run an assistive tool has off; this flips libAccessibility's own switch.
     override static func setUp() {
         super.setUp()
-        typealias SetEnabled = @convention(c) (Bool) -> Void
-        let library = "/usr/lib/libAccessibility.dylib"
-        let root = ProcessInfo.processInfo.environment["IPHONE_SIMULATOR_ROOT"] ?? ""
-        guard let handle = dlopen(root + library, RTLD_NOW) ?? dlopen(library, RTLD_NOW),
-              let symbol = dlsym(handle, "_AXSApplicationAccessibilitySetEnabled")
-        else { return }
-        unsafeBitCast(symbol, to: SetEnabled.self)(true)
+        ApplicationAccessibility.enable()
     }
 
     func testVoiceOverBooksFromTheSlide() async throws {

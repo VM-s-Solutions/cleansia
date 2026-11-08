@@ -77,6 +77,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -1086,8 +1088,16 @@ private fun SmartUpsellCarousel(
                             .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(999.dp)),
                     ) {
                         if (selected) {
-                            Box(Modifier.fillMaxHeight().fillMaxWidth(if (autoplay) rotationProgress.coerceAtLeast(0.12f) else 1f)
-                                .background(MaterialTheme.colorScheme.primary))
+                            // The fill moves every frame, so it is read in the draw phase, at the whole-pixel width
+                            // a layout gave it; read in composition, it recomposed the whole carousel and the slide
+                            // on screen on every frame.
+                            val primary = MaterialTheme.colorScheme.primary
+                            Box(
+                                Modifier.matchParentSize().drawBehind {
+                                    val fill = if (autoplay) rotationProgress.coerceAtLeast(0.12f) else 1f
+                                    drawRect(primary, size = Size((size.width * fill).roundToInt().toFloat(), size.height))
+                                },
+                            )
                         }
                     }
                 }

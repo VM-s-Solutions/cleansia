@@ -905,7 +905,7 @@ private fun SheetContent(
                             onConfirmed = confirm,
                             modifier = Modifier.slideSemantics(
                                 label = confirmText,
-                                busyLabel = confirmText,
+                                busyLabel = stringResource(R.string.busy_booking),
                                 enabled = canContinue && !submitting,
                                 isBusy = submitting,
                                 onCommit = confirm,

@@ -30,12 +30,20 @@ class SlideSemanticsCallSiteTest {
         slides.forEach { (path, args) -> assertTrue("$path passes no slideSemantics: $args", args.contains(".slideSemantics(")) }
     }
 
-    /** The customer's double tap books with the swipe's own action, and only while the swipe could. */
+    /**
+     * The customer's double tap books with the swipe's own action, and only while the swipe could. While the order is
+     * placed, the slide says so with the busy overlay's words rather than repeating its label.
+     */
     @Test
     fun `the booking slide's double tap places the order as its swipe does`() {
         val slide = appSources().single { (path, _) -> path.endsWith("booking/BookingBottomSheet.kt") }.second
             .let { calls(it, "SwipeToConfirmButton(").single() }
-        listOf("onConfirmed = confirm", "onCommit = confirm", "isBusy = submitting").forEach { assertTrue("booking slide lacks `$it`: $slide", slide.contains(it)) }
+        listOf(
+            "onConfirmed = confirm",
+            "onCommit = confirm",
+            "isBusy = submitting",
+            "busyLabel = stringResource(R.string.busy_booking)",
+        ).forEach { assertTrue("booking slide lacks `$it`: $slide", slide.contains(it)) }
         assertEquals("the semantics and the swipe are enabled alike: $slide", 2, Regex("""enabled = canContinue && !submitting""").findAll(slide).count())
     }
 

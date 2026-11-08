@@ -6,19 +6,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.LiveRegionMode
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.liveRegion
-import androidx.compose.ui.semantics.onClick
-import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
 
 /**
  * What TalkBack hears on the Orders board and the take sheet (spec §6.6, §6.7, §7.4, §9.6): one sentence per
- * card in the visual order, action buttons that name their job, live regions for state changes, and a click
- * action on the slides, which otherwise commit from a drag only.
+ * card in the visual order, action buttons that name their job, and live regions for state changes.
  */
 
 /** Resolves a [BoardText] against the app's resources (and re-resolves on a locale change). */
@@ -58,34 +51,6 @@ fun heroSentence(
 /** "Take, tomorrow, 08:00–10:00": a rotor of N cards never lists N identical "Take" buttons. */
 fun actionLabel(action: String, day: String?, window: String?): String =
     listOfNotNull(action, day, window).filter(String::isNotBlank).joinToString(", ")
-
-/**
- * The slide as one button TalkBack can activate: a double tap commits, as the swipe does. Disabled, it is
- * announced so with its reason; busy, it says what is happening. Applied through the Core slide's modifier,
- * so the shared slide itself stays as it was.
- */
-fun Modifier.slideSemantics(
-    label: String,
-    busyLabel: String,
-    enabled: Boolean,
-    isBusy: Boolean,
-    onCommit: () -> Unit,
-    disabledReason: String? = null,
-): Modifier {
-    return this.semantics(mergeDescendants = true) {
-        role = Role.Button
-        contentDescription = label
-        onClick(label) {
-            if (enabled && !isBusy) onCommit()
-            true
-        }
-        if (!enabled) {
-            disabled()
-            disabledReason?.let { stateDescription = it }
-        }
-        if (isBusy) stateDescription = busyLabel
-    }
-}
 
 /** A polite live region: TalkBack reads the text when it appears or changes, without moving focus. */
 fun Modifier.announcePolitely(): Modifier = semantics { liveRegion = LiveRegionMode.Polite }

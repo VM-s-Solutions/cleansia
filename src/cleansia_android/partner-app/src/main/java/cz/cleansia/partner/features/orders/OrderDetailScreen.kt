@@ -73,6 +73,7 @@ import cz.cleansia.core.ui.components.CleansiaTextLink
 import cz.cleansia.core.ui.components.OrderTimelinePoint
 import cz.cleansia.core.ui.components.OrderTimelineSegment
 import cz.cleansia.core.ui.components.SwipeToConfirmButton
+import cz.cleansia.core.ui.components.slideSemantics
 import cz.cleansia.core.ui.theme.capBandAligned
 import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.R

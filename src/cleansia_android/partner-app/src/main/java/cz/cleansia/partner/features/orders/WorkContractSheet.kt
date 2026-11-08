@@ -83,6 +83,7 @@ import cz.cleansia.core.ui.components.CleansiaTextLink
 import cz.cleansia.core.ui.components.HtmlContentView
 import cz.cleansia.core.ui.components.OrderCalendarLine
 import cz.cleansia.core.ui.components.SwipeToConfirmButton
+import cz.cleansia.core.ui.components.slideSemantics
 import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.core.ui.theme.capBandAligned

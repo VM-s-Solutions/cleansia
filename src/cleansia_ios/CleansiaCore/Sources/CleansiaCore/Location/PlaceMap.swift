@@ -389,14 +389,14 @@ final class PlaceMapCanvas: MKMapView {
     /// room inside the margins, or past the limits MapKit throws on.
     static func framed(_ region: MKCoordinateRegion, in size: CGSize, margins: UIEdgeInsets) -> MKCoordinateRegion? {
         guard hasRoom(in: size, margins: margins) else { return nil }
-        let topLeft = MKMapPoint(CLLocationCoordinate2D(
+        let topLeft = mapPoint(
             latitude: region.center.latitude + region.span.latitudeDelta / 2,
             longitude: region.center.longitude - region.span.longitudeDelta / 2
-        ))
-        let bottomRight = MKMapPoint(CLLocationCoordinate2D(
+        )
+        let bottomRight = mapPoint(
             latitude: region.center.latitude - region.span.latitudeDelta / 2,
             longitude: region.center.longitude + region.span.longitudeDelta / 2
-        ))
+        )
         let width = bottomRight.x - topLeft.x
         let height = bottomRight.y - topLeft.y
         let scale = max(width / Double(size.width), height / Double(size.height))
@@ -406,18 +406,30 @@ final class PlaceMapCanvas: MKMapView {
         let midY = topLeft.y + height / 2 + Double(margins.top - margins.bottom) / 2 * scale
         let top = MKMapPoint(x: midX - innerWidth / 2, y: midY - innerHeight / 2).coordinate
         let bottom = MKMapPoint(x: midX + innerWidth / 2, y: midY + innerHeight / 2).coordinate
+        // A coordinate comes back inside ±180, so the east edge of a region narrower than the world reads west of its
+        // west edge only where the region runs across the 180th meridian.
+        let east = bottom.longitude < top.longitude && innerWidth < MKMapSize.world.width
+            ? bottom.longitude + 360 : bottom.longitude
+        let middle = (top.longitude + east) / 2
         let centre = CLLocationCoordinate2D(
             latitude: (top.latitude + bottom.latitude) / 2,
-            longitude: (top.longitude + bottom.longitude) / 2
+            longitude: middle > 180 ? middle - 360 : middle
         )
         let span = MKCoordinateSpan(
             latitudeDelta: top.latitude - bottom.latitude,
-            longitudeDelta: bottom.longitude - top.longitude
+            longitudeDelta: east - top.longitude
         )
         guard CLLocationCoordinate2DIsValid(centre), span.latitudeDelta > 0, span.latitudeDelta <= 180,
               span.longitudeDelta > 0, span.longitudeDelta <= 360
         else { return nil }
         return MKCoordinateRegion(center: centre, span: span)
+    }
+
+    /// MapKit has no map point for a longitude past the 180th meridian: there the map goes on a world's width further.
+    private static func mapPoint(latitude: CLLocationDegrees, longitude: CLLocationDegrees) -> MKMapPoint {
+        let turns: Double = longitude > 180 ? 1 : longitude < -180 ? -1 : 0
+        let point = MKMapPoint(CLLocationCoordinate2D(latitude: latitude, longitude: longitude - 360 * turns))
+        return MKMapPoint(x: point.x + MKMapSize.world.width * turns, y: point.y)
     }
 
     private static func makeVeil() -> UIView {

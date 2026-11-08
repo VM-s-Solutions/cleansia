@@ -6,20 +6,37 @@ import XCTest
 final class PlaceMapFramingTests: XCTestCase {
     /// MapKit fits a region inside the map's layout margins, so the region it is handed is chosen to draw the place
     /// where the whole map would, at the same scale.
-    func testAMarginedMapDrawsThePlaceWhereTheWholeMapWould() throws {
-        let place = Coordinate(latitude: 50.0755, longitude: 14.4378)
-        let region = PlaceMap.region(for: place, metres: 700, anchor: 0.71)
+    func testAMarginedMapDrawsThePlaceWhereTheWholeMapWould() {
+        assertDrawnWhereTheWholeMapWould(Coordinate(latitude: 50.0755, longitude: 14.4378), metres: 700)
+    }
+
+    /// The area map of a place by the 180th meridian: its region, and the region MapKit is handed, run across it.
+    func testAPlaceByThe180thMeridianIsDrawnWhereTheWholeMapWould() {
+        for longitude in [179.99, -179.99] {
+            assertDrawnWhereTheWholeMapWould(Coordinate(latitude: 50.0755, longitude: longitude), metres: 6000)
+        }
+    }
+
+    private func assertDrawnWhereTheWholeMapWould(
+        _ place: Coordinate,
+        metres: CLLocationDistance,
+        line: UInt = #line
+    ) {
+        let region = PlaceMap.region(for: place, metres: metres, anchor: 0.71)
         let size = CGSize(width: 393, height: 214)
         let margins = UIEdgeInsets(top: 0, left: 12, bottom: 32, right: 156)
         let inner = CGRect(x: 12, y: 0, width: 393 - 168, height: 214 - 32)
 
         let whole = Self.draw(region, in: CGRect(origin: .zero, size: size))
-        let margined = try Self.draw(XCTUnwrap(PlaceMapCanvas.framed(region, in: size, margins: margins)), in: inner)
+        guard let framed = PlaceMapCanvas.framed(region, in: size, margins: margins) else {
+            return XCTFail("nothing framed for \(place)", line: line)
+        }
+        let margined = Self.draw(framed, in: inner)
 
-        XCTAssertEqual(margined.scale, whole.scale, accuracy: whole.scale * 1e-6)
+        XCTAssertEqual(margined.scale, whole.scale, accuracy: whole.scale * 1e-6, "\(place)", line: line)
         let point = MKMapPoint(CLLocationCoordinate2D(latitude: place.latitude, longitude: place.longitude))
-        XCTAssertEqual(margined.screen(point).x, whole.screen(point).x, accuracy: 0.01)
-        XCTAssertEqual(margined.screen(point).y, whole.screen(point).y, accuracy: 0.01)
+        XCTAssertEqual(margined.screen(point).x, whole.screen(point).x, accuracy: 0.01, "\(place)", line: line)
+        XCTAssertEqual(margined.screen(point).y, whole.screen(point).y, accuracy: 0.01, "\(place)", line: line)
     }
 
     func testNoMarginsLeaveTheRegionAsItIs() throws {
@@ -71,31 +88,36 @@ final class PlaceMapFramingTests: XCTestCase {
             && region.span.longitudeDelta > 0 && region.span.longitudeDelta <= 360
     }
 
-    /// A region drawn as MapKit draws it into a rect: fitted whole, its centre on the rect's.
+    /// A region drawn as MapKit draws it into a rect: fitted whole, its centre on the rect's. The map goes on round the
+    /// 180th meridian, so a point is drawn on the side of the centre it is nearer.
     private struct Drawn {
         let scale: Double
         let centre: MKMapPoint
         let rect: CGRect
 
         func screen(_ point: MKMapPoint) -> CGPoint {
-            CGPoint(x: rect.midX + (point.x - centre.x) / scale, y: rect.midY + (point.y - centre.y) / scale)
+            CGPoint(
+                x: rect.midX + (point.x - centre.x).remainder(dividingBy: MKMapSize.world.width) / scale,
+                y: rect.midY + (point.y - centre.y) / scale
+            )
         }
     }
 
+    /// A map point's x runs with the longitude: MapKit gives no map point past the 180th meridian.
     private static func draw(_ region: MKCoordinateRegion, in rect: CGRect) -> Drawn {
-        let corner = MKMapPoint(CLLocationCoordinate2D(
+        let north = MKMapPoint(CLLocationCoordinate2D(
             latitude: region.center.latitude + region.span.latitudeDelta / 2,
-            longitude: region.center.longitude - region.span.longitudeDelta / 2
+            longitude: region.center.longitude
         ))
-        let opposite = MKMapPoint(CLLocationCoordinate2D(
+        let south = MKMapPoint(CLLocationCoordinate2D(
             latitude: region.center.latitude - region.span.latitudeDelta / 2,
-            longitude: region.center.longitude + region.span.longitudeDelta / 2
+            longitude: region.center.longitude
         ))
-        let width = opposite.x - corner.x
-        let height = opposite.y - corner.y
+        let width = region.span.longitudeDelta / 360 * MKMapSize.world.width
+        let height = south.y - north.y
         return Drawn(
             scale: max(width / Double(rect.width), height / Double(rect.height)),
-            centre: MKMapPoint(x: corner.x + width / 2, y: corner.y + height / 2),
+            centre: MKMapPoint(x: north.x, y: north.y + height / 2),
             rect: rect
         )
     }

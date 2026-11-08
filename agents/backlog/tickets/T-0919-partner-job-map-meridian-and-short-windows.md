@@ -4,7 +4,7 @@ title: Partner job map — frames the place across the 180th meridian (iOS) and 
 size: S
 owner: Michael Chaban
 created: 2026-11-07
-updated: 2026-11-07
+updated: 2026-11-08
 depends_on: []
 blocks: []
 stories: []
@@ -36,11 +36,14 @@ padding. Otherwise the framing is exactly as before. The rule is `pinTip` in `Jo
 The area map's framing cannot run past the map, because its top padding is zero and its bottom padding is the map's
 height less the band, so it is unchanged.
 
-**iOS.** Lands later in PR #366.
+**iOS.** `PlaceMapCanvas.framed` takes a longitude past ±180 as lying a world's width further on, where MapKit
+gives no map point for it, and reads the east edge of a region narrower than the world east of its west edge where
+the region runs across the meridian, its centre brought back inside ±180. A region that does not cross the meridian
+is framed by exactly the same math as before. The rule is tested in `PlaceMapFramingTests`.
 
 ## Acceptance criteria
 
-- [ ] On iOS, the job map frames a place whose framed region crosses the 180th meridian.
+- [x] On iOS, the job map frames a place whose framed region crosses the 180th meridian.
 - [x] On Android, where the job map is not taller than the band's pin line, the door is on the map, at its centre.
 - [x] On Android, where the job map is taller than the pin line, the door sits on the pin line exactly as before.
 
@@ -65,3 +68,19 @@ height less the band, so it is unchanged.
   - The new test fails with the rule set back to the old framing and passes with the fix. `:core`, `:partner-app` and
     `:customer-app` compile, and their unit suites pass: 390, 1,278 and 1,871 tests. The logs and screenshots are in
     `~/cleansia-work.noindex/fixes-20261107/` (`android-*`).
+- 2026-11-08 — iOS, fixed in Core on the same branch. Two conversions broke across the meridian, not one.
+  `MKMapPoint(_:)` gives no map point, (-1, -1), for a longitude past ±180, so the corner of a region whose own edge
+  runs past the meridian was measured from a point that does not exist. `MKMapPoint.coordinate` wraps a point past the
+  meridian round the world, so the framed region's east edge read west of its west edge and the span came out
+  negative. `framed` now handles both, and a region that does not cross the meridian goes through exactly the same
+  math as before.
+  - Test first. `testAPlaceByThe180thMeridianIsDrawnWhereTheWholeMapWould` frames the area map, 6,000 m, of a place
+    at longitude 179.99 and of one at -179.99, and checks that the region MapKit is handed draws the place where the
+    whole map would, at the same scale. The test's drawing helper now measures a region's width from its span,
+    because MapKit gives no map point past the meridian. At `65069147a` neither place is framed on the iOS 16.4 and
+    26.3 simulators; with the fix the 18 PlaceMap tests pass on both.
+  - A throwaway probe compared the old and the new `framed` bit for bit over 14 places, from Prague to Sydney and on
+    either side of the meridian, 4 distances, 4 anchors, 81 sizes and 49 margins, on the iOS 16.4 simulator. Every
+    one of the 759,355 cases whose region does not cross the meridian came out the same, or with no region from
+    either. All 16,524 cases that changed run across it. The same sweep gave the same totals on 26.3. The probe and
+    the logs are in `~/cleansia-work.noindex/fixes-20261107/step2/` (`t0919-*`).

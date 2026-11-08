@@ -1101,6 +1101,25 @@ stays the text ink, 5.93:1 and 6.83:1, as it has been since the partner sweep ab
 still draw it in different hues. *Rejected* is the error colour on both. iOS's `TextInkTests` measures
 every document status, and none, on the card in both modes (iOS `eba022747`, Android `0ae302746`).
 
+## A filled button that cannot be pressed is grey {#disabled-button}
+
+Since 2026-11-08 (Mike's decision 5 on the customer onboarding, concept D), the shared filled button
+draws a grey fill under a dark label while it cannot be pressed, wherever a screen names no disabled
+colours of its own. Until then iOS drew the primary at half under the white label, which read 2.01:1.
+
+| Mode | Fill | Label | Contrast |
+|---|---|---|---|
+| Light | slate-200 `#E2E8F0` | slate-600 `#475569` | 6.15:1 |
+| Dark | the raised dark surface `#283548` | slate-400 `#94A3B8` | 4.84:1 |
+
+A loading button cannot be pressed either, so it takes the same pair, and its spinner takes the label's
+ink: a white spinner on slate-200 would read about 1.3:1. A screen that names its own disabled fill and
+label (`disabledContainerColor` and `disabledContentColor` on iOS) keeps them, and draws them only while
+the button cannot be pressed, as the partner job footer's refused *Take order* does. On iOS the pair is Core's
+`CleansiaColors.disabledContainer` and `onDisabledContainer`, which `CleansiaPrimaryButton` reads, and
+`ComponentTextInkTests` measures both modes. Android takes the same pair with the onboarding's Android
+half; until then its Material defaults draw the disabled button, and the two platforms differ.
+
 ## Android's dialogs and menus sit on slate {#surface-roles}
 
 Material 3 draws a dialog, a menu, a date picker and a search bar on its surface-container roles, and

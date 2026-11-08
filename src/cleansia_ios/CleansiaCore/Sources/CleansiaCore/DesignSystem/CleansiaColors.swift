@@ -47,6 +47,11 @@ public enum CleansiaColors {
 
     public static let outline = Color.dynamic(light: Palette.slate200, dark: Palette.slate700)
 
+    /// A filled button that cannot be pressed: slate-600 on slate-200 in light mode (6.15:1), slate-400 on the raised
+    /// dark surface in dark mode (4.84:1). The primary at half under a white label read 2.01:1.
+    public static let disabledContainer = Color.dynamic(light: Palette.slate200, dark: Palette.darkSurfaceElevated)
+    public static let onDisabledContainer = Color.dynamic(light: Palette.slate600, dark: Palette.slate400)
+
     /// Ink and hairline for a control the user may read but not change.
     ///
     /// 0.38 is Material 3's disabled opacity, which Android already applies for free through the

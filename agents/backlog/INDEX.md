@@ -426,7 +426,7 @@
 | T-0911 | Customer booking confirmation on the app's type scale — less bold, the app's fonts | S | `in_review` | — | Mike 2026-11-04: as for the partner pages, not much bold |
 | T-0912 | Partner Orders — job rows open the job, map behind the detail, Job-taken panel, gallery photos, cleaning animation, Note/Issue row | M | `in_review` | — | Mike 2026-11-04: picks E, M1, M3, J3 + three remarks |
 | T-0913 | Customer booking — "How clean is your home?" on one screen, without scrolling | S | `in_review` | — | Mike 2026-11-05 picked C1; built on iOS and Android. Android fits 375×667 in every state; iOS fits only with no level picked (options in `build/handoff/t0913-ios.json`) |
-| T-0917 | iOS long-term refactor — shared Core pieces, one locale source, lag fixes and build health | L | `in_progress` | — | Mike 2026-11-07: "Don't do the quick fixes, I want you to do the fixes that actually matter and win in long term"; iOS only, items from the verified audit of that day |
+| T-0917 | iOS long-term refactor — shared Core pieces, one locale source, lag fixes and build health | L | `in_review` | — | Mike 2026-11-07: "Don't do the quick fixes, I want you to do the fixes that actually matter and win in long term"; iOS only, items from the verified audit of that day |
 
 > **T-0785–T-0799 filed 2026-09-20** — the UI-polish and dead-code batch, on the owner's ruling of
 > that day (*"I want to polish alignments in admin app a bit on all of the overview/detail pages.

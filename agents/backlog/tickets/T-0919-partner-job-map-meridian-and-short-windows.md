@@ -89,3 +89,4 @@ is framed by exactly the same math as before. The rule is tested in `PlaceMapFra
     across the meridian centred east of it. With that step deleted the place is not framed and the test fails on the
     iOS 16.4 simulator; with it the 18 PlaceMap tests pass on 16.4 and 26.3. The logs are in
     `~/cleansia-work.noindex/fixes-20261107/step2/fix-366/`.
+- 2026-11-08 — Shipped: #366 merged to master as 0bf4c34dc.

@@ -86,3 +86,4 @@ whether that check is still needed.
     P1 puts the pin at y 160, P8 at y 133, and the SwiftUI page 300 pt shorter, the footer 40 pt taller and the
     keyboard-like cycle at y 157. Dragging the panel still lays the map out 0 times. The logs are in
     `~/cleansia-work.noindex/fixes-20261107/step2/` (`t0915-*`).
+- 2026-11-08 — Shipped: #366 merged to master as 0bf4c34dc.

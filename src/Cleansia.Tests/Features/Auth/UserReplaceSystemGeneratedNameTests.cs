@@ -118,18 +118,17 @@ public class UserReplaceSystemGeneratedNameTests
     }
 
     [Theory]
-    [InlineData(AuthenticationType.Apple, "Cleansia", "Customer", true)]
-    [InlineData(AuthenticationType.Apple, "Info", "Customer", true)]
-    [InlineData(AuthenticationType.Apple, "Cleansia", "Doe", true)]
-    [InlineData(AuthenticationType.Apple, " cleansia ", "CUSTOMER", true)]
-    [InlineData(AuthenticationType.Apple, "Jana", "Dvořáková", false)]
-    [InlineData(AuthenticationType.Apple, "Jane", "Doe", false)]
-    [InlineData(AuthenticationType.Internal, "Test", "Customer", false)]
-    [InlineData(AuthenticationType.Google, "Cleansia", "Customer", false)]
+    [InlineData(AuthenticationType.Apple, "jana@example.com", "Cleansia", "Customer", true)]
+    [InlineData(AuthenticationType.Apple, "jana@example.com", "Info", "Customer", true)]
+    [InlineData(AuthenticationType.Apple, "jana@example.com", "Cleansia", "Doe", true)]
+    [InlineData(AuthenticationType.Apple, "jana@example.com", " cleansia ", "CUSTOMER", true)]
+    [InlineData(AuthenticationType.Apple, "jana@example.com", "Jana", "Dvořáková", false)]
+    [InlineData(AuthenticationType.Apple, "jane.doe@example.com", "Jane", "Doe", false)]
+    [InlineData(AuthenticationType.Internal, "jana@example.com", "Test", "Customer", false)]
+    [InlineData(AuthenticationType.Google, "jana@example.com", "Cleansia", "Customer", false)]
     public void Reports_A_Placeholder_Name_Only_On_An_Apple_Account(
-        AuthenticationType authenticationType, string firstName, string lastName, bool expected)
+        AuthenticationType authenticationType, string email, string firstName, string lastName, bool expected)
     {
-        const string email = "jana@example.com";
         var user = authenticationType switch
         {
             AuthenticationType.Apple => User.CreateWithApple(email, firstName, lastName, "apple-sub"),

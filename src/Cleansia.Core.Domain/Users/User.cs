@@ -17,6 +17,13 @@ public class User : TenantAuditable
     public const string AnonymisedEmailSuffix = "@anonymized.local";
     public static readonly TimeSpan FailedLoginLockout = TimeSpan.FromMinutes(15);
 
+    // Apple provisioning stores these for a name part that neither Apple nor the e-mail supplied, and
+    // ReplaceSystemGeneratedName and IsNamePlaceholder recognise a generated name by them. Changing either
+    // orphans every row already written with the old value, which then reads as user-authored forever, so
+    // a change needs a data fix-up alongside it.
+    public const string PlaceholderFirstName = "Cleansia";
+    public const string PlaceholderLastName = "Customer";
+
     [Password]
     [MaxLength(255)]
     public string? Password { get; private set; }
@@ -352,6 +359,11 @@ public class User : TenantAuditable
 
         return FillMissingName(derivedFirstName, derivedLastName);
     }
+
+    /// <summary>An Apple account whose stored name still carries a placeholder word, which the apps treat as no name.</summary>
+    public bool IsNamePlaceholder()
+        => AuthenticationType == AuthenticationType.Apple
+            && (IsSystemGenerated(FirstName, PlaceholderFirstName) || IsSystemGenerated(LastName, PlaceholderLastName));
 
     private static bool IsSystemGenerated(string? storedNamePart, string? derivedNamePart)
         => string.IsNullOrWhiteSpace(storedNamePart)

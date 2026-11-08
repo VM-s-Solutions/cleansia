@@ -1,3 +1,4 @@
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Users;
 using Cleansia.TestUtilities.MockDataFactories.Users;
 
@@ -8,6 +9,8 @@ namespace Cleansia.Tests.Features.Auth;
 /// what the email derivation produces) may be displaced by a name the client genuinely supplied, and a
 /// name the user set themselves never may. Per-part, never all-or-nothing. Lives in
 /// <see cref="User.ReplaceSystemGeneratedName"/> so no caller can implement a looser variant.
+/// <see cref="User.IsNamePlaceholder"/> reads the profile with the same comparison, against the
+/// placeholder words and only on an Apple account.
 /// Written red → green per knowledge/testing.md.
 /// </summary>
 public class UserReplaceSystemGeneratedNameTests
@@ -112,5 +115,28 @@ public class UserReplaceSystemGeneratedNameTests
 
         Assert.Equal("Michael", user.FirstName);
         Assert.Equal("Customer", user.LastName);
+    }
+
+    [Theory]
+    [InlineData(AuthenticationType.Apple, "Cleansia", "Customer", true)]
+    [InlineData(AuthenticationType.Apple, "Info", "Customer", true)]
+    [InlineData(AuthenticationType.Apple, "Cleansia", "Doe", true)]
+    [InlineData(AuthenticationType.Apple, " cleansia ", "CUSTOMER", true)]
+    [InlineData(AuthenticationType.Apple, "Jana", "Dvořáková", false)]
+    [InlineData(AuthenticationType.Apple, "Jane", "Doe", false)]
+    [InlineData(AuthenticationType.Internal, "Test", "Customer", false)]
+    [InlineData(AuthenticationType.Google, "Cleansia", "Customer", false)]
+    public void Reports_A_Placeholder_Name_Only_On_An_Apple_Account(
+        AuthenticationType authenticationType, string firstName, string lastName, bool expected)
+    {
+        const string email = "jana@example.com";
+        var user = authenticationType switch
+        {
+            AuthenticationType.Apple => User.CreateWithApple(email, firstName, lastName, "apple-sub"),
+            AuthenticationType.Google => User.CreateWithGoogle(email, firstName, lastName, "google-sub"),
+            _ => User.CreateWithPassword(email, "Password1", firstName, lastName),
+        };
+
+        Assert.Equal(expected, user.IsNamePlaceholder());
     }
 }

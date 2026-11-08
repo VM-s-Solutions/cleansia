@@ -265,3 +265,129 @@ green; and Mike gets a customer TestFlight build.
   - ADR-0018 D1: the Android onboarding has no name step, because no account that signs in on Android can carry a
     placeholder or a blank name (open point 2, answered "no" by Mike on 2026-11-08); every state an Android account
     can reach matches iOS.
+- 2026-11-08 — Built the iOS half of PR A to `/Users/michael/cleansia-work.noindex/onboarding-d-20261108/BRIEF-build-ios.md`,
+  with Mike's answers of the day: Q1 "Go with A"; Q2, Q5, Q6 and Q7 ship the brief's defaults; Q3, no DEV deploy;
+  Q4, no live AXe captures, so the hosted typing and sheet frames stand.
+  - **Commits.** `65a699506` the profile carries `isNamePlaceholder` (absent reads `false`) and
+    `isEmailHiddenByApple`; `c3b7773be` the shared text and phone fields gain label-above, Next, the `+420` prefix and
+    autoFocus, all off by default; `52f87a4ea` the birth date wheels store a day only once one moves and Done only
+    closes, so customer Edit profile and the partner's personal details lose Cancel with it; `8b3337d44` the
+    onboarding, concept D; `62b5b9d45` the grey disabled button, alone; and this record.
+  - **The screen.** The mascot waves beside the greeting while a step is missing and gives a thumbs-up at "Ready to
+    book". One card counts name, e-mail and phone, names what is missing, and draws a row per step: done, open (with
+    its field and the cleaner's view, the example) or waiting. The open step is picked once from the saved profile:
+    the name when the server reports its stand-in for a hidden Apple name or a stored part is blank, otherwise the
+    phone. A phone counts only when it is a possible number for its country, and one `OnboardingChecklist` feeds the
+    marks, the count, the prompt, Call and SMS, the mascot and Save. An Apple relay address reads "Hidden by Apple".
+    The birth date is a fourth, optional row with the honest note in five locales, opening the shared wheels.
+  - **Where the build departs from the brief, each for a reason.** (1) The example well is padded 4 pt top and bottom,
+    the brief's first fit fallback: with 8 pt the 375 × 812 `empty` and `long-email` states scrolled by 6 pt (content
+    602.3 against 596.5). (2) A done row carries a row-sized content shape: without it, its combined VoiceOver
+    element was the 24 pt of its words, not the 44 pt row. (3) A row's value takes the width the label leaves,
+    instead of a `Spacer`, which cost 32 pt between label and value and cut a long address early. (4) The example's
+    dial and the done phone row format with a named region: on the iOS 16.4 simulator `Locale.current.region` reads
+    the override `en_US@rg=czzzzz` as `czzzzz`, and Core's handset-region engine then formats nothing
+    (`part2/logs/probe-region-16.log`). (5) Both shared fields re-run their focus once they land in a window, the
+    brief's named fallback for risk 3: on iOS 16.4, Next on Last name left the phone unfocused
+    (`part2/logs/red-ProfileOnboardingLayoutTests-16.log`); the text field takes the same fix because the waiting Name
+    row focuses First name. (6) The Ukrainian copy uses the catalog's apostrophe, `’`, as its three existing
+    "Необов’язково" do.
+  - **Named differences from the mock** are listed on the side-by-side page,
+    `/Users/michael/cleansia-work.noindex/onboarding-d-20261108/part2/side-by-side-ios.html` (one file, every image
+    inlined): the 56 pt button, the 24 pt card radius, the resting field border, the medium date style, the wheels
+    opening thirty years before the capture day, the stand-in keypad, the chips at their own width and as filled
+    tints, the footer rule only while the keyboard is up, the dark waiting ring in slate-400, Skip and the labels one
+    weight up, the values one size up, the greeting's line break, the 4 pt well and the composed sheet without a
+    grabber.
+  - **Tests first.** Red runs, in `/Users/michael/cleansia-work.noindex/onboarding-d-20261108/part2/logs/`: from
+    commits 1 to 3, `red-UserProfileClientMappingTests.log`,
+    `red-CleansiaPhoneInputPrefixTests-CleansiaTextFieldInputTraitsTests-PhoneNumberKitDisplayFormatterTests.log` and
+    `red-BirthDateFieldSheetTests.log`, with `sheet-16.log` and `sheet-26.log`; from commit 4,
+    `red-ProfileViewModelTests.log` (Save took `+42077712` and `+420111`), `red-OnboardingChecklistTests.log` (the
+    build), `red-ProfileOnboardingLayoutTests.log` (five of six layout tests and the birth date note red on the old
+    screen) and `red-ProfileOnboardingLayoutTests-16.log` (the focus chain and the dial on iOS 16.4); from commit 5,
+    `red-disabled-button.log` (the build). Green on their first run, so proving less: in part A,
+    `testABlankFirstNameOrAMissingEmailConfirmationIsRefused` and the untouched half of the hosted sheet test; here,
+    the fit test (the old screen fits too) and Core's `+42077712` impossible pin (PhoneNumberKit already calls it
+    impossible, so AC2's example holds).
+  - **Evidence.** 44 frames on each simulator, PNG and a VoiceOver `.semantics` file each, in
+    `/Users/michael/cleansia-work.noindex/onboarding-d-20261108/part2/captures/onboarding-16/` (iOS 16.4) and
+    `onboarding-26/` (iOS 26.3). The layout tests pass on both simulators. The gates:
+    Core Debug 985 of 985; Customer Debug 1968 run, 21 skipped, 0 failures; Partner Debug 1422 run, 36 skipped, 0
+    failures; the same three at `-O`, whole-module, with `MallocScribble`, with the same totals; all on iOS 26.3,
+    and the three catalogs and both `Package.resolved` files unchanged after every run (`part2/logs/gates-b.status`).
+  - **Decision 5** is `62b5b9d45` alone, with its docs (`docs/mobile-app/patterns.md#disabled-button`) and its tests,
+    so `git revert 62b5b9d45` drops it. Its commit body lists the 36 call sites it changes (Core 1, customer 21,
+    partner 14); the other 28 pass neither `enabled` nor `loading` and never change.
+  - ADR-0018 D1: until PR B merges, the iOS customer onboarding differs from Android's (mascot, checklist card,
+    example, grey disabled button).
+  - Reported, not rewritten: the implementation note's phone sentence, *"the server's `PhoneNumberAttribute` is the
+    judge"*, is wrong for the customer path. `UpdateCurrentUser` checks the phone only for uniqueness
+    (`UpdateCurrentUser.cs:62-66`), and `[PhoneNumber]` on `User.PhoneNumber` is not enforced on save; T-0921 F1
+    takes it up.
+  - ADR-0081 moves to `accepted` on the PM's instruction of 2026-11-08, with its *What shipped* note; the decisions
+    index follows.
+  - Left for Mike before PR A leaves draft: the routed `patterns-mobile.md:1016` row (Review, below); the copy flags
+    of the brief's section 6.2 (the Slovak written to match the mock's Czech, the Ukrainian and Russian texts, and
+    Q7's verb); and AC8 on a phone with VoiceOver, against the reads `ProfileOnboardingLayoutTests` pins.
+
+## Review
+
+Catalog-edit routing for the docs and catalog edits of the iOS half, by the test of `conventions.md`
+(*Who ratifies a catalog edit*), with the sweeps and searches it asks for.
+
+- **`docs/mobile-app/patterns.md#auth-screens`, the profile completion takes the mascot (commit 4).** Searched
+  `mascot` and `auth screen` (case-insensitive) in `agents/knowledge/patterns-mobile.md` and
+  `agents/knowledge/consistency.md`. `consistency.md` has neither. In `patterns-mobile.md`, `mascot` finds the asset
+  and puck rule (553-580), the empty states (824), the asset row (1060), the decode note (1095), the point-size note
+  (1396), the order pieces row (1017) and the component lists (21, 385), none about which screens draw one; `auth
+  screen` finds one sentence, 2062-2063: *"No auth header image (owner ruling 2026-10-01): `AuthHeaderImage` is
+  deleted, and no auth screen in either app draws a header image or a mascot; do not add one back →
+  `docs/mobile-app/patterns.md#auth-screens`."* Two readings, as `conventions.md` asks for a hard case: (1) the page
+  that sentence defers to listed the profile completion among the auth screens, so the sentence governed it, and
+  the carve-out is Mike's ruling of 2026-11-08 (concept D, mascot included), written in the page the sentence defers
+  to; (2) "auth screen" in the catalog sentence never meant this form, which asks for what a booking needs, not for
+  a sign-in. Under either reading the catalog line stays as it is and the owner's ruling is what changed the list;
+  no catalog sentence is edited.
+- **`docs/mobile-app/patterns.md#disabled-button` (commit 5).** A first statement. `git grep -n -i disabled` over
+  `patterns-mobile.md`, `consistency.md` and `docs/mobile-app` finds rules on fields (`patterns.md:917`), alert
+  buttons (`patterns-mobile.md:772-775`, `patterns.md:1349-1354`), confirm guards (640, 769), slides (1910, 1929),
+  a placeholder photo section (1577), an image cache (970), the invoice viewer (1054) and an input modifier (1138);
+  none governs a filled button's disabled colours. Inline; it obliges no call site beyond the shared button itself.
+- **`agents/knowledge/patterns-mobile.md`, the address-picker row and the devices bullet (T-0921 F13).** Test 1:
+  `git grep -n "import MapKit" -- src/cleansia_ios/CleansiaCustomer/Sources src/cleansia_ios/CleansiaPartner/Sources`
+  finds nothing; the one `pickerMap` caller is Core's `AddressPickerScreen`; `CleansiaCore/Sources/CleansiaCore/Devices`
+  holds the client protocol, view and view model, and the customer's `DevicesView.swift` holds only an initializer.
+  No call site becomes a deviation. Test 2, two readings: (1) the replaced sentences, *"the Views stay app-local and
+  carry the only sanctioned feature-layer `import MapKit`"* and *"a customer-local
+  `CustomerDevicesViewModel`/`CustomerDevicesView`"*, governed where these views live, and the test counts replacing
+  a governing sentence as narrowing, so the edit routes; (2) #368, merged by Mike on 2026-11-08, already moved both
+  into Core and its commits rewrote the docs pages to say so (`6a1ccf05d`, `dd5719d42`), so the edit withdraws two
+  sentences the tree contradicts and adds no constraint the tree does not already hold. Edited inline under reading
+  2, as the PM's instruction "correct both to the tree" reads it; under reading 1 the Reviewer routes it. Test 3:
+  iOS only, built and run here. It adds no constraint, so it names no enforcer.
+- **`agents/knowledge/patterns-mobile.md:1016`, the `BirthDateField` row (T-0921 F13): routed to the Architect, not
+  edited.** It describes the sheet commit 3 replaced (a draft, Cancel, a Done that stores `CalendarDay.confirmed`,
+  the `NavigationStack` and the tint), and commit 4 has the onboarding present the now public
+  `BirthDateWheelSheet` from a row of its own. Rewriting it replaces the sentence that governs the sheet and carves
+  an exception out of *"the ONE tappable birth-date control for both apps"*, so test 2 fires. Sweep for test 1:
+  `git grep -n "BirthDateField(\|BirthDateWheelSheet(" -- src/cleansia_ios` finds Edit profile, the partner's
+  personal details, the field's own sheet and the onboarding. Draft of the row's right-hand cell, for the
+  Architect:
+
+  > the Core **`BirthDateField`** (`Components/BirthDateField.swift`) — the ONE tappable birth-date **field** for
+  > both apps (`label:`/`placeholder:`/optional `errorText:` params, medium date formatted via the environment
+  > `\.locale` so the in-app language switch re-renders it, `in: ...Date()` future-block), and its sheet, the public
+  > **`BirthDateWheelSheet(birthDate:title:note:)`** in the same file: a `.wheel` `DatePicker` with its label hidden,
+  > at the `.medium` detent with the drag indicator, under the title and a **Done** that only closes (its 44 pt frame
+  > inside the `.plain` button). A wheel that moves stores its day at once; a sheet closed untouched stores nothing;
+  > an empty field's wheels show a day thirty years back through `CalendarDay.pickerBinding`'s getter
+  > (`CalendarDay.unsetSeed`), taken only by moving a wheel. There is no Cancel (Mike, 2026-11-08, Q1 "Go with A";
+  > from the fix plan of 2026-10-25 until then a draft, Cancel and a Done that stored the day shown; a `.graphical`
+  > calendar seeded at today until owner decision D15, 2026-10-01). **The customer onboarding presents
+  > `BirthDateWheelSheet` from its own birth date row**, the one caller that is not `BirthDateField`; a screen that
+  > wants the wheels presents this sheet, never a `DatePicker` of its own. `BirthDateFieldSheetTests` and
+  > `CalendarDayTests` (`CleansiaCoreTests`) pin the binding, Done and the untouched sheet, hosted on iOS 16.4 and
+  > 26.3. A per-app private date field or wheel sheet is a defect. **Enforced by:** the swiftlint custom rule
+  > `birth_date_picker_is_the_shared_one` (`src/cleansia_ios/.swiftlint.yml`) — **T1-CI**, with its three residuals
+  > as today.

@@ -64,3 +64,8 @@ Any finding not listed above, and everything T-0920's Out of scope names.
   the tree except F12: `CLAUDE.md:101` already names Angular 20.3 and Nx 23.2, as `package.json` pins
   (`@angular/core` `~20.3.34`, `nx` `23.2.1`), since `8c2e8b461`. F7's `JobBandMapLayout` is in the partner app, not
   in Core. T-0922 is held for T-0920's Android half (PR B), which files it.
+- 2026-11-08 — F13: `agents/knowledge/patterns-mobile.md`'s address-picker row and devices bullet now describe the
+  Core screens #368 shipped, in T-0920's records commit, with the routing test's sweep and both readings in T-0920's
+  `## Review`. The `BirthDateField` row (`:1016`) is not edited: rewriting it replaces the sentence that governs the
+  sheet and carves the onboarding's own birth date row out of "the ONE tappable birth-date control", so it routes
+  to the Architect (ADR-0033, test 2); the draft row is in T-0920's `## Review`.

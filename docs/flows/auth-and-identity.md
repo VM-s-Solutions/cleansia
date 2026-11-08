@@ -123,7 +123,7 @@ A legacy app or link request that sends no password still confirms and opens the
 leaves the account with **no password**. Forgot password sets one; an older registration password
 never survives by default. Both the six-digit OTP and legacy-token branch follow this rule.
 Source: `src/Cleansia.Core.AppServices/Features/Auth/ConfirmUserEmail.cs:179`,
-`src/Cleansia.Core.Domain/Users/User.cs:394`.
+`src/Cleansia.Core.Domain/Users/User.cs:409`.
 → [Security rule](/architecture/security-rules#confirmation-password)
 
 Update before confirmation to avoid the legacy fallback. Once an old client has confirmed and the

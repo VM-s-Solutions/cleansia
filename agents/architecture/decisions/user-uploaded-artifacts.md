@@ -76,7 +76,7 @@ property; 1–5 are per-surface properties.
 > reaches a cross-user DTO.
 
 **Why the avatar row matters most for planning:** `GetCurrentUser.ResolveProfilePhotoUrl` is the *only*
-SAS mint for `user-files`. `UserMappers.cs:23,66` and `EmployeeMappers.cs:37,63` map the photo **without**
+SAS mint for `user-files`. `UserMappers.cs:23,67` and `EmployeeMappers.cs:37,63` map the photo **without**
 a URL, so every list and employee DTO carries `BlobUrl = null`. **Cross-user avatar display is one line
 away**, and the day it lands the avatar's "audience: self" exemption expires.
 
@@ -266,7 +266,7 @@ workflows) and the frontend lint step is `continue-on-error: true` — neither c
   end to end. Condition: the §8 / B.4 degradation rule and the synthetic-corpus burden are written into
   rev N+1.
 - ~~**The avatar exemption**~~ — **CHALLENGED AND SUSTAINED.** The challenger independently verified it
-  (`GetCurrentUser.cs:44,47-60` is the only `user-files` SAS mint; `UserMappers.cs:23,66` and
+  (`GetCurrentUser.cs:44,47-60` is the only `user-files` SAS mint; `UserMappers.cs:23,67` and
   `EmployeeMappers.cs:37,63` carry no URL; `GdprExportDto.cs:85-90` carries file **names**, not bytes or
   URLs) and **could not improve on the author's own mitigation.** The exemption holds, with its expiry.
 - **Escalation Q-ART-01 (owner):** keep accepting DOC/DOCX on employee documents? They carry author

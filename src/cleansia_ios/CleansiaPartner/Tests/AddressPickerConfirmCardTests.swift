@@ -1,7 +1,7 @@
-import CleansiaCore
 import SwiftUI
 import UIKit
 import XCTest
+@testable import CleansiaCore
 @testable import CleansiaPartner
 
 /// The picker insets its map by the measured height of the stack over its bottom edge, and a new inset

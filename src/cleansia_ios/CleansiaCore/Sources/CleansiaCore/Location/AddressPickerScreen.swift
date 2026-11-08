@@ -306,28 +306,14 @@ private struct SearchResultRow: View {
     }
 }
 
-public struct AddressPickerConfirmCard: View {
+struct AddressPickerConfirmCard: View {
     let resolved: GeocodedAddress?
     let lookingUp: Bool
     let enabled: Bool
     let copy: AddressPickerCopy.Type
     let onConfirm: () -> Void
 
-    public init(
-        resolved: GeocodedAddress?,
-        lookingUp: Bool,
-        enabled: Bool,
-        copy: AddressPickerCopy.Type,
-        onConfirm: @escaping () -> Void
-    ) {
-        self.resolved = resolved
-        self.lookingUp = lookingUp
-        self.enabled = enabled
-        self.copy = copy
-        self.onConfirm = onConfirm
-    }
-
-    public var body: some View {
+    var body: some View {
         VStack(alignment: .leading, spacing: Spacing.s) {
             HStack(spacing: Spacing.xs) {
                 Image(systemName: "mappin.and.ellipse")

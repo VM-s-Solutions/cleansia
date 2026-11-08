@@ -94,6 +94,26 @@ Not done, even where a problem is visible; it is reported instead.
 
 ### Lag
 
+- 2026-11-08 — and-perf-04 (`cd3a38396`), and-perf-02 (`fcdf39891`), and-perf-03 (`60c1c6656`), and-perf-06
+  (`ae70fdebe`) and and-perf-10 (`350d49346`) done. Measured on the minified staging builds on `cleansia35`, signed in
+  against a local stand-in for the two mobile APIs (a DEV sign-in needs a confirmed e-mail), its delays taken from
+  DEV's anonymous endpoints, with uncommitted probes. The Home carousel recomposed 52 times a second while autoplaying
+  and its slide 52-104, now 0 and 0; the frame's animation phase p50 0.35 ms, now 0.04-0.05 ms. A job opened from the
+  board built 2 MapViews, 2 sheet states and 2 figure decodes, now 1, 1 and 1, from one `JobDetailFrame` call. Each
+  far bottom-tab jump built one tab in between in both apps, now none (`:core` `PagerState.showTab`); the customer's
+  orders were read 6 times over nine taps, now 2. The partner's push and pop took 742-793 ms (the 700 ms default
+  cross-fade), now 322-364 ms, through the push and pop transitions now in `:core` (`pushEnter` and its three
+  siblings), which the customer uses unchanged (335-373 ms both ways). The customer splash starts the orders and the
+  membership reads: they land at 0.65-0.78 s after the process starts instead of 2.55-2.65 s, but Home's first
+  content stays at about 3.45 s because the catalog, read after the hold, is slower; with a 2.5 s orders read, first
+  content moves from 3.64-3.83 s to 3.42-3.54 s. The partner builds measured and captured carry a placeholder Mapbox
+  token, since an empty one makes the MapView constructor throw. Captures of the touched screens (the carousel and
+  the splash, the 107 job detail frames; en, light and dark) are byte-identical in the apps' content; the first dark
+  360x800 frame of a run differs in 23 pixels of the system gesture handle, which two captures of one unchanged build
+  also do. Unit tests: core 391/0, partner 1278/0, customer 1872/0. Both staging builds assemble and start;
+  `check-consistency.mjs` reports what origin/master reports. Evidence in `android-longterm-20261108/` (`lag/`,
+  `captures/lag/`).
+
 ### Shared pieces in :core, first part
 
 ### Shared pieces in :core, second part

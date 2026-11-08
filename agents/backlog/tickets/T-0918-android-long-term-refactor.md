@@ -196,3 +196,21 @@ Not done, even where a problem is visible; it is reported instead.
   Evidence in `android-longterm-20261108/` (`cleanup/`, `captures/cleanup/`).
 
 ### Docs
+
+- 2026-11-08 — AND-PO-04, the Android charter's drift and the catalog lines the moves made wrong done, in
+  `agents/knowledge/patterns-mobile.md` and `.claude/agents/android.md`; each line was checked against this branch
+  first. The catalog's module list drops the deleted `CleansiaSectionHeader.kt` and the customer's own
+  `ActionState`, and describes the partner app as it is: features inline like the customer's, the API repositories
+  under `data/`, no Room database, the notification feed read through `:core`. `ActionState` is said to live only in
+  `:core`. A note after the screen sample names the nine files that still call `collectAsState(` as drift not to
+  mirror, and says `check-consistency.mjs` E6 cannot see them. The surface-roles note says both apps set the tertiary
+  roles, and the iOS parity row no longer gives `tertiaryContainer` as a slot Android leaves at Material's baseline.
+  The bottom-bar note names `:core`'s `FloatingIslandSlot` and the tests that now pin it; the money row describes
+  `:core`'s `formatMoney` and the partner's one `formatShortDate`, and drops the `EarningsSummaryScreen.kt` line 495
+  citation that failed `check-catalog-claims.mjs` (the file has 471 lines); the mascot row allows WebP. In the
+  charter, one-shot effects are a `SharedFlow`, `UiState` is sealed, a repository returns `ApiResult` through
+  `safeApiCall`, or `networkCall` inside `wireResult`, rather than `runCatching`, and the build types are debug,
+  staging and release, with no mock flavour. Catalog-edit routing (ADR-0033): every hunk describes the tree and none
+  narrows a rule, but the `tertiaryContainer` correction leaves iOS `CleansiaColors`, which still mirrors Material's
+  mauve, a parity deviation under test 1; its `consistency.md` entry and iOS ticket are Mike's call and are not filed
+  here. Markdown only: no code changed, and `check-catalog-claims.mjs`, which Docs CI runs, was not run in this part.

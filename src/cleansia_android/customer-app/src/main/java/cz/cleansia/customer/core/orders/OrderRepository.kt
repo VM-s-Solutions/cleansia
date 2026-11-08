@@ -72,6 +72,8 @@ class OrderRepository @Inject constructor(
     /** A page the server answered with no rows at all ends paging; the counter alone cannot. */
     private var exhausted = false
 
+    // Nothing returns from inside a synchronized(sessionLock) block: a return there made R8 drop a catch-all
+    // that ART's verifier requires, and the minified app failed to start.
     private val sessionLock = Any()
     private var sessionGeneration = 0L
 
@@ -84,10 +86,8 @@ class OrderRepository @Inject constructor(
      */
     suspend fun refresh(): ApiResult<Unit> = wireResult {
         val generation = synchronized(sessionLock) {
-            if (_loading.value) return ApiResult.Success(Unit)
-            _loading.value = true
-            sessionGeneration
-        }
+            if (_loading.value) null else sessionGeneration.also { _loading.value = true }
+        } ?: return ApiResult.Success(Unit)
         try {
             val resp = networkCall { api.getMyOrders(offset = 0, limit = pageSize) }
                 ?: return networkError()
@@ -95,18 +95,22 @@ class OrderRepository @Inject constructor(
                 return httpError(resp.errorBody(), resp.code())
             }
             val body = resp.requiredBody()
-            synchronized(sessionLock) {
-                if (generation != sessionGeneration) return networkError()
-                _orders.value = body.data
-                receivedSoFar = body.receivedCount
-                exhausted = body.receivedCount == 0
-                // Backend PagedData wrapper exposes total under `total`; expose it as
-                // totalRecords in the repo API to keep consumers agnostic of the wire name.
-                _totalRecords.value = body.total
-                _loaded.value = true
-                staleness.markFresh()
+            val sameSession = synchronized(sessionLock) {
+                if (generation == sessionGeneration) {
+                    _orders.value = body.data
+                    receivedSoFar = body.receivedCount
+                    exhausted = body.receivedCount == 0
+                    // Backend PagedData wrapper exposes total under `total`; expose it as
+                    // totalRecords in the repo API to keep consumers agnostic of the wire name.
+                    _totalRecords.value = body.total
+                    _loaded.value = true
+                    staleness.markFresh()
+                    true
+                } else {
+                    false
+                }
             }
-            return ApiResult.Success(Unit)
+            return if (sameSession) ApiResult.Success(Unit) else networkError()
         } finally {
             synchronized(sessionLock) { if (generation == sessionGeneration) _loading.value = false }
         }

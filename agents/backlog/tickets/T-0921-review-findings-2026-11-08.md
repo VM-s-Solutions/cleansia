@@ -4,7 +4,7 @@ title: "The 2026-11-08 review findings for iOS, server, web and docs"
 size: M
 owner: Michael Chaban
 created: 2026-11-08
-updated: 2026-11-08
+updated: 2026-11-09
 depends_on: []
 blocks: []
 stories: []
@@ -89,3 +89,16 @@ Any finding not listed above, and everything T-0920's Out of scope names.
 - 2026-11-08 — F7: `JobBandMapLayout.pinAnchor` puts the door mid-map on a map no taller than the pin line, the
   rule of Android's `pinTip` (`5930074e5`). Test-first in the partner app's `JobDetailPageTests`, where the type
   lives: the new test failed before the change (the door at 1.0 and 1.026 of the map's height) and passes with it.
+- 2026-11-09 — F1: `UpdateCurrentUser`'s validator refuses a phone that differs from the stored one and that
+  `PhoneNumberAttribute` does not hold valid, with `validation.invalid_phone_number` on `PhoneNumber`, before the
+  uniqueness check; the stored phone sent back unchanged still saves, whatever its form (`dd422b588`). The rule is the
+  attribute's, the check the cleaner's Personal save makes, not a possible-number check: the apps check a possible
+  number and leave validity to the server (`business-rules.md#cleaner-profile-fields`), so a possible-number rule here
+  would have left validity unjudged on this save. Test-first: four invalid numbers failed before the change and pass
+  with it. The customer web and the partner web carry the key's `api.*` text in all five locales, and both parity
+  specs pass; the mobile apps resolve the key generically and already carry it. The unit suite (9202), the endpoint's
+  host tests (11) and its integration tests (2) pass.
+- 2026-11-09 — F2: the customer profile facade's private `detailsOf` is deleted; nothing called it (`d4ab83032`).
+- 2026-11-09 — F12: not changed. At `dd422b588`, `CLAUDE.md:101` names Angular 20.3, Nx 23.2, NgRx 20.1 and
+  PrimeNG 20.4, as `src/Cleansia.App/package.json` pins them (`@angular/core` `~20.3.34`, `nx` `23.2.1`,
+  `@ngrx/store` `~20.1.0`, `primeng` `~20.4.0`).

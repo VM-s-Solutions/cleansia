@@ -458,7 +458,7 @@ internal fun OrderDetailContent(
     }
     // One frame for every state, so a job opened from the board keeps its map, its sheet and its figure when the rest
     // of it loads, instead of being built a second time.
-    val mapMode = page.mapMode
+    val mapMode = page.mapMode?.takeIf { canDrawMap() }
     JobDetailFrame(
         onNavigateBack = onNavigateBack,
         mascot = page.mascot,

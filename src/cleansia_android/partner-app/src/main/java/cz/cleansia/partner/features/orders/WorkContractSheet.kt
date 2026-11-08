@@ -688,7 +688,7 @@ private fun ColumnScope.TakenContent(
                     )
                     Image(painter = painterResource(R.drawable.mascot_thumbs_up), contentDescription = null, modifier = Modifier.size(96.dp))
                 }
-                takenStripPoint(takenRow)?.let { point ->
+                takenStripPoint(takenRow)?.takeIf { canDrawMap() }?.let { point ->
                     JobMapStrip(point = point, street = rules.streetLine(takenRow?.customerAddress), modifier = Modifier.padding(top = Spacing.XS))
                 }
                 val start = contractFacts?.cleaningDateTimeUtc?.let { runCatching { Instant.parse(it) }.getOrNull() } ?: rules.start(row)

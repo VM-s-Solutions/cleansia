@@ -67,6 +67,7 @@ import cz.cleansia.core.location.CleansiaMapPin
 import cz.cleansia.core.location.CleansiaMapStyle
 import cz.cleansia.core.location.canShowOrderMap
 import cz.cleansia.core.ui.components.FloatingCircleButton
+import cz.cleansia.partner.BuildConfig
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.OrderListItem
 import kotlin.math.PI
@@ -114,6 +115,9 @@ private fun mercatorY(latitude: Double): Double {
     val sin = sin(Math.toRadians(latitude))
     return 0.5 - ln((1 + sin) / (1 - sin)) / (4 * PI)
 }
+
+/** MapView's constructor throws without a Mapbox token, so a build with none draws no map. */
+internal fun canDrawMap(token: String = BuildConfig.MAPBOX_ACCESS_TOKEN): Boolean = token.isNotBlank()
 
 internal fun usablePoint(latitude: Double?, longitude: Double?): MapPoint? =
     if (latitude != null && longitude != null && canShowOrderMap(latitude, longitude)) MapPoint(latitude, longitude) else null

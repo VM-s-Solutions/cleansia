@@ -1,7 +1,7 @@
-import CleansiaCore
 import SwiftUI
 import UIKit
 import XCTest
+@testable import CleansiaCore
 @testable import CleansiaPartner
 
 /// The picker insets its map by the measured height of the stack over its bottom edge, and a new inset
@@ -95,8 +95,14 @@ final class AddressPickerConfirmCardTests: XCTestCase {
     // MARK: - Rendering
 
     private func height(resolved: GeocodedAddress?, lookingUp: Bool, size: DynamicTypeSize) -> CGFloat {
-        let card = ConfirmCard(resolved: resolved, lookingUp: lookingUp, enabled: !lookingUp, onConfirm: {})
-            .environment(\.dynamicTypeSize, size)
+        let card = AddressPickerConfirmCard(
+            resolved: resolved,
+            lookingUp: lookingUp,
+            enabled: !lookingUp,
+            copy: L10n.AddressPicker.self,
+            onConfirm: {}
+        )
+        .environment(\.dynamicTypeSize, size)
         let host = UIHostingController(rootView: card)
         return host.sizeThatFits(
             in: CGSize(width: Self.narrowestSupportedWidth, height: .greatestFiniteMagnitude)

@@ -347,6 +347,16 @@ enum CustomerCapture {
         return found
     }
 
+    /// Where SwiftUI draws each text, in the window's points: VoiceOver reads the slide as one button, so its words
+    /// are measured from the layer they are drawn into.
+    static func textFrames(in window: UIWindow) -> [CGRect] {
+        func texts(_ layer: CALayer) -> [CALayer] {
+            (String(describing: type(of: layer)) == "CGDrawingLayer" ? [layer] : [])
+                + (layer.sublayers ?? []).flatMap(texts)
+        }
+        return texts(window.layer).map { $0.convert($0.bounds, to: window.layer) }
+    }
+
     private static func semantics(of window: UIWindow) -> Data {
         let nodes = elements(of: window).map { element -> [String: Any] in
             let frame = element.frame

@@ -48,7 +48,7 @@ struct FullscreenPager: View {
 
             HStack {
                 if let collectionTitle {
-                    Text("\(collectionTitle) · \(selection + 1)/\(photos.count)")
+                    Text(verbatim: "\(collectionTitle) · \(selection + 1)/\(photos.count)")
                         .font(CleansiaTypography.labelLarge)
                         .foregroundColor(.white)
                 }

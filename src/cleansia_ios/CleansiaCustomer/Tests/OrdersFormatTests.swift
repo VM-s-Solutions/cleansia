@@ -1,3 +1,4 @@
+import CleansiaCore
 import CleansiaCustomerApi
 import Foundation
 import XCTest
@@ -57,6 +58,26 @@ final class OrdersFormatTests: XCTestCase {
 
     func testTheLocalesDecimalMarkIsUsed() {
         XCTAssertEqual(OrdersFormat.price(319.9, currencyCode: "CZK", locale: Locale(identifier: "cs_CZ")), "319,90 Kč")
+    }
+
+    /// The in-app language sets the marks, not the phone's: Czech chosen on an English phone prints the decimal comma
+    /// in Orders and in Earnings alike and the booking's day chips in Czech, and English prints the point on a phone
+    /// whose region writes a comma.
+    func testTheInAppLanguageSetsTheMarksWhateverThePhoneIsSetTo() {
+        let restore = CoreL10n.languageTag
+        defer { CoreL10n.apply(languageTag: restore) }
+        let thursday = Date(timeIntervalSince1970: 1_720_699_200)
+        let tuesday = thursday.addingTimeInterval(-2 * 86400)
+
+        CoreL10n.apply(languageTag: "cs")
+        XCTAssertEqual(OrdersFormat.price(412.3, currencyCode: "CZK"), "412,30 Kč")
+        XCTAssertEqual(EarningsFormat.decimalMoney(412.3, currencyCode: "CZK"), "412,30 Kč")
+        XCTAssertEqual(BookingDateFormat.dayLabel(thursday, now: tuesday), "čt")
+
+        CoreL10n.apply(languageTag: "en")
+        XCTAssertEqual(OrdersFormat.price(412.3, currencyCode: "CZK"), "412.30 Kč")
+        XCTAssertEqual(EarningsFormat.decimalMoney(412.3, currencyCode: "CZK"), "412.30 Kč")
+        XCTAssertEqual(BookingDateFormat.dayLabel(thursday, now: tuesday), "Thu")
     }
 
     func testDateTimeLocalizesPerAppLocale() {

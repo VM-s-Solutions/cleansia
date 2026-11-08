@@ -62,3 +62,4 @@ wordmark and attribution sit 8 dp above the map's bottom edge.
   mid-drag, the first frame logged at the new size already had the panel at its new stop.
   `:partner-app:testDebugUnitTest` (1,277 tests) and core's `CleansiaMapUsageTest` pass. The logs of the runs before
   and after the fix are in `~/cleansia-work.noindex/crash-fix-20261107/`.
+- 2026-11-08 — Shipped: #366 merged to master as 0bf4c34dc.

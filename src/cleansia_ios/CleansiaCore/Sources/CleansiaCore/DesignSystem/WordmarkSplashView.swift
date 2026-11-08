@@ -89,7 +89,7 @@ public struct WordmarkSplashView: View {
         }
         // Read the wordmark as one word, not eight separate letters, under VoiceOver.
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Cleansia")
+        .accessibilityLabel(Text(verbatim: "Cleansia"))
     }
 
     /// Honour Reduce Motion: a nil animation makes the reveal snap in with no stagger or offset.

@@ -1,3 +1,4 @@
+import CleansiaCore
 import Foundation
 
 extension L10n {
@@ -78,5 +79,20 @@ extension L10n {
         static var errorMessage: String {
             localized("devices_error_message")
         }
+    }
+}
+
+extension L10n.Devices: DevicesCopy {
+    static var retry: String {
+        L10n.retry
+    }
+
+    static var cancel: String {
+        L10n.cancel
+    }
+
+    /// A device that names no platform reads as an empty profile field does.
+    static var platformUnknown: String {
+        L10n.Profile.noData
     }
 }

@@ -64,7 +64,7 @@ struct InvoiceDetailView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(CleansiaColors.background.ignoresSafeArea())
         case let .error(error):
-            InvoiceDetailErrorView(error: error) { Task { await vm.load() } }
+            ErrorRetryView(error: error) { Task { await vm.load() } }
         case let .loaded(invoice):
             InvoiceDetailContent(
                 invoice: invoice,
@@ -86,28 +86,6 @@ struct InvoiceDetailView: View {
             UIPasteboard.general.string = value
         #endif
         snackbar.showSuccess(L10n.Invoices.fieldCopied)
-    }
-}
-
-private struct InvoiceDetailErrorView: View {
-    let error: ApiError
-    let onRetry: () -> Void
-
-    var body: some View {
-        VStack(spacing: Spacing.m) {
-            Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 40))
-                .foregroundColor(CleansiaColors.error)
-            Text(ApiErrorLocalizer().message(for: error))
-                .font(CleansiaTypography.bodyMedium)
-                .foregroundColor(CleansiaColors.onSurfaceVariant)
-                .multilineTextAlignment(.center)
-            CleansiaOutlinedButton(L10n.retry, size: .medium, action: onRetry)
-                .fixedSize()
-        }
-        .padding(Spacing.xl)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(CleansiaColors.background.ignoresSafeArea())
     }
 }
 

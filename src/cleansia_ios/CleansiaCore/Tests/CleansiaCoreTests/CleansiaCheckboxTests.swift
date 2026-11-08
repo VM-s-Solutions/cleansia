@@ -16,7 +16,7 @@ final class CleansiaCheckboxTests: XCTestCase {
         }
         defer { canvas.close() }
         await canvas.settle()
-        return Self.elements(under: canvas.window).first
+        return ApplicationAccessibility.elements(under: canvas.window).first
     }
 
     /// VoiceOver reads one button named by its label, ticked or not; the box itself is not read as an image.
@@ -73,19 +73,5 @@ final class CleansiaCheckboxTests: XCTestCase {
         .joined()
 
         XCTAssertTrue(source.contains("HStack(alignment:.firstTextBaseline,spacing:Spacing.xs){box.capBandAligned(of:"))
-    }
-
-    private static func elements(under view: NSObject, depth: Int = 0) -> [NSObject] {
-        guard depth < 60 else { return [] }
-        if view.isAccessibilityElement { return [view] }
-        if let children = view.accessibilityElements as? [NSObject], !children.isEmpty {
-            return children.flatMap { elements(under: $0, depth: depth + 1) }
-        }
-        let count = view.accessibilityElementCount()
-        if count != NSNotFound, count > 0 {
-            return (0 ..< count).compactMap { view.accessibilityElement(at: $0) as? NSObject }
-                .flatMap { elements(under: $0, depth: depth + 1) }
-        }
-        return ((view as? UIView)?.subviews ?? []).flatMap { elements(under: $0, depth: depth + 1) }
     }
 }

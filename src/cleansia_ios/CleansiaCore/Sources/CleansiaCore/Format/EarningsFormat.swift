@@ -44,7 +44,7 @@ public enum EarningsFormat {
     private static let symbolLock = NSLock()
     private nonisolated(unsafe) static var nativeSymbols: [String: String] = [:]
 
-    public static func shortDate(_ date: Date?, locale: Locale = .current) -> String? {
+    public static func shortDate(_ date: Date?, locale: Locale = CoreL10n.locale) -> String? {
         guard let date else { return nil }
         let formatter = DateFormatter()
         formatter.locale = locale
@@ -66,7 +66,7 @@ public enum EarningsFormat {
     private static func grouped(_ amount: Double, fractionDigits: Int) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
-        formatter.locale = .current
+        formatter.locale = CoreL10n.locale
         formatter.minimumFractionDigits = fractionDigits
         formatter.maximumFractionDigits = fractionDigits
         formatter.groupingSeparator = "\u{202F}"

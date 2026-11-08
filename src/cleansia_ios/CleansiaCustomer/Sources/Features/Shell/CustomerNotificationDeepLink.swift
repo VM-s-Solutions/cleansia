@@ -1,3 +1,4 @@
+import CleansiaCore
 import Foundation
 
 enum CustomerNotificationDestination: Equatable {
@@ -24,6 +25,15 @@ enum CustomerNotificationDeepLink {
             eventKey: eventKey,
             orderId: nonEmpty(userInfo[orderIdField]),
             disputeId: nonEmpty(userInfo[disputeIdField])
+        )
+    }
+
+    /// The same destination for the inbox row of the push.
+    static func resolve(_ notification: UserNotification) -> CustomerNotificationDestination? {
+        resolve(
+            eventKey: notification.eventKey,
+            orderId: nonEmpty(notification.args[orderIdField]),
+            disputeId: nonEmpty(notification.args[disputeIdField])
         )
     }
 

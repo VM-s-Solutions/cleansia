@@ -2,25 +2,7 @@ import CleansiaCore
 import CleansiaPartnerApi
 import Foundation
 
-struct UserDevice: Equatable, Identifiable {
-    let id: String
-    let platform: String?
-    let deviceId: String?
-    let lastActiveAt: Date?
-    let isCurrent: Bool
-}
-
-protocol PartnerDevicesClient: AnyObject {
-    /// The stable per-install id of THIS handset — the SAME instance the
-    /// HeaderAdapter stamps as X-Device-Id and Device/Register persisted
-    /// (D6). The one source; never a per-call UUID/identifierForVendor.
-    var currentDeviceId: String { get }
-
-    func myDevices() async -> ApiResult<[UserDevice]>
-    func revoke(rowId: String) async -> ApiResult<Void>
-}
-
-final class LivePartnerDevicesClient: PartnerDevicesClient, SessionScopedCache {
+final class LivePartnerDevicesClient: DevicesClient, SessionScopedCache {
     private let deviceIdProvider: DeviceIdProviding
 
     init(deviceIdProvider: DeviceIdProviding) {

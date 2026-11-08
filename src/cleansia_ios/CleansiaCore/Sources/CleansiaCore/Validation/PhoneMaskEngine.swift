@@ -91,26 +91,29 @@ public struct PhoneMaskEngine {
     }
 }
 
-public struct GroupedPhoneDisplayFormatter: PhoneDisplayFormatting {
-    public init() {}
+// The apps format with PhoneNumberKitDisplayFormatter; this plain grouping serves the tests alone.
+#if DEBUG
+    public struct GroupedPhoneDisplayFormatter: PhoneDisplayFormatting {
+        public init() {}
 
-    public func display(_ wireValue: String) -> String {
-        guard !wireValue.isEmpty else { return "" }
-        let hasPlus = wireValue.hasPrefix("+")
-        let digits = Array(wireValue.filter(\.isNumber))
-        guard !digits.isEmpty else { return hasPlus ? "+" : "" }
-        var groups: [String] = []
-        var index = 0
-        if hasPlus {
-            let countryLength = min(3, digits.count)
-            groups.append("+" + String(digits[0 ..< countryLength]))
-            index = countryLength
+        public func display(_ wireValue: String) -> String {
+            guard !wireValue.isEmpty else { return "" }
+            let hasPlus = wireValue.hasPrefix("+")
+            let digits = Array(wireValue.filter(\.isNumber))
+            guard !digits.isEmpty else { return hasPlus ? "+" : "" }
+            var groups: [String] = []
+            var index = 0
+            if hasPlus {
+                let countryLength = min(3, digits.count)
+                groups.append("+" + String(digits[0 ..< countryLength]))
+                index = countryLength
+            }
+            while index < digits.count {
+                let end = min(index + 3, digits.count)
+                groups.append(String(digits[index ..< end]))
+                index = end
+            }
+            return groups.joined(separator: " ")
         }
-        while index < digits.count {
-            let end = min(index + 3, digits.count)
-            groups.append(String(digits[index ..< end]))
-            index = end
-        }
-        return groups.joined(separator: " ")
     }
-}
+#endif

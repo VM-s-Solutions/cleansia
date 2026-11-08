@@ -109,8 +109,8 @@ struct RegistrationLockSkeleton: View {
     }
 }
 
-/// Mirrors `DashboardErrorView`'s shape rather than reaching for a shared component, because the
-/// tree has no shared error view and inventing one from the splash is not the place to start.
+/// Mirrors `ErrorRetryView`'s shape rather than using it: the splash has no server error to show, only that the
+/// server did not answer, in a title and a message of its own.
 ///
 /// Carries a sign-out as well as a retry: the splash has no back stack, and signing out is the one
 /// thing a cleaner stuck here can always do — the same escape the registration lock offers.

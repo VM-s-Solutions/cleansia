@@ -97,10 +97,6 @@ extension L10n {
             localized("booking_catalog_retry")
         }
 
-        static var details: String {
-            localized("common_details")
-        }
-
         static func continuePrice(_ total: String) -> String {
             format("booking_continue_price", total)
         }
@@ -184,10 +180,6 @@ extension L10n {
 
         static var extrasSubtitle: String {
             localized("booking_extras_subtitle")
-        }
-
-        static var summaryItemsLabel: String {
-            localized("booking_summary_items_label")
         }
 
         static var summaryDetailsLabel: String {
@@ -310,10 +302,6 @@ extension L10n {
             case .currencyMismatch: localized("booking_promo_code_error_currency")
             case nil: localized("booking_promo_code_error_generic")
             }
-        }
-
-        static var referralRowTitle: String {
-            localized("booking_referral_code_row_title")
         }
 
         static func referralRowApplied(_ code: String) -> String {

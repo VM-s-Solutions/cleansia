@@ -527,7 +527,7 @@ private struct StartsSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.s) {
             SectionLabel(text: L10n.Recurring.createStartsLabel)
-            DatePicker("", selection: binding, in: range, displayedComponents: .date)
+            DatePicker(String(), selection: binding, in: range, displayedComponents: .date)
                 .labelsHidden()
                 .frame(maxWidth: .infinity, alignment: .leading)
         }

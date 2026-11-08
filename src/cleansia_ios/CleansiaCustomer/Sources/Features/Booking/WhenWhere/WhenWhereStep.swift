@@ -227,7 +227,7 @@ private struct DayChipView: View {
                 Text(BookingDateFormat.dayLabel(day.date))
                     .font(CleansiaTypography.labelMedium)
                     .foregroundColor(selected ? CleansiaColors.onPrimary : CleansiaColors.onSurfaceVariant)
-                Text("\(day.dayNumber)")
+                Text(verbatim: "\(day.dayNumber)")
                     .font(CleansiaTypography.titleMedium)
                     .fontWeight(.bold)
                     .foregroundColor(selected ? CleansiaColors.onPrimary : CleansiaColors.onSurface)

@@ -88,10 +88,11 @@ struct AddressSectionView: View {
         .onReceive(vm.saved) { onSaved() }
         .sheet(isPresented: $pickerOpen) {
             NavigationStack {
-                AddressPickerView(
+                AddressPickerScreen(
                     geocoding: geocoding,
                     mapProvider: mapProvider,
                     serviceArea: serviceArea,
+                    copy: L10n.AddressPicker.self,
                     onConfirmed: { address in
                         vm.applyPick(address)
                         pickerOpen = false

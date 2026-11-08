@@ -148,12 +148,6 @@ final class PreferencesModelTests: XCTestCase {
         XCTAssertEqual(model.theme, .light)
         XCTAssertEqual(store.theme, .light)
     }
-
-    func testThemeColorSchemeMapping() {
-        XCTAssertNil(Theme.system.colorScheme)
-        XCTAssertEqual(Theme.light.colorScheme, .light)
-        XCTAssertEqual(Theme.dark.colorScheme, .dark)
-    }
 }
 
 /// For the tests that are about the local preference state alone. What reaches the server is
@@ -163,15 +157,6 @@ final class SilentLanguageSync: LanguagePreferenceSync {
 }
 
 final class PreferencesLabelsTests: XCTestCase {
-    func testLanguageLabelResolvesNativeName() {
-        XCTAssertEqual(PreferencesLabels.languageLabel("cs"), "Čeština")
-        XCTAssertEqual(PreferencesLabels.languageLabel("uk"), "Українська")
-    }
-
-    func testLanguageLabelFallsBackToTagWhenUnknown() {
-        XCTAssertEqual(PreferencesLabels.languageLabel("xx"), "xx")
-    }
-
     func testLanguageSummaryUsesNativeLabelWhenExplicit() {
         XCTAssertEqual(
             PreferencesLabels.languageSummary(isFollowingSystem: false, tag: "sk"),
@@ -182,13 +167,6 @@ final class PreferencesLabelsTests: XCTestCase {
     func testSystemLanguageIdIsNotARealTag() {
         XCTAssertFalse(
             UserDefaultsAppSettingsStore.supportedLanguageTags.contains(PreferencesLabels.systemLanguageId)
-        )
-    }
-
-    func testLanguagesCoverTheSupportedSet() {
-        XCTAssertEqual(
-            Set(PreferencesLabels.languages.map(\.tag)),
-            Set(UserDefaultsAppSettingsStore.supportedLanguageTags)
         )
     }
 

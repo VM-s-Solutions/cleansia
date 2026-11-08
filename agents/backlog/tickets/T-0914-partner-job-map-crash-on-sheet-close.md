@@ -102,3 +102,5 @@ In Core, `PlaceMap.swift`:
 - 2026-11-07 — `keepMarks` asks for a layout only while the place waits for room. Asking on every new margin laid the
   map out on every frame of a panel drag, with nothing to frame again. The fifteen PlaceMap tests pass on the iOS 16.4
   and 26.3 simulators, and the CleansiaCore suite (930 tests) passes on iOS 16.4.
+- 2026-11-08 — Shipped: #366 merged to master as 0bf4c34dc.
+- 2026-11-08 — Partner TestFlight 1.0.0 (21), built from the PR head 17a3f5247, carries the iOS fix for the retest.

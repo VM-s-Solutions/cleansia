@@ -377,8 +377,6 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
     }
 }
 
-struct EmptyResponse: Decodable {}
-
 enum ISO8601DateParser {
     static func parse(_ value: String) -> Date? {
         let withFraction = ISO8601DateFormatter()

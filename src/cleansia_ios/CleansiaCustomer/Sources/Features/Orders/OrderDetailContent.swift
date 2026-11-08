@@ -130,7 +130,7 @@ struct OrderDetailCompactHeader: View {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: Spacing.xs) {
                     if let number = order.displayOrderNumber, !number.isBlank {
-                        Text("#\(number)")
+                        Text(verbatim: "#\(number)")
                             .font(CleansiaTypography.titleMedium)
                             .foregroundColor(CleansiaColors.onSurface)
                     }

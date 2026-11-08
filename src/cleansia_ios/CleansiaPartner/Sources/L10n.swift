@@ -255,14 +255,6 @@ enum L10n {
             localized("registration_lock_category_approval")
         }
 
-        static var actionCompleteProfile: String {
-            localized("registration_lock_action_complete_profile")
-        }
-
-        static var actionUploadDocuments: String {
-            localized("registration_lock_action_upload_documents")
-        }
-
         static var documentsRequired: String {
             localized("registration_lock_documents_required")
         }
@@ -311,10 +303,6 @@ enum L10n {
 
         static var profile: String {
             localized("profile")
-        }
-
-        static func placeholderComingSoon(_ name: String, _ ticket: String) -> String {
-            format("shell_tab_placeholder", name, ticket)
         }
     }
 

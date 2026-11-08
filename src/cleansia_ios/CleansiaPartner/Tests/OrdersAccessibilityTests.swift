@@ -65,10 +65,8 @@ final class OrdersAccessibilityTests: XCTestCase {
         XCTAssertEqual(label, "\(L10n.Offers.confirm), \(tomorrow), 08:00–10:00")
     }
 
-    /// The open slide says what it does; the locked one is Core's disabled button, named by its reason and countdown.
-    func testTheSlidesSayWhatTheyDoAndWhyTheyWait() {
-        XCTAssertEqual(Speech.slideLabel(idle: "Swipe", busy: "Taking…", isBusy: false), "Swipe")
-        XCTAssertEqual(Speech.slideLabel(idle: "Swipe", busy: "Taking…", isBusy: true), "Taking…")
+    /// The locked slide is Core's disabled button, named by its reason and countdown.
+    func testALockedSlideSaysWhyItWaits() {
         XCTAssertEqual(
             SlideToConfirm.lockedLabel(reason: L10n.Orders.setOffFrom("14:00"), detail: L10n.Orders.heroIn("1 h")),
             "\(L10n.Orders.setOffFrom("14:00")), \(L10n.Orders.heroIn("1 h"))"

@@ -45,7 +45,7 @@ packages:
     url: https://github.com/google/GoogleSignIn-iOS
     from: 7.1.0
   StripePaymentSheet:
-    url: https://github.com/stripe/stripe-ios
+    url: https://github.com/stripe/stripe-ios-spm
     majorVersion: 25.0.0
 
 targets:

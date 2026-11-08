@@ -5,7 +5,8 @@ Mirrors ART MethodVerifier: the check applies only to instructions covered by a 
 A minified build can carry that shape (a return inside synchronized once did), and ART then fails the class with a VerifyError.
 
 Usage: dexdump -d classes*.dex > dump.txt && python3 check-r8-monitor.py dump.txt [method-name-prefix]
-Exits 1 when a method would be rejected, or when no method takes a monitor: that dump was not read, not passed."""
+Exits 1 when a method would be rejected, or when no method takes a monitor: that dump was not read, not passed.
+The last line also counts the methods with switch targets unchecked: code reached only through a switch is not walked."""
 import re, sys
 from collections import deque
 
@@ -91,15 +92,15 @@ def check(meth):
 
 if __name__ == '__main__':
     filt = sys.argv[2] if len(sys.argv) > 2 else None
-    ms = parse(sys.argv[1]); n_mon = 0; n_bad = 0
+    ms = parse(sys.argv[1]); n_mon = 0; n_bad = 0; n_part = 0
     for m in ms:
         if filt and not m['name'].startswith(filt): continue
         r = check(m)
         if r is None: continue
-        n_mon += 1; probs, unk = r
+        n_mon += 1; probs, unk = r; n_part += unk
         if probs:
             n_bad += 1; print('REJECT', m['name'], 'switch-approx' if unk else '', probs[:3])
         elif filt:
             print('ok    ', m['name'], 'switch-approx' if unk else '', 'tries=%d' % len(m['tries']))
-    print(f'methods parsed {len(ms)}, with monitor-enter {n_mon}, would be rejected {n_bad}')
+    print(f'methods parsed {len(ms)}, with monitor-enter {n_mon}, would be rejected {n_bad}, with switch targets unchecked {n_part}')
     sys.exit(1 if n_bad or not n_mon else 0)

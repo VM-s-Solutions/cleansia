@@ -214,3 +214,31 @@ Not done, even where a problem is visible; it is reported instead.
   narrows a rule, but the `tertiaryContainer` correction leaves iOS `CleansiaColors`, which still mirrors Material's
   mauve, a parity deviation under test 1; its `consistency.md` entry and iOS ticket are Mike's call and are not filed
   here. Markdown only: no code changed, and `check-catalog-claims.mjs`, which Docs CI runs, was not run in this part.
+
+### Fixes after checking the branch as a whole
+
+- 2026-11-08 — The branch as committed failed `check-catalog-claims.mjs`, which Docs CI runs on every pull request:
+  the catalog cited `EarningsSummaryScreen.kt:495`, past the end of the file since the `IconHalo` and `formatMoney`
+  moves. The Docs part's edits are committed (`5d037e3a8`), and the check passes on an export of that commit (no C1,
+  C2 or C3 violation). Then: `RouteKeepRuleTest` pins the partner's R8 rule that keeps a route object's `INSTANCE` and
+  `serializer()`, since no CI job runs R8 (`fed412764`); the booking slide's busy label is the overlay's "Booking your
+  cleaning…" instead of its own label again (`8fc7d43d3`); `OrderRepository` drops an orders page asked for before
+  `clear()`, which the splash's read could carry into the next account, and that read no longer holds off the next
+  account's own (`4f17c0ea2`); the splash test pins that a signed-out start reads nothing (`a2b2ca98b`);
+  `formatShortDate` builds its formatter per call, so a language picked in Settings reaches the dates (`c1c27b6cb`);
+  the Home carousel's capsule fills from its start edge again in a right-to-left layout (`5371af8d0`); and the
+  partner's `Main` and `Splash` fade as the customer's Home and splash do, through `fadeEnter`, `fadeExit`,
+  `fadeEnterLong` and `fadeExitLong`, now in `:core` (`a5e8ff79b`). The first `OrderRepository` change returned from
+  inside its `synchronized` blocks, which R8 compiled without the catch-all ART's verifier requires, so the minified
+  customer app failed to start with a `VerifyError`; neither the debug build nor the unit tests showed it, and
+  `56a0fbcba` moves the returns out. On `cleansia35`, forced right-to-left with English picked in the app, the
+  selected capsule's fill grows from its right edge, and left to right from its left as before. The mascot re-encode
+  (`01a50d89a`) is a second deliberate pixel change, confined to the mascot boxes: the screenshot criterion names only
+  AND-CM-02, and its wording is Mike's to amend, so it stays unticked. The janky-frame and frames-rendered figures in
+  `cd3a38396` and `fcdf39891` are single-session emulator readings that a second session did not reproduce; the claims
+  rest on the counts that did (recompositions, MapViews, sheet states, figure decodes). Unit tests: core 419/0,
+  partner 1269/0, customer 1853/0; one earlier full run failed `PaymentsCardCaptureViewModelTest`, whose view model
+  and repository this branch does not change, and it passed in the four runs after it. Both staging builds assemble,
+  install and start on `cleansia35` from cleared data and over an install; signed in against a local stand-in, the
+  partner reaches Main and pushes and pops a screen over it, and the customer signs out and in again, without a crash.
+  `check-consistency.mjs` reports what origin/master reports. Evidence in `android-longterm-20261108/fix-findings/`.

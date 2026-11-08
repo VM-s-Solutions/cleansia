@@ -318,7 +318,7 @@ private extension AppointmentConfirmationVisualTests {
 
     /// A booking placed through the presented sheet, slid a second after its review step comes up: every frame of
     /// the busy card's mascot, which is the one in the middle, and the welcoming figure it hands over to, once that
-    /// has stood a while.
+    /// has stood a second. A slow runner gets 30 s to land it.
     func handOverMascots(
         size: CGSize,
         sample: Sample
@@ -341,11 +341,17 @@ private extension AppointmentConfirmationVisualTests {
         defer { canvas.close() }
         var busy: [(time: TimeInterval, frame: CGRect)] = []
         var hero: CGRect?
+        var landed = TimeInterval.infinity
         let started = ProcessInfo.processInfo.systemUptime
-        while ProcessInfo.processInfo.systemUptime - started < 5 {
+        while ProcessInfo.processInfo.systemUptime - started < min(30, landed + 1) {
             let now = ProcessInfo.processInfo.systemUptime - started
             for frame in animatedMascots(canvas).map({ canvas.frame(of: $0) }) {
-                if isBusyCard(frame, in: canvas) { busy.append((now, frame)) } else { hero = frame }
+                if isBusyCard(frame, in: canvas) {
+                    busy.append((now, frame))
+                } else {
+                    hero = frame
+                    landed = min(landed, now)
+                }
             }
             try await Task.sleep(nanoseconds: 15_000_000)
         }

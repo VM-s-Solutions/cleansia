@@ -174,16 +174,16 @@ settings and signs in afresh.
 **The profile says when the stored name is the placeholder** (owner ruling 2026-11-08).
 `GET api/User/GetCurrent` on the customer and partner hosts, web and mobile, carries `isNamePlaceholder`.
 It is `true` for an Apple account whose stored first name is `Cleansia` or whose stored last name is
-`Customer`, compared trimmed and in any case, a blank part counting too: the **whole** stored name is
-then a stand-in the server wrote, not a name the person gave. It is `false` for every Google and
-password account, whatever its name (*Test Customer* included), and for an Apple account whose name
-carries neither word, one built from the e-mail included. No Apple account can sign in on a partner
-host, so there it is always `false`.
+`Customer`, compared trimmed and in any case, a blank part counting too. `true` means at least one stored
+part is a word the server wrote, so a client treats the **whole** stored name as no name, a part the person
+gave included. It is `false` for every Google and password account, whatever its name (*Test Customer*
+included), and for an Apple account whose name carries neither word, one built from the e-mail included.
+No Apple account can sign in on a partner host, so there it is always `false`.
 
 | Apple sent | E-mail | Stored | `isNamePlaceholder` |
 |---|---|---|---|
 | no name | a relay address | Cleansia Customer | `true` |
-| no name | `info@firma.cz` | Info Customer | `true`, for the whole name, so *Info* is never offered back as hers |
+| no name | `info@firma.cz` | Info Customer | `true`, for the whole name, so the onboarding never offers *Info* back as hers |
 | no name | `jana.novakova@seznam.cz` | Jana Novakova | `false` |
 | the given name only | a relay address | Jana Customer | `true` |
 | the whole name | any | Jana Dvořáková | `false` |

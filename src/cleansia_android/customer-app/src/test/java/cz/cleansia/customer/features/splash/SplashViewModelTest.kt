@@ -7,6 +7,7 @@ import cz.cleansia.customer.core.memberships.MembershipRepository
 import cz.cleansia.customer.core.orders.OrderRepository
 import cz.cleansia.customer.testing.MainDispatcherRule
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.delay
@@ -36,9 +37,12 @@ class SplashViewModelTest {
     private fun splash() = SplashViewModel(tokenStore, orders, membership)
 
     @Test
-    fun `no stored session is not a valid one`() {
+    fun `no stored session is not a valid one, and the splash reads nothing for it`() = runTest {
         every { tokenStore.current() } returns null
         assertEquals(false, splash().hasValidSession())
+        advanceUntilIdle()
+        coVerify(exactly = 0) { orders.refresh() }
+        coVerify(exactly = 0) { membership.refresh() }
     }
 
     @Test

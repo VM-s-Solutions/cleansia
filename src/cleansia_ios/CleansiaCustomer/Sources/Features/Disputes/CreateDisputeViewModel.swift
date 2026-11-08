@@ -77,9 +77,12 @@ final class CreateDisputeViewModel: ViewModel {
         return range.contains(text.count)
     }
 
-    func addEvidence(_ source: EvidenceSource, fileName: String) {
+    func addEvidence(_ source: EvidenceSource, fileName: String) async {
         guard !submitState.isSubmitting else { return }
-        switch EvidencePreparer.prepare(source) {
+        switch await EvidencePreparer.prepare(source) {
+        case let .success(file) where submitState.isSubmitting:
+            // A submit that started during the encode has already taken the list.
+            file.cleanUp()
         case let .success(file):
             pickedEvidence.append(PickedEvidence(id: UUID().uuidString, fileName: fileName, file: file))
         case let .failure(error):

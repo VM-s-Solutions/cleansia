@@ -151,6 +151,19 @@ Where the verifier corrected an auditor, the verifier's note wins.
   255 on a synthetic stripe photo and 1 of 255 on the crew photo. New captures: the job photos and the splash. Suites
   on the iOS 16.4 simulator: Core 972, Partner 1420, Customer 1960 with the three iOS 16.4 failures known before this
   work; Customer on iOS 26.3: 1960, none failing. Evidence in `ios-longterm-20261107/captures/lag/` and `lag/`.
+- 2026-11-08 — Two more, which Mike added to this pull request on 2026-11-07 after the Not doing list above was
+  written ("Fix all of the bugs that you found and also what you found"), one commit each. A picked avatar is encoded
+  off the main actor (`279b77522`): both apps' view models await Core's `AvatarEdit.pick`, which encodes in a detached
+  task as the job and document photos already did, and keep their error for an unreadable image. A 4032 × 3024 JPEG
+  picked on the iOS 16.4 simulator with the machine idle cost the main thread 76.4 ms upright and 167.0 ms as a
+  portrait capture in the partner app (customer 77.6 and 168.7 ms) and costs 0.05 and 0.12 ms (customer 0.06 and
+  0.13 ms); a customer test that the stored photo stays on screen while a pick encodes failed before and passes. The
+  partner job map looks up an area once for every map (`9055af6b8`): `JobAreaLocator` keeps the areas it finds for the
+  rest of the run and keeps no miss, and its test, which failed before, checks both with a second locator. Suites on
+  the iOS 16.4 simulator: Core 970, Partner 1422, Customer 1950 with the three iOS 16.4 failures known before this
+  work, and one timing failure in `AppointmentConfirmationVisualTests` that passed on its rerun; the same three at -O
+  whole-module with MallocScribble, on `9055af6b8`, fail only the three known. Evidence in
+  `fixes-20261107/step2/lane-368/`.
 
 ### Cleanup
 

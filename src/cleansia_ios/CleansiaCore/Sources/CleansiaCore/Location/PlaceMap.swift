@@ -244,9 +244,11 @@ struct PlaceMapView: UIViewRepresentable {
             if away || heard { say(false, on: nil) }
         }
 
+        /// MapKit reports the drawing at a new size before the map frames the place at it, and a map with no room
+        /// frames nothing: only what it draws at the size it framed the place or kept her view at can be her move.
         private func report(_ mapView: MKMapView) {
             guard movedAway != nil, let canvas = mapView as? PlaceMapCanvas, !canvas.isRecentring,
-                  PlaceMapCanvas.hasRoom(in: canvas.bounds.size, margins: canvas.layoutMargins)
+                  canvas.bounds.size == canvas.framedSize
             else { return }
             let isAway = canvas.isAway
             if isAway != away { say(isAway, on: canvas) }
@@ -276,7 +278,8 @@ final class PlaceMapCanvas: MKMapView {
 
     private let veil: UIView?
     private var target: MKCoordinateRegion?
-    private var framedSize: CGSize = .zero
+    /// The size it last framed the place or kept her view at; zero while the place waits to be framed.
+    private(set) var framedSize: CGSize = .zero
     private var place: CLLocationCoordinate2D?
     private var framedLook: Look?
     private var framingIsStale = false
@@ -302,6 +305,7 @@ final class PlaceMapCanvas: MKMapView {
         self.place = place
         keepsHerView = false
         framedSize = .zero
+        framedLook = nil
         setNeedsLayout()
     }
 
@@ -375,8 +379,7 @@ final class PlaceMapCanvas: MKMapView {
         framingIsStale = false
     }
 
-    /// Whether the margins leave MapKit room to draw in: without it there is nothing to frame, and nothing it draws is
-    /// her move.
+    /// Whether the margins leave MapKit room to draw in: without it there is nothing to frame.
     static func hasRoom(in size: CGSize, margins: UIEdgeInsets) -> Bool {
         margins.left + margins.right < size.width && margins.top + margins.bottom < size.height
     }

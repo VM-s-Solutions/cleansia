@@ -151,21 +151,64 @@ final class PlaceMapMotionTests: XCTestCase {
         XCTAssertFalse(mapView.isAway)
     }
 
-    /// The page around the map settles by a few points while she looks: what she moved to stays, and a map she has
-    /// not moved is framed again.
-    func testANewSizeKeepsHerMoveAndFramesAMapSheLeftAlone() {
-        let (mapView, window) = hosted(map(movedAway: .constant(false)))
+    /// The job map is keyed on its height, so a page that grows or shrinks re-keys the map and resizes it, in either
+    /// order. MapKit reports the drawing at the new size before the map frames the place at it: a map she left alone
+    /// is framed at the new size, and none of that is her move.
+    func testANewSizeFramesAMapSheLeftAloneReKeyedFirst() async {
+        var away = false
+        let binding = Binding(get: { away }, set: { away = $0 })
+        let placement = PlaceMapView.Placement()
+        let (mapView, window) = hosted(map(movedAway: binding), placement: placement)
         defer { window.isHidden = true }
-        mapView.frame = CGRect(x: 0, y: 0, width: 676, height: 676)
+
+        map(metres: 2500 * 380 / 680, movedAway: binding).apply(to: mapView, placement: placement)
+        mapView.frame = CGRect(x: 0, y: 0, width: 680, height: 380)
         mapView.layoutIfNeeded()
-        XCTAssertFalse(mapView.isAway, "framed again at the new size")
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        assertFramed(mapView)
+        XCTAssertFalse(mapView.keepsHerView)
+        XCTAssertFalse(away)
+    }
+
+    func testANewSizeFramesAMapSheLeftAloneResizedFirst() async {
+        var away = false
+        let binding = Binding(get: { away }, set: { away = $0 })
+        let placement = PlaceMapView.Placement()
+        let (mapView, window) = hosted(map(movedAway: binding), placement: placement)
+        defer { window.isHidden = true }
+
+        mapView.frame = CGRect(x: 0, y: 0, width: 680, height: 580)
+        mapView.layoutIfNeeded()
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        assertFramed(mapView)
+        XCTAssertFalse(mapView.keepsHerView)
+        XCTAssertFalse(away)
+
+        map(metres: 2500 * 580 / 680, movedAway: binding).apply(to: mapView, placement: placement)
+        mapView.layoutIfNeeded()
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        assertFramed(mapView)
+        XCTAssertFalse(mapView.keepsHerView)
+        XCTAssertFalse(away)
+    }
+
+    /// What she moved the map to stays at a new size, and recentring then frames the place at once at that size.
+    func testANewSizeKeepsTheViewSheMovedTo() async {
+        var away = false
+        let binding = Binding(get: { away }, set: { away = $0 })
+        let placement = PlaceMapView.Placement()
+        let (mapView, window) = hosted(map(movedAway: binding), placement: placement)
+        defer { window.isHidden = true }
 
         pan(mapView, by: CGVector(dx: 0, dy: 70))
-        mapView.keepsHerView = true
+        placement.mapViewDidChangeVisibleRegion(mapView)
         let looking = mapView.centerCoordinate
-        mapView.frame = CGRect(x: 0, y: 0, width: 680, height: 680)
+        mapView.frame = CGRect(x: 0, y: 0, width: 680, height: 580)
         mapView.layoutIfNeeded()
+        try? await Task.sleep(nanoseconds: 100_000_000)
         XCTAssertTrue(mapView.isAway)
+        XCTAssertTrue(mapView.keepsHerView)
+        XCTAssertTrue(away)
         XCTAssertEqual(mapView.centerCoordinate.latitude, looking.latitude, accuracy: 1e-4)
         XCTAssertEqual(mapView.centerCoordinate.longitude, looking.longitude, accuracy: 1e-4)
 
@@ -318,10 +361,14 @@ final class PlaceMapMotionTests: XCTestCase {
         CLLocationCoordinate2D(latitude: place.latitude, longitude: place.longitude)
     }
 
-    private func map(label: String? = nil, movedAway: Binding<Bool>? = nil) -> PlaceMapView {
+    private func map(
+        label: String? = nil,
+        metres: CLLocationDistance = 2500,
+        movedAway: Binding<Bool>? = nil
+    ) -> PlaceMapView {
         PlaceMapView(
             coordinate: place,
-            metres: 2500,
+            metres: metres,
             anchor: anchor,
             pinned: true,
             label: label,

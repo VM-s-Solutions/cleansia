@@ -78,6 +78,10 @@ Three consequences, and each one has bitten:
 **The mapper (ADR-0048 §D1).** Money and quantities refuse; booleans refuse; identity is refused **or
 dropped**; collections `orEmpty()`; nullable-by-design stays nullable.
 
+**One named exception (ADR-0081).** `MyProfileDto.isNamePlaceholder` reads absent as `false` and never
+refuses the profile, because only a server older than the member omits it, and `false` is what every app
+did before it existed. The exception covers that member alone.
+
 **The rollup ruling is per surface (§D2), and it is the part that is re-decided every time:**
 
 | The rendered total comes from… | Ruling | Because |

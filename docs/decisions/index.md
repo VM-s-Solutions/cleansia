@@ -2,7 +2,7 @@
 
 Every architecture and business decision on record, with the argument that settled it.
 
-**75 records.** A decision keeps a stable id — `ADR-0037` — and roughly six hundred source
+**81 records.** A decision keeps a stable id — `ADR-0037` — and roughly six hundred source
 files cite ids in that form. The id is the reference, not the file name or the title, so a record can
 be retitled without breaking a single citation.
 
@@ -164,6 +164,11 @@ the order's row and a take stamps the order, so two drops serialize while D8 sta
 gained a dated section** the same day: the `2026-10-27` framework agreement lets a job be released only
 until it is under way, and a placement past that is declined by not accepting its contract.
 
+**[ADR-0081](./adr-0081)** (`proposed` 2026-11-08, T-0920) supersedes nothing: the current-user profile
+says when an Apple account's stored name is the placeholder, and a mobile mapper reads the member as
+`false` when an older server omits it. That is a one-member exception to [ADR-0048](./adr-0048) D1 rule 2,
+and the rest of ADR-0048 stands, so there is no arrow.
+
 ## All records
 
 | | Decision | Status |
@@ -248,6 +253,7 @@ until it is under way, and a placement past that is declined by not accepting it
 | **[ADR-0078](./adr-0078)** | Each Live Activity token carries nullable APNs environment metadata, preserving mixed Xcode/TestFlight use of DEV APIs without endpoint guessing (design review 2026-10-28) | `accepted` |
 | **[ADR-0079](./adr-0079)** | Pre-take location: a Prague job names its district from the postcode, and the Available tab shows a distance band from the cleaner's stored home, measured to a snapped cell — so the snapped cell, narrowed by the label's area, becomes the effective pre-take ceiling (Mike's rulings 2026-10-31; owner acknowledged the ceiling 2026-11-06) | `accepted` |
 | **[ADR-0080](./adr-0080)** | The order-status tint and tone table lives in Core, keyed by the backend's wire integer, so both apps read one table per platform; a status mapping crosses into Core as that integer only when both apps map it the same way (Mike's approval of mock v2, 2026-11-02; T-0910; changes the `OrderStatusTone` doc-comment rule, supersedes no record) | `proposed` |
+| **[ADR-0081](./adr-0081)** | The current-user profile says when an Apple account's stored name is the placeholder, computed from the stored name on every read; an app treats that name as no name, gates nothing on it, and a mobile mapper reads an absent member as `false` (Mike's ruling 2026-11-08; T-0920; one named exception to ADR-0048 D1 rule 2, supersedes no record) | `proposed` |
 
 ⟲ = superseded in whole or in part by a later record.
 

@@ -8,7 +8,7 @@ updated: 2026-11-08
 depends_on: [T-0914, T-0915, T-0916, T-0917, T-0918, T-0919]
 blocks: []
 stories: []
-adrs: []
+adrs: [ADR-0081]
 layers: [backend, ios, android, docs]
 security_touching: true
 ---
@@ -220,3 +220,12 @@ green; and Mike gets a customer TestFlight build.
   production builds succeeded; the Android `ProfileWireTest` passed 10 of 10 and `UserProfileWireTest` 7 of 7; and
   both client typechecks, `typecheck:test`, `typecheck:specs`, `check-module-boundaries`, `check-docs-refs`,
   `check-catalog-claims` and `check-backlog-consistency` passed. ADR-0081 and the docs section are not written yet.
+- 2026-11-08 — Wrote the docs for the server signal. ADR-0081 (`proposed`) records the member, its rule, why it
+  is computed on every read rather than stored, and its one named exception to ADR-0048 D1 rule 2.
+  `docs/flows/auth-and-identity.md` gains the section *An Apple account's name* (`#apple-account-name`) and a
+  clause in its edge-cases row for Google or Apple sign-in. The decisions index gains the row and one sentence of
+  supersession prose, the sidebar gains the entry, `agents/architecture/decisions/mobile-wire-contract.md` gains
+  the exception under *Current shape*, and `User.IsNamePlaceholder()` points at the new section. The index's
+  record count read 75 while 80 records existed, so it now reads 81 rather than 76. Before the commit,
+  `check-docs-refs` (445 references, 0 unresolved), `check-catalog-claims`, `check-backlog-consistency` and the
+  VitePress site build passed.

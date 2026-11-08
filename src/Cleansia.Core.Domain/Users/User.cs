@@ -360,7 +360,10 @@ public class User : TenantAuditable
         return FillMissingName(derivedFirstName, derivedLastName);
     }
 
-    /// <summary>An Apple account whose stored name still carries a placeholder word, which the apps treat as no name.</summary>
+    /// <summary>
+    /// An Apple account whose stored name still carries a placeholder word, which the apps treat as no name.
+    /// → /flows/auth-and-identity#apple-account-name
+    /// </summary>
     public bool IsNamePlaceholder()
         => AuthenticationType == AuthenticationType.Apple
             && (IsSystemGenerated(FirstName, PlaceholderFirstName) || IsSystemGenerated(LastName, PlaceholderLastName));

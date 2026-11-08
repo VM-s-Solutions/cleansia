@@ -106,6 +106,8 @@ dependencies {
     implementation(libs.compose.material3)
     implementation(libs.compose.material.icons)
     implementation(libs.compose.foundation)
+    // The push and pop transitions both apps' NavHosts share.
+    implementation(libs.androidx.navigation.compose)
 
     // Hilt — :core declares @Module entries (e.g. TokenStore provider) that
     // both apps' SingletonComponent picks up.

@@ -49,35 +49,11 @@ import cz.cleansia.customer.features.profile.SecurityScreen
 import cz.cleansia.customer.features.rewards.RewardsActivityScreen
 import cz.cleansia.customer.features.splash.SplashScreen
 import cz.cleansia.customer.features.splash.SplashViewModel
-
-// ── Transition specs ──
-// Horizontal push (settings drill-down, auth stack) — 280ms
-private const val PUSH_DUR = 280
-
-private val pushEnter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> androidx.compose.animation.EnterTransition = {
-    slideIntoContainer(
-        AnimatedContentTransitionScope.SlideDirection.Left,
-        animationSpec = tween(PUSH_DUR),
-    ) + fadeIn(tween(PUSH_DUR))
-}
-private val pushExit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> androidx.compose.animation.ExitTransition = {
-    slideOutOfContainer(
-        AnimatedContentTransitionScope.SlideDirection.Left,
-        animationSpec = tween(PUSH_DUR),
-    ) + fadeOut(tween(PUSH_DUR))
-}
-private val popEnter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> androidx.compose.animation.EnterTransition = {
-    slideIntoContainer(
-        AnimatedContentTransitionScope.SlideDirection.Right,
-        animationSpec = tween(PUSH_DUR),
-    ) + fadeIn(tween(PUSH_DUR))
-}
-private val popExit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> androidx.compose.animation.ExitTransition = {
-    slideOutOfContainer(
-        AnimatedContentTransitionScope.SlideDirection.Right,
-        animationSpec = tween(PUSH_DUR),
-    ) + fadeOut(tween(PUSH_DUR))
-}
+import cz.cleansia.core.ui.PUSH_TRANSITION_MILLIS
+import cz.cleansia.core.ui.popEnter
+import cz.cleansia.core.ui.popExit
+import cz.cleansia.core.ui.pushEnter
+import cz.cleansia.core.ui.pushExit
 
 private val fadeEnterLong: AnimatedContentTransitionScope<NavBackStackEntry>.() -> androidx.compose.animation.EnterTransition = {
     fadeIn(tween(400))
@@ -282,10 +258,10 @@ fun CleansiaNavHost(
             )
         }
         composable<Routes.Home>(
-            enterTransition = { fadeIn(tween(PUSH_DUR)) },
-            exitTransition = { fadeOut(tween(PUSH_DUR)) },
-            popEnterTransition = { fadeIn(tween(PUSH_DUR)) },
-            popExitTransition = { fadeOut(tween(PUSH_DUR)) },
+            enterTransition = { fadeIn(tween(PUSH_TRANSITION_MILLIS)) },
+            exitTransition = { fadeOut(tween(PUSH_TRANSITION_MILLIS)) },
+            popEnterTransition = { fadeIn(tween(PUSH_TRANSITION_MILLIS)) },
+            popExitTransition = { fadeOut(tween(PUSH_TRANSITION_MILLIS)) },
         ) { backStackEntry ->
             val landingTab = backStackEntry.toRoute<Routes.Home>().tab
             MainShell(

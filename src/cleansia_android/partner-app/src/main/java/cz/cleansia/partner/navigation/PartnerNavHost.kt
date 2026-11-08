@@ -35,6 +35,10 @@ import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.ui.components.CleansiaErrorState
 import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.core.ui.components.WordmarkSplash
+import cz.cleansia.core.ui.popEnter
+import cz.cleansia.core.ui.popExit
+import cz.cleansia.core.ui.pushEnter
+import cz.cleansia.core.ui.pushExit
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.RegistrationCompletionStatus
 import cz.cleansia.partner.data.auth.AuthRepository
@@ -100,6 +104,10 @@ fun PartnerNavHost(navController: NavHostController) {
     NavHost(
         navController = navController,
         startDestination = NavRoute.Splash,
+        enterTransition = pushEnter,
+        exitTransition = pushExit,
+        popEnterTransition = popEnter,
+        popExitTransition = popExit,
     ) {
         composable<NavRoute.Splash> {
             SplashGate(

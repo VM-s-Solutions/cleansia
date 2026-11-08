@@ -39,6 +39,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
@@ -177,7 +178,7 @@ private fun PrefixedPhoneField(
                             if (value.isEmpty()) onValueChange("+")
                             focus.requestFocus()
                         }
-                        .semantics { contentDescription = "$countryCode $prefix" }
+                        .clearAndSetSemantics { contentDescription = "$countryCode $prefix" }
                         .padding(horizontal = Spacing.S),
                     horizontalArrangement = Arrangement.spacedBy(Spacing.XXS),
                     verticalAlignment = Alignment.CenterVertically,

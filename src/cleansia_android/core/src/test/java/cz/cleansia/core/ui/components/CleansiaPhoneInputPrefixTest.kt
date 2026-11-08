@@ -58,6 +58,16 @@ class CleansiaPhoneInputPrefixTest {
         }
     }
 
+    /** A clickable reads its children's texts after its own description: TalkBack said "Country code +420. +420". */
+    @Test
+    fun `TalkBack reads the prefix once`() {
+        val source = File(coreDir, "src/main/java/cz/cleansia/core/ui/components/CleansiaPhoneInput.kt").readText()
+        assertTrue(
+            "the prefix's code is read again after its description",
+            source.contains(".clearAndSetSemantics { contentDescription = \"\$countryCode \$prefix\" }"),
+        )
+    }
+
     private val coreDir: File = sequenceOf(File("."), File("core"), File("src/cleansia_android/core"))
         .firstOrNull { File(it, "src/main/res/values/strings.xml").isFile }
         ?: error("core module not found from working dir ${File(".").absolutePath}")

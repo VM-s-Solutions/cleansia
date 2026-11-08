@@ -12,8 +12,12 @@ public struct CleansiaPhoneInput: View {
     private let enabled: Bool
     private let transparentContainer: Bool
     private let engine: PhoneMaskEngine
+    private let countryRegion: String?
+    private let nationalEngine: PhoneMaskEngine?
+    private let autoFocus: Bool
 
     @State private var focused = false
+    @State private var freeForm = false
 
     public init(
         value: Binding<String>,
@@ -22,7 +26,9 @@ public struct CleansiaPhoneInput: View {
         errorText: String? = nil,
         enabled: Bool = true,
         transparentContainer: Bool = false,
-        engine: PhoneMaskEngine = .phoneNumberKit
+        engine: PhoneMaskEngine = .phoneNumberKit,
+        countryRegion: String? = nil,
+        autoFocus: Bool = false
     ) {
         _value = value
         self.label = label
@@ -31,6 +37,30 @@ public struct CleansiaPhoneInput: View {
         self.enabled = enabled
         self.transparentContainer = transparentContainer
         self.engine = engine
+        self.countryRegion = countryRegion
+        nationalEngine = countryRegion.map {
+            PhoneMaskEngine(formatter: PhoneNumberKitDisplayFormatter(defaultRegion: $0))
+        }
+        self.autoFocus = autoFocus
+    }
+
+    /// A national number goes out behind its calling code; a value that arrives with its own `+` (AutoFill, a paste)
+    /// is already whole; an emptied field is empty, never a bare code.
+    static func wire(national: String, prefix: String) -> String {
+        if national.hasPrefix("+") { return national }
+        return national.isEmpty ? "" : prefix + national
+    }
+
+    /// The calling code drawn before the national number, while the value is empty or carries it. Any other value, a
+    /// stored foreign number or a pasted one, shows in the free form, so a stored number is never rewritten.
+    static func prefix(of value: String, region: String?) -> String? {
+        guard let code = region.flatMap({ PhoneNumberKitDisplayFormatter.callingCode(for: $0) }),
+              value.isEmpty || value.hasPrefix(code) else { return nil }
+        return code
+    }
+
+    private var prefix: String? {
+        freeForm ? nil : Self.prefix(of: value, region: countryRegion)
     }
 
     private var isError: Bool {
@@ -49,18 +79,9 @@ public struct CleansiaPhoneInput: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xxs) {
-            ZStack(alignment: .leading) {
-                Text(label)
-                    .font(floating ? CleansiaTypography.labelMedium : CleansiaTypography.bodyLarge)
-                    .foregroundColor(floating ? floatingLabelColor : CleansiaColors.onSurfaceVariant)
-                    .offset(y: floating ? -13 : 0)
-
-                field
-                    .padding(.top, floating ? Spacing.s : 0)
+            Group {
+                if countryRegion == nil { floatingLabelBox } else { prefixedBox }
             }
-            .animation(.easeOut(duration: 0.2), value: focused)
-            .padding(.horizontal, Spacing.m)
-            .frame(minHeight: 56)
             .background(transparentContainer ? .clear : CleansiaColors.surface)
             .clipShape(RoundedRectangle(cornerRadius: CornerRadius.small))
             .overlay(
@@ -80,6 +101,69 @@ public struct CleansiaPhoneInput: View {
             }
         }
         .disabled(!enabled)
+        .onAppear {
+            if autoFocus, enabled { focused = true }
+        }
+    }
+
+    private var floatingLabelBox: some View {
+        ZStack(alignment: .leading) {
+            Text(label)
+                .font(floating ? CleansiaTypography.labelMedium : CleansiaTypography.bodyLarge)
+                .foregroundColor(floating ? floatingLabelColor : CleansiaColors.onSurfaceVariant)
+                .offset(y: floating ? -13 : 0)
+
+            field(prefix: nil)
+                .padding(.top, floating ? Spacing.s : 0)
+        }
+        .animation(.easeOut(duration: 0.2), value: focused)
+        .padding(.horizontal, Spacing.m)
+        .frame(minHeight: 56)
+    }
+
+    /// No label is drawn here: the caller's own heading names the field, and VoiceOver reads `label` on it. The
+    /// frame and hit shape sit inside the prefix button's label, or a tap on its padding would reach the box's
+    /// tap-to-focus and focus the field instead of switching it.
+    private var prefixedBox: some View {
+        HStack(spacing: 0) {
+            if let prefix {
+                Button {
+                    freeForm = true
+                    if value.isEmpty { value = "+" }
+                    focused = true
+                } label: {
+                    HStack(spacing: Spacing.xxs) {
+                        Text(verbatim: prefix)
+                            .font(CleansiaTypography.titleLarge)
+                            .monospacedDigit()
+                            .foregroundColor(enabled ? CleansiaColors.onSurface : CleansiaColors.disabledInk)
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(CleansiaColors.quiet)
+                    }
+                    .padding(.horizontal, Spacing.s)
+                    .frame(maxHeight: .infinity)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text(CoreL10n.localized("phone_input.country_code")))
+                .accessibilityValue(Text(verbatim: prefix))
+
+                Rectangle().fill(CleansiaColors.outline).frame(width: 1)
+            }
+            // Kept at one place in the tree in both forms, so the switch keeps the field and its focus.
+            field(prefix: prefix)
+                .padding(.horizontal, Spacing.m)
+        }
+        .frame(height: 52)
+    }
+
+    private func nationalValue(prefix: String) -> Binding<String> {
+        Binding(
+            // Read sanitised, as the field compares it, or a stored number with separators re-seats on every redraw.
+            get: { String(PhoneNumberSanitizer.sanitize(value).dropFirst(prefix.count)) },
+            set: { value = Self.wire(national: $0, prefix: prefix) }
+        )
     }
 
     // Deliberately NOT normalising the bound value on load. A number stored by another client can
@@ -103,11 +187,13 @@ public struct CleansiaPhoneInput: View {
         CleansiaFont.uiFont(.nunito, weight: .regular, size: 16)
     }
 
-    private var field: some View {
+    private func field(prefix: String?) -> some View {
         MaskedPhoneTextField(
-            value: $value,
+            value: prefix.map { nationalValue(prefix: $0) } ?? $value,
             focused: $focused,
-            engine: engine,
+            engine: prefix == nil ? engine : nationalEngine ?? engine,
+            keyboardType: prefix == nil ? .phonePad : .numberPad,
+            accessibilityLabel: countryRegion == nil ? nil : label,
             isEnabled: enabled,
             font: inputFont,
             textColor: enabled ? CleansiaColors.onSurface : CleansiaColors.disabledInk,
@@ -122,6 +208,8 @@ struct MaskedPhoneTextField: UIViewRepresentable {
     @Binding var value: String
     @Binding var focused: Bool
     let engine: PhoneMaskEngine
+    let keyboardType: UIKeyboardType
+    let accessibilityLabel: String?
     let isEnabled: Bool
     let font: UIFont
     let textColor: Color
@@ -145,7 +233,8 @@ struct MaskedPhoneTextField: UIViewRepresentable {
         field.borderStyle = .none
         field.backgroundColor = .clear
         field.clearButtonMode = .never
-        field.keyboardType = .phonePad
+        field.keyboardType = keyboardType
+        field.accessibilityLabel = accessibilityLabel
         field.textContentType = .telephoneNumber
         field.setContentHuggingPriority(.defaultLow, for: .horizontal)
         field.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
@@ -159,6 +248,11 @@ struct MaskedPhoneTextField: UIViewRepresentable {
         field.textColor = UIColor(textColor)
         field.tintColor = UIColor(tintColor)
         field.isEnabled = isEnabled
+        if field.keyboardType != keyboardType {
+            field.keyboardType = keyboardType
+            if field.isFirstResponder { field.reloadInputViews() }
+        }
+        field.accessibilityLabel = accessibilityLabel
         syncFirstResponder(field)
     }
 

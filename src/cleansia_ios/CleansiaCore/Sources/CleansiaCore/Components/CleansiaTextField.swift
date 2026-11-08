@@ -14,6 +14,8 @@ public struct CleansiaTextField: View {
     private let transparentContainer: Bool
     private let autoFocus: Bool
     private let keepsCaretWhenRegrouped: Bool
+    private let labelAbove: Bool
+    private let onNext: (() -> Void)?
 
     @State private var passwordVisible = false
     @State private var focused = false
@@ -30,7 +32,9 @@ public struct CleansiaTextField: View {
         enabled: Bool = true,
         transparentContainer: Bool = false,
         autoFocus: Bool = false,
-        keepsCaretWhenRegrouped: Bool = false
+        keepsCaretWhenRegrouped: Bool = false,
+        labelAbove: Bool = false,
+        onNext: (() -> Void)? = nil
     ) {
         _value = value
         self.label = label
@@ -44,6 +48,8 @@ public struct CleansiaTextField: View {
         self.transparentContainer = transparentContainer
         self.autoFocus = autoFocus
         self.keepsCaretWhenRegrouped = keepsCaretWhenRegrouped
+        self.labelAbove = labelAbove
+        self.onNext = onNext
     }
 
     /// Where the caret goes when a binding regroups the text under it (the IBAN's fours): after as many
@@ -83,45 +89,13 @@ public struct CleansiaTextField: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xxs) {
-            ZStack(alignment: .leading) {
+            if labelAbove {
                 Text(label)
-                    .font(floating ? CleansiaTypography.labelMedium : CleansiaTypography.bodyLarge)
-                    .foregroundColor(floating ? floatingLabelColor : restingLabelColor)
-                    .offset(y: floating ? -13 : 0)
-
-                HStack {
-                    field
-                    if isPassword {
-                        Button {
-                            passwordVisible.toggle()
-                        } label: {
-                            Image(systemName: passwordVisible ? "eye.slash" : "eye")
-                                .font(.system(size: 20))
-                                .foregroundColor(CleansiaColors.onSurfaceVariant)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(.top, floating ? Spacing.s : 0)
+                    .font(CleansiaTypography.labelLarge)
+                    .foregroundColor(restingLabelColor)
+                    .accessibilityHidden(true) // the text field reads it
             }
-            // One shared transaction for the label + field so they move as a
-            // single coordinated motion, never a two-part "drag". Keyed on
-            // FOCUS, not the derived `floating`: a programmatic value change
-            // (pre-fill / async binding) doesn't touch focus, so the label snaps
-            // into its floated place instead of sliding in on first appearance.
-            .animation(.easeOut(duration: 0.2), value: focused)
-            .padding(.horizontal, Spacing.m)
-            .frame(minHeight: 56)
-            .background(containerColor)
-            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.small))
-            .overlay(
-                RoundedRectangle(cornerRadius: CornerRadius.small)
-                    .stroke(borderColor, lineWidth: focused ? 2 : 1)
-            )
-            .contentShape(Rectangle())
-            .onTapGesture {
-                if enabled { focused = true }
-            }
+            box
 
             if let supporting = errorText ?? helper {
                 Text(supporting)
@@ -133,6 +107,50 @@ public struct CleansiaTextField: View {
         .disabled(!enabled)
         .onAppear {
             if autoFocus, enabled { focused = true }
+        }
+    }
+
+    private var box: some View {
+        ZStack(alignment: .leading) {
+            if !labelAbove {
+                Text(label)
+                    .font(floating ? CleansiaTypography.labelMedium : CleansiaTypography.bodyLarge)
+                    .foregroundColor(floating ? floatingLabelColor : restingLabelColor)
+                    .offset(y: floating ? -13 : 0)
+            }
+
+            HStack {
+                field
+                if isPassword {
+                    Button {
+                        passwordVisible.toggle()
+                    } label: {
+                        Image(systemName: passwordVisible ? "eye.slash" : "eye")
+                            .font(.system(size: 20))
+                            .foregroundColor(CleansiaColors.onSurfaceVariant)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.top, floating && !labelAbove ? Spacing.s : 0)
+        }
+        // One shared transaction for the label + field so they move as a
+        // single coordinated motion, never a two-part "drag". Keyed on
+        // FOCUS, not the derived `floating`: a programmatic value change
+        // (pre-fill / async binding) doesn't touch focus, so the label snaps
+        // into its floated place instead of sliding in on first appearance.
+        .animation(.easeOut(duration: 0.2), value: focused)
+        .padding(.horizontal, Spacing.m)
+        .frame(minHeight: labelAbove ? 52 : 56)
+        .background(containerColor)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.small))
+        .overlay(
+            RoundedRectangle(cornerRadius: CornerRadius.small)
+                .stroke(borderColor, lineWidth: focused ? 2 : 1)
+        )
+        .contentShape(Rectangle())
+        .onTapGesture {
+            if enabled { focused = true }
         }
     }
 
@@ -168,7 +186,9 @@ public struct CleansiaTextField: View {
             font: inputFont,
             textColor: enabled ? CleansiaColors.onSurface : CleansiaColors.disabledInk,
             tintColor: CleansiaColors.primary,
-            keepsCaretWhenRegrouped: keepsCaretWhenRegrouped
+            keepsCaretWhenRegrouped: keepsCaretWhenRegrouped,
+            accessibilityLabel: labelAbove ? label : nil,
+            onNext: onNext
         )
         .frame(maxWidth: .infinity)
         .frame(height: inputFont.lineHeight.rounded(.up))
@@ -192,6 +212,8 @@ private struct ManagedTextField: UIViewRepresentable {
     let textColor: Color
     let tintColor: Color
     let keepsCaretWhenRegrouped: Bool
+    let accessibilityLabel: String?
+    let onNext: (() -> Void)?
 
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
@@ -214,6 +236,8 @@ private struct ManagedTextField: UIViewRepresentable {
         field.borderStyle = .none
         field.backgroundColor = .clear
         field.clearButtonMode = .never
+        field.returnKeyType = onNext == nil ? .default : .next
+        field.accessibilityLabel = accessibilityLabel
         field.setContentHuggingPriority(.defaultLow, for: .horizontal)
         field.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         return field
@@ -330,6 +354,11 @@ private struct ManagedTextField: UIViewRepresentable {
             if field.placeholder != parent.placeholder { field.placeholder = parent.placeholder }
             if field.keyboardType != parent.keyboardType { field.keyboardType = parent.keyboardType }
             if field.textContentType != parent.textContentType { field.textContentType = parent.textContentType }
+            let returnKey: UIReturnKeyType = parent.onNext == nil ? .default : .next
+            if field.returnKeyType != returnKey { field.returnKeyType = returnKey }
+            if field.accessibilityLabel != parent.accessibilityLabel {
+                field.accessibilityLabel = parent.accessibilityLabel
+            }
         }
 
         @objc func editingChanged(_ field: UITextField) {
@@ -357,7 +386,7 @@ private struct ManagedTextField: UIViewRepresentable {
         }
 
         func textFieldShouldReturn(_ field: UITextField) -> Bool {
-            field.resignFirstResponder()
+            if let onNext = parent.onNext { onNext() } else { field.resignFirstResponder() }
             return true
         }
     }

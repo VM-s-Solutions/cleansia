@@ -68,6 +68,12 @@ final class PhoneNumberKitDisplayFormatterTests: XCTestCase {
         }
     }
 
+    func testTheCallingCodeOfARegion() {
+        XCTAssertEqual(PhoneNumberKitDisplayFormatter.callingCode(for: "CZ"), "+420")
+        XCTAssertEqual(PhoneNumberKitDisplayFormatter.callingCode(for: "sk"), "+421")
+        XCTAssertNil(PhoneNumberKitDisplayFormatter.callingCode(for: "ZZ"))
+    }
+
     func testEngineWiredToTheRealFormatterKeepsTheWireFormat() {
         let engine = PhoneMaskEngine(formatter: formatter)
         XCTAssertEqual(engine.reformat("+420 728089247").wireValue, "+420728089247")

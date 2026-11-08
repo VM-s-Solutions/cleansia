@@ -1,5 +1,9 @@
 package cz.cleansia.customer.features.profile
 
+import android.content.res.Configuration
+import android.view.ContextThemeWrapper
+import android.view.ViewGroup
+import android.widget.DatePicker
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -9,6 +13,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
@@ -24,39 +29,41 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.Phone
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.core.ui.components.sanitizePhoneInput
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.user.CurrentUser
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.theme.Poppins
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import java.util.TimeZone
+import cz.cleansia.core.ui.theme.Spacing
+import java.time.LocalDate
+import kotlinx.coroutines.launch
 
 /**
  * Post-signin onboarding. Shown once per user — gathers the few fields the
@@ -315,30 +322,73 @@ private fun OnboardingDateField(
         }
     }
 
-    if (showPicker) {
-        val state = rememberDatePickerState()
-        DatePickerDialog(
-            onDismissRequest = { showPicker = false },
-            confirmButton = {
-                CleansiaTextButton(
-                    onClick = {
-                        state.selectedDateMillis?.let { millis ->
-                            val fmt = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply {
-                                timeZone = TimeZone.getTimeZone("UTC")
-                            }
-                            onValueChange(fmt.format(Date(millis)))
-                        }
-                        showPicker = false
-                    },
-                ) { Text(stringResource(R.string.common_save)) }
-            },
-            dismissButton = {
-                CleansiaTextButton(onClick = { showPicker = false }) {
-                    Text(stringResource(R.string.common_cancel))
-                }
-            },
+    if (showPicker) BirthDateWheelSheet(birthDate = value, onBirthDate = onValueChange, onDismiss = { showPicker = false })
+}
+
+/** Thirty years back for an empty field, else the stored day. */
+internal fun birthDateWheelSeed(stored: String, today: LocalDate): LocalDate =
+    stored.takeIf { it.isNotBlank() }?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: today.minusYears(30)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun BirthDateWheelSheet(
+    birthDate: String,
+    onBirthDate: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
+    val latest by rememberUpdatedState(onBirthDate)
+    val dark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+    val seed = remember { birthDateWheelSeed(birthDate, LocalDate.now()) }
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surface,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.5f)
+                .padding(horizontal = Spacing.ML)
+                .padding(bottom = Spacing.XS),
         ) {
-            DatePicker(state = state)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = stringResource(R.string.onboarding_birthdate_label),
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f),
+                )
+                CleansiaTextButton(onClick = { scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() } }) {
+                    Text(stringResource(R.string.onboarding_birthdate_done), style = MaterialTheme.typography.titleLarge)
+                }
+            }
+            Text(
+                text = stringResource(R.string.onboarding_birthdate_helper),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(Spacing.S))
+            AndroidView(
+                factory = { context ->
+                    // A View follows the system's night mode; the app may have picked the other one.
+                    val themed = ContextThemeWrapper(context, R.style.Theme_Cleansia).apply {
+                        applyOverrideConfiguration(
+                            Configuration().apply {
+                                uiMode = if (dark) Configuration.UI_MODE_NIGHT_YES else Configuration.UI_MODE_NIGHT_NO
+                            },
+                        )
+                    }
+                    DatePicker(themed, null, 0, R.style.Widget_Cleansia_BirthDateWheels).apply {
+                        // A tap on a wheel's middle value would otherwise open a keyboard to type it.
+                        descendantFocusability = ViewGroup.FOCUS_BLOCK_DESCENDANTS
+                        maxDate = System.currentTimeMillis()
+                        init(seed.year, seed.monthValue - 1, seed.dayOfMonth) { _, y, m, d -> latest(LocalDate.of(y, m + 1, d).toString()) }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }

@@ -715,6 +715,7 @@
     <!-- Profile onboarding (post-signup one-shot) -->
     <string name="onboarding_greeting">Welcome aboard!</string>
     <string name="onboarding_greeting_named">Welcome aboard, %1$s!</string>
+    <string name="onboarding_birthdate_done">Done</string>
     <string name="onboarding_subtitle">A few quick details so we can serve you better. You can skip and fill these in later.</string>
     <string name="onboarding_phone_label">Phone number</string>
     <string name="onboarding_phone_helper">Include your country code (e.g. +420). We\'ll only use this to reach you about your bookings.</string>

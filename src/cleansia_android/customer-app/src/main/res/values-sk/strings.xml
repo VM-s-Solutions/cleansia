@@ -710,6 +710,7 @@
     <!-- Profile onboarding -->
     <string name="onboarding_greeting">Vitajte!</string>
     <string name="onboarding_greeting_named">Vitajte, %1$s!</string>
+    <string name="onboarding_birthdate_done">Hotovo</string>
     <string name="onboarding_subtitle">Pár rýchlych údajov, aby sme vám mohli lepšie slúžiť. Môžete tento krok preskočiť a vyplniť neskôr.</string>
     <string name="onboarding_phone_label">Telefónne číslo</string>
     <string name="onboarding_phone_helper">Uveďte predvoľbu (napr. +420). Použijeme ho iba na to, aby sme vás kontaktovali ohľadom vašich rezervácií.</string>

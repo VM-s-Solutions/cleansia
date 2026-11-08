@@ -710,6 +710,7 @@
     <!-- Profile onboarding -->
     <string name="onboarding_greeting">Добро пожаловать!</string>
     <string name="onboarding_greeting_named">Добро пожаловать, %1$s!</string>
+    <string name="onboarding_birthdate_done">Готово</string>
     <string name="onboarding_subtitle">Немного деталей, чтобы мы могли лучше вас обслуживать. Можно пропустить и заполнить позже.</string>
     <string name="onboarding_phone_label">Номер телефона</string>
     <string name="onboarding_phone_helper">Укажите код страны (напр. +420). Используем только для связи по вашим бронированиям.</string>

@@ -710,6 +710,7 @@
     <!-- Profile onboarding -->
     <string name="onboarding_greeting">Ласкаво просимо!</string>
     <string name="onboarding_greeting_named">Ласкаво просимо, %1$s!</string>
+    <string name="onboarding_birthdate_done">Готово</string>
     <string name="onboarding_subtitle">Кілька швидких деталей, щоб ми могли краще вам служити. Ви можете пропустити цей крок і заповнити пізніше.</string>
     <string name="onboarding_phone_label">Номер телефону</string>
     <string name="onboarding_phone_helper">Вкажіть код країни (напр. +420). Використовуватимемо лише для зв’язку щодо ваших бронювань.</string>

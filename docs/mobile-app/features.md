@@ -374,13 +374,13 @@ class DevicesViewModel @Inject constructor(
 ```
 
 ```swift [iOS]
-// CleansiaPartner/Sources/Features/Devices/DevicesViewModel.swift
+// CleansiaCore/Sources/CleansiaCore/Devices/DevicesViewModel.swift
 @MainActor
 final class DevicesViewModel: ViewModel {
     @Published private(set) var state: UiState<[UserDevice]> = .loading
     @Published private(set) var revokeAction: ActionState = .idle
 
-    private let client: PartnerDevicesClient
+    private let client: DevicesClient
     private let snackbar: SnackbarController
     private let localizer = ApiErrorLocalizer()
 

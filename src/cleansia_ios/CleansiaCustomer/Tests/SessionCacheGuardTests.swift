@@ -440,48 +440,6 @@ final class SessionCacheGuardTests: XCTestCase {
         XCTAssertNil(repository.currentUser)
     }
 
-    // MARK: - Notification badge
-
-    func testAnUnreadCountHeldAcrossClearRestoresNothing() async {
-        let entered = expectation(description: "unread count entered")
-        let client = FakeNotificationFeedClient()
-        client.holdUnreadCount = true
-        client.unreadCountStarted = { _ in entered.fulfill() }
-        let badge = NotificationBadgeModel(client: client)
-        let refresh = Task { await badge.refresh() }
-        await fulfillment(of: [entered], timeout: 2)
-
-        await badge.clear()
-        client.releaseUnreadCount(call: 1, result: .success(7))
-        await refresh.value
-
-        XCTAssertEqual(badge.unreadCount, 0)
-    }
-
-    func testANewSessionsUnreadCountIsNotSwallowedByTheOldOne() async {
-        let oldEntered = expectation(description: "old unread count entered")
-        let newEntered = expectation(description: "new unread count entered")
-        let client = FakeNotificationFeedClient()
-        client.holdUnreadCount = true
-        client.unreadCountStarted = { call in
-            if call == 1 { oldEntered.fulfill() } else { newEntered.fulfill() }
-        }
-        let badge = NotificationBadgeModel(client: client)
-        let old = Task { await badge.refresh() }
-        await fulfillment(of: [oldEntered], timeout: 2)
-        await badge.clear()
-
-        let new = Task { await badge.refresh() }
-        await fulfillment(of: [newEntered], timeout: 2)
-        client.releaseUnreadCount(call: 2, result: .success(2))
-        await new.value
-        client.releaseUnreadCount(call: 1, result: .success(7))
-        await old.value
-
-        XCTAssertEqual(client.unreadCountCallCount, 2)
-        XCTAssertEqual(badge.unreadCount, 2)
-    }
-
     private func disputes(_ id: String, total: Int) -> DisputesPage {
         DisputesPage(items: [DisputeFixtures.entry(id: id)], total: total)
     }

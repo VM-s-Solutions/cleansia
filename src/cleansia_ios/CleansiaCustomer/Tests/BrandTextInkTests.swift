@@ -76,10 +76,6 @@ final class BrandTextInkTests: XCTestCase {
         XCTAssertTrue(shell.contains(".tint(CleansiaColors.primaryText)"), "the tab bar's tint")
         XCTAssertFalse(shell.contains(".tint(CleansiaColors.primary)"))
         XCTAssertTrue(
-            try compactSource("Home/NotificationsInboxSheet.swift")
-                .contains("Button(L10n.NotificationsInbox.close){dismiss()}.tint(CleansiaColors.primaryText)")
-        )
-        XCTAssertTrue(
             try compactSource("Disputes/DisputesListView.swift")
                 .contains("systemImage:\"plus\")}.tint(CleansiaColors.primaryText)")
         )
@@ -126,8 +122,8 @@ final class BrandTextInkTests: XCTestCase {
     }
 
     /// Dark mode: on the primary container (sky-700 there) the text ink's sky-400 read 2.77:1, so the
-    /// default-address badges and the "This device" chip take the container's text ink,
-    /// sky-100 in dark (5.17:1) and unchanged in light (finding 2026-10-05).
+    /// default-address badges take the container's text ink, sky-100 in dark (5.17:1) and unchanged in light
+    /// (finding 2026-10-05). The "This device" chip is the shared devices screen's, pinned in Core.
     @MainActor
     func testTheBadgesOnThePrimaryContainerTakeItsTextInk() throws {
         let sites: [(path: String, snippet: String)] = [
@@ -135,8 +131,7 @@ final class BrandTextInkTests: XCTestCase {
             (
                 "Booking/WhenWhere/AddressPicker/BookingSavedAddressChooser.swift",
                 "Text(L10n.AddressManager.defaultBadge)"
-            ),
-            ("Profile/CustomerDevicesView.swift", "Text(L10n.Devices.thisDevice)")
+            )
         ]
         for site in sites {
             let source = try compactSource(site.path)
@@ -164,7 +159,6 @@ final class BrandTextInkTests: XCTestCase {
             ("Home/HomeSectionViews.swift", "Image(systemName:\"arrow.clockwise\")"),
             ("Home/HomeSectionViews.swift", "Image(systemName:\"bubbles.and.sparkles\")"),
             ("Payments/PaymentsView.swift", "Image(systemName:systemName)"),
-            ("Profile/CustomerDevicesView.swift", "Image(systemName:platformIcon(device.platform))"),
             ("Orders/OrderDetailDetailsCards.swift", "Image(systemName:\"phone.fill\")"),
             ("Profile/EditProfileView.swift", "Image(systemName:\"info.circle.fill\")"),
             ("Addresses/AddressManagerView.swift", "Image(systemName:\"mappin.and.ellipse\")"),

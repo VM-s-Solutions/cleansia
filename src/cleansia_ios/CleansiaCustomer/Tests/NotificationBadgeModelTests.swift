@@ -2,6 +2,7 @@ import CleansiaCore
 import XCTest
 @testable import CleansiaCustomer
 
+/// The customer's badge counts the customer's feed keys; the badge itself is tested in Core.
 @MainActor
 final class NotificationBadgeModelTests: XCTestCase {
     private var client: FakeNotificationFeedClient!
@@ -10,27 +11,7 @@ final class NotificationBadgeModelTests: XCTestCase {
     override func setUp() {
         super.setUp()
         client = FakeNotificationFeedClient()
-        badge = NotificationBadgeModel(client: client)
-    }
-
-    func testRefreshAppliesTheServerCount() async {
-        client.unreadCountResult = .success(3)
-        await badge.refresh()
-        XCTAssertEqual(badge.unreadCount, 3)
-    }
-
-    func testRefreshFailureKeepsTheLastValueSilently() async {
-        client.unreadCountResult = .success(4)
-        await badge.refresh()
-        client.unreadCountResult = .failure(ApiError(httpStatus: 401))
-        await badge.refresh()
-        XCTAssertEqual(badge.unreadCount, 4)
-    }
-
-    func testSignedOutFetchFailureLeavesZeroAndDoesNotCrash() async {
-        client.unreadCountResult = .failure(ApiError(httpStatus: 401))
-        await badge.refresh()
-        XCTAssertEqual(badge.unreadCount, 0)
+        badge = NotificationBadgeModel(client: client, feedEventKeys: CustomerFeedEventKeys.all)
     }
 
     func testPushReceiptIncrementsForAFeedEvent() {
@@ -48,27 +29,6 @@ final class NotificationBadgeModelTests: XCTestCase {
         badge.notePushReceived(eventKey: "promo.new_sitewide")
         badge.notePushReceived(eventKey: "totally.unknown")
         badge.notePushReceived(eventKey: "order.new_available")
-        XCTAssertEqual(badge.unreadCount, 0)
-    }
-
-    func testNoteMarkedReadDecrementsAndClampsAtZero() {
-        badge.notePushReceived(eventKey: "order.completed")
-        badge.noteMarkedRead()
-        badge.noteMarkedRead()
-        XCTAssertEqual(badge.unreadCount, 0)
-    }
-
-    func testLabelCapsAt99Plus() {
-        XCTAssertNil(NotificationBadgeModel.label(for: 0))
-        XCTAssertEqual(NotificationBadgeModel.label(for: 1), "1")
-        XCTAssertEqual(NotificationBadgeModel.label(for: 99), "99")
-        XCTAssertEqual(NotificationBadgeModel.label(for: 100), "99+")
-    }
-
-    func testClearWipesTheCount() async {
-        client.unreadCountResult = .success(7)
-        await badge.refresh()
-        await badge.clear()
         XCTAssertEqual(badge.unreadCount, 0)
     }
 }

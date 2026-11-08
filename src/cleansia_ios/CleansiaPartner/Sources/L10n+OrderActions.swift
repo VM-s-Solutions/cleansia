@@ -123,10 +123,6 @@ extension L10n.Orders {
         L10n.localized("order_started")
     }
 
-    static var afterPhotosRequired: String {
-        L10n.localized("error_key_order_after_photos_required")
-    }
-
     static var completeBlockedCashSequence: String {
         L10n.localized("partner_order_complete_blocked_cash_sequence")
     }
@@ -139,10 +135,6 @@ extension L10n.Orders {
 
     static var customerNotifiedOnTheWay: String {
         L10n.localized("customer_notified_on_the_way")
-    }
-
-    static var swipeToComplete: String {
-        L10n.localized("swipe_to_complete")
     }
 
     // Shared action labels
@@ -159,22 +151,6 @@ extension L10n.Orders {
 
     static var checklistSectionTitle: String {
         L10n.localized("checklist_section_title")
-    }
-
-    static var checklistServicesLabel: String {
-        L10n.localized("checklist_services_label")
-    }
-
-    static var checklistPackagesLabel: String {
-        L10n.localized("checklist_packages_label")
-    }
-
-    static var checklistExtrasLabel: String {
-        L10n.localized("checklist_extras_label")
-    }
-
-    static var checklistLockedHint: String {
-        L10n.localized("checklist_locked_hint")
     }
 
     static func checklistProgress(_ done: Int, _ total: Int) -> String {

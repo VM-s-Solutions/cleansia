@@ -39,7 +39,9 @@
             if let hit = image(forKey: key) { return hit }
             let generation = sessionGeneration
             let data = try await load(url)
-            guard let image = UIImage(data: data) else { throw RemoteImageError.undecodable }
+            guard let decoded = UIImage(data: data) else { throw RemoteImageError.undecodable }
+            // Decoded here, off the main thread; drawn as it arrives, it would be decoded on the main thread.
+            let image = await decoded.byPreparingForDisplay() ?? decoded
             if generation == sessionGeneration {
                 cache.setObject(image, forKey: key as NSString)
             }

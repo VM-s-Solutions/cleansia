@@ -1,3 +1,4 @@
+import CleansiaCore
 import Foundation
 
 extension L10n {
@@ -34,11 +35,11 @@ extension L10n {
             localized("address_picker_my_location")
         }
 
-        static var myLocationUnavailable: String {
+        static var locationUnavailable: String {
             localized("address_picker_my_location_unavailable")
         }
 
-        static var myLocationDenied: String {
+        static var locationDenied: String {
             localized("address_picker_my_location_denied")
         }
 
@@ -47,3 +48,5 @@ extension L10n {
         }
     }
 }
+
+extension L10n.AddressPicker: AddressPickerCopy {}

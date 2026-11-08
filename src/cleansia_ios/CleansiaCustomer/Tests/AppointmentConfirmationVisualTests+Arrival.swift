@@ -536,16 +536,16 @@ struct ArrivalTimeline: CustomStringConvertible {
         reveal.flatMap { reveal in samples.last { $0.time < reveal } }
     }
 
-    /// Every frame from `start` until the busy card starts to leave is under the whole scrim.
+    /// Every frame after the first from `start` until the reveal is under the whole scrim: the first can lag the swap.
     func scrimHeld(from start: TimeInterval) -> Bool {
         guard let reveal else { return false }
-        let held = samples.filter { $0.time >= start && $0.time < reveal }
+        let held = samples.filter { $0.time >= start && $0.time < reveal }.dropFirst()
         return !held.isEmpty && held.allSatisfy { dimming($0) >= 0.4 }
     }
 
-    /// Every frame from `time` on is clear of the scrim.
+    /// Every frame after the first from `time` is clear of the scrim: the first can lag the fade by a frame.
     func clear(from time: TimeInterval) -> Bool {
-        let after = samples.filter { $0.time >= time }
+        let after = samples.filter { $0.time >= time }.dropFirst()
         return !after.isEmpty && after.allSatisfy { dimming($0) <= 0.03 }
     }
 

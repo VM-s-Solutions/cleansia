@@ -82,25 +82,20 @@ final class FakeUserProfileClient: UserProfileClient, @unchecked Sendable {
     }
 }
 
-final class FakeCustomerDevicesClient: CustomerDevicesClient, @unchecked Sendable {
-    var currentDeviceIdValue = "device-current"
+/// The devices the customer's captures show; the devices screen itself is tested in Core.
+final class FakeCustomerDevicesClient: DevicesClient, @unchecked Sendable {
     var myDevicesResult: ApiResult<[UserDevice]> = .success([])
-    var revokeResult: ApiResult<Void> = .success(())
-    private(set) var revokedRowIds: [String] = []
-    private(set) var sentCurrentDeviceIds: [String] = []
 
     var currentDeviceId: String {
-        currentDeviceIdValue
+        "device-current"
     }
 
     func myDevices() async -> ApiResult<[UserDevice]> {
-        sentCurrentDeviceIds.append(currentDeviceIdValue)
-        return myDevicesResult
+        myDevicesResult
     }
 
-    func revoke(rowId: String) async -> ApiResult<Void> {
-        revokedRowIds.append(rowId)
-        return revokeResult
+    func revoke(rowId _: String) async -> ApiResult<Void> {
+        .success(())
     }
 }
 

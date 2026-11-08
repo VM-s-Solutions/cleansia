@@ -1168,9 +1168,10 @@ Czech for every user (*Česko*), as it already was on Android.
   `.mapStyle` modifier would have left iOS 16 users with every POI. The picker writes the settled region
   back to its binding, and applies a region the binding moves to only when it differs from the one it
   last reported, so a drag never fights the finger. Apple's logo and *Legal* link must stay visible, and
-  they sit inside the map's bottom layout margin. So each picker (the customer
-  `BookingAddressPickerView` and the partner `AddressPickerView`) measures what it lays over the map's
-  bottom edge, the location-button row and the confirm card, and passes that height as `bottomInset`.
+  they sit inside the map's bottom layout margin. So the picker (Core's `AddressPickerScreen`, which the
+  customer's `BookingAddressPickerView` and the partner's address step both show) measures what it lays
+  over the map's bottom edge, the location-button row and the confirm card, and passes that height as
+  `bottomInset`.
   The button row counts because on iOS 16 *Legal* sits at the bottom right, under the button. The card
   grows with the text size, so the inset is measured rather than fixed, and the logo and *Legal* stay
   above both up to AX5. MapKit centres its region inside the layout margins, so the centre pin is
@@ -1179,13 +1180,12 @@ Czech for every user (*Česko*), as it already was on Android.
   still while the margins move. **So the card must not change height on a lookup** (since 2026-10-03,
   owner remark). Every drag starts a reverse lookup, and the card's address block used to be one line
   while it looked the address up (*Looking up…*) and two lines once it had it (the street over its
-  city line). Each lookup therefore moved the inset, and with it the map, the pin and the card. Both
-  pickers now hold two lines in every state: the customer `BookingAddressPickerView` (booking and the
-  address manager share it) and the partner `AddressPickerView`, which had the same one-line lookup
-  state. While there is no second line, the title holds its place in the second line's font, unseen
-  and hidden from VoiceOver, so the height still follows the text size. `AddressPickerConfirmCardTests`
-  measures the partner card in all five languages, at the default and an accessibility text size, in
-  every lookup state. Since 2026-10-02 the customer's full-bleed order map, `OrderDetailMap`, keeps the
+  city line). Each lookup therefore moved the inset, and with it the map, the pin and the card. The
+  picker's card (`AddressPickerConfirmCard`, one in Core since 2026-11-07, where both apps had a copy with
+  the same one-line lookup state) now holds two lines in every state. While there is no second line, the
+  title holds its place in the second line's font, unseen and hidden from VoiceOver, so the height still
+  follows the text size. `AddressPickerConfirmCardTests` measures the card in the partner's words in all
+  five languages, at the default and an accessibility text size, in every lookup state. Since 2026-10-02 the customer's full-bleed order map, `OrderDetailMap`, keeps the
   logo and *Legal* above its `SnapSheet` the same way (the partner `OrderDetailView` did too until its
   map went on 2026-11-01): `fullBleedMap(coordinate:)` measures the map and reads the sheet's top, which
   `SnapSheet` publishes to its backdrop (`snapSheetTop`), and the bottom margin is the part of the map below it, at

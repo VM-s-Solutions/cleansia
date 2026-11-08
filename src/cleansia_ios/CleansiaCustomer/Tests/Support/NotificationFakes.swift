@@ -21,27 +21,9 @@ final class FakeNotificationFeedClient: NotificationFeedClient, @unchecked Senda
         return pageResults.removeFirst()
     }
 
-    var holdUnreadCount = false
-    var unreadCountStarted: ((Int) -> Void)?
-    private var heldUnreadCount: [Int: CheckedContinuation<ApiResult<Int>, Never>] = [:]
-
-    @MainActor
     func unreadCount() async -> ApiResult<Int> {
         unreadCountCallCount += 1
-        let call = unreadCountCallCount
-        guard holdUnreadCount else {
-            unreadCountStarted?(call)
-            return unreadCountResult
-        }
-        return await withCheckedContinuation { continuation in
-            heldUnreadCount[call] = continuation
-            unreadCountStarted?(call)
-        }
-    }
-
-    @MainActor
-    func releaseUnreadCount(call: Int, result: ApiResult<Int>) {
-        heldUnreadCount.removeValue(forKey: call)?.resume(returning: result)
+        return unreadCountResult
     }
 
     func markRead(id: String) async -> ApiResult<Void> {

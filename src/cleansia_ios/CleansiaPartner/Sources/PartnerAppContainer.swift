@@ -69,7 +69,7 @@ final class PartnerAppContainer: AppContainer {
     let marketClient: PartnerMarketClient = LivePartnerMarketClient()
     let profileClient: PartnerProfileClient = LivePartnerProfileClient()
     let userClient: PartnerUserClient = LivePartnerUserClient()
-    let devicesClient: PartnerDevicesClient
+    let devicesClient: DevicesClient
     lazy var orderClient: PartnerOrderClient = LivePartnerOrderClient(staleness: ordersStaleness)
     let ordersStaleness = OrdersStaleness()
     let invoicesStaleness = InvoicesStaleness()
@@ -112,7 +112,10 @@ final class PartnerAppContainer: AppContainer {
         self.devicesClient = devicesClient
         let notificationFeedClient = LiveNotificationFeedClient()
         self.notificationFeedClient = notificationFeedClient
-        notificationBadge = NotificationBadgeModel(client: notificationFeedClient)
+        notificationBadge = NotificationBadgeModel(
+            client: notificationFeedClient,
+            feedEventKeys: PartnerFeedEventKeys.all
+        )
         let pushTokenRegistrar = PushTokenRegistrar(
             client: PartnerDeviceRegistrationClient(),
             deviceIdProvider: authStack.deviceIdProvider

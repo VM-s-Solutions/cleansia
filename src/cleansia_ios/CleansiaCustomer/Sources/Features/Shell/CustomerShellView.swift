@@ -431,7 +431,7 @@ extension CustomerShellView {
                 currencyCode: container.marketStore.selected?.currencyCode
             ))
         case .devices:
-            CustomerDevicesView(
+            DevicesView(
                 client: container.devicesClient,
                 authClient: container.authClient,
                 snackbar: snackbar,

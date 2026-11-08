@@ -1,9 +1,18 @@
 import Foundation
+import SwiftUI
 
 public enum Theme: String, CaseIterable, Sendable {
     case system
     case light
     case dark
+
+    public var colorScheme: ColorScheme? {
+        switch self {
+        case .system: nil
+        case .light: .light
+        case .dark: .dark
+        }
+    }
 }
 
 public protocol AppSettingsStore: AnyObject {

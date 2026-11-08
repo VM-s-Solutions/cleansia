@@ -7,10 +7,12 @@ import XCTest
 final class SplashViewModelTests: XCTestCase {
     private final class FakeRegistrationClient: PartnerRegistrationClient {
         var result: ApiResult<RegistrationCompletionStatus> = .success(RegistrationCompletionStatus())
+        var delay: UInt64 = 0
         private(set) var callCount = 0
 
         func checkRegistrationStatus() async -> ApiResult<RegistrationCompletionStatus> {
             callCount += 1
+            if delay > 0 { try? await Task.sleep(nanoseconds: delay) }
             return result
         }
     }
@@ -177,6 +179,28 @@ final class SplashViewModelTests: XCTestCase {
 
         XCTAssertEqual(vm.outcome, .authenticated)
         XCTAssertEqual(client.callCount, 2)
+    }
+
+    /// A cold start asks while the reveal plays: a slow answer and the hold overlap, so the gate takes about the
+    /// longer of the two, not their sum.
+    func testTheStatusIsAskedDuringTheHold() async {
+        let client = FakeRegistrationClient()
+        client.result = .success(completeStatus())
+        client.delay = 800_000_000
+        let vm = SplashViewModel(
+            hasValidSession: true,
+            settings: FakeSettings(hasSeenOnboarding: true),
+            client: client,
+            hold: { try? await Task.sleep(nanoseconds: 800_000_000) }
+        )
+        let start = ProcessInfo.processInfo.systemUptime
+
+        await vm.resolve()
+
+        let elapsed = ProcessInfo.processInfo.systemUptime - start
+        XCTAssertEqual(vm.outcome, .authenticated)
+        XCTAssertGreaterThanOrEqual(elapsed, 0.8)
+        XCTAssertLessThan(elapsed, 1.4, "the hold and the status call ran one after the other")
     }
 
     func testEmptyStatusResolvesRegistrationLockFailClosed() async {

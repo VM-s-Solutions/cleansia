@@ -830,6 +830,8 @@ for (const mod of MODULES) {
 const enumsByModule = new Map(MODULES.map((m) => [m.name, new Map()]));
 /** module -> Set of declared `L10n.…` member paths */
 const l10nMembers = new Map(MODULES.map((m) => [m.name, new Set()]));
+/** module -> Set of declared L10n namespaces (`L10n.Orders`), which code may pass as a type */
+const l10nNamespaces = new Map(MODULES.map((m) => [m.name, new Set()]));
 /** module -> namespace -> Set of declared design-system members */
 const designMembers = new Map(MODULES.map((m) => [m.name, new Map(DESIGN_NAMESPACES.map((n) => [n, new Set()]))]));
 
@@ -873,6 +875,7 @@ for (const f of files.values()) {
 
         // L10n namespaces
         if (decl.qualified === "L10n" || decl.qualified.startsWith("L10n.")) {
+            l10nNamespaces.get(f.module).add(decl.qualified);
             for (const member of declaredMembers(f.blanked, decl, f.decls)) {
                 l10nMembers.get(f.module).add(`${decl.qualified}.${member}`);
             }
@@ -1026,6 +1029,15 @@ for (const f of files.values()) {
         if (inHeader(use.index)) continue;
         counts.l10n++;
         const parts = use[1].split(".");
+        // `L10n.Orders.self` hands the namespace itself over as a type; it names no member.
+        const namespace = `L10n.${parts.slice(0, -1).join(".")}`;
+        if (
+            parts.length > 1 &&
+            NON_MEMBERS.has(parts[parts.length - 1]) &&
+            visible(f.module).some((source) => l10nNamespaces.get(source)?.has(namespace))
+        ) {
+            continue;
+        }
         let resolved = false;
         for (let n = parts.length; n > 0; n--) {
             if (declared.has(`L10n.${parts.slice(0, n).join(".")}`)) {

@@ -156,7 +156,7 @@ OkHttpClient.Builder()
 ```
 
 ```swift [iOS — the URLSession seam]
-// AuthNetworkBoundary holds a lazily-built refresh session and authed session.
+// AuthApiClient holds the authed session and a separate no-auth session for /api/Auth/*.
 // HeaderAdapter stamps the headers and decides whether a Bearer goes on at all.
 public func apply(to request: inout URLRequest, accessToken: String?) {
     request.setValue(headerSafeDeviceId(), forHTTPHeaderField: "X-Device-Id")

@@ -134,7 +134,7 @@ struct EditProfileView: View {
 
     private func pick(_ image: UIImage) {
         pickerSource = nil
-        vm.pickAvatar(image)
+        Task { await vm.pickAvatar(image) }
     }
 
     private func takePhoto() {

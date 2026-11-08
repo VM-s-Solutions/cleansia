@@ -3047,6 +3047,7 @@
       }
     },
     "error.generic": {
+      "extractionState": "manual",
       "localizations": {
         "cs": {
           "stringUnit": {
@@ -3536,6 +3537,7 @@
       }
     },
     "error.not_found": {
+      "extractionState": "manual",
       "localizations": {
         "cs": {
           "stringUnit": {
@@ -7070,6 +7072,7 @@
       }
     },
     "error.request": {
+      "extractionState": "manual",
       "localizations": {
         "cs": {
           "stringUnit": {
@@ -7104,6 +7107,7 @@
       }
     },
     "error.server": {
+      "extractionState": "manual",
       "localizations": {
         "cs": {
           "stringUnit": {
@@ -7208,6 +7212,7 @@
       }
     },
     "error.unauthorized": {
+      "extractionState": "manual",
       "localizations": {
         "cs": {
           "stringUnit": {
@@ -7242,6 +7247,7 @@
       }
     },
     "error.unreachable": {
+      "extractionState": "manual",
       "localizations": {
         "cs": {
           "stringUnit": {
@@ -9166,6 +9172,7 @@
       }
     },
     "snackbar.dismiss": {
+      "extractionState": "manual",
       "localizations": {
         "cs": {
           "stringUnit": {

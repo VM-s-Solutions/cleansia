@@ -22,20 +22,12 @@ enum L10n {
         static var book: String {
             localized("nav_book")
         }
-
-        static func placeholderComingSoon(_ name: String) -> String {
-            format("shell_tab_placeholder", name)
-        }
     }
 
     enum Splash {
         static var tagline: String {
             localized("splash_tagline")
         }
-    }
-
-    static var signOut: String {
-        localized("profile_logout")
     }
 
     static var cancel: String {

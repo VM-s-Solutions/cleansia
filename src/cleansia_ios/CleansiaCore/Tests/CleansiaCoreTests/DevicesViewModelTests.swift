@@ -1,10 +1,9 @@
-import CleansiaCore
 import XCTest
-@testable import CleansiaPartner
+@testable import CleansiaCore
 
 @MainActor
 final class DevicesViewModelTests: XCTestCase {
-    private var client: FakePartnerDevicesClient!
+    private var client: FakeDevicesClient!
     private var snackbar: SnackbarController!
 
     private let thisDevice = UserDevice(
@@ -24,16 +23,24 @@ final class DevicesViewModelTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        client = FakePartnerDevicesClient()
+        client = FakeDevicesClient()
         snackbar = SnackbarController()
     }
 
     private func makeVM() -> DevicesViewModel {
-        DevicesViewModel(client: client, snackbar: snackbar)
+        DevicesViewModel(client: client, snackbar: snackbar, revokedMessage: "Device removed")
     }
 
     func testInitialStateIsLoading() {
         XCTAssertTrue(makeVM().state.isLoading)
+    }
+
+    func testLoadSendsTheOneDeviceIdAsCurrentDeviceId() async {
+        client.currentDeviceIdValue = "device-from-provider"
+        client.myDevicesResult = .success([thisDevice])
+        let vm = makeVM()
+        await vm.load()
+        XCTAssertEqual(client.sentCurrentDeviceIds, ["device-from-provider"])
     }
 
     func testLoadTransitionsLoadingToLoaded() async {
@@ -41,6 +48,15 @@ final class DevicesViewModelTests: XCTestCase {
         let vm = makeVM()
         await vm.load()
         XCTAssertEqual(vm.state.loadedValue, [thisDevice, otherDevice])
+    }
+
+    func testLoadEmptySuccessTransitionsToLoadedEmptyNotError() async {
+        client.myDevicesResult = .success([])
+        let vm = makeVM()
+        await vm.load()
+        XCTAssertEqual(vm.state.loadedValue, [])
+        if case .error = vm.state { XCTFail("empty backend must render the empty state, not error") }
+        XCTAssertNil(snackbar.current)
     }
 
     func testLoadFailureTransitionsToErrorAndSnackbars() async {
@@ -62,6 +78,7 @@ final class DevicesViewModelTests: XCTestCase {
         XCTAssertEqual(vm.revokeAction, .idle)
         XCTAssertEqual(vm.state.loadedValue, [thisDevice])
         XCTAssertEqual(client.revokedRowIds, ["row-2"])
+        XCTAssertEqual(snackbar.current?.text, "Device removed")
     }
 
     /// The system confirm has already closed, so the refusal is the snackbar's and the row is free again.
@@ -101,9 +118,9 @@ final class DevicesViewModelTests: XCTestCase {
         XCTAssertEqual(vm.revokeAction, .idle)
     }
 
-    /// TC-IOS-DEVICES-SELF-REVOKE (D7b): revoking the CURRENT device must
-    /// emit signedOut so the View forces logout — the server kills the
-    /// refresh chain but the access token survives ~15min otherwise.
+    /// Revoking the CURRENT device must emit signedOut so the View forces
+    /// logout — the server kills the refresh chain but the access token
+    /// survives ~15min otherwise.
     func testSelfRevokeEmitsSignedOut() async {
         client.currentDeviceIdValue = "device-current"
         client.myDevicesResult = .success([thisDevice, otherDevice])
@@ -135,8 +152,8 @@ final class DevicesViewModelTests: XCTestCase {
         XCTAssertFalse(signedOutEmitted)
     }
 
-    /// D7b secondary detection: even if the row's deviceId is nil, the
-    /// server-set isCurrent flag still triggers the self-revoke sign-out.
+    /// Even if the row's deviceId is nil, the server-set isCurrent flag
+    /// still triggers the self-revoke sign-out.
     func testSelfRevokeByIsCurrentFlagWhenDeviceIdMissing() async {
         let currentNoDeviceId = UserDevice(
             id: "row-1",
@@ -157,5 +174,45 @@ final class DevicesViewModelTests: XCTestCase {
         await vm.revoke(currentNoDeviceId)
 
         XCTAssertTrue(signedOutEmitted)
+    }
+}
+
+@MainActor
+final class FakeDevicesClient: DevicesClient {
+    var currentDeviceIdValue = "device-current"
+    var myDevicesResult: ApiResult<[UserDevice]> = .success([])
+    var revokeResult: ApiResult<Void> = .success(())
+
+    private(set) var sentCurrentDeviceIds: [String] = []
+    private(set) var revokedRowIds: [String] = []
+
+    /// When set, `revoke` suspends on this until `resumeRevoke()` is called,
+    /// so a test can hold one revoke mid-flight and fire a second to exercise
+    /// the re-entry guard against real concurrency.
+    private var revokeGate: CheckedContinuation<Void, Never>?
+    var suspendRevoke = false
+
+    var currentDeviceId: String {
+        currentDeviceIdValue
+    }
+
+    func myDevices() async -> ApiResult<[UserDevice]> {
+        sentCurrentDeviceIds.append(currentDeviceIdValue)
+        return myDevicesResult
+    }
+
+    func revoke(rowId: String) async -> ApiResult<Void> {
+        revokedRowIds.append(rowId)
+        if suspendRevoke {
+            await withCheckedContinuation { continuation in
+                revokeGate = continuation
+            }
+        }
+        return revokeResult
+    }
+
+    func resumeRevoke() {
+        revokeGate?.resume()
+        revokeGate = nil
     }
 }

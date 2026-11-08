@@ -197,8 +197,9 @@ struct ContactRows: Layout {
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache _: inout ()) -> CGSize {
         let needs = subviews.map { $0.sizeThatFits(.unspecified).width }
-        let width = proposal.width
-            ?? (needs.max() ?? 0) * CGFloat(needs.count) + spacing * CGFloat(max(needs.count - 1, 0))
+        let widest: CGFloat = needs.max() ?? 0
+        let gaps: CGFloat = spacing * CGFloat(max(needs.count - 1, 0))
+        let width = proposal.width ?? widest * CGFloat(needs.count) + gaps
         return CGSize(width: width, height: frames(subviews, width: width).map(\.maxY).max() ?? 0)
     }
 

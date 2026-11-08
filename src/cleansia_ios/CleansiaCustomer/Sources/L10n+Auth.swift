@@ -70,22 +70,8 @@ extension L10n {
             localized("auth_confirm_password")
         }
 
-        static var referralCode: String {
-            localized("auth_referral_code")
-        }
-
         static var referralToggle: String {
             localized("register_referral_toggle")
-        }
-
-        static var referralExpandHint: String {
-            localized("register_referral_expand_hint")
-        }
-
-        /// Says out loud that collapsing discards the code — the field is optional, but a
-        /// typed code silently disappearing is not something VoiceOver users can see.
-        static var referralCollapseHint: String {
-            localized("register_referral_collapse_hint")
         }
 
         static var acceptTerms: String {

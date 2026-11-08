@@ -18,7 +18,8 @@ public struct ChipFlow: Layout {
     public func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache _: inout ()) -> CGSize {
         let rows = rows(for: subviews, in: proposal.width ?? .infinity)
         let width = rows.map(\.width).max() ?? 0
-        let height = rows.map(\.height).reduce(0, +) + spacing * CGFloat(max(rows.count - 1, 0))
+        let rowsHeight: CGFloat = rows.map(\.height).reduce(0, +)
+        let height = rowsHeight + spacing * CGFloat(max(rows.count - 1, 0))
         return CGSize(width: proposal.width ?? width, height: height)
     }
 

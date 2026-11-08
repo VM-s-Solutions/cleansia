@@ -12,7 +12,7 @@ struct LanguagePickerView: View {
                 id: CustomerPreferencesLabels.systemLanguageId,
                 label: L10n.Preferences.languageSystem
             )]
-                + CustomerPreferencesLabels.languages.map { PreferenceOption(id: $0.tag, label: $0.label) },
+                + LanguageLabels.languages.map { PreferenceOption(id: $0.tag, label: $0.label) },
             selectedId: preferences.isFollowingSystemLanguage
                 ? CustomerPreferencesLabels.systemLanguageId
                 : preferences.languageTag,
@@ -74,52 +74,5 @@ struct AppearancePickerView: View {
                 onSelected()
             }
         )
-    }
-}
-
-struct PreferenceOption: Identifiable, Equatable {
-    let id: String
-    let label: String
-}
-
-private struct PreferencePickerList: View {
-    let title: String
-    let options: [PreferenceOption]
-    let selectedId: String
-    let onSelect: (String) -> Void
-
-    /// A native inset-grouped list: the row press highlight, separators, Dynamic Type row metrics and
-    /// the iOS 26 list look come with it. The brand background and surface stay.
-    var body: some View {
-        List {
-            Section {
-                ForEach(options) { option in
-                    let isSelected = option.id == selectedId
-                    Button {
-                        onSelect(option.id)
-                    } label: {
-                        HStack(spacing: Spacing.m) {
-                            Text(option.label)
-                                .font(CleansiaTypography.bodyLarge)
-                                .foregroundColor(CleansiaColors.onSurface)
-                            Spacer()
-                            if isSelected {
-                                Image(systemName: "checkmark")
-                                    .font(.system(size: 15, weight: .semibold))
-                                    .foregroundColor(CleansiaColors.primary)
-                            }
-                        }
-                        .contentShape(Rectangle())
-                    }
-                    .listRowBackground(CleansiaColors.surface)
-                    .accessibilityAddTraits(isSelected ? .isSelected : [])
-                }
-            }
-        }
-        .listStyle(.insetGrouped)
-        .scrollContentBackground(.hidden)
-        .background(CleansiaColors.background.ignoresSafeArea())
-        .navigationTitle(title)
-        .navigationBarTitleDisplayMode(.inline)
     }
 }

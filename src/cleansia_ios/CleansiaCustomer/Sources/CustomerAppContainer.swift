@@ -107,7 +107,7 @@ final class CustomerAppContainer: AppContainer {
     }
 
     let avatarCache = RemoteImageCache()
-    let devicesClient: CustomerDevicesClient
+    let devicesClient: DevicesClient
     let notificationFeedClient: NotificationFeedClient
     let notificationBadge: NotificationBadgeModel
     let gdprDeleteClient: GdprDeleteClient = LiveGdprDeleteClient()
@@ -160,7 +160,10 @@ final class CustomerAppContainer: AppContainer {
         devicesClient = LiveCustomerDevicesClient(deviceIdProvider: authStack.deviceIdProvider)
         let notificationFeedClient = LiveNotificationFeedClient()
         self.notificationFeedClient = notificationFeedClient
-        notificationBadge = NotificationBadgeModel(client: notificationFeedClient)
+        notificationBadge = NotificationBadgeModel(
+            client: notificationFeedClient,
+            feedEventKeys: CustomerFeedEventKeys.all
+        )
         let pushTokenRegistrar = PushTokenRegistrar(
             client: CustomerDeviceRegistrationClient(),
             deviceIdProvider: authStack.deviceIdProvider

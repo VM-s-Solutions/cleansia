@@ -1372,17 +1372,18 @@ What changed on iOS:
   - **No ADR changed.** [ADR-0018](/decisions/adr-0018) D3 maps Material's `AlertDialog` to `.alert`
     and `.confirmationDialog`. That row now holds on both sides with no exception left, and D1 holds
     the content identical, which did not change.
-- **The birth date is picked on wheels, and confirmed.** The date-of-birth field (customer profile edit
-  and completion, partner personal details) opens day, month and year wheels in a half-height sheet,
-  instead of a month-by-month calendar that started at today. An empty field's wheels open thirty
-  years back, so an adult's year is a short spin. Since the fix plan of 2026-10-25 the sheet carries the
-  field's name as its title with **Cancel** and **Done**, as Android's dialog carries its cancel and
-  confirm: the wheels spin a draft, **Done** stores the day on them — on an empty field the day shown,
-  untouched — and **Cancel** or a swipe down leaves the field as it was. Until then every spin was stored
-  at once, the sheet had no buttons and a swipe down was the only way out, and the day shown on an empty
-  field could not be taken without moving a wheel. Future dates stay blocked, and the stored day keeps
-  its time-zone handling. The recurring schedule's *Starts on* is still the system's compact date
-  picker.
+- **The birth date is picked on wheels, and a wheel that moves is the choice.** The date-of-birth field
+  (customer profile edit and completion, partner personal details) opens day, month and year wheels in
+  a half-height sheet, instead of a month-by-month calendar that started at today. An empty field's
+  wheels open thirty years back, so an adult's year is a short spin. The sheet carries the field's name
+  as its title and one **Done**. A wheel stores its day as soon as it moves, so **Done** only closes the
+  sheet, and there is no **Cancel**. A sheet closed untouched, by **Done** or a swipe down, stores
+  nothing: the day shown on an empty field is taken only by moving a wheel, so a customer who only
+  looks never gets a birth date thirty years before today. That is the owner's answer of 2026-11-08,
+  given for the customer onboarding. From the fix plan of 2026-10-25 until then the wheels spun a
+  draft, **Done** stored the day on them, on an empty field the day shown untouched, and **Cancel**
+  left the field as it was. Future dates stay blocked, and the stored day keeps its time-zone handling.
+  The recurring schedule's *Starts on* is still the system's compact date picker.
 - **A few symbols bounce, from iOS 17.** The notification bell (customer Home, partner dashboard)
   bounces once when the unread count rises, and stays still when it falls. The booking-success check,
   the Plus welcome screen's check and the *code applied* check of the promo and referral sheets bounce

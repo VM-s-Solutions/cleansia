@@ -80,7 +80,7 @@ import cz.cleansia.customer.core.disputes.openEvidencePdfFromUrl
 import cz.cleansia.core.format.disputeAllowsMessages
 import cz.cleansia.core.format.formatOrderDateTime
 import cz.cleansia.customer.ui.format.disputeStatusColor
-import cz.cleansia.customer.ui.state.ActionState
+import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.customer.core.orders.ReceiptOpenResult
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.snackbar.SnackbarController

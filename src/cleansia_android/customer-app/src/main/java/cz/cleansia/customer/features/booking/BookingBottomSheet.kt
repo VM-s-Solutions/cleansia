@@ -322,7 +322,7 @@ private fun SheetContent(
     // Derive the boolean here so the rest of this composable's enable/loading
     // logic stays untouched.
     val submitState by bookingVm.submitState.collectAsStateWithLifecycle()
-    val submitting = submitState is cz.cleansia.customer.ui.state.ActionState.Submitting
+    val submitting = submitState is cz.cleansia.core.ui.state.ActionState.Submitting
     val expressWaiver by bookingVm.expressWaiver.collectAsStateWithLifecycle()
     val currentStep by bookingVm.step.collectAsStateWithLifecycle()
     val canStepBack by bookingVm.canStepBack.collectAsStateWithLifecycle()
@@ -486,7 +486,7 @@ private fun SheetContent(
     var stopped by remember { mutableStateOf(false) }
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) { stopped = true }
     LifecycleEventEffect(Lifecycle.Event.ON_START) {
-        val placing = bookingVm.submitState.value is cz.cleansia.customer.ui.state.ActionState.Submitting
+        val placing = bookingVm.submitState.value is cz.cleansia.core.ui.state.ActionState.Submitting
         if (stopped && visible && !placing && pendingCardOrder == null) {
             bookingVm.revalidateResumedTime()
             bookingVm.refreshCashEligibility()

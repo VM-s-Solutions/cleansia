@@ -336,7 +336,7 @@ fun CleansiaNavHost(
             val vm: cz.cleansia.customer.features.profile.ProfileViewModel = hiltViewModel()
             val user by vm.currentUser.collectAsStateWithLifecycle()
             val saveState by vm.saveState.collectAsStateWithLifecycle()
-            val saving = saveState is cz.cleansia.customer.ui.state.ActionState.Submitting
+            val saving = saveState is cz.cleansia.core.ui.state.ActionState.Submitting
 
             cz.cleansia.customer.features.profile.ProfileOnboardingScreen(
                 user = user,
@@ -360,7 +360,7 @@ fun CleansiaNavHost(
             val vm: cz.cleansia.customer.features.profile.ProfileViewModel = hiltViewModel()
             val user by vm.currentUser.collectAsStateWithLifecycle()
             val saveState by vm.saveState.collectAsStateWithLifecycle()
-            val saving = saveState is cz.cleansia.customer.ui.state.ActionState.Submitting
+            val saving = saveState is cz.cleansia.core.ui.state.ActionState.Submitting
             val avatarDraft by vm.avatarDraft.collectAsStateWithLifecycle()
             val avatarState by vm.avatarState.collectAsStateWithLifecycle()
 
@@ -372,7 +372,7 @@ fun CleansiaNavHost(
                 user = user,
                 saving = saving,
                 avatarPhoto = cz.cleansia.customer.features.profile.avatarPhotoFor(user, avatarDraft),
-                avatarBusy = avatarState is cz.cleansia.customer.ui.state.ActionState.Submitting,
+                avatarBusy = avatarState is cz.cleansia.core.ui.state.ActionState.Submitting,
                 onBack = { navController.popBackStack() },
                 onPickPhoto = vm::pickAvatar,
                 onRemovePhoto = vm::removeAvatar,
@@ -460,7 +460,7 @@ fun CleansiaNavHost(
         ) {
             val vm: cz.cleansia.customer.features.profile.DeleteAccountViewModel = hiltViewModel()
             val deleteState by vm.deleteState.collectAsStateWithLifecycle()
-            val loading = deleteState is cz.cleansia.customer.ui.state.ActionState.Submitting
+            val loading = deleteState is cz.cleansia.core.ui.state.ActionState.Submitting
 
             cz.cleansia.customer.features.profile.DeleteAccountScreen(
                 userEmail = vm.userEmail,

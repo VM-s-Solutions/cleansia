@@ -17,7 +17,7 @@ import cz.cleansia.customer.core.memberships.MembershipRepository
 import cz.cleansia.customer.core.memberships.MembershipStatus
 import cz.cleansia.customer.core.memberships.SwapMembershipPlanResponse
 import cz.cleansia.customer.testing.MainDispatcherRule
-import cz.cleansia.customer.ui.state.ActionState
+import cz.cleansia.core.ui.state.ActionState
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every

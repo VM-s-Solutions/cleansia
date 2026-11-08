@@ -97,7 +97,7 @@ import cz.cleansia.customer.core.user.CodeDto
 import cz.cleansia.customer.features.payments.UnpaidReceivableDialog
 import cz.cleansia.customer.features.recurring.RecurringAuthoringGate
 import cz.cleansia.customer.ui.components.CardSavingConsent
-import cz.cleansia.customer.ui.state.ActionState
+import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.customer.ui.theme.CleansiaTheme
 import kotlinx.coroutines.launch
 

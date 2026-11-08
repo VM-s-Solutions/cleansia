@@ -90,7 +90,7 @@ class BookingSheetDraftTest {
         assertTrue(
             "a return during a submit no longer reads the live submit state",
             onStart.contains(
-                "val placing = bookingVm.submitState.value is cz.cleansia.customer.ui.state.ActionState.Submitting",
+                "val placing = bookingVm.submitState.value is cz.cleansia.core.ui.state.ActionState.Submitting",
             ),
         )
         assertTrue(

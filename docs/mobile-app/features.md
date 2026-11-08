@@ -93,9 +93,8 @@ also turns auto-capitalisation and autocorrection off, as Android's `KeyboardTyp
 app module is the drift that produced "blank screen" bugs before the shared module existed. If you
 need a variation, widen the shared type rather than forking it.
 
-Two pre-`:core` duplicates survive on Android and are **known, tracked for migration, not
-precedent**: `cz.cleansia.customer.ui.state.ActionState` (an identical copy of `:core`'s — its doc
-comment says so) and the customer app's `ui/format/` formatters, which shadow `core/format/`. Import
+One pre-`:core` duplicate survives on Android and is **known, tracked for migration, not
+precedent**: the customer app's `ui/format/` formatters, which shadow `core/format/`. Import
 the `:core` definition in new code.
 :::
 

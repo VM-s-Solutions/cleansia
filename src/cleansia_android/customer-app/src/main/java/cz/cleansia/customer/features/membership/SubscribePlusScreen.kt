@@ -91,7 +91,7 @@ fun SubscribePlusScreen(
 ) {
     val scope = rememberCoroutineScope()
     val submitState by viewModel.submitState.collectAsStateWithLifecycle()
-    val submitting = submitState is cz.cleansia.customer.ui.state.ActionState.Submitting
+    val submitting = submitState is cz.cleansia.core.ui.state.ActionState.Submitting
     val current by viewModel.current.collectAsStateWithLifecycle()
     val plans by viewModel.plans.collectAsStateWithLifecycle()
     val plansLoaded by viewModel.plansLoaded.collectAsStateWithLifecycle()

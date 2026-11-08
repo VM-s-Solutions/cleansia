@@ -305,8 +305,9 @@ private class PhoneVisualTransformation(
 /**
  * International form, and a length libphonenumber holds possible for the country. Not whether the number is
  * valid: the server's metadata is newer than this library's, so a number in a range allocated since would be
- * refused here with no way past it, and the server (`PhoneNumberAttribute`) stays the judge of validity.
- * The iOS twin is in `PhoneNumberKitDisplayFormatter`.
+ * refused here with no way past it. On the partner's Personal save the server (`PhoneNumberAttribute`) judges
+ * validity; the customer's profile save checks only that no other account holds the number, so there a possible
+ * length is the only check. The iOS twin is in `PhoneNumberKitDisplayFormatter`.
  */
 fun isPossiblePhoneNumber(wire: String): Boolean = wire.startsWith("+") && runCatching {
     val util = PhoneNumberUtil.getInstance()

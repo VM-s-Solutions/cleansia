@@ -710,13 +710,27 @@
     <!-- Profile onboarding -->
     <string name="onboarding_greeting">Добро пожаловать!</string>
     <string name="onboarding_greeting_named">Добро пожаловать, %1$s!</string>
+    <string name="onboarding_progress">Готово %1$d из %2$d</string>
+    <string name="onboarding_left_phone">Добавьте номер телефона, и сможете заказывать.</string>
+    <string name="onboarding_ready">Можно заказывать</string>
+    <string name="onboarding_ready_sub">У вас есть всё, что нужно для заказа.</string>
+    <string name="onboarding_row_name">Имя и фамилия</string>
+    <string name="onboarding_email_hidden">Её скрывает Apple</string>
+    <string name="onboarding_row_done_a11y">готово</string>
+    <string name="onboarding_row_current_a11y">текущий шаг</string>
+    <string name="onboarding_row_waiting_a11y">не заполнено</string>
+    <string name="onboarding_not_set">Не указано</string>
+    <string name="onboarding_card_title">Что увидит клинер</string>
+    <string name="onboarding_card_example">Пример</string>
+    <string name="onboarding_card_dial">Звонки и SMS на номер</string>
+    <string name="onboarding_card_call">Позвонить</string>
+    <string name="onboarding_card_sms">SMS</string>
+    <string name="onboarding_card_navigate">Маршрут</string>
+    <string name="onboarding_card_sample_address">Vinohradská 48, Praha 2</string>
     <string name="onboarding_birthdate_done">Готово</string>
-    <string name="onboarding_subtitle">Немного деталей, чтобы мы могли лучше вас обслуживать. Можно пропустить и заполнить позже.</string>
     <string name="onboarding_phone_label">Номер телефона</string>
-    <string name="onboarding_phone_helper">Укажите код страны (напр. +420). Используем только для связи по вашим бронированиям.</string>
     <string name="onboarding_birthdate_label">Дата рождения</string>
-    <string name="onboarding_birthdate_placeholder">Выберите дату</string>
-    <string name="onboarding_birthdate_helper">По желанию — для бонусов ко дню рождения.</string>
+    <string name="onboarding_birthdate_helper">Необязательно. Клинер её никогда не увидит.</string>
     <string name="onboarding_save">Сохранить и продолжить</string>
     <string name="onboarding_skip">Пропустить</string>
 

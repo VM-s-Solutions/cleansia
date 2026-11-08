@@ -712,13 +712,27 @@
     <!-- Profile onboarding -->
     <string name="onboarding_greeting">Vítejte!</string>
     <string name="onboarding_greeting_named">Vítejte, %1$s!</string>
+    <string name="onboarding_progress">Hotovo %1$d ze %2$d</string>
+    <string name="onboarding_left_phone">Doplňte telefonní číslo a můžete objednávat.</string>
+    <string name="onboarding_ready">Připraveno k objednání</string>
+    <string name="onboarding_ready_sub">Máte vše, co objednávka potřebuje.</string>
+    <string name="onboarding_row_name">Jméno a příjmení</string>
+    <string name="onboarding_email_hidden">Skrývá ho Apple</string>
+    <string name="onboarding_row_done_a11y">hotovo</string>
+    <string name="onboarding_row_current_a11y">aktuální krok</string>
+    <string name="onboarding_row_waiting_a11y">nevyplněno</string>
+    <string name="onboarding_not_set">Nevyplněno</string>
+    <string name="onboarding_card_title">Co uvidí uklízeč</string>
+    <string name="onboarding_card_example">Ukázka</string>
+    <string name="onboarding_card_dial">Hovory a SMS půjdou na</string>
+    <string name="onboarding_card_call">Zavolat</string>
+    <string name="onboarding_card_sms">SMS</string>
+    <string name="onboarding_card_navigate">Navigovat</string>
+    <string name="onboarding_card_sample_address">Vinohradská 48, Praha 2</string>
     <string name="onboarding_birthdate_done">Hotovo</string>
-    <string name="onboarding_subtitle">Pár rychlých údajů, abychom vám mohli lépe posloužit. Můžete tento krok přeskočit a vyplnit později.</string>
     <string name="onboarding_phone_label">Telefonní číslo</string>
-    <string name="onboarding_phone_helper">Uveďte předčíslí (např. +420). Použijeme ho pouze k tomu, abychom vás kontaktovali ohledně vašich rezervací.</string>
     <string name="onboarding_birthdate_label">Datum narození</string>
-    <string name="onboarding_birthdate_placeholder">Vyberte datum</string>
-    <string name="onboarding_birthdate_helper">Volitelné — pro narozeninové výhody.</string>
+    <string name="onboarding_birthdate_helper">Nepovinné. Uklízeči se nikdy nezobrazí.</string>
     <string name="onboarding_save">Uložit a pokračovat</string>
     <string name="onboarding_skip">Přeskočit</string>
 

@@ -265,7 +265,9 @@ The web order detail shows the same two lines under the total, by the same rule 
 [Points are not credit](/flows/loyalty-and-memberships#points-vs-credit)
 
 **Account and privacy** — saved addresses, notification preferences, five languages, data export and
-account erasure. The export carries the customer's own conduct record — every booking, cancellation,
+account erasure. After a first sign-in the customer sees what a booking still needs and how her cleaner
+will reach her, can add a birth date no cleaner ever sees, and can skip; on Android, with iOS to follow.
+The export carries the customer's own conduct record — every booking, cancellation,
 dispute filing, membership change, sign-in and consent, with the figures the platform showed them at
 the time — each consent with the IP, the device and the **version of the terms** it was given under,
 **every dispute** with its thread, resolution and refund, and on each order the version of the

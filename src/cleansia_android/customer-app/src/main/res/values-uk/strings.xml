@@ -710,13 +710,27 @@
     <!-- Profile onboarding -->
     <string name="onboarding_greeting">Ласкаво просимо!</string>
     <string name="onboarding_greeting_named">Ласкаво просимо, %1$s!</string>
+    <string name="onboarding_progress">Готово %1$d з %2$d</string>
+    <string name="onboarding_left_phone">Додайте номер телефону, і зможете замовляти.</string>
+    <string name="onboarding_ready">Можна замовляти</string>
+    <string name="onboarding_ready_sub">У вас є все, що потрібно для замовлення.</string>
+    <string name="onboarding_row_name">Ім’я та прізвище</string>
+    <string name="onboarding_email_hidden">Її приховує Apple</string>
+    <string name="onboarding_row_done_a11y">готово</string>
+    <string name="onboarding_row_current_a11y">поточний крок</string>
+    <string name="onboarding_row_waiting_a11y">не заповнено</string>
+    <string name="onboarding_not_set">Не вказано</string>
+    <string name="onboarding_card_title">Що побачить клінер</string>
+    <string name="onboarding_card_example">Приклад</string>
+    <string name="onboarding_card_dial">Дзвінки та SMS на номер</string>
+    <string name="onboarding_card_call">Подзвонити</string>
+    <string name="onboarding_card_sms">SMS</string>
+    <string name="onboarding_card_navigate">Маршрут</string>
+    <string name="onboarding_card_sample_address">Vinohradská 48, Praha 2</string>
     <string name="onboarding_birthdate_done">Готово</string>
-    <string name="onboarding_subtitle">Кілька швидких деталей, щоб ми могли краще вам служити. Ви можете пропустити цей крок і заповнити пізніше.</string>
     <string name="onboarding_phone_label">Номер телефону</string>
-    <string name="onboarding_phone_helper">Вкажіть код країни (напр. +420). Використовуватимемо лише для зв’язку щодо ваших бронювань.</string>
     <string name="onboarding_birthdate_label">Дата народження</string>
-    <string name="onboarding_birthdate_placeholder">Оберіть дату</string>
-    <string name="onboarding_birthdate_helper">За бажанням — для бонусів до дня народження.</string>
+    <string name="onboarding_birthdate_helper">Необов’язково. Клінер її ніколи не побачить.</string>
     <string name="onboarding_save">Зберегти і продовжити</string>
     <string name="onboarding_skip">Пропустити</string>
 

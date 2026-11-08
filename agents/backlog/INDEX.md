@@ -426,6 +426,7 @@
 | T-0911 | Customer booking confirmation on the app's type scale — less bold, the app's fonts | S | `in_review` | — | Mike 2026-11-04: as for the partner pages, not much bold |
 | T-0912 | Partner Orders — job rows open the job, map behind the detail, Job-taken panel, gallery photos, cleaning animation, Note/Issue row | M | `in_review` | — | Mike 2026-11-04: picks E, M1, M3, J3 + three remarks |
 | T-0913 | Customer booking — "How clean is your home?" on one screen, without scrolling | S | `in_review` | — | Mike 2026-11-05 picked C1; built on iOS and Android. Android fits 375×667 in every state; iOS fits only with no level picked (options in `build/handoff/t0913-ios.json`) |
+| T-0920 | Customer onboarding: concept D, ready to book with your cleaner's view | L | `in_progress` | — | Mike 2026-11-08: "Concept D is nice", then "go" on the scope and the four decisions as recommended; PR A (the server signal and iOS) after #366 and #368 merge, PR B (Android) after PR 3; two open points for Mike in the ticket |
 
 > **T-0785–T-0799 filed 2026-09-20** — the UI-polish and dead-code batch, on the owner's ruling of
 > that day (*"I want to polish alignments in admin app a bit on all of the overview/detail pages.
@@ -470,7 +471,7 @@
 > reported not absorbed. Owed: the DEV drop at the next DEV deploy (MS-2 / A1, `20260920204705`);
 > the merge order is #255 then #260. Open rows: none.
 
-*Next id: **T-0914**.*
+*Next id: **T-0921**.*
 
 
 Current startup checkpoint — 2026-10-16 UTC: PR #344 merged C12 `70d9c8b1ea82` as M5 `a8d308126dc4`; C12 local8, PR5 workflows/7 checks and M5 4/5 passed, all attempt 1/no reruns, with guarded manual skips and prior application limits retained. First read-only observation `38947741183/a1` failed before its baseline with a generic validation error; one POST, GET-only discovery, final artifact saved once, no resize/restart/B3 trial. T-0636 remains `in_progress`; safe diagnostic correction and the temporary comparison remain pending. The ticket's dated PR #344 closure and `pr344-closure-preparation001/CLAIMS-AND-PINS001.json` carry the bounds.

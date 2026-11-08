@@ -44,7 +44,8 @@ Where the verifier corrected an auditor, the verifier's note wins.
   a user would see.
 - The audit's "not worth doing" list: file splits, the formatter caching sweep, prebuilt Stripe and Firebase, CI
   caching, and moving single-app code out of Core.
-- The avatar JPEG encode and the area geocode cache (not in the agreed list).
+- The avatar JPEG encode and the area geocode cache, which were not in the agreed list. Mike moved both into scope on
+  2026-11-07, and they are fixed in `279b77522` and `9055af6b8` (see the Lag record of 2026-11-08).
 - Android, backend and web.
 - Dependency version upgrades (the Stripe change keeps 25.17.0).
 - `docs/` pages, except to fix a path or a name a move made wrong.

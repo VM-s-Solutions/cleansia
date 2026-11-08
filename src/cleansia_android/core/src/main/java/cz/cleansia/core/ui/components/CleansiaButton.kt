@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.FirstBaseline
 import androidx.compose.ui.layout.LastBaseline
@@ -38,6 +39,8 @@ import cz.cleansia.core.ui.theme.NunitoCapHeight
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.core.ui.theme.capBandAligned
 import cz.cleansia.core.ui.theme.capBandLine
+import cz.cleansia.core.ui.theme.disabledContainer
+import cz.cleansia.core.ui.theme.onDisabledContainer
 import cz.cleansia.core.ui.theme.primaryText
 import kotlin.math.ceil
 
@@ -51,8 +54,8 @@ enum class CleansiaButtonSize(
 }
 
 /**
- * Solid primary CTA — sky-600 fill, white text, pill shape. A disabled button that must stay legible passes its own
- * [disabledContainerColor] and [disabledContentColor]; left out, they are Material's.
+ * Solid primary CTA — sky-600 fill, white text, pill shape. A disabled one takes the caller's [disabledContainerColor]
+ * and [disabledContentColor]; left out, it draws grey with a dark label.
  */
 @Composable
 fun CleansiaPrimaryButton(
@@ -67,6 +70,9 @@ fun CleansiaPrimaryButton(
     disabledContainerColor: Color = Color.Unspecified,
     disabledContentColor: Color = Color.Unspecified,
 ) {
+    val scheme = MaterialTheme.colorScheme
+    val offFill = disabledContainerColor.takeOrElse { scheme.disabledContainer }
+    val offInk = disabledContentColor.takeOrElse { scheme.onDisabledContainer }
     Button(
         onClick = onClick,
         modifier = modifier
@@ -78,14 +84,14 @@ fun CleansiaPrimaryButton(
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary,
-            disabledContainerColor = disabledContainerColor,
-            disabledContentColor = disabledContentColor,
+            disabledContainerColor = offFill,
+            disabledContentColor = offInk,
         ),
     ) {
         if (loading) {
             CircularProgressIndicator(
                 modifier = Modifier.size(20.dp),
-                color = MaterialTheme.colorScheme.onPrimary,
+                color = offInk,
                 strokeWidth = 2.dp,
             )
         } else {

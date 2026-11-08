@@ -1097,6 +1097,31 @@ stays the text ink, 5.93:1 and 6.83:1, as it has been since the partner sweep ab
 still draw it in different hues. *Rejected* is the error colour on both. iOS's `TextInkTests` measures
 every document status, and none, on the card in both modes (iOS `eba022747`, Android `0ae302746`).
 
+## A filled button that cannot be pressed is grey {#disabled-button}
+
+Material draws a disabled filled button as its label at 38 % on a 12 % wash, which read 2.31:1 in
+light mode and 2.88:1 in dark on Android's shared primary button, so a Save that waits for a field
+looked faded rather than waiting. Since 2026-11-08 (owner decision on concept D) the shared filled
+button, `CleansiaPrimaryButton` in Android's `:core`, draws a button that cannot be pressed in a grey
+pair of its own:
+
+| Mode | Fill | Label | Contrast |
+|---|---|---|---|
+| Light | slate-200 `#E2E8F0` | slate-600 `#475569` | 6.15:1 |
+| Dark | `#283548`, the scheme's raised slate | slate-400 `#94A3B8` | 4.84:1 |
+
+- A loading button is a disabled one, so it takes the same pair, and its spinner takes the label's ink
+  instead of white, which reads 1.23:1 on slate-200.
+- A caller that passes its own `disabledContainerColor` and `disabledContentColor` keeps them, as the
+  partner's take button does while an overlapping job blocks it.
+- The pair is `ColorScheme.disabledContainer` and `onDisabledContainer` (`BrandColors.kt`), picked by the
+  surface's luminance as the text ink is; `PrimaryTextTest` measures both ratios.
+- It changes the 31 calls in the two apps that pass `enabled` or `loading`, and only while they are
+  disabled or loading. Five customer sheets and screens draw Material's `Button` with disabled colours of
+  their own (the promo code and referral code sheets, a dispute, a cancellation and a review) and keep
+  them.
+- Android draws it, and the iOS Core button follows with the same two pairs.
+
 ## Android's dialogs and menus sit on slate {#surface-roles}
 
 Material 3 draws a dialog, a menu, a date picker and a search bar on its surface-container roles, and

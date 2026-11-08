@@ -48,6 +48,16 @@ val ColorScheme.primaryTextOnContainer: Color
 val ColorScheme.primaryIconOnContainer: Color
     get() = if (surface.luminance() < 0.5f) onPrimaryContainer else primary
 
+/**
+ * A filled button that cannot be pressed: slate-600 on slate-200 in a light scheme (6.15:1), slate-400 on the raised
+ * dark slate in a dark one (4.84:1). Material's own, the label at 38 % on 12 %, read 2.31:1 and 2.88:1.
+ */
+val ColorScheme.disabledContainer: Color
+    get() = if (surface.luminance() < 0.5f) Color(0xFF283548) else Color(0xFFE2E8F0)
+
+val ColorScheme.onDisabledContainer: Color
+    get() = if (surface.luminance() < 0.5f) Color(0xFF94A3B8) else Color(0xFF475569)
+
 /** [ColorScheme.primaryText] of the theme in force. */
 @Composable
 @ReadOnlyComposable

@@ -203,7 +203,8 @@ the member defaults it to `false` and never refuses the profile over it: a named
 
 **What an app may do with it.** It exists for the customer apps' onboarding: given `true`, the
 onboarding may open on its name step with both name fields empty and greet the customer without a name,
-rather than *Welcome aboard, Cleansia!*. Nothing may gate on it: whether the onboarding shows at all,
+rather than *Welcome aboard, Cleansia!*. The iOS customer onboarding does exactly that; Android's has no
+name step, because no account that signs in on Android can carry the flag. Nothing may gate on it: whether the onboarding shows at all,
 booking and Edit profile, which keeps showing the stored name, do not read it. An app must not compare
 a name with `Cleansia` or `Customer` itself; the rule lives on the server, so it can change without an
 app release.

@@ -107,12 +107,19 @@ Uploads are single-flight guarded, matching iOS.
 ## Auth screens carry no mascot {#auth-screens}
 
 No auth screen in either app draws the mascot (owner ruling 2026-10-01). In the customer apps that
-means sign-in, sign-up, forgot password, e-mail confirmation and the profile completion after a first
-sign-in. In the partner apps it means sign-in, registration, e-mail confirmation and forgot password.
+means sign-in, sign-up, forgot password and e-mail confirmation. In the partner apps it means sign-in,
+registration, e-mail confirmation and forgot password.
 The partner app's pre-sign-in intro carousel keeps its two mascots, because it introduces the app
 rather than asking for anything. Nothing replaced the mascot: its height went to the form. Both
 platforms changed together, so the branding parity of [ADR-0018](/decisions/adr-0018) still holds,
 and the mascot is unchanged everywhere else.
+
+**The profile completion after a first sign-in carries the mascot again** (Mike's pick of the
+onboarding concept D, 2026-11-08). It sits at 76 pt beside the greeting: it waves while a step a
+booking needs is missing, and gives a thumbs-up once the card reads *Ready to book*. The 2026-10-01
+ruling had counted this screen among the auth screens; it asks for what a booking needs rather than
+for a sign-in, and it no longer counts. iOS draws it first and Android follows, so until Android's
+half ships the two platforms differ here, against ADR-0018's branding parity.
 
 **The customer sign-in fits one screen.** Without the mascot and the guest link the form fits every
 supported iPhone, the SE included, and ordinary Android phones; only the legacy 360×640dp size still

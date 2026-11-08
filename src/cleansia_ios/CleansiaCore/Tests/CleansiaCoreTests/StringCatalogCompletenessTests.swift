@@ -59,6 +59,8 @@ final class StringCatalogCompletenessTests: XCTestCase {
         Exception("Customer", "membership_inactive_badge", allLocalized, "Cleansia Plus is the product name"),
         Exception("Customer", "membership_inactive_title", allLocalized, "Cleansia Plus is the product name"),
         Exception("Customer", "membership_plus_title", allLocalized, "Cleansia Plus is the product name"),
+        Exception("Customer", "onboarding_card_sample_address", allLocalized, "an example address, not a word"),
+        Exception("Customer", "onboarding_card_sms", allLocalized, "SMS is the same initialism everywhere"),
         Exception(
             "Customer",
             "order_detail_duration_minutes",

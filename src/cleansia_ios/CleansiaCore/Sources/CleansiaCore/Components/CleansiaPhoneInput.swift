@@ -220,7 +220,10 @@ struct MaskedPhoneTextField: UIViewRepresentable {
     }
 
     func makeUIView(context: Context) -> UITextField {
-        let field = UITextField()
+        let field = WindowedTextField()
+        field.onEnteringWindow = { [weak coordinator = context.coordinator] field in
+            coordinator?.parent.syncFirstResponder(field)
+        }
         field.delegate = context.coordinator
         field.addTarget(
             context.coordinator,
@@ -265,7 +268,7 @@ struct MaskedPhoneTextField: UIViewRepresentable {
         field.moveCaret(to: edit.caret)
     }
 
-    private func syncFirstResponder(_ field: UITextField) {
+    func syncFirstResponder(_ field: UITextField) {
         guard field.window != nil else { return }
         // A disabled field never takes focus, and gives it up if it somehow holds it.
         guard isEnabled else {
@@ -377,3 +380,13 @@ private extension UITextField {
         }
     }
 #endif
+
+/// A field asked to focus before it is in a window cannot take the focus, and on iOS 16 nothing asks again.
+private final class WindowedTextField: UITextField {
+    var onEnteringWindow: ((UITextField) -> Void)?
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        if window != nil { onEnteringWindow?(self) }
+    }
+}

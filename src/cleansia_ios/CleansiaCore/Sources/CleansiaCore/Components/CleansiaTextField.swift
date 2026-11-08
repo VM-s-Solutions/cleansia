@@ -230,6 +230,9 @@ private struct ManagedTextField: UIViewRepresentable {
         field.onProgrammaticTextChange = { [weak coordinator = context.coordinator] newText in
             coordinator?.propagate(newText)
         }
+        field.onEnteringWindow = { [weak coordinator = context.coordinator] field in
+            coordinator?.parent.syncFirstResponder(field)
+        }
         // Born disabled when it should be. Without this the field is enabled until the first
         // updateUIView, and every rebuild of the form subtree reopens that window.
         field.isEnabled = isEnabled
@@ -305,7 +308,7 @@ private struct ManagedTextField: UIViewRepresentable {
         }
     }
 
-    private func syncFirstResponder(_ field: TrackingTextField) {
+    func syncFirstResponder(_ field: TrackingTextField) {
         guard field.window != nil else { return }
         // A disabled field never takes focus, and gives it up if it somehow holds it — the
         // binding can be stale-true from an earlier enabled render.
@@ -394,7 +397,14 @@ private struct ManagedTextField: UIViewRepresentable {
 
 private final class TrackingTextField: UITextField {
     var onProgrammaticTextChange: ((String) -> Void)?
+    /// A field asked to focus before it is in a window cannot take the focus, and on iOS 16 nothing asks again.
+    var onEnteringWindow: ((TrackingTextField) -> Void)?
     private var isApplyingBinding = false
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        if window != nil { onEnteringWindow?(self) }
+    }
 
     override var text: String? {
         didSet {

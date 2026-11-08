@@ -136,12 +136,12 @@ extension AppointmentConfirmationVisualTests {
         let sheet = try XCTUnwrap(canvas.host.presentedViewController)
         try await Task.sleep(nanoseconds: 400_000_000)
         let open = lowestAccessibleEdge(sheet.view)
-        postKeyboard(showing: true, in: canvas)
+        canvas.postKeyboard(showing: true)
         try await Task.sleep(nanoseconds: 200_000_000)
         XCTAssertLessThan(lowestAccessibleEdge(sheet.view), open - 200, "the keyboard pushes the form's footer up")
         await canvas.settle(timeout: 3, until: { vm.state.selectedServiceIds.isEmpty })
         try await Task.sleep(nanoseconds: 100_000_000)
-        postKeyboard(showing: false, in: canvas)
+        canvas.postKeyboard(showing: false)
         let full = BookingSuccessView.mascotCanvas(figureHeight: 116).width
         let standing = { self.animatedMascots(canvas).contains { abs(canvas.frame(of: $0).width - full) < 1 } }
         await canvas.settle(timeout: 3, until: standing)
@@ -427,25 +427,6 @@ private extension AppointmentConfirmationVisualTests {
         if node.isAccessibilityElement { return node.accessibilityFrame.maxY }
         let children = node.accessibilityElements as? [NSObject] ?? (node as? UIView)?.subviews ?? []
         return children.map { lowestAccessibleEdge($0) }.max() ?? 0
-    }
-
-    /// The keyboard's own notifications, as UIKit posts them for a 336 pt keyboard: the test host's simulator
-    /// may have a hardware keyboard attached, which never raises the software one.
-    func postKeyboard(showing: Bool, in canvas: HostedCanvas) {
-        let screen = canvas.window.screen.bounds
-        let raised = CGRect(x: 0, y: screen.maxY - 336, width: screen.width, height: 336)
-        let lowered = raised.offsetBy(dx: 0, dy: 336)
-        let info: [AnyHashable: Any] = [
-            UIResponder.keyboardFrameBeginUserInfoKey: NSValue(cgRect: showing ? lowered : raised),
-            UIResponder.keyboardFrameEndUserInfoKey: NSValue(cgRect: showing ? raised : lowered),
-            UIResponder.keyboardAnimationDurationUserInfoKey: 0.0,
-            UIResponder.keyboardAnimationCurveUserInfoKey: UIView.AnimationCurve.easeInOut.rawValue,
-            UIResponder.keyboardIsLocalUserInfoKey: true
-        ]
-        let edge = showing ? UIResponder.keyboardWillShowNotification : UIResponder.keyboardWillHideNotification
-        for name in [edge, UIResponder.keyboardWillChangeFrameNotification] {
-            NotificationCenter.default.post(name: name, object: canvas.window.screen, userInfo: info)
-        }
     }
 
     func attachGIF(_ frames: [CGImage], timestamps: [TimeInterval], name: String) throws {

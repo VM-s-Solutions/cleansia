@@ -4,7 +4,6 @@ public struct BirthDateField: View {
     @Binding private var birthDate: Date?
     private let label: String
     private let placeholder: String
-    private let helper: String?
     private let errorText: String?
 
     @Environment(\.locale) private var locale
@@ -14,13 +13,11 @@ public struct BirthDateField: View {
         birthDate: Binding<Date?>,
         label: String,
         placeholder: String,
-        helper: String? = nil,
         errorText: String? = nil
     ) {
         _birthDate = birthDate
         self.label = label
         self.placeholder = placeholder
-        self.helper = helper
         self.errorText = errorText
     }
 
@@ -59,10 +56,10 @@ public struct BirthDateField: View {
             }
             .buttonStyle(.plain)
 
-            if let supporting = errorText ?? helper {
-                Text(supporting)
+            if let errorText {
+                Text(errorText)
                     .font(CleansiaTypography.labelSmall)
-                    .foregroundColor(isError ? CleansiaColors.error : CleansiaColors.onSurfaceVariant)
+                    .foregroundColor(CleansiaColors.error)
                     .padding(.horizontal, Spacing.m)
             }
         }
@@ -141,8 +138,7 @@ public struct BirthDateWheelSheet: View {
                     BirthDateField(
                         birthDate: binding,
                         label: "Date of birth",
-                        placeholder: "Pick a date",
-                        helper: "Optional — helps us tailor your offers"
+                        placeholder: "Pick a date"
                     )
                     BirthDateField(
                         birthDate: .constant(nil),

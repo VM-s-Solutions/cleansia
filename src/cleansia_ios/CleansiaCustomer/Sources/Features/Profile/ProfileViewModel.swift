@@ -134,18 +134,20 @@ final class ProfileViewModel: ViewModel {
         }
     }
 
-    /// Apple sign-in can hand us an account with no name at all, so onboarding
-    /// has to be able to collect one — replaying the stored blanks is rejected by
-    /// the `UpdateCurrentUser` validators and leaves the screen a dead end.
-    var onboardingNeedsName: Bool {
-        guard let user = repository.currentUser else { return false }
-        return user.firstName.isBlank || user.lastName.isBlank
+    func onboardingChecklist(firstName: String, lastName: String, phoneNumber: String) -> OnboardingChecklist {
+        OnboardingChecklist(
+            firstName: firstName,
+            lastName: lastName,
+            email: currentUser?.email ?? "",
+            phone: phoneNumber
+        )
     }
 
-    /// `UpdateCurrentUser` requires both names; the phone is what the booking
-    /// pre-flight needs.
+    /// `UpdateCurrentUser` requires both names; the phone is what the booking pre-flight needs, and only a number its
+    /// country allows can reach a cleaner.
     func canCompleteOnboarding(firstName: String, lastName: String, phoneNumber: String) -> Bool {
-        !saveState.isSubmitting && !firstName.isBlank && !lastName.isBlank && !phoneNumber.isBlank
+        !saveState.isSubmitting
+            && onboardingChecklist(firstName: firstName, lastName: lastName, phoneNumber: phoneNumber).isReady
     }
 
     /// The language sent is the one the app resolves to: the language chosen in this app, or on

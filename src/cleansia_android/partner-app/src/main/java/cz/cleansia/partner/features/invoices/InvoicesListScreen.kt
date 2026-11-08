@@ -50,6 +50,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.money.CurrencySymbols
+import cz.cleansia.core.money.formatMoney
 import cz.cleansia.core.ui.components.IconHalo
 import cz.cleansia.core.ui.components.MascotEmptyState
 import cz.cleansia.core.ui.components.SudsRefreshIndicator
@@ -58,10 +59,6 @@ import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.R
 import cz.cleansia.partner.data.invoices.Invoice
 import cz.cleansia.partner.features.main.MainBottomNavInset
-import java.time.LocalDate
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 /**
  * Cleaner's invoice history.
@@ -297,7 +294,7 @@ private fun InvoiceCard(invoice: Invoice, onClick: () -> Unit) {
         // Prefer paid-at (final state) so the user sees the date that
         // matters to them; fall back to generated-at for invoices still
         // in Pending / Approved.
-        formatDate(invoice.paidAt) ?: formatDate(invoice.generatedAt)
+        formatShortDate(invoice.paidAt) ?: formatShortDate(invoice.generatedAt)
     }
     val dateLabelRes = if (invoice.paidAt != null) {
         R.string.invoice_card_paid_on
@@ -436,22 +433,4 @@ private fun EmptyState() {
         modifier = Modifier.padding(bottom = MainBottomNavInset),
         verticallyCentered = true,
     )
-}
-
-// --- formatting helpers (mirror EarningsSummaryScreen exactly) ---
-
-private val shortDateFormatter = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.getDefault())
-
-private fun formatDate(iso: String?): String? {
-    if (iso.isNullOrBlank()) return null
-    val date = runCatching { ZonedDateTime.parse(iso).toLocalDate() }
-        .getOrNull()
-        ?: runCatching { LocalDate.parse(iso) }.getOrNull()
-        ?: return null
-    return date.format(shortDateFormatter)
-}
-
-private fun formatMoney(amount: Double, symbol: String): String {
-    val formatted = String.format(Locale.getDefault(), "%,.2f", amount)
-    return if (symbol.isBlank()) formatted else "$formatted $symbol"
 }

@@ -54,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.money.CurrencySymbols
+import cz.cleansia.core.money.formatMoney
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.components.CleansiaOutlinedButton
 import cz.cleansia.core.ui.components.IconHalo
@@ -63,10 +64,6 @@ import cz.cleansia.partner.R
 import cz.cleansia.partner.data.invoices.InvoiceDetail
 import cz.cleansia.partner.data.invoices.InvoicePdfState
 import cz.cleansia.partner.data.invoices.pdfState
-import java.time.LocalDate
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 /**
  * Invoice detail — matches the EarningsSummaryScreen / InvoicesListScreen
@@ -338,9 +335,9 @@ private fun PeriodCard(
 ) {
     val period = invoice.payPeriodLabel?.takeIf { it.isNotBlank() } ?: "—"
     val orders = invoice.totalOrders
-    val generated = formatDate(invoice.generatedAt)
-    val approved = formatDate(invoice.approvedAt)
-    val paid = formatDate(invoice.paidAt)
+    val generated = formatShortDate(invoice.generatedAt)
+    val approved = formatShortDate(invoice.approvedAt)
+    val paid = formatShortDate(invoice.paidAt)
     val hasAnyDate = generated != null || approved != null || paid != null
 
     Column(
@@ -644,24 +641,6 @@ private fun Divider() {
             .height(1.dp)
             .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
     )
-}
-
-// --- helpers (mirror InvoicesListScreen / EarningsSummaryScreen) ---
-
-private val shortDateFormatter = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.getDefault())
-
-private fun formatDate(iso: String?): String? {
-    if (iso.isNullOrBlank()) return null
-    val date = runCatching { ZonedDateTime.parse(iso).toLocalDate() }
-        .getOrNull()
-        ?: runCatching { LocalDate.parse(iso) }.getOrNull()
-        ?: return null
-    return date.format(shortDateFormatter)
-}
-
-private fun formatMoney(amount: Double, symbol: String): String {
-    val formatted = String.format(Locale.getDefault(), "%,.2f", amount)
-    return if (symbol.isBlank()) formatted else "$formatted $symbol"
 }
 
 private fun copyToClipboard(context: Context, label: String, value: String) {

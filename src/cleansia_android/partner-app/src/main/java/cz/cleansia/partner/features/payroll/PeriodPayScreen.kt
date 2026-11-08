@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.money.CurrencySymbols
+import cz.cleansia.core.money.formatMoney
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.components.IconHalo
 import cz.cleansia.core.ui.theme.Spacing
@@ -49,11 +50,7 @@ import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.PayLineType
 import cz.cleansia.partner.data.payroll.OrderPayLine
 import cz.cleansia.partner.data.payroll.PeriodPaySummary
-import java.time.LocalDate
-import java.time.ZoneId
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
-import java.util.Locale
+import cz.cleansia.partner.features.invoices.formatShortDate
 
 /**
  * Read-only period pay breakdown — matches the EarningsSummaryScreen /
@@ -293,7 +290,7 @@ private fun JobRow(line: OrderPayLine, symbol: String) {
                     color = primaryText(),
                 )
             }
-            formatDate(line.createdOn)?.let { date ->
+            formatShortDate(line.createdOn, inDeviceZone = true)?.let { date ->
                 Text(
                     text = date,
                     style = MaterialTheme.typography.bodySmall,
@@ -390,24 +387,4 @@ private fun ErrorState(onRetry: () -> Unit) {
             onClick = onRetry,
         )
     }
-}
-
-// --- formatting helpers (mirror EarningsSummaryScreen / InvoicesListScreen) ---
-
-private val shortDateFormatter = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.getDefault())
-
-private fun formatDate(iso: String?): String? {
-    if (iso.isNullOrBlank()) return null
-    val date = runCatching {
-        ZonedDateTime.parse(iso).withZoneSameInstant(ZoneId.systemDefault()).toLocalDate()
-    }.getOrNull()
-        ?: runCatching { java.time.LocalDateTime.parse(iso).toLocalDate() }.getOrNull()
-        ?: runCatching { LocalDate.parse(iso) }.getOrNull()
-        ?: return null
-    return date.format(shortDateFormatter)
-}
-
-private fun formatMoney(amount: Double, symbol: String): String {
-    val formatted = String.format(Locale.getDefault(), "%,.2f", amount)
-    return if (symbol.isBlank()) formatted else "$formatted $symbol"
 }

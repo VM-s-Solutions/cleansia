@@ -4,7 +4,7 @@ title: "The 2026-11-08 Android review findings"
 size: M
 owner: Michael Chaban
 created: 2026-11-08
-updated: 2026-11-08
+updated: 2026-11-09
 depends_on: []
 blocks: []
 stories: []
@@ -51,3 +51,15 @@ Any finding not listed above. The rest of #370's out-of-scope list stays reporte
 
 - 2026-11-08 — Filed on `feature/customer-onboarding-d-android`, made from master at `5b57d65b2` (#370's merge).
   Every finding is in the tree there.
+- 2026-11-09 — F9 fixed (`d351f6e20`). `canDrawMap()` in `JobMap.kt` reads the build's Mapbox token; with none the
+  job detail gets the band the loading and error pages show and the taken panel draws no strip, instead of `MapView`'s
+  constructor closing the app. The area map of a job not yet taken is covered too. Pinned in `OrderDetailCallSiteTest`.
+- 2026-11-09 — F10 fixed (`4d17fd7c2`). `refresh`, `loadNextPage`, `getById` and `uploadEvidence`, a fourth read of the
+  same shape, run inside `wireResult`, so a broken disputes response is `ApiError.Server(200)` on its screen. Pinned in
+  `DisputeRepositoryTest`.
+- 2026-11-09 — F11 fixed (`8ee8b32f5`). `formatShortDate` takes the phone's day for every date and `inDeviceZone` is
+  gone, so the invoice list, the invoice detail and the period pay lines agree, as on iOS. Pinned in `ShortDateTest`.
+- 2026-11-09 — F8 fixed (`5825f9328`). android-ci builds both staging APKs after the unit tests and runs
+  `agents/tools/check-r8-monitor.py` over their dex after its self-test, `check-r8-monitor.test.py`. Run locally:
+  assembleStaging 2 m 28 s with a warm cache, the check 10 s; partner 41,006 methods, 828 with monitor-enter, 0
+  rejected; customer 63,103, 907, 0.

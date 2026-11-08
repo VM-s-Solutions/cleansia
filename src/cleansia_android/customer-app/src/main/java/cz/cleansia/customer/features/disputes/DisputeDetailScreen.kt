@@ -83,6 +83,7 @@ import cz.cleansia.customer.ui.format.disputeStatusColor
 import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.customer.core.orders.ReceiptOpenResult
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
+import cz.cleansia.core.ui.components.OrderStatusPill
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.core.ui.theme.Poppins
 import kotlinx.coroutines.launch
@@ -352,9 +353,10 @@ private fun HeaderCard(dispute: DisputeDetailsDto) {
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                 color = MaterialTheme.colorScheme.onSurface,
             )
-            StatusPill(
+            OrderStatusPill(
                 label = dispute.status?.name ?: "—",
-                color = statusColor,
+                ink = statusColor,
+                washAlpha = 0.14f,
             )
         }
         Spacer(Modifier.height(4.dp))
@@ -362,23 +364,6 @@ private fun HeaderCard(dispute: DisputeDetailsDto) {
             text = formatOrderDateTime(dispute.createdOn),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-@Composable
-private fun StatusPill(label: String, color: Color) {
-    Row(
-        modifier = Modifier
-            .clip(RoundedCornerShape(999.dp))
-            .background(color.copy(alpha = 0.14f))
-            .padding(horizontal = 10.dp, vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-            color = color,
         )
     }
 }

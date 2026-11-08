@@ -53,6 +53,6 @@ class DisputesListCardTest {
     @Test
     fun `the status colour survives on the pill`() {
         assertTrue(disputeRow.contains("StatusPill("))
-        assertTrue(disputeRow.contains("color = statusColor"))
+        assertTrue(disputeRow.contains("ink = statusColor"))
     }
 }

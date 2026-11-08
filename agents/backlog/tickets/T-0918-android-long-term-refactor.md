@@ -116,6 +116,26 @@ Not done, even where a problem is visible; it is reported instead.
 
 ### Shared pieces in :core, first part
 
+- 2026-11-08 — AND-CM-01 (`3386408cb`), AND-CM-05 (`71abe87d4`), AND-CM-06 (`984cf3b07`) and AND-CM-02 (`abce87171`)
+  done. `slideSemantics` moved unchanged next to the slide, into `:core`'s `SwipeToConfirmButton.kt`; the four partner
+  files import it, and the customer booking slide now passes it, with one confirm action for the swipe and the double
+  tap, enabled when the step can continue and the order is not being placed, and busy while it is. A `:core` test
+  reads the semantics from the modifier, and `SlideSemanticsCallSiteTest` checks every slide call in both apps. On
+  `cleansia35`, TalkBack focuses a slide wired as the booking sheet wires its own as one button, and its double tap
+  commits only the slide that can be used: one commit, and none on the slide that cannot continue or on the one placing
+  an order. The customer's own `ActionState` is deleted, its 18 main and 10 test callers import `:core`'s, and the
+  mobile-app features page no longer lists it. One `IconHalo` (with `IconHaloSize`) in `:core` replaces the six partner
+  copies and the customer's `LeadingIcon`, and the customer's two `RuleList` copies are calls to `:core`'s
+  `PasswordRuleList`. The customer schemes set their tertiary roles to the partner's amber, the one intended visual
+  change: Home's milestone card wash goes from #FBECF2 to #FBF7E7 in light mode and from #312636 to #39231F in dark,
+  and the not-serviced address glyph from #7D5260 to #92400E and from #EFB8C8 to #F59E0B. Captures (en, light and
+  dark, 412x915): the 74 partner screens (every icon-halo card, the take sheet, the Active hero and nine job-detail
+  states with their scrolled ends) are byte-identical; 26 of the 30 customer frames are pixel-identical outside the
+  system battery glyph, which SystemUI draws a few pixels apart from one emulator session to the next, and the other 4
+  are the milestone card and the glyph. Unit tests: core 392/0, partner 1278/0, customer 1873/0. Both staging builds
+  assemble and start; `check-consistency.mjs` reports what origin/master reports. Evidence in
+  `android-longterm-20261108/` (`core-a/`, `captures/core-a/`).
+
 ### Shared pieces in :core, second part
 
 ### Cleanup

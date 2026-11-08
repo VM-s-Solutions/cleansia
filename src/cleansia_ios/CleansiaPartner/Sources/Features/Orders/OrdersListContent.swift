@@ -27,8 +27,7 @@ struct AvailablePane: View {
                     .onChange(of: space.size.width) { width = $0 }
             })
             .environment(\.ordersTileWidth, tileWidth)
-            // A lazy stack reports only the tiles it has built, so the column keeps the widest need it has seen.
-            .onPreferenceChange(OrdersTileNeedKey.self) { tileWidth = max(tileWidth, $0.rounded(.up)) }
+            .onPreferenceChange(OrdersTileNeedKey.self) { tileWidth = OrdersTileNeedKey.column(tileWidth, after: $0) }
             .ordersScroll(onRefresh: vm.userRefresh)
     }
 

@@ -95,7 +95,7 @@ jobs:
       - name: Self-test check-r8-monitor
         run: python3 "$GITHUB_WORKSPACE/agents/tools/check-r8-monitor.test.py"
 
-      # Minified like release, so an R8 break (a serializer it strips, a method ART refuses) fails here, not on a phone.
+      # Minified like release, so a build R8 cannot finish fails here.
       - name: Minified staging builds (both apps)
         run: ./gradlew :partner-app:assembleStaging :customer-app:assembleStaging --no-daemon
 

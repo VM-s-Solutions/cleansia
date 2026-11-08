@@ -80,6 +80,18 @@ Not done, even where a problem is visible; it is reported instead.
 
 ### Minified staging builds
 
+- 2026-11-08 — and-perf-01 done (`06ab04a94`). The partner staging build type now falls back to release for `:core`
+  and uses the debug package, which has a Firebase client in `google-services.json`; the customer gained a staging
+  build type initialised from debug, not debuggable, R8-minified with release's proguard files. R8 broke the partner
+  start with "Serializer for class 'o' is not found": the route objects `NavRoute.Invoices` and `NavRoute.Profile` are
+  registered but never navigated to, so the kotlinx.serialization 1.7.3 object rule, which the partner's
+  `proguard-rules.pro` copies, let R8 drop their `INSTANCE` and `serializer()`; that rule is now conditioned on the
+  class alone. Partner `assembleStaging` 1 min 41 s (R8 56 s), APK 81.6 MB, dex 8.0 MB in one file; customer
+  1 min 39 s (R8 65 s), APK 88.8 MB, dex 12.3 MB in two files. Both install and start on `cleansia35` from cleared
+  data and over a debug install, and show the server's "Incorrect password." for a failed sign-in against DEV.
+  Unit tests: core 390/0, partner 1277/0, customer 1871/0. `check-consistency.mjs` reports what origin/master
+  reports (one existing E1 violation). Evidence in `android-longterm-20261108/` (`logs/`, `start/`).
+
 ### Lag
 
 ### Shared pieces in :core, first part

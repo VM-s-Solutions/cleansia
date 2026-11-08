@@ -114,7 +114,7 @@ final class CustomerCoreCaptureTests: XCTestCase {
             inspect: { window in
                 let slide = CustomerCapture.elements(of: window).first { $0.label == label }?.frame
                 found = slide.flatMap { slide in
-                    CustomerCapture.textFrames(in: window).filter(slide.contains).max { $0.width < $1.width }
+                    CustomerCapture.textFrames(in: window).filter { slide.contains($0) }.max { $0.width < $1.width }
                 }
             },
             content: { bookingSheet(vm, size: size, theme: theme, language: language, homeIndicator: indicator) }

@@ -90,8 +90,10 @@ green; and Mike gets a customer TestFlight build.
   ("2 of 3 done" with one line naming what is missing, then "Ready to book"). Each row is in one of three states:
   done (a check, one line, the label left and the value right), open (a ring, opened in place with its field and the
   example), or waiting (a grey ring, one line, and a full-width tap target that opens it). The open step is chosen
-  once, from the saved profile, when the screen appears: the name if the account has none, otherwise the phone.
-  Typing never moves it, and Next on Last name opens the phone row with its field focused.
+  once, from the saved profile, when the screen appears. On iOS it is the name if the account has none, otherwise the
+  phone; typing never moves it, and Next on Last name opens the phone row with its field focused. Android builds no
+  name step (open point 2): no account that signs in on Android can carry a placeholder or a blank name, so its open
+  step is the phone.
 - [ ] **AC2 — a phone valid for its country.** Given the phone step is open, When the number she has typed is not
   yet valid for its country (for example +420 777 12), Then the phone row is not done, the header still asks for the
   phone number, Call and SMS stay dashed, and Save and continue stays disabled. When the number becomes valid (for
@@ -117,14 +119,15 @@ green; and Mike gets a customer TestFlight build.
   test covers this through the view model. See open point 1: iOS stores the day shown on Done today.
 - [ ] **AC7 — the name step for a hidden-name Apple account.** Given an Apple account whose stored first name is
   Cleansia or whose stored last name is Customer, the words the server writes for a part that neither Apple nor the
-  e-mail gave, When she reaches onboarding, Then the server tells the app that the name is made up, and the Name step
-  is open with empty First name and Last name fields. The stored name shows nowhere: not in the fields, the row, the
-  example, or the greeting, which reads "Welcome aboard!". Save and continue stays disabled until her name and a valid
-  phone number are in. When she saves her name, Then the server stores it and no longer reports the name as made up.
-  Given an account whose name the person typed or Apple sent, When onboarding appears, Then the Name row is done and
-  shows that name. A hidden-name Apple account whose e-mail gives two name-shaped pieces keeps that guess and is not
-  asked: `jana.novakova@seznam.cz` is stored as Jana Novakova, and its Name row is done. That is the accepted limit of
-  ADR-0081 D4, and lifting it changes only what the server computes.
+  e-mail gave, When she reaches the iOS onboarding, Then the server tells the app that the name is made up, and the
+  Name step is open with empty First name and Last name fields. The stored name shows nowhere: not in the fields, the
+  row, the example, or the greeting, which reads "Welcome aboard!". Save and continue stays disabled until her name
+  and a valid phone number are in. When she saves her name, Then the server stores it and no longer reports the name
+  as made up. Given an account whose name the person typed or Apple sent, When onboarding appears on either platform,
+  Then the Name row is done and shows that name. A hidden-name Apple account whose e-mail gives two name-shaped pieces
+  keeps that guess and is not asked: `jana.novakova@seznam.cz` is stored as Jana Novakova, and its Name row is done.
+  That is the accepted limit of ADR-0081 D4, and lifting it changes only what the server computes. Android builds no
+  name step and does not read the server's signal (open point 2): no Apple account can sign in on Android.
 - [ ] **AC8 — screen-reader row states.** Given VoiceOver on iOS or TalkBack on Android, When focus reaches a row of
   the card, Then it reads the label and the value and ends with the row's state: "done", "current step" or "not done"
   (cs "hotovo", "aktuální krok", "nevyplněno"), with the three state words in all five locales. The drawn marks are
@@ -141,9 +144,10 @@ green; and Mike gets a customer TestFlight build.
   so it can be dropped alone.
 - [ ] **AC11 — screenshots against the mock.** Given the iOS build from PR A and the Android build from PR B, When
   onboarding is captured in each of the mock's states (empty, typing, filled, cs-dark, sheet, apple-private, and
-  long-email at 375 × 812), Then each capture is shown side by side with the mock's shot of the same state, every
-  difference is named, and the fit holds as the mock measures it: nothing scrolls at 390 × 844 in empty, filled,
-  cs-dark and sheet, nor at 375 × 812 in empty and long-email.
+  long-email at 375 × 812; on Android every state but apple-private, which no Android account can reach), Then each
+  capture is shown side by side with the mock's shot of the same state, every difference is named, and the fit holds
+  as the mock measures it: nothing scrolls at 390 × 844 in empty, filled, cs-dark and sheet, nor at 375 × 812 in empty
+  and long-email.
 
 ## Open points for Mike, before the app builds
 
@@ -153,11 +157,12 @@ green; and Mike gets a customer TestFlight build.
    `CalendarDay.swift:47-50`, `docs/mobile-app/patterns.md:1375-1385`). That change was made so that the day shown
    can be taken without moving a wheel. AC6 as agreed reverses it on iOS, and the sheet is shared with the customer's
    Edit profile and the partner's personal details. The choice is AC6 as agreed, or today's iOS Done kept and matched
-   on Android.
+   on Android. **Answered 2026-11-08:** Mike, *"Q1: Go with A"*, so AC6 as agreed.
 2. **The name step on Android.** Android has no Sign in with Apple
    (`docs/flows/auth-and-identity.md#native-account-only`), and only Apple sign-in makes up a name, so no Android
    account reaches the `apple-private` state today. About half a day of the Android estimate builds that name path.
-   The choice is whether PR B builds it.
+   The choice is whether PR B builds it. **Answered 2026-11-08:** Mike, *"Open Point 2: no"*, so PR B builds no name
+   step.
 
 ## Out of scope
 
@@ -250,3 +255,13 @@ green; and Mike gets a customer TestFlight build.
   Android wire tests (10 of 10 and 7 of 7) were up to date, because none of their inputs changed; and
   `check-docs-refs`, `check-catalog-claims`, `check-backlog-consistency`, `check-module-boundaries`, their
   self-tests and the VitePress site build passed.
+- 2026-11-08 — Mike answered both open points. Open point 1: *"Q1: Go with A"*, so AC6 stands as agreed: the wheels
+  store the day as they move, Done only closes, there is no Cancel, an untouched sheet stores nothing, and the
+  customer's Edit profile and the partner's personal details change with it. Open point 2: *"Open Point 2: no"*, so
+  PR B builds no name step. AC1's name clause, AC7 and AC11's Android capture now say what each platform builds, and
+  ADR-0081's Applies-to line and D5 no longer name an Android mapper. The PM settled the Android build brief's Q9 yes
+  the same day: on Android, AC6 is proven by a source test on the sheet and by the minified build's emulator walk,
+  not through the view model, which never sees the sheet. PR B's records reword AC6's last sentence with that proof.
+  - ADR-0018 D1: the Android onboarding has no name step, because no account that signs in on Android can carry a
+    placeholder or a blank name (open point 2, answered "no" by Mike on 2026-11-08); every state an Android account
+    can reach matches iOS.

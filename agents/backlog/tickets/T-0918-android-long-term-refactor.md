@@ -169,4 +169,30 @@ Not done, even where a problem is visible; it is reported instead.
 
 ### Cleanup
 
+- 2026-11-08 — and-perf-05 (`01a50d89a`), AND-PO-02 (`0c3258842`), AND-PO-01 (`4b7c0916b`), AND-PO-06
+  (`260a549a9`) and the unused version-catalog entries (`6a070dc2d`) done; what is dead was derived again on this
+  branch, after the moves. The fourteen mascots drawn from 1024 px PNGs (seven per app) are 720 px WebP under the
+  same names, `:core`'s refresh suds is 128 px, and the partner's unreferenced copy of the waving mascot is gone.
+  Measured on the minified staging builds on `cleansia35` with an uncommitted probe (`Resources.getDrawable` in a
+  fresh process, then the `ImageDecoder` decode itself), before and after alternating, 6 runs each: the partner's
+  seven took 62.4 ms to decode together before and 24.1 ms after (7.5-10.7 ms each before, 2.0-5.0 ms after), the
+  customer's 71.4 ms and 24.1 ms, the suds 1.05 ms and 0.12 ms; each bitmap is 2,073,600 bytes instead of
+  4,194,304. The staging APKs carry 487,168 bytes of these images instead of 5,322,279 (partner) and
+  511,028 instead of 8,030,630 (customer); with the whole cleanup, the partner staging APK goes from 81,627,107 to
+  76,547,762 bytes and the customer's from 88,830,207 to 81,277,114. Dead declarations: 19, in 19 files, -270/+15
+  lines (the partner's `isDark()` moves into `Theme.kt` so `BrandGradients.kt` can go). The functions only
+  tests reach are kept for Mike's decision, and so are the palette tokens no screen reads. Strings: 410 partner and
+  137 customer names that no code reads are deleted from all five locales, 3,054 lines; the runtime-built
+  `error_*`, `profile_fields_*` and `loyalty_perks_*` families and the `raw/keep.xml` globs were never candidates,
+  and three customer strings only tests read stay. The nine `Log.d` calls (-14 lines) and the Room, biometric and
+  Lottie catalog entries (-12/+4) are gone; no build script names those entries, and both apps assemble in debug
+  and staging without them. Captures (en, light and dark, 412x915) of every screen that draws a changed image, the
+  before and after builds in one emulator session: 13 customer screens and 33 partner screens with their scrolled
+  ends. Every difference in the apps' content lies inside a mascot, which looks the same at the size drawn (1-4
+  levels for most changed pixels, more on outline pixels, which alias less at small sizes); the frames whose figure
+  is the unchanged 500 px drawing are identical apart from SystemUI's battery glyph and gesture handle. Unit tests:
+  core 419/0, partner 1267/0, customer 1852/0, the counts before this part. Both staging builds start on
+  `cleansia35` from cleared data without a crash; `check-consistency.mjs` reports what origin/master reports.
+  Evidence in `android-longterm-20261108/` (`cleanup/`, `captures/cleanup/`).
+
 ### Docs

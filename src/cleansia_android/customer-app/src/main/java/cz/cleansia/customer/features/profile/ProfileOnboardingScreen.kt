@@ -316,7 +316,7 @@ private fun StepRow(
     Column(
         modifier = Modifier
             .then(if (onClick != null) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier)
-            .semantics(mergeDescendants = true) { contentDescription = listOfNotNull(label, value, note, state).joinToString(", ") }
+            .clearAndSetSemantics { contentDescription = listOfNotNull(label, value, note, state).joinToString(", ") }
             .fillMaxWidth()
             .heightIn(min = 44.dp)
             .padding(horizontal = Spacing.M, vertical = Spacing.XS),
@@ -356,7 +356,7 @@ private fun OpenRowHead(label: String, mark: Mark) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .semantics(mergeDescendants = true) { contentDescription = "$label, $state" },
+            .clearAndSetSemantics { contentDescription = "$label, $state" },
         verticalAlignment = Alignment.CenterVertically,
     ) {
         MarkDot(mark)

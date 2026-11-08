@@ -60,17 +60,21 @@ class ProfileOnboardingScreenTest {
         assertFalse("Save is gated on a phone that is merely not blank", source.contains("phone.isNotBlank()"))
     }
 
-    /** Each row is one read, its state last, as the partner's onboarding steps read. */
+    /**
+     * Each row is one read, its state last, as the partner's onboarding steps read. A merging node reads its texts again
+     * after its own description, so a row clears them.
+     */
     @Test
     fun `TalkBack reads each row once, ending with its state`() {
         assertTrue(
             "a line row no longer reads its label, value, note and state as one",
-            source.contains("semantics(mergeDescendants = true) { contentDescription = listOfNotNull(label, value, note, state).joinToString(\", \") }"),
+            source.contains("clearAndSetSemantics { contentDescription = listOfNotNull(label, value, note, state).joinToString(\", \") }"),
         )
         assertTrue(
             "the open row's head no longer reads its label and state as one",
-            source.contains("semantics(mergeDescendants = true) { contentDescription = \"\$label, \$state\" }"),
+            source.contains("clearAndSetSemantics { contentDescription = \"\$label, \$state\" }"),
         )
+        assertFalse("a row's texts are read again after its state", source.contains("semantics(mergeDescendants = true) { contentDescription"))
         listOf("onboarding_row_done_a11y", "onboarding_row_current_a11y", "onboarding_row_waiting_a11y").forEach {
             assertTrue("the rows no longer read $it", source.contains("R.string.$it"))
         }

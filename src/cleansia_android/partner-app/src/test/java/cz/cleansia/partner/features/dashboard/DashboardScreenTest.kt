@@ -99,7 +99,7 @@ class DashboardScreenTest {
 
     /**
      * The period's days arrive as calendar dates. Read as instants they named the wrong day west of Greenwich, and a
-     * date-only value failed the parse and hid the card. Payouts are manual, so no payout date is promised (R4).
+     * date-only value failed the parse and hid the card. Payouts are manual, so no payout date is promised.
      */
     @Test
     fun `the pay-period card reads calendar days and says when the figure is invoiced`() {

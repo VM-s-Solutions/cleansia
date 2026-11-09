@@ -35,6 +35,7 @@ struct CreateDisputeView: View {
         reasonValue != nil &&
             vm.descriptionIsValid(description.trimmingCharacters(in: .whitespacesAndNewlines)) &&
             vm.hasOrderContext &&
+            vm.preparingEvidence == 0 &&
             !vm.submitState.isSubmitting
     }
 

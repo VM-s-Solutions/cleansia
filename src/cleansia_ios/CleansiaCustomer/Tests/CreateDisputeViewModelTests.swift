@@ -208,18 +208,18 @@ final class CreateDisputeViewModelTests: XCTestCase {
         XCTAssertEqual(vm.pickedEvidence.map(\.fileName), ["a.jpg"])
     }
 
-    /// A submit that starts while a photo is still encoding has already taken the list, so the photo is not added.
-    func testAPhotoStillEncodingWhenASubmitStartsIsNotAdded() async {
+    /// Submit is shut while a photo encodes, or it would file the dispute without it.
+    func testASubmitWhileAPhotoEncodesDoesNothingAndThePhotoIsKept() async {
         let client = FakeDisputeClient()
-        client.createResult = .failure(ApiError(httpStatus: 500))
         let (vm, _) = makeVM(client: client)
         let pick = Task { await vm.addEvidence(.image(ProfileFixtures.image()), fileName: "a.jpg") }
         await Task.yield()
-        client.onCreate = { await pick.value }
 
         await vm.submit(reason: 3, description: validDescription)
+        await pick.value
 
-        XCTAssertTrue(vm.pickedEvidence.isEmpty)
+        XCTAssertEqual(client.createCallCount, 0)
+        XCTAssertEqual(vm.pickedEvidence.map(\.fileName), ["a.jpg"])
     }
 
     func testRemoveEvidenceDropsOnlyThatFileAndItsTempCopy() async {

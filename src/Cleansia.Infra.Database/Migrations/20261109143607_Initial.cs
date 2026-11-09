@@ -3445,6 +3445,10 @@ namespace Cleansia.Infra.Database.Migrations
                     Status = table.Column<int>(type: "integer", nullable: false),
                     ConfirmedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     WindowOverrideReason = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    FailedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    RepaidOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    RepaymentMethod = table.Column<int>(type: "integer", nullable: true),
+                    RepaymentReference = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
@@ -3893,7 +3897,8 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "IX_EmployeeInvoices_EmployeeId_PayPeriodId_CurrencyId",
                 table: "EmployeeInvoices",
                 columns: new[] { "EmployeeId", "PayPeriodId", "CurrencyId" },
-                unique: true);
+                unique: true,
+                filter: "\"Status\" <> 6");
 
             migrationBuilder.CreateIndex(
                 name: "IX_EmployeeInvoices_LanguageId",
@@ -4274,7 +4279,15 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "IX_OrderEmployeePays_OrderId_EmployeeId",
                 table: "OrderEmployeePays",
                 columns: new[] { "OrderId", "EmployeeId" },
-                unique: true);
+                unique: true,
+                filter: "\"LineType\" <> 3");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrderEmployeePays_OrderId_EmployeeId_DisputeCharge",
+                table: "OrderEmployeePays",
+                columns: new[] { "OrderId", "EmployeeId" },
+                unique: true,
+                filter: "\"LineType\" = 3");
 
             migrationBuilder.CreateIndex(
                 name: "IX_OrderEmployeePays_PayPeriodId",
@@ -4610,6 +4623,14 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "IX_PayPeriods_TenantId",
                 table: "PayPeriods",
                 column: "TenantId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PayPeriods_TenantId_Open",
+                table: "PayPeriods",
+                column: "TenantId",
+                unique: true,
+                filter: "\"Status\" = 1")
+                .Annotation("Npgsql:NullsDistinct", false);
 
             migrationBuilder.CreateIndex(
                 name: "IX_ProcessedMessages_MessageKey",

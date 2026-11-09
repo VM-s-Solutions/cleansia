@@ -46,7 +46,7 @@ public sealed class MarkInvoicePaidAdminOnlyTests(HostTestPostgresFixture db) : 
             ctx.EmployeeDocuments.Add(DomainSeed.ActiveDocument(employee.Id));
 
             // One invoice per (employee, period) is a unique index, so the two states need two periods.
-            var approvedPeriod = PayPeriod.Create(new DateOnly(2026, 1, 1), new DateOnly(2026, 1, 15));
+            var approvedPeriod = PayPeriod.Create(new DateOnly(2026, 1, 1), new DateOnly(2026, 1, 15)).Close("System");
             var pendingPeriod = PayPeriod.Create(new DateOnly(2026, 1, 16), new DateOnly(2026, 1, 31));
             ctx.PayPeriods.AddRange(approvedPeriod, pendingPeriod);
 

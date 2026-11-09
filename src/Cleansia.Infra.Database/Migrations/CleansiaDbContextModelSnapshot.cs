@@ -1904,7 +1904,8 @@ namespace Cleansia.Infra.Database.Migrations
                     NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("TenantId", "VariableSymbol"), false);
 
                     b.HasIndex("EmployeeId", "PayPeriodId", "CurrencyId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("\"Status\" <> 6");
 
                     b.ToTable("EmployeeInvoices");
                 });
@@ -2182,7 +2183,12 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasIndex("EmployeeId", "PayPeriodId");
 
                     b.HasIndex("OrderId", "EmployeeId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("\"LineType\" <> 3");
+
+                    b.HasIndex(new[] { "OrderId", "EmployeeId" }, "IX_OrderEmployeePays_OrderId_EmployeeId_DisputeCharge")
+                        .IsUnique()
+                        .HasFilter("\"LineType\" = 3");
 
                     b.ToTable("OrderEmployeePays");
                 });
@@ -2259,6 +2265,12 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasIndex("TenantId");
 
                     b.HasIndex("StartDate", "EndDate");
+
+                    b.HasIndex(new[] { "TenantId" }, "IX_PayPeriods_TenantId_Open")
+                        .IsUnique()
+                        .HasFilter("\"Status\" = 1");
+
+                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex(new[] { "TenantId" }, "IX_PayPeriods_TenantId_Open"), false);
 
                     b.ToTable("PayPeriods");
                 });
@@ -5574,6 +5586,9 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<DateTimeOffset?>("FailedOn")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
@@ -5593,6 +5608,16 @@ namespace Cleansia.Infra.Database.Migrations
                         .IsRequired()
                         .HasMaxLength(120)
                         .HasColumnType("character varying(120)");
+
+                    b.Property<DateTimeOffset?>("RepaidOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("RepaymentMethod")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RepaymentReference")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<int>("Source")
                         .HasColumnType("integer");

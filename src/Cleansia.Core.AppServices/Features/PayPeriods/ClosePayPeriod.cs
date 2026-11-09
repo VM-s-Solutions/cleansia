@@ -104,6 +104,18 @@ public class ClosePayPeriod
                 new PeriodSnapshot(payPeriod.Id, payPeriod.EndDate, payPeriod.Status),
                 command.Reason.Trim());
 
+            // Flushed here so a lost race is a business error, not a 500 from the pipeline's commit: another
+            // close of this period committed first, and the one-open index refuses this successor.
+            try
+            {
+                await payPeriodRepository.CommitAsync(cancellationToken);
+            }
+            catch (DbUpdateException ex) when (DbConstraintViolation.IsUniqueViolation(ex))
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.PayPeriodId), BusinessErrorMessage.PayPeriodNotOpen));
+            }
+
             return BusinessResult.Success(new Response(payPeriod.Id));
         }
     }

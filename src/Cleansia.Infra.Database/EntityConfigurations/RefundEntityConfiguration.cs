@@ -48,6 +48,9 @@ public class RefundEntityConfiguration : TenantAuditableEntityConfiguration<Refu
         builder.Property(r => r.WindowOverrideReason)
             .HasMaxLength(500);
 
+        builder.Property(r => r.RepaymentReference)
+            .HasMaxLength(100);
+
         builder.HasOne(r => r.Order)
             .WithMany()
             .HasForeignKey(r => r.OrderId)

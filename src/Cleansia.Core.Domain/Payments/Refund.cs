@@ -54,6 +54,14 @@ public class Refund : TenantAuditable
     [MaxLength(500)]
     public string? WindowOverrideReason { get; private set; }
 
+    public DateTimeOffset? FailedOn { get; private set; }
+
+    public DateTimeOffset? RepaidOn { get; private set; }
+
+    public RefundRepaymentMethod? RepaymentMethod { get; private set; }
+
+    public string? RepaymentReference { get; private set; }
+
     private Refund() { }
 
     public static Refund Create(

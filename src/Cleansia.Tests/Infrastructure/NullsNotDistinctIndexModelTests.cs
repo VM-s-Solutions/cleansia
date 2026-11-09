@@ -67,6 +67,7 @@ public sealed class NullsNotDistinctIndexModelTests : IDisposable
     [InlineData(typeof(PayoutReferenceCounter), new[] { "TenantId", "Year", "Scope" })]
     [InlineData(typeof(EmployeeInvoice), new[] { "TenantId", "InvoiceNumber" })]
     [InlineData(typeof(EmployeeInvoice), new[] { "TenantId", "VariableSymbol" })]
+    [InlineData(typeof(PayPeriod), new[] { "TenantId" })]
     public void A_Sole_Arbiter_Unique_Index_Is_Declared_Nulls_Not_Distinct(Type entityClrType, string[] columns)
     {
         using var ctx = NewContext();
@@ -246,10 +247,10 @@ public sealed class NullsNotDistinctIndexModelTests : IDisposable
     {
         var entityType = ctx.Model.FindEntityType(entityClrType)!;
         var index = entityType.GetIndexes()
-            .SingleOrDefault(ix => ix.Properties.Select(p => p.Name).SequenceEqual(columns));
+            .SingleOrDefault(ix => ix.IsUnique && ix.Properties.Select(p => p.Name).SequenceEqual(columns));
 
         Assert.True(index is not null,
-            $"{entityClrType.Name} has no index on ({string.Join(", ", columns)}).");
+            $"{entityClrType.Name} has no unique index on ({string.Join(", ", columns)}).");
         return index!;
     }
 }

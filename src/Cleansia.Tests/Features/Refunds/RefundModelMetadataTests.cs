@@ -85,6 +85,17 @@ public sealed class RefundModelMetadataTests
         Assert.Equal(500, property.GetMaxLength());
     }
 
+    [Fact]
+    public void Refund_Repayment_Columns_Are_Nullable_With_A_100_Character_Reference()
+    {
+        var refund = GetRefundEntityType();
+
+        Assert.All(
+            new[] { nameof(Refund.FailedOn), nameof(Refund.RepaidOn), nameof(Refund.RepaymentMethod), nameof(Refund.RepaymentReference) },
+            name => Assert.True(refund.FindProperty(name)!.IsNullable, name));
+        Assert.Equal(100, refund.FindProperty(nameof(Refund.RepaymentReference))!.GetMaxLength());
+    }
+
     [Theory]
     [InlineData(nameof(Refund.ReceiptId))]
     [InlineData(nameof(Refund.DisputeId))]

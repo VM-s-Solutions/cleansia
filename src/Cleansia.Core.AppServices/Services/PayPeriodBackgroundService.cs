@@ -111,7 +111,22 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         var start = latestEnd >= today ? latestEnd.Value.AddDays(1) : today;
         var period = PayPeriod.CreateBiWeekly(start, _payPeriodClosingConfig.LengthInDays);
         _payPeriodRepository.Add(period);
-        await _unitOfWork.CommitAsync(cancellationToken);
+        try
+        {
+            await _unitOfWork.CommitAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex) when (DbConstraintViolation.IsUniqueViolation(ex))
+        {
+            // Another writer opened the company's period after the read above. Detach the refused row so a
+            // later commit in this scope does not retry it.
+            _payPeriodRepository.Remove(period);
+            if (!await _payPeriodRepository.ExistsActivePeriodAsync(cancellationToken))
+            {
+                throw;
+            }
+
+            return;
+        }
 
         _logger.LogInformation(
             "Auto-seeded Open pay period {PeriodId} ({StartDate} - {EndDate}) " +

@@ -7,6 +7,7 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Tests.Services;
 using Cleansia.TestUtilities.MockDataFactories.EmployeePayroll;
+using Microsoft.EntityFrameworkCore;
 using MockQueryable;
 using Moq;
 
@@ -29,12 +30,17 @@ public class ClosePayPeriodTests
     private readonly Mock<IAuditContext> _audit = new();
     private readonly List<PayPeriod> _added = [];
 
-    private ClosePayPeriod.Handler Handler(PayPeriod period, int? lengthSetting = null, params PayPeriod[] others)
+    private ClosePayPeriod.Handler Handler(
+        PayPeriod period, int? lengthSetting = null, Exception? commitFailure = null, params PayPeriod[] others)
     {
         var repository = new Mock<IPayPeriodRepository>();
         repository.Setup(r => r.GetByIdAsync(PayPeriodId, It.IsAny<CancellationToken>())).ReturnsAsync(period);
         repository.Setup(r => r.GetQueryable()).Returns(() => others.Prepend(period).AsQueryable().BuildMock());
         repository.Setup(r => r.Add(It.IsAny<PayPeriod>())).Callback<PayPeriod>(_added.Add);
+        if (commitFailure is not null)
+        {
+            repository.Setup(r => r.CommitAsync(It.IsAny<CancellationToken>())).ThrowsAsync(commitFailure);
+        }
         var session = new Mock<IUserSessionProvider>();
         session.Setup(s => s.GetUserEmail()).Returns(AdminEmail);
         return new ClosePayPeriod.Handler(
@@ -109,6 +115,24 @@ public class ClosePayPeriodTests
         Assert.Equal(new DateOnly(2026, 1, 3), period.EndDate);
         var next = Assert.Single(_added);
         Assert.Equal((new DateOnly(2026, 1, 4), new DateOnly(2026, 1, 17)), (next.StartDate, next.EndDate));
+    }
+
+    /// <summary>
+    /// Two closes of one period, or Close now and the night run, can both pass the validator. The successor of the
+    /// later one meets the period the earlier one opened, and the admin reads that the period is no longer open.
+    /// </summary>
+    [Fact]
+    public async Task Handler_That_Loses_The_Close_To_Another_Writer_Fails_PayPeriodNotOpen()
+    {
+        var refused = new DbUpdateException("The open period index refused the successor", new UniqueViolation());
+
+        var result = await Handler(PayrollMockFactory.OpenPeriod(), commitFailure: refused)
+            .Handle(new ClosePayPeriod.Command(PayPeriodId, "A cleaner left mid-period"), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(
+            (nameof(ClosePayPeriod.Command.PayPeriodId), BusinessErrorMessage.PayPeriodNotOpen),
+            (result.Error!.Code, result.Error.Message));
     }
 
     // ── Validator ────────────────────────────────────────────────────
@@ -232,5 +256,10 @@ public class ClosePayPeriodTests
     private sealed class StubTimeProvider(DateTimeOffset now) : TimeProvider
     {
         public override DateTimeOffset GetUtcNow() => now;
+    }
+
+    private sealed class UniqueViolation : Exception
+    {
+        public string SqlState => "23505";
     }
 }

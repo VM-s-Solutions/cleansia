@@ -129,6 +129,34 @@ public class GetProductivityMetricsHandlerTests
         Assert.Equal(1, result.Value.PersonalBests.HighestEarningMonth.Month);
     }
 
+    /// <summary>
+    /// A cancelled invoice and the corrected invoice that replaces it hold the same jobs, so the month
+    /// counts them once.
+    /// </summary>
+    [Fact]
+    public async Task A_Cancelled_Invoice_Does_Not_Count_Toward_The_Highest_Earning_Month()
+    {
+        SetCaller(UserProfile.Employee);
+        _orderAccessService
+            .Setup(s => s.GetCallerEmployeeIdAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CallerEmployeeId);
+        var february = new DateTime(2026, 2, 15, 0, 0, 0, DateTimeKind.Utc);
+        _invoiceRepository
+            .Setup(r => r.GetByEmployeeAndDateRangeAsync(
+                CallerEmployeeId, It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(
+            [
+                PayrollMockFactory.Invoice(subTotal: 500m, generatedAt: new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc)),
+                PayrollMockFactory.Invoice(subTotal: 400m, generatedAt: february).Cancel("Wrong address", "admin-1"),
+                PayrollMockFactory.Invoice(subTotal: 400m, generatedAt: february.AddMinutes(20)),
+            ]);
+
+        var result = await CreateHandler().Handle(QueryFor(null), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal((1, 500m), (result.Value.PersonalBests.HighestEarningMonth!.Month, result.Value.PersonalBests.HighestEarningMonth.Amount));
+    }
+
     [Fact]
     public async Task Admin_Supplying_EmployeeId_Is_Honored_On_Both_Paths()
     {

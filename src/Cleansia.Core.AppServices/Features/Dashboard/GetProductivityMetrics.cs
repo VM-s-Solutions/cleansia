@@ -98,9 +98,10 @@ public class GetProductivityMetrics
                 .GetByEmployeeAndDateRangeAsync(employeeId, DashboardConstants.AllTimeStartDate, allTimeEnd, cancellationToken);
 
             // HighestEarningMonth is rendered with the dashboard's currency code; a month that was
-            // "highest" only because it mixed units is not a personal best.
+            // "highest" only because it mixed units is not a personal best. A cancelled invoice's jobs
+            // move to the corrected invoice that replaces it, so it does not count either.
             var highestEarningMonth = invoices
-                .Where(i => i.CurrencyId == currencyId)
+                .Where(i => i.CurrencyId == currencyId && !i.IsCancelled)
                 .GroupBy(i => (i.GeneratedAt.Year, i.GeneratedAt.Month))
                 .Select(g => g.MapToMonthlyEarning())
                 .OrderByDescending(m => m.Amount)

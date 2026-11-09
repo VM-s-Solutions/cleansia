@@ -124,6 +124,38 @@ public class AdminReportCurrencyScopeTests(PostgresContainerFixture fixture) : B
             transactional: false);
     }
 
+    /// <summary>
+    /// A cancelled invoice and the corrected invoice that replaces it hold the same jobs, so the money
+    /// counts them once; the cancelled invoice still shows in the counts and in its own status row.
+    /// </summary>
+    [Fact]
+    public async Task Payroll_Report_Counts_A_Cancelled_Invoices_Jobs_Once()
+    {
+        await TestMethod(
+            arrange: async context =>
+            {
+                await SeedInvoicesAsync(context);
+                var cancelled = context.Set<EmployeeInvoice>().Local.Single(i => i.CurrencyId == Czk);
+                cancelled.Cancel("Wrong address", "admin@cleansia.test");
+                context.Add(EmployeeInvoice.Create(cancelled.EmployeeId, cancelled.PayPeriodId, 1, 500m, Czk,
+                    PayrollMockFactory.NextTestVariableSymbol(), PayrollMockFactory.NextTestInvoiceNumber()));
+                await context.CommitAsync(CancellationToken.None);
+            },
+            act: provider => Payroll(provider, Czk),
+            assert: (CleansiaDbContext _, BusinessResult<PayrollReportDto> result) =>
+            {
+                Assert.True(result.IsSuccess, result.Error?.Message);
+                var report = result.Value!;
+                Assert.Equal((500m, 2, 1), (report.TotalPayroll, report.TotalInvoices, report.CancelledInvoices));
+                Assert.Equal(500m, report.EmployeeSummaries.Single().TotalAmount);
+                Assert.Equal(500m, report.MonthlyPayroll.Sum(m => m.TotalAmount));
+                Assert.Equal(500m, report.PayrollByStatus
+                    .Single(s => s.StatusCode == nameof(EmployeeInvoiceStatus.Cancelled)).TotalAmount);
+                return Task.CompletedTask;
+            },
+            transactional: false);
+    }
+
     // ── arrangement ──────────────────────────────────────────────────
 
     private static Task<BusinessResult<RevenueReportDto>> Revenue(IServiceProvider provider, string? currencyId) =>

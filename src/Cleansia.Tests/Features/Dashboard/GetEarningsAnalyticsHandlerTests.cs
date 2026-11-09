@@ -69,6 +69,33 @@ public class GetEarningsAnalyticsHandlerTests
         Assert.Equal(1200m, dto.Breakdown.TotalAmount);
     }
 
+    /// <summary>
+    /// A cancelled invoice and the corrected invoice that replaces it hold the same jobs, so only the
+    /// corrected one is earnings.
+    /// </summary>
+    [Fact]
+    public async Task A_Cancelled_Invoice_Is_Not_Earnings()
+    {
+        var issuedOn = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc);
+        _invoiceRepository
+            .Setup(r => r.GetByEmployeeAndDateRangeAsync(
+                CallerEmployeeId, It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(
+            [
+                PayrollMockFactory.Invoice(subTotal: 1300m, generatedAt: issuedOn).Cancel("Wrong address", "admin-1"),
+                PayrollMockFactory.Invoice(subTotal: 1300m, generatedAt: issuedOn.AddMinutes(20)),
+            ]);
+
+        var result = await CreateHandler().Handle(
+            new GetEarningsAnalytics.Query(null, new DateTime(2026, 1, 1), new DateTime(2026, 2, 1)), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        var dto = result.Value!;
+        Assert.Equal(1300m, dto.TotalEarnings);
+        Assert.Equal(1300m, dto.MonthlyEarnings.Single().Amount);
+        Assert.Equal(1300m, dto.Breakdown.TotalAmount);
+    }
+
     // The handler is internal; build it by reflection, as CompanyVatLeverTests does.
     private IRequestHandler<GetEarningsAnalytics.Query, BusinessResult<EarningsAnalyticsDto>> CreateHandler() =>
         (IRequestHandler<GetEarningsAnalytics.Query, BusinessResult<EarningsAnalyticsDto>>)Activator.CreateInstance(

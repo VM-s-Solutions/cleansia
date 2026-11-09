@@ -3070,7 +3070,6 @@
     "title": "Pay Period Management",
     "description": "Manage pay periods, close periods, and track partner payments",
     "create_new": "Create New Pay Period",
-    "confirm_close": "Are you sure you want to close this pay period? This action cannot be undone.",
     "filters": {
       "status": "Status",
       "year": "Year"
@@ -3092,7 +3091,6 @@
         "actions": "Actions"
       },
       "view_details": "View Details",
-      "close_period": "Close Period",
       "no_records": "No pay periods found",
       "days": "days"
     },
@@ -3124,14 +3122,6 @@
           "hint": "Mark this closed pay period as paid. This finalizes the settlement.",
           "submit": "Confirm Mark as Paid",
           "success": "Pay period marked as paid"
-        },
-        "reopen": {
-          "action": "Reopen Period",
-          "hint": "Reopen this pay period. The closure information will be cleared.",
-          "notes": "Reopen Notes (optional)",
-          "notes_hint": "Explain why the period is being reopened...",
-          "submit": "Confirm Reopen",
-          "success": "Pay period reopened"
         }
       }
     },

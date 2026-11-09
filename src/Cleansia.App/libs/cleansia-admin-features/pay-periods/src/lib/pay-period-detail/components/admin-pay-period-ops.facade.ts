@@ -3,8 +3,6 @@ import {
   AdminClient,
   MarkPayPeriodPaidCommand,
   MarkPayPeriodPaidResponse,
-  ReopenPayPeriodCommand,
-  ReopenPayPeriodResponse,
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { resolveApiErrorKey, SnackbarService } from '@cleansia/services';
@@ -22,8 +20,6 @@ export class AdminPayPeriodOpsFacade extends UnsubscribeControlDirective {
   readonly submitting = signal<boolean>(false);
   readonly errorKey = signal<string | null>(null);
 
-  readonly reopenNotes = signal<string>('');
-
   openPanel(panel: AdminPayPeriodOpsPanel): void {
     if (this.activePanel() === panel) {
       this.closePanel();
@@ -36,10 +32,6 @@ export class AdminPayPeriodOpsFacade extends UnsubscribeControlDirective {
   closePanel(): void {
     this.activePanel.set(null);
     this.resetInputs();
-  }
-
-  setReopenNotes(value: string): void {
-    this.reopenNotes.set(value);
   }
 
   markPaid(payPeriodId: string, onSuccess: () => void): void {
@@ -55,22 +47,8 @@ export class AdminPayPeriodOpsFacade extends UnsubscribeControlDirective {
     );
   }
 
-  reopen(payPeriodId: string, onSuccess: () => void): void {
-    if (!payPeriodId) {
-      return;
-    }
-    const command = new ReopenPayPeriodCommand();
-    command.payPeriodId = payPeriodId;
-    command.notes = this.reopenNotes().trim() || undefined;
-    this.run(
-      this.adminClient.adminPayPeriodClient.reopen(command),
-      'pay_periods.detail.ops.reopen.success',
-      onSuccess
-    );
-  }
-
   private run(
-    request$: Observable<MarkPayPeriodPaidResponse | ReopenPayPeriodResponse>,
+    request$: Observable<MarkPayPeriodPaidResponse>,
     successKey: string,
     onSuccess: () => void
   ): void {
@@ -95,7 +73,6 @@ export class AdminPayPeriodOpsFacade extends UnsubscribeControlDirective {
   }
 
   private resetInputs(): void {
-    this.reopenNotes.set('');
     this.errorKey.set(null);
   }
 

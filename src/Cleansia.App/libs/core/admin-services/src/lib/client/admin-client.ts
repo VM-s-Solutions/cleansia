@@ -13575,22 +13575,12 @@ export interface IAdminPayPeriodClient {
      * @param body (optional) 
      * @return OK
      */
-    open(body?: OpenPayPeriodCommand | undefined): Observable<OpenPayPeriodResponse>;
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
     close(body?: ClosePayPeriodCommand | undefined): Observable<ClosePayPeriodResponse>;
     /**
      * @param body (optional) 
      * @return OK
      */
     markPaid(body?: MarkPayPeriodPaidCommand | undefined): Observable<MarkPayPeriodPaidResponse>;
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    reopen(body?: ReopenPayPeriodCommand | undefined): Observable<ReopenPayPeriodResponse>;
 }
 
 @Injectable({
@@ -14016,83 +14006,6 @@ export class AdminPayPeriodClient implements IAdminPayPeriodClient {
      * @param body (optional) 
      * @return OK
      */
-    open(body?: OpenPayPeriodCommand | undefined): Observable<OpenPayPeriodResponse> {
-        let url = this.baseUrl + "/api/AdminPayPeriod/open";
-        url = url.replace(/[?&]$/, "");
-
-        const content = JSON.stringify(body);
-
-        let options : any = {
-            body: content,
-            observe: "response",
-            responseType: "blob",
-            headers: new HttpHeaders({
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            })
-        };
-
-        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
-            return this.processOpen(response);
-        })).pipe(ObservableCatch((response: any) => {
-            if (response instanceof HttpResponseBase) {
-                try {
-                    return this.processOpen(response as any);
-                } catch (e) {
-                    return ObservableThrow(e) as any as Observable<OpenPayPeriodResponse>;
-                }
-            } else
-                return ObservableThrow(response) as any as Observable<OpenPayPeriodResponse>;
-        }));
-    }
-
-    protected processOpen(response: HttpResponseBase): Observable<OpenPayPeriodResponse> {
-        const status = response.status;
-        const responseBlob =
-            response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
-
-        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
-        if (status === 200) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result200: any = null;
-            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result200 = OpenPayPeriodResponse.fromJS(resultData200);
-            return ObservableOf(result200);
-            }));
-        } else if (status === 400) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result400: any = null;
-            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, ResponseText, Headers, result400);
-            }));
-        } else if (status === 401) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result401: any = null;
-            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("Unauthorized", status, ResponseText, Headers, result401);
-            }));
-        } else if (status === 403) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result403: any = null;
-            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result403 = ProblemDetails.fromJS(resultData403);
-            return throwException("Forbidden", status, ResponseText, Headers, result403);
-            }));
-        } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
-            }));
-        }
-        return ObservableOf(null as any);
-    }
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
     close(body?: ClosePayPeriodCommand | undefined): Observable<ClosePayPeriodResponse> {
         let url = this.baseUrl + "/api/AdminPayPeriod/close";
         url = url.replace(/[?&]$/, "");
@@ -14212,83 +14125,6 @@ export class AdminPayPeriodClient implements IAdminPayPeriodClient {
             let result200: any = null;
             let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = MarkPayPeriodPaidResponse.fromJS(resultData200);
-            return ObservableOf(result200);
-            }));
-        } else if (status === 400) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result400: any = null;
-            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, ResponseText, Headers, result400);
-            }));
-        } else if (status === 401) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result401: any = null;
-            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("Unauthorized", status, ResponseText, Headers, result401);
-            }));
-        } else if (status === 403) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result403: any = null;
-            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result403 = ProblemDetails.fromJS(resultData403);
-            return throwException("Forbidden", status, ResponseText, Headers, result403);
-            }));
-        } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
-            }));
-        }
-        return ObservableOf(null as any);
-    }
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    reopen(body?: ReopenPayPeriodCommand | undefined): Observable<ReopenPayPeriodResponse> {
-        let url = this.baseUrl + "/api/AdminPayPeriod/reopen";
-        url = url.replace(/[?&]$/, "");
-
-        const content = JSON.stringify(body);
-
-        let options : any = {
-            body: content,
-            observe: "response",
-            responseType: "blob",
-            headers: new HttpHeaders({
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            })
-        };
-
-        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
-            return this.processReopen(response);
-        })).pipe(ObservableCatch((response: any) => {
-            if (response instanceof HttpResponseBase) {
-                try {
-                    return this.processReopen(response as any);
-                } catch (e) {
-                    return ObservableThrow(e) as any as Observable<ReopenPayPeriodResponse>;
-                }
-            } else
-                return ObservableThrow(response) as any as Observable<ReopenPayPeriodResponse>;
-        }));
-    }
-
-    protected processReopen(response: HttpResponseBase): Observable<ReopenPayPeriodResponse> {
-        const status = response.status;
-        const responseBlob =
-            response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
-
-        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
-        if (status === 200) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result200: any = null;
-            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result200 = ReopenPayPeriodResponse.fromJS(resultData200);
             return ObservableOf(result200);
             }));
         } else if (status === 400) {
@@ -21476,7 +21312,7 @@ export interface ICleanerCashHeldDto {
 
 export class ClosePayPeriodCommand implements IClosePayPeriodCommand {
     payPeriodId!: string | undefined;
-    notes!: string | undefined;
+    reason!: string | undefined;
 
     constructor(data?: IClosePayPeriodCommand) {
         if (data) {
@@ -21490,7 +21326,7 @@ export class ClosePayPeriodCommand implements IClosePayPeriodCommand {
     init(Data?: any) {
         if (Data) {
             this.payPeriodId = Data["payPeriodId"];
-            this.notes = Data["notes"];
+            this.reason = Data["reason"];
         }
     }
 
@@ -21504,14 +21340,14 @@ export class ClosePayPeriodCommand implements IClosePayPeriodCommand {
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["payPeriodId"] = this.payPeriodId;
-        data["notes"] = this.notes;
+        data["reason"] = this.reason;
         return data;
     }
 }
 
 export interface IClosePayPeriodCommand {
     payPeriodId: string | undefined;
-    notes: string | undefined;
+    reason: string | undefined;
 }
 
 export class ClosePayPeriodResponse implements IClosePayPeriodResponse {
@@ -23158,7 +22994,6 @@ export interface ICreatePayConfigResponse {
 
 export class CreatePayPeriodCommand implements ICreatePayPeriodCommand {
     startDate!: Date;
-    endDate!: Date;
     notes!: string | undefined;
 
     constructor(data?: ICreatePayPeriodCommand) {
@@ -23173,7 +23008,6 @@ export class CreatePayPeriodCommand implements ICreatePayPeriodCommand {
     init(Data?: any) {
         if (Data) {
             this.startDate = Data["startDate"] ? new Date(Data["startDate"].toString()) : undefined as any;
-            this.endDate = Data["endDate"] ? new Date(Data["endDate"].toString()) : undefined as any;
             this.notes = Data["notes"];
         }
     }
@@ -23188,7 +23022,6 @@ export class CreatePayPeriodCommand implements ICreatePayPeriodCommand {
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["startDate"] = this.startDate ? formatDate(this.startDate) : undefined as any;
-        data["endDate"] = this.endDate ? formatDate(this.endDate) : undefined as any;
         data["notes"] = this.notes;
         return data;
     }
@@ -23196,7 +23029,6 @@ export class CreatePayPeriodCommand implements ICreatePayPeriodCommand {
 
 export interface ICreatePayPeriodCommand {
     startDate: Date;
-    endDate: Date;
     notes: string | undefined;
 }
 
@@ -30268,82 +30100,6 @@ export enum NotificationFeedAudience {
     Admin = 2,
 }
 
-export class OpenPayPeriodCommand implements IOpenPayPeriodCommand {
-    payPeriodId!: string | undefined;
-    notes!: string | undefined;
-
-    constructor(data?: IOpenPayPeriodCommand) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.payPeriodId = Data["payPeriodId"];
-            this.notes = Data["notes"];
-        }
-    }
-
-    static fromJS(data: any): OpenPayPeriodCommand {
-        data = typeof data === 'object' ? data : {};
-        let result = new OpenPayPeriodCommand();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["payPeriodId"] = this.payPeriodId;
-        data["notes"] = this.notes;
-        return data;
-    }
-}
-
-export interface IOpenPayPeriodCommand {
-    payPeriodId: string | undefined;
-    notes: string | undefined;
-}
-
-export class OpenPayPeriodResponse implements IOpenPayPeriodResponse {
-    payPeriodId!: string | undefined;
-
-    constructor(data?: IOpenPayPeriodResponse) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.payPeriodId = Data["payPeriodId"];
-        }
-    }
-
-    static fromJS(data: any): OpenPayPeriodResponse {
-        data = typeof data === 'object' ? data : {};
-        let result = new OpenPayPeriodResponse();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["payPeriodId"] = this.payPeriodId;
-        return data;
-    }
-}
-
-export interface IOpenPayPeriodResponse {
-    payPeriodId: string | undefined;
-}
-
 export class OrderAddress implements IOrderAddress {
     street!: string | undefined;
     city!: string | undefined;
@@ -33151,6 +32907,7 @@ export class PayPeriodDto implements IPayPeriodDto {
     closedBy!: string | undefined;
     paidAt!: Date | undefined;
     notes!: string | undefined;
+    latestEndDate!: Date;
 
     constructor(data?: IPayPeriodDto) {
         if (data) {
@@ -33173,6 +32930,7 @@ export class PayPeriodDto implements IPayPeriodDto {
             this.closedBy = Data["closedBy"];
             this.paidAt = Data["paidAt"] ? new Date(Data["paidAt"].toString()) : undefined as any;
             this.notes = Data["notes"];
+            this.latestEndDate = Data["latestEndDate"] ? new Date(Data["latestEndDate"].toString()) : undefined as any;
         }
     }
 
@@ -33195,6 +32953,7 @@ export class PayPeriodDto implements IPayPeriodDto {
         data["closedBy"] = this.closedBy;
         data["paidAt"] = this.paidAt ? this.paidAt.toISOString() : undefined as any;
         data["notes"] = this.notes;
+        data["latestEndDate"] = this.latestEndDate ? formatDate(this.latestEndDate) : undefined as any;
         return data;
     }
 }
@@ -33210,6 +32969,7 @@ export interface IPayPeriodDto {
     closedBy: string | undefined;
     paidAt: Date | undefined;
     notes: string | undefined;
+    latestEndDate: Date;
 }
 
 export enum PayPeriodStatus {
@@ -34494,82 +34254,6 @@ export class RejectInvoiceResponse implements IRejectInvoiceResponse {
 
 export interface IRejectInvoiceResponse {
     invoiceId: string | undefined;
-}
-
-export class ReopenPayPeriodCommand implements IReopenPayPeriodCommand {
-    payPeriodId!: string | undefined;
-    notes!: string | undefined;
-
-    constructor(data?: IReopenPayPeriodCommand) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.payPeriodId = Data["payPeriodId"];
-            this.notes = Data["notes"];
-        }
-    }
-
-    static fromJS(data: any): ReopenPayPeriodCommand {
-        data = typeof data === 'object' ? data : {};
-        let result = new ReopenPayPeriodCommand();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["payPeriodId"] = this.payPeriodId;
-        data["notes"] = this.notes;
-        return data;
-    }
-}
-
-export interface IReopenPayPeriodCommand {
-    payPeriodId: string | undefined;
-    notes: string | undefined;
-}
-
-export class ReopenPayPeriodResponse implements IReopenPayPeriodResponse {
-    payPeriodId!: string | undefined;
-
-    constructor(data?: IReopenPayPeriodResponse) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.payPeriodId = Data["payPeriodId"];
-        }
-    }
-
-    static fromJS(data: any): ReopenPayPeriodResponse {
-        data = typeof data === 'object' ? data : {};
-        let result = new ReopenPayPeriodResponse();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["payPeriodId"] = this.payPeriodId;
-        return data;
-    }
-}
-
-export interface IReopenPayPeriodResponse {
-    payPeriodId: string | undefined;
 }
 
 export class ResetTenantSettingResponse implements IResetTenantSettingResponse {

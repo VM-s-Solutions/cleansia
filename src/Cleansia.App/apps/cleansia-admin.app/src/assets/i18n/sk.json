@@ -3070,7 +3070,6 @@
     "title": "Správa výplatných období",
     "description": "Spravujte výplatné obdobia, uzatvárajte obdobia a sledujte platby partnerom",
     "create_new": "Vytvoriť nové výplatné obdobie",
-    "confirm_close": "Naozaj chcete uzavrieť toto výplatné obdobie? Túto akciu nie je možné vrátiť späť.",
     "filters": {
       "status": "Stav",
       "year": "Rok"
@@ -3092,7 +3091,6 @@
         "actions": "Akcie"
       },
       "view_details": "Zobraziť detail",
-      "close_period": "Uzavrieť obdobie",
       "no_records": "Žiadne výplatné obdobia",
       "days": "dní"
     },
@@ -3124,14 +3122,6 @@
           "hint": "Označte toto uzavreté výplatné obdobie ako zaplatené. Tým sa vyúčtovanie dokončí.",
           "submit": "Potvrdiť zaplatenie",
           "success": "Výplatné obdobie bolo označené ako zaplatené"
-        },
-        "reopen": {
-          "action": "Znovu otvoriť obdobie",
-          "hint": "Znovu otvorte toto výplatné obdobie. Údaje o uzavretí budú vymazané.",
-          "notes": "Poznámky k otvoreniu (voliteľné)",
-          "notes_hint": "Vysvetlite, prečo sa obdobie znovu otvára...",
-          "submit": "Potvrdiť otvorenie",
-          "success": "Výplatné obdobie bolo znovu otvorené"
         }
       }
     },

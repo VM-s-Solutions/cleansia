@@ -2,7 +2,6 @@ import { computed, Injectable, inject, signal } from '@angular/core';
 import { FormBuilder } from '@angular/forms';
 import {
   AdminClient,
-  ClosePayPeriodCommand,
   CreatePayPeriodCommand,
   PayPeriodDto,
   PayPeriodStatus,
@@ -15,7 +14,7 @@ import { SnackbarService } from '@cleansia/services';
 import { currentLanguage } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
-import { PAY_PERIOD_LENGTH_DAYS, PayPeriodFilterParams } from './pay-period-management.models';
+import { PayPeriodFilterParams } from './pay-period-management.models';
 
 @Injectable()
 export class PayPeriodManagementFacade extends UnsubscribeControlDirective {
@@ -30,13 +29,6 @@ export class PayPeriodManagementFacade extends UnsubscribeControlDirective {
   readonly creating = signal<boolean>(false);
 
   readonly createStartDate = signal<Date | null>(null);
-  // Calendar days, not a sum of milliseconds, which lands on the wrong day across a DST change.
-  readonly createEndDate = computed(() => {
-    const start = this.createStartDate();
-    return start
-      ? new Date(start.getFullYear(), start.getMonth(), start.getDate() + PAY_PERIOD_LENGTH_DAYS - 1)
-      : null;
-  });
 
   readonly lang = currentLanguage(this.translate);
   readonly statusOptions = computed(() => {
@@ -157,12 +149,10 @@ export class PayPeriodManagementFacade extends UnsubscribeControlDirective {
 
   createPayPeriod(onSuccess: () => void): void {
     const startDate = this.createStartDate();
-    const endDate = this.createEndDate();
-    if (!startDate || !endDate || this.creating()) return;
+    if (!startDate || this.creating()) return;
 
     const command = new CreatePayPeriodCommand();
     command.startDate = startDate;
-    command.endDate = endDate;
 
     this.creating.set(true);
     this.adminClient.adminPayPeriodClient
@@ -176,25 +166,6 @@ export class PayPeriodManagementFacade extends UnsubscribeControlDirective {
         if (response) {
           this.snackbarService.showSuccessTranslated('pay_periods.messages.create_success');
           onSuccess();
-          this.loadPayPeriods();
-        }
-      });
-  }
-
-  closePayPeriod(payPeriodId: string, notes?: string): void {
-    const command = new ClosePayPeriodCommand();
-    command.payPeriodId = payPeriodId;
-    command.notes = notes;
-
-    this.adminClient.adminPayPeriodClient
-      .close(command)
-      .pipe(
-        takeUntil(this.destroyed$),
-        catchError(() => of(null))
-      )
-      .subscribe((response) => {
-        if (response) {
-          this.snackbarService.showSuccessTranslated('pay_periods.messages.close_success');
           this.loadPayPeriods();
         }
       });

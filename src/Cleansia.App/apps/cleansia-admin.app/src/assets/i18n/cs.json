@@ -3070,7 +3070,6 @@
     "title": "Správa platebních období",
     "description": "Spravujte platební období, uzavírejte období a sledujte platby partnerům",
     "create_new": "Vytvořit nové výplatní období",
-    "confirm_close": "Opravdu chcete uzavřít toto platební období? Tuto akci nelze vrátit zpět.",
     "filters": {
       "status": "Stav",
       "year": "Rok"
@@ -3092,7 +3091,6 @@
         "actions": "Akce"
       },
       "view_details": "Zobrazit detail",
-      "close_period": "Uzavřít období",
       "no_records": "Nebyla nalezena žádná platební období",
       "days": "dní"
     },
@@ -3124,14 +3122,6 @@
           "hint": "Označte toto uzavřené platební období jako zaplacené. Tím se vyúčtování dokončí.",
           "submit": "Potvrdit zaplacení",
           "success": "Platební období bylo označeno jako zaplacené"
-        },
-        "reopen": {
-          "action": "Znovu otevřít období",
-          "hint": "Znovu otevřete toto platební období. Údaje o uzavření budou vymazány.",
-          "notes": "Poznámky k otevření (volitelné)",
-          "notes_hint": "Vysvětlete, proč se období znovu otevírá...",
-          "submit": "Potvrdit otevření",
-          "success": "Platební období bylo znovu otevřeno"
         }
       }
     },

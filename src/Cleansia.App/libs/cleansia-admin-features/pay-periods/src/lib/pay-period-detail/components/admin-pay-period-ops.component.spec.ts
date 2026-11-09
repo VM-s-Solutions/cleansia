@@ -79,14 +79,11 @@ class FacadeStub {
   readonly activePanel = signal<AdminPayPeriodOpsPanel | null>(null);
   readonly submitting = signal<boolean>(false);
   readonly errorKey = signal<string | null>(null);
-  readonly reopenNotes = signal<string>('');
   openPanel = jest.fn((panel: AdminPayPeriodOpsPanel) =>
     this.activePanel.set(this.activePanel() === panel ? null : panel)
   );
   closePanel = jest.fn(() => this.activePanel.set(null));
-  setReopenNotes = jest.fn();
   markPaid = jest.fn();
-  reopen = jest.fn();
 }
 
 function makePayPeriod(partial: Partial<PayPeriodDto>): PayPeriodDto {
@@ -145,14 +142,9 @@ describe('AdminPayPeriodOpsComponent', () => {
     expect(meta.onPush).toBe(true);
   });
 
-  it('renders mark-paid and reopen actions for a closed period', () => {
+  it('renders only the mark-paid action for a closed period', () => {
     setPayPeriod(makePayPeriod({}));
-    expect(buttonLabels()).toEqual(
-      expect.arrayContaining([
-        'pay_periods.detail.ops.mark_paid.action',
-        'pay_periods.detail.ops.reopen.action',
-      ])
-    );
+    expect(buttonLabels()).toEqual(['pay_periods.detail.ops.mark_paid.action']);
   });
 
   it('renders nothing for an open period', () => {
@@ -169,17 +161,11 @@ describe('AdminPayPeriodOpsComponent', () => {
     expect(buttonLabels()).toEqual([]);
   });
 
-  it('delegates submits with the pay period id', () => {
+  it('delegates the submit with the pay period id', () => {
     setPayPeriod(makePayPeriod({}));
 
     component.submitMarkPaid();
     expect(facade.markPaid).toHaveBeenCalledWith(
-      'period-1',
-      expect.any(Function)
-    );
-
-    component.submitReopen();
-    expect(facade.reopen).toHaveBeenCalledWith(
       'period-1',
       expect.any(Function)
     );

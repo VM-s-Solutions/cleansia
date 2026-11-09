@@ -1,10 +1,8 @@
 import { TemplateRef } from '@angular/core';
-import { PayPeriodDto, PayPeriodStatus } from '@cleansia/admin-services';
+import { PayPeriodDto } from '@cleansia/admin-services';
 import { TableColumn, TableAction } from '@cleansia/components';
 import { formatDate } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
-
-export const PAY_PERIOD_LENGTH_DAYS = 14;
 
 export interface PayPeriodFilterParams {
   status?: number;
@@ -82,7 +80,6 @@ export function getPayPeriodTableColumns(
 export function getPayPeriodTableActions(
   defs: {
     onViewDetails: (row: PayPeriodDto) => void;
-    onClose: (row: PayPeriodDto) => void;
   },
   translate: TranslateService
 ): TableAction<PayPeriodDto>[] {
@@ -92,14 +89,6 @@ export function getPayPeriodTableActions(
       onClick: (row: PayPeriodDto) => defs.onViewDetails(row),
       color: 'info',
       tooltip: translate.instant('pay_periods.list.view_details'),
-    },
-    {
-      icon: 'pi pi-lock',
-      onClick: (row: PayPeriodDto) => defs.onClose(row),
-      color: 'warning',
-      tooltip: translate.instant('pay_periods.list.close_period'),
-      visible: (row: PayPeriodDto) =>
-        row.status === PayPeriodStatus[PayPeriodStatus.Open],
     },
   ];
 }

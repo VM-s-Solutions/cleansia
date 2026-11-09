@@ -119,6 +119,24 @@ public class GetPeriodPaysCurrencyScopeTests
         Assert.Equal(czkInvoice.Id, dto.InvoiceId);
     }
 
+    /// <summary>
+    /// A cancelled invoice and the corrected invoice that replaces it share a currency, and the
+    /// corrected one is the document the cleaner holds, whichever the period lists first.
+    /// </summary>
+    [Fact]
+    public async Task A_Cancelled_Invoice_Gives_Way_To_The_Corrected_Invoice_In_Its_Currency()
+    {
+        var cancelled = InvoiceIn(PayrollMockFactory.CurrencyId, "CZK").Cancel("Wrong address", "admin-1");
+        var corrected = InvoiceIn(PayrollMockFactory.CurrencyId, "CZK");
+        ArrangeInvoices([cancelled, corrected]);
+        ArrangePays(PayrollMockFactory.OrderPay(basePay: 300m));
+
+        var result = await CreateHandler().Handle(new GetPeriodPays.Query(EmployeeId, PayPeriodId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(corrected.Id, result.Value!.InvoiceId);
+    }
+
     // ── the currency VIEW: a named currency is exact ─────────────────
 
     /// <summary>

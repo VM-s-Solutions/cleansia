@@ -20,6 +20,7 @@ struct PeriodPayContent: View {
 }
 
 private struct HeroCard: View {
+    @Environment(\.locale) private var locale
     let summary: PeriodPaySummary
     let currencyCode: String?
 
@@ -33,8 +34,12 @@ private struct HeroCard: View {
                 Text(EarningsFormat.decimalMoney(summary.grandTotal, currencyCode: currencyCode))
                     .cleansiaFont(CleansiaTypography.headlineMedium)
                     .foregroundColor(CleansiaColors.onSurface)
-                if let label = summary.payPeriodLabel, !label.isEmpty {
-                    Text(label)
+                if let period = EarningsFormat.period(
+                    start: summary.payPeriodStart,
+                    end: summary.payPeriodEnd,
+                    locale: locale
+                ) {
+                    Text(period)
                         .font(CleansiaTypography.labelSmall)
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
                 }

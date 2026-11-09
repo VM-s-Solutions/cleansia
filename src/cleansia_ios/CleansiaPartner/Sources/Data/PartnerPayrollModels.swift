@@ -2,8 +2,8 @@ import CleansiaCore
 import CleansiaPartnerApi
 import Foundation
 
-/// **Refuse the page.** Every row is an addend of the list's own rollup — `InvoicesListContent`
-/// sums `totalAmount` across the rows and renders it as what the cleaner is owed — so dropping an
+/// **Refuse the page.** Every Paid row is an addend of the list's own rollup — `InvoicesListContent`
+/// sums their `totalAmount` per currency and renders it as what the cleaner has been paid — so dropping an
 /// unmappable row would silently subtract its amount from that figure. A smaller, plausible,
 /// unmarked number is the failure with no symptom; refusing is the only outcome that cannot show a
 /// wrong total.
@@ -16,7 +16,8 @@ import Foundation
 struct Invoice: Equatable, Identifiable {
     let id: String
     let invoiceNumber: String?
-    let payPeriodLabel: String?
+    let payPeriodStart: Date?
+    let payPeriodEnd: Date?
     let totalOrders: Int
     let totalAmount: Double
     let currencyCode: String?
@@ -30,7 +31,8 @@ extension Invoice {
     init(_ dto: EmployeeInvoiceDto) throws {
         id = try dto.id.requireNonBlank("id")
         invoiceNumber = dto.invoiceNumber
-        payPeriodLabel = dto.payPeriodLabel
+        payPeriodStart = dto.payPeriodStartDate?.wrappedDate
+        payPeriodEnd = dto.payPeriodEndDate?.wrappedDate
         totalOrders = try dto.totalOrders.require("totalOrders")
         totalAmount = try dto.totalAmount.require("totalAmount")
         currencyCode = dto.currencyCode
@@ -50,7 +52,8 @@ struct InvoiceDetail: Equatable, Identifiable {
     let id: String
     let invoiceNumber: String?
     let payPeriodId: String?
-    let payPeriodLabel: String?
+    let payPeriodStart: Date?
+    let payPeriodEnd: Date?
     let variableSymbol: String?
     let paymentReference: String?
     let totalOrders: Int
@@ -58,6 +61,8 @@ struct InvoiceDetail: Equatable, Identifiable {
     let bonusAmount: Double
     let deductionAmount: Double
     let totalAmount: Double
+    let cashSetOffAmount: Double
+    let transferAmount: Double
     let currencyCode: String?
     /// The currency view My Pay asks for when opened from this invoice, so the period it shows is
     /// the one this invoice settles even when the cleaner's resolved currency is another.
@@ -77,7 +82,8 @@ extension InvoiceDetail {
         id = try dto.id.requireNonBlank("id")
         invoiceNumber = dto.invoiceNumber
         payPeriodId = dto.payPeriodId
-        payPeriodLabel = dto.payPeriodLabel
+        payPeriodStart = dto.payPeriodStartDate?.wrappedDate
+        payPeriodEnd = dto.payPeriodEndDate?.wrappedDate
         variableSymbol = dto.variableSymbol
         paymentReference = dto.paymentReference
         totalOrders = try dto.totalOrders.require("totalOrders")
@@ -85,6 +91,8 @@ extension InvoiceDetail {
         bonusAmount = try dto.bonusAmount.require("bonusAmount")
         deductionAmount = try dto.deductionAmount.require("deductionAmount")
         totalAmount = try dto.totalAmount.require("totalAmount")
+        cashSetOffAmount = try dto.cashSetOffAmount.require("cashSetOffAmount")
+        transferAmount = try dto.transferAmount.require("transferAmount")
         currencyCode = dto.currencyCode
         currencyId = dto.currencyId
         status = try dto.status.require("status")
@@ -104,7 +112,8 @@ extension InvoiceDetail {
 /// period would blank a payslip the server answered correctly. The summary's own totals get the
 /// opposite treatment for the same reason: they *are* what the cleaner reads.
 struct PeriodPaySummary: Equatable {
-    let payPeriodLabel: String?
+    let payPeriodStart: Date?
+    let payPeriodEnd: Date?
     let totalOrders: Int
     let totalBasePay: Double
     let totalExtrasPay: Double
@@ -122,7 +131,8 @@ struct PeriodPaySummary: Equatable {
 
 extension PeriodPaySummary {
     init(_ dto: PeriodPaySummaryDto) throws {
-        payPeriodLabel = dto.payPeriodLabel
+        payPeriodStart = dto.payPeriodStartDate?.wrappedDate
+        payPeriodEnd = dto.payPeriodEndDate?.wrappedDate
         totalOrders = try dto.totalOrders.require("totalOrders")
         totalBasePay = try dto.totalBasePay.require("totalBasePay")
         totalExtrasPay = try dto.totalExtrasPay.require("totalExtrasPay")

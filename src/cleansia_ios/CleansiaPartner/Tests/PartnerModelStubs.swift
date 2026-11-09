@@ -42,7 +42,8 @@ extension DashboardStats {
 
 extension PeriodPaySummary {
     static func stub(
-        payPeriodLabel: String? = nil,
+        payPeriodStart: Date? = nil,
+        payPeriodEnd: Date? = nil,
         totalOrders: Int = 0,
         totalBasePay: Double = 0,
         totalExtrasPay: Double = 0,
@@ -55,7 +56,8 @@ extension PeriodPaySummary {
         orderPays: [OrderPayLine] = []
     ) -> PeriodPaySummary {
         PeriodPaySummary(
-            payPeriodLabel: payPeriodLabel,
+            payPeriodStart: payPeriodStart,
+            payPeriodEnd: payPeriodEnd,
             totalOrders: totalOrders,
             totalBasePay: totalBasePay,
             totalExtrasPay: totalExtrasPay,
@@ -74,7 +76,8 @@ extension Invoice {
     static func stub(
         id: String = "inv-1",
         invoiceNumber: String? = "INV-1",
-        payPeriodLabel: String? = nil,
+        payPeriodStart: Date? = nil,
+        payPeriodEnd: Date? = nil,
         totalOrders: Int = 0,
         totalAmount: Double = 0,
         currencyCode: String? = "CZK",
@@ -86,7 +89,8 @@ extension Invoice {
         Invoice(
             id: id,
             invoiceNumber: invoiceNumber,
-            payPeriodLabel: payPeriodLabel,
+            payPeriodStart: payPeriodStart,
+            payPeriodEnd: payPeriodEnd,
             totalOrders: totalOrders,
             totalAmount: totalAmount,
             currencyCode: currencyCode,
@@ -110,7 +114,8 @@ extension InvoiceDetail {
             id: id,
             invoiceNumber: "INV-1",
             payPeriodId: "pp-1",
-            payPeriodLabel: nil,
+            payPeriodStart: nil,
+            payPeriodEnd: nil,
             variableSymbol: nil,
             paymentReference: nil,
             totalOrders: 0,
@@ -118,6 +123,8 @@ extension InvoiceDetail {
             bonusAmount: 0,
             deductionAmount: 0,
             totalAmount: totalAmount,
+            cashSetOffAmount: 0,
+            transferAmount: totalAmount,
             currencyCode: "CZK",
             currencyId: currencyId,
             status: ._1,

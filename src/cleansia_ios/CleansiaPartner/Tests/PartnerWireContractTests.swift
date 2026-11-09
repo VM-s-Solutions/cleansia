@@ -10,6 +10,9 @@ import XCTest
 /// Nullability is read from the C# records — never from the spec, whose 359 plain-string properties
 /// are `nullable: true` without exception and therefore discriminate nothing.
 final class PartnerWireContractTests: XCTestCase {
+    private static let periodStart = Date(timeIntervalSince1970: 1_780_272_000)
+    private static let periodEnd = Date(timeIntervalSince1970: 1_781_481_600)
+
     // MARK: DashboardStatsDto
 
     private func statsPayload() -> DashboardStatsDto {
@@ -76,6 +79,8 @@ final class PartnerWireContractTests: XCTestCase {
             employeeName: "Jana",
             payPeriodId: "pp-1",
             payPeriodLabel: "1 – 15 Jun 2026",
+            payPeriodStartDate: OpenAPIDateWithoutTime(day: Self.periodStart),
+            payPeriodEndDate: OpenAPIDateWithoutTime(day: Self.periodEnd),
             invoiceNumber: "INV-2026-001",
             totalOrders: 3,
             subTotal: 4000,
@@ -119,12 +124,16 @@ final class PartnerWireContractTests: XCTestCase {
             employeeName: "Jana",
             payPeriodId: "pp-1",
             payPeriodLabel: "1 – 15 Jun 2026",
+            payPeriodStartDate: OpenAPIDateWithoutTime(day: Self.periodStart),
+            payPeriodEndDate: OpenAPIDateWithoutTime(day: Self.periodEnd),
             invoiceNumber: "INV-2026-001",
             totalOrders: 3,
             subTotal: 4000,
             bonusAmount: 250,
             deductionAmount: 50,
             totalAmount: 4200,
+            cashSetOffAmount: 301,
+            transferAmount: 3899,
             currencyCode: "EUR",
             currencyId: "cur-eur",
             status: ._3,
@@ -148,12 +157,48 @@ final class PartnerWireContractTests: XCTestCase {
             ("deductionAmount", { dto in dto.deductionAmount = nil }),
             ("totalOrders", { dto in dto.totalOrders = nil }),
             ("status", { dto in dto.status = nil }),
-            ("pdfGenerationFailed", { dto in dto.pdfGenerationFailed = nil })
+            ("pdfGenerationFailed", { dto in dto.pdfGenerationFailed = nil }),
+            ("cashSetOffAmount", { dto in dto.cashSetOffAmount = nil }),
+            ("transferAmount", { dto in dto.transferAmount = nil })
         ] {
             var payload = invoiceDetailPayload()
             corrupt(&payload)
             assertRefused(field) { try InvoiceDetail(payload) }
         }
+    }
+
+    /// The cash the cleaner kept at the door and the transfer they receive are the server's own figures, never
+    /// derived from the total on the phone.
+    func testTheInvoiceDetailCarriesTheCashSetOffAndTheTransferAsSent() throws {
+        let detail = try InvoiceDetail(invoiceDetailPayload())
+        XCTAssertEqual(detail.cashSetOffAmount, 301)
+        XCTAssertEqual(detail.transferAmount, 3899)
+    }
+
+    /// The period is named from its first and last day, the calendar days the server sends; the label it also
+    /// sends is English whatever the cleaner reads.
+    func testEachPayDocumentCarriesItsPeriodsDaysAsSent() throws {
+        let invoice = try Invoice(invoicePayload())
+        let detail = try InvoiceDetail(invoiceDetailPayload())
+        let summary = try PeriodPaySummary(summaryPayload())
+        for (name, start, end) in [
+            ("invoice", invoice.payPeriodStart, invoice.payPeriodEnd),
+            ("detail", detail.payPeriodStart, detail.payPeriodEnd),
+            ("summary", summary.payPeriodStart, summary.payPeriodEnd)
+        ] {
+            XCTAssertEqual(start, Self.periodStart, name)
+            XCTAssertEqual(end, Self.periodEnd, name)
+        }
+    }
+
+    func testAPayDocumentWithoutItsPeriodsDaysIsNotARefusal() throws {
+        var invoice = invoicePayload()
+        invoice.payPeriodStartDate = nil
+        invoice.payPeriodEndDate = nil
+        var summary = summaryPayload()
+        summary.payPeriodStartDate = nil
+        XCTAssertNil(try Invoice(invoice).payPeriodStart)
+        XCTAssertNil(try PeriodPaySummary(summary).payPeriodStart)
     }
 
     /// The rollup sums the rows, so a broken row must not be silently dropped out of the total.
@@ -184,6 +229,8 @@ final class PartnerWireContractTests: XCTestCase {
         PeriodPaySummaryDto(
             payPeriodId: "pp-1",
             payPeriodLabel: "1 – 15 Jun 2026",
+            payPeriodStartDate: OpenAPIDateWithoutTime(day: Self.periodStart),
+            payPeriodEndDate: OpenAPIDateWithoutTime(day: Self.periodEnd),
             employeeId: "emp-1",
             employeeName: "Jana",
             totalOrders: 2,

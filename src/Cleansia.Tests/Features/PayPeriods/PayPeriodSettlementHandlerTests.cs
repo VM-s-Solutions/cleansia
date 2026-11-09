@@ -8,7 +8,7 @@ using Moq;
 namespace Cleansia.Tests.Features.PayPeriods;
 
 /// <summary>
-/// AC3 (T-0171b) — the admin pay-period settlement handler. The domain guards the legal transition
+/// The admin pay-period settlement handler. The domain guards the legal transition
 /// (<see cref="PayPeriod.MarkAsPaid"/> requires Closed). These tests pin that the handler drives the domain
 /// transition on the happy path and surfaces a BusinessResult error (no throw, no mutation) on the guarded case.
 /// Written red → green per knowledge/testing.md.

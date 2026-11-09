@@ -3084,7 +3084,6 @@
       "filter_by_year": "Filtrovať podľa roku",
       "reset": "Obnoviť filtre",
       "columns": {
-        "period_label": "Obdobie",
         "start_date": "Dátum začiatku",
         "end_date": "Dátum konca",
         "duration": "Trvanie",
@@ -3094,8 +3093,7 @@
         "actions": "Akcie"
       },
       "view_details": "Zobraziť detail",
-      "no_records": "Žiadne výplatné obdobia",
-      "days": "dní"
+      "no_records": "Žiadne výplatné obdobia"
     },
     "days_one": "{{count}} deň",
     "days_few": "{{count}} dni",

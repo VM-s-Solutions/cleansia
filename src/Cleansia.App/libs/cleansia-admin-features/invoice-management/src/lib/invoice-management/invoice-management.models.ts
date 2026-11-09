@@ -50,22 +50,21 @@ export function getInvoiceTableColumns(
       id: 'employeeName',
       field: 'employeeName',
       header: 'pages.invoice_management.employee_name',
-      sortable: true,
       width: '13%',
     },
     {
       id: 'payPeriodLabel',
       field: 'payPeriodLabel',
       header: 'pages.invoice_management.pay_period',
-      sortable: true,
       width: '12%',
+      getValue: (row: EmployeeInvoiceDto) =>
+        formatPayPeriodRange(row.payPeriodStartDate, row.payPeriodEndDate, translate.currentLang),
     },
     {
       id: 'totalOrders',
       numeric: true,
       field: 'totalOrders',
       header: 'pages.invoice_management.total_orders',
-      sortable: true,
       width: '6%',
     },
     {

@@ -161,7 +161,7 @@
         </div>
         <div class="detail-grid__item">
           <span class="detail-grid__label">{{ 'pages.invoice_detail.pay_period' | translate }}</span>
-          <span class="detail-grid__value">{{ invoice.payPeriodLabel || '-' }}</span>
+          <span class="detail-grid__value">{{ facade.formatPayPeriod(invoice) }}</span>
         </div>
         <div class="detail-grid__item">
           <span class="detail-grid__label">{{ 'pages.invoice_detail.variable_symbol' | translate }}</span>

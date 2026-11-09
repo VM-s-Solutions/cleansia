@@ -1,14 +1,49 @@
+import { PayPeriodDto } from '@cleansia/admin-services';
 import { TranslateService } from '@ngx-translate/core';
-import { formatPayPeriodDuration } from './pay-period-management.models';
+import {
+  formatPayPeriodDuration,
+  getPayPeriodTableColumns,
+} from './pay-period-management.models';
+
+const translateIn = (currentLang: string) =>
+  ({
+    currentLang,
+    instant: (key: string, params?: { count?: number }) =>
+      `${key}:${params?.count}`,
+  } as unknown as TranslateService);
+
+describe('pay period list columns', () => {
+  const cs = translateIn('cs');
+
+  it('drops the Period column, since Start and End sit beside it', () => {
+    expect(getPayPeriodTableColumns(cs).map((c) => c.id)).toEqual([
+      'startDate',
+      'endDate',
+      'durationDays',
+      'status',
+      'closedAt',
+      'closedBy',
+    ]);
+  });
+
+  it("prints the start, the end and the duration in the session's language", () => {
+    const row = PayPeriodDto.fromJS({
+      startDate: '2026-11-01',
+      endDate: '2026-11-03',
+      durationDays: 3,
+    });
+    const value = (id: string) =>
+      getPayPeriodTableColumns(cs)
+        .find((c) => c.id === id)
+        ?.getValue?.(row);
+
+    expect(value('startDate')).toBe('1. 11. 2026');
+    expect(value('endDate')).toBe('3. 11. 2026');
+    expect(value('durationDays')).toBe('pay_periods.days_few:3');
+  });
+});
 
 describe('pay period duration', () => {
-  const translateIn = (currentLang: string) =>
-    ({
-      currentLang,
-      instant: (key: string, params?: { count?: number }) =>
-        `${key}:${params?.count}`,
-    } as unknown as TranslateService);
-
   it('names the day count in the plural form its language needs', () => {
     const cs = translateIn('cs');
 

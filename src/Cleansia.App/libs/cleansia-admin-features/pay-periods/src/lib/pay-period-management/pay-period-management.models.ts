@@ -21,20 +21,13 @@ export function getPayPeriodTableColumns(
 ): TableColumn<PayPeriodDto>[] {
   return [
     {
-      id: 'periodLabel',
-      field: 'periodLabel',
-      header: 'pay_periods.list.columns.period_label',
-      sortable: true,
-      width: '15%',
-    },
-    {
       id: 'startDate',
       numeric: true,
       field: 'startDate',
       header: 'pay_periods.list.columns.start_date',
       sortable: true,
       width: '12%',
-      getValue: (row: PayPeriodDto) => formatDate(row.startDate, translate.currentLang),
+      getValue: (row: PayPeriodDto) => formatDate(row.startDate, translate.currentLang, 'utcDate'),
     },
     {
       id: 'endDate',
@@ -43,7 +36,7 @@ export function getPayPeriodTableColumns(
       header: 'pay_periods.list.columns.end_date',
       sortable: true,
       width: '12%',
-      getValue: (row: PayPeriodDto) => formatDate(row.endDate, translate.currentLang),
+      getValue: (row: PayPeriodDto) => formatDate(row.endDate, translate.currentLang, 'utcDate'),
     },
     {
       id: 'durationDays',
@@ -52,9 +45,7 @@ export function getPayPeriodTableColumns(
       header: 'pay_periods.list.columns.duration',
       width: '10%',
       getValue: (row: PayPeriodDto) =>
-        row.durationDays
-          ? `${row.durationDays} ${translate.instant('pay_periods.list.days')}`
-          : '',
+        row.durationDays ? formatPayPeriodDuration(row.durationDays, translate) : '',
     },
     {
       id: 'status',

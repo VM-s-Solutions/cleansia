@@ -3084,7 +3084,6 @@
       "filter_by_year": "Filtrovat podle roku",
       "reset": "Resetovat filtry",
       "columns": {
-        "period_label": "Období",
         "start_date": "Datum začátku",
         "end_date": "Datum konce",
         "duration": "Délka trvání",
@@ -3094,8 +3093,7 @@
         "actions": "Akce"
       },
       "view_details": "Zobrazit detail",
-      "no_records": "Nebyla nalezena žádná platební období",
-      "days": "dní"
+      "no_records": "Nebyla nalezena žádná platební období"
     },
     "days_one": "{{count}} den",
     "days_few": "{{count}} dny",

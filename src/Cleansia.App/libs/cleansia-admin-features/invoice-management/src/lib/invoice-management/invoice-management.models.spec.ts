@@ -47,4 +47,31 @@ describe('invoice-management table columns', () => {
       ['transferAmount', false],
     ]);
   });
+
+  it("names the pay period by its dates in the session's language, not by the server's English label", () => {
+    const row = EmployeeInvoiceDto.fromJS({
+      payPeriodLabel: 'Nov 01 - Nov 14, 2026',
+      payPeriodStartDate: '2026-11-01',
+      payPeriodEndDate: '2026-11-14',
+    });
+    const value = getInvoiceTableColumns(translate)
+      .find((c) => c.id === 'payPeriodLabel')
+      ?.getValue?.(row);
+
+    expect(value).toBe('1. 11. 2026 – 14. 11. 2026');
+    expect(value).not.toMatch(/Nov/);
+  });
+
+  // The server sorts invoices by none of these and falls back to the generation date.
+  it('offers no sort on the partner, the pay period or the order count', () => {
+    const sortable = getInvoiceTableColumns(translate)
+      .filter((c) => ['employeeName', 'payPeriodLabel', 'totalOrders'].includes(c.id))
+      .map((c) => [c.id, !!c.sortable]);
+
+    expect(sortable).toEqual([
+      ['employeeName', false],
+      ['payPeriodLabel', false],
+      ['totalOrders', false],
+    ]);
+  });
 });

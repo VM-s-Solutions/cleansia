@@ -22,6 +22,7 @@ import {
   RejectDialogData,
   RejectDialogResult,
 } from '@cleansia/admin-features/employee-management';
+import { formatPayPeriodRange } from '../invoice-management/invoice-management.models';
 
 @Injectable()
 export class InvoiceDetailFacade extends UnsubscribeControlDirective {
@@ -331,6 +332,16 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
 
   formatDateTime(date: string | Date | null | undefined): string {
     return formatDate(date, this.translate.currentLang, 'dateTime') || '-';
+  }
+
+  formatPayPeriod(invoice: EmployeeInvoiceDetailDto): string {
+    return (
+      formatPayPeriodRange(
+        invoice.payPeriodStartDate,
+        invoice.payPeriodEndDate,
+        this.translate.currentLang
+      ) || '-'
+    );
   }
 
   formatCurrency(

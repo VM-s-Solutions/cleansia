@@ -5,6 +5,7 @@ import {
   ApproveInvoiceCommand,
   AssignInvoiceVariableSymbolCommand,
   CancelInvoiceCommand,
+  EmployeeInvoiceDetailDto,
   EmployeeInvoiceStatus,
   MarkInvoicePaidCommand,
   MaskedPayoutDetails,
@@ -375,6 +376,19 @@ describe('InvoiceDetailFacade', () => {
       expect(detailsMock).toHaveBeenCalledTimes(1);
       expect(facade.actionLoading()).toBe(false);
     });
+  });
+
+  it("names the pay period by its dates in the session's language", () => {
+    expect(
+      facade.formatPayPeriod(
+        EmployeeInvoiceDetailDto.fromJS({
+          payPeriodLabel: 'Nov 01 - Nov 14, 2026',
+          payPeriodStartDate: '2026-11-01',
+          payPeriodEndDate: '2026-11-14',
+        })
+      )
+    ).toBe('1. 11. 2026 – 14. 11. 2026');
+    expect(facade.formatPayPeriod(EmployeeInvoiceDetailDto.fromJS({}))).toBe('-');
   });
 
   it('renders an absent amount and date as a dash', () => {

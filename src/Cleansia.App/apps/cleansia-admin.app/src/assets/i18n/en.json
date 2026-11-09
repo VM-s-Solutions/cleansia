@@ -3084,7 +3084,6 @@
       "filter_by_year": "Filter by Year",
       "reset": "Reset Filters",
       "columns": {
-        "period_label": "Period",
         "start_date": "Start Date",
         "end_date": "End Date",
         "duration": "Duration",
@@ -3094,8 +3093,7 @@
         "actions": "Actions"
       },
       "view_details": "View Details",
-      "no_records": "No pay periods found",
-      "days": "days"
+      "no_records": "No pay periods found"
     },
     "days_one": "{{count}} day",
     "days_few": "{{count}} days",

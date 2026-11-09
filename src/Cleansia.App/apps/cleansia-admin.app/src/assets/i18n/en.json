@@ -2157,7 +2157,7 @@
       },
       "cancel_dialog": {
         "title": "Cancel Invoice",
-        "subtitle": "Please provide a reason for cancelling this invoice. A corrected invoice with a new number follows within minutes. To change only the bonus or deduction, use Adjust Amounts instead of cancelling (dispute an approved invoice first).",
+        "subtitle": "Please provide a reason for cancelling this invoice. A corrected invoice with a new number follows within minutes. It is rebuilt from the order payments, so a bonus or deduction set with Adjust Amounts must be set again on it. To change only the bonus or deduction, use Adjust Amounts instead of cancelling (dispute an approved invoice first).",
         "reason_label": "Cancellation Reason",
         "reason_placeholder": "Enter the reason for cancellation...",
         "submit": "Cancel Invoice"

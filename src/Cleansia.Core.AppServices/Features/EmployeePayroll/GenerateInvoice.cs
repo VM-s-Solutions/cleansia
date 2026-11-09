@@ -52,7 +52,7 @@ public class GenerateInvoice
                 .WithMessage(BusinessErrorMessage.Required)
                 .MustAsync(payPeriodRepository.ExistsAsync)
                 .WithMessage(BusinessErrorMessage.PayPeriodNotFound)
-                .MustAsync(BeClosedStatusAsync)
+                .MustAsync(HaveClosedAsync)
                 .WithMessage(BusinessErrorMessage.PayPeriodNotClosed);
 
             RuleFor(x => x)
@@ -66,10 +66,11 @@ public class GenerateInvoice
 
         // Pay is invoiced once its period has closed: an invoice issued while the period runs holds only
         // the jobs done so far, and every later job in its currency is then refused as already invoiced.
-        private async Task<bool> BeClosedStatusAsync(string payPeriodId, CancellationToken cancellationToken)
+        // A Paid period has closed too, and an admin can mark one paid before the sweep invoices it.
+        private async Task<bool> HaveClosedAsync(string payPeriodId, CancellationToken cancellationToken)
         {
             var period = await _payPeriodRepository.GetByIdAsync(payPeriodId, cancellationToken);
-            return period!.Status == PayPeriodStatus.Closed;
+            return period!.Status != PayPeriodStatus.Open;
         }
 
         // PER CURRENCY: one invoice per (employee, period, currency), so the rule passes while every

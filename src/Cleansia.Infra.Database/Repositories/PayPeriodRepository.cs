@@ -46,7 +46,8 @@ public class PayPeriodRepository(CleansiaDbContext context) : BaseRepository<Pay
         //
         // Pay is invoiced once its period has closed, never while it runs, so an Open period is no
         // candidate however old it is; the cutoff ages the CLOSE, leaving a just-closed period to the
-        // close that is still invoicing it. The anti-join is the LEFT-of-NOT-EXISTS; group/distinct
+        // close that is still invoicing it. A Paid period stays a candidate: an admin can mark a period
+        // paid before this sweep reaches it. The anti-join is the LEFT-of-NOT-EXISTS; group/distinct
         // collapses the (possibly many) pay rows per (period, employee) to one re-enqueue candidate.
         //
         // ONE query rooted on the pay set with IgnoreQueryFilters so the ignore propagates across the
@@ -62,7 +63,7 @@ public class PayPeriodRepository(CleansiaDbContext context) : BaseRepository<Pay
 
         var query =
             from pay in Context.Set<OrderEmployeePay>().IgnoreQueryFilters()
-            where pay.PayPeriod!.Status == PayPeriodStatus.Closed
+            where pay.PayPeriod!.Status != PayPeriodStatus.Open
                 && pay.PayPeriod.ClosedAt <= olderThanUtc
                 // One invoice per currency: a pair whose CZK pay is invoiced and whose EUR pay is not
                 // is still a candidate. The message key stays per pair, and the consumer invoices every

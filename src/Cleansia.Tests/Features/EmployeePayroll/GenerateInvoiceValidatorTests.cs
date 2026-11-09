@@ -105,10 +105,14 @@ public class GenerateInvoiceValidatorTests
             && e.ErrorMessage == BusinessErrorMessage.PayPeriodNotFound);
     }
 
+    /// <summary>
+    /// A Paid period has closed too: an admin can mark a period paid before the sweep invoices it, and its
+    /// pay must still be invoiced.
+    /// </summary>
     [Theory]
-    [InlineData(PayPeriodStatus.Open)]
-    [InlineData(PayPeriodStatus.Paid)]
-    public async Task A_Period_That_Is_Not_Closed_Fails_PayPeriodNotClosed(PayPeriodStatus status)
+    [InlineData(PayPeriodStatus.Open, false)]
+    [InlineData(PayPeriodStatus.Paid, true)]
+    public async Task Only_An_Open_Period_Fails_PayPeriodNotClosed(PayPeriodStatus status, bool valid)
     {
         _payPeriodRepository
             .Setup(r => r.GetByIdAsync(PayPeriodId, It.IsAny<CancellationToken>()))
@@ -116,9 +120,13 @@ public class GenerateInvoiceValidatorTests
 
         var result = await CreateValidator().ValidateAsync(Valid());
 
-        Assert.Contains(result.Errors, e =>
-            e.PropertyName == nameof(GenerateInvoice.Command.PayPeriodId)
-            && e.ErrorMessage == BusinessErrorMessage.PayPeriodNotClosed);
+        Assert.Equal(valid, result.IsValid);
+        if (!valid)
+        {
+            Assert.Contains(result.Errors, e =>
+                e.PropertyName == nameof(GenerateInvoice.Command.PayPeriodId)
+                && e.ErrorMessage == BusinessErrorMessage.PayPeriodNotClosed);
+        }
     }
 
     [Fact]

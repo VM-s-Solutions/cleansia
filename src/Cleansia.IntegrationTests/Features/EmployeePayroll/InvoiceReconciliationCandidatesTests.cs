@@ -50,6 +50,29 @@ public class InvoiceReconciliationCandidatesTests(PostgresContainerFixture fixtu
             });
     }
 
+    /// <summary>An admin can mark a period paid before the sweep reaches it, and its pay is still invoiced.</summary>
+    [Fact]
+    public async Task A_Period_Marked_Paid_Before_The_Sweep_Is_Still_A_Candidate()
+    {
+        string employeeId = default!;
+        string paid = default!;
+
+        await TestMethod(
+            arrange: async context =>
+            {
+                employeeId = await SeedCleanerAsync(context);
+                paid = await SeedPeriodWithPayAsync(context, employeeId, new DateOnly(2026, 1, 1), closedAt: DateTime.UtcNow.AddMinutes(-30), markPaid: true);
+            },
+            act: async provider => await provider.GetRequiredService<IPayPeriodRepository>()
+                .GetInvoiceReconciliationCandidatesAsync(DateTime.UtcNow.AddMinutes(-15), take: 50, CancellationToken.None),
+            assert: (CleansiaDbContext _, List<InvoiceReconciliationItem> candidates) =>
+            {
+                var candidate = Assert.Single(candidates);
+                Assert.Equal((paid, employeeId), (candidate.PayPeriodId, candidate.EmployeeId));
+                return Task.CompletedTask;
+            });
+    }
+
     private static async Task<string> SeedCleanerAsync(CleansiaDbContext context)
     {
         var country = Country.Create("Czechia", "CZ", "CZ", isServiced: true);
@@ -70,7 +93,7 @@ public class InvoiceReconciliationCandidatesTests(PostgresContainerFixture fixtu
         return employee.Id;
     }
 
-    private static async Task<string> SeedPeriodWithPayAsync(CleansiaDbContext context, string employeeId, DateOnly start, DateTime? closedAt)
+    private static async Task<string> SeedPeriodWithPayAsync(CleansiaDbContext context, string employeeId, DateOnly start, DateTime? closedAt, bool markPaid = false)
     {
         var period = PayPeriod.CreateBiWeekly(start);
         // Created long before the threshold, so only the status and the close can keep it out.
@@ -79,6 +102,10 @@ public class InvoiceReconciliationCandidatesTests(PostgresContainerFixture fixtu
         {
             period.Close("System");
             typeof(PayPeriod).GetProperty(nameof(PayPeriod.ClosedAt))!.SetValue(period, closedAt);
+        }
+        if (markPaid)
+        {
+            period.MarkAsPaid();
         }
         context.Add(period);
 

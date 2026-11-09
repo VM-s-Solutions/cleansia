@@ -4,7 +4,7 @@ title: "Customer onboarding: concept D, ready to book with your cleaner's view"
 size: L
 owner: Michael Chaban
 created: 2026-11-08
-updated: 2026-11-08
+updated: 2026-11-09
 depends_on: [T-0914, T-0915, T-0916, T-0917, T-0918, T-0919]
 blocks: []
 stories: []
@@ -259,7 +259,7 @@ green; and Mike gets a customer TestFlight build.
   store the day as they move, Done only closes, there is no Cancel, an untouched sheet stores nothing, and the
   customer's Edit profile and the partner's personal details change with it. Open point 2: *"Open Point 2: no"*, so
   PR B builds no name step. AC1's name clause, AC7 and AC11's Android capture now say what each platform builds, and
-  ADR-0081's Applies-to line and D5 no longer name an Android mapper. The PM settled the Android build brief's Q9 yes
+  ADR-0081's Applies-to line and D5 no longer name an Android mapper. The Android build brief's Q9 was settled yes
   the same day: on Android, AC6 is proven by a source test on the sheet and by the minified build's emulator walk,
   not through the view model, which never sees the sheet. PR B's records reword AC6's last sentence with that proof.
   - ADR-0018 D1: the Android onboarding has no name step, because no account that signs in on Android can carry a
@@ -325,11 +325,17 @@ green; and Mike gets a customer TestFlight build.
     judge"*, is wrong for the customer path. `UpdateCurrentUser` checks the phone only for uniqueness
     (`UpdateCurrentUser.cs:62-66`), and `[PhoneNumber]` on `User.PhoneNumber` is not enforced on save; T-0921 F1
     takes it up.
-  - ADR-0081 moves to `accepted` on the PM's instruction of 2026-11-08, with its *What shipped* note; the decisions
+  - ADR-0081 moves to `accepted` on instruction of 2026-11-08, with its *What shipped* note; the decisions
     index follows.
   - Left for Mike before PR A leaves draft: the routed `patterns-mobile.md:1016` row (Review, below); the copy flags
     of the brief's section 6.2 (the Slovak written to match the mock's Czech, the Ukrainian and Russian texts, and
     Q7's verb); and AC8 on a phone with VoiceOver, against the reads `ProfileOnboardingLayoutTests` pins.
+- 2026-11-09 — From the review of PR A. `6f07824d2`: a hosted test types national digits into the empty `+420` phone
+  field and expects them stored behind the code. AC2 and AC3 rest on that setter, and no test reached it: with it
+  stubbed to store the digits as typed, the test failed on the iOS 26.3 simulator; with the real one it passes. Routed
+  for ratification before PR A leaves draft, with the `:1016` row: T-0921 F13's address-picker row (`:1046`) and
+  devices bullet (`:2041`), and whether `:2063` still holds (Review, below). The `:1016` draft now names the simulator
+  CI hosts its tests on; the iOS 16.4 run was local.
 
 ## Review
 
@@ -348,7 +354,8 @@ Catalog-edit routing for the docs and catalog edits of the iOS half, by the test
   the carve-out is Mike's ruling of 2026-11-08 (concept D, mascot included), written in the page the sentence defers
   to; (2) "auth screen" in the catalog sentence never meant this form, which asks for what a booking needs, not for
   a sign-in. Under either reading the catalog line stays as it is and the owner's ruling is what changed the list;
-  no catalog sentence is edited.
+  no catalog sentence is edited. Since the review of PR A (2026-11-09), the ratification of the rows below also
+  confirms that this sentence still matches Mike's ruling.
 - **`docs/mobile-app/patterns.md#disabled-button` (commit 5).** A first statement. `git grep -n -i disabled` over
   `patterns-mobile.md`, `consistency.md` and `docs/mobile-app` finds rules on fields (`patterns.md:917`), alert
   buttons (`patterns-mobile.md:772-775`, `patterns.md:1349-1354`), confirm guards (640, 769), slides (1910, 1929),
@@ -364,16 +371,16 @@ Catalog-edit routing for the docs and catalog edits of the iOS half, by the test
   a governing sentence as narrowing, so the edit routes; (2) #368, merged by Mike on 2026-11-08, already moved both
   into Core and its commits rewrote the docs pages to say so (`6a1ccf05d`, `dd5719d42`), so the edit withdraws two
   sentences the tree contradicts and adds no constraint the tree does not already hold. Edited inline under reading
-  2, as the PM's instruction "correct both to the tree" reads it; under reading 1 the Reviewer routes it. Test 3:
-  iOS only, built and run here. It adds no constraint, so it names no enforcer.
-- **`agents/knowledge/patterns-mobile.md:1016`, the `BirthDateField` row (T-0921 F13): routed to the Architect, not
+  2, as the instruction "correct both to the tree" reads it; under reading 1 it routes per ADR-0033. Test 3:
+  iOS only, built and run here. It adds no constraint, so it names no enforcer. The review of PR A (2026-11-09) reads
+  them under reading 1, so both rows are routed with the `:1016` row below and stay as edited until ratified.
+- **`agents/knowledge/patterns-mobile.md:1016`, the `BirthDateField` row (T-0921 F13): routed per ADR-0033, not
   edited.** It describes the sheet commit 3 replaced (a draft, Cancel, a Done that stores `CalendarDay.confirmed`,
   the `NavigationStack` and the tint), and commit 4 has the onboarding present the now public
   `BirthDateWheelSheet` from a row of its own. Rewriting it replaces the sentence that governs the sheet and carves
   an exception out of *"the ONE tappable birth-date control for both apps"*, so test 2 fires. Sweep for test 1:
   `git grep -n "BirthDateField(\|BirthDateWheelSheet(" -- src/cleansia_ios` finds Edit profile, the partner's
-  personal details, the field's own sheet and the onboarding. Draft of the row's right-hand cell, for the
-  Architect:
+  personal details, the field's own sheet and the onboarding. Draft of the row's right-hand cell, for ratification:
 
   > the Core **`BirthDateField`** (`Components/BirthDateField.swift`) — the ONE tappable birth-date **field** for
   > both apps (`label:`/`placeholder:`/optional `errorText:` params, medium date formatted via the environment
@@ -387,7 +394,7 @@ Catalog-edit routing for the docs and catalog edits of the iOS half, by the test
   > calendar seeded at today until owner decision D15, 2026-10-01). **The customer onboarding presents
   > `BirthDateWheelSheet` from its own birth date row**, the one caller that is not `BirthDateField`; a screen that
   > wants the wheels presents this sheet, never a `DatePicker` of its own. `BirthDateFieldSheetTests` and
-  > `CalendarDayTests` (`CleansiaCoreTests`) pin the binding, Done and the untouched sheet, hosted on iOS 16.4 and
-  > 26.3. A per-app private date field or wheel sheet is a defect. **Enforced by:** the swiftlint custom rule
-  > `birth_date_picker_is_the_shared_one` (`src/cleansia_ios/.swiftlint.yml`) — **T1-CI**, with its three residuals
-  > as today.
+  > `CalendarDayTests` (`CleansiaCoreTests`) pin the binding, Done and the untouched sheet, hosted on the iOS 26
+  > simulator CI runs. A per-app private date field or wheel sheet is a defect. **Enforced by:** the swiftlint custom
+  > rule `birth_date_picker_is_the_shared_one` (`src/cleansia_ios/.swiftlint.yml`) — **T1-CI**, with its three
+  > residuals as today.

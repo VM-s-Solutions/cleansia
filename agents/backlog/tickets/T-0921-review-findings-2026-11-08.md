@@ -68,7 +68,7 @@ Any finding not listed above, and everything T-0920's Out of scope names.
   Core screens #368 shipped, in T-0920's records commit, with the routing test's sweep and both readings in T-0920's
   `## Review`. The `BirthDateField` row (`:1016`) is not edited: rewriting it replaces the sentence that governs the
   sheet and carves the onboarding's own birth date row out of "the ONE tappable birth-date control", so it routes
-  to the Architect (ADR-0033, test 2); the draft row is in T-0920's `## Review`.
+  for ratification (ADR-0033, test 2); the draft row is in T-0920's `## Review`.
 - 2026-11-08 — F3: `handOverMascots` records until the welcoming figure has stood for a second, and gives a slow
   runner 30 s to land it, instead of a fixed 5 s (`5786e8bd9`). The assertions are unchanged. On the iOS 26.3
   simulator the test passes in 10.3 s instead of 15.3 s; on all three phones the welcoming figure measures as
@@ -102,3 +102,10 @@ Any finding not listed above, and everything T-0920's Out of scope names.
 - 2026-11-09 — F12: not changed. At `dd422b588`, `CLAUDE.md:101` names Angular 20.3, Nx 23.2, NgRx 20.1 and
   PrimeNG 20.4, as `src/Cleansia.App/package.json` pins them (`@angular/core` `~20.3.34`, `nx` `23.2.1`,
   `@ngrx/store` `~20.1.0`, `primeng` `~20.4.0`).
+- 2026-11-09 — From the review of PR A. F1: the customer app can now receive `validation.invalid_phone_number`, so the
+  iOS error-voice rosters list it for both apps, from `UpdateCurrentUser` and the cleaner's `UpdatePersonalInfo`
+  (`0deda4264`). F4: Submit on the dispute form stays shut while a picked photo is still being prepared, and submit
+  does nothing while one is, so a submit made during an encode no longer drops the photo or leaves it on a closed
+  form (`6579b1d0d`). The branch that dropped it is gone with its test; the new test failed before the change on the
+  iOS 26.3 simulator and passes with it. F13: the two inline catalog edits are routed for ratification with the
+  `:1016` row (T-0920's work record and `## Review`).

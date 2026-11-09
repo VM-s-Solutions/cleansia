@@ -348,6 +348,7 @@ green; and Mike gets a customer TestFlight build.
   commit 4 records Mike's pick of concept D (2026-11-08) and no longer counts the profile completion as an auth
   screen; at `8f0a53252` no file under either app's `Features/Auth` draws a mascot, and `AuthHeaderImage` is gone.
   No catalog edit, so nothing routes.
+- 2026-11-09 — Shipped, the server signal and the iOS half: #369 merged to master as 45146bd5d.
 
 ## Review
 

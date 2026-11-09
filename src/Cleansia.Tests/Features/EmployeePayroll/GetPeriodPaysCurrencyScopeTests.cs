@@ -137,6 +137,23 @@ public class GetPeriodPaysCurrencyScopeTests
         Assert.Equal(corrected.Id, result.Value!.InvoiceId);
     }
 
+    /// <summary>
+    /// Until the corrected invoice is issued, the cancelled one is the only document in its currency,
+    /// and it is the one shown.
+    /// </summary>
+    [Fact]
+    public async Task A_Cancelled_Invoice_Is_Shown_While_Its_Currency_Holds_Nothing_Else()
+    {
+        var cancelled = InvoiceIn(PayrollMockFactory.CurrencyId, "CZK").Cancel("Wrong address", "admin-1");
+        ArrangeInvoices([cancelled]);
+        ArrangePays(PayrollMockFactory.OrderPay(basePay: 300m));
+
+        var result = await CreateHandler().Handle(new GetPeriodPays.Query(EmployeeId, PayPeriodId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(cancelled.Id, result.Value!.InvoiceId);
+    }
+
     // ── the currency VIEW: a named currency is exact ─────────────────
 
     /// <summary>

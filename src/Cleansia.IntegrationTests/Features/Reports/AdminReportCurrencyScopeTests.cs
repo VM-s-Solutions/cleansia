@@ -125,8 +125,9 @@ public class AdminReportCurrencyScopeTests(PostgresContainerFixture fixture) : B
     }
 
     /// <summary>
-    /// A cancelled invoice and the corrected invoice that replaces it hold the same jobs, so the money
-    /// counts them once; the cancelled invoice still shows in the counts and in its own status row.
+    /// A cancelled invoice and the corrected invoice that replaces it hold the same jobs, so the money,
+    /// bonuses and deductions count them once, and a cleaner whose only invoice is cancelled is not in
+    /// the average; the cancelled invoices still show in the counts and in their own status row.
     /// </summary>
     [Fact]
     public async Task Payroll_Report_Counts_A_Cancelled_Invoices_Jobs_Once()
@@ -136,9 +137,21 @@ public class AdminReportCurrencyScopeTests(PostgresContainerFixture fixture) : B
             {
                 await SeedInvoicesAsync(context);
                 var cancelled = context.Set<EmployeeInvoice>().Local.Single(i => i.CurrencyId == Czk);
+                cancelled.UpdateAmounts(bonusAmount: 80m, deductionAmount: 30m);
                 cancelled.Cancel("Wrong address", "admin@cleansia.test");
                 context.Add(EmployeeInvoice.Create(cancelled.EmployeeId, cancelled.PayPeriodId, 1, 500m, Czk,
-                    PayrollMockFactory.NextTestVariableSymbol(), PayrollMockFactory.NextTestInvoiceNumber()));
+                    PayrollMockFactory.NextTestVariableSymbol(), PayrollMockFactory.NextTestInvoiceNumber(),
+                    bonusAmount: 80m, deductionAmount: 30m));
+
+                var user = User.CreateWithPassword("report-emp-2@cleansia.test", "12345678Test!", "Sec", "Ond", UserProfile.Employee);
+                user.ConfirmEmail();
+                context.Users.Add(user);
+                var other = Employee.CreateWithUser(user);
+                context.Add(other);
+                var othersOnly = EmployeeInvoice.Create(other.Id, cancelled.PayPeriodId, 1, 300m, Czk,
+                    PayrollMockFactory.NextTestVariableSymbol(), PayrollMockFactory.NextTestInvoiceNumber());
+                othersOnly.Cancel("Duplicate", "admin@cleansia.test");
+                context.Add(othersOnly);
                 await context.CommitAsync(CancellationToken.None);
             },
             act: provider => Payroll(provider, Czk),
@@ -146,10 +159,13 @@ public class AdminReportCurrencyScopeTests(PostgresContainerFixture fixture) : B
             {
                 Assert.True(result.IsSuccess, result.Error?.Message);
                 var report = result.Value!;
-                Assert.Equal((500m, 2, 1), (report.TotalPayroll, report.TotalInvoices, report.CancelledInvoices));
-                Assert.Equal(500m, report.EmployeeSummaries.Single().TotalAmount);
-                Assert.Equal(500m, report.MonthlyPayroll.Sum(m => m.TotalAmount));
-                Assert.Equal(500m, report.PayrollByStatus
+                Assert.Equal((550m, 3, 2), (report.TotalPayroll, report.TotalInvoices, report.CancelledInvoices));
+                Assert.Equal(80m, report.TotalBonuses);
+                Assert.Equal(30m, report.TotalDeductions);
+                Assert.Equal(550m, report.AveragePayPerEmployee);
+                Assert.Equal(550m, report.EmployeeSummaries.Single().TotalAmount);
+                Assert.Equal(550m, report.MonthlyPayroll.Sum(m => m.TotalAmount));
+                Assert.Equal(850m, report.PayrollByStatus
                     .Single(s => s.StatusCode == nameof(EmployeeInvoiceStatus.Cancelled)).TotalAmount);
                 return Task.CompletedTask;
             },

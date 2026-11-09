@@ -80,6 +80,16 @@ class OrderDetailCallSiteTest {
         )
     }
 
+    /** MapView's constructor throws without a Mapbox token, so such a build shows the job with no map instead of closing. */
+    @Test
+    fun `a build with no Mapbox token draws neither the band's map nor the taken panel's strip`() {
+        assertFalse(canDrawMap(""))
+        assertFalse(canDrawMap(" "))
+        assertTrue(canDrawMap("pk.test"))
+        assertTrue("the band asks canDrawMap", detailScreen.contains("val mapMode = page.mapMode?.takeIf { canDrawMap() }"))
+        assertTrue("the strip asks canDrawMap", source("WorkContractSheet.kt").contains("takenStripPoint(takenRow)?.takeIf { canDrawMap() }"))
+    }
+
     @Test
     fun `the non-payment report is offered through its gate and sent only from its confirm`() {
         assertTrue(

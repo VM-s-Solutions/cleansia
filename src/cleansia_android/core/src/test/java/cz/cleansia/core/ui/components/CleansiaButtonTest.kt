@@ -18,14 +18,19 @@ class CleansiaButtonTest {
     }
 
     @Test
-    fun `the primary button's disabled colours are Material's own unless the caller gives them`() {
+    fun `the primary button's disabled colours are the readable grey unless the caller gives them`() {
         val parameters = signature(source, "fun CleansiaPrimaryButton(")
         assertTrue(parameters.contains("disabledContainerColor: Color = Color.Unspecified,"))
         assertTrue(parameters.contains("disabledContentColor: Color = Color.Unspecified,"))
+        val button = body(source, "fun CleansiaPrimaryButton(")
+        assertTrue(button.contains("val offFill = disabledContainerColor.takeOrElse { scheme.disabledContainer }"))
+        assertTrue(button.contains("val offInk = disabledContentColor.takeOrElse { scheme.onDisabledContainer }"))
         assertTrue(
-            Regex("""ButtonDefaults\.buttonColors\([\s\S]*?disabledContainerColor = disabledContainerColor,\s*disabledContentColor = disabledContentColor,""")
-                .containsMatchIn(body(source, "fun CleansiaPrimaryButton(")),
+            Regex("""ButtonDefaults\.buttonColors\([\s\S]*?disabledContainerColor = offFill,\s*disabledContentColor = offInk,""")
+                .containsMatchIn(button),
         )
+        // A loading button is a disabled one, so its spinner takes the disabled label's ink.
+        assertTrue(Regex("""CircularProgressIndicator\([\s\S]*?color = offInk,""").containsMatchIn(button))
     }
 
     @Test

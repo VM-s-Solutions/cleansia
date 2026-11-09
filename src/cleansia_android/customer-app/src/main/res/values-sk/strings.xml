@@ -710,12 +710,27 @@
     <!-- Profile onboarding -->
     <string name="onboarding_greeting">Vitajte!</string>
     <string name="onboarding_greeting_named">Vitajte, %1$s!</string>
-    <string name="onboarding_subtitle">Pár rýchlych údajov, aby sme vám mohli lepšie slúžiť. Môžete tento krok preskočiť a vyplniť neskôr.</string>
+    <string name="onboarding_progress">Hotovo %1$d z %2$d</string>
+    <string name="onboarding_left_phone">Doplňte telefónne číslo a môžete objednávať.</string>
+    <string name="onboarding_ready">Pripravené na objednanie</string>
+    <string name="onboarding_ready_sub">Máte všetko, čo objednávka potrebuje.</string>
+    <string name="onboarding_row_name">Meno a priezvisko</string>
+    <string name="onboarding_email_hidden">Skrýva ho Apple</string>
+    <string name="onboarding_row_done_a11y">hotovo</string>
+    <string name="onboarding_row_current_a11y">aktuálny krok</string>
+    <string name="onboarding_row_waiting_a11y">nevyplnené</string>
+    <string name="onboarding_not_set">Nevyplnené</string>
+    <string name="onboarding_card_title">Čo uvidí upratovač</string>
+    <string name="onboarding_card_example">Ukážka</string>
+    <string name="onboarding_card_dial">Hovory a SMS pôjdu na</string>
+    <string name="onboarding_card_call">Zavolať</string>
+    <string name="onboarding_card_sms">SMS</string>
+    <string name="onboarding_card_navigate">Navigovať</string>
+    <string name="onboarding_card_sample_address">Vinohradská 48, Praha 2</string>
+    <string name="onboarding_birthdate_done">Hotovo</string>
     <string name="onboarding_phone_label">Telefónne číslo</string>
-    <string name="onboarding_phone_helper">Uveďte predvoľbu (napr. +420). Použijeme ho iba na to, aby sme vás kontaktovali ohľadom vašich rezervácií.</string>
     <string name="onboarding_birthdate_label">Dátum narodenia</string>
-    <string name="onboarding_birthdate_placeholder">Vyberte dátum</string>
-    <string name="onboarding_birthdate_helper">Voliteľné — pre narodeninové výhody.</string>
+    <string name="onboarding_birthdate_helper">Nepovinné. Upratovačovi sa nikdy nezobrazí.</string>
     <string name="onboarding_save">Uložiť a pokračovať</string>
     <string name="onboarding_skip">Preskočiť</string>
 

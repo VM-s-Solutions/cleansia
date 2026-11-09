@@ -317,6 +317,7 @@ class ProfileViewModelTest {
 
         assertTrue(skipped)
         coVerify { settings.markOnboardingSeen("user-1") }
+        coVerify(exactly = 0) { userRepository.updateCurrentUser(any(), any(), any(), any(), any(), any(), any()) }
     }
 
     // ── avatar ──

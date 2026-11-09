@@ -98,6 +98,16 @@ class PrimaryTextTest {
     }
 
     @Test
+    fun `a filled button that cannot be pressed reads in both schemes`() {
+        assertEquals(Color(0xFFE2E8F0), light.disabledContainer)
+        assertEquals(Color(0xFF475569), light.onDisabledContainer)
+        assertEquals(Color(0xFF283548), dark.disabledContainer)
+        assertEquals(Color(0xFF94A3B8), dark.onDisabledContainer)
+        assertEquals(6.15, contrast(light.onDisabledContainer, light.disabledContainer), 0.01)
+        assertEquals(4.84, contrast(dark.onDisabledContainer, dark.disabledContainer), 0.01)
+    }
+
+    @Test
     fun `the light primary is under 4_5 to 1 on white, which is why text does not use it`() {
         assertTrue(contrast(sky600, Color.White) < 4.5)
     }

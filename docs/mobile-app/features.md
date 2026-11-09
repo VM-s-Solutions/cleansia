@@ -72,8 +72,9 @@ the order detail's *Read the contract*, and the customer wizards' confirm step l
 - **The phone field** keeps a `+` only while nothing has been kept before it
   (`PhoneNumberSanitizer.sanitize`, `sanitizePhoneInput`), so a number copied with a space, a label or
   a bracket in front of its country code keeps the code; until then only a `+` that was the very first
-  character survived. The Android customer app's two profile phone fields, plain text fields, go
-  through the same function since the same day.
+  character survived. The Android customer app's two profile phone fields go through the same function
+  since the same day: Edit profile's plain text field, and the onboarding's shared phone field, which
+  since 2026-11-08 shows the country's calling code before the national digits.
 
 → [Partner onboarding — e-mail confirmation](/partner-app/onboarding#step-2-email-confirmation),
 [what each step checks](/partner-app/onboarding#step-checks)

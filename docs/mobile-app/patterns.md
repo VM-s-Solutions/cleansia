@@ -115,11 +115,11 @@ platforms changed together, so the branding parity of [ADR-0018](/decisions/adr-
 and the mascot is unchanged everywhere else.
 
 **The profile completion after a first sign-in carries the mascot again** (Mike's pick of the
-onboarding concept D, 2026-11-08). It sits at 76 pt beside the greeting: it waves while a step a
-booking needs is missing, and gives a thumbs-up once the card reads *Ready to book*. The 2026-10-01
-ruling had counted this screen among the auth screens; it asks for what a booking needs rather than
-for a sign-in, and it no longer counts. iOS draws it first and Android follows, so until Android's
-half ships the two platforms differ here, against ADR-0018's branding parity.
+onboarding concept D, 2026-11-08). It sits at 76 pt on iOS and 76 dp on Android beside the greeting:
+it waves while a step a booking needs is missing, and gives a thumbs-up once the card reads *Ready to
+book*. The 2026-10-01 ruling had counted this screen among the auth screens; it asks for what a
+booking needs rather than for a sign-in, and it no longer counts. Both platforms draw it, so
+ADR-0018's branding parity holds here too.
 
 **The customer sign-in fits one screen.** Without the mascot and the guest link the form fits every
 supported iPhone, the SE included, and ordinary Android phones; only the legacy 360×640dp size still
@@ -1103,22 +1103,32 @@ every document status, and none, on the card in both modes (iOS `eba022747`, And
 
 ## A filled button that cannot be pressed is grey {#disabled-button}
 
-Since 2026-11-08 (Mike's decision 5 on the customer onboarding, concept D), the shared filled button
-draws a grey fill under a dark label while it cannot be pressed, wherever a screen names no disabled
-colours of its own. Until then iOS drew the primary at half under the white label, which read 2.01:1.
+Since 2026-11-08 (Mike's decision 5 on the customer onboarding, concept D), the shared filled button,
+`CleansiaPrimaryButton` in iOS Core and in Android's `:core`, draws a grey fill under a dark label while
+it cannot be pressed, wherever a screen names no disabled colours of its own. Until then iOS drew the
+primary at half under the white label, which read 2.01:1, and Android drew Material's disabled look,
+the label at 38 % on a 12 % wash, which read 2.31:1 in light mode and 2.88:1 in dark, so a Save that
+waits for a field looked faded rather than waiting.
 
 | Mode | Fill | Label | Contrast |
 |---|---|---|---|
 | Light | slate-200 `#E2E8F0` | slate-600 `#475569` | 6.15:1 |
 | Dark | the raised dark surface `#283548` | slate-400 `#94A3B8` | 4.84:1 |
 
-A loading button cannot be pressed either, so it takes the same pair, and its spinner takes the label's
-ink: a white spinner on slate-200 would read about 1.3:1. A screen that names its own disabled fill and
-label (`disabledContainerColor` and `disabledContentColor` on iOS) keeps them, and draws them only while
-the button cannot be pressed, as the partner job footer's refused *Take order* does. On iOS the pair is Core's
-`CleansiaColors.disabledContainer` and `onDisabledContainer`, which `CleansiaPrimaryButton` reads, and
-`ComponentTextInkTests` measures both modes. Android takes the same pair with the onboarding's Android
-half; until then its Material defaults draw the disabled button, and the two platforms differ.
+- A loading button cannot be pressed either, so it takes the same pair, and its spinner takes the
+  label's ink instead of white, which reads 1.23:1 on slate-200.
+- A screen that names its own disabled fill and label (`disabledContainerColor` and
+  `disabledContentColor`, on both platforms) keeps them, and draws them only while the button cannot be
+  pressed, as the partner's take button does: the job footer's refused *Take order* on iOS, and on
+  Android while an overlapping job blocks it.
+- On iOS the pair is Core's `CleansiaColors.disabledContainer` and `onDisabledContainer`, which
+  `CleansiaPrimaryButton` reads, and `ComponentTextInkTests` measures both modes. On Android it is
+  `ColorScheme.disabledContainer` and `onDisabledContainer` (`BrandColors.kt`), picked by the surface's
+  luminance as the text ink is, and `PrimaryTextTest` measures both ratios.
+- On Android it changes the 31 calls in the two apps that pass `enabled` or `loading`, and only while
+  they are disabled or loading. Five customer sheets and screens draw Material's `Button` with disabled
+  colours of their own (the promo code and referral code sheets, a dispute, a cancellation and a review)
+  and keep them.
 
 ## Android's dialogs and menus sit on slate {#surface-roles}
 
@@ -1409,7 +1419,11 @@ What changed on iOS:
   given for the customer onboarding. From the fix plan of 2026-10-25 until then the wheels spun a
   draft, **Done** stored the day on them, on an empty field the day shown untouched, and **Cancel**
   left the field as it was. Future dates stay blocked, and the stored day keeps its time-zone handling.
-  The recurring schedule's *Starts on* is still the system's compact date picker.
+  The recurring schedule's *Starts on* is still the system's compact date picker. Since 2026-11-08
+  (owner decision on concept D) Android's customer profile completion also opens day, month and year
+  wheels in a half-height sheet, the system's spinner date picker: a wheel stores its day as it moves,
+  **Done** only closes, and a sheet closed untouched stores nothing. Android's Edit profile and the
+  partner's personal details keep Material's calendar.
 - **A few symbols bounce, from iOS 17.** The notification bell (customer Home, partner dashboard)
   bounces once when the unread count rises, and stays still when it falls. The booking-success check,
   the Plus welcome screen's check and the *code applied* check of the promo and referral sheets bounce

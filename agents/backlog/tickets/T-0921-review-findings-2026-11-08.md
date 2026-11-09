@@ -126,3 +126,4 @@ Any finding not listed above, and everything T-0920's Out of scope names.
 - 2026-11-09 — Q6 (the server checks a changed phone for validity, the apps a possible length for the country): the
   PM keeps the current behaviour, which is the documented cleaner rule (`business-rules.md#cleaner-profile-fields`).
   Mike can still change it, to a possible-number check at `UpdateCurrentUser.cs:101`. No code changed.
+- 2026-11-09 — Shipped: #369 merged to master as 45146bd5d.

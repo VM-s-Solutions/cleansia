@@ -290,7 +290,7 @@ private fun JobRow(line: OrderPayLine, symbol: String) {
                     color = primaryText(),
                 )
             }
-            formatShortDate(line.createdOn, inDeviceZone = true)?.let { date ->
+            formatShortDate(line.createdOn)?.let { date ->
                 Text(
                     text = date,
                     style = MaterialTheme.typography.bodySmall,

@@ -715,12 +715,27 @@
     <!-- Profile onboarding (post-signup one-shot) -->
     <string name="onboarding_greeting">Welcome aboard!</string>
     <string name="onboarding_greeting_named">Welcome aboard, %1$s!</string>
-    <string name="onboarding_subtitle">A few quick details so we can serve you better. You can skip and fill these in later.</string>
+    <string name="onboarding_progress">%1$d of %2$d done</string>
+    <string name="onboarding_left_phone">Add your phone number and you can book.</string>
+    <string name="onboarding_ready">Ready to book</string>
+    <string name="onboarding_ready_sub">Everything a booking needs is here.</string>
+    <string name="onboarding_row_name">Name</string>
+    <string name="onboarding_email_hidden">Hidden by Apple</string>
+    <string name="onboarding_row_done_a11y">done</string>
+    <string name="onboarding_row_current_a11y">current step</string>
+    <string name="onboarding_row_waiting_a11y">not done</string>
+    <string name="onboarding_not_set">Not set</string>
+    <string name="onboarding_card_title">What your cleaner sees</string>
+    <string name="onboarding_card_example">Example</string>
+    <string name="onboarding_card_dial">Calls and texts go to</string>
+    <string name="onboarding_card_call">Call</string>
+    <string name="onboarding_card_sms">SMS</string>
+    <string name="onboarding_card_navigate">Navigate</string>
+    <string name="onboarding_card_sample_address">Vinohradská 48, Praha 2</string>
+    <string name="onboarding_birthdate_done">Done</string>
     <string name="onboarding_phone_label">Phone number</string>
-    <string name="onboarding_phone_helper">Include your country code (e.g. +420). We\'ll only use this to reach you about your bookings.</string>
     <string name="onboarding_birthdate_label">Birth date</string>
-    <string name="onboarding_birthdate_placeholder">Choose date</string>
-    <string name="onboarding_birthdate_helper">Optional — for birthday perks.</string>
+    <string name="onboarding_birthdate_helper">Optional. Never shown to your cleaner.</string>
     <string name="onboarding_save">Save and continue</string>
     <string name="onboarding_skip">Skip for now</string>
 

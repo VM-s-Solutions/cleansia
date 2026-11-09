@@ -242,3 +242,4 @@ Not done, even where a problem is visible; it is reported instead.
   install and start on `cleansia35` from cleared data and over an install; signed in against a local stand-in, the
   partner reaches Main and pushes and pops a screen over it, and the customer signs out and in again, without a crash.
   `check-consistency.mjs` reports what origin/master reports. Evidence in `android-longterm-20261108/fix-findings/`.
+- 2026-11-08 — Shipped: #370 merged to master as 5b57d65b2.

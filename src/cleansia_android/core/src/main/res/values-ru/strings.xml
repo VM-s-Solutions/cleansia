@@ -11,4 +11,5 @@
     <string name="core_error_not_found">Запрашиваемый ресурс не найден.</string>
     <string name="core_error_unauthorized">Ваша сессия истекла. Войдите снова.</string>
     <string name="core_error_unknown">Что-то пошло не так. Попробуйте ещё раз.</string>
+    <string name="core_phone_country_code">Код страны</string>
 </resources>

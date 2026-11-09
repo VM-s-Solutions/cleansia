@@ -10,23 +10,20 @@ import org.junit.Test
 
 class ShortDateTest {
 
-    /** 22:30 UTC is already the next day in Prague: an invoice keeps the day its timestamp names, a pay line takes the phone's. */
+    /** 22:30 UTC is already the next day in Prague: an invoice and a pay line paid then both show the phone's day. */
     @Test
-    fun `an invoice date is the day its timestamp names, a pay line's the day on the phone`() {
+    fun `every date is the day on the phone, so an invoice and its pay line agree`() {
         val original = TimeZone.getDefault()
         try {
             TimeZone.setDefault(TimeZone.getTimeZone("Europe/Prague"))
             assertNotNull(formatShortDate("2026-10-20"))
             assertNotEquals(formatShortDate("2026-10-20"), formatShortDate("2026-10-21"))
 
-            assertEquals(formatShortDate("2026-10-20"), formatShortDate("2026-10-20T22:30:00Z"))
-            assertEquals(formatShortDate("2026-10-21"), formatShortDate("2026-10-20T22:30:00Z", inDeviceZone = true))
-
-            assertNull(formatShortDate("2026-10-11T07:15:00"))
-            assertEquals(formatShortDate("2026-10-11"), formatShortDate("2026-10-11T07:15:00", inDeviceZone = true))
+            assertEquals(formatShortDate("2026-10-21"), formatShortDate("2026-10-20T22:30:00Z"))
+            assertEquals(formatShortDate("2026-10-11"), formatShortDate("2026-10-11T07:15:00"))
 
             assertNull(formatShortDate(" "))
-            assertNull(formatShortDate("yesterday", inDeviceZone = true))
+            assertNull(formatShortDate("yesterday"))
         } finally {
             TimeZone.setDefault(original)
         }

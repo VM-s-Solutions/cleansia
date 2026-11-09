@@ -6,8 +6,9 @@ import org.junit.Test
 
 /**
  * What the device checks of a phone: international form, and a length libphonenumber holds possible for the
- * country. Whether the number is valid is the server's (`PhoneNumberAttribute`), whose metadata is newer than
- * the app's. The iOS twin, in `PhoneNumberKitDisplayFormatter`, takes the same table.
+ * country. On the partner's Personal save the server (`PhoneNumberAttribute`), whose metadata is newer than the
+ * app's, judges whether the number is valid; the customer's profile save checks only that no other account holds
+ * the number, so there this is the only check. The iOS twin, in `PhoneNumberKitDisplayFormatter`, takes the same table.
  */
 class PhoneNumberPossibilityTest {
 
@@ -26,7 +27,7 @@ class PhoneNumberPossibilityTest {
 
     @Test
     fun `a number without its country code, a bare plus, or one too short or too long does not`() {
-        listOf("777123456", "420777123456", "+", "+1", "+4201", "+42077712345", "+4207771234567890", "").forEach {
+        listOf("777123456", "420777123456", "+", "+1", "+4201", "+42077712", "+42077712345", "+4207771234567890", "").forEach {
             assertFalse(it, isPossiblePhoneNumber(it))
         }
     }

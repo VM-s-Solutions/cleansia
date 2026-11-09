@@ -393,6 +393,20 @@ green; and Mike gets a customer TestFlight build.
 - Gates: compile and unit tests of the three modules (3563 at 97a7ce140, 0 failures); `check-consistency mobile` (the one E1 at
   `OrdersListViewModel.kt:92`, unchanged); `check-docs-refs` (0 unresolved); `check-catalog-claims` (C1 0, C2 0, C3 0);
   `check-backlog-consistency` (C1 0, C2 0, reach 0); every PR check (Android CI, iOS CI, Docs CI, Frontend CI, Booking policy parity, Secret scan) passed on its first run at b5c050eed, #371.
+- 2026-11-09 — Architect ruling, 2026-11-09: `patterns-mobile.md:1030`, the birth-date row's Android column, is
+  ratified and applied from PR B's routed draft, with one fix to match the tree: the customer Edit profile's dialog has
+  no future-block (`EditProfileScreen.kt:509`), so the column now says so. Test 1 finds no deviation:
+  `git grep -n -e DatePickerDialog -e android.widget.DatePicker -- src/cleansia_android` finds the partner's personal
+  details, Edit profile, the onboarding's sheet and the recurring schedule's *Starts on* (not a birth date), each as
+  the column names it. Test 2 fires and is answered by Mike's Q1 "Go with A" and AC9; the column obliges no Android
+  call site, and `ProfileOnboardingScreenTest` pins the seed, the listener, Done and the missing Cancel.
+- 2026-11-09 — Architect ruling, 2026-11-09: `ios-app-architecture.md:82`, the date-picker row, takes PR B's routed
+  Android clause. Its iOS clauses, which #369 did not route, still described the sheet before Q1 (a draft that Done
+  wrote, the day shown on an untouched empty field, and Cancel); they now match `52f87a4ea`, because the divergence
+  sentence cannot be true otherwise: a wheel writes as it moves, Done only closes, there is no Cancel, and on an
+  untouched empty field iOS and the Android customer store nothing, against the Android partner's Confirm. The stale
+  `ProfileOnboardingScreen.kt:319-330` citation is gone; `check-catalog-claims` does not scan this file, so nothing
+  gates its citations.
 
 ## Review
 

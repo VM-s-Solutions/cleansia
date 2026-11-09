@@ -98,12 +98,19 @@ public class PayPeriodValidatorTests
         Assert.Equal(BusinessErrorMessage.OverlappingPeriod, Assert.Single(result.Errors).ErrorMessage);
     }
 
-    /// <summary>One open period per company: pay joins the open one, so a second would only split it.</summary>
+    /// <summary>
+    /// One open period per company: pay joins the open one, so a second would only split it. The open period
+    /// overlaps the new one too, and only one refusal may come back: two whole-command errors share one code,
+    /// and the client cannot translate them joined.
+    /// </summary>
     [Fact]
     public async Task Create_While_A_Period_Is_Open_Fails_CompanyHasOpenPayPeriod()
     {
         ArrangeConfirmedSession();
         _payPeriodRepository.Setup(r => r.ExistsActivePeriodAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _payPeriodRepository
+            .Setup(r => r.HasOverlappingPeriodAsync(Start, End, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
 
         var result = await CreateValidator().ValidateAsync(ValidCreate());
 

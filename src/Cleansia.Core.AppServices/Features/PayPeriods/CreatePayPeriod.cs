@@ -43,11 +43,12 @@ public class CreatePayPeriod
                 .Must(startDate => startDate <= DateOnly.FromDateTime(timeProvider.GetUtcNow().UtcDateTime))
                 .WithMessage(BusinessErrorMessage.InvalidDate);
 
+            // One chain: the open period overlaps almost any new one, and two whole-command refusals share one
+            // error code, which the client receives joined and cannot translate.
             RuleFor(x => x)
+                .Cascade(CascadeMode.Stop)
                 .MustAsync(async (_, cancellationToken) => !await payPeriodRepository.ExistsActivePeriodAsync(cancellationToken))
-                .WithMessage(BusinessErrorMessage.CompanyHasOpenPayPeriod);
-
-            RuleFor(x => x)
+                .WithMessage(BusinessErrorMessage.CompanyHasOpenPayPeriod)
                 .MustAsync(BeNoOverlappingPeriodAsync)
                 .WithMessage(BusinessErrorMessage.OverlappingPeriod);
 

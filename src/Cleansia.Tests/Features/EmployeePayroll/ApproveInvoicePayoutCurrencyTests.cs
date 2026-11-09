@@ -180,12 +180,26 @@ public class ApproveInvoicePayoutCurrencyTests
         _payoutDetails.Verify(r => r.GetByEmployeeIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    [Fact]
+    public async Task A_Cancelled_Invoice_Is_Refused_Whatever_Its_Status_Says()
+    {
+        var invoice = ArrangeInvoice(CzkId, EmployeeInvoiceStatus.Pending);
+        invoice.Cancel("Wrong period", "admin-1");
+        // A row disputed after its cancel, before Dispute refused a cancelled invoice.
+        typeof(EmployeeInvoice).GetProperty(nameof(EmployeeInvoice.Status))!.SetValue(invoice, EmployeeInvoiceStatus.Disputed);
+        ArrangePayout(currencyId: CzkId);
+
+        var result = await Validator().ValidateAsync(new ApproveInvoice.Command(InvoiceId, null));
+
+        Assert.Equal(BusinessErrorMessage.InvalidInvoiceStatus, Assert.Single(result.Errors).ErrorMessage);
+    }
+
     // ── arrangement ──────────────────────────────────────────────────
 
     private ApproveInvoice.Validator Validator() => new(
         _users.Object, _session.Object, _invoiceRepository.Object, _payoutDetails.Object, _resolution.Object);
 
-    private void ArrangeInvoice(string currencyId, EmployeeInvoiceStatus status)
+    private EmployeeInvoice ArrangeInvoice(string currencyId, EmployeeInvoiceStatus status)
     {
         var invoice = EmployeeInvoice.Create(
             employeeId: EmployeeId,
@@ -208,6 +222,7 @@ public class ApproveInvoicePayoutCurrencyTests
 
         _invoiceRepository.Setup(r => r.ExistsAsync(InvoiceId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         _invoiceRepository.Setup(r => r.GetByIdAsync(InvoiceId, It.IsAny<CancellationToken>())).ReturnsAsync(invoice);
+        return invoice;
     }
 
     private void ArrangePayout(

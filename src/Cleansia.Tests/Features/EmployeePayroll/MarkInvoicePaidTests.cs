@@ -151,6 +151,19 @@ public class MarkInvoicePaidTests
         Assert.Equal(nameof(MarkInvoicePaid.Command.InvoiceId), result.Error.Code);
     }
 
+    [Fact]
+    public async Task A_Cancelled_Invoice_Is_Refused_Whatever_Its_Status_Says()
+    {
+        var invoice = InvoiceIn(EmployeeInvoiceStatus.Cancelled);
+        // A row disputed and approved after its cancel, before Dispute refused a cancelled invoice.
+        typeof(EmployeeInvoice).GetProperty(nameof(EmployeeInvoice.Status))!.SetValue(invoice, EmployeeInvoiceStatus.Approved);
+        Arrange(invoice);
+
+        var result = await CreateValidator().ValidateAsync(Command());
+
+        Assert.Equal(BusinessErrorMessage.InvoiceAlreadyCancelled, Assert.Single(result.Errors).ErrorMessage);
+    }
+
     /// <summary>
     /// Marking is not idempotent by design: it is a person asserting a bank transfer went out, and a
     /// second assertion about the same variable symbol is a different transfer. Refusing surfaces the

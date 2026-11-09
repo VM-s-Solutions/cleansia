@@ -261,6 +261,14 @@ public class EmployeeInvoiceEntityTests
     }
 
     [Fact]
+    public void Dispute_On_Cancelled_Throws()
+    {
+        var invoice = InvoiceInStatus(EmployeeInvoiceStatus.Cancelled);
+
+        Assert.Throws<InvalidOperationException>(() => invoice.Dispute("x"));
+    }
+
+    [Fact]
     public void UpdateAmounts_On_Paid_Throws()
     {
         var invoice = PaidInvoice();

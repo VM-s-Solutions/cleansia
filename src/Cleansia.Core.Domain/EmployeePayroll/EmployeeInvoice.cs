@@ -352,6 +352,11 @@ public class EmployeeInvoice : TenantAuditable
             throw new InvalidOperationException("Cannot dispute a paid invoice");
         }
 
+        if (IsCancelled)
+        {
+            throw new InvalidOperationException("Cannot dispute a cancelled invoice");
+        }
+
         Status = EmployeeInvoiceStatus.Disputed;
         AdminNotes = adminNotes;
 

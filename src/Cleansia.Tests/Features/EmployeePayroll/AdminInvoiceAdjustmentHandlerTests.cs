@@ -186,6 +186,18 @@ public class AdminInvoiceAdjustmentHandlerTests
         Assert.Equal(EmployeeInvoiceStatus.Paid, invoice.Status);
     }
 
+    [Fact]
+    public async Task DisputeInvoice_Is_Refused_On_A_Cancelled_Invoice()
+    {
+        Arrange(InvoiceIn(EmployeeInvoiceStatus.Cancelled));
+        _invoiceRepository.Setup(r => r.ExistsAsync(InvoiceId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
+        var result = await new DisputeInvoice.Validator(_invoiceRepository.Object)
+            .ValidateAsync(new DisputeInvoice.Command(InvoiceId, AdminNotes: "x"));
+
+        Assert.Equal(BusinessErrorMessage.InvoiceAlreadyCancelled, Assert.Single(result.Errors).ErrorMessage);
+    }
+
     // ── Adjust renders the PDF again, and only on a Pending or Disputed invoice ──
 
     [Fact]

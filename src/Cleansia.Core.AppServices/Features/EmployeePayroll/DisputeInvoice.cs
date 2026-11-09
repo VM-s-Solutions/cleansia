@@ -30,7 +30,9 @@ public class DisputeInvoice
                 .MustAsync(invoiceRepository.ExistsAsync)
                 .WithMessage(BusinessErrorMessage.InvoiceNotFound)
                 .MustAsync(NotPaidAsync)
-                .WithMessage(BusinessErrorMessage.InvoiceAlreadyPaid);
+                .WithMessage(BusinessErrorMessage.InvoiceAlreadyPaid)
+                .MustAsync(NotCancelledAsync)
+                .WithMessage(BusinessErrorMessage.InvoiceAlreadyCancelled);
 
             RuleFor(x => x.AdminNotes)
                 .Cascade(CascadeMode.Stop)
@@ -44,6 +46,12 @@ public class DisputeInvoice
         {
             var invoice = await _invoiceRepository.GetByIdAsync(invoiceId, cancellationToken);
             return invoice!.Status != EmployeeInvoiceStatus.Paid;
+        }
+
+        private async Task<bool> NotCancelledAsync(string invoiceId, CancellationToken cancellationToken)
+        {
+            var invoice = await _invoiceRepository.GetByIdAsync(invoiceId, cancellationToken);
+            return !invoice!.IsCancelled;
         }
     }
 

@@ -165,16 +165,17 @@ public class PayPeriodValidatorTests
         _userRepository.Object,
         _session.Object,
         _payPeriodRepository.Object,
-        PayPeriodTestServices.ClosingConfig(lengthSetting));
+        PayPeriodTestServices.ClosingConfig(lengthSetting),
+        _clock);
 
     private UpdatePayPeriod.Command ValidUpdate() => new(PayPeriodId, Start, End, Notes: null);
 
-    private void ArrangeOpenPeriod()
+    private void ArrangeOpenPeriod(DateOnly? start = null)
     {
         _payPeriodRepository.Setup(r => r.ExistsAsync(PayPeriodId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         _payPeriodRepository
             .Setup(r => r.GetByIdAsync(PayPeriodId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(PayrollMockFactory.OpenPeriod());
+            .ReturnsAsync(PayrollMockFactory.OpenPeriod(start));
     }
 
     [Fact]
@@ -255,43 +256,78 @@ public class PayPeriodValidatorTests
             && e.ErrorMessage == BusinessErrorMessage.PayPeriodNotOpen);
     }
 
+    /// <summary>
+    /// Change end date moves only the end, to any day from tomorrow to the period's last allowed day. Ending it today
+    /// or earlier is Close now's job, so the two actions never overlap.
+    /// </summary>
     [Theory]
-    [InlineData(7)]
-    [InlineData(13)]
-    [InlineData(15)]
-    [InlineData(31)]
-    public async Task Update_To_A_Period_Not_Of_14_Days_Fails_InvalidDuration(int days)
+    [InlineData(6, null)]
+    [InlineData(14, null)]
+    [InlineData(5, BusinessErrorMessage.PayPeriodEndTooSoon)]
+    [InlineData(4, BusinessErrorMessage.PayPeriodEndTooSoon)]
+    [InlineData(15, BusinessErrorMessage.InvalidDuration)]
+    public async Task Update_Takes_An_End_From_Tomorrow_To_The_Last_Allowed_Day(int day, string? error)
     {
         ArrangeConfirmedSession();
         ArrangeOpenPeriod();
-        _payPeriodRepository
-            .Setup(r => r.HasOverlappingPeriodAsync(It.IsAny<DateOnly>(), It.IsAny<DateOnly>(), PayPeriodId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
 
-        var result = await UpdateValidator().ValidateAsync(ValidUpdate() with { EndDate = Start.AddDays(days - 1) });
+        var result = await UpdateValidator().ValidateAsync(ValidUpdate() with { EndDate = new DateOnly(2026, 1, day) });
 
-        var error = Assert.Single(result.Errors);
-        Assert.Equal(nameof(UpdatePayPeriod.Command.EndDate), error.PropertyName);
-        Assert.Equal(BusinessErrorMessage.InvalidDuration, error.ErrorMessage);
+        if (error is null)
+        {
+            Assert.True(result.IsValid);
+            return;
+        }
+
+        var failure = Assert.Single(result.Errors);
+        Assert.Equal(nameof(UpdatePayPeriod.Command.EndDate), failure.PropertyName);
+        Assert.Equal(error, failure.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task Update_Moving_The_Start_Fails_InvalidDate()
+    {
+        ArrangeConfirmedSession();
+        ArrangeOpenPeriod();
+
+        var result = await UpdateValidator().ValidateAsync(ValidUpdate() with { StartDate = new DateOnly(2026, 1, 2) });
+
+        var failure = Assert.Single(result.Errors);
+        Assert.Equal(nameof(UpdatePayPeriod.Command.PayPeriodId), failure.PropertyName);
+        Assert.Equal(BusinessErrorMessage.InvalidDate, failure.ErrorMessage);
+    }
+
+    /// <summary>The period Close now opens starts tomorrow, so its earliest end is the day after its start.</summary>
+    [Fact]
+    public async Task Update_Of_A_Period_Starting_Tomorrow_Refuses_An_End_On_Its_First_Day()
+    {
+        var tomorrow = new DateOnly(2026, 1, 6);
+        ArrangeConfirmedSession();
+        ArrangeOpenPeriod(tomorrow);
+
+        var result = await UpdateValidator().ValidateAsync(new UpdatePayPeriod.Command(PayPeriodId, tomorrow, tomorrow, Notes: null));
+
+        Assert.Equal(BusinessErrorMessage.InvalidDate, Assert.Single(result.Errors).ErrorMessage);
+        Assert.True((await UpdateValidator().ValidateAsync(
+            new UpdatePayPeriod.Command(PayPeriodId, tomorrow, tomorrow.AddDays(1), Notes: null))).IsValid);
     }
 
     [Theory]
-    [InlineData(3, true)]
-    [InlineData(4, false)]
-    public async Task Update_With_A_Three_Day_Setting_Takes_Three_Days_And_Refuses_A_Fourth(int days, bool valid)
+    [InlineData(3, null)]
+    [InlineData(4, BusinessErrorMessage.InvalidDuration)]
+    public async Task Update_With_A_Three_Day_Setting_Takes_The_Third_Day_And_Refuses_A_Fourth(int days, string? error)
     {
+        var start = new DateOnly(2026, 1, 4);
         ArrangeConfirmedSession();
-        ArrangeOpenPeriod();
-        _payPeriodRepository
-            .Setup(r => r.HasOverlappingPeriodAsync(It.IsAny<DateOnly>(), It.IsAny<DateOnly>(), PayPeriodId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
+        ArrangeOpenPeriod(start);
 
-        var result = await UpdateValidator(lengthSetting: 3).ValidateAsync(ValidUpdate() with { EndDate = Start.AddDays(days - 1) });
+        var result = await UpdateValidator(lengthSetting: 3).ValidateAsync(
+            new UpdatePayPeriod.Command(PayPeriodId, start, start.AddDays(days - 1), Notes: null));
 
-        Assert.Equal(valid, result.IsValid);
-        if (!valid)
+        Assert.Equal(error is null, result.IsValid);
+        if (error is not null)
         {
-            Assert.Equal(BusinessErrorMessage.InvalidDuration, Assert.Single(result.Errors).ErrorMessage);
+            Assert.Equal(error, Assert.Single(result.Errors).ErrorMessage);
         }
     }
 

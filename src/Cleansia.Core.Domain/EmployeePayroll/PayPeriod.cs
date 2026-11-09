@@ -79,7 +79,7 @@ public class PayPeriod : TenantAuditable
         return Create(startDate, endDate, $"Second half of {startDate:MMMM yyyy}");
     }
 
-    public PayPeriod Update(DateOnly startDate, DateOnly endDate, string? notes = null)
+    public PayPeriod Update(DateOnly startDate, DateOnly endDate, int maxLengthInDays, string? notes = null)
     {
         if (Status != PayPeriodStatus.Open)
         {
@@ -91,10 +91,9 @@ public class PayPeriod : TenantAuditable
             throw new ArgumentException("End date must be after start date", nameof(endDate));
         }
 
-        var duration = endDate.DayNumber - startDate.DayNumber;
-        if (duration < 1 || duration > 31)
+        if (endDate.DayNumber - startDate.DayNumber + 1 > maxLengthInDays)
         {
-            throw new ArgumentException("Pay period must be between 1 and 31 days", nameof(endDate));
+            throw new ArgumentException($"Pay period must be at most {maxLengthInDays} days", nameof(endDate));
         }
 
         StartDate = startDate;

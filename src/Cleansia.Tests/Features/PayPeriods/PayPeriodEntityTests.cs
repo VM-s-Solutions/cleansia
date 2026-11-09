@@ -42,6 +42,28 @@ public class PayPeriodEntityTests
         Assert.Throws<InvalidOperationException>(() => period.Close("admin@cleansia.cz"));
     }
 
+    // ── Update ───────────────────────────────────────────────────────
+
+    [Fact]
+    public void Update_To_A_Six_Day_Period_Moves_The_End()
+    {
+        var period = PayrollMockFactory.OpenPeriod();
+
+        period.Update(new DateOnly(2026, 1, 1), new DateOnly(2026, 1, 6), PayPeriod.LengthInDays);
+
+        Assert.Equal((new DateOnly(2026, 1, 1), new DateOnly(2026, 1, 6)), (period.StartDate, period.EndDate));
+    }
+
+    [Fact]
+    public void Update_Past_The_Allowed_Length_Throws()
+    {
+        var period = PayrollMockFactory.OpenPeriod();
+
+        Assert.Throws<ArgumentException>(() =>
+            period.Update(new DateOnly(2026, 1, 1), new DateOnly(2026, 1, 15), PayPeriod.LengthInDays));
+        Assert.Equal(new DateOnly(2026, 1, 14), period.EndDate);
+    }
+
     // ── MarkAsPaid ───────────────────────────────────────────────────
 
     [Fact]

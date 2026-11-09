@@ -3461,8 +3461,9 @@
     },
     "pay_period": {
       "already_paid": "Platební období již bylo zaplaceno",
+      "end_too_soon": "Datum konce musí být nejdříve zítra. Chcete-li období ukončit dnes, použijte „Uzavřít nyní“.",
       "has_order_pays": "Nelze smazat platební období, které má přiřazené platby objednávek",
-      "invalid_duration": "Platební období trvá přesně 14 dní: datum konce musí být 13 dní po datu začátku",
+      "invalid_duration": "Datum konce je pozdější než poslední den, do kterého může platební období trvat.",
       "not_closed": "Platební období není uzavřeno",
       "overlapping_period": "Platební období se překrývá s existujícím obdobím"
     },

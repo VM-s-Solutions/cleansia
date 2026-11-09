@@ -3461,8 +3461,9 @@
     },
     "pay_period": {
       "already_paid": "Výplatné obdobie už bolo zaplatené",
+      "end_too_soon": "Dátum konca musí byť najskôr zajtra. Ak chcete obdobie ukončiť dnes, použite „Uzavrieť teraz“.",
       "has_order_pays": "Nie je možné odstrániť výplatné obdobie, ktoré má priradené platby za objednávky",
-      "invalid_duration": "Výplatné obdobie trvá presne 14 dní: dátum konca musí byť 13 dní po dátume začiatku",
+      "invalid_duration": "Dátum konca je neskorší ako posledný deň, do ktorého môže výplatné obdobie trvať.",
       "not_closed": "Výplatné obdobie nie je uzavreté",
       "overlapping_period": "Výplatné obdobie sa prekrýva s existujúcim obdobím"
     },

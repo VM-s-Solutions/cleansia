@@ -665,6 +665,7 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'pay_config.not_found',
   'pay_config.service_or_package_required',
   'pay_period.already_paid',
+  'pay_period.end_too_soon',
   'pay_period.has_order_pays',
   'pay_period.invalid_duration',
   'pay_period.not_closed',

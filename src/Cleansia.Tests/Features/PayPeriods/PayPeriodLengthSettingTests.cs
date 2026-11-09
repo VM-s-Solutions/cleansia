@@ -66,7 +66,7 @@ public class PayPeriodLengthSettingTests
         var period = PayPeriod.CreateBiWeekly(new DateOnly(2026, 1, 1), 3);
 
         Assert.Equal(new DateOnly(2026, 1, 3), period.EndDate);
-        Assert.Equal(new DateOnly(2026, 1, 3), period.Update(new DateOnly(2026, 1, 1), new DateOnly(2026, 1, 3)).EndDate);
+        Assert.Equal(new DateOnly(2026, 1, 3), period.Update(new DateOnly(2026, 1, 1), new DateOnly(2026, 1, 3), 3).EndDate);
     }
 
     [Fact]

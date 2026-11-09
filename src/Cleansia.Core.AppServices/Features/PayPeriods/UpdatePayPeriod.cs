@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.Domain.EmployeePayroll;
@@ -21,6 +22,8 @@ public class UpdatePayPeriod
 
     public record Response(string PayPeriodId);
 
+    public record EndDateSnapshot(string PayPeriodId, DateOnly EndDate);
+
     public class Validator : AbstractValidator<Command>
     {
         private readonly IPayPeriodRepository _payPeriodRepository;
@@ -29,7 +32,8 @@ public class UpdatePayPeriod
             IUserRepository userRepository,
             IUserSessionProvider userSessionProvider,
             IPayPeriodRepository payPeriodRepository,
-            IPayPeriodClosingConfig payPeriodClosingConfig)
+            IPayPeriodClosingConfig payPeriodClosingConfig,
+            TimeProvider timeProvider)
         {
             _payPeriodRepository = payPeriodRepository;
 
@@ -42,7 +46,9 @@ public class UpdatePayPeriod
                 .MustAsync(payPeriodRepository.ExistsAsync)
                 .WithMessage(BusinessErrorMessage.PayPeriodNotFound)
                 .MustAsync(BeOpenStatusAsync)
-                .WithMessage(BusinessErrorMessage.PayPeriodNotOpen);
+                .WithMessage(BusinessErrorMessage.PayPeriodNotOpen)
+                .MustAsync(KeepTheStoredStartAsync)
+                .WithMessage(BusinessErrorMessage.InvalidDate);
 
             RuleFor(x => x.StartDate)
                 .NotEmpty()
@@ -54,7 +60,9 @@ public class UpdatePayPeriod
                 .WithMessage(BusinessErrorMessage.Required)
                 .Must((cmd, endDate) => endDate > cmd.StartDate)
                 .WithMessage(BusinessErrorMessage.InvalidDate)
-                .Must((cmd, endDate) => endDate == cmd.StartDate.AddDays(payPeriodClosingConfig.LengthInDays - 1))
+                .Must(endDate => endDate > DateOnly.FromDateTime(timeProvider.GetUtcNow().UtcDateTime))
+                .WithMessage(BusinessErrorMessage.PayPeriodEndTooSoon)
+                .Must((cmd, endDate) => endDate <= cmd.StartDate.AddDays(payPeriodClosingConfig.LengthInDays - 1))
                 .WithMessage(BusinessErrorMessage.InvalidDuration);
 
             RuleFor(x => x)
@@ -72,6 +80,12 @@ public class UpdatePayPeriod
             return period!.Status == PayPeriodStatus.Open;
         }
 
+        private async Task<bool> KeepTheStoredStartAsync(Command command, string payPeriodId, CancellationToken cancellationToken)
+        {
+            var period = await _payPeriodRepository.GetByIdAsync(payPeriodId, cancellationToken);
+            return period!.StartDate == command.StartDate;
+        }
+
         private async Task<bool> BeNoOverlappingPeriodAsync(Command command, CancellationToken cancellationToken)
         {
             var hasOverlap = await _payPeriodRepository.HasOverlappingPeriodAsync(
@@ -81,7 +95,9 @@ public class UpdatePayPeriod
     }
 
     public class Handler(
-        IPayPeriodRepository payPeriodRepository)
+        IPayPeriodRepository payPeriodRepository,
+        IPayPeriodClosingConfig payPeriodClosingConfig,
+        IAuditContext auditContext)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -93,7 +109,9 @@ public class UpdatePayPeriod
                     nameof(command.PayPeriodId), BusinessErrorMessage.PayPeriodNotFound));
             }
 
-            payPeriod.Update(command.StartDate, command.EndDate, command.Notes);
+            var before = new EndDateSnapshot(payPeriod.Id, payPeriod.EndDate);
+            payPeriod.Update(command.StartDate, command.EndDate, payPeriodClosingConfig.LengthInDays, command.Notes);
+            auditContext.RecordChange("PayPeriod", payPeriod.Id, before, new EndDateSnapshot(payPeriod.Id, payPeriod.EndDate));
 
             return BusinessResult.Success(new Response(payPeriod.Id));
         }

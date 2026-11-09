@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Auth;
+using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
@@ -486,6 +487,7 @@ public class AppleAuthHandlerTests
         var relayLetters = new string(relayLocalPart.Where(char.IsLetter).ToArray());
         Assert.DoesNotContain(relayLetters, _provisionedUser.FirstName, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain(relayLetters, _provisionedUser.LastName, StringComparison.OrdinalIgnoreCase);
+        Assert.True(_provisionedUser.MapToMyProfileDto()!.IsNamePlaceholder);
     }
 
     // The email fallback is a floor, not a rewrite: a name Apple actually handed us always wins.
@@ -509,6 +511,7 @@ public class AppleAuthHandlerTests
         Assert.NotNull(_provisionedUser);
         Assert.Equal("Jane", _provisionedUser!.FirstName);
         Assert.Equal("Doe", _provisionedUser.LastName);
+        Assert.False(_provisionedUser.MapToMyProfileDto()!.IsNamePlaceholder);
     }
 
     // Back-fill: accounts provisioned before the blank-name fix can only be repaired when Apple replays

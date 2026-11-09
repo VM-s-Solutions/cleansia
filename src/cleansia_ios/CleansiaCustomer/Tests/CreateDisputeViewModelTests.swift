@@ -174,10 +174,10 @@ final class CreateDisputeViewModelTests: XCTestCase {
         FileManager.default.fileExists(atPath: url.path)
     }
 
-    func testAddEvidenceKeepsAValidFileAsPending() {
+    func testAddEvidenceKeepsAValidFileAsPending() async {
         let (vm, _) = makeVM(client: FakeDisputeClient())
 
-        vm.addEvidence(pdf(), fileName: "receipt.pdf")
+        await vm.addEvidence(pdf(), fileName: "receipt.pdf")
 
         XCTAssertEqual(vm.pickedEvidence.map(\.fileName), ["receipt.pdf"])
         XCTAssertEqual(vm.pickedEvidence.first?.upload, .pending)
@@ -185,20 +185,47 @@ final class CreateDisputeViewModelTests: XCTestCase {
         XCTAssertEqual(vm.pickedEvidence.first.map { exists($0.file.url) }, true)
     }
 
-    func testAddEvidenceRefusesAnOversizedFile() {
+    func testAddEvidenceRefusesAnOversizedFile() async {
         let snackbar = SnackbarController()
         let (vm, _) = makeVM(client: FakeDisputeClient(), snackbar: snackbar)
 
-        vm.addEvidence(.pdf(Data(count: DisputeFormConstants.maxEvidenceBytes + 1)), fileName: "big.pdf")
+        await vm.addEvidence(.pdf(Data(count: DisputeFormConstants.maxEvidenceBytes + 1)), fileName: "big.pdf")
 
         XCTAssertTrue(vm.pickedEvidence.isEmpty)
         XCTAssertEqual(snackbar.current?.text, L10n.Disputes.evidenceTooLarge)
     }
 
-    func testRemoveEvidenceDropsOnlyThatFileAndItsTempCopy() {
+    /// The main actor runs the first check while a camera-size photo is still encoding, so the encode is off it.
+    func testAPhotoIsEncodedOffTheMainActor() async {
         let (vm, _) = makeVM(client: FakeDisputeClient())
-        vm.addEvidence(pdf("a"), fileName: "a.pdf")
-        vm.addEvidence(pdf("r"), fileName: "r.pdf")
+        let photo = ProfileFixtures.image(width: 4032, height: 3024)
+
+        let pick = Task { await vm.addEvidence(.image(photo), fileName: "a.jpg") }
+        await Task.yield()
+        XCTAssertTrue(vm.pickedEvidence.isEmpty, "the encode held the main actor")
+
+        await pick.value
+        XCTAssertEqual(vm.pickedEvidence.map(\.fileName), ["a.jpg"])
+    }
+
+    /// Submit is shut while a photo encodes, or it would file the dispute without it.
+    func testASubmitWhileAPhotoEncodesDoesNothingAndThePhotoIsKept() async {
+        let client = FakeDisputeClient()
+        let (vm, _) = makeVM(client: client)
+        let pick = Task { await vm.addEvidence(.image(ProfileFixtures.image()), fileName: "a.jpg") }
+        await Task.yield()
+
+        await vm.submit(reason: 3, description: validDescription)
+        await pick.value
+
+        XCTAssertEqual(client.createCallCount, 0)
+        XCTAssertEqual(vm.pickedEvidence.map(\.fileName), ["a.jpg"])
+    }
+
+    func testRemoveEvidenceDropsOnlyThatFileAndItsTempCopy() async {
+        let (vm, _) = makeVM(client: FakeDisputeClient())
+        await vm.addEvidence(pdf("a"), fileName: "a.pdf")
+        await vm.addEvidence(pdf("r"), fileName: "r.pdf")
         guard let first = vm.pickedEvidence.first else { return XCTFail("expected two files") }
 
         vm.removeEvidence(id: first.id)
@@ -212,8 +239,8 @@ final class CreateDisputeViewModelTests: XCTestCase {
         client.createResult = .success("dispute-9")
         let snackbar = SnackbarController()
         let (vm, _) = makeVM(client: client, snackbar: snackbar)
-        vm.addEvidence(pdf("a"), fileName: "a.pdf")
-        vm.addEvidence(pdf("r"), fileName: "r.pdf")
+        await vm.addEvidence(pdf("a"), fileName: "a.pdf")
+        await vm.addEvidence(pdf("r"), fileName: "r.pdf")
         let urls = vm.pickedEvidence.map(\.file.url)
         var emitted: String?
         vm.created.sink { emitted = $0 }.store(in: &cancellables)
@@ -234,7 +261,7 @@ final class CreateDisputeViewModelTests: XCTestCase {
         let client = FakeDisputeClient()
         client.createResult = .success("dispute-9")
         let (vm, _) = makeVM(client: client)
-        vm.addEvidence(pdf(), fileName: "a.pdf")
+        await vm.addEvidence(pdf(), fileName: "a.pdf")
         var uploadDuringRequest: EvidenceUploadState?
         var submitDuringRequest: ActionState?
         client.onUpload = {
@@ -256,8 +283,8 @@ final class CreateDisputeViewModelTests: XCTestCase {
         client.uploadResults = [.failure(ApiError(httpStatus: 500)), client.uploadResult]
         let snackbar = SnackbarController()
         let (vm, _) = makeVM(client: client, snackbar: snackbar)
-        vm.addEvidence(pdf("a"), fileName: "a.pdf")
-        vm.addEvidence(pdf("r"), fileName: "r.pdf")
+        await vm.addEvidence(pdf("a"), fileName: "a.pdf")
+        await vm.addEvidence(pdf("r"), fileName: "r.pdf")
         var emitted: [String] = []
         vm.created.sink { emitted.append($0) }.store(in: &cancellables)
 
@@ -281,7 +308,7 @@ final class CreateDisputeViewModelTests: XCTestCase {
         let client = FakeDisputeClient()
         client.createResult = .failure(ApiError(httpStatus: 500))
         let (vm, _) = makeVM(client: client)
-        vm.addEvidence(pdf(), fileName: "a.pdf")
+        await vm.addEvidence(pdf(), fileName: "a.pdf")
 
         await vm.submit(reason: 3, description: validDescription)
 
@@ -294,9 +321,9 @@ final class CreateDisputeViewModelTests: XCTestCase {
         let client = FakeDisputeClient()
         client.createResult = .failure(ApiError(httpStatus: 500))
         let (vm, _) = makeVM(client: client)
-        vm.addEvidence(pdf("a"), fileName: "a.pdf")
+        await vm.addEvidence(pdf("a"), fileName: "a.pdf")
         client.onCreate = {
-            vm.addEvidence(self.pdf("r"), fileName: "r.pdf")
+            await vm.addEvidence(self.pdf("r"), fileName: "r.pdf")
             if let first = vm.pickedEvidence.first { vm.removeEvidence(id: first.id) }
         }
 

@@ -26,4 +26,5 @@ public record MyProfileDto(
     DateTimeOffset MemberSince,
     int TotalBookings,
     decimal TotalSavings,
-    string? SavingsCurrencyCode);
+    string? SavingsCurrencyCode,
+    bool IsNamePlaceholder);

@@ -366,7 +366,7 @@ A legacy request with no password remains accepted, but **withdraws the stored p
 the mailbox holder uses Forgot password once to set one. This also closes the single-registration
 pre-hijack path without trusting a password a stranger may have registered.
 `src/Cleansia.Core.AppServices/Features/Auth/ConfirmUserEmail.cs:65` validates a supplied password;
-`:179` calls `src/Cleansia.Core.Domain/Users/User.cs:394`, which replaces it before confirmation.
+`:179` calls `src/Cleansia.Core.Domain/Users/User.cs:409`, which replaces it before confirmation.
 Re-registration's earlier password-withdrawal rule remains.
 → [Auth and identity](/flows/auth-and-identity#confirmation-password)
 

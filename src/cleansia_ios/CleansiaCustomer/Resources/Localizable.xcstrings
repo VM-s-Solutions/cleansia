@@ -20751,31 +20751,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Volitelné — pro narozeninové výhody."
+            "value": "Nepovinné. Uklízeči se nikdy nezobrazí."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Optional — for birthday perks."
+            "value": "Optional. Never shown to your cleaner."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "По желанию — для бонусов ко дню рождения."
+            "value": "Необязательно. Клинер её никогда не увидит."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Voliteľné — pre narodeninové výhody."
+            "value": "Nepovinné. Upratovačovi sa nikdy nezobrazí."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "За бажанням — для бонусів до дня народження."
+            "value": "Необов’язково. Клінер її ніколи не побачить."
           }
         }
       }
@@ -20920,37 +20920,667 @@
         }
       }
     },
-    "onboarding_phone_helper": {
+    "onboarding_progress": {
       "extractionState": "manual",
       "localizations": {
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Uveďte předčíslí (např. +420). Použijeme ho pouze k tomu, abychom vás kontaktovali ohledně vašich rezervací."
+            "value": "Hotovo %1$d ze %2$d"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Include your country code (e.g. +420). We'll only use this to reach you about your bookings."
+            "value": "%1$d of %2$d done"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Укажите код страны (напр. +420). Используем только для связи по вашим бронированиям."
+            "value": "Готово %1$d из %2$d"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Uveďte predvoľbu (napr. +420). Použijeme ho iba na to, aby sme vás mohli kontaktovať ohľadom vašich rezervácií."
+            "value": "Hotovo %1$d z %2$d"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Вкажіть код країни (напр. +420). Використовуватимемо лише для зв’язку щодо ваших бронювань."
+            "value": "Готово %1$d з %2$d"
+          }
+        }
+      }
+    },
+    "onboarding_left_phone": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doplňte telefonní číslo a můžete objednávat."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add your phone number and you can book."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Добавьте номер телефона, и сможете заказывать."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doplňte telefónne číslo a môžete objednávať."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Додайте номер телефону, і зможете замовляти."
+          }
+        }
+      }
+    },
+    "onboarding_left_name": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doplňte jméno a můžete objednávat."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add your name and you can book."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Добавьте имя, и сможете заказывать."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doplňte meno a môžete objednávať."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Додайте ім’я, і зможете замовляти."
+          }
+        }
+      }
+    },
+    "onboarding_left_both": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro objednání doplňte jméno a telefonní číslo."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add your name and phone number to book."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чтобы заказывать, добавьте имя и номер телефона."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na objednanie doplňte meno a telefónne číslo."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Щоб замовляти, додайте ім’я та номер телефону."
+          }
+        }
+      }
+    },
+    "onboarding_ready": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Připraveno k objednání"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ready to book"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Можно заказывать"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pripravené na objednanie"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Можна замовляти"
+          }
+        }
+      }
+    },
+    "onboarding_ready_sub": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Máte vše, co objednávka potřebuje."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Everything a booking needs is here."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У вас есть всё, что нужно для заказа."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Máte všetko, čo objednávka potrebuje."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У вас є все, що потрібно для замовлення."
+          }
+        }
+      }
+    },
+    "onboarding_row_name": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jméno a příjmení"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Имя и фамилия"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meno a priezvisko"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ім’я та прізвище"
+          }
+        }
+      }
+    },
+    "onboarding_email_hidden": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skrývá ho Apple"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hidden by Apple"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Её скрывает Apple"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skrýva ho Apple"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Її приховує Apple"
+          }
+        }
+      }
+    },
+    "onboarding_row_done_a11y": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "hotovo"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "done"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "готово"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "hotovo"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "готово"
+          }
+        }
+      }
+    },
+    "onboarding_row_current_a11y": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "aktuální krok"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "current step"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "текущий шаг"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "aktuálny krok"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "поточний крок"
+          }
+        }
+      }
+    },
+    "onboarding_row_waiting_a11y": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "nevyplněno"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "not done"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "не заполнено"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "nevyplnené"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "не заповнено"
+          }
+        }
+      }
+    },
+    "onboarding_not_set": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nevyplněno"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not set"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не указано"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nevyplnené"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не вказано"
+          }
+        }
+      }
+    },
+    "onboarding_card_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co uvidí uklízeč"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What your cleaner sees"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Что увидит клинер"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Čo uvidí upratovač"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Що побачить клінер"
+          }
+        }
+      }
+    },
+    "onboarding_card_example": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ukázka"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Example"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пример"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ukážka"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Приклад"
+          }
+        }
+      }
+    },
+    "onboarding_card_dial": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hovory a SMS půjdou na"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calls and texts go to"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Звонки и SMS на номер"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hovory a SMS pôjdu na"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дзвінки та SMS на номер"
+          }
+        }
+      }
+    },
+    "onboarding_card_call": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zavolat"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Call"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Позвонить"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zavolať"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Подзвонити"
+          }
+        }
+      }
+    },
+    "onboarding_card_sms": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SMS"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SMS"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SMS"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SMS"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SMS"
+          }
+        }
+      }
+    },
+    "onboarding_card_navigate": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Navigovat"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Navigate"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Маршрут"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Navigovať"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Маршрут"
+          }
+        }
+      }
+    },
+    "onboarding_card_sample_address": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vinohradská 48, Praha 2"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vinohradská 48, Praha 2"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vinohradská 48, Praha 2"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vinohradská 48, Praha 2"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vinohradská 48, Praha 2"
           }
         }
       }
@@ -21056,41 +21686,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Пропустити"
-          }
-        }
-      }
-    },
-    "onboarding_subtitle": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pár rychlých údajů, abychom vám mohli lépe posloužit. Můžete tento krok přeskočit a vyplnit později."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "A few quick details so we can serve you better. You can skip and fill these in later."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Немного деталей, чтобы мы могли лучше вас обслуживать. Можно пропустить и заполнить позже."
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pár rýchlych údajov, aby sme vám mohli lepšie slúžiť. Môžete tento krok preskočiť a vyplniť neskôr."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Кілька швидких деталей, щоб ми могли краще вам служити. Ви можете пропустити цей крок і заповнити пізніше."
           }
         }
       }

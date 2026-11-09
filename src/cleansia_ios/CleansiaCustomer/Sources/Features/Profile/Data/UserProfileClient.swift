@@ -18,6 +18,7 @@ struct CurrentUserProfile: Equatable {
     var totalBookings: Int = 0
     var totalSavings: Double = 0
     var savingsCurrencyCode: String?
+    var isNamePlaceholder = false
 
     var isComplete: Bool {
         !firstName.isBlank && !lastName.isBlank && !email.isBlank && !(phoneNumber ?? "").isBlank
@@ -25,6 +26,10 @@ struct CurrentUserProfile: Equatable {
 
     var fullName: String {
         [firstName, lastName].filter { !$0.isBlank }.joined(separator: " ")
+    }
+
+    var isEmailHiddenByApple: Bool {
+        email.lowercased().hasSuffix("@privaterelay.appleid.com")
     }
 }
 
@@ -123,7 +128,10 @@ extension MyProfileDto {
             memberSince: memberSince,
             totalBookings: totalBookings.require("totalBookings"),
             totalSavings: totalSavings.require("totalSavings"),
-            savingsCurrencyCode: savingsCurrencyCode
+            savingsCurrencyCode: savingsCurrencyCode,
+            // Defaulted rather than required: only a server older than the member omits it, and false is what
+            // every build did before it. → /decisions/adr-0081
+            isNamePlaceholder: isNamePlaceholder ?? false
         )
     }
 }

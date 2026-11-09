@@ -2150,6 +2150,7 @@
       "invalid_age": "Please enter a valid age.",
       "invalid_date": "Please enter a valid date.",
       "invalid_password": "That password isn't valid.",
+      "invalid_phone_number": "Please enter a valid phone number.",
       "must_be_positive": "The value must be greater than zero."
     },
     "review": {

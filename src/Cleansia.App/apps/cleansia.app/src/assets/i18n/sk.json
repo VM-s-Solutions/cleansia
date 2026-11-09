@@ -2150,6 +2150,7 @@
       "invalid_age": "Zadajte platný vek.",
       "invalid_date": "Zadajte platný dátum.",
       "invalid_password": "Toto heslo nie je platné.",
+      "invalid_phone_number": "Zadajte prosím platné telefónne číslo.",
       "must_be_positive": "Hodnota musí byť väčšia ako nula."
     },
     "review": {

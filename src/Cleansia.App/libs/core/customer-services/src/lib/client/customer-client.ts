@@ -13404,6 +13404,7 @@ export class MyProfileDto implements IMyProfileDto {
     totalBookings!: number;
     totalSavings!: number;
     savingsCurrencyCode!: string | undefined;
+    isNamePlaceholder!: boolean;
 
     constructor(data?: IMyProfileDto) {
         if (data) {
@@ -13431,6 +13432,7 @@ export class MyProfileDto implements IMyProfileDto {
             this.totalBookings = Data["totalBookings"];
             this.totalSavings = Data["totalSavings"];
             this.savingsCurrencyCode = Data["savingsCurrencyCode"];
+            this.isNamePlaceholder = Data["isNamePlaceholder"];
         }
     }
 
@@ -13458,6 +13460,7 @@ export class MyProfileDto implements IMyProfileDto {
         data["totalBookings"] = this.totalBookings;
         data["totalSavings"] = this.totalSavings;
         data["savingsCurrencyCode"] = this.savingsCurrencyCode;
+        data["isNamePlaceholder"] = this.isNamePlaceholder;
         return data;
     }
 }
@@ -13478,6 +13481,7 @@ export interface IMyProfileDto {
     totalBookings: number;
     totalSavings: number;
     savingsCurrencyCode: string | undefined;
+    isNamePlaceholder: boolean;
 }
 
 export class MyReceivableDto implements IMyReceivableDto {

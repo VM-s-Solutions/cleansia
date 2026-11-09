@@ -223,6 +223,18 @@ final class JobDetailPageTests: XCTestCase {
         XCTAssertEqual(JobBandMapLayout(size: CGSize(width: 700, height: 400), top: 0, visible: 100).side, 700)
     }
 
+    /// A map no taller than the pin line has the door at its middle: on the line it would sit past the map's foot.
+    func testTheDoorSitsMidMapOnAMapNoTallerThanThePinLine() {
+        let line = 54 + 136 * 0.72
+        func anchor(_ height: CGFloat) -> CGFloat {
+            JobBandMapLayout(size: CGSize(width: 393, height: height), top: 54, visible: 136).pinAnchor
+        }
+        XCTAssertEqual(anchor(line + 1) * (line + 1), line, accuracy: 0.001, "a taller map keeps the door on the line")
+        XCTAssertEqual(anchor(line), 0.5)
+        XCTAssertEqual(anchor(148), 0.5)
+        XCTAssertEqual(anchor(0), 0.5)
+    }
+
     /// Apple's logo and Legal ride the panel's edge wherever it rests, inside the phone's width and short of the
     /// figure.
     func testTheMapsMarksRideThePanelsEdge() {

@@ -19,6 +19,8 @@ final class MaskedPhoneTextFieldTests: XCTestCase {
             value: Binding(get: { self.value }, set: { self.value = $0 }),
             focused: Binding(get: { self.focused }, set: { self.focused = $0 }),
             engine: PhoneMaskEngine(formatter: GroupedPhoneDisplayFormatter()),
+            keyboardType: .phonePad,
+            accessibilityLabel: nil,
             isEnabled: true,
             font: .systemFont(ofSize: 16),
             textColor: .black,

@@ -35,6 +35,7 @@ struct CreateDisputeView: View {
         reasonValue != nil &&
             vm.descriptionIsValid(description.trimmingCharacters(in: .whitespacesAndNewlines)) &&
             vm.hasOrderContext &&
+            vm.preparingEvidence == 0 &&
             !vm.submitState.isSubmitting
     }
 
@@ -65,7 +66,7 @@ struct CreateDisputeView: View {
         .onReceive(vm.created) { id in onCreated(id) }
         .task { await vm.loadLineOptions() }
         .evidencePicker(isPresented: $showEvidencePicker) { source, fileName in
-            vm.addEvidence(source, fileName: fileName)
+            Task { await vm.addEvidence(source, fileName: fileName) }
         }
     }
 

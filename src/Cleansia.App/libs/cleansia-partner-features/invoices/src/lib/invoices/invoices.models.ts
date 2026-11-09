@@ -1,7 +1,7 @@
 import { TemplateRef } from '@angular/core';
 import { TableColumn, TableAction } from '@cleansia/components';
 import { EmployeeInvoiceDto } from '@cleansia/partner-services';
-import { formatDate, formatMoney, localeFor } from '@cleansia/utils';
+import { formatDate, formatMoney, formatPayPeriodRange, localeFor } from '@cleansia/utils';
 
 export interface InvoicesActions {
   onDownload: (invoice: EmployeeInvoiceDto) => void;
@@ -12,6 +12,8 @@ export function getInvoicesTableDefinition(
   lang: string | undefined,
   statusTemplate?: TemplateRef<EmployeeInvoiceDto>
 ): { columns: TableColumn<EmployeeInvoiceDto>[]; actions: TableAction<EmployeeInvoiceDto>[] } {
+  const money = (invoice: EmployeeInvoiceDto, amount: number): string =>
+    formatMoney(amount, invoice.currencyCode ?? '', localeFor(lang), { fractionDigits: 2 });
   return {
     columns: [
       {
@@ -24,7 +26,8 @@ export function getInvoicesTableDefinition(
         id: 'payPeriodLabel',
         field: 'payPeriodLabel',
         header: 'pages.invoices.pay_period',
-        sortable: true,
+        getValue: (invoice: EmployeeInvoiceDto) =>
+          formatPayPeriodRange(invoice.payPeriodStartDate, invoice.payPeriodEndDate, lang),
       },
       {
         id: 'generatedAt',
@@ -38,18 +41,28 @@ export function getInvoicesTableDefinition(
         id: 'totalOrders',
         field: 'totalOrders',
         header: 'pages.invoices.total_orders',
-        sortable: true,
         numeric: true,
       },
       {
         id: 'totalAmount',
         field: 'totalAmount',
         header: 'pages.invoices.total_amount',
-        getValue: (invoice?: EmployeeInvoiceDto) =>
-          invoice
-            ? formatMoney(invoice.totalAmount, invoice.currencyCode ?? '', localeFor(lang), { fractionDigits: 2 })
-            : '',
+        getValue: (invoice: EmployeeInvoiceDto) => money(invoice, invoice.totalAmount),
         sortable: true,
+        numeric: true,
+      },
+      {
+        id: 'cashSetOffAmount',
+        field: 'cashSetOffAmount',
+        header: 'pages.invoices.cash_set_off',
+        getValue: (invoice: EmployeeInvoiceDto) => money(invoice, invoice.cashSetOffAmount),
+        numeric: true,
+      },
+      {
+        id: 'transferAmount',
+        field: 'transferAmount',
+        header: 'pages.invoices.transfer_amount',
+        getValue: (invoice: EmployeeInvoiceDto) => money(invoice, invoice.transferAmount),
         numeric: true,
       },
       {

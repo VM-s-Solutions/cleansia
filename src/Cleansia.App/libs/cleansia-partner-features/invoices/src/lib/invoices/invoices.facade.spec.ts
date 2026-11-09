@@ -59,13 +59,41 @@ describe('InvoicesFacade', () => {
     expect(facade.loading()).toBe(false);
   });
 
-  it('empties the list when the read fails', () => {
-    employeePayrollClient.getPagedInvoices.mockReturnValue(throwError(() => new Error('boom')));
+  // The interceptor toasts the failure; blanking the table on top of it would read as "no invoices".
+  it('keeps the rows it has when a later read fails', () => {
     const facade = create();
+    employeePayrollClient.getPagedInvoices.mockReturnValue(throwError(() => new Error('boom')));
+
+    facade.onPageChange({ first: 20, rows: 20, page: 1, totalRecords: 7 });
+
+    expect(employeePayrollClient.getPagedInvoices).toHaveBeenCalledTimes(2);
+    expect(facade.invoices()).toBe(page.data);
+    expect(facade.totalRecords()).toBe(7);
+    expect(facade.loading()).toBe(false);
+  });
+
+  it('shows an empty list when the server answers with none', () => {
+    const facade = create();
+    employeePayrollClient.getPagedInvoices.mockReturnValue(of(PagedDataOfEmployeeInvoiceDto.fromJS({ data: [], total: 0 })));
+
+    facade.loadInvoices();
 
     expect(facade.invoices()).toEqual([]);
     expect(facade.totalRecords()).toBe(0);
-    expect(facade.loading()).toBe(false);
+  });
+
+  it('asks for the partner again on the next load after the lookup failed, then lists the invoices', () => {
+    employeeClient.getCurrentEmployee.mockReturnValueOnce(throwError(() => new Error('boom')));
+    const facade = create();
+
+    expect(employeePayrollClient.getPagedInvoices).not.toHaveBeenCalled();
+
+    facade.loadInvoices();
+
+    expect(employeeClient.getCurrentEmployee).toHaveBeenCalledTimes(2);
+    expect(employeePayrollClient.getPagedInvoices).toHaveBeenCalledTimes(1);
+    expect(employeePayrollClient.getPagedInvoices.mock.calls[0][0]).toBe('emp-1');
+    expect(facade.invoices()).toBe(page.data);
   });
 
   it('refuses to download an invoice that has no PDF yet, without calling the server', () => {

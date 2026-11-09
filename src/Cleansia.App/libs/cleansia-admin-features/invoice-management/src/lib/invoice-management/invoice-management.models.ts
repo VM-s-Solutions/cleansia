@@ -5,20 +5,10 @@ import {
   EmployeeInvoiceStatus,
 } from '@cleansia/admin-services';
 import { TableColumn, TableAction } from '@cleansia/components';
-import { formatDate, formatMoney, localeFor } from '@cleansia/utils';
+import { formatDate, formatMoney, formatPayPeriodRange, localeFor } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 
 export type InvoicePdfState = 'ready' | 'failed' | 'pending';
-
-export function formatPayPeriodRange(
-  startDate: Date | undefined,
-  endDate: Date | undefined,
-  lang: string | undefined
-): string {
-  return startDate && endDate
-    ? `${formatDate(startDate, lang, 'utcDate')} – ${formatDate(endDate, lang, 'utcDate')}`
-    : '';
-}
 
 export function getInvoicePdfState(
   invoice: Pick<

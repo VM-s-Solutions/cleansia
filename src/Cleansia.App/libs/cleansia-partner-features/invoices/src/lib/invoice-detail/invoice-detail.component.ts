@@ -64,6 +64,8 @@ export class InvoiceDetailComponent implements OnInit {
       bonus: amount(invoice?.bonusAmount),
       deduction: amount(invoice?.deductionAmount),
       total: amount(invoice?.totalAmount),
+      cashSetOff: amount(invoice?.cashSetOffAmount),
+      transfer: amount(invoice?.transferAmount),
     };
   });
 

@@ -137,6 +137,16 @@
             <span>{{ 'pages.invoice_detail.total_amount' | translate }}</span>
             <span class="amount">{{ amounts().total }}</span>
           </div>
+          @if (invoice.cashSetOffAmount > 0) {
+          <div class="amount-row negative">
+            <span>{{ 'pages.invoices.cash_set_off' | translate }}</span>
+            <span class="amount">-{{ amounts().cashSetOff }}</span>
+          </div>
+          <div class="amount-row total">
+            <span>{{ 'pages.invoices.transfer_amount' | translate }}</span>
+            <span class="amount">{{ amounts().transfer }}</span>
+          </div>
+          }
         </div>
       </div>
     </cleansia-section>

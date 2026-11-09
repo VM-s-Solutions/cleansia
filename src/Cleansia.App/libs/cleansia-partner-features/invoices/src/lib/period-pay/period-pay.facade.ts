@@ -6,6 +6,7 @@ import {
   CashHeldDto,
   PartnerClient,
   PayPeriodDto,
+  PayPeriodStatus,
   PeriodPaySummaryDto,
   SortDefinition,
   SortDirection,
@@ -173,9 +174,11 @@ export class PeriodPayFacade extends UnsubscribeControlDirective {
         }
         const periods = paged.data ?? [];
         this.payPeriods.set(periods);
-        const latestPeriodId = periods[0]?.id;
-        if (latestPeriodId) {
-          this.selectPeriod(latestPeriodId);
+        const shownPeriodId = (
+          periods.find((period) => period.status === PayPeriodStatus[PayPeriodStatus.Open]) ?? periods[0]
+        )?.id;
+        if (shownPeriodId) {
+          this.selectPeriod(shownPeriodId);
         } else {
           this.initialLoading.set(false);
         }

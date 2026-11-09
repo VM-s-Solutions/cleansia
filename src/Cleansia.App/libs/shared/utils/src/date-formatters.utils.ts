@@ -25,3 +25,13 @@ export function formatDate(
   if (Number.isNaN(date.getTime())) return '';
   return date.toLocaleString(localeFor(lang), STYLE_OPTIONS[style]);
 }
+
+export function formatPayPeriodRange(
+  startDate: Date | undefined,
+  endDate: Date | undefined,
+  lang: string | undefined,
+): string {
+  return startDate && endDate
+    ? `${formatDate(startDate, lang, 'utcDate')} – ${formatDate(endDate, lang, 'utcDate')}`
+    : '';
+}

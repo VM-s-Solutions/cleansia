@@ -18,10 +18,9 @@ import {
 } from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { SnackbarService } from '@cleansia/services';
-import { currentLanguage } from '@cleansia/utils';
+import { currentLanguage, formatPayPeriodRange } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
-import { formatPayPeriodRange } from './invoice-management.models';
 
 // shortcut: the picker lists the newest 1000 periods (38 years of 14-day ones); page it if a company outgrows that.
 const PAY_PERIOD_OPTIONS_LIMIT = 1000;

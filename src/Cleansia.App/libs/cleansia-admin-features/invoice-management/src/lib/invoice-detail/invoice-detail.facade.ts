@@ -13,7 +13,7 @@ import {
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { DialogService as ConfirmDialogService, SnackbarService } from '@cleansia/services';
-import { formatDate, formatMoney, localeFor } from '@cleansia/utils';
+import { formatDate, formatMoney, formatPayPeriodRange, localeFor } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
 import { catchError, filter, finalize, of, takeUntil } from 'rxjs';
@@ -22,7 +22,6 @@ import {
   RejectDialogData,
   RejectDialogResult,
 } from '@cleansia/admin-features/employee-management';
-import { formatPayPeriodRange } from '../invoice-management/invoice-management.models';
 
 @Injectable()
 export class InvoiceDetailFacade extends UnsubscribeControlDirective {

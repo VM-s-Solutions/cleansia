@@ -5,6 +5,7 @@ import {
   EmployeeItem,
   PagedDataOfPayPeriodDto,
   PartnerClient,
+  PayPeriodStatus,
   PeriodPaySummaryDto,
 } from '@cleansia/partner-services';
 import { TranslateService } from '@ngx-translate/core';
@@ -79,6 +80,45 @@ describe('PeriodPayFacade', () => {
     expect(facade.initialLoading()).toBe(false);
     expect(facade.loading()).toBe(false);
     expect(facade.hasError()).toBe(false);
+  });
+
+  // A period made ahead by hand sorts first by its start, yet the pay being earned now is in the open one.
+  it('selects the open period rather than the newest one', () => {
+    payPeriodClient.getPagedPayPeriods.mockReturnValue(
+      of(
+        PagedDataOfPayPeriodDto.fromJS({
+          data: [
+            { id: 'period-3', status: PayPeriodStatus[PayPeriodStatus.Closed] },
+            { id: 'period-2', status: PayPeriodStatus[PayPeriodStatus.Open] },
+            { id: 'period-1', status: PayPeriodStatus[PayPeriodStatus.Paid] },
+          ],
+          total: 3,
+        })
+      )
+    );
+
+    facade.init();
+
+    expect(facade.selectedPeriodId()).toBe('period-2');
+    expect(employeePayrollClient.getPeriodPays).toHaveBeenCalledWith('emp-1', 'period-2', undefined);
+  });
+
+  it('selects the newest period when none is open', () => {
+    payPeriodClient.getPagedPayPeriods.mockReturnValue(
+      of(
+        PagedDataOfPayPeriodDto.fromJS({
+          data: [
+            { id: 'period-2', status: PayPeriodStatus[PayPeriodStatus.Closed] },
+            { id: 'period-1', status: PayPeriodStatus[PayPeriodStatus.Paid] },
+          ],
+          total: 2,
+        })
+      )
+    );
+
+    facade.init();
+
+    expect(facade.selectedPeriodId()).toBe('period-2');
   });
 
   it('scopes the summary call to the session employee and the selected period', () => {

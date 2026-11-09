@@ -1,8 +1,11 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators;
+using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -13,23 +16,25 @@ public class ClosePayPeriod
 {
     public record Command(
         string PayPeriodId,
-        string? Notes) : ICommand<Response>;
+        string Reason) : ICommand<Response>;
 
     public record Response(string PayPeriodId);
+
+    public record PeriodSnapshot(string PayPeriodId, DateOnly EndDate, PayPeriodStatus Status);
 
     public class Validator : UserEmailValidator<Command>
     {
         private readonly IPayPeriodRepository _payPeriodRepository;
-        private readonly IEmployeeInvoiceRepository _invoiceRepository;
+        private readonly TimeProvider _timeProvider;
 
         public Validator(
             IUserRepository userRepository,
             IUserSessionProvider userSessionProvider,
             IPayPeriodRepository payPeriodRepository,
-            IEmployeeInvoiceRepository invoiceRepository) : base(userRepository, userSessionProvider)
+            TimeProvider timeProvider) : base(userRepository, userSessionProvider)
         {
             _payPeriodRepository = payPeriodRepository;
-            _invoiceRepository = invoiceRepository;
+            _timeProvider = timeProvider;
 
             RuleFor(x => x.PayPeriodId)
                 .Cascade(CascadeMode.Stop)
@@ -39,11 +44,14 @@ public class ClosePayPeriod
                 .WithMessage(BusinessErrorMessage.PayPeriodNotFound)
                 .MustAsync(BeOpenStatusAsync)
                 .WithMessage(BusinessErrorMessage.PayPeriodNotOpen)
-                .MustAsync(BeNoUnpaidInvoicesAsync)
-                .WithMessage(BusinessErrorMessage.UnpaidInvoicesExist);
+                .MustAsync(HaveStartedAsync)
+                .WithMessage(BusinessErrorMessage.PayPeriodNotStarted);
 
-            RuleFor(x => x.Notes)
-                .MaximumLength(1000)
+            RuleFor(x => x.Reason)
+                .Cascade(CascadeMode.Stop)
+                .NotEmpty()
+                .WithMessage(BusinessErrorMessage.Required)
+                .MaximumLength(500)
                 .WithMessage(BusinessErrorMessage.MaxLength);
         }
 
@@ -53,15 +61,19 @@ public class ClosePayPeriod
             return period!.Status == PayPeriodStatus.Open;
         }
 
-        private Task<bool> BeNoUnpaidInvoicesAsync(string payPeriodId, CancellationToken cancellationToken)
+        private async Task<bool> HaveStartedAsync(string payPeriodId, CancellationToken cancellationToken)
         {
-            return _invoiceRepository.AllInvoicesPaidInPeriodAsync(payPeriodId, cancellationToken);
+            var period = await _payPeriodRepository.GetByIdAsync(payPeriodId, cancellationToken);
+            return period!.StartDate <= DateOnly.FromDateTime(_timeProvider.GetUtcNow().UtcDateTime);
         }
     }
 
     public class Handler(
         IPayPeriodRepository payPeriodRepository,
-        IUserSessionProvider userSessionProvider)
+        IUserSessionProvider userSessionProvider,
+        IAuditContext auditContext,
+        IPayPeriodClosingConfig payPeriodClosingConfig,
+        TimeProvider timeProvider)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -73,8 +85,24 @@ public class ClosePayPeriod
                     nameof(command.PayPeriodId), BusinessErrorMessage.PayPeriodNotFound));
             }
 
-            var adminEmail = userSessionProvider.GetUserEmail();
-            payPeriod.Close(adminEmail!, command.Notes);
+            var before = new PeriodSnapshot(payPeriod.Id, payPeriod.EndDate, payPeriod.Status);
+            payPeriod.Close(userSessionProvider.GetUserEmail()!, endDay: DateOnly.FromDateTime(timeProvider.GetUtcNow().UtcDateTime));
+
+            // The close is not saved yet, so the store still reads this period as Open.
+            var anotherIsOpen = await payPeriodRepository
+                .GetQueryable()
+                .AnyAsync(p => p.Status == PayPeriodStatus.Open && p.Id != payPeriod.Id, cancellationToken);
+            if (!anotherIsOpen)
+            {
+                payPeriodRepository.Add(PayPeriod.CreateBiWeekly(payPeriod.EndDate.AddDays(1), payPeriodClosingConfig.LengthInDays));
+            }
+
+            auditContext.RecordChange(
+                "PayPeriod",
+                payPeriod.Id,
+                before,
+                new PeriodSnapshot(payPeriod.Id, payPeriod.EndDate, payPeriod.Status),
+                command.Reason.Trim());
 
             return BusinessResult.Success(new Response(payPeriod.Id));
         }

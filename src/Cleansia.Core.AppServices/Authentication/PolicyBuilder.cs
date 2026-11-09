@@ -119,10 +119,8 @@ public static class PolicyBuilder
         [Policy.CanViewPayPeriodAdmin] = PhysicalPolicy.AccountantOrAbove,
         [Policy.CanCreatePayPeriod] = PhysicalPolicy.AccountantOrAbove,
         [Policy.CanUpdatePayPeriod] = PhysicalPolicy.AccountantOrAbove,
-        [Policy.CanOpenPayPeriod] = PhysicalPolicy.AccountantOrAbove,
         [Policy.CanDeletePayPeriod] = PhysicalPolicy.AccountantOrAbove,
         [Policy.CanMarkPayPeriodPaid] = PhysicalPolicy.AccountantOrAbove,
-        [Policy.CanReopenPayPeriod] = PhysicalPolicy.AccountantOrAbove,
 
         // Employee Payroll — Pay Config. Readable by whoever books a pay row; a rate is company policy.
         [Policy.CanViewPayConfigs] = PhysicalPolicy.AccountantOrAbove,

@@ -103,10 +103,8 @@ public class FrozenPermissionMapTests
         [Policy.CanViewPayPeriodAdmin] = PhysicalPolicy.AccountantOrAbove,  // ADR-0066 D3 (admin-host read)
         [Policy.CanCreatePayPeriod] = PhysicalPolicy.AccountantOrAbove,
         [Policy.CanUpdatePayPeriod] = PhysicalPolicy.AccountantOrAbove,
-        [Policy.CanOpenPayPeriod] = PhysicalPolicy.AccountantOrAbove,
         [Policy.CanDeletePayPeriod] = PhysicalPolicy.AccountantOrAbove,
         [Policy.CanMarkPayPeriodPaid] = PhysicalPolicy.AccountantOrAbove,       // AUD-02 settlement (additive)
-        [Policy.CanReopenPayPeriod] = PhysicalPolicy.AccountantOrAbove,         // AUD-02 settlement (additive)
 
         // Payroll — Pay Config
         [Policy.CanViewPayConfigs] = PhysicalPolicy.AccountantOrAbove,
@@ -330,10 +328,10 @@ public class FrozenPermissionMapTests
         {
             Policy.CanGenerateInvoice, Policy.CanApproveInvoice,
             Policy.CanMarkInvoicePaid, Policy.CanCancelInvoice, Policy.CanClosePayPeriod,
-            Policy.CanCreatePayPeriod, Policy.CanUpdatePayPeriod, Policy.CanOpenPayPeriod,
+            Policy.CanCreatePayPeriod, Policy.CanUpdatePayPeriod,
             Policy.CanDeletePayPeriod, Policy.CanViewPayConfigs, Policy.CanViewPayConfig,
             Policy.CanUpdateInvoiceAmounts, Policy.CanDisputeInvoice, Policy.CanRejectInvoice,
-            Policy.CanMarkPayPeriodPaid, Policy.CanReopenPayPeriod,
+            Policy.CanMarkPayPeriodPaid,
             Policy.CanViewPagedInvoicesAdmin, Policy.CanViewPayPeriodsAdmin, Policy.CanViewPayPeriodAdmin,
         };
         foreach (var p in accountantOrAbove)

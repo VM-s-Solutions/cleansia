@@ -3460,11 +3460,11 @@
       "service_or_package_required": "Je vyžadovaná služba alebo balík"
     },
     "pay_period": {
-      "already_paid": "Výplatné obdobie už bolo zaplatené",
       "end_too_soon": "Dátum konca musí byť najskôr zajtra. Ak chcete obdobie ukončiť dnes, použite „Uzavrieť teraz“.",
       "has_order_pays": "Nie je možné odstrániť výplatné obdobie, ktoré má priradené platby za objednávky",
       "invalid_duration": "Dátum konca je neskorší ako posledný deň, do ktorého môže výplatné obdobie trvať.",
       "not_closed": "Výplatné obdobie nie je uzavreté",
+      "not_started": "Toto výplatné obdobie sa ešte nezačalo, preto ho nemožno uzavrieť.",
       "overlapping_period": "Výplatné obdobie sa prekrýva s existujúcim obdobím"
     },
     "payment": {
@@ -3503,8 +3503,7 @@
       "pay_period": {
         "not_found": "Výplatné obdobie nebolo nájdené",
         "not_open": "Výplatné obdobie nie je otvorené"
-      },
-      "unpaid_invoices_exist": "Existujú nezaplatené faktúry"
+      }
     },
     "promo": {
       "amount_must_be_positive": "Výška zľavy musí byť väčšia ako nula.",

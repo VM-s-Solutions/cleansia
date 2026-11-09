@@ -3460,11 +3460,11 @@
       "service_or_package_required": "Je vyžadována buď služba nebo balíček"
     },
     "pay_period": {
-      "already_paid": "Platební období již bylo zaplaceno",
       "end_too_soon": "Datum konce musí být nejdříve zítra. Chcete-li období ukončit dnes, použijte „Uzavřít nyní“.",
       "has_order_pays": "Nelze smazat platební období, které má přiřazené platby objednávek",
       "invalid_duration": "Datum konce je pozdější než poslední den, do kterého může platební období trvat.",
       "not_closed": "Platební období není uzavřeno",
+      "not_started": "Toto platební období ještě nezačalo, proto ho nelze uzavřít.",
       "overlapping_period": "Platební období se překrývá s existujícím obdobím"
     },
     "payment": {
@@ -3503,8 +3503,7 @@
       "pay_period": {
         "not_found": "Platební období nenalezeno",
         "not_open": "Platební období není otevřené"
-      },
-      "unpaid_invoices_exist": "Existují nezaplacené faktury"
+      }
     },
     "promo": {
       "amount_must_be_positive": "Výše slevy musí být větší než nula.",

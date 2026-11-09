@@ -128,17 +128,6 @@ public sealed class PayPeriodEmployeeIsolationPostgresTests(PostgresContainerFix
                     await AssertRowsAsync(context, mode, observations, emails, uploads, "first-refusal");
                 }
                 Assert.Null(failure);
-                if (mode == "invoice")
-                {
-                    await using (var reopen = provider.CreateAsyncScope())
-                    {
-                        var context = reopen.ServiceProvider.GetRequiredService<CleansiaDbContext>();
-                        (await context.PayPeriods.SingleAsync(p => p.Id == PeriodId)).Reopen();
-                        await context.CommitAsync(CancellationToken.None);
-                    }
-                    await using var repeat = provider.CreateAsyncScope();
-                    await repeat.ServiceProvider.GetRequiredService<IPayPeriodBackgroundService>().CloseExpiredPeriodsAndOpenNewAsync();
-                }
                 return true;
             },
             assert: async (context, _) =>
@@ -149,7 +138,8 @@ public sealed class PayPeriodEmployeeIsolationPostgresTests(PostgresContainerFix
                 Assert.All(observations.Rows, row => Assert.Equal(PayPeriodStatus.Closed, row.DurableStatus));
                 Assert.All(emails.Where(e => !e.Document), e => Assert.Equal(0, e.DirtyInvoices));
                 Assert.Contains(emails, e => e.Email == "b@payroll.test" && e.Document);
-                Assert.Equal(2, observations.Rows.Count(r => r.EmployeeIds.Contains("payroll-a")));
+                // A refused invoice is one save; a refused PDF stamp follows its invoice's save.
+                Assert.Equal(mode == "invoice" ? 1 : 2, observations.Rows.Count(r => r.EmployeeIds.Contains("payroll-a")));
             },
             cleanup: async context =>
             {

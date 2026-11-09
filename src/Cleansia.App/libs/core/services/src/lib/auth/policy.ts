@@ -98,10 +98,8 @@ export const Policy = {
   CanViewPayPeriodAdmin: 'CanViewPayPeriodAdmin',
   CanCreatePayPeriod: 'CanCreatePayPeriod',
   CanUpdatePayPeriod: 'CanUpdatePayPeriod',
-  CanOpenPayPeriod: 'CanOpenPayPeriod',
   CanDeletePayPeriod: 'CanDeletePayPeriod',
   CanMarkPayPeriodPaid: 'CanMarkPayPeriodPaid',
-  CanReopenPayPeriod: 'CanReopenPayPeriod',
 
   // Employee Payroll — Pay Config
   CanViewPayConfigs: 'CanViewPayConfigs',
@@ -372,10 +370,8 @@ export const POLICY_MAP: Record<PolicyName, PhysicalPolicy> = {
   CanViewPayPeriodAdmin: PhysicalPolicy.AccountantOrAbove,
   CanCreatePayPeriod: PhysicalPolicy.AccountantOrAbove,
   CanUpdatePayPeriod: PhysicalPolicy.AccountantOrAbove,
-  CanOpenPayPeriod: PhysicalPolicy.AccountantOrAbove,
   CanDeletePayPeriod: PhysicalPolicy.AccountantOrAbove,
   CanMarkPayPeriodPaid: PhysicalPolicy.AccountantOrAbove,
-  CanReopenPayPeriod: PhysicalPolicy.AccountantOrAbove,
 
   // Employee Payroll — Pay Config
   CanViewPayConfigs: PhysicalPolicy.AccountantOrAbove,

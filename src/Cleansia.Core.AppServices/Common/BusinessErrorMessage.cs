@@ -378,7 +378,6 @@ public static class BusinessErrorMessage
     public const string InvalidInvoiceStatus = "payroll.invoice.invalid_status";
     public const string InvoiceAlreadyExists = "payroll.invoice.already_exists";
     public const string PayPeriodNotOpen = "payroll.pay_period.not_open";
-    public const string UnpaidInvoicesExist = "payroll.unpaid_invoices_exist";
     public const string PayAlreadyCalculated = "payroll.pay.already_calculated";
     public const string NoUnpaidOrderPays = "payroll.no_unpaid_order_pays";
     public const string NoActivePeriod = "payroll.no_active_period";
@@ -412,9 +411,9 @@ public static class BusinessErrorMessage
     public const string OverlappingPeriod = "pay_period.overlapping_period";
     public const string HasOrderPays = "pay_period.has_order_pays";
     public const string PayPeriodNotClosed = "pay_period.not_closed";
+    public const string PayPeriodNotStarted = "pay_period.not_started";
     // Change end date's end is tomorrow at the earliest; ending the period today is Close now.
     public const string PayPeriodEndTooSoon = "pay_period.end_too_soon";
-    public const string PayPeriodAlreadyPaid = "pay_period.already_paid";
 
     // Pay Config
     public const string PayConfigServiceOrPackageRequired = "pay_config.service_or_package_required";

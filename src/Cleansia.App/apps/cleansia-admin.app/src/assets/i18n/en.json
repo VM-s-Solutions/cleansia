@@ -3460,11 +3460,11 @@
       "service_or_package_required": "Either service or package is required"
     },
     "pay_period": {
-      "already_paid": "Pay period has already been paid",
       "end_too_soon": "The end date must be tomorrow or later. To end the period today, use “Close now”.",
       "has_order_pays": "Cannot delete pay period that has associated order pays",
       "invalid_duration": "The end date is later than the last day this pay period may run to.",
       "not_closed": "Pay period is not closed",
+      "not_started": "This pay period hasn't started yet, so it can't be closed.",
       "overlapping_period": "Pay period overlaps with an existing period"
     },
     "payment": {
@@ -3503,8 +3503,7 @@
       "pay_period": {
         "not_found": "Pay period not found",
         "not_open": "Pay period is not open"
-      },
-      "unpaid_invoices_exist": "Unpaid invoices exist"
+      }
     },
     "promo": {
       "amount_must_be_positive": "The discount amount must be greater than zero.",

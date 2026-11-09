@@ -5,9 +5,9 @@ using Cleansia.TestUtilities.MockDataFactories.EmployeePayroll;
 namespace Cleansia.Tests.Features.PayPeriods;
 
 /// <summary>
-/// Pure-entity lifecycle guards for <see cref="PayPeriod"/>: Close requires Open,
-/// MarkAsPaid requires Closed, Reopen refuses a Paid period. The legal transitions are pinned too so
-/// an illegal-jump regression is caught from both sides.
+/// Pure-entity lifecycle guards for <see cref="PayPeriod"/>: Close requires Open and MarkAsPaid requires
+/// Closed, and nothing reopens a period. The legal transitions are pinned too so an illegal-jump regression is
+/// caught from both sides.
 /// </summary>
 public class PayPeriodEntityTests
 {
@@ -64,6 +64,48 @@ public class PayPeriodEntityTests
         Assert.Equal(new DateOnly(2026, 1, 14), period.EndDate);
     }
 
+    [Fact]
+    public void Close_With_An_End_Day_Inside_The_Period_Ends_It_That_Day()
+    {
+        var period = PayrollMockFactory.OpenPeriod();
+
+        period.Close("admin@cleansia.cz", endDay: new DateOnly(2026, 1, 5));
+
+        Assert.Equal((PayPeriodStatus.Closed, new DateOnly(2026, 1, 1), new DateOnly(2026, 1, 5)),
+            (period.Status, period.StartDate, period.EndDate));
+    }
+
+    [Fact]
+    public void Close_On_Its_First_Day_Leaves_A_One_Day_Period()
+    {
+        var period = PayrollMockFactory.OpenPeriod();
+
+        period.Close("admin@cleansia.cz", endDay: new DateOnly(2026, 1, 1));
+
+        Assert.Equal(new DateOnly(2026, 1, 1), period.EndDate);
+    }
+
+    [Fact]
+    public void Close_With_An_End_Day_Before_The_Start_Throws_And_Leaves_It_Open()
+    {
+        var period = PayrollMockFactory.OpenPeriod();
+
+        Assert.Throws<ArgumentException>(() => period.Close("admin@cleansia.cz", endDay: new DateOnly(2025, 12, 31)));
+        Assert.Equal((PayPeriodStatus.Open, new DateOnly(2026, 1, 14)), (period.Status, period.EndDate));
+    }
+
+    [Theory]
+    [InlineData(15)]
+    [InlineData(null)]
+    public void Close_With_An_End_Day_After_The_End_Or_None_Keeps_The_End(int? endDay)
+    {
+        var period = PayrollMockFactory.OpenPeriod();
+
+        period.Close("admin@cleansia.cz", endDay: endDay is null ? null : new DateOnly(2026, 1, endDay.Value));
+
+        Assert.Equal(new DateOnly(2026, 1, 14), period.EndDate);
+    }
+
     // ── MarkAsPaid ───────────────────────────────────────────────────
 
     [Fact]
@@ -91,27 +133,5 @@ public class PayPeriodEntityTests
         var period = PayrollMockFactory.PaidPeriod();
 
         Assert.Throws<InvalidOperationException>(() => period.MarkAsPaid());
-    }
-
-    // ── Reopen ───────────────────────────────────────────────────────
-
-    [Fact]
-    public void Reopen_From_Closed_Restores_Open_And_Clears_ClosedMetadata()
-    {
-        var period = PayrollMockFactory.ClosedPeriod();
-
-        period.Reopen("correction");
-
-        Assert.Equal(PayPeriodStatus.Open, period.Status);
-        Assert.Null(period.ClosedAt);
-        Assert.Null(period.ClosedBy);
-    }
-
-    [Fact]
-    public void Reopen_From_Paid_Throws()
-    {
-        var period = PayrollMockFactory.PaidPeriod();
-
-        Assert.Throws<InvalidOperationException>(() => period.Reopen());
     }
 }

@@ -1081,7 +1081,6 @@
         "cannot_cancel_paid": "Cannot cancel a paid invoice",
         "already_cancelled": "Invoice has already been cancelled"
       },
-      "unpaid_invoices_exist": "Unpaid invoices exist",
       "pay": {
         "already_calculated": "Pay has already been calculated"
       },

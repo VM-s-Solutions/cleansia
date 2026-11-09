@@ -107,16 +107,26 @@ public class PayPeriod : TenantAuditable
         return this;
     }
 
-    public PayPeriod Close(string closedBy, string? notes = null)
+    public PayPeriod Close(string closedBy, string? notes = null, DateOnly? endDay = null)
     {
         if (Status != PayPeriodStatus.Open)
         {
             throw new InvalidOperationException($"Cannot close period in status {Status}");
         }
 
+        if (endDay < StartDate)
+        {
+            throw new ArgumentException("A pay period cannot end before it starts", nameof(endDay));
+        }
+
         Status = PayPeriodStatus.Closed;
         ClosedAt = DateTime.UtcNow;
         ClosedBy = closedBy;
+
+        if (endDay < EndDate)
+        {
+            EndDate = endDay.Value;
+        }
 
         if (notes != null)
         {
@@ -135,25 +145,6 @@ public class PayPeriod : TenantAuditable
 
         Status = PayPeriodStatus.Paid;
         PaidAt = DateTime.UtcNow;
-
-        return this;
-    }
-
-    public PayPeriod Reopen(string? notes = null)
-    {
-        if (Status == PayPeriodStatus.Paid)
-        {
-            throw new InvalidOperationException("Cannot reopen a paid period");
-        }
-
-        Status = PayPeriodStatus.Open;
-        ClosedAt = null;
-        ClosedBy = null;
-
-        if (notes != null)
-        {
-            Notes = notes;
-        }
 
         return this;
     }

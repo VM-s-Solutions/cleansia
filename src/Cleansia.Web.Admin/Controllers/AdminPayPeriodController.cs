@@ -79,19 +79,6 @@ public class AdminPayPeriodController(IMediator mediator) : ApiController(mediat
         return HandleResult<DeletePayPeriod.Response>(result);
     }
 
-    [HttpPost("open")]
-    [Permission(Policy.CanOpenPayPeriod)]
-    [EnableRateLimiting("auth")]
-    [ProducesResponseType(typeof(OpenPayPeriod.Response), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> OpenPayPeriod([FromBody] OpenPayPeriod.Command command, CancellationToken cancellationToken)
-    {
-        var result = await Mediator.Send(command, cancellationToken);
-        return HandleResult<OpenPayPeriod.Response>(result);
-    }
-
     [HttpPost("close")]
     [Permission(Policy.CanClosePayPeriod)]
     [EnableRateLimiting("auth")]
@@ -116,18 +103,5 @@ public class AdminPayPeriodController(IMediator mediator) : ApiController(mediat
     {
         var result = await Mediator.Send(command, cancellationToken);
         return HandleResult<MarkPayPeriodPaid.Response>(result);
-    }
-
-    [HttpPost("reopen")]
-    [Permission(Policy.CanReopenPayPeriod)]
-    [EnableRateLimiting("auth")]
-    [ProducesResponseType(typeof(ReopenPayPeriod.Response), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> ReopenPayPeriod([FromBody] ReopenPayPeriod.Command command, CancellationToken cancellationToken)
-    {
-        var result = await Mediator.Send(command, cancellationToken);
-        return HandleResult<ReopenPayPeriod.Response>(result);
     }
 }

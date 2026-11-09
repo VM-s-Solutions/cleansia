@@ -1081,7 +1081,6 @@
         "cannot_cancel_paid": "Неможливо скасувати оплачений рахунок",
         "already_cancelled": "Рахунок вже скасовано"
       },
-      "unpaid_invoices_exist": "Існують неоплачені рахунки",
       "pay": {
         "already_calculated": "Оплату вже розраховано"
       },

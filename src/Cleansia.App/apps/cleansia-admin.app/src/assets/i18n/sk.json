@@ -3070,7 +3070,6 @@
     "title": "Správa výplatných období",
     "description": "Spravujte výplatné obdobia, uzatvárajte obdobia a sledujte platby partnerom",
     "create_new": "Vytvoriť nové výplatné obdobie",
-    "confirm_close": "Naozaj chcete uzavrieť toto výplatné obdobie? Túto akciu nie je možné vrátiť späť.",
     "filters": {
       "status": "Stav",
       "year": "Rok"
@@ -3092,7 +3091,6 @@
         "actions": "Akcie"
       },
       "view_details": "Zobraziť detail",
-      "close_period": "Uzavrieť obdobie",
       "no_records": "Žiadne výplatné obdobia",
       "days": "dní"
     },
@@ -3115,23 +3113,20 @@
       "created_by": "Vytvoril",
       "modified_at": "Upravené dňa",
       "modified_by": "Upravil",
-      "close_period": "Uzavrieť výplatné obdobie",
       "not_found": "Výplatné obdobie nebolo nájdené",
       "ops": {
         "title": "Operácie vyúčtovania",
+        "close_now": {
+          "action": "Uzavrieť teraz",
+          "hint": "Toto obdobie sa skončí dnes namiesto {{ end }}. Približne do 20 minút dostane každý upratovač, ktorý v ňom má odmenu, faktúru e-mailom. Ďalšie obdobie sa začne zajtra, potrvá nastavený počet dní ({{ days }}) a pripadnú doň zákazky dokončené po uzavretí. Uzavreté obdobie nemožno znova otvoriť.",
+          "reason": "Dôvod (uloží sa do auditného záznamu)",
+          "submit": "Uzavrieť obdobie teraz"
+        },
         "mark_paid": {
           "action": "Označiť obdobie ako zaplatené",
           "hint": "Označte toto uzavreté výplatné obdobie ako zaplatené. Tým sa vyúčtovanie dokončí.",
           "submit": "Potvrdiť zaplatenie",
           "success": "Výplatné obdobie bolo označené ako zaplatené"
-        },
-        "reopen": {
-          "action": "Znovu otvoriť obdobie",
-          "hint": "Znovu otvorte toto výplatné obdobie. Údaje o uzavretí budú vymazané.",
-          "notes": "Poznámky k otvoreniu (voliteľné)",
-          "notes_hint": "Vysvetlite, prečo sa obdobie znovu otvára...",
-          "submit": "Potvrdiť otvorenie",
-          "success": "Výplatné obdobie bolo znovu otvorené"
         }
       }
     },
@@ -3460,10 +3455,11 @@
       "service_or_package_required": "Je vyžadovaná služba alebo balík"
     },
     "pay_period": {
-      "already_paid": "Výplatné obdobie už bolo zaplatené",
+      "end_too_soon": "Dátum konca musí byť najskôr zajtra. Ak chcete obdobie ukončiť dnes, použite „Uzavrieť teraz“.",
       "has_order_pays": "Nie je možné odstrániť výplatné obdobie, ktoré má priradené platby za objednávky",
-      "invalid_duration": "Výplatné obdobie trvá presne 14 dní: dátum konca musí byť 13 dní po dátume začiatku",
+      "invalid_duration": "Dátum konca je neskorší ako posledný deň, do ktorého môže výplatné obdobie trvať.",
       "not_closed": "Výplatné obdobie nie je uzavreté",
+      "not_started": "Toto výplatné obdobie sa ešte nezačalo, preto ho nemožno uzavrieť.",
       "overlapping_period": "Výplatné obdobie sa prekrýva s existujúcim obdobím"
     },
     "payment": {
@@ -3502,8 +3498,7 @@
       "pay_period": {
         "not_found": "Výplatné obdobie nebolo nájdené",
         "not_open": "Výplatné obdobie nie je otvorené"
-      },
-      "unpaid_invoices_exist": "Existujú nezaplatené faktúry"
+      }
     },
     "promo": {
       "amount_must_be_positive": "Výška zľavy musí byť väčšia ako nula.",

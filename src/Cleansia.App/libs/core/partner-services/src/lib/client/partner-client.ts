@@ -12831,6 +12831,7 @@ export class PayPeriodDto implements IPayPeriodDto {
     closedBy!: string | undefined;
     paidAt!: Date | undefined;
     notes!: string | undefined;
+    latestEndDate!: Date;
 
     constructor(data?: IPayPeriodDto) {
         if (data) {
@@ -12853,6 +12854,7 @@ export class PayPeriodDto implements IPayPeriodDto {
             this.closedBy = Data["closedBy"];
             this.paidAt = Data["paidAt"] ? new Date(Data["paidAt"].toString()) : undefined as any;
             this.notes = Data["notes"];
+            this.latestEndDate = Data["latestEndDate"] ? new Date(Data["latestEndDate"].toString()) : undefined as any;
         }
     }
 
@@ -12875,6 +12877,7 @@ export class PayPeriodDto implements IPayPeriodDto {
         data["closedBy"] = this.closedBy;
         data["paidAt"] = this.paidAt ? this.paidAt.toISOString() : undefined as any;
         data["notes"] = this.notes;
+        data["latestEndDate"] = this.latestEndDate ? formatDate(this.latestEndDate) : undefined as any;
         return data;
     }
 }
@@ -12890,6 +12893,7 @@ export interface IPayPeriodDto {
     closedBy: string | undefined;
     paidAt: Date | undefined;
     notes: string | undefined;
+    latestEndDate: Date;
 }
 
 export enum PayPeriodStatus {

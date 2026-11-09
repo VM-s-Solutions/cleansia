@@ -62,7 +62,7 @@ public static class EmployeePayrollMappers
             invoice.BankTransferNote
         );
 
-    public static PayPeriodDto MapToDto(this PayPeriod period) =>
+    public static PayPeriodDto MapToDto(this PayPeriod period, int lengthInDays) =>
         new(
             period.Id,
             period.StartDate,
@@ -73,7 +73,8 @@ public static class EmployeePayrollMappers
             period.ClosedAt,
             period.ClosedBy,
             period.PaidAt,
-            period.Notes
+            period.Notes,
+            period.StartDate.AddDays(lengthInDays - 1)
         );
 
     public static EmployeePayConfigDto MapToDto(this EmployeePayConfig config) =>

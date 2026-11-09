@@ -1,26 +1,26 @@
 import { TestBed } from '@angular/core/testing';
 import {
   AdminClient,
+  ClosePayPeriodCommand,
+  ClosePayPeriodResponse,
   MarkPayPeriodPaidCommand,
   MarkPayPeriodPaidResponse,
-  ReopenPayPeriodCommand,
-  ReopenPayPeriodResponse,
 } from '@cleansia/admin-services';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { AdminPayPeriodOpsFacade } from './admin-pay-period-ops.facade';
 
 // The keys a refusal resolves to; anything else falls back, as an untranslated code does in the app.
 const TRANSLATED = new Set([
   'api.pay_period.not_closed',
-  'api.pay_period.already_paid',
+  'api.pay_period.not_started',
   'api.payroll.pay_period.not_found',
 ]);
 
 describe('AdminPayPeriodOpsFacade', () => {
   let facade: AdminPayPeriodOpsFacade;
-  let payPeriodClient: { markPaid: jest.Mock; reopen: jest.Mock };
+  let payPeriodClient: { markPaid: jest.Mock; close: jest.Mock };
   let snackbar: {
     showSuccess: jest.Mock;
     showSuccessTranslated: jest.Mock;
@@ -31,12 +31,12 @@ describe('AdminPayPeriodOpsFacade', () => {
   const markPaidResponse = MarkPayPeriodPaidResponse.fromJS({
     payPeriodId: 'period-1',
   });
-  const reopenResponse = ReopenPayPeriodResponse.fromJS({
+  const closeResponse = ClosePayPeriodResponse.fromJS({
     payPeriodId: 'period-1',
   });
 
   beforeEach(() => {
-    payPeriodClient = { markPaid: jest.fn(), reopen: jest.fn() };
+    payPeriodClient = { markPaid: jest.fn(), close: jest.fn() };
     snackbar = {
       showSuccess: jest.fn(),
       showSuccessTranslated: jest.fn(),
@@ -64,17 +64,97 @@ describe('AdminPayPeriodOpsFacade', () => {
     facade = TestBed.inject(AdminPayPeriodOpsFacade);
   });
 
-  it('toggles panels and resets inputs when switching', () => {
-    facade.setReopenNotes('stale');
-    facade.openPanel('reopen');
-    expect(facade.activePanel()).toBe('reopen');
-    expect(facade.reopenNotes()).toBe('');
+  it('toggles the panel and clears a stale refusal when it opens', () => {
+    facade.errorKey.set('api.pay_period.not_closed');
 
     facade.openPanel('markPaid');
     expect(facade.activePanel()).toBe('markPaid');
+    expect(facade.errorKey()).toBeNull();
 
     facade.openPanel('markPaid');
     expect(facade.activePanel()).toBeNull();
+  });
+
+  it('clears a stale reason when the close-now panel opens', () => {
+    facade.setCloseNowReason('stale');
+
+    facade.openPanel('closeNow');
+
+    expect(facade.activePanel()).toBe('closeNow');
+    expect(facade.closeNowReason()).toBe('');
+  });
+
+  describe('close now', () => {
+    it('sends the period id and the trimmed reason', () => {
+      payPeriodClient.close.mockReturnValue(of(closeResponse));
+      facade.setCloseNowReason('  The cleaner leaves the company  ');
+
+      facade.closeNow('period-1', jest.fn());
+
+      const command: ClosePayPeriodCommand =
+        payPeriodClient.close.mock.calls[0][0];
+      expect(command).toBeInstanceOf(ClosePayPeriodCommand);
+      expect(command.toJSON()).toEqual({
+        payPeriodId: 'period-1',
+        reason: 'The cleaner leaves the company',
+      });
+    });
+
+    it('sends nothing while the reason is blank', () => {
+      facade.setCloseNowReason('   ');
+
+      facade.closeNow('period-1', jest.fn());
+
+      expect(payPeriodClient.close).not.toHaveBeenCalled();
+      expect(facade.canSubmitCloseNow()).toBe(false);
+    });
+
+    it('lands a refusal in errorKey, keeps the panel and does not re-load', () => {
+      payPeriodClient.close.mockReturnValue(
+        throwError(() => ({ result: { detail: 'pay_period.not_started' } }))
+      );
+      facade.openPanel('closeNow');
+      facade.setCloseNowReason('Agreement ended');
+      const onSuccess = jest.fn();
+
+      facade.closeNow('period-1', onSuccess);
+
+      expect(facade.errorKey()).toBe('api.pay_period.not_started');
+      expect(facade.activePanel()).toBe('closeNow');
+      expect(onSuccess).not.toHaveBeenCalled();
+      expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
+    });
+
+    it('toasts, closes the panel and re-loads once on success', () => {
+      payPeriodClient.close.mockReturnValue(of(closeResponse));
+      facade.openPanel('closeNow');
+      facade.setCloseNowReason('Agreement ended');
+      const onSuccess = jest.fn();
+
+      facade.closeNow('period-1', onSuccess);
+
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
+        'pay_periods.messages.close_success'
+      );
+      expect(facade.activePanel()).toBeNull();
+      expect(facade.closeNowReason()).toBe('');
+      expect(onSuccess).toHaveBeenCalledTimes(1);
+    });
+
+    it('holds submitting while the close is in flight', () => {
+      const response$ = new Subject<ClosePayPeriodResponse>();
+      payPeriodClient.close.mockReturnValue(response$);
+      facade.setCloseNowReason('Agreement ended');
+      expect(facade.canSubmitCloseNow()).toBe(true);
+
+      facade.closeNow('period-1', jest.fn());
+      expect(facade.submitting()).toBe(true);
+      expect(facade.canSubmitCloseNow()).toBe(false);
+
+      response$.next(closeResponse);
+      response$.complete();
+      expect(facade.submitting()).toBe(false);
+    });
   });
 
   it('builds a mark-paid command carrying just the pay period id', () => {
@@ -86,34 +166,6 @@ describe('AdminPayPeriodOpsFacade', () => {
       payPeriodClient.markPaid.mock.calls[0][0];
     expect(command).toBeInstanceOf(MarkPayPeriodPaidCommand);
     expect(command.toJSON()).toEqual({ payPeriodId: 'period-1' });
-  });
-
-  it('builds a typed reopen command with trimmed optional notes', () => {
-    payPeriodClient.reopen.mockReturnValue(of(reopenResponse));
-    facade.setReopenNotes('  correction needed  ');
-
-    facade.reopen('period-1', jest.fn());
-
-    const command: ReopenPayPeriodCommand =
-      payPeriodClient.reopen.mock.calls[0][0];
-    expect(command).toBeInstanceOf(ReopenPayPeriodCommand);
-    expect(command.toJSON()).toEqual({
-      payPeriodId: 'period-1',
-      notes: 'correction needed',
-    });
-  });
-
-  it('omits empty reopen notes from the command', () => {
-    payPeriodClient.reopen.mockReturnValue(of(reopenResponse));
-
-    facade.reopen('period-1', jest.fn());
-
-    const command: ReopenPayPeriodCommand =
-      payPeriodClient.reopen.mock.calls[0][0];
-    expect(command.toJSON()).toEqual({
-      payPeriodId: 'period-1',
-      notes: undefined,
-    });
   });
 
   it('shows a success toast, closes the panel and re-loads on success', () => {
@@ -132,9 +184,9 @@ describe('AdminPayPeriodOpsFacade', () => {
   });
 
   it('toggles submitting off once the request settles', () => {
-    payPeriodClient.reopen.mockReturnValue(of(reopenResponse));
+    payPeriodClient.markPaid.mockReturnValue(of(markPaidResponse));
     expect(facade.submitting()).toBe(false);
-    facade.reopen('period-1', jest.fn());
+    facade.markPaid('period-1', jest.fn());
     expect(facade.submitting()).toBe(false);
   });
 
@@ -147,16 +199,6 @@ describe('AdminPayPeriodOpsFacade', () => {
 
     expect(facade.errorKey()).toBe('api.pay_period.not_closed');
     expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
-  });
-
-  it('maps the already-paid backend code on a reopen failure', () => {
-    payPeriodClient.reopen.mockReturnValue(
-      throwError(() => ({ result: { detail: 'pay_period.already_paid' } }))
-    );
-
-    facade.reopen('period-1', jest.fn());
-
-    expect(facade.errorKey()).toBe('api.pay_period.already_paid');
   });
 
   it('falls back to result.title when detail is absent', () => {
@@ -182,12 +224,12 @@ describe('AdminPayPeriodOpsFacade', () => {
   });
 
   it('falls back to a generic error for unknown codes and does not re-load', () => {
-    payPeriodClient.reopen.mockReturnValue(
+    payPeriodClient.markPaid.mockReturnValue(
       throwError(() => ({ result: { detail: 'something.unexpected' } }))
     );
     const onSuccess = jest.fn();
 
-    facade.reopen('period-1', onSuccess);
+    facade.markPaid('period-1', onSuccess);
 
     expect(facade.errorKey()).toBe('api.common.error_occurred');
     expect(onSuccess).not.toHaveBeenCalled();

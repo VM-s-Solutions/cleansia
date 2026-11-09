@@ -7,9 +7,10 @@ public interface IPayPeriodBackgroundService
     Task CloseExpiredPeriodsAndOpenNewAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Closes one Open period of the ambient company, invoices and e-mails its cleaners, and — when
-    /// asked — opens the next period after it. The nightly rollover asks; the company wind-down does
-    /// not, because a company that has closed its door has no next period. The caller commits.
+    /// Closes one Open period of the ambient company and — when asked — opens the next period after it,
+    /// commits both, and only then invoices and e-mails each cleaner with un-invoiced pay in it. The
+    /// nightly rollover asks; the company wind-down does not, because a company that has closed its door
+    /// has no next period.
     /// </summary>
     Task ClosePeriodAsync(PayPeriod period, string closeNote, bool openNext, CancellationToken cancellationToken);
 

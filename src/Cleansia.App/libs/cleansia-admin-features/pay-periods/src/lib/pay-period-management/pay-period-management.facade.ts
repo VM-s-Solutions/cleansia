@@ -2,7 +2,6 @@ import { computed, Injectable, inject, signal } from '@angular/core';
 import { FormBuilder } from '@angular/forms';
 import {
   AdminClient,
-  ClosePayPeriodCommand,
   CreatePayPeriodCommand,
   PayPeriodDto,
   PayPeriodStatus,
@@ -15,7 +14,7 @@ import { SnackbarService } from '@cleansia/services';
 import { currentLanguage } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
-import { PAY_PERIOD_LENGTH_DAYS, PayPeriodFilterParams } from './pay-period-management.models';
+import { PayPeriodFilterParams } from './pay-period-management.models';
 
 @Injectable()
 export class PayPeriodManagementFacade extends UnsubscribeControlDirective {
@@ -30,13 +29,6 @@ export class PayPeriodManagementFacade extends UnsubscribeControlDirective {
   readonly creating = signal<boolean>(false);
 
   readonly createStartDate = signal<Date | null>(null);
-  // Calendar days, not a sum of milliseconds, which lands on the wrong day across a DST change.
-  readonly createEndDate = computed(() => {
-    const start = this.createStartDate();
-    return start
-      ? new Date(start.getFullYear(), start.getMonth(), start.getDate() + PAY_PERIOD_LENGTH_DAYS - 1)
-      : null;
-  });
 
   readonly lang = currentLanguage(this.translate);
   readonly statusOptions = computed(() => {
@@ -151,18 +143,43 @@ export class PayPeriodManagementFacade extends UnsubscribeControlDirective {
     this.filterForm.patchValue({ year: value });
   }
 
+  prepareCreate(): void {
+    this.createStartDate.set(null);
+
+    this.adminClient.adminPayPeriodClient
+      .getPaged(
+        undefined,
+        undefined,
+        [new SortDefinition({ field: 'endDate', direction: SortDirection.Descending })],
+        0,
+        1
+      )
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => of(null))
+      )
+      .subscribe((response) => {
+        const latestEnd = response?.data?.[0]?.endDate;
+        if (!latestEnd || this.createStartDate()) return;
+
+        // The end arrives as a UTC midnight and the calendar picks local days; the server refuses a start after today.
+        const dayAfter = new Date(latestEnd.getUTCFullYear(), latestEnd.getUTCMonth(), latestEnd.getUTCDate() + 1);
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        this.createStartDate.set(dayAfter < today ? dayAfter : today);
+      });
+  }
+
   setCreateStartDate(date: Date | null): void {
     this.createStartDate.set(date);
   }
 
   createPayPeriod(onSuccess: () => void): void {
     const startDate = this.createStartDate();
-    const endDate = this.createEndDate();
-    if (!startDate || !endDate || this.creating()) return;
+    if (!startDate || this.creating()) return;
 
     const command = new CreatePayPeriodCommand();
     command.startDate = startDate;
-    command.endDate = endDate;
 
     this.creating.set(true);
     this.adminClient.adminPayPeriodClient
@@ -176,25 +193,6 @@ export class PayPeriodManagementFacade extends UnsubscribeControlDirective {
         if (response) {
           this.snackbarService.showSuccessTranslated('pay_periods.messages.create_success');
           onSuccess();
-          this.loadPayPeriods();
-        }
-      });
-  }
-
-  closePayPeriod(payPeriodId: string, notes?: string): void {
-    const command = new ClosePayPeriodCommand();
-    command.payPeriodId = payPeriodId;
-    command.notes = notes;
-
-    this.adminClient.adminPayPeriodClient
-      .close(command)
-      .pipe(
-        takeUntil(this.destroyed$),
-        catchError(() => of(null))
-      )
-      .subscribe((response) => {
-        if (response) {
-          this.snackbarService.showSuccessTranslated('pay_periods.messages.close_success');
           this.loadPayPeriods();
         }
       });

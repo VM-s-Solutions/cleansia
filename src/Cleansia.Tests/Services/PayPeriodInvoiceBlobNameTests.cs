@@ -107,6 +107,15 @@ public class PayPeriodInvoiceBlobNameTests
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((string employeeId, string payPeriodId, CancellationToken _) =>
                 (IReadOnlyList<OrderEmployeePay>)[PayrollMockFactory.OrderPay(basePay: 100m, employeeId: employeeId, payPeriodId: payPeriodId)]);
+        _orderPayRepository
+            .Setup(r => r.GetQueryable())
+            .Returns(() => new[]
+            {
+                PayrollMockFactory.OrderPay(
+                    basePay: 100m,
+                    employeeId: _cleanersByTenant[_currentTenant!].Id,
+                    payPeriodId: _expiredPeriodsByTenant[_currentTenant!].Id),
+            }.AsQueryable().BuildMock());
 
         var currency = CurrencyMockFactory.Generate();
         currency.Id = PayrollMockFactory.CurrencyId;
@@ -187,7 +196,8 @@ public class PayPeriodInvoiceBlobNameTests
         _payoutReferenceAllocator.Object,
         new Mock<ITenantRepository>().Object,
         new Mock<ICashLedgerRepository>().Object,
-        PayPeriodTestServices.ScopeFactory(CreateService));
+        PayPeriodTestServices.ScopeFactory(CreateService),
+        PayPeriodTestServices.ClosingConfig());
 
     private static PayPeriod ExpiredPeriod(string id, string tenantId)
     {

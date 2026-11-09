@@ -1081,7 +1081,6 @@
         "cannot_cancel_paid": "Nie je možné zrušiť zaplatenú faktúru",
         "already_cancelled": "Faktúra už bola zrušená"
       },
-      "unpaid_invoices_exist": "Existujú nezaplatené faktúry",
       "pay": {
         "already_calculated": "Odmena už bola vypočítaná"
       },

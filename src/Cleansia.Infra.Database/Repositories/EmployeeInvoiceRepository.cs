@@ -1,5 +1,4 @@
 using Cleansia.Core.Domain.EmployeePayroll;
-using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -51,16 +50,6 @@ public class EmployeeInvoiceRepository(CleansiaDbContext context) : BaseReposito
             .Where(i => i.EmployeeId == employeeId)
             .OrderByDescending(i => i.GeneratedAt)
             .FirstOrDefaultAsync(cancellationToken);
-    }
-
-    public async Task<bool> AllInvoicesPaidInPeriodAsync(string payPeriodId, CancellationToken cancellationToken)
-    {
-        // Inverse: returns true iff zero unpaid invoices exist for the period.
-        // Caller is ClosePayPeriod.Validator — period close is refused while
-        // any invoice is still outstanding (Pending/Generated/Approved/etc).
-        var hasUnpaid = await GetDbSet()
-            .AnyAsync(i => i.PayPeriodId == payPeriodId && i.Status != EmployeeInvoiceStatus.Paid, cancellationToken);
-        return !hasUnpaid;
     }
 
     public async Task<IReadOnlyList<EmployeeInvoice>> GetByEmployeeAndDateRangeAsync(

@@ -10,6 +10,7 @@ using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Payments;
+using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Services.Pdf;
 using Cleansia.Infra.Services.Pdf.Models;
 using Microsoft.EntityFrameworkCore;
@@ -43,6 +44,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
     private readonly ITenantRepository _tenantRepository;
     private readonly ICashLedgerRepository _cashLedgerRepository;
     private readonly IServiceScopeFactory _serviceScopeFactory;
+    private readonly IPayPeriodClosingConfig _payPeriodClosingConfig;
 
     public PayPeriodBackgroundService(
         IPayPeriodRepository payPeriodRepository,
@@ -64,7 +66,8 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         IPayoutReferenceAllocator payoutReferenceAllocator,
         ITenantRepository tenantRepository,
         ICashLedgerRepository cashLedgerRepository,
-        IServiceScopeFactory serviceScopeFactory)
+        IServiceScopeFactory serviceScopeFactory,
+        IPayPeriodClosingConfig payPeriodClosingConfig)
     {
         _payPeriodRepository = payPeriodRepository;
         _employeeRepository = employeeRepository;
@@ -86,6 +89,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         _tenantRepository = tenantRepository;
         _cashLedgerRepository = cashLedgerRepository;
         _serviceScopeFactory = serviceScopeFactory;
+        _payPeriodClosingConfig = payPeriodClosingConfig;
     }
 
     public async Task EnsureOpenPeriodAsync(CancellationToken cancellationToken = default)
@@ -100,7 +104,12 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
 
         if (hasOpen) return;
 
-        var period = PayPeriod.CreateBiWeekly(DateOnly.FromDateTime(DateTime.UtcNow));
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var latestEnd = await _payPeriodRepository
+            .GetQueryable()
+            .MaxAsync(p => (DateOnly?)p.EndDate, cancellationToken);
+        var start = latestEnd >= today ? latestEnd.Value.AddDays(1) : today;
+        var period = PayPeriod.CreateBiWeekly(start, _payPeriodClosingConfig.LengthInDays);
         _payPeriodRepository.Add(period);
         await _unitOfWork.CommitAsync(cancellationToken);
 
@@ -162,9 +171,6 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
                     cancellationToken.ThrowIfCancellationRequested();
                     await ClosePeriodAsync(period, "Automatically closed by background job", openNext, cancellationToken);
                 }
-
-                // Commit per-tenant so new rows inherit the right TenantId.
-                await _unitOfWork.CommitAsync(cancellationToken);
             }
 
             _logger.LogInformation("Pay period auto-close job completed successfully");
@@ -185,38 +191,43 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
             period.StartDate.ToString("yyyy-MM-dd"),
             period.EndDate.ToString("yyyy-MM-dd"));
 
+        if (openNext)
+        {
+            // Within the current tenant — check if any open period exists. The close above is not
+            // flushed yet, so the store still reads this period as Open and it has to be excluded by id
+            // or no successor ever opens.
+            var hasActivePeriod = await _payPeriodRepository
+                .GetQueryable()
+                .AnyAsync(p => p.Status == PayPeriodStatus.Open && p.Id != period.Id, cancellationToken);
+
+            if (!hasActivePeriod)
+            {
+                var newPeriod = PayPeriod.CreateBiWeekly(period.EndDate.AddDays(1), _payPeriodClosingConfig.LengthInDays);
+                _payPeriodRepository.Add(newPeriod);
+
+                _logger.LogInformation(
+                    "Created new pay period {PeriodId} ({StartDate} - {EndDate})",
+                    newPeriod.Id,
+                    newPeriod.StartDate.ToString("yyyy-MM-dd"),
+                    newPeriod.EndDate.ToString("yyyy-MM-dd"));
+            }
+        }
+
+        // Durable before the first invoice, so pay calculated from here on lands in the successor instead
+        // of behind this period's invoice. A cleaner this run does not reach is left to the
+        // reconciliation sweep, which invoices a closed period's un-invoiced pay.
+        await _unitOfWork.CommitAsync(cancellationToken);
+
         await SendPeriodClosedEmailsAsync(period, cancellationToken);
-
-        if (!openNext)
-        {
-            return;
-        }
-
-        // Within the current tenant — check if any open period exists. The close above is not flushed
-        // yet (ADR-0046 declines committing it before the e-mails), so the store still reads this
-        // period as Open and it has to be excluded by id or no successor ever opens.
-        var hasActivePeriod = await _payPeriodRepository
-            .GetQueryable()
-            .AnyAsync(p => p.Status == PayPeriodStatus.Open && p.Id != period.Id, cancellationToken);
-
-        if (!hasActivePeriod)
-        {
-            var newPeriod = PayPeriod.CreateBiWeekly(period.EndDate.AddDays(1));
-            _payPeriodRepository.Add(newPeriod);
-
-            _logger.LogInformation(
-                "Created new pay period {PeriodId} ({StartDate} - {EndDate})",
-                newPeriod.Id,
-                newPeriod.StartDate.ToString("yyyy-MM-dd"),
-                newPeriod.EndDate.ToString("yyyy-MM-dd"));
-        }
     }
 
     private async Task SendPeriodClosedEmailsAsync(PayPeriod period, CancellationToken cancellationToken)
     {
-        var employeeIds = await _employeeRepository.GetQueryable()
-            .Where(e => e.IsActive)
-            .Select(e => e.Id)
+        var employeeIds = await _orderEmployeePayRepository.GetQueryable()
+            .Where(p => p.PayPeriodId == period.Id && p.EmployeeInvoiceId == null)
+            .Select(p => p.EmployeeId)
+            .Distinct()
+            .OrderBy(id => id)
             .ToListAsync(cancellationToken);
         var periodId = period.Id;
         var startDate = period.StartDate;

@@ -107,10 +107,8 @@ public class Policy
     public const string CanViewPayPeriodAdmin = nameof(CanViewPayPeriodAdmin); // AccountantOrAbove
     public const string CanCreatePayPeriod = nameof(CanCreatePayPeriod); // AccountantOrAbove
     public const string CanUpdatePayPeriod = nameof(CanUpdatePayPeriod); // AccountantOrAbove
-    public const string CanOpenPayPeriod = nameof(CanOpenPayPeriod); // AccountantOrAbove
     public const string CanDeletePayPeriod = nameof(CanDeletePayPeriod); // AccountantOrAbove
     public const string CanMarkPayPeriodPaid = nameof(CanMarkPayPeriodPaid); // AccountantOrAbove
-    public const string CanReopenPayPeriod = nameof(CanReopenPayPeriod); // AccountantOrAbove
 
     // Pay Config
     public const string CanViewPayConfigs = nameof(CanViewPayConfigs); // AccountantOrAbove

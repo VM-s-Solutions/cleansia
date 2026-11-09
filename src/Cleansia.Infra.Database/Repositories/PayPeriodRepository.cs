@@ -44,12 +44,12 @@ public class PayPeriodRepository(CleansiaDbContext context) : BaseRepository<Pay
         // tenant filter so the sweep sees stale pay across all tenants; each item carries its TenantId
         // so the sweep can re-scope per item before re-enqueuing.
         //
-        // An employee is "in" a stale period iff they have an OrderEmployeePay row in a PayPeriod
-        // committed BEFORE the cutoff; they are MISSING the invoice iff no EmployeeInvoice exists for
-        // (PayPeriodId, EmployeeId). The anti-join is the LEFT-of-NOT-EXISTS; group/distinct collapses
-        // the (possibly many) pay rows per (period, employee) to one re-enqueue candidate.
-        var cutoff = new DateTimeOffset(olderThanUtc, TimeSpan.Zero);
-
+        // Pay is invoiced once its period has closed, never while it runs, so an Open period is no
+        // candidate however old it is; the cutoff ages the CLOSE, leaving a just-closed period to the
+        // close that is still invoicing it. A Paid period stays a candidate: an admin can mark a period
+        // paid before this sweep reaches it. The anti-join is the LEFT-of-NOT-EXISTS; group/distinct
+        // collapses the (possibly many) pay rows per (period, employee) to one re-enqueue candidate.
+        //
         // ONE query rooted on the pay set with IgnoreQueryFilters so the ignore propagates across the
         // whole tree. Composing separate DbSets re-attaches each tenant filter, whose body is an
         // untranslatable provider call — so the stale-period filter goes through the NAVIGATION rather
@@ -63,7 +63,8 @@ public class PayPeriodRepository(CleansiaDbContext context) : BaseRepository<Pay
 
         var query =
             from pay in Context.Set<OrderEmployeePay>().IgnoreQueryFilters()
-            where pay.PayPeriod!.CreatedOn <= cutoff
+            where pay.PayPeriod!.Status != PayPeriodStatus.Open
+                && pay.PayPeriod.ClosedAt <= olderThanUtc
                 // One invoice per currency: a pair whose CZK pay is invoiced and whose EUR pay is not
                 // is still a candidate. The message key stays per pair, and the consumer invoices every
                 // currency still open.

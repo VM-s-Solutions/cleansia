@@ -6,7 +6,10 @@ namespace Cleansia.Core.Domain.EmployeePayroll;
 
 public class PayPeriod : TenantAuditable
 {
-    /// <summary>A pay period runs this many days, start and end inclusive (owner decision 2026-10-04).</summary>
+    /// <summary>
+    /// The days, start and end inclusive, that both cleaner agreements promise a pay period runs (owner decision
+    /// 2026-10-04). The hosts read the length from PayPeriodClosing:LengthInDays, which defaults to this.
+    /// </summary>
     public const int LengthInDays = 14;
 
     [Required]
@@ -41,9 +44,9 @@ public class PayPeriod : TenantAuditable
         }
 
         var duration = endDate.DayNumber - startDate.DayNumber;
-        if (duration < 7 || duration > 31)
+        if (duration < 1 || duration > 31)
         {
-            throw new ArgumentException("Pay period must be between 7 and 31 days", nameof(endDate));
+            throw new ArgumentException("Pay period must be between 1 and 31 days", nameof(endDate));
         }
 
         return new PayPeriod
@@ -55,9 +58,9 @@ public class PayPeriod : TenantAuditable
         };
     }
 
-    public static PayPeriod CreateBiWeekly(DateOnly startDate, string? notes = null)
+    public static PayPeriod CreateBiWeekly(DateOnly startDate, int lengthInDays = LengthInDays, string? notes = null)
     {
-        var endDate = startDate.AddDays(LengthInDays - 1);
+        var endDate = startDate.AddDays(lengthInDays - 1);
         return Create(startDate, endDate, notes);
     }
 
@@ -76,7 +79,7 @@ public class PayPeriod : TenantAuditable
         return Create(startDate, endDate, $"Second half of {startDate:MMMM yyyy}");
     }
 
-    public PayPeriod Update(DateOnly startDate, DateOnly endDate, string? notes = null)
+    public PayPeriod Update(DateOnly startDate, DateOnly endDate, int maxLengthInDays, string? notes = null)
     {
         if (Status != PayPeriodStatus.Open)
         {
@@ -88,10 +91,9 @@ public class PayPeriod : TenantAuditable
             throw new ArgumentException("End date must be after start date", nameof(endDate));
         }
 
-        var duration = endDate.DayNumber - startDate.DayNumber;
-        if (duration < 7 || duration > 31)
+        if (endDate.DayNumber - startDate.DayNumber + 1 > maxLengthInDays)
         {
-            throw new ArgumentException("Pay period must be between 7 and 31 days", nameof(endDate));
+            throw new ArgumentException($"Pay period must be at most {maxLengthInDays} days", nameof(endDate));
         }
 
         StartDate = startDate;
@@ -105,16 +107,26 @@ public class PayPeriod : TenantAuditable
         return this;
     }
 
-    public PayPeriod Close(string closedBy, string? notes = null)
+    public PayPeriod Close(string closedBy, string? notes = null, DateOnly? endDay = null)
     {
         if (Status != PayPeriodStatus.Open)
         {
             throw new InvalidOperationException($"Cannot close period in status {Status}");
         }
 
+        if (endDay < StartDate)
+        {
+            throw new ArgumentException("A pay period cannot end before it starts", nameof(endDay));
+        }
+
         Status = PayPeriodStatus.Closed;
         ClosedAt = DateTime.UtcNow;
         ClosedBy = closedBy;
+
+        if (endDay < EndDate)
+        {
+            EndDate = endDay.Value;
+        }
 
         if (notes != null)
         {
@@ -133,25 +145,6 @@ public class PayPeriod : TenantAuditable
 
         Status = PayPeriodStatus.Paid;
         PaidAt = DateTime.UtcNow;
-
-        return this;
-    }
-
-    public PayPeriod Reopen(string? notes = null)
-    {
-        if (Status == PayPeriodStatus.Paid)
-        {
-            throw new InvalidOperationException("Cannot reopen a paid period");
-        }
-
-        Status = PayPeriodStatus.Open;
-        ClosedAt = null;
-        ClosedBy = null;
-
-        if (notes != null)
-        {
-            Notes = notes;
-        }
 
         return this;
     }

@@ -8,10 +8,9 @@ using Moq;
 namespace Cleansia.Tests.Features.PayPeriods;
 
 /// <summary>
-/// AC3 (T-0171b) — the admin pay-period settlement handlers. The domain guards the legal
-/// transitions (<see cref="PayPeriod.MarkAsPaid"/> requires Closed; <see cref="PayPeriod.Reopen"/>
-/// refuses a Paid period). These tests pin that each handler drives the domain transition on the
-/// happy path and surfaces a BusinessResult error (no throw, no mutation) on the guarded case.
+/// The admin pay-period settlement handler. The domain guards the legal transition
+/// (<see cref="PayPeriod.MarkAsPaid"/> requires Closed). These tests pin that the handler drives the domain
+/// transition on the happy path and surfaces a BusinessResult error (no throw, no mutation) on the guarded case.
 /// Written red → green per knowledge/testing.md.
 /// </summary>
 public class PayPeriodSettlementHandlerTests
@@ -32,13 +31,6 @@ public class PayPeriodSettlementHandlerTests
     {
         var period = OpenPeriod();
         period.Close(AdminEmail);
-        return period;
-    }
-
-    private static PayPeriod PaidPeriod()
-    {
-        var period = ClosedPeriod();
-        period.MarkAsPaid();
         return period;
     }
 
@@ -80,40 +72,5 @@ public class PayPeriodSettlementHandlerTests
         Assert.Equal(BusinessErrorMessage.PayPeriodNotClosed, result.Error!.Message);
         Assert.Equal(PayPeriodStatus.Open, period.Status);
         Assert.Null(period.PaidAt);
-    }
-
-    // ── ReopenPayPeriod (AC3) ────────────────────────────────────────
-
-    [Fact]
-    public async Task ReopenPayPeriod_Moves_Closed_To_Open_And_Clears_ClosedMetadata()
-    {
-        var period = ClosedPeriod();
-        Arrange(period);
-        var handler = new ReopenPayPeriod.Handler(_payPeriodRepository.Object);
-
-        var result = await handler.Handle(
-            new ReopenPayPeriod.Command(PayPeriodId, Notes: "reopened for correction"),
-            CancellationToken.None);
-
-        Assert.True(result.IsSuccess);
-        Assert.Equal(PayPeriodStatus.Open, period.Status);
-        Assert.Null(period.ClosedAt);
-        Assert.Null(period.ClosedBy);
-    }
-
-    [Fact]
-    public async Task ReopenPayPeriod_On_Paid_Period_Returns_Error_And_Does_Not_Mutate()
-    {
-        var period = PaidPeriod();
-        Arrange(period);
-        var handler = new ReopenPayPeriod.Handler(_payPeriodRepository.Object);
-
-        var result = await handler.Handle(
-            new ReopenPayPeriod.Command(PayPeriodId, Notes: null),
-            CancellationToken.None);
-
-        Assert.True(result.IsFailure);
-        Assert.Equal(BusinessErrorMessage.PayPeriodAlreadyPaid, result.Error!.Message);
-        Assert.Equal(PayPeriodStatus.Paid, period.Status);
     }
 }

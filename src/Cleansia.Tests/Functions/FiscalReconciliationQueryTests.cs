@@ -26,9 +26,8 @@ namespace Cleansia.Tests.Functions;
 /// beyond the original D3.4 "no Receipt" to also catch the claimed-but-unregistered rows.
 /// An order WITHIN the threshold (recently committed) is NOT swept.</para>
 ///
-/// <para><b>Invoice predicate:</b> a <c>PayPeriod</c> with an employee (an <c>OrderEmployeePay</c>
-/// row) who has NO <c>EmployeeInvoice</c> for <c>(PayPeriodId, EmployeeId)</c>, older than the
-/// threshold.</para>
+/// <para><b>Invoice predicate:</b> a <c>PayPeriod</c> CLOSED before the threshold, with an employee
+/// (an <c>OrderEmployeePay</c> row) who has NO <c>EmployeeInvoice</c> in that row's currency.</para>
 ///
 /// <para>Written TEST-FIRST (RED until the two queries exist).</para>
 /// </summary>
@@ -306,23 +305,19 @@ public sealed class FiscalReconciliationQueryTests : IDisposable
         Assert.Equal("01HZX9N6M7Q8R9S0T1V2W3X418", due[1].Id);
     }
 
-    // ── A stale PayPeriod with an employee lacking an EmployeeInvoice is swept ──
+    // ── A period closed before the threshold, with an employee lacking an EmployeeInvoice, is swept ──
 
     [Fact]
-    public async Task Invoice_Recon_Returns_PayPeriod_Employee_Missing_Invoice()
+    public async Task Invoice_Recon_Returns_A_Closed_PayPeriods_Employee_Missing_Invoice()
     {
         await EnsureSchemaAsync();
-        var stale = DateTimeOffset.UtcNow.AddMinutes(-60);
 
         var payPeriodId = "01HZX9N6M7Q8R9S0T1V2W3XP01";
         var employeeId = "01HZX9N6M7Q8R9S0T1V2W3XE01";
 
         await using (var seed = NewContext())
         {
-            var period = PayPeriod.CreateBiWeekly(DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-20)));
-            period.Id = payPeriodId;
-            period.Created("system", stale);
-            seed.Add(period);
+            seed.Add(ClosedPeriod(payPeriodId, closedAt: DateTime.UtcNow.AddMinutes(-60)));
 
             var pay = OrderEmployeePay.Create(
                 orderId: "01HZX9N6M7Q8R9S0T1V2W3XO01",
@@ -351,17 +346,13 @@ public sealed class FiscalReconciliationQueryTests : IDisposable
     public async Task Invoice_Recon_Skips_Employee_With_Existing_Invoice()
     {
         await EnsureSchemaAsync();
-        var stale = DateTimeOffset.UtcNow.AddMinutes(-60);
 
         var payPeriodId = "01HZX9N6M7Q8R9S0T1V2W3XP02";
         var employeeId = "01HZX9N6M7Q8R9S0T1V2W3XE02";
 
         await using (var seed = NewContext())
         {
-            var period = PayPeriod.CreateBiWeekly(DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-20)));
-            period.Id = payPeriodId;
-            period.Created("system", stale);
-            seed.Add(period);
+            seed.Add(ClosedPeriod(payPeriodId, closedAt: DateTime.UtcNow.AddMinutes(-60)));
 
             seed.Add(OrderEmployeePay.Create(
                 orderId: "01HZX9N6M7Q8R9S0T1V2W3XO02",
@@ -385,23 +376,19 @@ public sealed class FiscalReconciliationQueryTests : IDisposable
         Assert.Empty(due);
     }
 
-    // ── Invoice freshness — a PayPeriod within the threshold is NOT swept ──
+    // ── Invoice freshness — a period CLOSED within the threshold is NOT swept, however old it is ──
 
     [Fact]
-    public async Task Invoice_Recon_Skips_Fresh_PayPeriod_Within_Threshold()
+    public async Task Invoice_Recon_Skips_A_PayPeriod_Closed_Within_Threshold()
     {
         await EnsureSchemaAsync();
-        var fresh = DateTimeOffset.UtcNow.AddMinutes(-2);
 
         var payPeriodId = "01HZX9N6M7Q8R9S0T1V2W3XP03";
         var employeeId = "01HZX9N6M7Q8R9S0T1V2W3XE03";
 
         await using (var seed = NewContext())
         {
-            var period = PayPeriod.CreateBiWeekly(DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-2)));
-            period.Id = payPeriodId;
-            period.Created("system", fresh);
-            seed.Add(period);
+            seed.Add(ClosedPeriod(payPeriodId, closedAt: DateTime.UtcNow.AddMinutes(-2)));
 
             seed.Add(OrderEmployeePay.Create(
                 orderId: "01HZX9N6M7Q8R9S0T1V2W3XO03",
@@ -419,6 +406,16 @@ public sealed class FiscalReconciliationQueryTests : IDisposable
         var due = await repo.GetInvoiceReconciliationCandidatesAsync(cutoff, take: 50, CancellationToken.None);
 
         Assert.Empty(due);
+    }
+
+    private static PayPeriod ClosedPeriod(string id, DateTime closedAt)
+    {
+        var period = PayPeriod.CreateBiWeekly(DateOnly.FromDateTime(closedAt.AddDays(-20)));
+        period.Id = id;
+        period.Created("system", closedAt.AddDays(-20));
+        period.Close("System");
+        typeof(PayPeriod).GetProperty(nameof(PayPeriod.ClosedAt))!.SetValue(period, closedAt);
+        return period;
     }
 
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider

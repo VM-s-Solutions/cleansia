@@ -1,2 +1,2 @@
-export type AdminPayPeriodOpsPanel = 'markPaid' | 'reopen';
+export type AdminPayPeriodOpsPanel = 'markPaid' | 'closeNow';
 

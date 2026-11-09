@@ -93,6 +93,9 @@ public class PayPeriodInvoicePdfFailureRecordingTests
             .Setup(r => r.GetUnassignedForEmployeePeriodAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([PayrollMockFactory.OrderPay(basePay: 100m)]);
+        _orderPayRepository
+            .Setup(r => r.GetQueryable())
+            .Returns(new[] { PayrollMockFactory.OrderPay(basePay: 100m) }.AsQueryable().BuildMock());
 
         var currency = CurrencyMockFactory.Generate();
         currency.Id = PayrollMockFactory.CurrencyId;
@@ -279,7 +282,8 @@ public class PayPeriodInvoicePdfFailureRecordingTests
         _payoutReferenceAllocator.Object,
         new Mock<ITenantRepository>().Object,
         new Mock<ICashLedgerRepository>().Object,
-        PayPeriodTestServices.ScopeFactory(CreateService));
+        PayPeriodTestServices.ScopeFactory(CreateService),
+        PayPeriodTestServices.ClosingConfig());
 
     private static Employee Cleaner()
     {

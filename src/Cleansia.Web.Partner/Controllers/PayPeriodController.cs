@@ -11,7 +11,7 @@ namespace Cleansia.Web.Partner.Controllers;
 
 /// <summary>
 /// Partner-host pay-period surface — READ-ONLY by design. The full mutation surface
-/// (Create/Update/Delete/Open/Close/MarkPaid/Reopen) lives ONLY on the Admin host's
+/// (Create/Update/Delete/Close/MarkPaid) lives ONLY on the Admin host's
 /// <c>AdminPayPeriodController</c>, per the per-audience-host seam: pay periods are an admin/payroll
 /// concern, so the Partner API exposes only the read a partner-facing screen needs. The previously
 /// duplicated mutation endpoints (AdminOnly-gated, so never cleaner-exploitable, but redundant write

@@ -1,5 +1,7 @@
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Infra.Common.Configuration;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 
@@ -21,4 +23,11 @@ internal static class PayPeriodTestServices
         });
         return factory.Object;
     }
+
+    public static PayPeriodClosingConfig ClosingConfig(int? lengthInDays = null) =>
+        new(new ConfigurationBuilder()
+            .AddInMemoryCollection(lengthInDays is null
+                ? []
+                : [new KeyValuePair<string, string?>("PayPeriodClosing:LengthInDays", lengthInDays.ToString())])
+            .Build());
 }

@@ -104,6 +104,9 @@ public class InvoiceDocumentLanguageTests
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([PayrollMockFactory.OrderPay(basePay: 100m)]);
         _orderPayRepository
+            .Setup(r => r.GetQueryable())
+            .Returns(new[] { PayrollMockFactory.OrderPay(basePay: 100m) }.AsQueryable().BuildMock());
+        _orderPayRepository
             .Setup(r => r.GetByInvoiceIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([PayrollMockFactory.OrderPay(basePay: 100m)]);
 
@@ -218,7 +221,8 @@ public class InvoiceDocumentLanguageTests
         _payoutReferenceAllocator.Object,
         new Mock<ITenantRepository>().Object,
         new Mock<ICashLedgerRepository>().Object,
-        PayPeriodTestServices.ScopeFactory(CreateService));
+        PayPeriodTestServices.ScopeFactory(CreateService),
+        PayPeriodTestServices.ClosingConfig());
 
     private Task<BusinessResult<RegenerateInvoicePdf.Response>> ReRender(string languageCode) =>
         new RegenerateInvoicePdf.Handler(

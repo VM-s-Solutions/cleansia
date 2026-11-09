@@ -66,13 +66,6 @@
     ) {
     <cleansia-section [title]="'pay_periods.detail.ops.title' | translate">
       <div class="detail-actions">
-        @if (payPeriod.status === PayPeriodStatus[PayPeriodStatus.Open]) {
-        <cleansia-button
-          [label]="'pay_periods.detail.close_period' | translate"
-          icon="pi pi-lock"
-          (onClick)="onClosePayPeriod()"
-        />
-        }
         <cleansia-admin-pay-period-ops
           [payPeriod]="payPeriod"
           (changed)="onOpsChanged()"

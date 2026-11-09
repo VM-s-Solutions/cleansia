@@ -13,7 +13,8 @@ import {
   CleansiaSectionComponent,
   CleansiaTextareaComponent,
 } from '@cleansia/components';
-import { TranslateModule } from '@ngx-translate/core';
+import { PermissionService, Policy } from '@cleansia/services';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { AdminPayPeriodOpsComponent } from './admin-pay-period-ops.component';
 import { AdminPayPeriodOpsFacade } from './admin-pay-period-ops.facade';
 import { AdminPayPeriodOpsPanel } from './admin-pay-period-ops.models';
@@ -56,6 +57,7 @@ class SectionStub {
 class TextareaStub extends ControlStub {
   label = input<string>('');
   placeholder = input<string>('');
+  maxLength = input<number | undefined>(undefined);
   valueChanges = output<string>();
 }
 
@@ -79,14 +81,15 @@ class FacadeStub {
   readonly activePanel = signal<AdminPayPeriodOpsPanel | null>(null);
   readonly submitting = signal<boolean>(false);
   readonly errorKey = signal<string | null>(null);
-  readonly reopenNotes = signal<string>('');
+  readonly closeNowReason = signal<string>('');
+  readonly canSubmitCloseNow = signal<boolean>(false);
   openPanel = jest.fn((panel: AdminPayPeriodOpsPanel) =>
     this.activePanel.set(this.activePanel() === panel ? null : panel)
   );
   closePanel = jest.fn(() => this.activePanel.set(null));
-  setReopenNotes = jest.fn();
+  setCloseNowReason = jest.fn();
   markPaid = jest.fn();
-  reopen = jest.fn();
+  closeNow = jest.fn();
 }
 
 function makePayPeriod(partial: Partial<PayPeriodDto>): PayPeriodDto {
@@ -97,16 +100,34 @@ function makePayPeriod(partial: Partial<PayPeriodDto>): PayPeriodDto {
   });
 }
 
+function makeOpenPayPeriod(latestEndDate: string): PayPeriodDto {
+  return PayPeriodDto.fromJS({
+    id: 'period-1',
+    status: PayPeriodStatus[PayPeriodStatus.Open],
+    startDate: '2026-01-01',
+    endDate: '2026-01-14',
+    latestEndDate,
+  });
+}
+
 describe('AdminPayPeriodOpsComponent', () => {
   let fixture: ComponentFixture<AdminPayPeriodOpsComponent>;
   let component: AdminPayPeriodOpsComponent;
   let facade: FacadeStub;
+  let grantedPolicies: Set<string>;
 
   beforeEach(async () => {
     facade = new FacadeStub();
+    grantedPolicies = new Set([Policy.CanClosePayPeriod]);
 
     await TestBed.configureTestingModule({
       imports: [AdminPayPeriodOpsComponent, TranslateModule.forRoot()],
+      providers: [
+        {
+          provide: PermissionService,
+          useValue: { hasPolicy: (policy: string) => grantedPolicies.has(policy) },
+        },
+      ],
     })
       .overrideComponent(AdminPayPeriodOpsComponent, {
         remove: {
@@ -145,20 +166,19 @@ describe('AdminPayPeriodOpsComponent', () => {
     expect(meta.onPush).toBe(true);
   });
 
-  it('renders mark-paid and reopen actions for a closed period', () => {
+  it('renders only the mark-paid action for a closed period', () => {
     setPayPeriod(makePayPeriod({}));
-    expect(buttonLabels()).toEqual(
-      expect.arrayContaining([
-        'pay_periods.detail.ops.mark_paid.action',
-        'pay_periods.detail.ops.reopen.action',
-      ])
-    );
+    expect(buttonLabels()).toEqual(['pay_periods.detail.ops.mark_paid.action']);
   });
 
-  it('renders nothing for an open period', () => {
-    setPayPeriod(
-      makePayPeriod({ status: PayPeriodStatus[PayPeriodStatus.Open] })
-    );
+  it('renders only Close now for an open period', () => {
+    setPayPeriod(makeOpenPayPeriod('2026-01-14'));
+    expect(buttonLabels()).toEqual(['pay_periods.detail.ops.close_now.action']);
+  });
+
+  it('hides Close now from a session that may not close a pay period', () => {
+    grantedPolicies.clear();
+    setPayPeriod(makeOpenPayPeriod('2026-01-14'));
     expect(buttonLabels()).toEqual([]);
   });
 
@@ -169,17 +189,57 @@ describe('AdminPayPeriodOpsComponent', () => {
     expect(buttonLabels()).toEqual([]);
   });
 
-  it('delegates submits with the pay period id', () => {
+  it('opens the reason field and the submit under Close now', () => {
+    setPayPeriod(makeOpenPayPeriod('2026-01-14'));
+
+    facade.activePanel.set('closeNow');
+    fixture.detectChanges();
+
+    const textarea = fixture.debugElement.query(By.directive(TextareaStub))
+      .componentInstance as TextareaStub;
+    expect(textarea.label()).toBe('pay_periods.detail.ops.close_now.reason');
+    expect(textarea.maxLength()).toBe(500);
+    expect(buttonLabels()).toEqual([
+      'pay_periods.detail.ops.close_now.action',
+      'pay_periods.detail.ops.close_now.submit',
+    ]);
+  });
+
+  it('names the end it replaces and the configured length in the hint', () => {
+    TestBed.inject(TranslateService).use('cs');
+
+    setPayPeriod(makeOpenPayPeriod('2026-01-14'));
+    expect(component.closeNowHint().end).toMatch(/^14\.\s1\.\s2026$/);
+    expect(component.closeNowHint().days).toBe(14);
+
+    setPayPeriod(makeOpenPayPeriod('2026-01-03'));
+    expect(component.closeNowHint().days).toBe(3);
+  });
+
+  it('delegates the reason and the close, and re-loads when the close lands', () => {
+    setPayPeriod(makeOpenPayPeriod('2026-01-14'));
+    const emitted = jest.fn();
+    component.changed.subscribe(emitted);
+    facade.closeNow.mockImplementation(
+      (_payPeriodId: string, onSuccess: () => void) => onSuccess()
+    );
+
+    component.onCloseNowReasonChange('Agreement ended');
+    component.submitCloseNow();
+
+    expect(facade.setCloseNowReason).toHaveBeenCalledWith('Agreement ended');
+    expect(facade.closeNow).toHaveBeenCalledWith(
+      'period-1',
+      expect.any(Function)
+    );
+    expect(emitted).toHaveBeenCalledTimes(1);
+  });
+
+  it('delegates the submit with the pay period id', () => {
     setPayPeriod(makePayPeriod({}));
 
     component.submitMarkPaid();
     expect(facade.markPaid).toHaveBeenCalledWith(
-      'period-1',
-      expect.any(Function)
-    );
-
-    component.submitReopen();
-    expect(facade.reopen).toHaveBeenCalledWith(
       'period-1',
       expect.any(Function)
     );

@@ -1,10 +1,10 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import {
   AdminClient,
+  ClosePayPeriodCommand,
+  ClosePayPeriodResponse,
   MarkPayPeriodPaidCommand,
   MarkPayPeriodPaidResponse,
-  ReopenPayPeriodCommand,
-  ReopenPayPeriodResponse,
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { resolveApiErrorKey, SnackbarService } from '@cleansia/services';
@@ -22,7 +22,10 @@ export class AdminPayPeriodOpsFacade extends UnsubscribeControlDirective {
   readonly submitting = signal<boolean>(false);
   readonly errorKey = signal<string | null>(null);
 
-  readonly reopenNotes = signal<string>('');
+  readonly closeNowReason = signal<string>('');
+  readonly canSubmitCloseNow = computed(
+    () => this.closeNowReason().trim().length > 0 && !this.submitting()
+  );
 
   openPanel(panel: AdminPayPeriodOpsPanel): void {
     if (this.activePanel() === panel) {
@@ -38,8 +41,8 @@ export class AdminPayPeriodOpsFacade extends UnsubscribeControlDirective {
     this.resetInputs();
   }
 
-  setReopenNotes(value: string): void {
-    this.reopenNotes.set(value);
+  setCloseNowReason(value: string): void {
+    this.closeNowReason.set(value);
   }
 
   markPaid(payPeriodId: string, onSuccess: () => void): void {
@@ -55,22 +58,23 @@ export class AdminPayPeriodOpsFacade extends UnsubscribeControlDirective {
     );
   }
 
-  reopen(payPeriodId: string, onSuccess: () => void): void {
-    if (!payPeriodId) {
+  closeNow(payPeriodId: string, onSuccess: () => void): void {
+    const reason = this.closeNowReason().trim();
+    if (!payPeriodId || !reason) {
       return;
     }
-    const command = new ReopenPayPeriodCommand();
+    const command = new ClosePayPeriodCommand();
     command.payPeriodId = payPeriodId;
-    command.notes = this.reopenNotes().trim() || undefined;
+    command.reason = reason;
     this.run(
-      this.adminClient.adminPayPeriodClient.reopen(command),
-      'pay_periods.detail.ops.reopen.success',
+      this.adminClient.adminPayPeriodClient.close(command),
+      'pay_periods.messages.close_success',
       onSuccess
     );
   }
 
   private run(
-    request$: Observable<MarkPayPeriodPaidResponse | ReopenPayPeriodResponse>,
+    request$: Observable<MarkPayPeriodPaidResponse | ClosePayPeriodResponse>,
     successKey: string,
     onSuccess: () => void
   ): void {
@@ -95,7 +99,7 @@ export class AdminPayPeriodOpsFacade extends UnsubscribeControlDirective {
   }
 
   private resetInputs(): void {
-    this.reopenNotes.set('');
+    this.closeNowReason.set('');
     this.errorKey.set(null);
   }
 

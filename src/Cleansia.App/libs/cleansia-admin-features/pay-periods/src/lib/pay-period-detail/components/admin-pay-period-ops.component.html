@@ -1,16 +1,46 @@
+@if (isOpen()) {
+<ng-container *cleansiaPermission="Policy.CanClosePayPeriod">
+<cleansia-button
+  [label]="'pay_periods.detail.ops.close_now.action' | translate"
+  icon="pi pi-lock"
+  severity="danger"
+  [outlined]="facade.activePanel() !== 'closeNow'"
+  (onClick)="togglePanel('closeNow')"
+/>
+
+@if (facade.activePanel() === 'closeNow') {
+<div class="detail-actions__panel">
+  <p class="detail-actions__hint">
+    {{ 'pay_periods.detail.ops.close_now.hint' | translate: closeNowHint() }}
+  </p>
+  <cleansia-textarea
+    [label]="'pay_periods.detail.ops.close_now.reason' | translate"
+    [maxLength]="500"
+    [ngModel]="facade.closeNowReason()"
+    (valueChanges)="onCloseNowReasonChange($event)"
+  />
+  @if (facade.errorKey()) {
+  <p class="detail-actions__error">{{ facade.errorKey()! | translate }}</p>
+  }
+  <cleansia-button
+    [label]="'pay_periods.detail.ops.close_now.submit' | translate"
+    icon="pi pi-lock"
+    severity="danger"
+    [loading]="facade.submitting()"
+    [disabled]="!facade.canSubmitCloseNow()"
+    (onClick)="submitCloseNow()"
+  />
+</div>
+}
+</ng-container>
+}
+
 @if (isClosed()) {
 <cleansia-button
   [label]="'pay_periods.detail.ops.mark_paid.action' | translate"
   icon="pi pi-money-bill"
   [outlined]="facade.activePanel() !== 'markPaid'"
   (onClick)="togglePanel('markPaid')"
-/>
-<cleansia-button
-  [label]="'pay_periods.detail.ops.reopen.action' | translate"
-  icon="pi pi-lock-open"
-  severity="secondary"
-  [outlined]="facade.activePanel() !== 'reopen'"
-  (onClick)="togglePanel('reopen')"
 />
 
 @if (facade.activePanel() === 'markPaid') {
@@ -26,29 +56,6 @@
     icon="pi pi-money-bill"
     [loading]="facade.submitting()"
     (onClick)="submitMarkPaid()"
-  />
-</div>
-}
-
-@if (facade.activePanel() === 'reopen') {
-<div class="detail-actions__panel">
-  <p class="detail-actions__hint">
-    {{ 'pay_periods.detail.ops.reopen.hint' | translate }}
-  </p>
-  <cleansia-textarea
-    [label]="'pay_periods.detail.ops.reopen.notes' | translate"
-    [placeholder]="'pay_periods.detail.ops.reopen.notes_hint' | translate"
-    [ngModel]="facade.reopenNotes()"
-    (valueChanges)="onReopenNotesChange($event)"
-  />
-  @if (facade.errorKey()) {
-  <p class="detail-actions__error">{{ facade.errorKey()! | translate }}</p>
-  }
-  <cleansia-button
-    [label]="'pay_periods.detail.ops.reopen.submit' | translate"
-    icon="pi pi-lock-open"
-    [loading]="facade.submitting()"
-    (onClick)="submitReopen()"
   />
 </div>
 }

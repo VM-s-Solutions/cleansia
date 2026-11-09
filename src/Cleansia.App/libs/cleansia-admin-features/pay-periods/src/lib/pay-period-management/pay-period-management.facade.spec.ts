@@ -1,10 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 import {
   AdminClient,
-  ClosePayPeriodCommand,
   CreatePayPeriodCommand,
   CreatePayPeriodResponse,
+  PagedDataOfPayPeriodDto,
+  PayPeriodDto,
   PayPeriodStatus,
+  SortDefinition,
+  SortDirection,
 } from '@cleansia/admin-services';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
@@ -14,7 +17,6 @@ import { PayPeriodManagementFacade } from './pay-period-management.facade';
 describe('PayPeriodManagementFacade', () => {
   let facade: PayPeriodManagementFacade;
   let getPagedMock: jest.Mock;
-  let closeMock: jest.Mock;
   let createMock: jest.Mock;
   let snackbar: {
     showSuccess: jest.Mock;
@@ -26,7 +28,6 @@ describe('PayPeriodManagementFacade', () => {
   beforeEach(() => {
     TestBed.resetTestingModule();
     getPagedMock = jest.fn().mockReturnValue(of({ data: [], total: 0 }));
-    closeMock = jest.fn().mockReturnValue(of({ payPeriodId: 'period-1' }));
     createMock = jest.fn().mockReturnValue(of(CreatePayPeriodResponse.fromJS({ payPeriodId: 'period-new' })));
     snackbar = {
       showSuccess: jest.fn(),
@@ -41,7 +42,7 @@ describe('PayPeriodManagementFacade', () => {
         {
           provide: AdminClient,
           useValue: {
-            adminPayPeriodClient: { getPaged: getPagedMock, close: closeMock, create: createMock },
+            adminPayPeriodClient: { getPaged: getPagedMock, create: createMock },
           },
         },
         { provide: SnackbarService, useValue: snackbar },
@@ -111,35 +112,74 @@ describe('PayPeriodManagementFacade', () => {
     expect(year).toBeUndefined();
   });
 
-  it('re-reads the list after a close lands, and not when it fails', () => {
-    facade.closePayPeriod('period-1', 'done');
-    expect(getPagedMock).toHaveBeenCalledTimes(1);
-    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
-      'pay_periods.messages.close_success'
-    );
+  describe('create dialog default', () => {
+    const calendarDay = (date: Date | null) =>
+      date ? [date.getFullYear(), date.getMonth() + 1, date.getDate()] : null;
+    const latestEndingOn = (endDate: string) =>
+      of(PagedDataOfPayPeriodDto.fromJS({ data: [{ id: 'p-latest', endDate }], total: 1 }));
 
-    closeMock.mockReturnValue(throwError(() => new Error('boom')));
-    facade.closePayPeriod('period-1', 'done');
-    expect(getPagedMock).toHaveBeenCalledTimes(1);
+    afterEach(() => jest.useRealTimers());
+
+    it('reads the one period with the latest end, whatever the list shows', () => {
+      facade.applyFilter({ status: PayPeriodStatus.Paid, year: 2025 });
+      getPagedMock.mockClear();
+
+      facade.prepareCreate();
+
+      expect(getPagedMock).toHaveBeenCalledWith(
+        undefined,
+        undefined,
+        [new SortDefinition({ field: 'endDate', direction: SortDirection.Descending })],
+        0,
+        1
+      );
+    });
+
+    it('defaults the start to the day after the latest end', () => {
+      jest.useFakeTimers({ now: new Date(2026, 10, 9, 12) });
+      getPagedMock.mockReturnValue(latestEndingOn('2026-10-31'));
+
+      facade.prepareCreate();
+
+      expect(calendarDay(facade.createStartDate())).toEqual([2026, 11, 1]);
+    });
+
+    it('defaults to today while the latest period runs past it, since the server refuses a later start', () => {
+      jest.useFakeTimers({ now: new Date(2026, 10, 9, 12) });
+      getPagedMock.mockReturnValue(latestEndingOn('2026-11-14'));
+
+      facade.prepareCreate();
+
+      expect(calendarDay(facade.createStartDate())).toEqual([2026, 11, 9]);
+    });
+
+    it('leaves the start empty when there is no period yet or the read fails', () => {
+      facade.setCreateStartDate(new Date(2026, 0, 1));
+
+      facade.prepareCreate();
+      expect(facade.createStartDate()).toBeNull();
+
+      getPagedMock.mockReturnValue(throwError(() => new Error('boom')));
+      facade.prepareCreate();
+      expect(facade.createStartDate()).toBeNull();
+    });
+
+    it('keeps a start the admin picked before the read lands', () => {
+      const response$ = new Subject<PagedDataOfPayPeriodDto>();
+      getPagedMock.mockReturnValue(response$);
+
+      facade.prepareCreate();
+      facade.setCreateStartDate(new Date(2026, 10, 3));
+      response$.next(
+        PagedDataOfPayPeriodDto.fromJS({ data: [PayPeriodDto.fromJS({ endDate: '2026-10-31' })], total: 1 })
+      );
+
+      expect(calendarDay(facade.createStartDate())).toEqual([2026, 11, 3]);
+    });
   });
 
   describe('create', () => {
-    const calendarDay = (date: Date | null) => (date ? [date.getFullYear(), date.getMonth() + 1, date.getDate()] : null);
-
-    it('derives the end 13 days after the start, across a month and a year end', () => {
-      expect(facade.createEndDate()).toBeNull();
-
-      facade.setCreateStartDate(new Date(2026, 9, 19));
-      expect(calendarDay(facade.createEndDate())).toEqual([2026, 11, 1]);
-
-      facade.setCreateStartDate(new Date(2026, 11, 25));
-      expect(calendarDay(facade.createEndDate())).toEqual([2027, 1, 7]);
-
-      facade.setCreateStartDate(null);
-      expect(facade.createEndDate()).toBeNull();
-    });
-
-    it('sends the start and the derived end on the wire', () => {
+    it('sends only the start on the wire, since the server sets the end at the configured length', () => {
       facade.setCreateStartDate(new Date(2026, 9, 19));
 
       facade.createPayPeriod(jest.fn());
@@ -148,7 +188,6 @@ describe('PayPeriodManagementFacade', () => {
       expect(command).toBeInstanceOf(CreatePayPeriodCommand);
       expect(command.toJSON()).toEqual({
         startDate: '2026-10-19',
-        endDate: '2026-11-01',
         notes: undefined,
       });
     });
@@ -208,29 +247,6 @@ describe('PayPeriodManagementFacade', () => {
       facade.createPayPeriod(jest.fn());
 
       expect(createMock).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  describe('command bodies on the wire', () => {
-    it('serializes a close with the period id and the notes', () => {
-      facade.closePayPeriod('period-1', 'all invoices generated');
-
-      const command: ClosePayPeriodCommand = closeMock.mock.calls[0][0];
-      expect(command).toBeInstanceOf(ClosePayPeriodCommand);
-      expect(command.toJSON()).toEqual({
-        payPeriodId: 'period-1',
-        notes: 'all invoices generated',
-      });
-    });
-
-    it('leaves the notes undefined when the caller omits them', () => {
-      facade.closePayPeriod('period-1');
-
-      const command: ClosePayPeriodCommand = closeMock.mock.calls[0][0];
-      expect(command.toJSON()).toEqual({
-        payPeriodId: 'period-1',
-        notes: undefined,
-      });
     });
   });
 });

@@ -10,7 +10,7 @@ import {
   CleansiaTitleComponent,
 } from '@cleansia/components';
 import { CleansiaAdminRoute } from '@cleansia/services';
-import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
 import { AdminPayPeriodOpsComponent } from './components';
@@ -38,7 +38,6 @@ export class PayPeriodDetailComponent implements OnInit, OnDestroy {
   protected readonly facade = inject(PayPeriodDetailFacade);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly translate = inject(TranslateService);
 
   protected readonly PayPeriodStatus = PayPeriodStatus;
 
@@ -57,15 +56,6 @@ export class PayPeriodDetailComponent implements OnInit, OnDestroy {
 
   goBack(): void {
     this.router.navigate([CleansiaAdminRoute.PAY_PERIODS]);
-  }
-
-  onClosePayPeriod(): void {
-    const payPeriod = this.facade.payPeriod();
-    if (!payPeriod?.id) return;
-
-    if (confirm(this.translate.instant('pay_periods.confirm_close'))) {
-      this.facade.closePayPeriod(payPeriod.id);
-    }
   }
 
   formatDate(date: string | Date | null | undefined): string {

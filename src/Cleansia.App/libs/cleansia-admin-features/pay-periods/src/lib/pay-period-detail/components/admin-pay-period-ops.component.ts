@@ -13,9 +13,14 @@ import {
   CleansiaButtonComponent,
   CleansiaTextareaComponent,
 } from '@cleansia/components';
-import { TranslatePipe } from '@ngx-translate/core';
+import { CleansiaPermissionDirective } from '@cleansia/directives';
+import { Policy } from '@cleansia/services';
+import { currentLanguage, formatDate } from '@cleansia/utils';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { AdminPayPeriodOpsFacade } from './admin-pay-period-ops.facade';
 import { AdminPayPeriodOpsPanel } from './admin-pay-period-ops.models';
+
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 @Component({
   selector: 'cleansia-admin-pay-period-ops',
@@ -26,6 +31,7 @@ import { AdminPayPeriodOpsPanel } from './admin-pay-period-ops.models';
     TranslatePipe,
     CleansiaTextareaComponent,
     CleansiaButtonComponent,
+    CleansiaPermissionDirective,
   ],
   templateUrl: './admin-pay-period-ops.component.html',
   providers: [AdminPayPeriodOpsFacade],
@@ -33,20 +39,39 @@ import { AdminPayPeriodOpsPanel } from './admin-pay-period-ops.models';
 })
 export class AdminPayPeriodOpsComponent {
   protected readonly facade = inject(AdminPayPeriodOpsFacade);
+  protected readonly Policy = Policy;
+  private readonly lang = currentLanguage(inject(TranslateService));
 
   readonly payPeriod = input.required<PayPeriodDto>();
   readonly changed = output<void>();
+
+  readonly isOpen = computed(
+    () => this.payPeriod().status === PayPeriodStatus[PayPeriodStatus.Open]
+  );
 
   readonly isClosed = computed(
     () => this.payPeriod().status === PayPeriodStatus[PayPeriodStatus.Closed]
   );
 
+  // Close now's successor runs the configured length, which reaches the client only as this period's latest end.
+  readonly closeNowHint = computed(() => {
+    const payPeriod = this.payPeriod();
+    return {
+      end: formatDate(payPeriod.endDate, this.lang(), 'utcDate'),
+      days:
+        Math.round(
+          (payPeriod.latestEndDate.getTime() - payPeriod.startDate.getTime()) /
+            DAY_MS
+        ) + 1,
+    };
+  });
+
   togglePanel(panel: AdminPayPeriodOpsPanel): void {
     this.facade.openPanel(panel);
   }
 
-  onReopenNotesChange(value: string): void {
-    this.facade.setReopenNotes(value);
+  onCloseNowReasonChange(value: string): void {
+    this.facade.setCloseNowReason(value);
   }
 
   submitMarkPaid(): void {
@@ -55,9 +80,9 @@ export class AdminPayPeriodOpsComponent {
     this.facade.markPaid(payPeriodId, () => this.changed.emit());
   }
 
-  submitReopen(): void {
+  submitCloseNow(): void {
     const payPeriodId = this.payPeriod().id;
     if (!payPeriodId) return;
-    this.facade.reopen(payPeriodId, () => this.changed.emit());
+    this.facade.closeNow(payPeriodId, () => this.changed.emit());
   }
 }

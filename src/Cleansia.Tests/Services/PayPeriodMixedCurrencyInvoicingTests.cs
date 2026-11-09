@@ -96,6 +96,9 @@ public class PayPeriodMixedCurrencyInvoicingTests
             .Setup(r => r.GetUnassignedForEmployeePeriodAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(() => _unassignedPays);
+        _orderPayRepository
+            .Setup(r => r.GetQueryable())
+            .Returns(() => _unassignedPays.AsQueryable().BuildMock());
 
         var czk = CurrencyMockFactory.Generate();
         czk.Id = PayrollMockFactory.CurrencyId;
@@ -211,7 +214,7 @@ public class PayPeriodMixedCurrencyInvoicingTests
     [Fact]
     public async Task A_Currency_This_Pair_Already_Holds_An_Invoice_For_Is_Skipped_Not_Doubled()
     {
-        // The CZK half was invoiced when the period first closed; a EUR pay row has landed since.
+        // The pair already holds a CZK invoice; its EUR pay is not invoiced yet.
         _existingInvoices = [PayrollMockFactory.Invoice(currencyId: PayrollMockFactory.CurrencyId)];
         var eur = PayrollMockFactory.OrderPay(basePay: 30m, currencyId: EurId);
         _unassignedPays = [PayrollMockFactory.OrderPay(basePay: 600m), eur];
@@ -242,16 +245,14 @@ public class PayPeriodMixedCurrencyInvoicingTests
     }
 
     [Fact]
-    public async Task No_Unassigned_Pay_Sends_One_Plain_Period_Closed_Email_And_No_Invoice()
+    public async Task A_Cleaner_Without_Pay_In_The_Period_Gets_No_Email_And_No_Invoice()
     {
         _unassignedPays = [];
 
         await Run();
 
         Assert.Empty(_addedInvoices);
-        var sent = Assert.Single(_emailsSent);
-        Assert.Null(sent.PdfBytes);
-        Assert.Null(sent.FileName);
+        Assert.Empty(_emailsSent);
         _payoutReferenceAllocator.Verify(a => a.AllocateAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -408,7 +409,8 @@ public class PayPeriodMixedCurrencyInvoicingTests
         _payoutReferenceAllocator.Object,
         new Mock<ITenantRepository>().Object,
         _cashLedger.Object,
-        PayPeriodTestServices.ScopeFactory(CreateService));
+        PayPeriodTestServices.ScopeFactory(CreateService),
+        PayPeriodTestServices.ClosingConfig());
 
     private static Employee Cleaner()
     {

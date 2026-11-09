@@ -27,13 +27,6 @@ public interface IEmployeeInvoiceRepository : IRepository<EmployeeInvoice, strin
     Task<EmployeeInvoice?> GetLatestInvoiceAsync(string employeeId, CancellationToken cancellationToken);
 
     /// <summary>
-    /// True iff every invoice in the given pay period is Paid. Used by the
-    /// admin "close pay period" validator — closing is refused while any
-    /// invoice is still outstanding.
-    /// </summary>
-    Task<bool> AllInvoicesPaidInPeriodAsync(string payPeriodId, CancellationToken cancellationToken);
-
-    /// <summary>
     /// Invoices for an employee whose <c>GeneratedAt</c> falls in the given
     /// date range. Used by per-employee earnings analytics and the
     /// dashboard productivity widget.

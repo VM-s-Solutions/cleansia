@@ -117,7 +117,7 @@ green; and Mike gets a customer TestFlight build.
   sheet and closes it with Done or a swipe down without moving a wheel, Then no birth date is stored and the row still
   reads "Not set". When she moves a wheel, Then the day on the wheels is stored and the row shows it. On Android a
   source test on the sheet and the minified build's emulator walk cover this; the view model never sees the sheet.
-  See open point 1: iOS stores the day shown on Done today.
+  Mike answered open point 1 with A on 2026-11-08, so iOS behaves the same way.
 - [ ] **AC7 — the name step for a hidden-name Apple account.** Given an Apple account whose stored first name is
   Cleansia or whose stored last name is Customer, the words the server writes for a part that neither Apple nor the
   e-mail gave, When she reaches the iOS onboarding, Then the server tells the app that the name is made up, and the
@@ -469,3 +469,4 @@ Catalog-edit routing for the docs and catalog edits of the iOS half, by the test
   > simulator CI runs. A per-app private date field or wheel sheet is a defect. **Enforced by:** the swiftlint custom
   > rule `birth_date_picker_is_the_shared_one` (`src/cleansia_ios/.swiftlint.yml`) — **T1-CI**, with its three
   > residuals as today.
+- 2026-11-09 — Shipped, the Android half: #371 merged to master as 08edb60f6. Customer TestFlight 1.0.0 (20), built from f4dca6526 and tagged `ios/customer/1.0.0-20`, is processed, with its dSYMs on Crashlytics. DEV still runs a server without `isNamePlaceholder` until a DEV deploy, so that build shows the hidden-name step only after one.

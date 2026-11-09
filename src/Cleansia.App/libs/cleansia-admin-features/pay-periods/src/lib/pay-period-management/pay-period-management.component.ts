@@ -77,7 +77,6 @@ export class PayPeriodManagementComponent implements OnInit {
       actions: getPayPeriodTableActions(
         {
           onViewDetails: (row) => this.viewPayPeriodDetails(row),
-          onClose: (row) => this.closePayPeriod(row),
         },
         this.translate
       ),
@@ -94,16 +93,8 @@ export class PayPeriodManagementComponent implements OnInit {
     this.router.navigate([CleansiaAdminRoute.PAY_PERIODS, payPeriod.id]);
   }
 
-  closePayPeriod(payPeriod: PayPeriodDto): void {
-    const payPeriodId = payPeriod.id;
-    if (!payPeriodId || !confirm(this.translate.instant('pay_periods.confirm_close'))) {
-      return;
-    }
-    this.facade.closePayPeriod(payPeriodId);
-  }
-
   openCreateDialog(): void {
-    this.facade.setCreateStartDate(null);
+    this.facade.prepareCreate();
     this.showCreateDialog.set(true);
   }
 

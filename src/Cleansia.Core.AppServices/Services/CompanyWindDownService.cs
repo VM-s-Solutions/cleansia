@@ -510,8 +510,8 @@ public sealed class CompanyWindDownService(
     /// <summary>
     /// The last pay period closes only once the company is deactivated, no order is open and no
     /// completed order still awaits its pay row — a period closed before that would invoice the
-    /// cleaner short. A Closed period is never re-invoiced: the body re-e-mails every cleaner, and
-    /// a row an allocation failure left uninvoiced is the admin's to settle from the pay-period tools.
+    /// cleaner short. Only an Open period is closed here: a row a close left uninvoiced, in this period
+    /// or an earlier Closed one, is the reconciliation sweep's to invoice.
     /// </summary>
     private async Task<(int Closed, string? SkippedBecause)> CloseLastPeriodAsync(Tenant tenant, CancellationToken cancellationToken)
     {
@@ -539,7 +539,6 @@ public sealed class CompanyWindDownService(
         foreach (var period in open)
         {
             await payPeriodBackgroundService.ClosePeriodAsync(period, PeriodCloseNote, openNext: false, cancellationToken);
-            await unitOfWork.CommitAsync(cancellationToken);
         }
 
         return (open.Count, null);

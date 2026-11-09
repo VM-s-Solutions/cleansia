@@ -1081,7 +1081,6 @@
         "cannot_cancel_paid": "Невозможно отменить оплаченный счёт",
         "already_cancelled": "Счёт уже отменён"
       },
-      "unpaid_invoices_exist": "Существуют неоплаченные счета",
       "pay": {
         "already_calculated": "Оплата уже рассчитана"
       },

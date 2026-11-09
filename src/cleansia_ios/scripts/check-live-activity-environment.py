@@ -43,7 +43,7 @@ def check_app(app, expected=None):
 
 def check_ipa(ipa, expected=None):
     with tempfile.TemporaryDirectory(prefix="cleansia-apns-artifact-") as directory:
-        root = Path(directory)
+        root = Path(directory).resolve()  # macOS temp folders sit under /var, a symlink to /private/var
         with zipfile.ZipFile(ipa) as archive:
             for entry in archive.infolist():
                 target = (root / entry.filename).resolve()

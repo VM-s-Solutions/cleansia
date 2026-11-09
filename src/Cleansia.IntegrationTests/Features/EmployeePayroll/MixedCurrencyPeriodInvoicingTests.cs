@@ -193,7 +193,7 @@ public class MixedCurrencyPeriodInvoicingTests(PostgresContainerFixture fixture)
         context.Countries.Add(country);
         context.Currencies.AddRange(czk, eur);
 
-        var payPeriod = PayPeriod.Create(new DateOnly(2026, 2, 1), new DateOnly(2026, 2, 15));
+        var payPeriod = PayPeriod.Create(new DateOnly(2026, 2, 1), new DateOnly(2026, 2, 15)).Close("System");
         context.Add(payPeriod);
 
         var user = User.CreateWithPassword(

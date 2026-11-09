@@ -3070,7 +3070,6 @@
     "title": "Správa platebních období",
     "description": "Spravujte platební období, uzavírejte období a sledujte platby partnerům",
     "create_new": "Vytvořit nové výplatní období",
-    "confirm_close": "Opravdu chcete uzavřít toto platební období? Tuto akci nelze vrátit zpět.",
     "filters": {
       "status": "Stav",
       "year": "Rok"
@@ -3092,7 +3091,6 @@
         "actions": "Akce"
       },
       "view_details": "Zobrazit detail",
-      "close_period": "Uzavřít období",
       "no_records": "Nebyla nalezena žádná platební období",
       "days": "dní"
     },
@@ -3115,23 +3113,20 @@
       "created_by": "Vytvořil",
       "modified_at": "Upraveno dne",
       "modified_by": "Upravil",
-      "close_period": "Uzavřít platební období",
       "not_found": "Platební období nenalezeno",
       "ops": {
         "title": "Operace vyúčtování",
+        "close_now": {
+          "action": "Uzavřít nyní",
+          "hint": "Toto období skončí dnes místo {{ end }}. Přibližně do 20 minut dostane každý uklízeč, který v něm má odměnu, fakturu e-mailem. Další období začne zítra, potrvá nastavený počet dní ({{ days }}) a připadnou do něj zakázky dokončené po uzavření. Uzavřené období nelze znovu otevřít.",
+          "reason": "Důvod (uloží se do auditního záznamu)",
+          "submit": "Uzavřít období nyní"
+        },
         "mark_paid": {
           "action": "Označit období jako zaplacené",
           "hint": "Označte toto uzavřené platební období jako zaplacené. Tím se vyúčtování dokončí.",
           "submit": "Potvrdit zaplacení",
           "success": "Platební období bylo označeno jako zaplacené"
-        },
-        "reopen": {
-          "action": "Znovu otevřít období",
-          "hint": "Znovu otevřete toto platební období. Údaje o uzavření budou vymazány.",
-          "notes": "Poznámky k otevření (volitelné)",
-          "notes_hint": "Vysvětlete, proč se období znovu otevírá...",
-          "submit": "Potvrdit otevření",
-          "success": "Platební období bylo znovu otevřeno"
         }
       }
     },
@@ -3460,10 +3455,11 @@
       "service_or_package_required": "Je vyžadována buď služba nebo balíček"
     },
     "pay_period": {
-      "already_paid": "Platební období již bylo zaplaceno",
+      "end_too_soon": "Datum konce musí být nejdříve zítra. Chcete-li období ukončit dnes, použijte „Uzavřít nyní“.",
       "has_order_pays": "Nelze smazat platební období, které má přiřazené platby objednávek",
-      "invalid_duration": "Platební období trvá přesně 14 dní: datum konce musí být 13 dní po datu začátku",
+      "invalid_duration": "Datum konce je pozdější než poslední den, do kterého může platební období trvat.",
       "not_closed": "Platební období není uzavřeno",
+      "not_started": "Toto platební období ještě nezačalo, proto ho nelze uzavřít.",
       "overlapping_period": "Platební období se překrývá s existujícím obdobím"
     },
     "payment": {
@@ -3502,8 +3498,7 @@
       "pay_period": {
         "not_found": "Platební období nenalezeno",
         "not_open": "Platební období není otevřené"
-      },
-      "unpaid_invoices_exist": "Existují nezaplacené faktury"
+      }
     },
     "promo": {
       "amount_must_be_positive": "Výše slevy musí být větší než nula.",

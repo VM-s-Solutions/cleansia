@@ -152,12 +152,16 @@ public class PayPeriodEmailLanguageTests
             .Setup(r => r.GetQueryable())
             .Returns(new[] { PayrollMockFactory.OpenPeriod() }.AsQueryable().BuildMock());
 
-        // No unpaid pays: the run stops before invoice/PDF generation and still sends the statement,
-        // which is the leg under test.
+        // One unpaid pay row and no language row: the run writes the invoice, stops before the PDF and
+        // still sends the statement, which is the leg under test.
+        var pay = PayrollMockFactory.OrderPay(basePay: 100m);
         _orderPayRepository
             .Setup(r => r.GetUnassignedForEmployeePeriodAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Array.Empty<OrderEmployeePay>());
+            .ReturnsAsync([pay]);
+        _orderPayRepository
+            .Setup(r => r.GetQueryable())
+            .Returns(new[] { pay }.AsQueryable().BuildMock());
 
         _invoiceRepository
             .Setup(r => r.GetQueryable())
@@ -167,6 +171,9 @@ public class PayPeriodEmailLanguageTests
         currency.Id = PayrollMockFactory.CurrencyId;
         _currencyRepository
             .Setup(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(currency);
+        _currencyRepository
+            .Setup(r => r.GetByIdAsync(PayrollMockFactory.CurrencyId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(currency);
 
         return new PayPeriodBackgroundService(

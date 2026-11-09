@@ -38,7 +38,7 @@ public sealed class PayPeriodEmployeeIsolationPostgresTests(PostgresContainerFix
     public Task A_Refused_Employee_Write_Is_Discarded_Before_B_And_The_Plain_Fallback(string mode) => RunAsync(mode);
 
     [Fact]
-    public Task Active_Host_Cancellation_Stops_Before_B_And_The_Parent_Close() => RunAsync("cancel");
+    public Task Active_Host_Cancellation_Stops_Before_B_With_The_Close_Already_Durable() => RunAsync("cancel");
 
     private async Task RunAsync(string mode)
     {
@@ -50,7 +50,6 @@ public sealed class PayPeriodEmployeeIsolationPostgresTests(PostgresContainerFix
             setup: services =>
             {
                 services.AddFunctionsProcessing();
-                services.Replace(ServiceDescriptor.Scoped<IEmployeeRepository, OrderedEmployees>());
                 services.AddDbContext<CleansiaDbContext>((_, options) => options.AddInterceptors(observations));
                 var pdf = new Mock<IPdfService>();
                 pdf.Setup(p => p.GenerateInvoicePdf(It.IsAny<InvoicePdfData>(), It.IsAny<CountryInvoiceContext?>(), It.IsAny<string?>()))
@@ -116,7 +115,7 @@ public sealed class PayPeriodEmployeeIsolationPostgresTests(PostgresContainerFix
                     Console.WriteLine(JsonSerializer.Serialize(new { phase = "host-cancelled", period.Status,
                         invoices = invoices.Select(i => new { i.EmployeeId, i.VariableSymbol, i.PdfBlobUrl }), observations.Rows, emails, uploads }));
                     Assert.IsAssignableFrom<OperationCanceledException>(failure);
-                    Assert.Equal(PayPeriodStatus.Open, period.Status);
+                    Assert.Equal(PayPeriodStatus.Closed, period.Status);
                     Assert.Equal("payroll-a", Assert.Single(invoices).EmployeeId);
                     Assert.Null(invoices.Single().PdfBlobUrl);
                     Assert.Empty(emails);
@@ -147,8 +146,7 @@ public sealed class PayPeriodEmployeeIsolationPostgresTests(PostgresContainerFix
                 if (mode == "cancel") return;
                 await AssertRowsAsync(context, mode, observations, emails, uploads, "final-refusal");
                 Assert.Equal(PayPeriodStatus.Closed, (await context.PayPeriods.AsNoTracking().SingleAsync(p => p.Id == PeriodId)).Status);
-                Assert.All(observations.Rows, row => Assert.Equal(PayPeriodStatus.Open, row.DurableStatus));
-                Assert.All(observations.Rows.Where(r => r.Phase == "invoice-save"), row => Assert.DoesNotContain(PayPeriodStatus.Closed, row.TrackedStatuses));
+                Assert.All(observations.Rows, row => Assert.Equal(PayPeriodStatus.Closed, row.DurableStatus));
                 Assert.All(emails.Where(e => !e.Document), e => Assert.Equal(0, e.DirtyInvoices));
                 Assert.Contains(emails, e => e.Email == "b@payroll.test" && e.Document);
                 Assert.Equal(2, observations.Rows.Count(r => r.EmployeeIds.Contains("payroll-a")));
@@ -295,10 +293,6 @@ public sealed class PayPeriodEmployeeIsolationPostgresTests(PostgresContainerFix
         }
     }
     private sealed record Observation(string Phase, PayPeriodStatus DurableStatus, PayPeriodStatus[] TrackedStatuses, string[] EmployeeIds);
-    private sealed class OrderedEmployees(CleansiaDbContext context) : EmployeeRepository(context)
-    {
-        public override IQueryable<Employee> GetQueryable() => base.GetQueryable().OrderBy(e => e.Id);
-    }
     private sealed class SuccessorReadFault
     {
         public bool Enabled { get; set; } = true;

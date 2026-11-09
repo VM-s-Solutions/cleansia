@@ -103,6 +103,9 @@ public class PayPeriodBackgroundServiceInvoiceMathTests
             .Setup(r => r.GetUnassignedForEmployeePeriodAsync(
                 employee.Id, expiredPeriod.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(pays);
+        _orderPayRepository
+            .Setup(r => r.GetQueryable())
+            .Returns(pays.AsQueryable().BuildMock());
 
         var currency = CurrencyMockFactory.Generate();
         currency.Id = PayrollMockFactory.CurrencyId;

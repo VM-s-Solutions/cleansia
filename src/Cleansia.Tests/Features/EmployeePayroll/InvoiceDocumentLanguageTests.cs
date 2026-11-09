@@ -104,6 +104,9 @@ public class InvoiceDocumentLanguageTests
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([PayrollMockFactory.OrderPay(basePay: 100m)]);
         _orderPayRepository
+            .Setup(r => r.GetQueryable())
+            .Returns(new[] { PayrollMockFactory.OrderPay(basePay: 100m) }.AsQueryable().BuildMock());
+        _orderPayRepository
             .Setup(r => r.GetByInvoiceIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([PayrollMockFactory.OrderPay(basePay: 100m)]);
 

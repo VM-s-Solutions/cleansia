@@ -10,6 +10,16 @@ import { TranslateService } from '@ngx-translate/core';
 
 export type InvoicePdfState = 'ready' | 'failed' | 'pending';
 
+export function formatPayPeriodRange(
+  startDate: Date | undefined,
+  endDate: Date | undefined,
+  lang: string | undefined
+): string {
+  return startDate && endDate
+    ? `${formatDate(startDate, lang, 'utcDate')} – ${formatDate(endDate, lang, 'utcDate')}`
+    : '';
+}
+
 export function getInvoicePdfState(
   invoice: Pick<
     EmployeeInvoiceDto | EmployeeInvoiceDetailDto,

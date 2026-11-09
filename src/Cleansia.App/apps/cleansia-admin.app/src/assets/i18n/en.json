@@ -871,6 +871,7 @@
         "search": "Search",
         "search_placeholder": "Search by invoice number or partner",
         "status": "Invoice Status",
+        "pay_period": "Pay Period",
         "currency": "Currency"
       },
       "invoice_status": {
@@ -3087,6 +3088,10 @@
       "no_records": "No pay periods found",
       "days": "days"
     },
+    "days_one": "{{count}} day",
+    "days_few": "{{count}} days",
+    "days_many": "{{count}} days",
+    "days_other": "{{count}} days",
     "detail": {
       "title": "Pay Period Details",
       "back_to_list": "Back to Pay Periods",
@@ -3098,26 +3103,35 @@
       "start_date": "Start Date",
       "end_date": "End Date",
       "duration": "Duration",
-      "days": "days",
       "closed_at": "Closed At",
       "closed_by": "Closed By",
+      "paid_at": "Paid At",
       "notes": "Notes",
       "created_at": "Created At",
       "created_by": "Created By",
       "modified_at": "Modified At",
       "modified_by": "Modified By",
       "not_found": "Pay period not found",
+      "invoices": {
+        "title": "Invoices",
+        "all": "All invoices",
+        "unpaid": "Unpaid invoices",
+        "uninvoiced_pay": "Pay items not invoiced yet",
+        "view": "View invoices"
+      },
       "ops": {
         "title": "Settlement Operations",
         "close_now": {
           "action": "Close now",
           "hint": "This period ends today instead of {{ end }}. Within about 20 minutes every cleaner with pay in it gets an invoice by e-mail. The next period starts tomorrow and runs {{ days }} days, and jobs finished after you close go into it. A closed period can't be reopened.",
+          "hint_past_end": "This period ended on {{ end }} and has not been closed yet. Within about 20 minutes every cleaner with pay in it gets an invoice by e-mail. The next period runs from {{ next }} for {{ days }} days, and jobs finished after you close go into it. A closed period can't be reopened.",
           "reason": "Reason (kept in the audit log)",
           "submit": "Close the period now"
         },
         "mark_paid": {
           "action": "Mark Period as Paid",
           "hint": "Mark this closed pay period as paid. This finalizes the settlement.",
+          "blocked": "Available once every invoice in this period is paid or cancelled and all its pay is invoiced.",
           "submit": "Confirm Mark as Paid",
           "success": "Pay period marked as paid"
         }

@@ -1,12 +1,18 @@
 import { TemplateRef } from '@angular/core';
 import { PayPeriodDto } from '@cleansia/admin-services';
 import { TableColumn, TableAction } from '@cleansia/components';
-import { formatDate } from '@cleansia/utils';
+import { formatDate, localeFor } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 
 export interface PayPeriodFilterParams {
   status?: number;
   year?: number;
+}
+
+// ngx-translate has no plurals, so the CLDR rules pick the form and the bundle holds its wording.
+export function formatPayPeriodDuration(days: number, translate: TranslateService): string {
+  const form = new Intl.PluralRules(localeFor(translate.currentLang)).select(days);
+  return translate.instant(`pay_periods.days_${form}`, { count: days });
 }
 
 export function getPayPeriodTableColumns(

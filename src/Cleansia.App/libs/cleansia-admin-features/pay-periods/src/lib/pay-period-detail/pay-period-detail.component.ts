@@ -9,7 +9,8 @@ import {
   CleansiaStatusBadgeComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
-import { CleansiaAdminRoute } from '@cleansia/services';
+import { CleansiaPermissionDirective } from '@cleansia/directives';
+import { CleansiaAdminRoute, Policy } from '@cleansia/services';
 import { TranslatePipe } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
@@ -28,6 +29,7 @@ import { PayPeriodDetailFacade } from './pay-period-detail.facade';
     CleansiaSectionComponent,
     CleansiaStatusBadgeComponent,
     ToastModule,
+    CleansiaPermissionDirective,
     AdminPayPeriodOpsComponent,
   ],
   templateUrl: './pay-period-detail.component.html',
@@ -40,6 +42,7 @@ export class PayPeriodDetailComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
 
   protected readonly PayPeriodStatus = PayPeriodStatus;
+  protected readonly Policy = Policy;
 
   ngOnInit(): void {
     const payPeriodId = this.route.snapshot.paramMap.get('id');
@@ -64,6 +67,16 @@ export class PayPeriodDetailComponent implements OnInit, OnDestroy {
 
   formatDateTime(date: string | Date | null | undefined): string {
     return this.facade.formatDateTime(date);
+  }
+
+  formatDuration(days: number): string {
+    return this.facade.formatDuration(days);
+  }
+
+  viewInvoices(payPeriodId: string | undefined): void {
+    this.router.navigate([CleansiaAdminRoute.INVOICE_MANAGEMENT], {
+      queryParams: { payPeriodId },
+    });
   }
 
   onOpsChanged(): void {

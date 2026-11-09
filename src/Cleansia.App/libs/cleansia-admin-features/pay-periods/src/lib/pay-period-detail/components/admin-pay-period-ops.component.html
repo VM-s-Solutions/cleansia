@@ -11,7 +11,7 @@
 @if (facade.activePanel() === 'closeNow') {
 <div class="detail-actions__panel">
   <p class="detail-actions__hint">
-    {{ 'pay_periods.detail.ops.close_now.hint' | translate: closeNowHint() }}
+    {{ closeNowHint().key | translate: closeNowHint().params }}
   </p>
   <cleansia-textarea
     [label]="'pay_periods.detail.ops.close_now.reason' | translate"
@@ -36,12 +36,17 @@
 }
 
 @if (isClosed()) {
+<ng-container *cleansiaPermission="Policy.CanMarkPayPeriodPaid">
 <cleansia-button
   [label]="'pay_periods.detail.ops.mark_paid.action' | translate"
   icon="pi pi-money-bill"
   [outlined]="facade.activePanel() !== 'markPaid'"
+  [disabled]="!canMarkPaid()"
   (onClick)="togglePanel('markPaid')"
 />
+@if (!canMarkPaid()) {
+<p class="detail-actions__hint">{{ 'pay_periods.detail.ops.mark_paid.blocked' | translate }}</p>
+}
 
 @if (facade.activePanel() === 'markPaid') {
 <div class="detail-actions__panel">
@@ -59,4 +64,5 @@
   />
 </div>
 }
+</ng-container>
 }

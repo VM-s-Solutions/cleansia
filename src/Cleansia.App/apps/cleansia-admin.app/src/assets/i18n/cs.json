@@ -871,6 +871,7 @@
         "search": "Vyhledávání",
         "search_placeholder": "Hledat dle čísla faktury nebo partnera",
         "status": "Stav faktury",
+        "pay_period": "Platební období",
         "currency": "Měna"
       },
       "invoice_status": {
@@ -3087,6 +3088,10 @@
       "no_records": "Nebyla nalezena žádná platební období",
       "days": "dní"
     },
+    "days_one": "{{count}} den",
+    "days_few": "{{count}} dny",
+    "days_many": "{{count}} dne",
+    "days_other": "{{count}} dní",
     "detail": {
       "title": "Detail platebního období",
       "back_to_list": "Zpět na platební období",
@@ -3098,26 +3103,35 @@
       "start_date": "Datum začátku",
       "end_date": "Datum konce",
       "duration": "Délka trvání",
-      "days": "dní",
       "closed_at": "Uzavřeno dne",
       "closed_by": "Uzavřel",
+      "paid_at": "Zaplaceno dne",
       "notes": "Poznámky",
       "created_at": "Vytvořeno dne",
       "created_by": "Vytvořil",
       "modified_at": "Upraveno dne",
       "modified_by": "Upravil",
       "not_found": "Platební období nenalezeno",
+      "invoices": {
+        "title": "Faktury",
+        "all": "Všechny faktury",
+        "unpaid": "Nezaplacené faktury",
+        "uninvoiced_pay": "Položky odměn bez faktury",
+        "view": "Zobrazit faktury"
+      },
       "ops": {
         "title": "Operace vyúčtování",
         "close_now": {
           "action": "Uzavřít nyní",
           "hint": "Toto období skončí dnes místo {{ end }}. Přibližně do 20 minut dostane každý uklízeč, který v něm má odměnu, fakturu e-mailem. Další období začne zítra, potrvá nastavený počet dní ({{ days }}) a připadnou do něj zakázky dokončené po uzavření. Uzavřené období nelze znovu otevřít.",
+          "hint_past_end": "Toto období skončilo {{ end }} a ještě nebylo uzavřeno. Přibližně do 20 minut dostane každý uklízeč, který v něm má odměnu, fakturu e-mailem. Další období začíná {{ next }}, potrvá nastavený počet dní ({{ days }}) a připadnou do něj zakázky dokončené po uzavření. Uzavřené období nelze znovu otevřít.",
           "reason": "Důvod (uloží se do auditního záznamu)",
           "submit": "Uzavřít období nyní"
         },
         "mark_paid": {
           "action": "Označit období jako zaplacené",
           "hint": "Označte toto uzavřené platební období jako zaplacené. Tím se vyúčtování dokončí.",
+          "blocked": "Dostupné, až budou všechny faktury tohoto období zaplacené nebo zrušené a všechny jeho odměny vyfakturované.",
           "submit": "Potvrdit zaplacení",
           "success": "Platební období bylo označeno jako zaplacené"
         }

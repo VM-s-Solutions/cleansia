@@ -871,6 +871,7 @@
         "search": "Hľadať",
         "search_placeholder": "Hľadať podľa čísla faktúry alebo partnera",
         "status": "Stav faktúry",
+        "pay_period": "Výplatné obdobie",
         "currency": "Mena"
       },
       "invoice_status": {
@@ -3087,6 +3088,10 @@
       "no_records": "Žiadne výplatné obdobia",
       "days": "dní"
     },
+    "days_one": "{{count}} deň",
+    "days_few": "{{count}} dni",
+    "days_many": "{{count}} dňa",
+    "days_other": "{{count}} dní",
     "detail": {
       "title": "Detail výplatného obdobia",
       "back_to_list": "Späť na výplatné obdobia",
@@ -3098,26 +3103,35 @@
       "start_date": "Dátum začiatku",
       "end_date": "Dátum konca",
       "duration": "Trvanie",
-      "days": "dní",
       "closed_at": "Uzavreté dňa",
       "closed_by": "Uzavrel",
+      "paid_at": "Zaplatené dňa",
       "notes": "Poznámky",
       "created_at": "Vytvorené dňa",
       "created_by": "Vytvoril",
       "modified_at": "Upravené dňa",
       "modified_by": "Upravil",
       "not_found": "Výplatné obdobie nebolo nájdené",
+      "invoices": {
+        "title": "Faktúry",
+        "all": "Všetky faktúry",
+        "unpaid": "Nezaplatené faktúry",
+        "uninvoiced_pay": "Položky odmien bez faktúry",
+        "view": "Zobraziť faktúry"
+      },
       "ops": {
         "title": "Operácie vyúčtovania",
         "close_now": {
           "action": "Uzavrieť teraz",
           "hint": "Toto obdobie sa skončí dnes namiesto {{ end }}. Približne do 20 minút dostane každý upratovač, ktorý v ňom má odmenu, faktúru e-mailom. Ďalšie obdobie sa začne zajtra, potrvá nastavený počet dní ({{ days }}) a pripadnú doň zákazky dokončené po uzavretí. Uzavreté obdobie nemožno znova otvoriť.",
+          "hint_past_end": "Toto obdobie sa skončilo {{ end }} a ešte nebolo uzavreté. Približne do 20 minút dostane každý upratovač, ktorý v ňom má odmenu, faktúru e-mailom. Ďalšie obdobie sa začína {{ next }}, potrvá nastavený počet dní ({{ days }}) a pripadnú doň zákazky dokončené po uzavretí. Uzavreté obdobie nemožno znova otvoriť.",
           "reason": "Dôvod (uloží sa do auditného záznamu)",
           "submit": "Uzavrieť obdobie teraz"
         },
         "mark_paid": {
           "action": "Označiť obdobie ako zaplatené",
           "hint": "Označte toto uzavreté výplatné obdobie ako zaplatené. Tým sa vyúčtovanie dokončí.",
+          "blocked": "Dostupné, keď budú všetky faktúry tohto obdobia zaplatené alebo zrušené a všetky jeho odmeny vyfakturované.",
           "submit": "Potvrdiť zaplatenie",
           "success": "Výplatné obdobie bolo označené ako zaplatené"
         }

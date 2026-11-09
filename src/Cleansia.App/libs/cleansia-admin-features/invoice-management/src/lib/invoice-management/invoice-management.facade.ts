@@ -4,16 +4,27 @@ import {
   AdminClient,
   EmployeeInvoiceDto,
   EmployeeInvoiceStatus,
+  PayPeriodDto,
   RegenerateInvoicePdfCommand,
   SortDefinition,
   SortDirection,
 } from '@cleansia/admin-services';
-import { FilterChip, FilterDrawerState, PaginationState, SortEvent } from '@cleansia/components';
+import {
+  FilterChip,
+  FilterDrawerState,
+  ICleansiaSelectOption,
+  PaginationState,
+  SortEvent,
+} from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { SnackbarService } from '@cleansia/services';
 import { currentLanguage } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
+import { formatPayPeriodRange } from './invoice-management.models';
+
+// shortcut: the picker lists the newest 1000 periods (38 years of 14-day ones); page it if a company outgrows that.
+const PAY_PERIOD_OPTIONS_LIMIT = 1000;
 
 export interface InvoiceFilterParams {
   statuses?: EmployeeInvoiceStatus[];
@@ -51,8 +62,18 @@ export class InvoiceManagementFacade extends UnsubscribeControlDirective {
       value: status,
     }));
   });
+  readonly payPeriods = signal<PayPeriodDto[]>([]);
+  readonly payPeriodOptions = computed<ICleansiaSelectOption[]>(() => {
+    const lang = this.lang();
+    return this.payPeriods().flatMap((period) =>
+      period.id
+        ? [{ label: formatPayPeriodRange(period.startDate, period.endDate, lang), value: period.id }]
+        : []
+    );
+  });
   readonly filterForm = inject(FormBuilder).group({
     status: [[] as EmployeeInvoiceStatus[]],
+    payPeriodId: [null as string | null],
     currencyId: [null as string | null],
   });
   readonly filters = new FilterDrawerState({
@@ -71,6 +92,15 @@ export class InvoiceManagementFacade extends UnsubscribeControlDirective {
             },
           ]
         : []),
+      ...(value.payPeriodId
+        ? [
+            {
+              key: 'payPeriodId',
+              label: this.translate.instant('pages.invoice_management.filters.pay_period'),
+              value: this.payPeriodOptions().find((o) => o.value === value.payPeriodId)?.label ?? '',
+            },
+          ]
+        : []),
       ...(value.currencyId
         ? [
             {
@@ -84,6 +114,7 @@ export class InvoiceManagementFacade extends UnsubscribeControlDirective {
     apply: (value) =>
       this.applyFilter({
         statuses: value.status?.length ? value.status : undefined,
+        payPeriodId: value.payPeriodId || undefined,
         currencyId: value.currencyId || undefined,
       }),
   });
@@ -111,6 +142,27 @@ export class InvoiceManagementFacade extends UnsubscribeControlDirective {
           )
         );
       });
+  }
+
+  loadPayPeriods(): void {
+    this.adminClient.adminPayPeriodClient
+      .getPaged(
+        undefined,
+        undefined,
+        [new SortDefinition({ field: 'startDate', direction: SortDirection.Descending })],
+        0,
+        PAY_PERIOD_OPTIONS_LIMIT
+      )
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => of(null))
+      )
+      .subscribe((response) => this.payPeriods.set(response?.data ?? []));
+  }
+
+  // The drawer applies a patched filter once it settles, and that apply is the list's first load.
+  showPayPeriod(payPeriodId: string): void {
+    this.filterForm.patchValue({ payPeriodId });
   }
 
   loadInvoices(): void {

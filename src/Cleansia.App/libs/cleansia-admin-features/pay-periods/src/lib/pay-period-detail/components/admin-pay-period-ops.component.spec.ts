@@ -118,7 +118,7 @@ describe('AdminPayPeriodOpsComponent', () => {
 
   beforeEach(async () => {
     facade = new FacadeStub();
-    grantedPolicies = new Set([Policy.CanClosePayPeriod]);
+    grantedPolicies = new Set([Policy.CanClosePayPeriod, Policy.CanMarkPayPeriodPaid]);
 
     await TestBed.configureTestingModule({
       imports: [AdminPayPeriodOpsComponent, TranslateModule.forRoot()],
@@ -154,10 +154,20 @@ describe('AdminPayPeriodOpsComponent', () => {
   }
 
   function buttonLabels(): string[] {
+    return buttons().map((button) => button.label());
+  }
+
+  function buttons(): ButtonStub[] {
     return fixture.debugElement
       .queryAll(By.directive(ButtonStub))
-      .map((b) => (b.componentInstance as ButtonStub).label());
+      .map((b) => b.componentInstance as ButtonStub);
   }
+
+  function text(): string {
+    return (fixture.nativeElement as HTMLElement).textContent ?? '';
+  }
+
+  afterEach(() => jest.useRealTimers());
 
   it('uses OnPush change detection', () => {
     const meta = (
@@ -180,6 +190,31 @@ describe('AdminPayPeriodOpsComponent', () => {
     grantedPolicies.clear();
     setPayPeriod(makeOpenPayPeriod('2026-01-14'));
     expect(buttonLabels()).toEqual([]);
+  });
+
+  it('hides Mark paid from a session that may not mark a period paid', () => {
+    grantedPolicies.delete(Policy.CanMarkPayPeriodPaid);
+    setPayPeriod(makePayPeriod({}));
+    expect(buttonLabels()).toEqual([]);
+  });
+
+  it.each([
+    { unpaidInvoiceCount: 1, uninvoicedPayCount: 0 },
+    { unpaidInvoiceCount: 0, uninvoicedPayCount: 2 },
+  ])('disables Mark paid and says why while the counts read %o', (counts) => {
+    setPayPeriod(makePayPeriod({ invoiceCount: 3, ...counts }));
+
+    expect(buttons()[0].disabled()).toBe(true);
+    expect(text()).toContain('pay_periods.detail.ops.mark_paid.blocked');
+  });
+
+  it('enables Mark paid once every invoice is paid and all pay is invoiced', () => {
+    setPayPeriod(
+      makePayPeriod({ invoiceCount: 3, unpaidInvoiceCount: 0, uninvoicedPayCount: 0 })
+    );
+
+    expect(buttons()[0].disabled()).toBe(false);
+    expect(text()).not.toContain('pay_periods.detail.ops.mark_paid.blocked');
   });
 
   it('renders nothing for a paid period', () => {
@@ -206,14 +241,32 @@ describe('AdminPayPeriodOpsComponent', () => {
   });
 
   it('names the end it replaces and the configured length in the hint', () => {
+    jest.useFakeTimers({ now: new Date('2026-01-10T12:00:00Z') });
     TestBed.inject(TranslateService).use('cs');
 
     setPayPeriod(makeOpenPayPeriod('2026-01-14'));
-    expect(component.closeNowHint().end).toMatch(/^14\.\s1\.\s2026$/);
-    expect(component.closeNowHint().days).toBe(14);
+    expect(component.closeNowHint().key).toBe('pay_periods.detail.ops.close_now.hint');
+    expect(component.closeNowHint().params.end).toMatch(/^14\.\s1\.\s2026$/);
+    expect(component.closeNowHint().params.days).toBe(14);
 
     setPayPeriod(makeOpenPayPeriod('2026-01-03'));
-    expect(component.closeNowHint().days).toBe(3);
+    expect(component.closeNowHint().params.days).toBe(3);
+  });
+
+  // Past its end the server keeps the end and starts the next period the day after it, so "ends
+  // today" and "starts tomorrow" would both be wrong.
+  it('says the period already ended, and when the next one starts, once its end has passed', () => {
+    TestBed.inject(TranslateService).use('cs');
+
+    jest.useFakeTimers({ now: new Date('2026-01-14T23:59:00Z') });
+    setPayPeriod(makeOpenPayPeriod('2026-01-14'));
+    expect(component.closeNowHint().key).toBe('pay_periods.detail.ops.close_now.hint');
+
+    jest.setSystemTime(new Date('2026-01-15T01:00:00Z'));
+    setPayPeriod(makeOpenPayPeriod('2026-01-14'));
+    expect(component.closeNowHint().key).toBe('pay_periods.detail.ops.close_now.hint_past_end');
+    expect(component.closeNowHint().params.end).toMatch(/^14\.\s1\.\s2026$/);
+    expect(component.closeNowHint().params.next).toMatch(/^15\.\s1\.\s2026$/);
   });
 
   it('delegates the reason and the close, and re-loads when the close lands', () => {

@@ -4,8 +4,11 @@ import {
   AdminCurrencyListItem,
   EmployeeInvoiceDto,
   PagedDataOfEmployeeInvoiceDto,
+  PagedDataOfPayPeriodDto,
   RegenerateInvoicePdfCommand,
   RegenerateInvoicePdfResponse,
+  SortDefinition,
+  SortDirection,
 } from '@cleansia/admin-services';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
@@ -20,6 +23,7 @@ describe('InvoiceManagementFacade', () => {
     regeneratePdf: jest.Mock;
   };
   let getOverviewMock: jest.Mock;
+  let getPagedPeriodsMock: jest.Mock;
   let snackbar: {
     showSuccess: jest.Mock;
     showSuccessTranslated: jest.Mock;
@@ -27,6 +31,7 @@ describe('InvoiceManagementFacade', () => {
     showErrorTranslated: jest.Mock;
   };
 
+  const PAY_PERIOD_SLOT = 1;
   const CURRENCY_SLOT = 8;
 
   const emptyPage = PagedDataOfEmployeeInvoiceDto.fromJS({
@@ -48,6 +53,18 @@ describe('InvoiceManagementFacade', () => {
       regeneratePdf: jest.fn(),
     };
     getOverviewMock = jest.fn().mockReturnValue(of([]));
+    getPagedPeriodsMock = jest.fn().mockReturnValue(
+      of(
+        PagedDataOfPayPeriodDto.fromJS({
+          data: [
+            { id: 'period-2', startDate: '2026-11-15', endDate: '2026-11-28' },
+            { id: 'period-1', startDate: '2026-11-01', endDate: '2026-11-14' },
+            { startDate: '2026-10-18', endDate: '2026-10-31' },
+          ],
+          total: 3,
+        })
+      )
+    );
     snackbar = {
       showSuccess: jest.fn(),
       showSuccessTranslated: jest.fn(),
@@ -63,6 +80,7 @@ describe('InvoiceManagementFacade', () => {
           useValue: {
             adminInvoiceClient: invoiceClient,
             adminCurrencyClient: { getOverview: getOverviewMock },
+            adminPayPeriodClient: { getPaged: getPagedPeriodsMock },
           },
         },
         { provide: SnackbarService, useValue: snackbar },
@@ -209,5 +227,69 @@ describe('InvoiceManagementFacade', () => {
       { id: 'cur-czk', code: 'CZK', isDefault: true },
       { id: 'cur-eur', code: 'EUR', isDefault: false },
     ]);
+  });
+
+  describe('the pay period filter', () => {
+    afterEach(() => jest.useRealTimers());
+
+    it('lists the periods newest first, each named by its dates in the session language', () => {
+      facade.loadPayPeriods();
+
+      expect(getPagedPeriodsMock).toHaveBeenCalledWith(
+        undefined,
+        undefined,
+        [new SortDefinition({ field: 'startDate', direction: SortDirection.Descending })],
+        0,
+        1000
+      );
+      expect(facade.payPeriodOptions()).toEqual([
+        { label: '15. 11. 2026 – 28. 11. 2026', value: 'period-2' },
+        { label: '1. 11. 2026 – 14. 11. 2026', value: 'period-1' },
+      ]);
+    });
+
+    it('sends the chosen period in its own slot, names it in a chip, and clears it with the chip', () => {
+      jest.useFakeTimers();
+      facade.loadPayPeriods();
+
+      facade.filterForm.patchValue({ payPeriodId: 'period-1' });
+      jest.advanceTimersByTime(500);
+
+      expect(invoiceClient.getPaged.mock.lastCall?.[PAY_PERIOD_SLOT]).toBe('period-1');
+      expect(facade.filters.chips()).toEqual([
+        {
+          key: 'payPeriodId',
+          label: 'pages.invoice_management.filters.pay_period',
+          value: '1. 11. 2026 – 14. 11. 2026',
+        },
+      ]);
+
+      facade.filters.removeChip('payPeriodId');
+
+      expect(invoiceClient.getPaged.mock.lastCall?.[PAY_PERIOD_SLOT]).toBeUndefined();
+      expect(facade.filters.chips()).toEqual([]);
+    });
+
+    // The period page's View invoices link opens the list here; an unfiltered first load would show
+    // every period's invoices until the filter landed.
+    it('opens on one period with its first and only load already filtered to it', () => {
+      jest.useFakeTimers();
+
+      facade.showPayPeriod('period-1');
+      expect(invoiceClient.getPaged).not.toHaveBeenCalled();
+      jest.advanceTimersByTime(500);
+
+      expect(invoiceClient.getPaged).toHaveBeenCalledTimes(1);
+      expect(invoiceClient.getPaged.mock.lastCall?.[PAY_PERIOD_SLOT]).toBe('period-1');
+      expect(facade.filterForm.value.payPeriodId).toBe('period-1');
+    });
+
+    it('offers no period when the read fails', () => {
+      getPagedPeriodsMock.mockReturnValue(throwError(() => new Error('boom')));
+
+      facade.loadPayPeriods();
+
+      expect(facade.payPeriodOptions()).toEqual([]);
+    });
   });
 });

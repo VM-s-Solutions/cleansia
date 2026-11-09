@@ -21,20 +21,16 @@
     @let payPeriod = facade.payPeriod()!;
     <div class="detail-identity">
       <div class="detail-identity__row">
-        <span class="detail-identity__name">{{ payPeriod.periodLabel || '-' }}</span>
+        <span class="detail-identity__name">{{ formatDate(payPeriod.startDate) }} – {{ formatDate(payPeriod.endDate) }}</span>
         <div class="detail-identity__badges">
           <cleansia-status-badge kind="payPeriod" [value]="payPeriod.status" />
         </div>
       </div>
       <div class="detail-identity__meta">
         <span class="detail-identity__meta-item">
-          <i class="pi pi-calendar"></i>
-          {{ formatDate(payPeriod.startDate) }} – {{ formatDate(payPeriod.endDate) }}
-        </span>
-        <span class="detail-identity__meta-item">
           <i class="pi pi-clock"></i>
           {{ 'pay_periods.detail.duration' | translate }}
-          <strong>{{ payPeriod.durationDays || '0' }} {{ 'pay_periods.detail.days' | translate }}</strong>
+          <strong>{{ formatDuration(payPeriod.durationDays) }}</strong>
         </span>
       </div>
     </div>
@@ -50,6 +46,12 @@
           <span class="detail-grid__label">{{ 'pay_periods.detail.closed_by' | translate }}</span>
           <span class="detail-grid__value">{{ payPeriod.closedBy || '-' }}</span>
         </div>
+        @if (payPeriod.paidAt) {
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pay_periods.detail.paid_at' | translate }}</span>
+          <span class="detail-grid__value">{{ formatDateTime(payPeriod.paidAt) }}</span>
+        </div>
+        }
         @if (payPeriod.notes) {
         <div class="detail-grid__item detail-grid__item--wide">
           <span class="detail-grid__label">{{ 'pay_periods.detail.notes' | translate }}</span>
@@ -59,6 +61,33 @@
       </div>
     </cleansia-section>
     }
+
+    <cleansia-section [title]="'pay_periods.detail.invoices.title' | translate">
+      <ng-container section-actions>
+        <cleansia-button
+          *cleansiaPermission="Policy.CanViewPagedInvoicesAdmin"
+          [label]="'pay_periods.detail.invoices.view' | translate"
+          icon="pi pi-file"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="viewInvoices(payPeriod.id)"
+        />
+      </ng-container>
+      <div class="detail-grid">
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pay_periods.detail.invoices.all' | translate }}</span>
+          <span class="detail-grid__value">{{ payPeriod.invoiceCount ?? '-' }}</span>
+        </div>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pay_periods.detail.invoices.unpaid' | translate }}</span>
+          <span class="detail-grid__value">{{ payPeriod.unpaidInvoiceCount ?? '-' }}</span>
+        </div>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pay_periods.detail.invoices.uninvoiced_pay' | translate }}</span>
+          <span class="detail-grid__value">{{ payPeriod.uninvoicedPayCount ?? '-' }}</span>
+        </div>
+      </div>
+    </cleansia-section>
 
     @if (
       payPeriod.status === PayPeriodStatus[PayPeriodStatus.Open] ||

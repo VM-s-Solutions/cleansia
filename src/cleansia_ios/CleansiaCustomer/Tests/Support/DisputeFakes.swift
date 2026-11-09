@@ -31,7 +31,7 @@ final class FakeDisputeClient: DisputeClient, @unchecked Sendable {
     private(set) var uploadedDisputeIds: [String] = []
 
     /// Run while the call is in flight, so a test can observe the view model mid-request.
-    var onCreate: (@MainActor () -> Void)?
+    var onCreate: (@MainActor () async -> Void)?
     var onUpload: (@MainActor () -> Void)?
 
     var holdPages = false

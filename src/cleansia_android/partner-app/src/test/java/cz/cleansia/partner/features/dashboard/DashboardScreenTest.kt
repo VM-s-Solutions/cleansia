@@ -1,6 +1,7 @@
 package cz.cleansia.partner.features.dashboard
 
 import java.io.File
+import java.text.DecimalFormatSymbols
 import java.util.Locale
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -108,6 +109,25 @@ class DashboardScreenTest {
                 // formatter turns into a space.
                 assertEquals(tag, "3 609 Kč", figure.replace('\u00A0', ' ').replace('\u202F', ' '))
             }
+        } finally {
+            Locale.setDefault(original)
+        }
+    }
+
+    /** Whole units in each language the app ships, an English comma drawn as a space; nothing earned reads the fallback. */
+    @Test
+    fun `a dashboard figure is a whole unit and an English comma is drawn as a space`() {
+        val original = Locale.getDefault()
+        try {
+            for (tag in listOf("en-US", "cs-CZ", "sk-SK", "uk-UA", "ru-RU")) {
+                val locale = Locale.forLanguageTag(tag)
+                Locale.setDefault(locale)
+                val group = DecimalFormatSymbols.getInstance(locale).groupingSeparator.let { if (it == ',') ' ' else it }
+                assertEquals(tag, "1${group}276 Kč", formatMoneyWithSymbol(1275.5, "Kč", fallback = "—"))
+                listOf(null, 0.0, -5.0).forEach { assertEquals(tag, "—", formatMoneyWithSymbol(it, "Kč", fallback = "—")) }
+            }
+            Locale.setDefault(Locale.US)
+            assertEquals("12 345 Kč", formatMoneyWithSymbol(12_345.4, "Kč", fallback = "—"))
         } finally {
             Locale.setDefault(original)
         }

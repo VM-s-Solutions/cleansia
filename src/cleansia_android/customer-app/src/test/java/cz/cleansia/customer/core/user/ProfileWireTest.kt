@@ -203,7 +203,8 @@ class ProfileWireTest {
               "memberSince": "2025-02-03T10:00:00Z",
               "totalBookings": 17,
               "totalSavings": 4820.50,
-              "savingsCurrencyCode": "CZK"
+              "savingsCurrencyCode": "CZK",
+              "isNamePlaceholder": true
             }
         """.trimIndent()
 
@@ -223,6 +224,7 @@ class ProfileWireTest {
             "totalBookings",
             "totalSavings",
             "savingsCurrencyCode",
+            "isNamePlaceholder",
         )
 
         val PROFILE_NULLABLE_FIELDS = listOf(

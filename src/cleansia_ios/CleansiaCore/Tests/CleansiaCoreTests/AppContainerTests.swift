@@ -110,45 +110,6 @@ final class AppEnvironmentTests: XCTestCase {
     }
 }
 
-final class LazyRefreshSessionBoundaryTests: XCTestCase {
-    func testRefreshSessionIsBuiltSeparatelyAndLazily() {
-        var noAuthBuildCount = 0
-        var authBuildCount = 0
-
-        let boundary = AuthNetworkBoundary(
-            makeRefreshSession: {
-                noAuthBuildCount += 1
-                return ()
-            },
-            makeAuthedSession: {
-                authBuildCount += 1
-                return ()
-            }
-        )
-
-        XCTAssertEqual(noAuthBuildCount, 0)
-        XCTAssertEqual(authBuildCount, 0)
-
-        _ = boundary.refreshSession
-        _ = boundary.refreshSession
-        _ = boundary.authedSession
-        _ = boundary.authedSession
-
-        XCTAssertEqual(noAuthBuildCount, 1)
-        XCTAssertEqual(authBuildCount, 1)
-    }
-
-    func testRefreshAndAuthedSessionsAreDistinctInstances() {
-        final class Session {}
-        let boundary = AuthNetworkBoundary(
-            makeRefreshSession: { Session() },
-            makeAuthedSession: { Session() }
-        )
-
-        XCTAssertFalse(boundary.refreshSession === boundary.authedSession)
-    }
-}
-
 @MainActor
 final class BaseAppContainerTests: XCTestCase {
     private func makeContainer(

@@ -165,10 +165,10 @@
       },
       {
         "package": "Stripe",
-        "repositoryURL": "https://github.com/stripe/stripe-ios",
+        "repositoryURL": "https://github.com/stripe/stripe-ios-spm",
         "state": {
           "branch": null,
-          "revision": "55dbee993d8a4df8977f2c21dd07ad35e7cfd50e",
+          "revision": "d91001846fb3e2fa751abbaaa9339950426b381c",
           "version": "25.17.0"
         }
       },

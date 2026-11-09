@@ -2,21 +2,7 @@ import CleansiaCore
 import CleansiaCustomerApi
 import Foundation
 
-struct UserDevice: Equatable, Identifiable {
-    let id: String
-    let platform: String?
-    let deviceId: String?
-    let lastActiveAt: Date?
-    let isCurrent: Bool
-}
-
-protocol CustomerDevicesClient: AnyObject {
-    var currentDeviceId: String { get }
-    func myDevices() async -> ApiResult<[UserDevice]>
-    func revoke(rowId: String) async -> ApiResult<Void>
-}
-
-final class LiveCustomerDevicesClient: CustomerDevicesClient {
+final class LiveCustomerDevicesClient: DevicesClient {
     private let deviceIdProvider: DeviceIdProviding
 
     init(deviceIdProvider: DeviceIdProviding) {

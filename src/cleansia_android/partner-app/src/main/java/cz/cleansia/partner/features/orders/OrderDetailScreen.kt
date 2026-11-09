@@ -73,6 +73,7 @@ import cz.cleansia.core.ui.components.CleansiaTextLink
 import cz.cleansia.core.ui.components.OrderTimelinePoint
 import cz.cleansia.core.ui.components.OrderTimelineSegment
 import cz.cleansia.core.ui.components.SwipeToConfirmButton
+import cz.cleansia.core.ui.components.slideSemantics
 import cz.cleansia.core.ui.theme.capBandAligned
 import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.R
@@ -413,12 +414,12 @@ internal fun OrderDetailContent(
     notes: @Composable (readOnly: Boolean, canAdd: Boolean) -> Unit,
 ) {
     val lists = DetailLists(ownRows, openRows, now, onOpenOrder, onShowAvailable, areaCentre)
-    when (uiState) {
+    val page = when (uiState) {
         is OrderDetailUiState.Loaded -> {
             val order = uiState.order
             when {
-                order.orderStatus.toOrderStatus() == OrderStatus._6 -> CancelledDetail(order, boardRow, now, lists, onNavigateBack, onOpenEarnings)
-                order.isAssignedToCurrentUser == true -> OwnJobDetail(
+                order.orderStatus.toOrderStatus() == OrderStatus._6 -> cancelledDetail(order, boardRow, now, lists, onOpenEarnings)
+                order.isAssignedToCurrentUser == true -> ownJobDetail(
                     order = order,
                     now = now,
                     myEmployeeId = myEmployeeId,
@@ -428,8 +429,6 @@ internal fun OrderDetailContent(
                     contractStanding = contractStanding,
                     completionStep = completionStep,
                     checkedIds = checkedIds,
-                    areaCentre = areaCentre,
-                    onNavigateBack = onNavigateBack,
                     onOpenEarnings = onOpenEarnings,
                     onToggleChecklistItem = onToggleChecklistItem,
                     onOpenContract = onOpenContract,
@@ -447,17 +446,42 @@ internal fun OrderDetailContent(
                     onDeletePhoto = onDeletePhoto,
                     notes = notes,
                 )
-                else -> NotTakenDetail(order, boardRow, now, lists, inFlight, preferredOffer, onNavigateBack, onTake, onDeclineOffer)
+                else -> notTakenDetail(order, boardRow, now, lists, inFlight, preferredOffer, onTake, onDeclineOffer)
             }
         }
-        OrderDetailUiState.Loading -> boardRow?.let { RowDetail(it, lists, preferredOffer, inFlight, now, failed = false, onNavigateBack, onRetry, onDeclineOffer) }
-            ?: NoRowLoading(onNavigateBack)
-        is OrderDetailUiState.Error -> boardRow?.takeUnless { uiState.refused }?.let { RowDetail(it, lists, preferredOffer, inFlight, now, failed = true, onNavigateBack, onRetry, onDeclineOffer) }
-            ?: NoRowError(gone = false, lists, onNavigateBack, onRetry)
-        OrderDetailUiState.Gone -> NoRowError(gone = true, lists, onNavigateBack, onRetry)
-        is OrderDetailUiState.Removed -> RemovedPage(uiState.reason, removedJob, lists, onNavigateBack, onCheckAgain)
+        OrderDetailUiState.Loading -> boardRow?.let { rowDetail(it, lists, preferredOffer, inFlight, now, failed = false, onRetry, onDeclineOffer) }
+            ?: noRowLoading()
+        is OrderDetailUiState.Error -> boardRow?.takeUnless { uiState.refused }?.let { rowDetail(it, lists, preferredOffer, inFlight, now, failed = true, onRetry, onDeclineOffer) }
+            ?: noRowError(gone = false, lists, onRetry)
+        OrderDetailUiState.Gone -> noRowError(gone = true, lists, onRetry)
+        is OrderDetailUiState.Removed -> removedPage(uiState.reason, removedJob, lists, onCheckAgain)
     }
+    // One frame for every state, so a job opened from the board keeps its map, its sheet and its figure when the rest
+    // of it loads, instead of being built a second time.
+    val mapMode = page.mapMode?.takeIf { canDrawMap() }
+    JobDetailFrame(
+        onNavigateBack = onNavigateBack,
+        mascot = page.mascot,
+        pinned = page.pinned,
+        spokenTitle = page.spokenTitle,
+        map = if (mapMode == null) null else { { band, sheetTop -> JobBandMap(mapMode, areaCentre, page.street, band, sheetTop) } },
+        cleaning = page.cleaning,
+        head = page.head,
+        content = page.content,
+    )
 }
+
+/** What a state puts in the page's frame: the figure, the move pinned under the thumb, the map and the street on its pin, the head and the rest. */
+private class DetailPage(
+    @DrawableRes val mascot: Int?,
+    val pinned: (@Composable () -> Unit)?,
+    val mapMode: JobMapMode? = null,
+    val street: String? = null,
+    val cleaning: Boolean = false,
+    val spokenTitle: String? = null,
+    val head: (@Composable (PuckClearance) -> Unit)? = null,
+    val content: @Composable ColumnScope.(PuckClearance) -> Unit,
+)
 
 /** Her own rows and the open jobs as the page holds them, where their rows lead, and where the job's area lies. */
 private class DetailLists(
@@ -470,7 +494,7 @@ private class DetailLists(
 )
 
 @Composable
-private fun OwnJobDetail(
+private fun ownJobDetail(
     order: OrderItem,
     now: Instant,
     myEmployeeId: String?,
@@ -480,8 +504,6 @@ private fun OwnJobDetail(
     contractStanding: WorkContractStanding,
     completionStep: CompletionStep,
     checkedIds: Set<String>,
-    areaCentre: MapPoint?,
-    onNavigateBack: () -> Unit,
     onOpenEarnings: () -> Unit,
     onToggleChecklistItem: (String, Boolean) -> Unit,
     onOpenContract: (WorkContractRequest) -> Unit,
@@ -498,7 +520,7 @@ private fun OwnJobDetail(
     onAddPhoto: (PhotoType) -> Unit,
     onDeletePhoto: (String) -> Unit,
     notes: @Composable (readOnly: Boolean, canAdd: Boolean) -> Unit,
-) {
+): DetailPage {
     val rules = OrdersBoardRules
     val zone = ZoneId.systemDefault()
     val locale = appLocale()
@@ -684,18 +706,10 @@ private fun OwnJobDetail(
     }
 
     val precise = location as? OrderLocation.Precise
-    JobDetailFrame(
-        onNavigateBack = onNavigateBack,
+    return DetailPage(
         mascot = mascot,
-        map = { band, sheetTop ->
-            JobBandMap(
-                mode = jobMapMode(taken = isMine, latitude = precise?.latitude, longitude = precise?.longitude),
-                areaCentre = areaCentre,
-                street = rules.streetLine(precise?.line),
-                band = band,
-                sheetTopPx = sheetTop,
-            )
-        },
+        mapMode = jobMapMode(taken = isMine, latitude = precise?.latitude, longitude = precise?.longitude),
+        street = rules.streetLine(precise?.line),
         cleaning = cleaningAnimated(step),
         pinned = if (status == OrderStatus._5 || move == PinnedMove.None) {
             null
@@ -1033,22 +1047,21 @@ private fun OrderItem.statusStamps(): Map<OrderStatus, Instant> =
 private fun instantOrNull(text: String): Instant? = runCatching { Instant.parse(text) }.getOrNull()
 
 @Composable
-private fun NotTakenDetail(
+private fun notTakenDetail(
     order: OrderItem,
     boardRow: OrderListItem?,
     now: Instant,
     lists: DetailLists,
     inFlight: OrderAction?,
     preferredOffer: PendingOffer?,
-    onNavigateBack: () -> Unit,
     onTake: () -> Unit,
     onDeclineOffer: () -> Unit,
-) {
+): DetailPage {
     val rules = OrdersBoardRules
     val row = order.asBoardRow(band = boardRow?.homeDistanceBand)
     val start = rules.start(row) ?: now
     val own = lists.own
-    NotTakenPage(row = row, order = order, boardRow = boardRow, now = now, lists = lists, preferredOffer = preferredOffer, failed = false, onNavigateBack = onNavigateBack, onRetry = {}) {
+    return notTakenPage(row = row, order = order, boardRow = boardRow, now = now, lists = lists, preferredOffer = preferredOffer, failed = false, onRetry = {}) {
         OrderPrimaryAction(
             move = pinnedMove(
                 status = order.orderStatus.toOrderStatus(),
@@ -1084,7 +1097,7 @@ private fun NotTakenDetail(
  * the head once the rest failed.
  */
 @Composable
-private fun NotTakenPage(
+private fun notTakenPage(
     row: OrderListItem,
     order: OrderItem?,
     boardRow: OrderListItem?,
@@ -1092,10 +1105,9 @@ private fun NotTakenPage(
     lists: DetailLists,
     preferredOffer: PendingOffer?,
     failed: Boolean,
-    onNavigateBack: () -> Unit,
     onRetry: () -> Unit,
     pinned: (@Composable () -> Unit)?,
-) {
+): DetailPage {
     val rules = OrdersBoardRules
     val zone = ZoneId.systemDefault()
     val locale = appLocale()
@@ -1116,13 +1128,10 @@ private fun NotTakenPage(
     val mine = rules.ownOfDay(own.rows, day, zone)
     val number = (order?.displayOrderNumber ?: row.displayOrderNumber)?.takeIf { it.isNotBlank() }
 
-    JobDetailFrame(
-        onNavigateBack = onNavigateBack,
+    return DetailPage(
         mascot = if (failed) R.drawable.mascot_resting else detailMascot(status, isMine = false, offered = preferredOffer != null),
         pinned = pinned,
-        map = { band, sheetTop ->
-            JobBandMap(mode = jobMapMode(taken = false, latitude = null, longitude = null), areaCentre = lists.areaCentre, street = null, band = band, sheetTopPx = sheetTop)
-        },
+        mapMode = jobMapMode(taken = false, latitude = null, longitude = null),
         head = { clearance ->
             JobHead(
                 number = number,
@@ -1168,7 +1177,7 @@ private fun NotTakenPage(
                 onRetry = onRetry,
                 modifier = Modifier.padding(top = 24.dp),
             )
-            return@JobDetailFrame
+            return@DetailPage
         }
         ScopeCard(order = order, row = row, lateJoin = lateJoin)
         ShownAfterTake()
@@ -1250,14 +1259,13 @@ private fun HoldLine(offer: PendingOffer, now: Instant) {
 }
 
 @Composable
-private fun CancelledDetail(
+private fun cancelledDetail(
     order: OrderItem,
     boardRow: OrderListItem?,
     now: Instant,
     lists: DetailLists,
-    onNavigateBack: () -> Unit,
     onOpenEarnings: () -> Unit,
-) {
+): DetailPage {
     val rules = OrdersBoardRules
     val zone = ZoneId.systemDefault()
     val locale = appLocale()
@@ -1269,8 +1277,7 @@ private fun CancelledDetail(
     val today = now.atZone(zone).toLocalDate()
     val number = order.displayOrderNumber?.takeIf { it.isNotBlank() }
 
-    JobDetailFrame(
-        onNavigateBack = onNavigateBack,
+    return DetailPage(
         mascot = detailMascot(OrderStatus._6, isMine = true),
         pinned = null,
         head = { clearance ->
@@ -1433,17 +1440,16 @@ private fun CheckAgainLink(onCheckAgain: () -> Unit) {
  * A job not hers is the not-taken page from the row; the pinned area holds only what the row can decide (see [rowDetailPin]).
  */
 @Composable
-private fun RowDetail(
+private fun rowDetail(
     row: OrderListItem,
     lists: DetailLists,
     preferredOffer: PendingOffer?,
     inFlight: OrderAction?,
     now: Instant,
     failed: Boolean,
-    onNavigateBack: () -> Unit,
     onRetry: () -> Unit,
     onDeclineOffer: () -> Unit,
-) {
+): DetailPage {
     val rules = OrdersBoardRules
     val zone = ZoneId.systemDefault()
     val locale = appLocale()
@@ -1479,27 +1485,18 @@ private fun RowDetail(
         RowPin.None -> null
     }
     if (!own) {
-        NotTakenPage(
+        return notTakenPage(
             row = row, order = null, boardRow = row, now = now, lists = lists, preferredOffer = preferredOffer, failed = failed,
-            onNavigateBack = onNavigateBack, onRetry = onRetry, pinned = pinned,
+            onRetry = onRetry, pinned = pinned,
         )
-        return
     }
     val number = row.displayOrderNumber?.takeIf { it.isNotBlank() }
     val step = rules.runStep(status, crew = false, myMarkAt = null, firstAfterPhotoAt = null)
-    JobDetailFrame(
-        onNavigateBack = onNavigateBack,
+    return DetailPage(
         mascot = if (failed) R.drawable.mascot_resting else detailMascot(orderStatus, isMine = true, cash = rules.isCash(row)),
         pinned = pinned,
-        map = { band, sheetTop ->
-            JobBandMap(
-                mode = jobMapMode(taken = true, latitude = row.customerAddressLatitude, longitude = row.customerAddressLongitude),
-                areaCentre = lists.areaCentre,
-                street = rules.streetLine(row.customerAddress),
-                band = band,
-                sheetTopPx = sheetTop,
-            )
-        },
+        mapMode = jobMapMode(taken = true, latitude = row.customerAddressLatitude, longitude = row.customerAddressLongitude),
+        street = rules.streetLine(row.customerAddress),
         cleaning = !failed && cleaningAnimated(step),
         head = { clearance ->
             JobHead(
@@ -1597,9 +1594,8 @@ internal fun rowDetailPin(move: PinnedMove, failed: Boolean): RowPin = when {
 
 /** Nothing is known, not even whether the job is hers: every value a flat bar and the move's slot held. */
 @Composable
-private fun NoRowLoading(onNavigateBack: () -> Unit) {
-    JobDetailFrame(
-        onNavigateBack = onNavigateBack,
+private fun noRowLoading(): DetailPage {
+    return DetailPage(
         mascot = null,
         pinned = { Bar(width = Dp.Unspecified, height = 56.dp, modifier = Modifier.fillMaxWidth().clip(CircleShape).clearAndSetSemantics {}) },
         spokenTitle = stringResource(R.string.loading),
@@ -1645,8 +1641,8 @@ private fun NoRowLoading(onNavigateBack: () -> Unit) {
 
 /** No row to fall back on: the failure is the sheet's head, then what the app still holds. */
 @Composable
-private fun NoRowError(gone: Boolean, lists: DetailLists, onNavigateBack: () -> Unit, onRetry: () -> Unit) {
-    JobDetailFrame(onNavigateBack = onNavigateBack, mascot = R.drawable.mascot_resting, pinned = null) { clearance ->
+private fun noRowError(gone: Boolean, lists: DetailLists, onRetry: () -> Unit): DetailPage {
+    return DetailPage(mascot = R.drawable.mascot_resting, pinned = null) { clearance ->
         MascotClearColumn(clearance) {
             ErrorWords(
                 title = stringResource(if (gone) R.string.detail_gone else R.string.detail_error_job),
@@ -1664,12 +1660,12 @@ private fun NoRowError(gone: Boolean, lists: DetailLists, onNavigateBack: () -> 
  * administrator's reason as written; then her next jobs and the open jobs, from the store or read by the page itself.
  */
 @Composable
-private fun RemovedPage(reason: String?, job: OrderListItem?, lists: DetailLists, onNavigateBack: () -> Unit, onCheckAgain: () -> Unit) {
+private fun removedPage(reason: String?, job: OrderListItem?, lists: DetailLists, onCheckAgain: () -> Unit): DetailPage {
     val zone = ZoneId.systemDefault()
     val locale = appLocale()
     val ownFailed = lists.own.failed && !lists.own.hasLoaded
     val openFailed = lists.open.failed && !lists.open.hasLoaded
-    JobDetailFrame(onNavigateBack = onNavigateBack, mascot = R.drawable.mascot_resting, pinned = null) { clearance ->
+    return DetailPage(mascot = R.drawable.mascot_resting, pinned = null) { clearance ->
         MascotClearColumn(clearance) {
             Text(
                 text = OrdersBoardRules.tie(stringResource(if (reason != null) R.string.order_removal_title else R.string.notification_order_assignment_revoked_title)),

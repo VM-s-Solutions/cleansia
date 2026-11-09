@@ -33,6 +33,7 @@ import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.components.CleansiaTextLink
 import cz.cleansia.core.ui.components.LockedSwipeToConfirm
 import cz.cleansia.core.ui.components.SwipeToConfirmButton
+import cz.cleansia.core.ui.components.slideSemantics
 import cz.cleansia.core.ui.theme.NunitoCapHeight
 import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.R

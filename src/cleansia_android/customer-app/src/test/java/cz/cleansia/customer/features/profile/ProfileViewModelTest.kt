@@ -18,7 +18,7 @@ import cz.cleansia.customer.core.settings.LanguagePreference
 import cz.cleansia.customer.core.user.CurrentUser
 import cz.cleansia.customer.core.user.UserRepository
 import cz.cleansia.customer.testing.MainDispatcherRule
-import cz.cleansia.customer.ui.state.ActionState
+import cz.cleansia.core.ui.state.ActionState
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -317,6 +317,7 @@ class ProfileViewModelTest {
 
         assertTrue(skipped)
         coVerify { settings.markOnboardingSeen("user-1") }
+        coVerify(exactly = 0) { userRepository.updateCurrentUser(any(), any(), any(), any(), any(), any(), any()) }
     }
 
     // ── avatar ──

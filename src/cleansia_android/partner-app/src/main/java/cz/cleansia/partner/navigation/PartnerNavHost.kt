@@ -35,6 +35,14 @@ import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.ui.components.CleansiaErrorState
 import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.core.ui.components.WordmarkSplash
+import cz.cleansia.core.ui.fadeEnter
+import cz.cleansia.core.ui.fadeEnterLong
+import cz.cleansia.core.ui.fadeExit
+import cz.cleansia.core.ui.fadeExitLong
+import cz.cleansia.core.ui.popEnter
+import cz.cleansia.core.ui.popExit
+import cz.cleansia.core.ui.pushEnter
+import cz.cleansia.core.ui.pushExit
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.RegistrationCompletionStatus
 import cz.cleansia.partner.data.auth.AuthRepository
@@ -100,8 +108,15 @@ fun PartnerNavHost(navController: NavHostController) {
     NavHost(
         navController = navController,
         startDestination = NavRoute.Splash,
+        enterTransition = pushEnter,
+        exitTransition = pushExit,
+        popEnterTransition = popEnter,
+        popExitTransition = popExit,
     ) {
-        composable<NavRoute.Splash> {
+        composable<NavRoute.Splash>(
+            enterTransition = fadeEnterLong,
+            exitTransition = fadeExitLong,
+        ) {
             SplashGate(
                 onAuthenticated = {
                     navController.navigate(NavRoute.Main) {
@@ -205,7 +220,12 @@ fun PartnerNavHost(navController: NavHostController) {
             )
         }
 
-        composable<NavRoute.Main> { entry ->
+        composable<NavRoute.Main>(
+            enterTransition = fadeEnter,
+            exitTransition = fadeExit,
+            popEnterTransition = fadeEnter,
+            popExitTransition = fadeExit,
+        ) { entry ->
             MainScaffold(
                 onOpenOrderDetails = { id ->
                     navController.navigate(NavRoute.OrderDetail(orderId = id))

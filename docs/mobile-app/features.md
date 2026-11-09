@@ -72,8 +72,9 @@ the order detail's *Read the contract*, and the customer wizards' confirm step l
 - **The phone field** keeps a `+` only while nothing has been kept before it
   (`PhoneNumberSanitizer.sanitize`, `sanitizePhoneInput`), so a number copied with a space, a label or
   a bracket in front of its country code keeps the code; until then only a `+` that was the very first
-  character survived. The Android customer app's two profile phone fields, plain text fields, go
-  through the same function since the same day.
+  character survived. The Android customer app's two profile phone fields go through the same function
+  since the same day: Edit profile's plain text field, and the onboarding's shared phone field, which
+  since 2026-11-08 shows the country's calling code before the national digits.
 
 → [Partner onboarding — e-mail confirmation](/partner-app/onboarding#step-2-email-confirmation),
 [what each step checks](/partner-app/onboarding#step-checks)
@@ -93,9 +94,8 @@ also turns auto-capitalisation and autocorrection off, as Android's `KeyboardTyp
 app module is the drift that produced "blank screen" bugs before the shared module existed. If you
 need a variation, widen the shared type rather than forking it.
 
-Two pre-`:core` duplicates survive on Android and are **known, tracked for migration, not
-precedent**: `cz.cleansia.customer.ui.state.ActionState` (an identical copy of `:core`'s — its doc
-comment says so) and the customer app's `ui/format/` formatters, which shadow `core/format/`. Import
+One pre-`:core` duplicate survives on Android and is **known, tracked for migration, not
+precedent**: the customer app's `ui/format/` formatters, which shadow `core/format/`. Import
 the `:core` definition in new code.
 :::
 
@@ -349,7 +349,7 @@ sealed interface DevicesUiState {
 
 @HiltViewModel
 class DevicesViewModel @Inject constructor(
-    private val devicesRepository: DevicesRepository,
+    private val devicesRepository: DeviceManagementRepository,
     private val errorTranslator: ApiErrorTranslator,
     private val snackbar: SnackbarController,
     /* … */
@@ -375,13 +375,13 @@ class DevicesViewModel @Inject constructor(
 ```
 
 ```swift [iOS]
-// CleansiaPartner/Sources/Features/Devices/DevicesViewModel.swift
+// CleansiaCore/Sources/CleansiaCore/Devices/DevicesViewModel.swift
 @MainActor
 final class DevicesViewModel: ViewModel {
     @Published private(set) var state: UiState<[UserDevice]> = .loading
     @Published private(set) var revokeAction: ActionState = .idle
 
-    private let client: PartnerDevicesClient
+    private let client: DevicesClient
     private let snackbar: SnackbarController
     private let localizer = ApiErrorLocalizer()
 

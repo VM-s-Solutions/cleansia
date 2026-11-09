@@ -50,13 +50,16 @@ enum EvidenceSource {
     /// is left around (Gate-SEC R11). The blob name is server-controlled; only the
     /// extension travels (Gate-SEC R12).
     enum EvidencePreparer {
-        static func prepare(_ source: EvidenceSource) -> Result<PreparedEvidence, EvidencePreparationError> {
-            switch source {
-            case let .image(image):
-                prepareImage(image)
-            case let .pdf(data):
-                preparePdf(data)
-            }
+        /// Runs off the main actor: a camera photo takes long enough to downscale and compress to freeze the screen.
+        static func prepare(_ source: EvidenceSource) async -> Result<PreparedEvidence, EvidencePreparationError> {
+            await Task.detached(priority: .userInitiated) {
+                switch source {
+                case let .image(image):
+                    prepareImage(image)
+                case let .pdf(data):
+                    preparePdf(data)
+                }
+            }.value
         }
 
         static func prepareImage(

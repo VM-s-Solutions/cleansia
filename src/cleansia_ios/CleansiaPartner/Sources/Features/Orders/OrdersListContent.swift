@@ -27,7 +27,7 @@ struct AvailablePane: View {
                     .onChange(of: space.size.width) { width = $0 }
             })
             .environment(\.ordersTileWidth, tileWidth)
-            .onPreferenceChange(OrdersTileNeedKey.self) { tileWidth = max(108, $0.rounded(.up)) }
+            .onPreferenceChange(OrdersTileNeedKey.self) { tileWidth = OrdersTileNeedKey.column(tileWidth, after: $0) }
             .ordersScroll(onRefresh: vm.userRefresh)
     }
 
@@ -49,26 +49,32 @@ struct AvailablePane: View {
 
     private var populated: some View {
         let now = vm.now()
+        let reserved = vm.reserved
         let cards = vm.availableCards
         let groups = OrdersBoardRules.dayGroups(cards)
         let range = pageRange(cards)
         let short = headerForm(groups.map(\.day))
-        return VStack(alignment: .leading, spacing: Spacing.s) {
+        return LazyVStack(alignment: .leading, spacing: Spacing.s) {
             if let stale = staleText {
                 OrdersStaleStrip(text: stale) { Task { await vm.userRefresh() } }
             }
-            ForEach(vm.reserved, id: \.offer.id) { pair in
-                AvailableJobCard(
-                    row: pair.row,
-                    now: now,
-                    clash: vm.clash(for: pair.row),
-                    isTaking: vm.boardTake?.snapshot.id == pair.row.id,
-                    reservedUntil: OfferLabels.reservedUntil(pair.offer.respondByUtc, now: now),
-                    onOpen: { open(pair.row) },
-                    onTake: { vm.take(pair.row) },
-                    onDecline: { vm.askToDecline(pair.offer) }
-                )
-                .accessibilityFocused($focusedCard, equals: pair.row.id)
+            if !reserved.isEmpty {
+                // Built as one block, so every pay tile reports its need before the column is first drawn.
+                VStack(alignment: .leading, spacing: Spacing.s) {
+                    ForEach(reserved, id: \.offer.id) { pair in
+                        AvailableJobCard(
+                            row: pair.row,
+                            now: now,
+                            clash: vm.clash(for: pair.row),
+                            isTaking: vm.boardTake?.snapshot.id == pair.row.id,
+                            reservedUntil: OfferLabels.reservedUntil(pair.offer.respondByUtc, now: now),
+                            onOpen: { open(pair.row) },
+                            onTake: { vm.take(pair.row) },
+                            onDecline: { vm.askToDecline(pair.offer) }
+                        )
+                        .accessibilityFocused($focusedCard, equals: pair.row.id)
+                    }
+                }
             }
             OrdersToolbar(vm: vm)
             if let cash = vm.cashPanel, cash.over, let limit = cash.limit {
@@ -79,7 +85,7 @@ struct AvailablePane: View {
             }
             footer
         }
-        .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: vm.reserved.map(\.row.id) + cards.map(\.id))
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: reserved.map(\.row.id) + cards.map(\.id))
         .onChange(of: vm.firstAppendedId) { focusedCard = $0 }
         .onChange(of: vm.contractRequest == nil) { closed in
             if closed, let next = vm.focusAfterTake { focusedCard = next }

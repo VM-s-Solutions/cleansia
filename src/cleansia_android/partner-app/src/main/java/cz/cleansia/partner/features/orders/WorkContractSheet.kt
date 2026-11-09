@@ -83,6 +83,7 @@ import cz.cleansia.core.ui.components.CleansiaTextLink
 import cz.cleansia.core.ui.components.HtmlContentView
 import cz.cleansia.core.ui.components.OrderCalendarLine
 import cz.cleansia.core.ui.components.SwipeToConfirmButton
+import cz.cleansia.core.ui.components.slideSemantics
 import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.core.ui.theme.capBandAligned
@@ -687,7 +688,7 @@ private fun ColumnScope.TakenContent(
                     )
                     Image(painter = painterResource(R.drawable.mascot_thumbs_up), contentDescription = null, modifier = Modifier.size(96.dp))
                 }
-                takenStripPoint(takenRow)?.let { point ->
+                takenStripPoint(takenRow)?.takeIf { canDrawMap() }?.let { point ->
                     JobMapStrip(point = point, street = rules.streetLine(takenRow?.customerAddress), modifier = Modifier.padding(top = Spacing.XS))
                 }
                 val start = contractFacts?.cleaningDateTimeUtc?.let { runCatching { Instant.parse(it) }.getOrNull() } ?: rules.start(row)

@@ -8,8 +8,8 @@ import cz.cleansia.core.auth.SessionManager
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.partner.R
-import cz.cleansia.partner.core.devices.DevicesRepository
-import cz.cleansia.partner.core.devices.UserDeviceDto
+import cz.cleansia.core.devices.DeviceManagementRepository
+import cz.cleansia.core.devices.UserDeviceDto
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.partner.data.auth.AuthRepository
 import cz.cleansia.core.network.ApiResult
@@ -29,7 +29,7 @@ sealed interface DevicesUiState {
 
 @HiltViewModel
 class DevicesViewModel @Inject constructor(
-    private val devicesRepository: DevicesRepository,
+    private val devicesRepository: DeviceManagementRepository,
     private val authRepository: AuthRepository,
     private val sessionManager: SessionManager,
     private val errorTranslator: ApiErrorTranslator,

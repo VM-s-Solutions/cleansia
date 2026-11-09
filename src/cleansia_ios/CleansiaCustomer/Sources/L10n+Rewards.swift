@@ -151,10 +151,6 @@ extension L10n {
             format("loyalty_referral_stats_qualified", accepted, qualified)
         }
 
-        static var back: String {
-            localized("common_back")
-        }
-
         /// Backend perk label keys use dot notation (`loyalty.perks.welcome_badge`);
         /// resolved against the underscore string key, falling back to the raw key
         /// so an unknown future perk stays visible (`resolveLabelKey` parity).

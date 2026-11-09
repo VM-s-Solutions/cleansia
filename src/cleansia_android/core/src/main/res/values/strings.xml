@@ -21,4 +21,5 @@
     <string name="core_error_not_found">The requested resource was not found.</string>
     <string name="core_error_unauthorized">Your session expired. Please sign in again.</string>
     <string name="core_error_unknown">Something went wrong. Please try again.</string>
+    <string name="core_phone_country_code">Country code</string>
 </resources>

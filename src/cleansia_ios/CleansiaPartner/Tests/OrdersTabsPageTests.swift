@@ -217,22 +217,32 @@ final class JobMapAndPanelTests: XCTestCase {
         XCTAssertFalse(JobBandMap.area("Praha 8", locked: true).showsRecentre(movedAway: true), "a still map")
     }
 
-    func testTheAreaIsLookedUpOnceAndFallsBackToTheMarketsCity() async {
+    /// A detail opened again is a new map with a new locator. The found areas outlive this test, so it looks up names
+    /// no other test does.
+    func testAFoundAreaIsLookedUpOnceForEveryMapAndAMissIsAskedAgain() async {
+        let run = UUID().uuidString
+        let area = "Praha 8 \(run)"
+        let nowhere = "Nowhere \(run)"
         var asked: [String] = []
         let found = Coordinate(latitude: 50.12, longitude: 14.46)
-        let locator = JobAreaLocator { query in
+        let geocode: (String) async -> Coordinate? = { query in
             asked.append(query)
-            return query == "Praha 8" ? found : nil
+            return query == area ? found : nil
         }
-        await locator.locate("Praha 8")
-        XCTAssertEqual(locator.centre, found)
-        await locator.locate("Praha 8")
-        XCTAssertEqual(asked, ["Praha 8"], "an area is looked up once")
-        await locator.locate("Nowhere")
-        XCTAssertEqual(locator.centre, JobAreaLocator.marketCity)
-        await locator.locate(nil)
-        XCTAssertEqual(locator.centre, JobAreaLocator.marketCity)
-        XCTAssertEqual(asked, ["Praha 8", "Nowhere"], "no area, nothing to look up")
+        let first = JobAreaLocator(geocode: geocode)
+        await first.locate(area)
+        XCTAssertEqual(first.centre, found)
+        let second = JobAreaLocator(geocode: geocode)
+        await second.locate(area)
+        XCTAssertEqual(second.centre, found)
+        XCTAssertEqual(asked, [area], "a found area is looked up once for every map")
+        await second.locate(nowhere)
+        XCTAssertEqual(second.centre, JobAreaLocator.marketCity)
+        await second.locate(nowhere)
+        XCTAssertEqual(asked, [area, nowhere, nowhere], "a miss is asked again: that lookup may have been offline")
+        await second.locate(nil)
+        XCTAssertEqual(second.centre, JobAreaLocator.marketCity)
+        XCTAssertEqual(asked, [area, nowhere, nowhere], "no area, nothing to look up")
     }
 
     // MARK: - The Job taken panel

@@ -71,7 +71,7 @@ final class MobileRefinementVisualTests: XCTestCase {
             UIColor.systemTeal.setFill()
             context.fill(CGRect(x: 0, y: 0, width: 64, height: 64))
         }
-        avatar.pick(image)
+        await avatar.pick(image)
         await capture(
             name: "Refinement Partner staged photo and one bottom Save",
             size: CGSize(width: 390, height: 1000)

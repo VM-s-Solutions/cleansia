@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -41,15 +40,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.money.CurrencySymbols
+import cz.cleansia.core.money.formatMoney
+import cz.cleansia.core.ui.components.IconHalo
 import cz.cleansia.core.ui.theme.Spacing
-import cz.cleansia.core.ui.theme.primaryIconOnContainer
 import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.R
 import cz.cleansia.partner.data.dashboard.DashboardStats
@@ -170,7 +169,7 @@ private fun HeadlineEarningsCard(stats: DashboardStats?) {
             )
             Spacer(Modifier.height(2.dp))
             Text(
-                text = formatMoney(stats?.currentPeriodEarnings, symbol),
+                text = formatWholeMoney(stats?.currentPeriodEarnings, symbol),
                 style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface,
             )
@@ -203,7 +202,7 @@ private fun BreakdownGrid(stats: DashboardStats?) {
     ) {
         BreakdownRow(
             label = stringResource(R.string.earnings_today),
-            value = formatMoney(stats?.todayEarnings, symbol),
+            value = formatWholeMoney(stats?.todayEarnings, symbol),
             secondary = stringResource(
                 R.string.earnings_jobs_done_count,
                 stats?.todayCompletedCount ?: 0,
@@ -212,7 +211,7 @@ private fun BreakdownGrid(stats: DashboardStats?) {
         Divider()
         BreakdownRow(
             label = stringResource(R.string.earnings_this_week),
-            value = formatMoney(stats?.weekEarnings, symbol),
+            value = formatWholeMoney(stats?.weekEarnings, symbol),
             secondary = stringResource(
                 R.string.earnings_jobs_done_count,
                 stats?.weekCompletedCount ?: 0,
@@ -221,7 +220,7 @@ private fun BreakdownGrid(stats: DashboardStats?) {
         Divider()
         BreakdownRow(
             label = stringResource(R.string.earnings_last_month),
-            value = formatMoney(stats?.lastMonthEarnings, symbol),
+            value = formatWholeMoney(stats?.lastMonthEarnings, symbol),
             secondary = stringResource(
                 R.string.earnings_jobs_done_count,
                 stats?.lastMonthCompletedOrders ?: 0,
@@ -371,16 +370,17 @@ private fun CashHeldCard(cashHeld: List<CashHeld>) {
             Spacer(Modifier.height(Spacing.M))
             Divider()
             Spacer(Modifier.height(Spacing.M))
+            // Cash is owed to the cent, so unlike the earnings figures it is not rounded to a whole unit.
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = formatCash(held.amount, symbol),
+                    text = formatMoney(held.amount, symbol),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.weight(1f),
                 )
                 held.floatCap?.let { cap ->
                     Text(
-                        text = stringResource(R.string.earnings_cash_held_limit, formatCash(cap, symbol)),
+                        text = stringResource(R.string.earnings_cash_held_limit, formatMoney(cap, symbol)),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -442,23 +442,6 @@ private fun InvoicesEntryCard(onClick: () -> Unit) {
 }
 
 @Composable
-private fun IconHalo(icon: ImageVector) {
-    Box(
-        modifier = Modifier
-            .size(44.dp)
-            .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primaryIconOnContainer,
-            modifier = Modifier.size(22.dp),
-        )
-    }
-}
-
-@Composable
 private fun Divider() {
     Box(
         modifier = Modifier
@@ -479,19 +462,10 @@ private fun parseIsoDate(iso: String?): LocalDate? {
         ?: runCatching { LocalDate.parse(iso) }.getOrNull()
 }
 
-/** Cash is owed to the cent, so unlike the earnings figures it is not rounded to a whole unit. */
-private fun formatCash(amount: Double, symbol: String): String {
-    val formatted = String.format(Locale.getDefault(), "%,.2f", amount)
-    return if (symbol.isBlank()) formatted else "$formatted $symbol"
-}
-
 /**
- * Null is "no stats on this screen at all" — the error state — and renders as an em dash. It can no
- * longer mean a broken wire field: [DashboardStats] refuses those in the mapper rather than handing
- * the screen a zero to print.
+ * An earnings figure in whole units. Null is "no stats on this screen at all" — the error state — and
+ * renders as an em dash. It can no longer mean a broken wire field: [DashboardStats] refuses those in
+ * the mapper rather than handing the screen a zero to print.
  */
-private fun formatMoney(amount: Double?, symbol: String): String {
-    if (amount == null) return "\u2014"
-    val formatted = String.format(Locale.getDefault(), "%,.0f", amount)
-    return if (symbol.isBlank()) formatted else "$formatted $symbol"
-}
+internal fun formatWholeMoney(amount: Double?, symbol: String): String =
+    if (amount == null) "\u2014" else formatMoney(amount, symbol, fractionDigits = 0)

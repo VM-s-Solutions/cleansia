@@ -264,7 +264,7 @@ coordinating multi-agent or multi-step work, start with **`agents/WAY-OF-WORKING
   ios, qa, reviewer, security, optimizer, docs). Invoke via the `Agent` tool with `subagent_type` set
   to the charter's `name`.
 - **`agents/process/*.md`** — ticket lifecycle, quality gates, communication protocol, routing.
-- **`agents/tools/check-*.mjs`** — 18 repo checkers, nine with their own self-test. The only
+- **`agents/tools/check-*`** — 19 repo checkers, ten with their own self-test. The only
   required checks on `master` are `build`, `References and build` and `No new secret in the history`
   (API verified 2026-10-14). Only `build` is pinned to GitHub Actions (integration id 15368).
   Backend and iOS emit `build` when their paths change; Frontend and Android emit it on every pull

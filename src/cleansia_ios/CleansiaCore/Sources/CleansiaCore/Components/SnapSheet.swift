@@ -356,10 +356,10 @@ private extension Comparable {
                     CleansiaColors.primaryContainer
                 } content: {
                     VStack(spacing: Spacing.m) {
-                        Text("Order detail content")
+                        Text(verbatim: "Order detail content")
                             .font(CleansiaTypography.titleMedium)
                         ForEach(0 ..< 8, id: \.self) { index in
-                            Text("Section \(index)")
+                            Text(verbatim: "Section \(index)")
                                 .frame(maxWidth: .infinity)
                                 .padding()
                                 .background(CleansiaColors.surfaceVariant)

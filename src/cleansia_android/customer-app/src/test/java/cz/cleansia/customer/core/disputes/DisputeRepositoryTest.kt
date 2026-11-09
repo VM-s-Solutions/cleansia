@@ -4,6 +4,7 @@ import android.content.Context
 import cz.cleansia.customer.R
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
+import cz.cleansia.core.network.WireContractViolation
 import cz.cleansia.core.snackbar.SnackbarController
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -337,6 +338,33 @@ class DisputeRepositoryTest {
         val result = newRepo().uploadEvidence("d-1", byteArrayOf(1, 2, 3), "f.png", "image/png")
 
         assertTrue((result as ApiResult.Error).error is ApiError.Network)
+    }
+
+    // ── a response that breaks the wire contract ──
+
+    /** The adapter refuses a broken body at the call; every read answers the server error its screen shows, never a crash. */
+    @Test
+    fun aResponseThatBreaksTheContract_isAServerErrorRatherThanACrash() = runTest {
+        val page0 = DisputeListResponseDto(total = 2, data = listOf(DisputeListItemDto(id = "d-1")))
+        coEvery { api.getPaged(offset = 0, limit = 20) } returns Response.success(page0)
+        coEvery { api.getPaged(offset = 1, limit = 20) } throws WireContractViolation("total")
+        coEvery { api.getById("d-1") } throws WireContractViolation("status")
+        coEvery { api.uploadEvidence(any(), any()) } throws WireContractViolation("UploadDisputeEvidenceResponse")
+        val repo = newRepo()
+        repo.refresh()
+
+        val nextPage = repo.loadNextPage()
+        coEvery { api.getPaged(offset = 0, limit = 20) } throws WireContractViolation("total")
+        val results = listOf(
+            nextPage,
+            repo.refresh(),
+            repo.getById("d-1"),
+            repo.uploadEvidence("d-1", byteArrayOf(1, 2, 3), "f.png", "image/png"),
+        )
+
+        results.forEach { assertTrue("expected a server error but got: $it", (it as? ApiResult.Error)?.error is ApiError.Server) }
+        assertEquals(false, repo.loading.value)
+        assertEquals(false, repo.loadingMore.value)
     }
 
     // ── clear() ──

@@ -107,6 +107,19 @@ final class OrdersListLogicTests: XCTestCase {
         )
     }
 
+    // MARK: the Available pane's pay column
+
+    /// The reserved block reports every tile or, scrolled off, none; the column narrows when its widest job leaves.
+    func testThePayColumnKeepsItsWidthOverAnEmptyReportAndNarrowsWhenTheWidestLeaves() {
+        var column: CGFloat = 108
+        var columns: [CGFloat] = []
+        for need: CGFloat in [123.4, 0, 124, 114.2, 90] {
+            column = OrdersTileNeedKey.column(column, after: need)
+            columns.append(column)
+        }
+        XCTAssertEqual(columns, [124, 124, 124, 115, 108])
+    }
+
     // MARK: helpers
 
     private func makeDate(_ year: Int, _ month: Int, _ day: Int, hour: Int = 0) -> Date {

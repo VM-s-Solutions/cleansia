@@ -21,7 +21,7 @@ so keep architecture clean and consistent — a sloppy Android pattern propagate
   `networkCall` + `ApiErrorParser` + `SnackbarController`, `cz.cleansia.core.ui.components.*`,
   `CleansiaTheme`) with copied-from-source samples.
 - `agents/knowledge/consistency.md` — the canonical form for mobile ViewModels/Screens/Repositories
-  (E1–E8): sealed `*UiState` (not flag-bags), shared `ActionState`, `collectAsStateWithLifecycle`,
+  (E1–E10): sealed `*UiState` (not flag-bags), shared `ActionState`, `collectAsStateWithLifecycle`,
   `ApiResult<T>` repos. Build the feature **the same way**; a new deviation is a hard review fail.
 - `agents/knowledge/conventions.md`
 - `docs/architecture/push-notifications.md` (when touching notifications) + the mobile-app docs.
@@ -38,18 +38,25 @@ Develop test-first (`agents/knowledge/testing.md`). The **ViewModel holds the lo
 success-effect, repo-result→state mapping) and make it pass, then build the screen to that tested
 state. The Compose UI is verified by QA against the AC. Pure helpers (formatters) are TDD'd strictly.
 
-1. ViewModel: `@HiltViewModel`, `StateFlow<…UiState>` for state, a `Channel`/`receiveAsFlow` for
-   one-shot events. `init` loads; functions are `viewModelScope.launch`. Immutable `UiState` data
-   class updated via `copy`. Navigation via emitted events — never navigate from the ViewModel
-   directly.
+1. ViewModel: `@HiltViewModel`, `StateFlow<…UiState>` for state, a `SharedFlow(replay = 0,
+   extraBufferCapacity = 1)` for one-shot effects. `init` loads; functions are `viewModelScope.launch`.
+   `UiState` is a sealed interface (`Loading` / `Error` / `Loaded`), never a flag-bag data class; an
+   editable form is `Loaded(val form: …Form)`, updated via `copy` (`consistency.md` E1). Navigation via
+   emitted events — never navigate from the ViewModel directly.
 2. Screen: a stateful `…Screen` (collects state, wires events) + a stateless `…ScreenContent`
    (pure, preview-friendly) handling the three states (loading / error / content). Add a `@Preview`.
-3. Repository: interface in the domain layer, impl `@Inject`ed and `@Binds`-bound via a Hilt module;
-   map API DTOs to domain models with `toDomain()`. Wrap calls in `runCatching` → `Result`.
+3. Repository: a `@Singleton`, as the app you are in shapes it — the partner's are an interface bound
+   to its `…Impl` with `@Binds` in a Hilt module, the customer's and `:core`'s a class injected as is;
+   map API DTOs to domain models with `toDomain()`. It returns `ApiResult<T>` (ADR-0011,
+   `consistency.md` E5): wrap each call in `safeApiCall`, or in `networkCall { }` inside
+   `wireResult { }`, not in `runCatching`, which also catches the `CancellationException` both rethrow.
 4. All user-facing text via **string resources** (`stringResource(R.string.x)`) — never hardcoded.
    Reusable UI and theme tokens go in `:core`.
-5. Build variants: verify against `mockDebug` (mock data) during development; `prodDebug` for real
-   API; `prodRelease` for release.
+5. Build types (there are no flavours and no mock data): `debug` against the DEV API during
+   development; `staging` — R8-minified, not debuggable, the debug package and key, the DEV API — for
+   anything judged on a release-like build (lag, R8 keep rules); `release` for release.
+   `-PAPI_BASE_URL=http://10.0.2.2:5002/` (partner) or `:5004/` (customer) points any of them at a
+   local host.
 
 ## Parity
 When you implement or change a feature, note the surface (states, API calls, navigation) clearly in

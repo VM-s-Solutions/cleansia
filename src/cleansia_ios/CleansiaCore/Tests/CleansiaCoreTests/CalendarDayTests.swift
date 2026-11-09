@@ -121,23 +121,6 @@ final class CalendarDayTests: XCTestCase {
         XCTAssertEqual(binding.wrappedValue, day)
     }
 
-    /// Done on an empty field that was never spun stores the day the wheels showed, with no time of day, as
-    /// the partner's Android dialog stores the day it opened on.
-    func testDoneOnAnUntouchedEmptyFieldStoresTheDayTheWheelsShowed() throws {
-        let now = try instant(year: 2026, month: 10, day: 2, hour: 23, in: .gmt)
-
-        XCTAssertEqual(
-            CalendarDay.confirmed(nil, now: now),
-            try instant(year: 1996, month: 10, day: 2, hour: 0, in: .gmt)
-        )
-    }
-
-    func testDoneStoresTheDayOnTheWheels() throws {
-        let day = try instant(year: 1990, month: 5, day: 10, hour: 0, in: .gmt)
-
-        XCTAssertEqual(CalendarDay.confirmed(day), day)
-    }
-
     private func instant(year: Int, month: Int, day: Int, hour: Int, in timeZone: TimeZone) throws -> Date {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = timeZone

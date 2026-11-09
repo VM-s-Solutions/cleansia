@@ -185,7 +185,8 @@ class UserProfileWireTest {
               "memberSince": "2025-11-02T08:30:00Z",
               "totalBookings": 17,
               "totalSavings": 4820.50,
-              "savingsCurrencyCode": "CZK"
+              "savingsCurrencyCode": "CZK",
+              "isNamePlaceholder": true
             }
         """.trimIndent()
 
@@ -205,6 +206,7 @@ class UserProfileWireTest {
             "totalBookings",
             "totalSavings",
             "savingsCurrencyCode",
+            "isNamePlaceholder",
         )
 
         val NULLABLE_FIELDS = listOf("phoneNumber", "birthDate", "preferredLanguageCode")

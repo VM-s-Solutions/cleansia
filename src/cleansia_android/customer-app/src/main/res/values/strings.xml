@@ -70,38 +70,15 @@
     <string name="nav_home">Home</string>
     <string name="nav_book">Book</string>
     <string name="nav_orders">Orders</string>
-    <string name="nav_offers">Offers</string>
     <string name="nav_rewards">Rewards</string>
     <string name="nav_profile">Profile</string>
-    <string name="offers_placeholder">Offers and promos coming soon</string>
 
     <!-- Rewards tab -->
     <string name="rewards_title">Rewards</string>
-    <string name="rewards_subtitle">Perks and recognition for loyal customers</string>
-    <string name="rewards_completed_orders">Completed bookings</string>
-    <string name="rewards_bookings_label">bookings</string>
-    <string name="rewards_next_milestone">%1$d more to unlock %2$s</string>
-    <string name="rewards_all_tiers_unlocked">You\'ve unlocked all tiers — thank you!</string>
-    <string name="rewards_tiers_title">Milestones</string>
-
-    <string name="rewards_referral_title">Invite a friend</string>
-    <string name="rewards_referral_your_code">Your code</string>
-    <string name="rewards_referral_share">Share your code</string>
-    <string name="rewards_referral_no_joins">Be the first — share your code</string>
 
     <!-- Home — address bar -->
     <string name="home_address_label">Cleaning at</string>
     <string name="home_address_placeholder">Select an address</string>
-
-    <!-- Home — upcoming order -->
-    <string name="home_upcoming_empty_title">No upcoming cleaning</string>
-    <string name="home_upcoming_empty_subtitle">Book your first clean.</string>
-
-    <!-- Home — reorder -->
-    <string name="home_reorder_title">Order again</string>
-    <string name="home_reorder_service_name">Household cleaning</string>
-    <string name="home_reorder_details">2 rooms · Last ordered Apr 2</string>
-    <string name="home_reorder_cta">Rebook</string>
 
     <!-- Smart upsell carousel slides -->
     <string name="home_upsell_plus_top">Cleansia Plus</string>
@@ -158,9 +135,6 @@
     <string name="home_upsell_chip_times">%1$d×</string>
     <string name="home_upsell_referral_desc">You get %1$s credit once their first cleaning is completed, and they get credit where their market offers it.</string>
 
-    <string name="home_hero2_top">Spring is here</string>
-    <string name="home_hero2_title">Deep clean + windows combo</string>
-
     <!-- Home — trust strip -->
     <string name="home_trust_same_day">Same-day</string>
 
@@ -181,48 +155,16 @@
     <string name="home_recent_title">Recent bookings</string>
     <string name="home_recent_see_all">See all</string>
     <string name="home_recent_fallback_title">Cleaning</string>
-    <string name="home_book_again">Book again</string>
 
-    <!-- Home — milestone -->
-    <string name="home_milestone_title">Progress to next tier</string>
     <!-- Loyalty-driven milestone (replaces totalOrders booking count) -->
     <string name="home_milestone_title_v2">%1$s — Progress to next tier</string>
 
     <!-- Home — seasonal -->
 
-    <!-- Home — quick actions -->
-    <string name="home_quick_book">Book</string>
-    <string name="home_quick_orders">Orders</string>
-    <string name="home_quick_track">Track</string>
-
-    <!-- Home — services -->
-    <string name="home_services_title_short">Popular services</string>
-    <string name="home_services_from">From</string>
-    <string name="home_services_see_all">See all</string>
-
-    <string name="home_service_household_name">Household</string>
-
-    <string name="home_service_upholstery_name">Upholstery</string>
-
-    <string name="home_service_windows_name">Windows</string>
-
-    <!-- Home — promo carousel -->
-    <string name="home_promo_title">For you</string>
-
-    <string name="home_hero_slide1_title">Spotless in hours</string>
-    <string name="home_hero_book_now">Book now</string>
-
-    <string name="home_hero_slide2_title">Deep clean, easy week</string>
-    <string name="home_hero_slide2_subtitle">Carpets, upholstery, windows — all in a single visit.</string>
-    <string name="home_hero_slide2_cta">Explore</string>
-
     <!-- Orders tab -->
     <string name="orders_title">My orders</string>
     <string name="orders_empty_title">No orders yet</string>
     <string name="orders_empty_subtitle">Your booked cleanings will show up here.</string>
-    <string name="orders_upcoming">Upcoming</string>
-    <string name="orders_past">Past orders</string>
-    <string name="orders_rebook">Rebook this order</string>
     <string name="orders_status_new">New</string>
     <string name="orders_status_pending">Pending</string>
     <string name="orders_status_confirmed">Confirmed</string>
@@ -248,8 +190,6 @@
     <string name="orders_empty_cta">Book your first cleaning</string>
 
     <!-- Order detail -->
-    <string name="order_detail_title">Order #%1$s</string>
-    <string name="order_detail_created">Created %1$s</string>
     <string name="order_detail_section_details">Cleaning details</string>
     <string name="order_detail_address">Address</string>
     <string name="order_detail_headline_default">Booking received</string>
@@ -263,12 +203,6 @@
     <string name="order_detail_subhead_on_the_way">Heading to your address now</string>
     <string name="order_detail_subhead_in_progress">Work has started</string>
     <string name="order_detail_subhead_in_progress_eta">Estimated %1$d minutes</string>
-    <string name="order_detail_progress_percent">%1$d%% complete</string>
-    <string name="order_detail_step_booked">Booked</string>
-    <string name="order_detail_step_accepted">Accepted</string>
-    <string name="order_detail_step_on_the_way">On the way</string>
-    <string name="order_detail_step_started">Started</string>
-    <string name="order_detail_step_finished">Finished</string>
     <string name="order_detail_rooms">Property</string>
     <string name="order_detail_estimated">Estimated time</string>
     <string name="order_detail_actual_time">Actual time</string>
@@ -277,7 +211,6 @@
     <string name="order_detail_total">Total</string>
     <string name="order_paid_with_credit">Paid with credit</string>
     <string name="order_paid_by_card">Paid by card</string>
-    <string name="order_detail_confirmation">Confirmation code</string>
     <string name="order_detail_cleaners">Your cleaner</string>
     <string name="order_detail_instructions">Instructions</string>
     <string name="order_detail_special_instructions">Special instructions</string>
@@ -285,14 +218,9 @@
     <string name="order_detail_notes">Notes</string>
     <string name="order_detail_your_review">Your review</string>
     <string name="order_detail_leave_review">Rate your experience</string>
-    <string name="order_detail_rate_experience">How was your cleaning?</string>
-    <string name="order_detail_review_comment">Add a comment (optional)</string>
-    <string name="order_detail_submit_review">Submit review</string>
     <string name="order_detail_timeline">Status timeline</string>
     <string name="order_detail_timeline_new_cleaner">Offered to cleaners again</string>
-    <string name="order_detail_rebook">Rebook this cleaning</string>
     <string name="order_detail_download_receipt">Download receipt</string>
-    <string name="order_detail_report_issue">Report an issue</string>
     <!-- Order detail — Phase 3 additions -->
     <string name="order_detail_error_title">Couldn\'t load this order</string>
     <string name="order_detail_error_message">Check your internet connection and try again.</string>
@@ -335,9 +263,6 @@
     </plurals>
     <string name="order_cancel_express_waiver_forfeit">Cancelling also uses up one of your included express bookings for this month.</string>
     <string name="order_cancel_fee_neutral">Are you sure you want to cancel this booking?</string>
-    <!-- Legacy free-text label (kept for backward-compat — no longer rendered). -->
-    <string name="order_cancel_reason_label">Reason (optional)</string>
-    <string name="order_cancel_reason_placeholder">Tell us what changed…</string>
     <!-- Reason picker (Wave 3 redesign) -->
     <string name="order_cancel_reason_picker_label">Why are you cancelling?</string>
     <string name="order_cancel_reason_schedule">Schedule changed</string>
@@ -406,13 +331,10 @@
     <string name="order_photos_view_button">View all</string>
     <string name="order_photos_tab_before">Before</string>
     <string name="order_photos_tab_after">After</string>
-    <string name="order_photos_summary_before">Before — %1$d</string>
-    <string name="order_photos_summary_after">After — %1$d</string>
     <string name="order_photos_empty_before">No before photos yet.</string>
     <string name="order_photos_empty_after">No after photos yet.</string>
     <string name="order_photos_error_title">Couldn\'t load photos.</string>
     <string name="order_photos_error_retry">Retry</string>
-    <string name="order_photos_metadata_by">By %1$s</string>
     <string name="common_close">Close</string>
 
     <!-- Booking review: the contract sentence and the request to start within the withdrawal period -->
@@ -420,11 +342,8 @@
     <string name="consent_early_performance_draft_2026_09_29">I ask for the cleaning to start within the 14-day withdrawal period, and I acknowledge that I lose the right to withdraw once the cleaning has been fully performed.</string>
 
     <!-- Profile tab -->
-    <string name="profile_greeting">Hi, there!</string>
-    <string name="profile_email_placeholder">you@example.com</string>
     <string name="profile_row_edit">Edit</string>
     <string name="profile_row_addresses">Saved addresses</string>
-    <string name="profile_row_payment">Payment methods</string>
     <string name="profile_row_notifications">Notifications</string>
     <string name="profile_row_security">Security</string>
     <string name="profile_row_help">Help &amp; support</string>
@@ -435,12 +354,10 @@
     <string name="profile_logout_dialog_cancel">Cancel</string>
     <string name="profile_app_version">Cleansia · v0.1.0</string>
     <string name="profile_stat_bookings">Bookings</string>
-    <string name="profile_stat_favorite">Favorite</string>
     <string name="profile_stat_saved">Saved</string>
     <string name="profile_stat_member_since">Member since</string>
     <string name="profile_tier_plus">Plus</string>
     <string name="profile_tier_regular">Regular</string>
-    <string name="profile_section_account">Account</string>
     <string name="profile_section_personal">Personal</string>
     <string name="profile_section_contact">Contact</string>
     <string name="profile_section_preferences">Preferences</string>
@@ -464,44 +381,6 @@
     <string name="profile_avatar_upload_success">Profile photo updated</string>
     <string name="profile_avatar_remove_success">Profile photo removed</string>
     <string name="profile_save_success">Profile saved successfully</string>
-
-    <!-- Profile — addresses -->
-    <string name="profile_addresses_title">Saved addresses</string>
-    <string name="profile_addresses_add">Add address</string>
-    <string name="profile_addresses_default">Default</string>
-
-    <!-- Add address -->
-    <string name="add_address_title">New address</string>
-    <string name="add_address_section_label">Label this address</string>
-    <string name="add_address_section_label_sub">Pick one or type your own</string>
-    <string name="add_address_section_address">Where is it?</string>
-    <string name="add_address_section_address_sub">Street, city and ZIP</string>
-    <string name="add_address_preset_home">Home</string>
-    <string name="add_address_preset_work">Work</string>
-    <string name="add_address_preset_other">Other</string>
-    <string name="add_address_label_custom">Custom label</string>
-    <string name="add_address_street">Street &amp; house number</string>
-    <string name="add_address_city">City</string>
-    <string name="add_address_zip">ZIP</string>
-    <string name="add_address_set_default">Set as default</string>
-    <string name="add_address_set_default_sub">Preselected when you book a cleaning</string>
-    <string name="add_address_save">Save address</string>
-
-    <!-- Address validation -->
-    <string name="address_field_street">Street</string>
-    <string name="address_field_city">City</string>
-    <string name="address_field_zip">ZIP code</string>
-    <string name="address_error_required">%1$s is required</string>
-    <string name="address_error_too_short">%1$s is too short</string>
-    <string name="address_error_too_long">%1$s is too long</string>
-    <string name="address_error_invalid_zip">Invalid ZIP (use format e.g. 120 00)</string>
-
-    <!-- Profile — payment methods -->
-    <string name="payment_methods_title">Payment methods</string>
-    <string name="payment_methods_add_card">Add a new card</string>
-    <string name="payment_methods_default">Default</string>
-    <string name="payment_methods_expires">Expires %1$s/%2$02d</string>
-    <string name="payment_methods_empty">No payment methods yet</string>
 
     <!-- Profile — notifications -->
     <string name="notifications_title">Notifications</string>
@@ -531,7 +410,6 @@
     <string name="notifications_dispute_reply">Dispute replies</string>
     <string name="notifications_dispute_reply_desc">When support responds to your dispute</string>
     <string name="busy_booking">Booking your cleaning…</string>
-    <string name="busy_payment">Processing payment…</string>
     <string name="busy_subscribe_plus">Activating Cleansia Plus…</string>
 
     <!-- Profile — help & support -->
@@ -599,13 +477,9 @@
     <string name="booking_step_indicator">Step %1$d of %2$d</string>
     <string name="booking_continue">Continue</string>
     <string name="booking_continue_price">Continue · %1$s</string>
-    <string name="booking_confirm">Confirm &amp; pay</string>
-    <string name="booking_confirm_price">Confirm &amp; pay · %1$s</string>
     <string name="booking_slide_to_confirm">Slide to confirm</string>
     <string name="booking_slide_to_confirm_price">Slide to pay · %1$s</string>
-    <string name="booking_total">Total</string>
     <string name="booking_arrival_window">Cleaner arrives within 1 hour</string>
-    <string name="booking_slot_unavailable">Unavailable</string>
     <string name="booking_slot_express" formatted="false">Express +20%</string>
     <string name="booking_slot_express_waived">Express · no surcharge</string>
     <string name="booking_express_waiver_available">Plus covers the 20%% express surcharge — %1$d left this calendar month.</string>
@@ -642,7 +516,6 @@
     <string name="booking_trust_insured">Insured up to %1$s</string>
 
     <string name="booking_pick_service">Pick a service</string>
-    <string name="booking_or_package">Or choose a package</string>
     <string name="booking_packages_featured">Featured packages</string>
     <string name="booking_package_includes">INCLUDES</string>
     <string name="booking_package_includes_prefix">Includes:</string>
@@ -664,15 +537,12 @@
     <string name="booking_twice_package_confirm">Add package</string>
     <string name="booking_your_home">Your home</string>
     <string name="booking_size_limit_caption">Up to %1$d rooms and %2$d bathrooms</string>
-    <string name="booking_search_services">Search services</string>
     <string name="booking_no_results">No services match your search</string>
     <string name="booking_cat_all">All</string>
     <string name="booking_catalog_loading">Loading services…</string>
     <string name="booking_catalog_error">Couldn\'t load services</string>
     <string name="booking_catalog_empty">No services available right now</string>
     <string name="booking_catalog_retry">Retry</string>
-    <string name="booking_rooms">Rooms</string>
-    <string name="booking_bathrooms">Bathrooms</string>
 
     <string name="booking_where">Where</string>
     <string name="booking_select_address_hint">Pick from saved or add new</string>
@@ -681,7 +551,6 @@
          weekday abbreviations rendered by java.time, so this is the only day label
          that needs a translation. Same key name as iOS (booking_today). -->
     <string name="booking_today">Today</string>
-    <string name="booking_new_address">Pick on map</string>
 
     <!-- Address picker (map) -->
     <string name="address_picker_title">Cleaning address</string>
@@ -692,9 +561,7 @@
     <string name="address_picker_my_location">My location</string>
     <string name="address_picker_my_location_unavailable">Couldn\'t get your location. Make sure GPS is on and try again.</string>
     <string name="address_picker_my_location_denied">Location permission denied. Enable it in Settings to use My location.</string>
-    <string name="address_picker_search">Search address</string>
     <string name="address_picker_search_hint">Street, city, or ZIP…</string>
-    <string name="address_picker_search_prompt">Type at least 2 characters to search</string>
     <string name="address_picker_searching">Searching…</string>
     <string name="address_picker_no_results">No matches. Try another search.</string>
     <string name="booking_address_default">Default</string>
@@ -719,14 +586,7 @@
     <string name="common_cancel">Cancel</string>
     <string name="common_got_it">Got it</string>
     <string name="common_details">Details</string>
-    <string name="booking_street">Street</string>
-    <string name="booking_city">City</string>
-    <string name="booking_zip">ZIP</string>
     <string name="booking_select_time">Pick a time</string>
-    <string name="booking_all_times">Show all</string>
-    <string name="booking_time_morning">Morning</string>
-    <string name="booking_time_afternoon">Afternoon</string>
-    <string name="booking_time_evening">Evening</string>
 
     <!-- Booking extras (Confirm step add-on toggles) -->
     <string name="booking_extras_header">Add extras</string>
@@ -783,10 +643,7 @@
     <string name="booking_summary_credit_card_only">Credit applies to card payments only.</string>
 
     <!-- Promo code (Loyalty Phase B) — auto-validated input on Confirm step -->
-    <string name="booking_promo_code_label">Have a promo code?</string>
-    <string name="booking_promo_code_placeholder">WELCOME20</string>
     <string name="booking_promo_code_validating">Checking…</string>
-    <string name="booking_promo_code_valid">Code applied: -%1$s</string>
     <string name="booking_promo_code_error_not_found">Code not found</string>
     <string name="booking_promo_code_error_inactive">Code is no longer available</string>
     <string name="booking_promo_code_error_expired">This code has expired</string>
@@ -845,13 +702,8 @@
     <string name="booking_access_instructions_hint">How do we get in? (optional)</string>
 
     <string name="booking_success_t1_title">Booking received</string>
-    <string name="booking_success_t1_desc">Just now</string>
     <string name="booking_success_t2_title">Cleaner being assigned</string>
     <string name="booking_success_t2_desc">We\'ll let you know as soon as we find one</string>
-    <string name="booking_success_t3_title">Cleaner confirmed</string>
-    <string name="booking_success_t3_desc">You\'ll see their profile here</string>
-    <string name="booking_success_t4_title">Cleaning day</string>
-    <string name="booking_success_t4_desc">We\'ll remind you 1 hour before</string>
     <string name="booking_success_view_orders">View order</string>
     <string name="booking_success_go_home">Back to home</string>
     <string name="booking_success_total_label">Total</string>
@@ -863,12 +715,27 @@
     <!-- Profile onboarding (post-signup one-shot) -->
     <string name="onboarding_greeting">Welcome aboard!</string>
     <string name="onboarding_greeting_named">Welcome aboard, %1$s!</string>
-    <string name="onboarding_subtitle">A few quick details so we can serve you better. You can skip and fill these in later.</string>
+    <string name="onboarding_progress">%1$d of %2$d done</string>
+    <string name="onboarding_left_phone">Add your phone number and you can book.</string>
+    <string name="onboarding_ready">Ready to book</string>
+    <string name="onboarding_ready_sub">Everything a booking needs is here.</string>
+    <string name="onboarding_row_name">Name</string>
+    <string name="onboarding_email_hidden">Hidden by Apple</string>
+    <string name="onboarding_row_done_a11y">done</string>
+    <string name="onboarding_row_current_a11y">current step</string>
+    <string name="onboarding_row_waiting_a11y">not done</string>
+    <string name="onboarding_not_set">Not set</string>
+    <string name="onboarding_card_title">What your cleaner sees</string>
+    <string name="onboarding_card_example">Example</string>
+    <string name="onboarding_card_dial">Calls and texts go to</string>
+    <string name="onboarding_card_call">Call</string>
+    <string name="onboarding_card_sms">SMS</string>
+    <string name="onboarding_card_navigate">Navigate</string>
+    <string name="onboarding_card_sample_address">Vinohradská 48, Praha 2</string>
+    <string name="onboarding_birthdate_done">Done</string>
     <string name="onboarding_phone_label">Phone number</string>
-    <string name="onboarding_phone_helper">Include your country code (e.g. +420). We\'ll only use this to reach you about your bookings.</string>
     <string name="onboarding_birthdate_label">Birth date</string>
-    <string name="onboarding_birthdate_placeholder">Choose date</string>
-    <string name="onboarding_birthdate_helper">Optional — for birthday perks.</string>
+    <string name="onboarding_birthdate_helper">Optional. Never shown to your cleaner.</string>
     <string name="onboarding_save">Save and continue</string>
     <string name="onboarding_skip">Skip for now</string>
 
@@ -907,7 +774,6 @@
     <!-- Cleansia Plus subscription — marketing + management copy. Pricing
          and perk wording is provisional; lock with product before launch. -->
     <string name="membership_plus_title">Cleansia Plus</string>
-    <string name="membership_plus_subtitle">A better way to keep your home clean</string>
     <string name="membership_disclosure">Renews automatically until you cancel. If you cancel, the benefits run to the end of the paid period. If a renewal payment fails, the benefits pause, and a cancellation then takes effect at once.</string>
     <string name="plus_not_available_in_market">Plus is not available in your market yet</string>
 
@@ -927,8 +793,6 @@
     <!-- Plan switcher (monthly/annual toggle on the subscribe screen) -->
     <string name="membership_plan_monthly">Monthly</string>
     <string name="membership_plan_annual">Annual</string>
-    <string name="membership_plan_savings_badge">Save %1$d%%</string>
-    <string name="membership_plan_per_month_billed_annually">%1$s / month — billed annually as %2$s</string>
     <string name="membership_plan_per_month">%1$s / month</string>
     <string name="membership_plan_per_year">%1$s / year</string>
 
@@ -973,14 +837,12 @@
     <string name="membership_success_perk_express">Express bookings with the surcharge waived</string>
     <string name="membership_success_cta_setup_recurring">Set up a recurring cleaning</string>
     <string name="membership_success_cta_back_home">Back to home</string>
-    <string name="membership_active_status">Active</string>
     <string name="membership_renews_on">Renews on %1$s</string>
     <string name="membership_trial_until">Free trial until %1$s</string>
     <string name="membership_cancelled_until">Active until %1$s</string>
     <string name="membership_cancel_success_trial">Cleansia Plus cancelled — you won\'t be charged, and your benefits run until the trial ends.</string>
     <string name="membership_cancel_success_now">Cleansia Plus cancelled — nothing more will be charged.</string>
     <string name="membership_active_until">Active until %1$s</string>
-    <string name="membership_status_ending">Cancellation requested</string>
     <string name="membership_status_ending_badge">ENDING</string>
     <string name="membership_status_active_badge">PLUS · ACTIVE</string>
     <string name="membership_then_ends_hint">Plus benefits stop on this date.</string>
@@ -996,7 +858,6 @@
     <string name="membership_cancel_dialog_message_trial">Your trial ends on %1$s, and your benefits stay until then. No payment follows, so you won\'t be charged.</string>
     <string name="membership_cancel_dialog_message_now">Your membership ends right away. The unpaid renewal is not charged, and nothing more will be.</string>
     <string name="membership_cancel_dialog_confirm">Cancel</string>
-    <string name="membership_subscribed_success">Welcome to Cleansia Plus!</string>
     <string name="membership_already_active">You\'re already a Plus member.</string>
 
     <!-- Recurring bookings (Plus perk) -->
@@ -1045,7 +906,6 @@
     <string name="recurring_create_bathrooms_label">Bathrooms</string>
     <string name="recurring_create_address_label">Address</string>
     <string name="recurring_create_address_default">DEFAULT</string>
-    <string name="recurring_create_address_empty">Add a saved address from your profile first.</string>
     <string name="recurring_create_services_label">What to clean</string>
     <string name="recurring_create_services_loading">Loading services…</string>
     <string name="recurring_create_section_packages">Packages</string>
@@ -1271,10 +1131,6 @@
     <string name="loyalty_tier_silver_mopper">Silver Mopper</string>
     <string name="loyalty_tier_gold_polisher">Gold Polisher</string>
     <string name="loyalty_tier_platinum_sparkler">Platinum Sparkler</string>
-    <string name="loyalty_tier_label_short_bronze">Bronze</string>
-    <string name="loyalty_tier_label_short_silver">Silver</string>
-    <string name="loyalty_tier_label_short_gold">Gold</string>
-    <string name="loyalty_tier_label_short_platinum">Platinum</string>
     <string name="loyalty_lifetime_points">Lifetime points</string>
     <string name="credit_your_credit">Your credit</string>
     <string name="credit_auto_applied_share">Comes off your next card booking automatically, up to %1$d%% of it.</string>
@@ -1315,7 +1171,6 @@
     <string name="loyalty_referral_section_title">Invite friends</string>
     <string name="loyalty_referral_subtitle">Share your code. When a friend\'s first cleaning is completed, you get %1$s credit, and they get credit where their market offers it.</string>
     <string name="loyalty_referral_subtitle_no_figure">Share your code with friends to enter when they sign up.</string>
-    <string name="loyalty_referral_code_label">Your code</string>
     <string name="loyalty_referral_share_button">Share</string>
     <string name="loyalty_referral_copy_button">Copy</string>
     <string name="loyalty_referral_copied_toast">Code copied</string>
@@ -1323,8 +1178,6 @@
     <string name="loyalty_referral_stats_empty">Be the first — share your code</string>
     <string name="loyalty_referral_stats_qualified">%1$d friend joined · %2$d qualified</string>
     <string name="loyalty_referral_share_failed">Couldn\'t open share. Code copied to clipboard.</string>
-    <string name="referral_code_field_collapsed">I have a referral code</string>
-    <string name="referral_code_field_label">Referral code</string>
     <string name="referral_code_field_placeholder">X3K9P2</string>
     <string name="referral_code_validating">Checking…</string>
     <string name="error_referral_not_found">Referral code not found</string>
@@ -1592,10 +1445,8 @@
     <string name="order_photos_phase_count">%1$s · %2$d</string>
     <string name="booking_cash_needs_saved_card">Save a valid card for this currency to pay in cash.</string>
     <string name="error_order_cash_requires_saved_card">Cash requires a valid saved card in the booking currency.</string>
-    <string name="booking_success_confirmed_title">Booking confirmed</string>
     <string name="booking_success_details_loading">Loading booking details…</string>
     <string name="booking_success_details_unavailable">Booking details are temporarily unavailable.</string>
-    <string name="booking_success_cleaner_assigned">Cleaner assigned</string>
     <string name="booking_success_finding">No cleaner has taken it yet.</string>
     <string name="booking_success_finding_sub">We\'ll let you know as soon as one does.</string>
     <plurals name="booking_success_crew">

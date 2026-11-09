@@ -5,9 +5,8 @@ import app.cash.turbine.test
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.partner.R
-import cz.cleansia.partner.core.devices.DevicesRepository
-import cz.cleansia.partner.core.devices.RevokeDeviceResponse
-import cz.cleansia.partner.core.devices.UserDeviceDto
+import cz.cleansia.core.devices.DeviceManagementRepository
+import cz.cleansia.core.devices.UserDeviceDto
 import cz.cleansia.core.auth.ForcedSignOutReason
 import cz.cleansia.core.auth.SessionEvent
 import cz.cleansia.core.auth.SessionManager
@@ -34,7 +33,7 @@ class DevicesViewModelTest {
     @get:Rule
     val mainRule = MainDispatcherRule()
 
-    private lateinit var repository: DevicesRepository
+    private lateinit var repository: DeviceManagementRepository
     private lateinit var authRepository: AuthRepository
     private lateinit var sessionManager: SessionManager
     private lateinit var snackbar: SnackbarController
@@ -96,7 +95,7 @@ class DevicesViewModelTest {
     @Test
     fun `revoke success removes the device and returns to Idle`() = runTest {
         coEvery { repository.getMyDevices() } returns ApiResult.Success(listOf(thisDevice, otherDevice))
-        coEvery { repository.revoke("row-2") } returns ApiResult.Success(RevokeDeviceResponse(success = true))
+        coEvery { repository.revoke("row-2") } returns ApiResult.Success(Unit)
 
         val vm = viewModel()
         advanceUntilIdle()
@@ -115,7 +114,7 @@ class DevicesViewModelTest {
     @Test
     fun `revoking the current device wipes locally and emits the forced sign-out`() = runTest {
         coEvery { repository.getMyDevices() } returns ApiResult.Success(listOf(thisDevice, otherDevice))
-        coEvery { repository.revoke("row-1") } returns ApiResult.Success(RevokeDeviceResponse(success = true))
+        coEvery { repository.revoke("row-1") } returns ApiResult.Success(Unit)
 
         val vm = viewModel()
         advanceUntilIdle()
@@ -180,7 +179,7 @@ class DevicesViewModelTest {
         var revokeCalls = 0
         coEvery { repository.revoke("row-2") } coAnswers {
             revokeCalls++
-            ApiResult.Success(RevokeDeviceResponse(success = true))
+            ApiResult.Success(Unit)
         }
 
         val vm = viewModel()

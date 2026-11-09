@@ -1,5 +1,6 @@
 package cz.cleansia.partner.features.orders
 
+import androidx.compose.ui.unit.dp
 import cz.cleansia.core.location.GeocodedAddress
 import cz.cleansia.core.location.ReverseGeocodingService
 import cz.cleansia.partner.api.model.OrderListItem
@@ -58,6 +59,14 @@ class JobMapRulesTest {
         assertFalse(movedOffJob(prague, 15.0, prague, 14.95))
         assertTrue(movedOffJob(prague, 15.0, prague, 15.1))
         assertTrue(movedOffJob(prague, 15.0, prague, 14.9))
+    }
+
+    @Test
+    fun `the door sits on the band's pin line, or mid-map on a map no taller than the line`() {
+        assertEquals(178.dp, pinTip(line = 178.dp, height = 818.dp))
+        assertEquals(178.dp, pinTip(line = 178.dp, height = 179.dp))
+        assertEquals(74.dp, pinTip(line = 156.dp, height = 148.dp))
+        assertEquals(78.dp, pinTip(line = 156.dp, height = 156.dp))
     }
 
     @Test

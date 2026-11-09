@@ -70,38 +70,15 @@
     <string name="nav_home">Главная</string>
     <string name="nav_book">Заказать</string>
     <string name="nav_orders">Заказы</string>
-    <string name="nav_offers">Предложения</string>
     <string name="nav_rewards">Награды</string>
     <string name="nav_profile">Профиль</string>
-    <string name="offers_placeholder">Предложения и акции скоро</string>
 
     <!-- Rewards tab -->
     <string name="rewards_title">Награды</string>
-    <string name="rewards_subtitle">Привилегии и признание для постоянных клиентов</string>
-    <string name="rewards_completed_orders">Завершённые бронирования</string>
-    <string name="rewards_bookings_label">бронирований</string>
-    <string name="rewards_next_milestone">Ещё %1$d до открытия %2$s</string>
-    <string name="rewards_all_tiers_unlocked">Вы открыли все уровни — спасибо!</string>
-    <string name="rewards_tiers_title">Этапы</string>
-
-    <string name="rewards_referral_title">Пригласить друга</string>
-    <string name="rewards_referral_your_code">Ваш код</string>
-    <string name="rewards_referral_share">Поделиться кодом</string>
-    <string name="rewards_referral_no_joins">Будьте первым — поделитесь своим кодом</string>
 
     <!-- Home — address bar -->
     <string name="home_address_label">Уборка по адресу</string>
     <string name="home_address_placeholder">Выберите адрес</string>
-
-    <!-- Home — upcoming order -->
-    <string name="home_upcoming_empty_title">Нет запланированных уборок</string>
-    <string name="home_upcoming_empty_subtitle">Закажите первую уборку.</string>
-
-    <!-- Home — reorder -->
-    <string name="home_reorder_title">Заказать снова</string>
-    <string name="home_reorder_service_name">Уборка дома</string>
-    <string name="home_reorder_details">2 комнаты · Последний заказ 2 апреля</string>
-    <string name="home_reorder_cta">Заказать снова</string>
 
     <!-- Smart upsell carousel slides -->
     <string name="home_upsell_plus_top">Cleansia Plus</string>
@@ -160,9 +137,6 @@
     <string name="home_upsell_chip_times">%1$d×</string>
     <string name="home_upsell_referral_desc">Вы получите %1$s кредита после первой завершённой уборки друга, а друг — кредит, если его предлагают на его рынке.</string>
 
-    <string name="home_hero2_top">Весна уже здесь</string>
-    <string name="home_hero2_title">Глубокая уборка + окна вместе</string>
-
     <!-- Home — trust strip -->
     <string name="home_trust_same_day">Сегодня</string>
 
@@ -183,47 +157,16 @@
     <string name="home_recent_title">Недавние бронирования</string>
     <string name="home_recent_see_all">Показать все</string>
     <string name="home_recent_fallback_title">Уборка</string>
-    <string name="home_book_again">Заказать снова</string>
 
     <!-- Home — milestone -->
-    <string name="home_milestone_title">Прогресс к следующему уровню</string>
     <string name="home_milestone_title_v2">%1$s — Прогресс к следующему уровню</string>
 
     <!-- Home — seasonal -->
-
-    <!-- Home — quick actions -->
-    <string name="home_quick_book">Заказать</string>
-    <string name="home_quick_orders">Заказы</string>
-    <string name="home_quick_track">Отследить</string>
-
-    <!-- Home — services -->
-    <string name="home_services_title_short">Популярные услуги</string>
-    <string name="home_services_from">От</string>
-    <string name="home_services_see_all">Показать все</string>
-
-    <string name="home_service_household_name">Домашняя</string>
-
-    <string name="home_service_upholstery_name">Обивка</string>
-
-    <string name="home_service_windows_name">Окна</string>
-
-    <!-- Home — promo carousel -->
-    <string name="home_promo_title">Для вас</string>
-
-    <string name="home_hero_slide1_title">Безупречно за пару часов</string>
-    <string name="home_hero_book_now">Заказать</string>
-
-    <string name="home_hero_slide2_title">Глубокая уборка, лёгкая неделя</string>
-    <string name="home_hero_slide2_subtitle">Ковры, обивка, окна — всё за один визит.</string>
-    <string name="home_hero_slide2_cta">Узнать</string>
 
     <!-- Orders tab -->
     <string name="orders_title">Мои заказы</string>
     <string name="orders_empty_title">Пока нет заказов</string>
     <string name="orders_empty_subtitle">Ваши забронированные уборки появятся здесь.</string>
-    <string name="orders_upcoming">Предстоящие</string>
-    <string name="orders_past">Прошлые заказы</string>
-    <string name="orders_rebook">Заказать снова</string>
     <string name="orders_status_new">Новый</string>
     <string name="orders_status_pending">Ожидает</string>
     <string name="orders_status_confirmed">Подтверждён</string>
@@ -249,8 +192,6 @@
     <string name="orders_empty_cta">Заказать первую уборку</string>
 
     <!-- Order detail -->
-    <string name="order_detail_title">Заказ №%1$s</string>
-    <string name="order_detail_created">Создан %1$s</string>
     <string name="order_detail_section_details">Детали уборки</string>
     <string name="order_detail_address">Адрес</string>
     <string name="order_detail_headline_default">Бронирование получено</string>
@@ -264,12 +205,6 @@
     <string name="order_detail_subhead_on_the_way">Направляется к вам</string>
     <string name="order_detail_subhead_in_progress">Работа начата</string>
     <string name="order_detail_subhead_in_progress_eta">Ориентировочно %1$d минут</string>
-    <string name="order_detail_progress_percent">%1$d%% готово</string>
-    <string name="order_detail_step_booked">Забронировано</string>
-    <string name="order_detail_step_accepted">Принято</string>
-    <string name="order_detail_step_on_the_way">В пути</string>
-    <string name="order_detail_step_started">Начато</string>
-    <string name="order_detail_step_finished">Завершено</string>
     <string name="order_detail_rooms">Объект</string>
     <string name="order_detail_estimated">Ожидаемое время</string>
     <string name="order_detail_actual_time">Фактическое время</string>
@@ -278,7 +213,6 @@
     <string name="order_detail_total">Итого</string>
     <string name="order_paid_with_credit">Оплачено кредитом</string>
     <string name="order_paid_by_card">Оплачено картой</string>
-    <string name="order_detail_confirmation">Код подтверждения</string>
     <string name="order_detail_cleaners">Ваш клинер</string>
     <string name="order_detail_instructions">Инструкции</string>
     <string name="order_detail_special_instructions">Особые инструкции</string>
@@ -286,14 +220,9 @@
     <string name="order_detail_notes">Заметки</string>
     <string name="order_detail_your_review">Ваш отзыв</string>
     <string name="order_detail_leave_review">Оцените впечатление</string>
-    <string name="order_detail_rate_experience">Как прошла уборка?</string>
-    <string name="order_detail_review_comment">Добавьте комментарий (необязательно)</string>
-    <string name="order_detail_submit_review">Отправить отзыв</string>
     <string name="order_detail_timeline">Хронология статуса</string>
     <string name="order_detail_timeline_new_cleaner">Снова предложено клинерам</string>
-    <string name="order_detail_rebook">Заказать эту уборку снова</string>
     <string name="order_detail_download_receipt">Скачать чек</string>
-    <string name="order_detail_report_issue">Сообщить о проблеме</string>
     <string name="order_detail_error_title">Не удалось загрузить этот заказ</string>
     <string name="order_detail_error_message">Проверьте подключение к интернету и попробуйте снова.</string>
     <string name="order_detail_error_retry">Попробовать снова</string>
@@ -336,8 +265,6 @@
     </plurals>
     <string name="order_cancel_express_waiver_forfeit">Отмена также израсходует один из экспресс-заказов, включённых в ваше членство в этом месяце.</string>
     <string name="order_cancel_fee_neutral">Вы уверены, что хотите отменить это бронирование?</string>
-    <string name="order_cancel_reason_label">Причина (необязательно)</string>
-    <string name="order_cancel_reason_placeholder">Расскажите, что изменилось…</string>
     <string name="order_cancel_reason_picker_label">Почему вы отменяете?</string>
     <string name="order_cancel_reason_schedule">Изменения в графике</string>
     <string name="order_cancel_reason_mistake">Заказал по ошибке</string>
@@ -404,13 +331,10 @@
     <string name="order_photos_view_button">Показать все</string>
     <string name="order_photos_tab_before">До</string>
     <string name="order_photos_tab_after">После</string>
-    <string name="order_photos_summary_before">До — %1$d</string>
-    <string name="order_photos_summary_after">После — %1$d</string>
     <string name="order_photos_empty_before">Нет фото до уборки.</string>
     <string name="order_photos_empty_after">Нет фото после уборки.</string>
     <string name="order_photos_error_title">Не удалось загрузить фото.</string>
     <string name="order_photos_error_retry">Повторить</string>
-    <string name="order_photos_metadata_by">От %1$s</string>
     <string name="common_close">Закрыть</string>
 
     <!-- Booking review: the contract sentence and the request to start within the withdrawal period -->
@@ -418,11 +342,8 @@
     <string name="consent_early_performance_draft_2026_09_29">Я прошу начать уборку в течение 14-дневного срока для отказа от договора и признаю, что после полного выполнения уборки теряю право на отказ.</string>
 
     <!-- Profile tab -->
-    <string name="profile_greeting">Привет!</string>
-    <string name="profile_email_placeholder">вы@example.com</string>
     <string name="profile_row_edit">Редактировать</string>
     <string name="profile_row_addresses">Сохранённые адреса</string>
-    <string name="profile_row_payment">Способы оплаты</string>
     <string name="profile_row_notifications">Уведомления</string>
     <string name="profile_row_security">Безопасность</string>
     <string name="profile_row_help">Помощь и поддержка</string>
@@ -433,12 +354,10 @@
     <string name="profile_logout_dialog_cancel">Отмена</string>
     <string name="profile_app_version">Cleansia · v0.1.0</string>
     <string name="profile_stat_bookings">Бронирования</string>
-    <string name="profile_stat_favorite">Избранный</string>
     <string name="profile_stat_saved">Сохранено</string>
     <string name="profile_stat_member_since">Участник с</string>
     <string name="profile_tier_plus">Plus</string>
     <string name="profile_tier_regular">Обычный</string>
-    <string name="profile_section_account">Учётная запись</string>
     <string name="profile_section_personal">Личное</string>
     <string name="profile_section_contact">Контакты</string>
     <string name="profile_section_preferences">Настройки</string>
@@ -462,44 +381,6 @@
     <string name="profile_avatar_upload_success">Фото профиля обновлено</string>
     <string name="profile_avatar_remove_success">Фото профиля удалено</string>
     <string name="profile_save_success">Профиль успешно сохранён</string>
-
-    <!-- Profile — addresses -->
-    <string name="profile_addresses_title">Сохранённые адреса</string>
-    <string name="profile_addresses_add">Добавить адрес</string>
-    <string name="profile_addresses_default">По умолчанию</string>
-
-    <!-- Add address -->
-    <string name="add_address_title">Новый адрес</string>
-    <string name="add_address_section_label">Назовите этот адрес</string>
-    <string name="add_address_section_label_sub">Выберите готовый или введите своё название</string>
-    <string name="add_address_section_address">Где он находится?</string>
-    <string name="add_address_section_address_sub">Улица, город и индекс</string>
-    <string name="add_address_preset_home">Дом</string>
-    <string name="add_address_preset_work">Работа</string>
-    <string name="add_address_preset_other">Другое</string>
-    <string name="add_address_label_custom">Своё название</string>
-    <string name="add_address_street">Улица и номер дома</string>
-    <string name="add_address_city">Город</string>
-    <string name="add_address_zip">Индекс</string>
-    <string name="add_address_set_default">Сделать основным</string>
-    <string name="add_address_set_default_sub">Будет выбран при бронировании уборки</string>
-    <string name="add_address_save">Сохранить адрес</string>
-
-    <!-- Address validation -->
-    <string name="address_field_street">Улица</string>
-    <string name="address_field_city">Город</string>
-    <string name="address_field_zip">Почтовый индекс</string>
-    <string name="address_error_required">%1$s обязательно</string>
-    <string name="address_error_too_short">%1$s слишком короткое</string>
-    <string name="address_error_too_long">%1$s слишком длинное</string>
-    <string name="address_error_invalid_zip">Неверный индекс (формат, напр. 120 00)</string>
-
-    <!-- Profile — payment methods -->
-    <string name="payment_methods_title">Способы оплаты</string>
-    <string name="payment_methods_add_card">Добавить новую карту</string>
-    <string name="payment_methods_default">Основной</string>
-    <string name="payment_methods_expires">Срок %1$s/%2$02d</string>
-    <string name="payment_methods_empty">Пока нет способов оплаты</string>
 
     <!-- Profile — notifications -->
     <string name="notifications_title">Уведомления</string>
@@ -529,7 +410,6 @@
     <string name="notifications_dispute_reply">Ответы по спорам</string>
     <string name="notifications_dispute_reply_desc">Когда поддержка отвечает на ваш спор</string>
     <string name="busy_booking">Создаём ваш заказ…</string>
-    <string name="busy_payment">Обрабатываем платёж…</string>
     <string name="busy_subscribe_plus">Активируем Cleansia Plus…</string>
 
     <!-- Profile — help & support -->
@@ -597,13 +477,9 @@
     <string name="booking_step_indicator">Шаг %1$d из %2$d</string>
     <string name="booking_continue">Продолжить</string>
     <string name="booking_continue_price">Продолжить · %1$s</string>
-    <string name="booking_confirm">Подтвердить и оплатить</string>
-    <string name="booking_confirm_price">Подтвердить и оплатить · %1$s</string>
     <string name="booking_slide_to_confirm">Свайп для подтверждения</string>
     <string name="booking_slide_to_confirm_price">Свайп для оплаты · %1$s</string>
-    <string name="booking_total">Итого</string>
     <string name="booking_arrival_window">Клинер прибудет в течение 1 часа</string>
-    <string name="booking_slot_unavailable">Недоступно</string>
     <string name="booking_slot_express" formatted="false">Экспресс +20 %</string>
     <string name="booking_slot_express_waived">Экспресс · без доплаты</string>
     <string name="booking_express_waiver_available">Plus покрывает 20%% экспресс-доплаты — %1$d осталось в этом календарном месяце.</string>
@@ -638,7 +514,6 @@
     <string name="booking_trust_insured">Застраховано до %1$s</string>
 
     <string name="booking_pick_service">Выберите услугу</string>
-    <string name="booking_or_package">Или выберите пакет</string>
     <string name="booking_packages_featured">Рекомендуемые пакеты</string>
     <string name="booking_package_includes">ВКЛЮЧАЕТ</string>
     <string name="booking_package_includes_prefix">Включает:</string>
@@ -660,21 +535,17 @@
     <string name="booking_twice_package_confirm">Добавить пакет</string>
     <string name="booking_your_home">Ваш дом</string>
     <string name="booking_size_limit_caption">Не более %1$d комнат и %2$d ванных комнат</string>
-    <string name="booking_search_services">Поиск услуг</string>
     <string name="booking_no_results">Нет услуг по вашему запросу</string>
     <string name="booking_cat_all">Все</string>
     <string name="booking_catalog_loading">Загрузка услуг…</string>
     <string name="booking_catalog_error">Не удалось загрузить услуги</string>
     <string name="booking_catalog_empty">Сейчас нет доступных услуг</string>
     <string name="booking_catalog_retry">Повторить</string>
-    <string name="booking_rooms">Комнаты</string>
-    <string name="booking_bathrooms">Ванные</string>
 
     <string name="booking_where">Где</string>
     <string name="booking_select_address_hint">Выберите из сохранённых или добавьте новый</string>
     <string name="booking_when">Выберите дату</string>
     <string name="booking_today">Сегодня</string>
-    <string name="booking_new_address">Выбрать на карте</string>
 
     <!-- Address picker (map) -->
     <string name="address_picker_title">Адрес уборки</string>
@@ -685,9 +556,7 @@
     <string name="address_picker_my_location">Моё местоположение</string>
     <string name="address_picker_my_location_unavailable">Не удалось получить местоположение. Убедитесь, что GPS включён, и попробуйте снова.</string>
     <string name="address_picker_my_location_denied">Доступ к местоположению запрещён. Включите его в Настройках.</string>
-    <string name="address_picker_search">Поиск адреса</string>
     <string name="address_picker_search_hint">Улица, город или индекс…</string>
-    <string name="address_picker_search_prompt">Введите минимум 2 символа для поиска</string>
     <string name="address_picker_searching">Поиск…</string>
     <string name="address_picker_no_results">Нет совпадений. Попробуйте другой запрос.</string>
     <string name="booking_address_default">По умолчанию</string>
@@ -712,14 +581,7 @@
     <string name="common_cancel">Отмена</string>
     <string name="common_got_it">Понятно</string>
     <string name="common_details">Детали</string>
-    <string name="booking_street">Улица</string>
-    <string name="booking_city">Город</string>
-    <string name="booking_zip">Индекс</string>
     <string name="booking_select_time">Выберите время</string>
-    <string name="booking_all_times">Показать все</string>
-    <string name="booking_time_morning">Утро</string>
-    <string name="booking_time_afternoon">День</string>
-    <string name="booking_time_evening">Вечер</string>
 
     <!-- Booking extras (Confirm step add-on toggles) -->
     <string name="booking_extras_header">Дополнения</string>
@@ -776,10 +638,7 @@
     <string name="booking_summary_credit_card_only">Кредит действует только при оплате картой.</string>
 
     <!-- Promo code -->
-    <string name="booking_promo_code_label">Есть промокод?</string>
-    <string name="booking_promo_code_placeholder">WELCOME20</string>
     <string name="booking_promo_code_validating">Проверка…</string>
-    <string name="booking_promo_code_valid">Код применён: -%1$s</string>
     <string name="booking_promo_code_error_not_found">Код не найден</string>
     <string name="booking_promo_code_error_inactive">Код больше не доступен</string>
     <string name="booking_promo_code_error_expired">Срок действия кода истёк</string>
@@ -838,13 +697,8 @@
     <string name="booking_access_instructions_hint">Как войти? (необязательно)</string>
 
     <string name="booking_success_t1_title">Бронирование получено</string>
-    <string name="booking_success_t1_desc">Только что</string>
     <string name="booking_success_t2_title">Назначаем клинера</string>
     <string name="booking_success_t2_desc">Сообщим, как только его найдём</string>
-    <string name="booking_success_t3_title">Клинер подтверждён</string>
-    <string name="booking_success_t3_desc">Здесь появится его профиль</string>
-    <string name="booking_success_t4_title">День уборки</string>
-    <string name="booking_success_t4_desc">Напомним за час</string>
     <string name="booking_success_view_orders">Смотреть заказ</string>
     <string name="booking_success_go_home">На главную</string>
     <string name="booking_success_total_label">Итого</string>
@@ -856,12 +710,27 @@
     <!-- Profile onboarding -->
     <string name="onboarding_greeting">Добро пожаловать!</string>
     <string name="onboarding_greeting_named">Добро пожаловать, %1$s!</string>
-    <string name="onboarding_subtitle">Немного деталей, чтобы мы могли лучше вас обслуживать. Можно пропустить и заполнить позже.</string>
+    <string name="onboarding_progress">Готово %1$d из %2$d</string>
+    <string name="onboarding_left_phone">Добавьте номер телефона, и сможете заказывать.</string>
+    <string name="onboarding_ready">Можно заказывать</string>
+    <string name="onboarding_ready_sub">У вас есть всё, что нужно для заказа.</string>
+    <string name="onboarding_row_name">Имя и фамилия</string>
+    <string name="onboarding_email_hidden">Её скрывает Apple</string>
+    <string name="onboarding_row_done_a11y">готово</string>
+    <string name="onboarding_row_current_a11y">текущий шаг</string>
+    <string name="onboarding_row_waiting_a11y">не заполнено</string>
+    <string name="onboarding_not_set">Не указано</string>
+    <string name="onboarding_card_title">Что увидит клинер</string>
+    <string name="onboarding_card_example">Пример</string>
+    <string name="onboarding_card_dial">Звонки и SMS на номер</string>
+    <string name="onboarding_card_call">Позвонить</string>
+    <string name="onboarding_card_sms">SMS</string>
+    <string name="onboarding_card_navigate">Маршрут</string>
+    <string name="onboarding_card_sample_address">Vinohradská 48, Praha 2</string>
+    <string name="onboarding_birthdate_done">Готово</string>
     <string name="onboarding_phone_label">Номер телефона</string>
-    <string name="onboarding_phone_helper">Укажите код страны (напр. +420). Используем только для связи по вашим бронированиям.</string>
     <string name="onboarding_birthdate_label">Дата рождения</string>
-    <string name="onboarding_birthdate_placeholder">Выберите дату</string>
-    <string name="onboarding_birthdate_helper">По желанию — для бонусов ко дню рождения.</string>
+    <string name="onboarding_birthdate_helper">Необязательно. Клинер её никогда не увидит.</string>
     <string name="onboarding_save">Сохранить и продолжить</string>
     <string name="onboarding_skip">Пропустить</string>
 
@@ -898,7 +767,6 @@
 
     <!-- Cleansia Plus subscription -->
     <string name="membership_plus_title">Cleansia Plus</string>
-    <string name="membership_plus_subtitle">Лучший способ держать дом чистым</string>
     <string name="membership_disclosure">Подписка автоматически продлевается до отмены. После отмены преимущества действуют до конца оплаченного периода. Если оплату за продление не удаётся списать, преимущества приостанавливаются, а отмена тогда действует сразу.</string>
     <string name="plus_not_available_in_market">Plus пока недоступен на вашем рынке</string>
 
@@ -918,8 +786,6 @@
     <!-- Plan switcher -->
     <string name="membership_plan_monthly">Месячный</string>
     <string name="membership_plan_annual">Годовой</string>
-    <string name="membership_plan_savings_badge">Экономия %1$d%%</string>
-    <string name="membership_plan_per_month_billed_annually">%1$s / месяц — оплата ежегодно %2$s</string>
     <string name="membership_plan_per_month">%1$s / месяц</string>
     <string name="membership_plan_per_year">%1$s / год</string>
 
@@ -963,14 +829,12 @@
     <string name="membership_success_perk_express">Экспресс-заказы без доплаты</string>
     <string name="membership_success_cta_setup_recurring">Настроить регулярную уборку</string>
     <string name="membership_success_cta_back_home">На главную</string>
-    <string name="membership_active_status">Активна</string>
     <string name="membership_renews_on">Продлевается %1$s</string>
     <string name="membership_trial_until">Бесплатный пробный период до %1$s</string>
     <string name="membership_cancelled_until">Активна до %1$s</string>
     <string name="membership_cancel_success_trial">Cleansia Plus отменено — с вас ничего не спишут, а преимущества будут действовать до конца пробного периода.</string>
     <string name="membership_cancel_success_now">Cleansia Plus отменено — больше ничего не будет списано.</string>
     <string name="membership_active_until">Активна до %1$s</string>
-    <string name="membership_status_ending">Запрошена отмена</string>
     <string name="membership_status_ending_badge">ЗАВЕРШАЕТСЯ</string>
     <string name="membership_status_active_badge">PLUS · АКТИВНА</string>
     <string name="membership_then_ends_hint">Преимущества Plus прекратятся в эту дату.</string>
@@ -986,7 +850,6 @@
     <string name="membership_cancel_dialog_message_trial">Пробный период закончится %1$s, и до этого преимущества сохранятся. Оплаты после него не будет, поэтому с вас ничего не спишут.</string>
     <string name="membership_cancel_dialog_message_now">Членство закончится сразу. Неоплаченное продление не будет списано, и больше ничего тоже.</string>
     <string name="membership_cancel_dialog_confirm">Отменить</string>
-    <string name="membership_subscribed_success">Добро пожаловать в Cleansia Plus!</string>
     <string name="membership_already_active">Вы уже участник Plus.</string>
 
     <!-- Recurring bookings -->
@@ -1035,7 +898,6 @@
     <string name="recurring_create_bathrooms_label">Ванные</string>
     <string name="recurring_create_address_label">Адрес</string>
     <string name="recurring_create_address_default">ОСНОВНОЙ</string>
-    <string name="recurring_create_address_empty">Сначала сохраните адрес в профиле.</string>
     <string name="recurring_create_services_label">Что убрать</string>
     <string name="recurring_create_services_loading">Загрузка услуг…</string>
     <string name="recurring_create_section_packages">Пакеты</string>
@@ -1252,10 +1114,6 @@
     <string name="loyalty_tier_silver_mopper">Серебряный мопер</string>
     <string name="loyalty_tier_gold_polisher">Золотой полировщик</string>
     <string name="loyalty_tier_platinum_sparkler">Платиновый блеск</string>
-    <string name="loyalty_tier_label_short_bronze">Бронза</string>
-    <string name="loyalty_tier_label_short_silver">Серебро</string>
-    <string name="loyalty_tier_label_short_gold">Золото</string>
-    <string name="loyalty_tier_label_short_platinum">Платина</string>
     <string name="loyalty_lifetime_points">Баллы за всё время</string>
     <string name="credit_your_credit">Ваш кредит</string>
     <string name="credit_auto_applied_share">Автоматически списывается со следующего заказа с оплатой картой — до %1$d%% его стоимости.</string>
@@ -1296,7 +1154,6 @@
     <string name="loyalty_referral_section_title">Пригласите друзей</string>
     <string name="loyalty_referral_subtitle">Поделитесь своим кодом. После первой завершённой уборки друга вы получите %1$s кредита, а друг — кредит, если его предлагают на его рынке.</string>
     <string name="loyalty_referral_subtitle_no_figure">Поделитесь своим кодом с друзьями — они введут его при регистрации.</string>
-    <string name="loyalty_referral_code_label">Ваш код</string>
     <string name="loyalty_referral_share_button">Поделиться</string>
     <string name="loyalty_referral_copy_button">Копировать</string>
     <string name="loyalty_referral_copied_toast">Код скопирован</string>
@@ -1304,8 +1161,6 @@
     <string name="loyalty_referral_stats_empty">Будьте первым — поделитесь кодом</string>
     <string name="loyalty_referral_stats_qualified">%1$d друг присоединился · %2$d квалифицированы</string>
     <string name="loyalty_referral_share_failed">Не удалось поделиться. Код скопирован в буфер.</string>
-    <string name="referral_code_field_collapsed">У меня есть реферальный код</string>
-    <string name="referral_code_field_label">Реферальный код</string>
     <string name="referral_code_field_placeholder">X3K9P2</string>
     <string name="referral_code_validating">Проверка…</string>
     <string name="error_referral_not_found">Реферальный код не найден</string>
@@ -1586,10 +1441,8 @@
     <string name="order_photos_phase_count">%1$s · %2$d</string>
     <string name="booking_cash_needs_saved_card">Для оплаты наличными сохраните действующую карту в валюте заказа.</string>
     <string name="error_order_cash_requires_saved_card">Для оплаты наличными нужна действующая сохранённая карта в валюте заказа.</string>
-    <string name="booking_success_confirmed_title">Бронирование подтверждено</string>
     <string name="booking_success_details_loading">Загружаем детали бронирования…</string>
     <string name="booking_success_details_unavailable">Детали бронирования временно недоступны.</string>
-    <string name="booking_success_cleaner_assigned">Клинер назначен</string>
     <string name="booking_success_finding">Пока ни один клинер его не взял.</string>
     <string name="booking_success_finding_sub">Сообщим вам, как только кто-то его возьмёт.</string>
     <plurals name="booking_success_crew">

@@ -935,6 +935,7 @@
     },
     "validation": {
       "invalid_password": "Недійсний пароль",
+      "invalid_phone_number": "Будь ласка, введіть дійсний номер телефону.",
       "invalid_date": "Недійсна дата",
       "date_must_be_in_past": "Дата повинна бути в минулому",
       "invalid_age": "Недійсний вік",

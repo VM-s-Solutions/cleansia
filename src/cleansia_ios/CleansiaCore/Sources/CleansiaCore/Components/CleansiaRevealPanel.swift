@@ -170,7 +170,7 @@ private struct RedactedLines: View {
     struct CleansiaRevealPanel_Previews: PreviewProvider {
         static var previews: some View {
             CleansiaRevealPanel(title: "Entry instructions") {
-                Text("Side gate, key box code 4417. Second door on the left.")
+                Text(verbatim: "Side gate, key box code 4417. Second door on the left.")
                     .font(CleansiaTypography.bodyMedium)
                     .foregroundColor(CleansiaColors.onSurface)
             }

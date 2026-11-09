@@ -82,6 +82,7 @@ import cz.cleansia.customer.core.loyalty.TierInfoDto
 import cz.cleansia.customer.core.loyalty.TierPerkDto
 import cz.cleansia.customer.core.market.formattedReferralCredit
 import cz.cleansia.customer.core.referral.ReferralAccountDto
+import cz.cleansia.core.ui.components.OrderStatusPill
 import cz.cleansia.core.ui.components.SudsRefreshIndicator
 import cz.cleansia.core.ui.theme.Poppins
 import cz.cleansia.customer.ui.theme.SuccessText
@@ -833,9 +834,10 @@ private fun TierLadderRow(
             )
         }
         when {
-            isCurrent -> StatusPill(
+            isCurrent -> OrderStatusPill(
                 label = stringResource(R.string.loyalty_tier_status_current),
-                color = primaryText(),
+                ink = primaryText(),
+                washAlpha = 0.14f,
             )
             isUnlocked -> Icon(
                 Icons.Outlined.CheckCircle,
@@ -878,22 +880,6 @@ private fun composeDiscountSummary(
         stringResource(R.string.loyalty_discount_min_order, pct, formatOrderPrice(minOrder, currencyCode))
     } else {
         stringResource(R.string.loyalty_discount_basic, pct)
-    }
-}
-
-@Composable
-private fun StatusPill(label: String, color: Color) {
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(999.dp))
-            .background(color.copy(alpha = 0.14f))
-            .padding(horizontal = 10.dp, vertical = 4.dp),
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-            color = color,
-        )
     }
 }
 

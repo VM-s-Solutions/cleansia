@@ -1,3 +1,4 @@
+import CleansiaCore
 import Foundation
 
 enum PartnerNotificationDestination: Equatable {
@@ -19,6 +20,15 @@ enum PartnerNotificationDeepLink {
         let orderId = (userInfo[orderIdField] as? String).flatMap { $0.isEmpty ? nil : $0 }
         let invoiceId = (userInfo[invoiceIdField] as? String).flatMap { $0.isEmpty ? nil : $0 }
         return resolve(eventKey: eventKey, orderId: orderId, invoiceId: invoiceId)
+    }
+
+    /// The same destination for the inbox row of the push.
+    static func resolve(_ notification: UserNotification) -> PartnerNotificationDestination? {
+        resolve(
+            eventKey: notification.eventKey,
+            orderId: notification.args[orderIdField].flatMap { $0.isEmpty ? nil : $0 },
+            invoiceId: notification.args[invoiceIdField].flatMap { $0.isEmpty ? nil : $0 }
+        )
     }
 
     static func resolve(

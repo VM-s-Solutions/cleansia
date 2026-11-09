@@ -127,10 +127,34 @@ final class ComponentTextInkTests: XCTestCase {
         XCTAssertEqual(CleansiaPrimaryButton.ink(pressable: true, disabled: nil), CleansiaColors.onPrimary)
     }
 
+    /// A filled button that cannot be pressed reads in both modes: slate-600 on slate-200 in light mode, slate-400 on
+    /// the raised dark surface in dark mode. The primary at half under a white label read 2.01:1. A loading button
+    /// shares the look, so its spinner takes the label's ink.
+    func testTheDisabledButtonReadsInBothModes() throws {
+        XCTAssertEqual(
+            contrast(
+                resolved(CleansiaColors.onDisabledContainer, .light),
+                resolved(CleansiaColors.disabledContainer, .light)
+            ),
+            6.15,
+            accuracy: 0.01
+        )
+        XCTAssertEqual(
+            contrast(
+                resolved(CleansiaColors.onDisabledContainer, .dark),
+                resolved(CleansiaColors.disabledContainer, .dark)
+            ),
+            4.84,
+            accuracy: 0.01
+        )
+        let button = try compactSource("Components/CleansiaButton.swift")
+        XCTAssertTrue(button.contains(".tint(Self.ink(pressable:pressable,disabled:disabledContentColor))"))
+    }
+
     /// Blue text on the primary container reads 4.5:1 in both modes (finding 2026-10-05): in dark mode the
     /// container is sky-700, where the text ink's sky-400 read 2.77:1, so badge text takes
-    /// `primaryTextOnContainer` (sky-100 in dark, the text ink's sky-700 in light). The section header's badge
-    /// is one.
+    /// `primaryTextOnContainer` (sky-100 in dark, the text ink's sky-700 in light). The devices screen's This
+    /// device chip is one.
     func testBadgeTextOnThePrimaryContainerReadsInBothModes() throws {
         for style in [UIUserInterfaceStyle.light, .dark] {
             let container = resolved(CleansiaColors.primaryContainer, style)
@@ -159,16 +183,17 @@ final class ComponentTextInkTests: XCTestCase {
             accuracy: 0.001,
             "light changed"
         )
-        XCTAssertTrue(
-            try compactSource("Components/CleansiaSectionHeader.swift")
-                .contains(".foregroundColor(CleansiaColors.primaryTextOnContainer).padding(.horizontal,Spacing.s)")
-        )
+        XCTAssertTrue(try compactSource("Devices/DevicesView.swift").contains(
+            "Text(copy.thisDevice).font(CleansiaTypography.labelSmall)"
+                + ".foregroundColor(CleansiaColors.primaryTextOnContainer)"
+        ), "the devices screen's This device chip")
     }
 
     /// An icon on the primary container reads 3:1 or more in both modes (finding 2026-10-05): in dark mode the
     /// container is sky-700, where the primary's sky-400 read 2.77:1, so icons on it take
-    /// `primaryIconOnContainer` (sky-100 in dark, 5.17:1; the primary itself in light, 3.57:1, unchanged).
-    func testIconsOnThePrimaryContainerReadInBothModes() {
+    /// `primaryIconOnContainer` (sky-100 in dark, 5.17:1; the primary itself in light, 3.57:1, unchanged). The
+    /// devices screen's platform icon is one.
+    func testIconsOnThePrimaryContainerReadInBothModes() throws {
         for style in [UIUserInterfaceStyle.light, .dark] {
             XCTAssertGreaterThanOrEqual(
                 contrast(
@@ -196,6 +221,17 @@ final class ComponentTextInkTests: XCTestCase {
             1,
             accuracy: 0.001,
             "light changed"
+        )
+        XCTAssertTrue(try compactSource("Devices/DevicesView.swift").contains(
+            "Image(systemName:platformIcon(device.platform)).foregroundColor(CleansiaColors.primaryIconOnContainer)"
+        ))
+    }
+
+    /// The shared screens' text buttons: the notifications inbox's Close in its toolbar.
+    func testTheSharedScreensTextButtonsTakeTheTextInk() throws {
+        XCTAssertTrue(
+            try compactSource("Notifications/NotificationsInboxSheet.swift")
+                .contains("Button(copy.close){dismiss()}.tint(CleansiaColors.primaryText)")
         )
     }
 

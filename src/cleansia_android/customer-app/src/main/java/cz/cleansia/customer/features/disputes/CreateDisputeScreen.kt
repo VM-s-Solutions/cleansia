@@ -69,7 +69,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.disputes.DisputeSettlement
-import cz.cleansia.customer.ui.state.ActionState
+import cz.cleansia.core.ui.state.ActionState
 
 /**
  * CreateDisputeScreen — "Report an issue" full-screen form. Reached from two

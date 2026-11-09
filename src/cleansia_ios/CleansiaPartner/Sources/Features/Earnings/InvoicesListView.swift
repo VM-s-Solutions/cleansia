@@ -40,33 +40,11 @@ struct InvoicesListView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(CleansiaColors.background.ignoresSafeArea())
         case let .error(error):
-            InvoicesErrorView(error: error) { Task { await vm.userRefresh() } }
+            ErrorRetryView(error: error) { Task { await vm.userRefresh() } }
         case let .loaded(invoices):
             InvoicesListContent(invoices: invoices, onOpenInvoice: onOpenInvoice)
                 .background(CleansiaColors.background.ignoresSafeArea())
         }
-    }
-}
-
-private struct InvoicesErrorView: View {
-    let error: ApiError
-    let onRetry: () -> Void
-
-    var body: some View {
-        VStack(spacing: Spacing.m) {
-            Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 40))
-                .foregroundColor(CleansiaColors.error)
-            Text(ApiErrorLocalizer().message(for: error))
-                .font(CleansiaTypography.bodyMedium)
-                .foregroundColor(CleansiaColors.onSurfaceVariant)
-                .multilineTextAlignment(.center)
-            CleansiaOutlinedButton(L10n.retry, size: .medium, action: onRetry)
-                .fixedSize()
-        }
-        .padding(Spacing.xl)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(CleansiaColors.background.ignoresSafeArea())
     }
 }
 

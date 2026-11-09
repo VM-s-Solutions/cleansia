@@ -407,7 +407,7 @@ final class PartnerOrdersVisualTests: XCTestCase {
             host.view.layoutIfNeeded()
         }
         let fitted = Date().addingTimeInterval(4)
-        while !Self.webViewsFitTheirText(in: host.view), Date() < fitted {
+        while await !Self.webViewsFitTheirText(in: host.view), Date() < fitted {
             try? await Task.sleep(nanoseconds: 60_000_000)
             host.view.layoutIfNeeded()
         }
@@ -435,11 +435,11 @@ final class PartnerOrdersVisualTests: XCTestCase {
         return nil
     }
 
-    /// A text sized to its document has loaded and been laid out at its height; one that scrolls itself is ready.
-    private static func webViewsFitTheirText(in view: UIView) -> Bool {
+    private static func webViewsFitTheirText(in view: UIView) async -> Bool {
         guard let web = webView(in: view), !web.scrollView.isScrollEnabled else { return true }
-        return web.scrollView.contentSize.height > 1
-            && abs(web.bounds.height - web.scrollView.contentSize.height) <= 1
+        let laidOut = "document.fonts.status == 'loaded' && document.body.firstChild ? document.body.scrollHeight : 0"
+        guard let height = try? await web.evaluateJavaScript(laidOut) as? Double, height > 1 else { return false }
+        return abs(web.scrollView.contentSize.height - height) <= 1 && abs(web.bounds.height - height) <= 1
     }
 }
 

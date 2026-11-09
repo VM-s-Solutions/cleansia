@@ -935,6 +935,7 @@
     },
     "validation": {
       "invalid_password": "Neplatné heslo",
+      "invalid_phone_number": "Zadajte prosím platné telefónne číslo.",
       "invalid_date": "Neplatný dátum",
       "date_must_be_in_past": "Dátum musí byť v minulosti",
       "invalid_age": "Neplatný vek",

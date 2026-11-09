@@ -8,9 +8,9 @@ import cz.cleansia.core.settings.AppLocale
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.partner.core.notifications.NotificationDeepLink
-import cz.cleansia.partner.core.notifications.NotificationFeedRepository
+import cz.cleansia.core.notifications.NotificationFeedRepository
 import cz.cleansia.partner.core.notifications.NotificationTemplates
-import cz.cleansia.partner.core.notifications.UserNotificationDto
+import cz.cleansia.core.notifications.UserNotificationDto
 import cz.cleansia.partner.core.settings.AppSettingsRepository
 import cz.cleansia.partner.navigation.NavRoute
 import dagger.hilt.android.lifecycle.HiltViewModel

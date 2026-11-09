@@ -101,10 +101,6 @@ extension L10n.Booking {
         L10n.localized("booking_success_title")
     }
 
-    static var successConfirmedTitle: String {
-        L10n.localized("booking_success_confirmed_title")
-    }
-
     static var successDetailsLoading: String {
         L10n.localized("booking_success_details_loading")
     }
@@ -113,48 +109,8 @@ extension L10n.Booking {
         L10n.localized("booking_success_details_unavailable")
     }
 
-    static var successCleanerAssigned: String {
-        L10n.localized("booking_success_cleaner_assigned")
-    }
-
     static var successGoHome: String {
         L10n.localized("booking_success_go_home")
-    }
-
-    static var successProgress: String {
-        L10n.localized("booking_success_progress")
-    }
-
-    static var successStepReceivedTitle: String {
-        L10n.localized("booking_success_t1_title")
-    }
-
-    static var successStepReceivedSubtitle: String {
-        L10n.localized("booking_success_t1_desc")
-    }
-
-    static var successStepAssigningTitle: String {
-        L10n.localized("booking_success_t2_title")
-    }
-
-    static var successStepAssigningSubtitle: String {
-        L10n.localized("booking_success_t2_desc")
-    }
-
-    static var successStepConfirmedTitle: String {
-        L10n.localized("booking_success_t3_title")
-    }
-
-    static var successStepConfirmedSubtitle: String {
-        L10n.localized("booking_success_t3_desc")
-    }
-
-    static var successStepCleaningDayTitle: String {
-        L10n.localized("booking_success_t4_title")
-    }
-
-    static var successStepCleaningDaySubtitle: String {
-        L10n.localized("booking_success_t4_desc")
     }
 
     static var successTotalLabel: String {
@@ -195,14 +151,6 @@ extension L10n.Booking {
 
     static var successCashOnDay: String {
         L10n.localized("booking_success_cash_on_day")
-    }
-
-    static var errorSignInRequired: String {
-        L10n.localized("error_booking_sign_in_required")
-    }
-
-    static var errorPickTime: String {
-        L10n.localized("error_booking_pick_time")
     }
 
     static var errorGenericNetwork: String {

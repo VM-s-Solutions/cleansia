@@ -7,7 +7,7 @@ import androidx.lifecycle.viewModelScope
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.disputes.DisputeDetailsDto
 import cz.cleansia.customer.core.disputes.DisputeRepository
-import cz.cleansia.customer.ui.state.ActionState
+import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.userMessage
 import cz.cleansia.core.network.ApiResult

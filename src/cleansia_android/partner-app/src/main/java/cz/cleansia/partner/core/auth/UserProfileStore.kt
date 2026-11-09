@@ -90,13 +90,6 @@ class UserProfileStore @Inject constructor(
         }
     }
 
-    suspend fun updateName(firstName: String?, lastName: String?) {
-        dataStore.edit { prefs ->
-            firstName?.let { prefs[KEY_FIRST_NAME] = it } ?: prefs.remove(KEY_FIRST_NAME)
-            lastName?.let { prefs[KEY_LAST_NAME] = it } ?: prefs.remove(KEY_LAST_NAME)
-        }
-    }
-
     override suspend fun clear() {
         dataStore.edit { it.clear() }
     }

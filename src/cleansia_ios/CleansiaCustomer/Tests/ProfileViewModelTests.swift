@@ -209,30 +209,18 @@ final class ProfileViewModelTests: XCTestCase {
         guard case .error = vm.saveState else { return XCTFail("expected action error") }
     }
 
-    func testOnboardingNeedsNameOnlyWhenAStoredNameIsBlank() async {
+    /// Save reads the loaded profile's e-mail too, so the profile loads first.
+    func testCanCompleteOnboardingRequiresNamesAndAPhoneItsCountryAllows() async {
+        client.currentUserResult = .success(ProfileFixtures.user(phoneNumber: nil))
         let vm = makeVM()
-        XCTAssertFalse(vm.onboardingNeedsName)
-
-        client.currentUserResult = .success(ProfileFixtures.user(firstName: "", lastName: "Doe"))
         await vm.refresh()
-        XCTAssertTrue(vm.onboardingNeedsName)
 
-        client.currentUserResult = .success(ProfileFixtures.user(firstName: "Jane", lastName: " "))
-        await vm.refresh()
-        XCTAssertTrue(vm.onboardingNeedsName)
-
-        client.currentUserResult = .success(ProfileFixtures.user())
-        await vm.refresh()
-        XCTAssertFalse(vm.onboardingNeedsName)
-    }
-
-    func testCanCompleteOnboardingRequiresNamesAndPhone() {
-        let vm = makeVM()
-
-        XCTAssertTrue(vm.canCompleteOnboarding(firstName: "Ada", lastName: "Lovelace", phoneNumber: "+420111"))
-        XCTAssertFalse(vm.canCompleteOnboarding(firstName: " ", lastName: "Lovelace", phoneNumber: "+420111"))
-        XCTAssertFalse(vm.canCompleteOnboarding(firstName: "Ada", lastName: "", phoneNumber: "+420111"))
-        XCTAssertFalse(vm.canCompleteOnboarding(firstName: "Ada", lastName: "Lovelace", phoneNumber: " "))
+        XCTAssertTrue(vm.canCompleteOnboarding(firstName: "Ada", lastName: "Lovelace", phoneNumber: "+420777123456"))
+        XCTAssertFalse(vm.canCompleteOnboarding(firstName: " ", lastName: "Lovelace", phoneNumber: "+420777123456"))
+        XCTAssertFalse(vm.canCompleteOnboarding(firstName: "Ada", lastName: "", phoneNumber: "+420777123456"))
+        for phone in ["+42077712", "+420111", " "] {
+            XCTAssertFalse(vm.canCompleteOnboarding(firstName: "Ada", lastName: "Lovelace", phoneNumber: phone), phone)
+        }
     }
 
     /// Onboarding is the one write that replaces the server's sign-up stamp (`en` for every Google or
@@ -329,6 +317,7 @@ final class ProfileViewModelTests: XCTestCase {
 
         XCTAssertTrue(settings.hasSeenOnboarding(userId: "user-7"))
         XCTAssertFalse(settings.hasSeenOnboarding(userId: "someone-else"))
+        XCTAssertEqual(client.updateCallCount, 0)
     }
 
     func testSkipOnboardingWithoutLoadedUserMarksNothing() {

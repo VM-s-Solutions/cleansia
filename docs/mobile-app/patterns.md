@@ -107,12 +107,19 @@ Uploads are single-flight guarded, matching iOS.
 ## Auth screens carry no mascot {#auth-screens}
 
 No auth screen in either app draws the mascot (owner ruling 2026-10-01). In the customer apps that
-means sign-in, sign-up, forgot password, e-mail confirmation and the profile completion after a first
-sign-in. In the partner apps it means sign-in, registration, e-mail confirmation and forgot password.
+means sign-in, sign-up, forgot password and e-mail confirmation. In the partner apps it means sign-in,
+registration, e-mail confirmation and forgot password.
 The partner app's pre-sign-in intro carousel keeps its two mascots, because it introduces the app
 rather than asking for anything. Nothing replaced the mascot: its height went to the form. Both
 platforms changed together, so the branding parity of [ADR-0018](/decisions/adr-0018) still holds,
 and the mascot is unchanged everywhere else.
+
+**The profile completion after a first sign-in carries the mascot again** (Mike's pick of the
+onboarding concept D, 2026-11-08). It sits at 76 pt on iOS and 76 dp on Android beside the greeting:
+it waves while a step a booking needs is missing, and gives a thumbs-up once the card reads *Ready to
+book*. The 2026-10-01 ruling had counted this screen among the auth screens; it asks for what a
+booking needs rather than for a sign-in, and it no longer counts. Both platforms draw it, so
+ADR-0018's branding parity holds here too.
 
 **The customer sign-in fits one screen.** Without the mascot and the guest link the form fits every
 supported iPhone, the SE included, and ordinary Android phones; only the legacy 360×640dp size still
@@ -1094,6 +1101,35 @@ stays the text ink, 5.93:1 and 6.83:1, as it has been since the partner sweep ab
 still draw it in different hues. *Rejected* is the error colour on both. iOS's `TextInkTests` measures
 every document status, and none, on the card in both modes (iOS `eba022747`, Android `0ae302746`).
 
+## A filled button that cannot be pressed is grey {#disabled-button}
+
+Since 2026-11-08 (Mike's decision 5 on the customer onboarding, concept D), the shared filled button,
+`CleansiaPrimaryButton` in iOS Core and in Android's `:core`, draws a grey fill under a dark label while
+it cannot be pressed, wherever a screen names no disabled colours of its own. Until then iOS drew the
+primary at half under the white label, which read 2.01:1, and Android drew Material's disabled look,
+the label at 38 % on a 12 % wash, which read 2.31:1 in light mode and 2.88:1 in dark, so a Save that
+waits for a field looked faded rather than waiting.
+
+| Mode | Fill | Label | Contrast |
+|---|---|---|---|
+| Light | slate-200 `#E2E8F0` | slate-600 `#475569` | 6.15:1 |
+| Dark | the raised dark surface `#283548` | slate-400 `#94A3B8` | 4.84:1 |
+
+- A loading button cannot be pressed either, so it takes the same pair, and its spinner takes the
+  label's ink instead of white, which reads 1.23:1 on slate-200.
+- A screen that names its own disabled fill and label (`disabledContainerColor` and
+  `disabledContentColor`, on both platforms) keeps them, and draws them only while the button cannot be
+  pressed, as the partner's take button does: the job footer's refused *Take order* on iOS, and on
+  Android while an overlapping job blocks it.
+- On iOS the pair is Core's `CleansiaColors.disabledContainer` and `onDisabledContainer`, which
+  `CleansiaPrimaryButton` reads, and `ComponentTextInkTests` measures both modes. On Android it is
+  `ColorScheme.disabledContainer` and `onDisabledContainer` (`BrandColors.kt`), picked by the surface's
+  luminance as the text ink is, and `PrimaryTextTest` measures both ratios.
+- On Android it changes the 31 calls in the two apps that pass `enabled` or `loading`, and only while
+  they are disabled or loading. Five customer sheets and screens draw Material's `Button` with disabled
+  colours of their own (the promo code and referral code sheets, a dispute, a cancellation and a review)
+  and keep them.
+
 ## Android's dialogs and menus sit on slate {#surface-roles}
 
 Material 3 draws a dialog, a menu, a date picker and a search bar on its surface-container roles, and
@@ -1168,9 +1204,10 @@ Czech for every user (*Česko*), as it already was on Android.
   `.mapStyle` modifier would have left iOS 16 users with every POI. The picker writes the settled region
   back to its binding, and applies a region the binding moves to only when it differs from the one it
   last reported, so a drag never fights the finger. Apple's logo and *Legal* link must stay visible, and
-  they sit inside the map's bottom layout margin. So each picker (the customer
-  `BookingAddressPickerView` and the partner `AddressPickerView`) measures what it lays over the map's
-  bottom edge, the location-button row and the confirm card, and passes that height as `bottomInset`.
+  they sit inside the map's bottom layout margin. So the picker (Core's `AddressPickerScreen`, which the
+  customer's `BookingAddressPickerView` and the partner's address step both show) measures what it lays
+  over the map's bottom edge, the location-button row and the confirm card, and passes that height as
+  `bottomInset`.
   The button row counts because on iOS 16 *Legal* sits at the bottom right, under the button. The card
   grows with the text size, so the inset is measured rather than fixed, and the logo and *Legal* stay
   above both up to AX5. MapKit centres its region inside the layout margins, so the centre pin is
@@ -1179,13 +1216,12 @@ Czech for every user (*Česko*), as it already was on Android.
   still while the margins move. **So the card must not change height on a lookup** (since 2026-10-03,
   owner remark). Every drag starts a reverse lookup, and the card's address block used to be one line
   while it looked the address up (*Looking up…*) and two lines once it had it (the street over its
-  city line). Each lookup therefore moved the inset, and with it the map, the pin and the card. Both
-  pickers now hold two lines in every state: the customer `BookingAddressPickerView` (booking and the
-  address manager share it) and the partner `AddressPickerView`, which had the same one-line lookup
-  state. While there is no second line, the title holds its place in the second line's font, unseen
-  and hidden from VoiceOver, so the height still follows the text size. `AddressPickerConfirmCardTests`
-  measures the partner card in all five languages, at the default and an accessibility text size, in
-  every lookup state. Since 2026-10-02 the customer's full-bleed order map, `OrderDetailMap`, keeps the
+  city line). Each lookup therefore moved the inset, and with it the map, the pin and the card. The
+  picker's card (`AddressPickerConfirmCard`, one in Core since 2026-11-07, where both apps had a copy with
+  the same one-line lookup state) now holds two lines in every state. While there is no second line, the
+  title holds its place in the second line's font, unseen and hidden from VoiceOver, so the height still
+  follows the text size. `AddressPickerConfirmCardTests` measures the card in the partner's words in all
+  five languages, at the default and an accessibility text size, in every lookup state. Since 2026-10-02 the customer's full-bleed order map, `OrderDetailMap`, keeps the
   logo and *Legal* above its `SnapSheet` the same way (the partner `OrderDetailView` did too until its
   map went on 2026-11-01): `fullBleedMap(coordinate:)` measures the map and reads the sheet's top, which
   `SnapSheet` publishes to its backdrop (`snapSheetTop`), and the bottom margin is the part of the map below it, at
@@ -1372,17 +1408,22 @@ What changed on iOS:
   - **No ADR changed.** [ADR-0018](/decisions/adr-0018) D3 maps Material's `AlertDialog` to `.alert`
     and `.confirmationDialog`. That row now holds on both sides with no exception left, and D1 holds
     the content identical, which did not change.
-- **The birth date is picked on wheels, and confirmed.** The date-of-birth field (customer profile edit
-  and completion, partner personal details) opens day, month and year wheels in a half-height sheet,
-  instead of a month-by-month calendar that started at today. An empty field's wheels open thirty
-  years back, so an adult's year is a short spin. Since the fix plan of 2026-10-25 the sheet carries the
-  field's name as its title with **Cancel** and **Done**, as Android's dialog carries its cancel and
-  confirm: the wheels spin a draft, **Done** stores the day on them — on an empty field the day shown,
-  untouched — and **Cancel** or a swipe down leaves the field as it was. Until then every spin was stored
-  at once, the sheet had no buttons and a swipe down was the only way out, and the day shown on an empty
-  field could not be taken without moving a wheel. Future dates stay blocked, and the stored day keeps
-  its time-zone handling. The recurring schedule's *Starts on* is still the system's compact date
-  picker.
+- **The birth date is picked on wheels, and a wheel that moves is the choice.** The date-of-birth field
+  (customer profile edit and completion, partner personal details) opens day, month and year wheels in
+  a half-height sheet, instead of a month-by-month calendar that started at today. An empty field's
+  wheels open thirty years back, so an adult's year is a short spin. The sheet carries the field's name
+  as its title and one **Done**. A wheel stores its day as soon as it moves, so **Done** only closes the
+  sheet, and there is no **Cancel**. A sheet closed untouched, by **Done** or a swipe down, stores
+  nothing: the day shown on an empty field is taken only by moving a wheel, so a customer who only
+  looks never gets a birth date thirty years before today. That is the owner's answer of 2026-11-08,
+  given for the customer onboarding. From the fix plan of 2026-10-25 until then the wheels spun a
+  draft, **Done** stored the day on them, on an empty field the day shown untouched, and **Cancel**
+  left the field as it was. Future dates stay blocked, and the stored day keeps its time-zone handling.
+  The recurring schedule's *Starts on* is still the system's compact date picker. Since 2026-11-08
+  (owner decision on concept D) Android's customer profile completion also opens day, month and year
+  wheels in a half-height sheet, the system's spinner date picker: a wheel stores its day as it moves,
+  **Done** only closes, and a sheet closed untouched stores nothing. Android's Edit profile and the
+  partner's personal details keep Material's calendar.
 - **A few symbols bounce, from iOS 17.** The notification bell (customer Home, partner dashboard)
   bounces once when the unread count rises, and stays still when it falls. The booking-success check,
   the Plus welcome screen's check and the *code applied* check of the promo and referral sheets bounce

@@ -23,7 +23,6 @@ class ServiceAreaProvider(
     private val citiesState = MutableStateFlow<List<ServicedCity>?>(null)
     private val mutex = Mutex()
 
-    val servicedCountries: StateFlow<List<ServicedCountry>?> = countriesState.asStateFlow()
     val servicedCities: StateFlow<List<ServicedCity>?> = citiesState.asStateFlow()
 
     /**

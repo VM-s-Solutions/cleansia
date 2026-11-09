@@ -34,7 +34,7 @@ public struct CleansiaPrimaryButton: View {
     private let action: () -> Void
 
     /// `disabledContainerColor` and `disabledContentColor` replace the fill and the label ink while the button
-    /// cannot be pressed; left out, it draws the primary at half under the same label.
+    /// cannot be pressed; left out, it draws the disabled container under its ink.
     public init(
         _ text: String,
         size: CleansiaButtonSize = .large,
@@ -58,13 +58,11 @@ public struct CleansiaPrimaryButton: View {
     }
 
     static func fill(pressable: Bool, disabled: Color?) -> Color {
-        if !pressable, let disabled { return disabled }
-        return CleansiaColors.primary.opacity(pressable ? 1 : 0.5)
+        pressable ? CleansiaColors.primary : disabled ?? CleansiaColors.disabledContainer
     }
 
     static func ink(pressable: Bool, disabled: Color?) -> Color {
-        if !pressable, let disabled { return disabled }
-        return CleansiaColors.onPrimary
+        pressable ? CleansiaColors.onPrimary : disabled ?? CleansiaColors.onDisabledContainer
     }
 
     public var body: some View {
@@ -74,7 +72,7 @@ public struct CleansiaPrimaryButton: View {
                 if loading {
                     ProgressView()
                         .progressViewStyle(.circular)
-                        .tint(CleansiaColors.onPrimary)
+                        .tint(Self.ink(pressable: pressable, disabled: disabledContentColor))
                 } else {
                     HStack(spacing: Spacing.xs) {
                         if let leadingIcon {

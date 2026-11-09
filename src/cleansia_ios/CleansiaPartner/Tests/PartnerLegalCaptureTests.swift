@@ -98,7 +98,7 @@ final class PartnerLegalCaptureTests: XCTestCase {
             host.view.layoutIfNeeded()
         }
         let loaded = Date().addingTimeInterval(6)
-        while !Self.documentLoaded(in: host.view), Date() < loaded {
+        while await !Self.documentLoaded(in: host.view), Date() < loaded {
             try? await Task.sleep(nanoseconds: 60_000_000)
             host.view.layoutIfNeeded()
         }
@@ -109,11 +109,17 @@ final class PartnerLegalCaptureTests: XCTestCase {
         CaptureProbe.attach(window, name: name, to: self)
     }
 
-    private static func documentLoaded(in view: UIView) -> Bool {
-        if let web = view as? WKWebView {
-            return !web.isLoading && web.scrollView.contentSize.height > 1
-        }
-        return view.subviews.contains(where: documentLoaded(in:))
+    /// The document has laid its text out and handed the scroll view that height: a blank page has a height too.
+    private static func documentLoaded(in view: UIView) async -> Bool {
+        guard let web = webView(in: view) else { return false }
+        let laidOut = "document.fonts.status == 'loaded' && document.body.firstChild ? document.body.scrollHeight : 0"
+        guard let height = try? await web.evaluateJavaScript(laidOut) as? Double, height > 1 else { return false }
+        return web.scrollView.contentSize.height >= height - 1
+    }
+
+    private static func webView(in view: UIView) -> WKWebView? {
+        if let web = view as? WKWebView { return web }
+        return view.subviews.lazy.compactMap(webView(in:)).first
     }
 
     static func document(language: String, accepted: Bool) -> CleanerLegalDocument {

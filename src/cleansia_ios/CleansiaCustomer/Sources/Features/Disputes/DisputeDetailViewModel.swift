@@ -78,7 +78,7 @@ final class DisputeDetailViewModel: ViewModel {
 
     private func uploadOne(_ source: EvidenceSource) async -> Bool {
         let prepared: PreparedEvidence
-        switch EvidencePreparer.prepare(source) {
+        switch await EvidencePreparer.prepare(source) {
         case let .success(file):
             prepared = file
         case let .failure(error):

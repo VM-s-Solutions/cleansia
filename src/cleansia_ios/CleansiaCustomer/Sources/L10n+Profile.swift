@@ -84,10 +84,6 @@ extension L10n {
             format("onboarding_greeting_named", firstName)
         }
 
-        static var subtitle: String {
-            localized("onboarding_subtitle")
-        }
-
         static var firstNameLabel: String {
             localized("profile_edit_first_name")
         }
@@ -100,16 +96,8 @@ extension L10n {
             localized("onboarding_phone_label")
         }
 
-        static var phoneHelper: String {
-            localized("onboarding_phone_helper")
-        }
-
         static var birthDateLabel: String {
             localized("onboarding_birthdate_label")
-        }
-
-        static var birthDatePlaceholder: String {
-            localized("onboarding_birthdate_placeholder")
         }
 
         static var birthDateHelper: String {
@@ -122,6 +110,82 @@ extension L10n {
 
         static var skip: String {
             localized("onboarding_skip")
+        }
+
+        static func progress(_ done: Int, of total: Int) -> String {
+            format("onboarding_progress", done, total)
+        }
+
+        static var leftPhone: String {
+            localized("onboarding_left_phone")
+        }
+
+        static var leftName: String {
+            localized("onboarding_left_name")
+        }
+
+        static var leftBoth: String {
+            localized("onboarding_left_both")
+        }
+
+        static var ready: String {
+            localized("onboarding_ready")
+        }
+
+        static var readySub: String {
+            localized("onboarding_ready_sub")
+        }
+
+        static var rowName: String {
+            localized("onboarding_row_name")
+        }
+
+        static var emailHidden: String {
+            localized("onboarding_email_hidden")
+        }
+
+        static var rowDone: String {
+            localized("onboarding_row_done_a11y")
+        }
+
+        static var rowCurrent: String {
+            localized("onboarding_row_current_a11y")
+        }
+
+        static var rowWaiting: String {
+            localized("onboarding_row_waiting_a11y")
+        }
+
+        static var notSet: String {
+            localized("onboarding_not_set")
+        }
+
+        static var cardTitle: String {
+            localized("onboarding_card_title")
+        }
+
+        static var cardExample: String {
+            localized("onboarding_card_example")
+        }
+
+        static var cardDial: String {
+            localized("onboarding_card_dial")
+        }
+
+        static var cardCall: String {
+            localized("onboarding_card_call")
+        }
+
+        static var cardSms: String {
+            localized("onboarding_card_sms")
+        }
+
+        static var cardNavigate: String {
+            localized("onboarding_card_navigate")
+        }
+
+        static var sampleAddress: String {
+            localized("onboarding_card_sample_address")
         }
     }
 

@@ -82,3 +82,36 @@ final class HostedCanvas {
         [view] + view.subviews.flatMap { views(under: $0) }
     }
 }
+
+extension HostedCanvas {
+    /// The keyboard's own notifications, in the order UIKit posts them for a 336 pt keyboard: the test host's
+    /// simulator may have a hardware keyboard attached, which never raises the software one.
+    func postKeyboard(showing: Bool) {
+        let screen = window.screen.bounds
+        let raised = CGRect(x: 0, y: screen.maxY - 336, width: screen.width, height: 336)
+        let lowered = raised.offsetBy(dx: 0, dy: 336)
+        let info: [AnyHashable: Any] = [
+            UIResponder.keyboardFrameBeginUserInfoKey: NSValue(cgRect: showing ? lowered : raised),
+            UIResponder.keyboardFrameEndUserInfoKey: NSValue(cgRect: showing ? raised : lowered),
+            UIResponder.keyboardAnimationDurationUserInfoKey: 0.0,
+            UIResponder.keyboardAnimationCurveUserInfoKey: UIView.AnimationCurve.easeInOut.rawValue,
+            UIResponder.keyboardIsLocalUserInfoKey: true
+        ]
+        let names: [Notification.Name] = showing
+            ? [
+                UIResponder.keyboardWillShowNotification,
+                UIResponder.keyboardWillChangeFrameNotification,
+                UIResponder.keyboardDidShowNotification,
+                UIResponder.keyboardDidChangeFrameNotification
+            ]
+            : [
+                UIResponder.keyboardWillHideNotification,
+                UIResponder.keyboardWillChangeFrameNotification,
+                UIResponder.keyboardDidHideNotification,
+                UIResponder.keyboardDidChangeFrameNotification
+            ]
+        for name in names {
+            NotificationCenter.default.post(name: name, object: window.screen, userInfo: info)
+        }
+    }
+}

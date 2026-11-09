@@ -21,6 +21,8 @@ on:
     paths:
       - 'src/cleansia_android/**'
       - '.github/workflows/android-ci.yml'
+      - 'agents/tools/check-r8-monitor.py'
+      - 'agents/tools/check-r8-monitor.test.py'
 
 permissions:
   contents: read
@@ -89,6 +91,27 @@ jobs:
 
       - name: Unit tests (all modules)
         run: ./gradlew :core:testDebugUnitTest :partner-app:testDebugUnitTest :customer-app:testDebugUnitTest --no-daemon
+
+      - name: Self-test check-r8-monitor
+        run: python3 "$GITHUB_WORKSPACE/agents/tools/check-r8-monitor.test.py"
+
+      # Minified like release, so a build R8 cannot finish fails here.
+      - name: Minified staging builds (both apps)
+        run: ./gradlew :partner-app:assembleStaging :customer-app:assembleStaging --no-daemon
+
+      # A debug build never shows this: ART refuses a minified method that holds a monitor outside a catch-all.
+      - name: Staging dex against ART's monitor rule
+        run: |
+          set -euo pipefail
+          dexdump="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -n 1)dexdump"
+          for app in partner-app customer-app; do
+            out="$RUNNER_TEMP/$app"
+            mkdir -p "$out"
+            unzip -q -o "$app/build/outputs/apk/staging/$app-staging.apk" 'classes*.dex' -d "$out"
+            "$dexdump" -d "$out"/classes*.dex > "$out/dump.txt"
+            echo "$app:"
+            python3 "$GITHUB_WORKSPACE/agents/tools/check-r8-monitor.py" "$out/dump.txt"
+          done
 
       - name: Upload test reports on failure
         if: failure()

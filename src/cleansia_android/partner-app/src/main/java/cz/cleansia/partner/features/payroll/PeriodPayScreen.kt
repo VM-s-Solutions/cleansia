@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -36,26 +35,22 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.money.CurrencySymbols
+import cz.cleansia.core.money.formatMoney
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
+import cz.cleansia.core.ui.components.IconHalo
 import cz.cleansia.core.ui.theme.Spacing
-import cz.cleansia.core.ui.theme.primaryIconOnContainer
 import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.PayLineType
 import cz.cleansia.partner.data.payroll.OrderPayLine
 import cz.cleansia.partner.data.payroll.PeriodPaySummary
-import java.time.LocalDate
-import java.time.ZoneId
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
-import java.util.Locale
+import cz.cleansia.partner.features.invoices.formatShortDate
 
 /**
  * Read-only period pay breakdown — matches the EarningsSummaryScreen /
@@ -295,7 +290,7 @@ private fun JobRow(line: OrderPayLine, symbol: String) {
                     color = primaryText(),
                 )
             }
-            formatDate(line.createdOn)?.let { date ->
+            formatShortDate(line.createdOn)?.let { date ->
                 Text(
                     text = date,
                     style = MaterialTheme.typography.bodySmall,
@@ -363,23 +358,6 @@ private fun MoneyRow(label: String, amount: Double, symbol: String, bold: Boolea
 }
 
 @Composable
-private fun IconHalo(icon: ImageVector) {
-    Box(
-        modifier = Modifier
-            .size(44.dp)
-            .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primaryIconOnContainer,
-            modifier = Modifier.size(22.dp),
-        )
-    }
-}
-
-@Composable
 private fun Divider() {
     Box(
         modifier = Modifier
@@ -409,24 +387,4 @@ private fun ErrorState(onRetry: () -> Unit) {
             onClick = onRetry,
         )
     }
-}
-
-// --- formatting helpers (mirror EarningsSummaryScreen / InvoicesListScreen) ---
-
-private val shortDateFormatter = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.getDefault())
-
-private fun formatDate(iso: String?): String? {
-    if (iso.isNullOrBlank()) return null
-    val date = runCatching {
-        ZonedDateTime.parse(iso).withZoneSameInstant(ZoneId.systemDefault()).toLocalDate()
-    }.getOrNull()
-        ?: runCatching { java.time.LocalDateTime.parse(iso).toLocalDate() }.getOrNull()
-        ?: runCatching { LocalDate.parse(iso) }.getOrNull()
-        ?: return null
-    return date.format(shortDateFormatter)
-}
-
-private fun formatMoney(amount: Double, symbol: String): String {
-    val formatted = String.format(Locale.getDefault(), "%,.2f", amount)
-    return if (symbol.isBlank()) formatted else "$formatted $symbol"
 }

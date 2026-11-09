@@ -1,41 +1,6 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "birth_date_field.cancel": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zrušit"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cancel"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Отмена"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zrušiť"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Скасувати"
-          }
-        }
-      }
-    },
     "birth_date_field.done": {
       "extractionState": "manual",
       "localizations": {
@@ -3047,6 +3012,7 @@
       }
     },
     "error.generic": {
+      "extractionState": "manual",
       "localizations": {
         "cs": {
           "stringUnit": {
@@ -3536,6 +3502,7 @@
       }
     },
     "error.not_found": {
+      "extractionState": "manual",
       "localizations": {
         "cs": {
           "stringUnit": {
@@ -7070,6 +7037,7 @@
       }
     },
     "error.request": {
+      "extractionState": "manual",
       "localizations": {
         "cs": {
           "stringUnit": {
@@ -7104,6 +7072,7 @@
       }
     },
     "error.server": {
+      "extractionState": "manual",
       "localizations": {
         "cs": {
           "stringUnit": {
@@ -7208,6 +7177,7 @@
       }
     },
     "error.unauthorized": {
+      "extractionState": "manual",
       "localizations": {
         "cs": {
           "stringUnit": {
@@ -7242,6 +7212,7 @@
       }
     },
     "error.unreachable": {
+      "extractionState": "manual",
       "localizations": {
         "cs": {
           "stringUnit": {
@@ -8990,6 +8961,41 @@
         }
       }
     },
+    "phone_input.country_code": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Předvolba země"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Country code"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Код страны"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Predvoľba krajiny"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Код країни"
+          }
+        }
+      }
+    },
     "reveal_panel.action.hide": {
       "extractionState": "manual",
       "localizations": {
@@ -9166,6 +9172,7 @@
       }
     },
     "snackbar.dismiss": {
+      "extractionState": "manual",
       "localizations": {
         "cs": {
           "stringUnit": {

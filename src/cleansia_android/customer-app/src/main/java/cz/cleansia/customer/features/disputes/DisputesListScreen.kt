@@ -43,7 +43,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -58,6 +57,7 @@ import cz.cleansia.customer.core.disputes.DisputeListItemDto
 import cz.cleansia.core.format.formatOrderDateTime
 import cz.cleansia.customer.ui.format.disputeStatusColor
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
+import cz.cleansia.core.ui.components.OrderStatusPill
 import cz.cleansia.core.ui.components.SudsRefreshIndicator
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.core.ui.theme.Poppins
@@ -248,9 +248,10 @@ private fun DisputeRow(
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                 color = MaterialTheme.colorScheme.onSurface,
             )
-            StatusPill(
+            OrderStatusPill(
                 label = dispute.status?.name ?: "—",
-                color = statusColor,
+                ink = statusColor,
+                washAlpha = 0.14f,
             )
         }
         Spacer(Modifier.height(6.dp))
@@ -266,23 +267,6 @@ private fun DisputeRow(
             text = formatOrderDateTime(dispute.createdOn),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-@Composable
-private fun StatusPill(label: String, color: Color) {
-    Row(
-        modifier = Modifier
-            .clip(RoundedCornerShape(999.dp))
-            .background(color.copy(alpha = 0.14f))
-            .padding(horizontal = 10.dp, vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-            color = color,
         )
     }
 }

@@ -152,11 +152,17 @@ private struct StepNode: View {
     private static let nodeRow: CGFloat = 36
 
     var body: some View {
+        let leading: Color = leadingConnector ?? .clear
+        let trailing: Color = trailingConnector ?? .clear
+        let weight: Font.Weight = state == .current ? .heavy : .semibold
+        let traits: AccessibilityTraits = isReachable ? .isButton : []
+        let hint: String = isReachable ? L10n.Profile.onboardingStepJumpHint : ""
+        let spoken: String = position + ", " + label
         VStack(spacing: 6) {
             ZStack {
                 HStack(spacing: 0) {
-                    (leadingConnector ?? .clear).frame(height: 2)
-                    (trailingConnector ?? .clear).frame(height: 2)
+                    leading.frame(height: 2)
+                    trailing.frame(height: 2)
                 }
                 nodeDisc
             }
@@ -165,7 +171,7 @@ private struct StepNode: View {
             // One line alone ellipsized "Особисте" and "Личность" at 320pt from AX2.
             Text(label)
                 .font(CleansiaTypography.labelMedium)
-                .fontWeight(state == .current ? .heavy : .semibold)
+                .fontWeight(weight)
                 .foregroundColor(labelColor)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
@@ -176,10 +182,10 @@ private struct StepNode: View {
         .contentShape(Rectangle())
         .onTapGesture { if isReachable { onTap() } }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(position + ", " + label)
+        .accessibilityLabel(spoken)
         .accessibilityValue(stateDescription)
-        .accessibilityAddTraits(isReachable ? .isButton : [])
-        .accessibilityHint(isReachable ? L10n.Profile.onboardingStepJumpHint : "")
+        .accessibilityAddTraits(traits)
+        .accessibilityHint(hint)
         .accessibilityAction { if isReachable { onTap() } }
     }
 

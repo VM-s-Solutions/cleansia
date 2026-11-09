@@ -1,3 +1,4 @@
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Users;
 using Cleansia.TestUtilities.MockDataFactories.Users;
 
@@ -8,6 +9,8 @@ namespace Cleansia.Tests.Features.Auth;
 /// what the email derivation produces) may be displaced by a name the client genuinely supplied, and a
 /// name the user set themselves never may. Per-part, never all-or-nothing. Lives in
 /// <see cref="User.ReplaceSystemGeneratedName"/> so no caller can implement a looser variant.
+/// <see cref="User.IsNamePlaceholder"/> reads the profile with the same comparison, against the
+/// placeholder words and only on an Apple account.
 /// Written red → green per knowledge/testing.md.
 /// </summary>
 public class UserReplaceSystemGeneratedNameTests
@@ -112,5 +115,27 @@ public class UserReplaceSystemGeneratedNameTests
 
         Assert.Equal("Michael", user.FirstName);
         Assert.Equal("Customer", user.LastName);
+    }
+
+    [Theory]
+    [InlineData(AuthenticationType.Apple, "jana@example.com", "Cleansia", "Customer", true)]
+    [InlineData(AuthenticationType.Apple, "jana@example.com", "Info", "Customer", true)]
+    [InlineData(AuthenticationType.Apple, "jana@example.com", "Cleansia", "Doe", true)]
+    [InlineData(AuthenticationType.Apple, "jana@example.com", " cleansia ", "CUSTOMER", true)]
+    [InlineData(AuthenticationType.Apple, "jana@example.com", "Jana", "Dvořáková", false)]
+    [InlineData(AuthenticationType.Apple, "jane.doe@example.com", "Jane", "Doe", false)]
+    [InlineData(AuthenticationType.Internal, "jana@example.com", "Test", "Customer", false)]
+    [InlineData(AuthenticationType.Google, "jana@example.com", "Cleansia", "Customer", false)]
+    public void Reports_A_Placeholder_Name_Only_On_An_Apple_Account(
+        AuthenticationType authenticationType, string email, string firstName, string lastName, bool expected)
+    {
+        var user = authenticationType switch
+        {
+            AuthenticationType.Apple => User.CreateWithApple(email, firstName, lastName, "apple-sub"),
+            AuthenticationType.Google => User.CreateWithGoogle(email, firstName, lastName, "google-sub"),
+            _ => User.CreateWithPassword(email, "Password1", firstName, lastName),
+        };
+
+        Assert.Equal(expected, user.IsNamePlaceholder());
     }
 }

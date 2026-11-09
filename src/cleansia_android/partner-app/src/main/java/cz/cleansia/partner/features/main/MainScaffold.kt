@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavBackStackEntry
 import cz.cleansia.core.snackbar.SnackbarInsetScope
+import cz.cleansia.core.ui.showTab
 import cz.cleansia.partner.R
 import cz.cleansia.partner.features.dashboard.DashboardScreen
 import cz.cleansia.partner.features.invoices.InvoicesListScreen
@@ -75,14 +76,14 @@ fun MainScaffold(
     val selected = MainTab.values()[pagerState.currentPage]
     val scope = rememberCoroutineScope()
     val selectTab: (MainTab) -> Unit = { target ->
-        scope.launch { pagerState.animateScrollToPage(target.ordinal) }
+        scope.launch { pagerState.showTab(target.ordinal) }
     }
 
     // Observe pending tab switches written into Main's SavedStateHandle by
     // pushed routes (e.g. EarningsSummaryScreen → popBack + jump to
     // Invoices). This keeps cross-scaffold tab switches declarative — the
     // pushed screen writes a key, pops itself, and the scaffold reacts on
-    // recompose by animating to the target tab. We null out the slot once
+    // recompose by showing the target tab. We null out the slot once
     // consumed so re-entering Main from elsewhere doesn't re-trigger.
     val savedHandle = backStackEntry?.savedStateHandle
     val pendingTabOrdinal by (
@@ -92,7 +93,7 @@ fun MainScaffold(
     LaunchedEffect(pendingTabOrdinal) {
         val ordinal = pendingTabOrdinal ?: return@LaunchedEffect
         val tab = MainTab.values().getOrNull(ordinal) ?: return@LaunchedEffect
-        pagerState.animateScrollToPage(tab.ordinal)
+        pagerState.showTab(tab.ordinal)
         savedHandle?.set(PENDING_TAB_KEY, null)
     }
 
@@ -170,7 +171,7 @@ val MainBottomNavInset: androidx.compose.ui.unit.Dp = 112.dp
 /**
  * SavedStateHandle key on the Main backstack entry. Pushed routes can
  * write a [MainTab.ordinal] here just before popping back to Main —
- * MainScaffold observes the key and animates the pager to that tab. Lets
+ * MainScaffold observes the key and shows that tab. Lets
  * Earnings → "View invoices" land the cleaner on the Invoices tab with
  * the bottom-nav still visible, instead of stranding them inside a
  * standalone full-screen InvoicesListScreen with the scaffold hidden.

@@ -105,7 +105,7 @@ struct DeleteAccountView: View {
                 .foregroundColor(CleansiaColors.onSurfaceVariant)
             VStack(alignment: .leading, spacing: Spacing.xs) {
                 ForEach(items, id: \.self) { item in
-                    Text("•  \(item)")
+                    Text(verbatim: "•  \(item)")
                         .font(CleansiaTypography.bodyMedium)
                         .foregroundColor(CleansiaColors.onSurface)
                 }

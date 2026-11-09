@@ -76,7 +76,7 @@ public struct CleansiaTextArea: View {
                     .foregroundColor(isError ? CleansiaColors.error : CleansiaColors.onSurfaceVariant)
             }
             if showsCounter, let maxLength {
-                Text("\(value.count)/\(maxLength)")
+                Text(verbatim: "\(value.count)/\(maxLength)")
                     .font(CleansiaTypography.labelSmall)
                     .foregroundColor(CleansiaColors.onSurfaceVariant)
                     .frame(maxWidth: .infinity, alignment: .trailing)

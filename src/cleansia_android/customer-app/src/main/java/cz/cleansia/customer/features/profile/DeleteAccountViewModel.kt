@@ -8,7 +8,7 @@ import cz.cleansia.core.network.userMessage
 import dagger.hilt.android.qualifiers.ApplicationContext
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.user.UserRepository
-import cz.cleansia.customer.ui.state.ActionState
+import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.core.auth.JwtDecoder
 import cz.cleansia.core.auth.TokenStore
 import cz.cleansia.core.snackbar.SnackbarController

@@ -355,7 +355,7 @@ private struct DocumentRow: View {
                     Text(DocumentPresentation.typeLabel(document.documentType))
                         .font(CleansiaTypography.labelMedium)
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
-                    Text(" · ")
+                    Text(verbatim: " · ")
                         .font(CleansiaTypography.labelMedium)
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
                     Text(DocumentPresentation.statusLabel(document.status))

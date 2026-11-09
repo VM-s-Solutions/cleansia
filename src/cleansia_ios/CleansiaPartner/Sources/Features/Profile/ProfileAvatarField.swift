@@ -33,7 +33,7 @@ struct ProfileAvatarField: View {
                     sourceType: source,
                     onImagePicked: { image in
                         pickerSource = nil
-                        avatar.pick(image)
+                        Task { await avatar.pick(image) }
                     },
                     onCancel: { pickerSource = nil }
                 )

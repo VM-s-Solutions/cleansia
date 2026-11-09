@@ -2,8 +2,15 @@ package cz.cleansia.core.ui.components
 
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsConfiguration
+import androidx.compose.ui.semantics.SemanticsModifier
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.unit.dp
 import java.io.File
 import org.junit.Assert.assertEquals
@@ -14,7 +21,7 @@ import org.junit.Test
 
 /**
  * The slide both apps confirm with. There is no Compose test harness in this module, so the rules the composable
- * follows are pure functions pinned here, and the locked face is read as source.
+ * follows are pure functions pinned here, the semantics are read from the modifier, and the locked face is read as source.
  */
 class SwipeToConfirmButtonTest {
 
@@ -93,6 +100,38 @@ class SwipeToConfirmButtonTest {
     fun `the open slide writes its label in the label ink`() {
         val open = body(source, "fun SwipeToConfirmButton(")
         assertTrue(Regex("""color = SwipeLabelInk\.copy\(""").containsMatchIn(open))
+    }
+
+    /**
+     * What TalkBack gets from a slide: one merged button named by its label, whose double tap commits as the swipe
+     * does, and only while the swipe could. A busy slide says what is happening, a disabled one its reason.
+     */
+    @Test
+    fun `a double tap commits a slide only when it is enabled and not busy`() {
+        var commits = 0
+        @Suppress("DEPRECATION")
+        fun slide(enabled: Boolean, isBusy: Boolean, reason: String? = null): SemanticsConfiguration =
+            (Modifier.slideSemantics("Slide to pay", "Paying…", enabled, isBusy, { commits++ }, reason) as SemanticsModifier)
+                .semanticsConfiguration
+        val ready = slide(enabled = true, isBusy = false)
+        assertTrue(ready.isMergingSemanticsOfDescendants)
+        assertEquals(Role.Button, ready[SemanticsProperties.Role])
+        assertEquals(listOf("Slide to pay"), ready[SemanticsProperties.ContentDescription])
+        assertEquals("Slide to pay", ready[SemanticsActions.OnClick].label)
+        assertNull(ready.getOrNull(SemanticsProperties.Disabled))
+        assertTrue(ready[SemanticsActions.OnClick].action!!())
+        assertEquals(1, commits)
+
+        val locked = slide(enabled = false, isBusy = false, reason = "Opens at 08:00")
+        val submitting = slide(enabled = false, isBusy = true)
+        val busy = slide(enabled = true, isBusy = true)
+        listOf(locked, submitting, busy).forEach { it[SemanticsActions.OnClick].action!!() }
+        assertEquals("only the enabled, idle slide commits", 1, commits)
+        assertEquals(Unit, locked.getOrNull(SemanticsProperties.Disabled))
+        assertEquals("Opens at 08:00", locked[SemanticsProperties.StateDescription])
+        assertEquals(Unit, submitting.getOrNull(SemanticsProperties.Disabled))
+        assertEquals("Paying…", submitting[SemanticsProperties.StateDescription])
+        assertEquals("Paying…", busy[SemanticsProperties.StateDescription])
     }
 
     @Test

@@ -47,14 +47,6 @@ extension L10n {
             localized("no_active_orders")
         }
 
-        static var noCompletedOrders: String {
-            localized("no_completed_orders")
-        }
-
-        static var noMatchingOrders: String {
-            localized("no_matching_orders")
-        }
-
         static var sortEarningsHighToLow: String {
             localized("sort_earnings_high_to_low")
         }
@@ -87,10 +79,6 @@ extension L10n {
             plural("scope_baths", count)
         }
 
-        static func extras(_ count: Int) -> String {
-            plural("scope_extras", count)
-        }
-
         static func crewSize(_ count: Int) -> String {
             plural("crew_size", count)
         }
@@ -100,10 +88,6 @@ extension L10n {
         }
 
         // Detail
-
-        static var back: String {
-            localized("back")
-        }
 
         static var actionCall: String {
             localized("action_call")
@@ -163,60 +147,8 @@ extension L10n {
             localized("payment_section_title")
         }
 
-        static var paymentSubtotal: String {
-            localized("payment_subtotal")
-        }
-
-        static var paymentTierDiscount: String {
-            localized("payment_tier_discount")
-        }
-
-        static var paymentMembershipDiscount: String {
-            localized("payment_membership_discount")
-        }
-
-        static var paymentPromoDiscount: String {
-            localized("payment_promo_discount")
-        }
-
-        static var paymentTotal: String {
-            localized("payment_total")
-        }
-
-        static var paymentMethodCash: String {
-            localized("payment_method_cash")
-        }
-
-        static var paymentStatusPaid: String {
-            localized("payment_status_paid")
-        }
-
-        static var paymentStatusPending: String {
-            localized("payment_status_pending")
-        }
-
-        static var paymentStatusFailed: String {
-            localized("payment_status_failed")
-        }
-
-        static var paymentStatusRefunded: String {
-            localized("payment_status_refunded")
-        }
-
-        static var paymentStatusDisputed: String {
-            localized("payment_status_disputed")
-        }
-
-        static var paymentStatusPartiallyRefunded: String {
-            localized("payment_status_partially_refunded")
-        }
-
         static var photosSectionTitle: String {
             localized("photos")
-        }
-
-        static var photosNoneRecorded: String {
-            localized("photos_none_recorded")
         }
 
         static var photosBefore: String {
@@ -265,38 +197,8 @@ extension L10n {
 
         // MARK: - Timer hero
 
-        /// Kept for key parity with Android even though the iOS card starts at
-        /// Confirmed — see `OrderTimer.phase(for:now:)`.
-        static var trackerHeadlineNew: String {
-            localized("tracker_headline_new")
-        }
-
-        static var trackerHeadlineConfirmed: String {
-            localized("tracker_headline_confirmed")
-        }
-
-        static var trackerHeadlineConfirmedSoon: String {
-            localized("tracker_headline_confirmed_soon")
-        }
-
-        static var trackerHeadlineOnTheWay: String {
-            localized("tracker_headline_on_the_way")
-        }
-
         static var trackerHeadlineDone: String {
             localized("tracker_headline_done")
-        }
-
-        static func trackerFinishedAt(_ dateTime: String) -> String {
-            format("tracker_finished_at", dateTime)
-        }
-
-        static func durationHoursMinutes(_ hours: Int, _ minutes: Int) -> String {
-            format("duration_hours_minutes", hours, minutes)
-        }
-
-        static func durationMinutesOnly(_ minutes: Int) -> String {
-            format("duration_minutes_only", minutes)
         }
 
         static func statusLabel(_ status: OrderStatus?) -> String {
@@ -449,24 +351,8 @@ extension L10n.Orders {
         L10n.format("orders_sort_a11y", label)
     }
 
-    static var a11yExpanded: String {
-        L10n.localized("orders_a11y_expanded")
-    }
-
-    static var a11yCollapsed: String {
-        L10n.localized("orders_a11y_collapsed")
-    }
-
-    static var a11yToggleHint: String {
-        L10n.localized("orders_a11y_toggle_hint")
-    }
-
     static var cashHidden: String {
         L10n.localized("available_cash_hidden")
-    }
-
-    static var heroNext: String {
-        L10n.localized("active_hero_next")
     }
 
     static func heroIn(_ duration: String) -> String {

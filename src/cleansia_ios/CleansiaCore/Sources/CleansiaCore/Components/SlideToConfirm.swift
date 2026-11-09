@@ -49,7 +49,8 @@ public struct SlideToConfirmThumb: Equatable {
 /// `SwipeToConfirmButton.kt` parity). While `isBusy` the thumb locks at the
 /// end with a spinner and snaps back when the busy state ends; the parent can
 /// also bump `resetTrigger` to snap the thumb back after a failed submit so
-/// the user can retry.
+/// the user can retry. VoiceOver cannot drag, so it reads the open slide as one
+/// button whose activation confirms.
 ///
 /// `thumbLanes` keeps the words clear of the thumb at both ends and `maxLabelLines` lets them wrap there; the track
 /// grows from its height to hold them. Both are off by default, so a one-line label keeps the fixed track and the
@@ -136,6 +137,13 @@ public struct SlideToConfirm: View {
                 .onChange(of: resetTrigger) { _ in
                     withAnimation(.spring()) { thumb.reset() }
                 }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(Self.lockedLabel(reason: isBusy ? busyLabel : idleLabel, detail: detail))
+                .accessibilityAddTraits(.isButton)
+                .accessibilityAction {
+                    if enabled, !isBusy { onConfirm() }
+                }
+                .disabled(!enabled || isBusy)
         }
     }
 

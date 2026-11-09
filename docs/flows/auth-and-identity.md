@@ -123,7 +123,7 @@ A legacy app or link request that sends no password still confirms and opens the
 leaves the account with **no password**. Forgot password sets one; an older registration password
 never survives by default. Both the six-digit OTP and legacy-token branch follow this rule.
 Source: `src/Cleansia.Core.AppServices/Features/Auth/ConfirmUserEmail.cs:179`,
-`src/Cleansia.Core.Domain/Users/User.cs:394`.
+`src/Cleansia.Core.Domain/Users/User.cs:409`.
 → [Security rule](/architecture/security-rules#confirmation-password)
 
 Update before confirmation to avoid the legacy fallback. Once an old client has confirmed and the
@@ -145,6 +145,76 @@ host also still serves the six token-keyed guest routes, for app builds installe
 until a follow-up removes them (T-0800).
 → [The anonymous allow-list](/mobile-app/api-integration#the-anonymous-allow-list),
 [Guest order lookup](/flows/booking-and-pricing#guest-order-lookup)
+
+## An Apple account's name {#apple-account-name}
+
+Apple hands over the person's name once, on the first authorisation, and may send part of it or none:
+the person can clear either part in Apple's sheet, and a later sign-in carries no name at all. The
+server **never stores a blank part**. `UpdateCurrentUser` needs both names and `CreateOrder` a customer
+name of at least two characters, so a blank part would leave the customer unable to save a profile or
+book. A first Apple sign-in fills each part from the first of these that has one:
+
+1. what Apple sent, trimmed. A whole name sent in one field is split at its first space, or at its last
+   when it came as the family name;
+2. the verified e-mail: its first name-shaped piece for the first name, its second for the last name
+   (the local part split at `.`, `_`, `-` and `+`, letters only, at least two of them). An Apple relay
+   address (`privaterelay.appleid.com`) is a random token and gives nothing;
+3. the placeholder: `Cleansia` for the first name, `Customer` for the last.
+
+A Google or password account stores exactly the name its client sent; the server makes up no name for
+it.
+
+**A later Apple sign-in that carries the name replaces only what the server wrote.** Per part, it
+replaces a stored value that is blank or equal to what this account's e-mail gives (the piece, or the
+placeholder word), and leaves every other value alone, so a saved name that differs from those is never
+touched. A sign-in without a name changes nothing, except a blank part left by an older server, which it
+fills the same way. Apple sends the name again only after the person revokes the app in their Apple ID
+settings and signs in afresh.
+
+**The profile says when the stored name is the placeholder** (owner ruling 2026-11-08).
+`GET api/User/GetCurrent` on the customer and partner hosts, web and mobile, carries `isNamePlaceholder`.
+It is `true` for an Apple account whose stored first name is `Cleansia` or whose stored last name is
+`Customer`, compared trimmed and in any case, a blank part counting too. `true` means at least one stored
+part is a word the server wrote, so a client treats the **whole** stored name as no name, a part the person
+gave included. It is `false` for every Google and password account, whatever its name (*Test Customer*
+included), and for an Apple account whose name carries neither word, one built from the e-mail included.
+No Apple account can sign in on a partner host, so there it is always `false`.
+
+| Apple sent | E-mail | Stored | `isNamePlaceholder` |
+|---|---|---|---|
+| no name | a relay address | Cleansia Customer | `true` |
+| no name | `info@firma.cz` | Info Customer | `true`, for the whole name, so the onboarding never offers *Info* back as hers |
+| no name | `jana.novakova@seznam.cz` | Jana Novakova | `false` |
+| the given name only | a relay address | Jana Customer | `true` |
+| the whole name | any | Jana Dvořáková | `false` |
+
+It is computed from the stored row on every read and stored nowhere, so it follows the name with
+nothing to keep in step. A save of a name that carries neither word, from the onboarding, Edit profile
+or the web profile, ends it on every device at once. A save that replays the placeholder unchanged keeps it: the
+session-start language update and a phone-only profile edit replay both names
+(→ [The account's language](#account-language)). Apple's real name arriving at a later sign-in replaces
+the placeholder parts and ends it too.
+
+**Absent means `false`.** Only a server older than the member omits it, and `false` is how every app
+read the name before the member existed: a non-blank name counts as given. A mobile mapper that reads
+the member defaults it to `false` and never refuses the profile over it: a named exception to
+[ADR-0048](/decisions/adr-0048)'s rule that a missing boolean is refused, which
+[ADR-0081](/decisions/adr-0081) records for this member alone.
+
+**What an app may do with it.** It exists for the customer apps' onboarding: given `true`, the
+onboarding may open on its name step with both name fields empty and greet the customer without a name,
+rather than *Welcome aboard, Cleansia!*. The iOS customer onboarding does exactly that; Android's has no
+name step, because no account that signs in on Android can carry the flag. Nothing may gate on it: whether the onboarding shows at all,
+booking and Edit profile, which keeps showing the stored name, do not read it. An app must not compare
+a name with `Cleansia` or `Customer` itself; the rule lives on the server, so it can change without an
+app release.
+
+**Its limit.** Nothing stored tells a name built from the e-mail from one Apple sent, so a two-piece
+guess reads as given: `jana.novakova@seznam.cz` stored as *Jana Novakova* is not reported, and a wrong
+guess is corrected in Edit profile. The two placeholder words are evidence as well as a default: the
+sign-in repair and this member recognise a placeholder by them, so changing either needs a data fix-up
+of the rows already written. Why the member is computed rather than stored, and what a column would
+cost → [ADR-0081](/decisions/adr-0081)
 
 ## The account's language {#account-language}
 
@@ -192,7 +262,10 @@ field on those two commands, which the owner left out of the 2026-10-01 change (
 Both customer apps send a missing phone as `""` on every profile save, not only on the language
 update. A `null` used to be dropped from the body, and the binder refuses a command without its
 non-nullable `PhoneNumber`, so a customer with no phone could not save a profile edit at all. Now the
-edit saves and the stored phone, if any, is kept.
+edit saves and the stored phone, if any, is kept. Since 2026-11-09 a phone that differs from the
+stored one has to be valid in international form, the check the cleaner's
+[Personal save](/product/business-rules#cleaner-profile-fields) makes
+(`validation.invalid_phone_number`); the stored phone sent back unchanged still saves, whatever its form.
 :::
 
 ## Sign-in and session acts leave a row {#session-rows}
@@ -254,7 +327,7 @@ hosts have no device id, which is why the admin TTL was shortened instead.
 | Rotation racing a revoke | The revoke wins — the rotation's commit fails on the concurrency token and rolls back both the mark and the new token. |
 | Device revoked | Only tokens carrying that device id are ended. A token with no device id survives to natural expiry rather than being killed by an unrelated device. |
 | A shared phone whose previous account's sign-out never reached the server (offline, or past the iOS app's 5-second cap) | The next account's push registration deactivates every other account's active device row holding the same device id **and** the same push token, in whichever company it sits, and deletes that account's Live Activity tokens for the install, push-to-start included — the `Device/Unregister` part of the sign-out that never arrived. Its notification and Live Activity pushes stop reaching the phone. Its session is not ended: an access token it was issued before is refused once the revoked-device directory next polls, but its refresh token is not revoked, so a refresh issues a new one. A registration without a push token retires nothing, and neither does a row with another token or none — the other app on an Android phone can share the device id — and an account whose row is not retired keeps its Live Activity tokens. |
-| Google or Apple sign-in | Resolved by **subject**, never by email address. A sign-in of an existing account is a `customer.session.login` row; a first sign-in provisions the account, writes the two versioned consent rows and declines the login row. |
+| Google or Apple sign-in | Resolved by **subject**, never by email address. A sign-in of an existing account is a `customer.session.login` row; a first sign-in provisions the account, writes the two versioned consent rows and declines the login row. An Apple first sign-in that brings no name, or half of one, fills the gap from the e-mail or with a placeholder, which the profile reports (→ [An Apple account's name](#apple-account-name)). |
 | Login, logout, password reset, e-mail confirmation | A customer audit row each, on a customer host only (→ [Session rows](#session-rows)). Refresh rotations write none; the `RefreshToken` row (IP, device, audience, 90 days) stays their record. |
 | An administrator signs in or out on the admin host | An **admin** audit row each — `admin.session.login` (success or refusal, the refusal naming a known account) and `admin.session.logout`. Never a customer row. |
 | A Google sign-in or a customer registration on a partner host | No registration exists there; a Google identity with no account is refused `auth.social_account_not_found`, a Customer account `auth.insufficient_privileges`, and nothing is provisioned. |

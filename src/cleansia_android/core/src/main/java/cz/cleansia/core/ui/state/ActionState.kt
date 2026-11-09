@@ -3,9 +3,6 @@ package cz.cleansia.core.ui.state
 /**
  * Three-state machine for one-shot UI actions — the `:core` home of the type so both apps share one
  * definition.
- *
- * The customer app still carries an identical copy; **they must stay in step until that one is
- * removed.**
  */
 sealed interface ActionState {
     /** No action in flight, no inline error to surface. The default + post-success state. */

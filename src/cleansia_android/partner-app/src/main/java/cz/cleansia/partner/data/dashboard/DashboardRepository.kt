@@ -6,7 +6,6 @@ import cz.cleansia.partner.api.client.DashboardApi
 import cz.cleansia.partner.api.model.AvailableJobPreviewDto
 import cz.cleansia.partner.api.model.AvailableJobsPreviewResponse
 import cz.cleansia.partner.api.model.DashboardStatsDto
-import cz.cleansia.partner.api.model.EarningsAnalyticsDto
 import cz.cleansia.partner.api.model.OrderListItem
 import cz.cleansia.partner.api.model.SortDirection
 import cz.cleansia.core.network.ApiError
@@ -124,20 +123,6 @@ interface DashboardRepository {
      * independent of the dashboard tab's cached snapshot.
      */
     suspend fun getStats(employeeId: String?): ApiResult<DashboardStats>
-
-    /**
-     * Unmapped on purpose: nothing reads this yet, so it has no coercion site and no reader to protect.
-     * The generated return type is the tell — the first screen that renders it owns the mapper and the
-     * domain vocabulary for the three schemas behind it. Note that `highestMonth` / `lowestMonth` carry
-     * no `nullable: true` because OpenAPI 3.0 cannot hang sibling keywords off a bare `$ref`; the
-     * backing record declares them nullable and the handler fills them by `MaxBy` over a list that is
-     * empty for a cleaner with no invoices.
-     */
-    suspend fun getEarningsAnalytics(
-        employeeId: String,
-        startDate: String,
-        endDate: String,
-    ): ApiResult<EarningsAnalyticsDto>
 }
 
 @Singleton
@@ -278,14 +263,6 @@ class DashboardRepositoryImpl @Inject constructor(
     private suspend fun getAvailableJobsPreview(limit: Int): ApiResult<AvailableJobsPreview> =
         safeApiCall(json) { dashboardApi.dashboardGetAvailableJobsPreview(limit) }
             .mapWire { it.toDomain() }
-
-    override suspend fun getEarningsAnalytics(
-        employeeId: String,
-        startDate: String,
-        endDate: String,
-    ): ApiResult<EarningsAnalyticsDto> = safeApiCall(json) {
-        dashboardApi.dashboardGetEarningsAnalytics(employeeId, startDate, endDate)
-    }
 
     private companion object {
         // 60s: long enough that swiping tabs back and forth never

@@ -4,24 +4,20 @@ public struct BirthDateField: View {
     @Binding private var birthDate: Date?
     private let label: String
     private let placeholder: String
-    private let helper: String?
     private let errorText: String?
 
     @Environment(\.locale) private var locale
     @State private var showPicker = false
-    @State private var draft: Date?
 
     public init(
         birthDate: Binding<Date?>,
         label: String,
         placeholder: String,
-        helper: String? = nil,
         errorText: String? = nil
     ) {
         _birthDate = birthDate
         self.label = label
         self.placeholder = placeholder
-        self.helper = helper
         self.errorText = errorText
     }
 
@@ -40,7 +36,6 @@ public struct BirthDateField: View {
                 .font(CleansiaTypography.labelMedium)
                 .foregroundColor(isError ? CleansiaColors.error : CleansiaColors.onSurfaceVariant)
             Button {
-                draft = birthDate
                 showPicker = true
             } label: {
                 HStack {
@@ -61,50 +56,77 @@ public struct BirthDateField: View {
             }
             .buttonStyle(.plain)
 
-            if let supporting = errorText ?? helper {
-                Text(supporting)
+            if let errorText {
+                Text(errorText)
                     .font(CleansiaTypography.labelSmall)
-                    .foregroundColor(isError ? CleansiaColors.error : CleansiaColors.onSurfaceVariant)
+                    .foregroundColor(CleansiaColors.error)
                     .padding(.horizontal, Spacing.m)
             }
         }
         .sheet(isPresented: $showPicker) {
-            NavigationStack {
-                // Picked, shown and stored in one zone. The picker keeps the time of day it was seeded
-                // with, so a day chosen in the handset's calendar and a day decoded off the wire are
-                // otherwise different instants that encode as different days.
-                DatePicker(
-                    label,
-                    selection: CalendarDay.pickerBinding($draft),
-                    in: ...Date(),
-                    displayedComponents: .date
-                )
-                // Wheels, not a month grid: an adult's birth date is decades back, a few spins on a wheel
-                // and many page flips on a calendar.
-                .datePickerStyle(.wheel)
-                .labelsHidden()
-                .environment(\.calendar, CalendarDay.calendar)
-                .environment(\.timeZone, CalendarDay.calendar.timeZone)
-                .padding()
-                .navigationTitle(label)
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button(CoreL10n.localized("birth_date_field.cancel")) {
-                            showPicker = false
-                        }
-                    }
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button(CoreL10n.localized("birth_date_field.done")) {
-                            birthDate = CalendarDay.confirmed(draft)
-                            showPicker = false
-                        }
-                    }
-                }
-            }
-            .tint(CleansiaColors.primaryText)
-            .presentationDetents([.medium])
+            BirthDateWheelSheet(birthDate: $birthDate, title: label)
         }
+    }
+}
+
+/// The half-height wheels a birth date is picked on. A wheel that moves stores its day, so Done only closes, and a
+/// sheet closed untouched leaves an empty field empty.
+public struct BirthDateWheelSheet: View {
+    @Binding private var birthDate: Date?
+    private let title: String
+    private let note: String?
+    @Environment(\.dismiss) private var dismiss
+
+    public init(birthDate: Binding<Date?>, title: String, note: String? = nil) {
+        _birthDate = birthDate
+        self.title = title
+        self.note = note
+    }
+
+    public var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.xs) {
+            HStack {
+                Text(title)
+                    .cleansiaFont(CleansiaTypography.headlineSmall)
+                    .foregroundColor(CleansiaColors.onSurface)
+                Spacer()
+                Button { dismiss() } label: {
+                    Text(CoreL10n.localized("birth_date_field.done"))
+                        .font(CleansiaTypography.titleLarge)
+                        .foregroundColor(CleansiaColors.primaryText)
+                        .frame(minWidth: 44, minHeight: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+            if let note {
+                Text(note)
+                    .font(CleansiaTypography.bodyMedium)
+                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+            }
+            // Picked, shown and stored in one zone. The picker keeps the time of day it was seeded
+            // with, so a day chosen in the handset's calendar and a day decoded off the wire are
+            // otherwise different instants that encode as different days.
+            DatePicker(
+                title,
+                selection: CalendarDay.pickerBinding($birthDate),
+                in: ...Date(),
+                displayedComponents: .date
+            )
+            // Wheels, not a month grid: an adult's birth date is decades back, a few spins on a wheel
+            // and many page flips on a calendar.
+            .datePickerStyle(.wheel)
+            .labelsHidden()
+            .environment(\.calendar, CalendarDay.calendar)
+            .environment(\.timeZone, CalendarDay.calendar.timeZone)
+            .frame(maxWidth: .infinity)
+        }
+        .padding(.horizontal, Spacing.ml)
+        .padding(.top, Spacing.ml)
+        .frame(maxHeight: .infinity, alignment: .top)
+        .background(CleansiaColors.surface)
+        .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
     }
 }
 
@@ -116,8 +138,7 @@ public struct BirthDateField: View {
                     BirthDateField(
                         birthDate: binding,
                         label: "Date of birth",
-                        placeholder: "Pick a date",
-                        helper: "Optional — helps us tailor your offers"
+                        placeholder: "Pick a date"
                     )
                     BirthDateField(
                         birthDate: .constant(nil),

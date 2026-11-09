@@ -123,11 +123,6 @@ enum OrdersAccessibility {
         ])
     }
 
-    /// A slide's spoken label: what it does, or what it is doing.
-    static func slideLabel(idle: String, busy: String, isBusy: Bool) -> String {
-        isBusy ? busy : idle
-    }
-
     static func payCaption(_ row: OrderListItem) -> String {
         (row.requiredEmployees ?? 0) > 1 ? L10n.Orders.yourShare : L10n.Orders.youEarn
     }
@@ -152,26 +147,5 @@ enum OrdersAccessibility {
             .filter { !$0.isEmpty }
             .map { $0.hasSuffix(".") ? $0 : $0 + "." }
             .joined(separator: " ")
-    }
-}
-
-extension View {
-    /// Core's slide commits only from a drag, so VoiceOver could never use it. At this build's own call sites
-    /// (the take sheet and the hero) it becomes one button whose default action commits; a disabled slide says
-    /// why in its hint. The detail's slides are not changed here (→ the Core follow-up).
-    func slideAccessibility(
-        label: String,
-        hint: String? = nil,
-        enabled: Bool,
-        onActivate: @escaping () -> Void
-    ) -> some View {
-        accessibilityElement(children: .ignore)
-            .accessibilityLabel(label)
-            .accessibilityHint(hint ?? "")
-            .accessibilityAddTraits(.isButton)
-            .disabled(!enabled)
-            .accessibilityAction {
-                if enabled { onActivate() }
-            }
     }
 }

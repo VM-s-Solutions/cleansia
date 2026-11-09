@@ -11,4 +11,5 @@
     <string name="core_error_not_found">Požadovaný zdroj nebol nájdený.</string>
     <string name="core_error_unauthorized">Vaša relácia vypršala. Prihláste sa znova.</string>
     <string name="core_error_unknown">Niečo sa pokazilo. Skúste to znova.</string>
+    <string name="core_phone_country_code">Predvoľba krajiny</string>
 </resources>

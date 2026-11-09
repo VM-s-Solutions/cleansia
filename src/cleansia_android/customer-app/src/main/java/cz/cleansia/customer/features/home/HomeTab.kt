@@ -77,6 +77,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -95,6 +98,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
@@ -141,10 +145,6 @@ import cz.cleansia.customer.features.main.MainShellBottomClearance
 import cz.cleansia.core.ui.components.statusBarFade
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
-
-/* ── Presentation models ── */
-
-private data class PastCleaner(val id: String, val name: String, val rating: Float, val jobs: Int)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -1086,8 +1086,18 @@ private fun SmartUpsellCarousel(
                             .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(999.dp)),
                     ) {
                         if (selected) {
-                            Box(Modifier.fillMaxHeight().fillMaxWidth(if (autoplay) rotationProgress.coerceAtLeast(0.12f) else 1f)
-                                .background(MaterialTheme.colorScheme.primary))
+                            // The fill moves every frame, so it is read in the draw phase, at the whole-pixel width
+                            // and from the start edge a layout gave it; read in composition, it recomposed the whole
+                            // carousel and the slide on screen on every frame.
+                            val primary = MaterialTheme.colorScheme.primary
+                            Box(
+                                Modifier.matchParentSize().drawBehind {
+                                    val fill = if (autoplay) rotationProgress.coerceAtLeast(0.12f) else 1f
+                                    val filled = (size.width * fill).roundToInt().toFloat()
+                                    val start = if (layoutDirection == LayoutDirection.Rtl) size.width - filled else 0f
+                                    drawRect(primary, topLeft = Offset(start, 0f), size = Size(filled, size.height))
+                                },
+                            )
                         }
                     }
                 }

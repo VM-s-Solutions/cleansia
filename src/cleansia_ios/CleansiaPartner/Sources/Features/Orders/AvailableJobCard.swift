@@ -530,6 +530,11 @@ struct OrdersTileNeedKey: PreferenceKey {
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
         value = max(value, nextValue())
     }
+
+    /// A reserved block the lazy board has not built reports nothing, so an empty report keeps the column.
+    static func column(_ column: CGFloat, after need: CGFloat) -> CGFloat {
+        need > 0 ? max(108, need.rounded(.up)) : column
+    }
 }
 
 private struct OrdersTileWidthKey: EnvironmentKey {

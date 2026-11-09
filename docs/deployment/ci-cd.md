@@ -114,7 +114,7 @@ failing, it does not make the secret safe.
 |----------|---------|---------|
 | `backend-ci` | PR to any branch that touches `src/**` outside the web, Android and iOS trees, `sql-scripts/**` or the workflow | Build + test .NET solution |
 | `frontend-ci` | PR to any branch | Build Angular apps |
-| `android-ci` | PR to any branch | Compile and unit-test `:core`, `:partner-app` and `:customer-app` |
+| `android-ci` | PR to any branch | Compile and unit-test `:core`, `:partner-app` and `:customer-app`, then build both apps minified (`assembleStaging`) and check their dex against ART's monitor rule (`agents/tools/check-r8-monitor.py`) |
 | `ios-ci` | PR to any branch that touches `src/cleansia_ios/**`, `src/cleansia_android/openapi/**`, its seven Android test inputs listed below, or the workflow; manual (`workflow_dispatch`) | SwiftFormat, SwiftLint, then build and test the three schemes in Debug. Pushes to `master` and manual runs also test both apps again optimised; a manual run also starts a non-blocking Xcode 27.1 readiness job ([why](#runners)) |
 | `docs-ci` | PR to any branch | Docs pointers and written claims resolve; the docs site builds |
 | `ios-symbols-ci` | PR to any branch that touches `src/cleansia_ios/**`, the checker, its self-test or the workflow | `check-ios-symbols.mjs` on Linux |

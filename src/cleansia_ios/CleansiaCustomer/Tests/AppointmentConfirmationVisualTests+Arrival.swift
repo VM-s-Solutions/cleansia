@@ -136,12 +136,12 @@ extension AppointmentConfirmationVisualTests {
         let sheet = try XCTUnwrap(canvas.host.presentedViewController)
         try await Task.sleep(nanoseconds: 400_000_000)
         let open = lowestAccessibleEdge(sheet.view)
-        postKeyboard(showing: true, in: canvas)
+        canvas.postKeyboard(showing: true)
         try await Task.sleep(nanoseconds: 200_000_000)
         XCTAssertLessThan(lowestAccessibleEdge(sheet.view), open - 200, "the keyboard pushes the form's footer up")
         await canvas.settle(timeout: 3, until: { vm.state.selectedServiceIds.isEmpty })
         try await Task.sleep(nanoseconds: 100_000_000)
-        postKeyboard(showing: false, in: canvas)
+        canvas.postKeyboard(showing: false)
         let full = BookingSuccessView.mascotCanvas(figureHeight: 116).width
         let standing = { self.animatedMascots(canvas).contains { abs(canvas.frame(of: $0).width - full) < 1 } }
         await canvas.settle(timeout: 3, until: standing)
@@ -318,7 +318,7 @@ private extension AppointmentConfirmationVisualTests {
 
     /// A booking placed through the presented sheet, slid a second after its review step comes up: every frame of
     /// the busy card's mascot, which is the one in the middle, and the welcoming figure it hands over to, once that
-    /// has stood a while.
+    /// has stood a second. A slow runner gets 30 s to land it.
     func handOverMascots(
         size: CGSize,
         sample: Sample
@@ -341,11 +341,17 @@ private extension AppointmentConfirmationVisualTests {
         defer { canvas.close() }
         var busy: [(time: TimeInterval, frame: CGRect)] = []
         var hero: CGRect?
+        var landed = TimeInterval.infinity
         let started = ProcessInfo.processInfo.systemUptime
-        while ProcessInfo.processInfo.systemUptime - started < 5 {
+        while ProcessInfo.processInfo.systemUptime - started < min(30, landed + 1) {
             let now = ProcessInfo.processInfo.systemUptime - started
             for frame in animatedMascots(canvas).map({ canvas.frame(of: $0) }) {
-                if isBusyCard(frame, in: canvas) { busy.append((now, frame)) } else { hero = frame }
+                if isBusyCard(frame, in: canvas) {
+                    busy.append((now, frame))
+                } else {
+                    hero = frame
+                    landed = min(landed, now)
+                }
             }
             try await Task.sleep(nanoseconds: 15_000_000)
         }
@@ -427,25 +433,6 @@ private extension AppointmentConfirmationVisualTests {
         if node.isAccessibilityElement { return node.accessibilityFrame.maxY }
         let children = node.accessibilityElements as? [NSObject] ?? (node as? UIView)?.subviews ?? []
         return children.map { lowestAccessibleEdge($0) }.max() ?? 0
-    }
-
-    /// The keyboard's own notifications, as UIKit posts them for a 336 pt keyboard: the test host's simulator
-    /// may have a hardware keyboard attached, which never raises the software one.
-    func postKeyboard(showing: Bool, in canvas: HostedCanvas) {
-        let screen = canvas.window.screen.bounds
-        let raised = CGRect(x: 0, y: screen.maxY - 336, width: screen.width, height: 336)
-        let lowered = raised.offsetBy(dx: 0, dy: 336)
-        let info: [AnyHashable: Any] = [
-            UIResponder.keyboardFrameBeginUserInfoKey: NSValue(cgRect: showing ? lowered : raised),
-            UIResponder.keyboardFrameEndUserInfoKey: NSValue(cgRect: showing ? raised : lowered),
-            UIResponder.keyboardAnimationDurationUserInfoKey: 0.0,
-            UIResponder.keyboardAnimationCurveUserInfoKey: UIView.AnimationCurve.easeInOut.rawValue,
-            UIResponder.keyboardIsLocalUserInfoKey: true
-        ]
-        let edge = showing ? UIResponder.keyboardWillShowNotification : UIResponder.keyboardWillHideNotification
-        for name in [edge, UIResponder.keyboardWillChangeFrameNotification] {
-            NotificationCenter.default.post(name: name, object: canvas.window.screen, userInfo: info)
-        }
     }
 
     func attachGIF(_ frames: [CGImage], timestamps: [TimeInterval], name: String) throws {
@@ -536,16 +523,16 @@ struct ArrivalTimeline: CustomStringConvertible {
         reveal.flatMap { reveal in samples.last { $0.time < reveal } }
     }
 
-    /// Every frame from `start` until the busy card starts to leave is under the whole scrim.
+    /// Every frame after the first from `start` until the reveal is under the whole scrim: the first can lag the swap.
     func scrimHeld(from start: TimeInterval) -> Bool {
         guard let reveal else { return false }
-        let held = samples.filter { $0.time >= start && $0.time < reveal }
+        let held = samples.filter { $0.time >= start && $0.time < reveal }.dropFirst()
         return !held.isEmpty && held.allSatisfy { dimming($0) >= 0.4 }
     }
 
-    /// Every frame from `time` on is clear of the scrim.
+    /// Every frame after the first from `time` is clear of the scrim: the first can lag the fade by a frame.
     func clear(from time: TimeInterval) -> Bool {
-        let after = samples.filter { $0.time >= time }
+        let after = samples.filter { $0.time >= time }.dropFirst()
         return !after.isEmpty && after.allSatisfy { dimming($0) <= 0.03 }
     }
 

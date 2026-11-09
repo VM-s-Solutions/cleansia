@@ -238,16 +238,6 @@ export class ProfileFacade extends UnsubscribeControlDirective {
       });
   }
 
-  private detailsOf(user: MyProfileDto): ProfileDetails {
-    return {
-      firstName: user.firstName,
-      lastName: user.lastName,
-      phoneNumber: user.phoneNumber,
-      birthDate: user.birthDate,
-      languageCode: user.preferredLanguageCode,
-    };
-  }
-
   /**
    * The signed url is minted per read, so it is not a cache key — the blob name is, and the backend
    * mints a new one on every replace. Holding the url steady while the name is unchanged keeps the

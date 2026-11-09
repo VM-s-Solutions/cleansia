@@ -57,7 +57,7 @@ struct EarningsView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(CleansiaColors.background.ignoresSafeArea())
         case let .error(error):
-            EarningsErrorView(error: error) { Task { await vm.load() } }
+            ErrorRetryView(error: error) { Task { await vm.load() } }
         case let .loaded(stats):
             EarningsContent(
                 stats: stats,
@@ -100,28 +100,6 @@ struct EarningsView: View {
                 snackbar: snackbar
             )
         }
-    }
-}
-
-private struct EarningsErrorView: View {
-    let error: ApiError
-    let onRetry: () -> Void
-
-    var body: some View {
-        VStack(spacing: Spacing.m) {
-            Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 40))
-                .foregroundColor(CleansiaColors.error)
-            Text(ApiErrorLocalizer().message(for: error))
-                .font(CleansiaTypography.bodyMedium)
-                .foregroundColor(CleansiaColors.onSurfaceVariant)
-                .multilineTextAlignment(.center)
-            CleansiaOutlinedButton(L10n.retry, size: .medium, action: onRetry)
-                .fixedSize()
-        }
-        .padding(Spacing.xl)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(CleansiaColors.background.ignoresSafeArea())
     }
 }
 

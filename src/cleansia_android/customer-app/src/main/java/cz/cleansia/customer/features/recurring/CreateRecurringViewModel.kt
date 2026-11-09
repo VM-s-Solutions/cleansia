@@ -41,7 +41,7 @@ import cz.cleansia.customer.features.booking.doubleBookingOfService
 import cz.cleansia.customer.features.booking.FIRST_WINDOW_HOUR
 import cz.cleansia.customer.features.booking.LAST_WINDOW_HOUR
 import cz.cleansia.customer.features.payments.UnpaidReceivable
-import cz.cleansia.customer.ui.state.ActionState
+import cz.cleansia.core.ui.state.ActionState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope

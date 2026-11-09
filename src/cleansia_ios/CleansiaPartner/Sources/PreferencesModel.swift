@@ -104,13 +104,3 @@ final class PreferencesModel: ObservableObject {
         return bundle
     }
 }
-
-extension Theme {
-    var colorScheme: ColorScheme? {
-        switch self {
-        case .system: nil
-        case .light: .light
-        case .dark: .dark
-        }
-    }
-}

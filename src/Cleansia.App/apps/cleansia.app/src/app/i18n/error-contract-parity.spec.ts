@@ -473,6 +473,7 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   'validation.invalid_age',
   'validation.invalid_date',
   'validation.invalid_password',
+  'validation.invalid_phone_number',
   'validation.must_be_positive',
   // User — register / profile
   'user.email_confirmed',

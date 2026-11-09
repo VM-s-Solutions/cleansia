@@ -23,7 +23,7 @@ public class UpdateCurrentUserSessionIdentityTests
     private const string CallerId = "caller-1";
     private const string CallerEmail = "caller@cleansia.cz";
     private const string OtherUserId = "someone-else";
-    private const string Phone = "+420123456789";
+    private const string Phone = "+420777123456";
 
     private readonly Mock<IUserRepository> _userRepository = new();
     private readonly Mock<IOrderRepository> _orderRepository = new();

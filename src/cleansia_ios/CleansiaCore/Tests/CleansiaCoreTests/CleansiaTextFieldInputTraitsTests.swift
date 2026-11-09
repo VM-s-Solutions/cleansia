@@ -17,13 +17,14 @@ final class CleansiaTextFieldInputTraitsTests: XCTestCase {
     }
 
     private func hostedField(
-        keyboardType: UIKeyboardType, contentType: UITextContentType? = nil, isPassword: Bool = false
+        keyboardType: UIKeyboardType, contentType: UITextContentType? = nil, isPassword: Bool = false,
+        labelAbove: Bool = false, onNext: (() -> Void)? = nil
     ) async throws -> UITextField {
         window?.isHidden = true
         let host = UIHostingController(
             rootView: CleansiaTextField(
                 value: .constant(""), label: "Field", keyboardType: keyboardType,
-                textContentType: contentType, isPassword: isPassword
+                textContentType: contentType, isPassword: isPassword, labelAbove: labelAbove, onNext: onNext
             )
             .padding(.horizontal, Spacing.l)
         )
@@ -125,6 +126,23 @@ final class CleansiaTextFieldInputTraitsTests: XCTestCase {
         }
         XCTFail("credential fields never appeared")
         return []
+    }
+
+    /// Return offers Next only to a field handed somewhere to go, and a label drawn above the box is the one VoiceOver
+    /// reads on the field. A field that asks for neither keeps UIKit's return key and reads as it did.
+    func testNextAndTheLabelAboveReachTheField() async throws {
+        let plain = try await hostedField(keyboardType: .default)
+        XCTAssertEqual(plain.returnKeyType, .default)
+        XCTAssertNil(plain.accessibilityLabel)
+
+        var nexts = 0
+        let chained = try await hostedField(keyboardType: .default, onNext: { nexts += 1 })
+        XCTAssertEqual(chained.returnKeyType, .next)
+        XCTAssertEqual(chained.delegate?.textFieldShouldReturn?(chained), true)
+        XCTAssertEqual(nexts, 1)
+
+        let labelled = try await hostedField(keyboardType: .default, labelAbove: true)
+        XCTAssertEqual(labelled.accessibilityLabel, "Field")
     }
 
     func testEveryOtherFieldKeepsUIKitsDefaults() async throws {

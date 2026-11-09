@@ -177,6 +177,7 @@ export default withMermaid(
               { text: "ADR-0078 — Each Live Activity token carries its APNs environment", link: '/decisions/adr-0078' },
               { text: "ADR-0079 — Pre-take location, a Prague district and a snapped distance band", link: '/decisions/adr-0079' },
               { text: "ADR-0080 — The order-status tint table lives in Core, keyed by the wire value", link: '/decisions/adr-0080' },
+              { text: "ADR-0081 — The profile reports an Apple placeholder name", link: '/decisions/adr-0081' },
             ],
           },
         ],

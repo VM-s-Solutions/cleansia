@@ -86,7 +86,7 @@ agents/
 │   ├── testing.md            # what must be tested + the must-cover list (pay, lifecycle, authz…)
 │   ├── runtime-readiness.md  # observability + graceful degradation when a dependency is down
 │   └── conventions.md        # naming, file layout, quality bars, owner-only steps
-├── tools/                    # 7 check-*.mjs repo checkers, six with a self-test
+├── tools/                    # 19 check-* repo checkers, ten with a self-test
 ├── backlog/                  # where new work is filed — see its README for the one rule
 │   ├── INDEX.md              # the manifest: one row per ticket, ONE status, nowhere else
 │   ├── tickets/              # T-NNNN-*.md — one file per unit of work

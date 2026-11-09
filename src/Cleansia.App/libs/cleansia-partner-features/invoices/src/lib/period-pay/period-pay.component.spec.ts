@@ -138,7 +138,9 @@ describe('PeriodPayComponent pay breakdown', () => {
   const summaryWith = (totalDirtinessPay: number) =>
     PeriodPaySummaryDto.fromJS({
       payPeriodId: 'period-1',
-      payPeriodLabel: '1.5. - 15.5.2026',
+      payPeriodLabel: 'Nov 01 - Nov 14, 2026',
+      payPeriodStartDate: '2026-11-01',
+      payPeriodEndDate: '2026-11-14',
       totalOrders: 1,
       totalBasePay: 650,
       totalExtrasPay: 0,
@@ -185,6 +187,24 @@ describe('PeriodPayComponent pay breakdown', () => {
 
     expect(breakdownAmount('pages.period_pay.dirtiness_pay')).toBe(`195,00${NBSP}Kč`);
     expect(breakdownAmount('pages.period_pay.grand_total')).toBe(`845,00${NBSP}Kč`);
+  });
+
+  it('names the period of the summary by its days in the language of the session, and again after a switch', () => {
+    facade.summary.set(summaryWith(0));
+    fixture.detectChanges();
+
+    const period = (): string | undefined =>
+      Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.detail-grid__item'))
+        .find((item) => item.querySelector('.detail-grid__label')?.textContent?.trim() === 'pages.period_pay.pay_period')
+        ?.querySelector('.detail-grid__value')
+        ?.textContent?.trim();
+
+    expect(period()).toBe('1. 11. 2026 – 14. 11. 2026');
+
+    facade.lang.set('en');
+    fixture.detectChanges();
+
+    expect(period()).toBe('Nov 1, 2026 – Nov 14, 2026');
   });
 
   it('shows no dirtiness row for a period with no increased or heavy job', () => {

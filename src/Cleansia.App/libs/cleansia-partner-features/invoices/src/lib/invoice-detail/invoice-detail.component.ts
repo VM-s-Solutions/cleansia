@@ -8,7 +8,7 @@ import {
   CleansiaTableComponent,
 } from '@cleansia/components';
 import { CleansiaPartnerRoute } from '@cleansia/services';
-import { currentLanguage, formatDate } from '@cleansia/utils';
+import { currentLanguage, formatDate, formatPayPeriodRange } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { InvoiceDetailFacade } from './invoice-detail.facade';
 import { formatInvoiceAmount, getOrderPaysTableDefinition } from './invoice-detail.models';
@@ -51,6 +51,7 @@ export class InvoiceDetailComponent implements OnInit {
       generated: formatDate(invoice?.generatedAt, lang, 'dateTime'),
       approved: formatDate(invoice?.approvedAt, lang, 'dateTime'),
       paid: formatDate(invoice?.paidAt, lang, 'dateTime'),
+      period: formatPayPeriodRange(invoice?.payPeriodStartDate, invoice?.payPeriodEndDate, lang) || '-',
     };
   });
 

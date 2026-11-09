@@ -11,6 +11,7 @@ import {
   CleansiaTitleComponent,
 } from '@cleansia/components';
 import { CleansiaPartnerRoute } from '@cleansia/services';
+import { formatPayPeriodRange } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { PeriodPayFacade } from './period-pay.facade';
 import {
@@ -56,6 +57,11 @@ export class PeriodPayComponent implements OnInit {
   protected readonly cashHeldRows = computed(() =>
     buildCashHeldRows(this.facade.cashHeld(), this.facade.lang())
   );
+
+  protected readonly summaryPeriod = computed(() => {
+    const summary = this.facade.summary();
+    return formatPayPeriodRange(summary?.payPeriodStartDate, summary?.payPeriodEndDate, this.facade.lang());
+  });
 
   protected readonly amounts = computed(() => {
     const summary = this.facade.summary();

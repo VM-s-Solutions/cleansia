@@ -7,7 +7,7 @@ import {
   input,
   signal,
 } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
   EmployeeInvoiceDetailDto,
@@ -33,6 +33,8 @@ class SectionStub {
 }
 
 describe('InvoiceDetailComponent', () => {
+  let fixture: ComponentFixture<InvoiceDetailComponent>;
+
   function render(overrides: Record<string, unknown> = {}): HTMLElement {
     const facade = {
       invoiceDetail: signal(
@@ -72,7 +74,7 @@ describe('InvoiceDetailComponent', () => {
       },
     });
     TestBed.inject(TranslateService).use('cs');
-    const fixture = TestBed.createComponent(InvoiceDetailComponent);
+    fixture = TestBed.createComponent(InvoiceDetailComponent);
     fixture.detectChanges();
     return fixture.nativeElement as HTMLElement;
   }
@@ -104,5 +106,29 @@ describe('InvoiceDetailComponent', () => {
     ]);
     expect(page.textContent).not.toContain('pages.invoices.cash_set_off');
     expect(page.textContent).not.toContain('pages.invoices.transfer_amount');
+  });
+
+  const period = (page: HTMLElement): string | undefined =>
+    page
+      .querySelector('.invoice-detail-banner__meta-item')
+      ?.textContent?.trim();
+
+  it('names the pay period by its days in the language of the session, and again after a switch', () => {
+    const page = render({
+      payPeriodLabel: 'Nov 01 - Nov 14, 2026',
+      payPeriodStartDate: '2026-11-01',
+      payPeriodEndDate: '2026-11-14',
+    });
+
+    expect(period(page)).toBe('1. 11. 2026 – 14. 11. 2026');
+
+    TestBed.inject(TranslateService).use('en');
+    fixture.detectChanges();
+
+    expect(period(page)).toBe('Nov 1, 2026 – Nov 14, 2026');
+  });
+
+  it('puts a dash where the server sent no period days', () => {
+    expect(period(render())).toBe('-');
   });
 });

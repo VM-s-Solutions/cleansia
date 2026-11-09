@@ -28,6 +28,7 @@ Invoicing at close was the design (`CalculateOrderPayHandler.cs:16-18`, and the 
 - R1: early close is an exception. A period lasts at most 14 days and closes in the 02:00 UTC run after its end date.
   An admin can end the open period today (Close now, with a reason) or change its end date up to its 14th day. A
   closed period is never reopened.
+  - The length became one setting in P1.9, `PayPeriodClosing:LengthInDays`: 14 by default, 3 on DEV only (D39).
 - R2: pay that arrives after its period was invoiced goes into the next open period and is invoiced with it.
 - R3: payouts are manual bank transfers at launch, automated through the company's bank later, never through Stripe.
   This supersedes decision 48's Stripe Connect Express route. Stripe stays for customer card payments.
@@ -41,15 +42,15 @@ separate reviewer re-derives the amounts by hand and checks that each new test f
 
 Branch `fix/pay-invoice-after-close`. No schema change.
 
-- [ ] **P1.1** $ The 5-minute sweep invoices only closed periods, aged from `ClosedAt`; its stale comments go; the SQLite tests that pin today's behaviour are rewritten, and a Postgres case is added.
-- [ ] **P1.2** $ `GenerateInvoice` refuses an open period with `pay_period.not_closed`, which also guards the admin generate-invoice endpoint.
-- [ ] **P1.3** $ The night close commits the close and its successor before invoicing, loops only over cleaners with un-invoiced pay, and e-mails no cleaner without pay; the wind-down close gets the same order.
-- [ ] **P1.4** $ Close now, with a required reason kept in the audit log, replaces the admin Close; Reopen and Open, their two policies and their callers go; the admin client is regenerated.
-- [ ] **P1.5** One open period, never in the future: Create refuses while a period is open or for a start after today, and `EnsureOpenPeriodAsync` seeds from max(today, latest end + 1).
-- [ ] **P1.6** The Close now panel on the open period's page, in five locales, built with the cleansia-design skill.
-- [ ] **P1.7** $ `UpdatePayPeriod` changes only the end date, from tomorrow to the last allowed day, with the new key `pay_period.end_too_soon`.
-- [ ] **P1.8** Before Phase 2, no code: P4.4's design is written in T-0926 and approved by Mike (D12).
-- [ ] **P1.9** The period length is one setting, `PayPeriodClosing:LengthInDays` (default 14; 3 on DEV only, through the dev bicep), read by every path that creates or extends a period; Create takes only a start date.
+- [x] **P1.1** $ The 5-minute sweep invoices only closed periods, aged from `ClosedAt`; its stale comments go; the SQLite tests that pin today's behaviour are rewritten, and a Postgres case is added.
+- [x] **P1.2** $ `GenerateInvoice` refuses an open period with `pay_period.not_closed`, which also guards the admin generate-invoice endpoint.
+- [x] **P1.3** $ The night close commits the close and its successor before invoicing, loops only over cleaners with un-invoiced pay, and e-mails no cleaner without pay; the wind-down close gets the same order.
+- [x] **P1.4** $ Close now, with a required reason kept in the audit log, replaces the admin Close; Reopen and Open, their two policies and their callers go; the admin client is regenerated.
+- [x] **P1.5** One open period, never in the future: Create refuses while a period is open or for a start after today, and `EnsureOpenPeriodAsync` seeds from max(today, latest end + 1).
+- [x] **P1.6** The Close now panel on the open period's page, in five locales, built without the cleansia-design skill on Mike's ruling of 2026-11-09 ("Build without it"), so it follows the existing admin patterns and tokens.
+- [x] **P1.7** $ `UpdatePayPeriod` changes only the end date, from tomorrow to the last allowed day, with the new key `pay_period.end_too_soon`.
+- [x] **P1.8** Before Phase 2, no code: P4.4's design is written in T-0926 and approved by Mike (D12).
+- [x] **P1.9** The period length is one setting, `PayPeriodClosing:LengthInDays` (default 14; 3 on DEV only, through the dev bicep), read by every path that creates or extends a period; Create takes only a start date.
 
 ## Done
 
@@ -104,3 +105,6 @@ The plan's "Not doing" list. Anything found outside these slices is reported to 
 - 2026-11-09 — Gates on the head merged with master (`10b75e186`): Cleansia.Tests 9229/9229, Cleansia.IntegrationTests
   1050/1050, Cleansia.HostTests 518/518, and no pending model change. The admin and partner error-contract parity
   specs, the tests of the 71 affected web projects, both web typechecks and the admin production build pass.
+- 2026-11-09 — The money re-review of `23ad5c060` passed: the amounts were re-derived by hand, and every assertion it
+  added failed with the change reverted. The security review of #372 at `0907ccaca` passed against S1 to S12.
+- 2026-11-09 — Shipped: #372 merged to master as eb9ea0c4a.

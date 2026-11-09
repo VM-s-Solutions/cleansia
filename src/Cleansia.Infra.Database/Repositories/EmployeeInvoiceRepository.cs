@@ -1,4 +1,5 @@
 using Cleansia.Core.Domain.EmployeePayroll;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -41,7 +42,8 @@ public class EmployeeInvoiceRepository(CleansiaDbContext context) : BaseReposito
                 && p.EmployeeInvoiceId == null
                 && invoices.Any(i => i.EmployeeId == employeeId
                     && i.PayPeriodId == payPeriodId
-                    && i.CurrencyId == p.CurrencyId), cancellationToken);
+                    && i.CurrencyId == p.CurrencyId
+                    && i.Status != EmployeeInvoiceStatus.Cancelled), cancellationToken);
     }
 
     public Task<EmployeeInvoice?> GetLatestInvoiceAsync(string employeeId, CancellationToken cancellationToken)

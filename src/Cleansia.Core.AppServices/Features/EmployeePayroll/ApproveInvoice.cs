@@ -39,7 +39,7 @@ public class ApproveInvoice
                 .WithMessage(BusinessErrorMessage.Required)
                 .MustAsync(invoiceRepository.ExistsAsync)
                 .WithMessage(BusinessErrorMessage.InvoiceNotFound)
-                .MustAsync(BePendingStatusAsync)
+                .MustAsync(BePendingOrDisputedAsync)
                 .WithMessage(BusinessErrorMessage.InvalidInvoiceStatus)
                 .MustAsync(PayoutDetailsAreUsableAsync)
                 .WithMessage(BusinessErrorMessage.InvoicePayoutDetailsMissing)
@@ -51,10 +51,10 @@ public class ApproveInvoice
                 .WithMessage(BusinessErrorMessage.MaxLength);
         }
 
-        private async Task<bool> BePendingStatusAsync(string invoiceId, CancellationToken cancellationToken)
+        private async Task<bool> BePendingOrDisputedAsync(string invoiceId, CancellationToken cancellationToken)
         {
             var invoice = await _invoiceRepository.GetByIdAsync(invoiceId, cancellationToken);
-            return invoice!.Status == EmployeeInvoiceStatus.Pending;
+            return invoice is { IsCancelled: false, Status: EmployeeInvoiceStatus.Pending or EmployeeInvoiceStatus.Disputed };
         }
 
         // Approval is the admin's commitment to transfer, and the transfer itself is keyed by hand in a

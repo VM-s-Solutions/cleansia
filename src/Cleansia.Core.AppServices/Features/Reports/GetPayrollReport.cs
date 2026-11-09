@@ -50,10 +50,13 @@ public class GetPayrollReport
 
             var invoices = await employeeInvoiceRepository.GetAllByDateRangeAsync(
                 bounds.StartDate, bounds.EndDate, currency.Id, cancellationToken);
+            // A cancelled invoice's jobs move to the corrected invoice that replaces it, so the money is
+            // summed over the uncancelled ones; the counts and the by-status rows still show every invoice.
+            var uncancelled = invoices.Where(i => i.Status != EmployeeInvoiceStatus.Cancelled).ToList();
 
-            var totalPayroll = invoices.Sum(i => i.TotalAmount);
+            var totalPayroll = uncancelled.Sum(i => i.TotalAmount);
             var totalInvoices = invoices.Count;
-            var uniqueEmployees = invoices.Select(i => i.EmployeeId).Distinct().Count();
+            var uniqueEmployees = uncancelled.Select(i => i.EmployeeId).Distinct().Count();
             var averagePayPerEmployee = uniqueEmployees > 0 ? totalPayroll / uniqueEmployees : 0;
 
             var pendingInvoices = invoices.Count(i => i.Status == EmployeeInvoiceStatus.Pending);
@@ -61,10 +64,10 @@ public class GetPayrollReport
             var paidInvoices = invoices.Count(i => i.Status == EmployeeInvoiceStatus.Paid);
             var cancelledInvoices = invoices.Count(i => i.Status == EmployeeInvoiceStatus.Cancelled);
 
-            var totalBonuses = invoices.Sum(i => i.BonusAmount);
-            var totalDeductions = invoices.Sum(i => i.DeductionAmount);
+            var totalBonuses = uncancelled.Sum(i => i.BonusAmount);
+            var totalDeductions = uncancelled.Sum(i => i.DeductionAmount);
 
-            var employeeSummaries = invoices
+            var employeeSummaries = uncancelled
                 .GroupBy(i => new { i.EmployeeId, EmployeeName = GetEmployeeName(i) })
                 .Select(g => new EmployeePayrollSummary(
                     EmployeeId: g.Key.EmployeeId,
@@ -87,7 +90,7 @@ public class GetPayrollReport
                     TotalAmount: g.Sum(i => i.TotalAmount)))
                 .ToList();
 
-            var monthlyPayroll = invoices
+            var monthlyPayroll = uncancelled
                 .GroupBy(i => new { i.GeneratedAt.Year, i.GeneratedAt.Month })
                 .Select(g => new MonthlyPayroll(
                     Year: g.Key.Year,

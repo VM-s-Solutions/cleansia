@@ -1112,7 +1112,7 @@
       },
       "cancel_dialog": {
         "title": "Zrušit fakturu",
-        "subtitle": "Prosím uveďte důvod zrušení této faktury",
+        "subtitle": "Prosím uveďte důvod zrušení této faktury. Do několika minut následuje opravená faktura s novým číslem. Sestaví se znovu z plateb za objednávky, takže bonus nebo srážku, které jste zadali přes Upravit částky, na ní musíte zadat znovu. Pokud chcete změnit jen bonus nebo srážku, použijte místo zrušení Upravit částky (schválenou fakturu nejprve rozporujte). Pokud už byl převod k této faktuře odeslán, označte ji místo zrušení jako zaplacenou.",
         "reason_label": "Důvod zrušení",
         "reason_placeholder": "Zadejte důvod zrušení...",
         "submit": "Zrušit fakturu"
@@ -1155,14 +1155,6 @@
           "notes_hint": "Popište důvod rozporu...",
           "submit": "Potvrdit rozpor",
           "success": "Faktura byla označena jako rozporovaná"
-        },
-        "reject": {
-          "action": "Zamítnout fakturu",
-          "hint": "Zamítněte tuto fakturu. Poznámky jsou povinné.",
-          "notes": "Poznámky k zamítnutí",
-          "notes_hint": "Popište důvod zamítnutí...",
-          "submit": "Potvrdit zamítnutí",
-          "success": "Faktura byla zamítnuta"
         }
       }
     },
@@ -3457,6 +3449,8 @@
     "pay_period": {
       "end_too_soon": "Datum konce musí být nejdříve zítra. Chcete-li období ukončit dnes, použijte „Uzavřít nyní“.",
       "has_order_pays": "Nelze smazat platební období, které má přiřazené platby objednávek",
+      "has_uninvoiced_pay": "Část odměn v tomto období ještě není vyfakturována, proto ho nelze označit jako zaplacené. Faktury se vystavují automaticky brzy po uzavření období.",
+      "has_unpaid_invoices": "Některé faktury v tomto období ještě nejsou zaplacené. Nejprve označte každou fakturu jako zaplacenou.",
       "invalid_duration": "Datum konce je pozdější než poslední den, do kterého může platební období trvat.",
       "not_closed": "Platební období není uzavřeno",
       "not_started": "Toto platební období ještě nezačalo, proto ho nelze uzavřít.",

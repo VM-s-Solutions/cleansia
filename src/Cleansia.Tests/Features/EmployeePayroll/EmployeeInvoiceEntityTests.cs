@@ -261,11 +261,11 @@ public class EmployeeInvoiceEntityTests
     }
 
     [Fact]
-    public void Reject_On_Paid_Throws()
+    public void Dispute_On_Cancelled_Throws()
     {
-        var invoice = PaidInvoice();
+        var invoice = InvoiceInStatus(EmployeeInvoiceStatus.Cancelled);
 
-        Assert.Throws<InvalidOperationException>(() => invoice.Reject("x"));
+        Assert.Throws<InvalidOperationException>(() => invoice.Dispute("x"));
     }
 
     [Fact]
@@ -380,7 +380,8 @@ public class EmployeeInvoiceEntityTests
                 invoice.Dispute("x");
                 break;
             case EmployeeInvoiceStatus.Rejected:
-                invoice.Reject("x");
+                // A legacy row: nothing writes Rejected any more.
+                typeof(EmployeeInvoice).GetProperty(nameof(EmployeeInvoice.Status))!.SetValue(invoice, EmployeeInvoiceStatus.Rejected);
                 break;
             case EmployeeInvoiceStatus.Cancelled:
                 invoice.Cancel("x", "admin@cleansia.cz");

@@ -50,7 +50,7 @@ public class InvoiceReconciliationCandidatesTests(PostgresContainerFixture fixtu
             });
     }
 
-    /// <summary>An admin can mark a period paid before the sweep reaches it, and its pay is still invoiced.</summary>
+    /// <summary>A Paid period whose pay is still un-invoiced stays a candidate.</summary>
     [Fact]
     public async Task A_Period_Marked_Paid_Before_The_Sweep_Is_Still_A_Candidate()
     {

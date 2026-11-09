@@ -1,2 +1,2 @@
-export type AdminPayrollOpsPanel = 'adjust' | 'dispute' | 'reject';
+export type AdminPayrollOpsPanel = 'adjust' | 'dispute';
 

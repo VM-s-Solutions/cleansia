@@ -214,6 +214,9 @@ Backend:
   `IPayPeriodRepository`, its tenth collaborator.
 - `EmployeeInvoice.cs`: the fit helper, and the negative backstop in `CreateFromOrderPays`.
 - `GenerateInvoice.cs` and `PayPeriodBackgroundService.GenerateInvoicesForEmployeeAsync`: the move step, per currency.
+- `PayPeriodBackgroundService.SendEmployeePeriodClosedEmailAsync`: no "period closed" e-mail when every row of the
+  cleaner moved on (D7). P1.3's loop reaches every cleaner with an un-invoiced row, a charge-only cleaner included,
+  and today it sends a plain e-mail when invoicing yields no attachment.
 - `OrderEmployeePayRepository.cs`:
   - `GetByOrderAndEmployeeAsync` and `GetTotalPayByOrderIdsAsync` read the job or fee-share row only.
   - New: an exists-check for a carried line.
@@ -324,3 +327,8 @@ The plan's "Not doing" list. Anything found outside these slices is reported to 
 - 2026-11-09 — Filed from the plan page. Not started. P4.4's design is due before Phase 2.
 - 2026-11-09 — P4.4's design written under Design (P1.8): no new column, one index change for P2.1, one enum value for
   P3.1. Waiting for Mike's OK and his answers to its three questions before Phase 2 starts.
+- 2026-11-09 — Mike: "Yup, I like the recommended variants. Go with them". Q1: the design is approved, so P2.1 takes
+  the index change and P3.1 the new line type. Q2: a charge the next invoice cannot take whole waits whole for a later
+  invoice. Q3: a charge later pay never covers stays blocked, and Mike decides each case; no code. Section 8 now also
+  names `SendEmployeePeriodClosedEmailAsync`, which P1.3's loop reaches: P4.4 skips its e-mail when every row of the
+  cleaner moved on (D7).

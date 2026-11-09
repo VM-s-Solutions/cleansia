@@ -317,7 +317,11 @@ public class EmployeeInvoice : TenantAuditable
         Status = EmployeeInvoiceStatus.Approved;
         ApprovedAt = DateTime.UtcNow;
         ApprovedBy = approvedBy;
-        AdminNotes = adminNotes;
+
+        if (adminNotes != null)
+        {
+            AdminNotes = adminNotes;
+        }
 
         return this;
     }
@@ -348,20 +352,12 @@ public class EmployeeInvoice : TenantAuditable
             throw new InvalidOperationException("Cannot dispute a paid invoice");
         }
 
-        Status = EmployeeInvoiceStatus.Disputed;
-        AdminNotes = adminNotes;
-
-        return this;
-    }
-
-    public EmployeeInvoice Reject(string adminNotes)
-    {
-        if (Status == EmployeeInvoiceStatus.Paid)
+        if (IsCancelled)
         {
-            throw new InvalidOperationException("Cannot reject a paid invoice");
+            throw new InvalidOperationException("Cannot dispute a cancelled invoice");
         }
 
-        Status = EmployeeInvoiceStatus.Rejected;
+        Status = EmployeeInvoiceStatus.Disputed;
         AdminNotes = adminNotes;
 
         return this;

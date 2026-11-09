@@ -74,7 +74,7 @@ public class MarkInvoicePaid
         private async Task<bool> NotCancelledAsync(string invoiceId, CancellationToken cancellationToken)
         {
             var invoice = await _invoiceRepository.GetByIdAsync(invoiceId, cancellationToken);
-            return invoice!.Status != EmployeeInvoiceStatus.Cancelled;
+            return invoice!.Status != EmployeeInvoiceStatus.Cancelled && !invoice.IsCancelled;
         }
 
         private async Task<bool> ApprovedAsync(string invoiceId, CancellationToken cancellationToken)

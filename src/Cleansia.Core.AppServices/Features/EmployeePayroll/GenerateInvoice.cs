@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Payments;
@@ -8,7 +9,6 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
-using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -66,7 +66,7 @@ public class GenerateInvoice
 
         // Pay is invoiced once its period has closed: an invoice issued while the period runs holds only
         // the jobs done so far, and every later job in its currency is then refused as already invoiced.
-        // A Paid period has closed too, and an admin can mark one paid before the sweep invoices it.
+        // A Paid period has closed too.
         private async Task<bool> HaveClosedAsync(string payPeriodId, CancellationToken cancellationToken)
         {
             var period = await _payPeriodRepository.GetByIdAsync(payPeriodId, cancellationToken);
@@ -93,6 +93,10 @@ public class GenerateInvoice
         IOrderEmployeePayRepository orderEmployeePayRepository,
         IPayoutReferenceAllocator payoutReferenceAllocator,
         ICashLedgerRepository cashLedgerRepository,
+        IPayPeriodRepository payPeriodRepository,
+        IEmployeeRepository employeeRepository,
+        IEmailService emailService,
+        IBlobContainerClientFactory blobContainerClientFactory,
         IServiceScopeFactory serviceScopeFactory,
         ILogger<Handler> logger)
         : ICommandHandler<Command, Response>
@@ -207,36 +211,76 @@ public class GenerateInvoice
                     BusinessErrorMessage.InvoiceReferenceUnavailable));
             }
 
+            var documents = new List<(EmployeeInvoice Invoice, string PdfBlobUrl)>(invoices.Count);
             foreach (var invoice in invoices)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                try
+                if (await RegenerateInvoicePdf.RenderSavedAsync(serviceScopeFactory, invoice, logger, cancellationToken) is { } pdfBlobUrl)
                 {
-                    // Financial creation is already committed. A failed document commit must discard
-                    // its whole unit of work before the next currency is attempted (ADR-0072 D2).
-                    await using var scope = serviceScopeFactory.CreateAsyncScope();
-                    if (!string.IsNullOrEmpty(invoice.TenantId))
-                    {
-                        scope.ServiceProvider.GetRequiredService<ITenantProvider>().SetTenantOverride(invoice.TenantId);
-                    }
-
-                    var document = await scope.ServiceProvider.GetRequiredService<IMediator>().Send(
-                        new RegenerateInvoicePdf.Command(invoice.Id, Constants.Language.English), cancellationToken);
-                    if (document.IsFailure)
-                    {
-                        logger.LogWarning("Invoice {InvoiceId} was created but its PDF is unavailable ({Error})",
-                            invoice.Id, document.Error?.Message);
-                    }
-                }
-                catch (Exception ex) when (ex is not OperationCanceledException)
-                {
-                    // Keep the committed financial result: an admin can retry the existing PDF repair
-                    // action, and other currencies still get their own clean rendering scope.
-                    logger.LogError(ex, "Invoice {InvoiceId} was created but its PDF could not be persisted", invoice.Id);
+                    documents.Add((invoice, pdfBlobUrl));
                 }
             }
 
+            await EmailAsync(command, documents, cancellationToken);
+
             return BusinessResult.Success(new Response(invoices.Select(i => i.Id).ToList()));
+        }
+
+        // The night run's rules: an active cleaner with an active account and an address gets one e-mail per
+        // rendered invoice, in their language, or one without an attachment when none rendered. The invoices are
+        // issued already, so a failed send is logged and never fails the command.
+        private async Task EmailAsync(
+            Command command,
+            IReadOnlyList<(EmployeeInvoice Invoice, string PdfBlobUrl)> documents,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                var employee = await employeeRepository.GetQueryable()
+                    .Include(e => e.User)
+                    .FirstOrDefaultAsync(e => e.Id == command.EmployeeId && e.IsActive, cancellationToken);
+                if (employee?.User is not { IsActive: true } || string.IsNullOrWhiteSpace(employee.User.Email))
+                {
+                    logger.LogWarning("Employee {EmployeeId} has no active user or email; skipping the invoice email",
+                        command.EmployeeId);
+                    return;
+                }
+
+                var period = await payPeriodRepository.GetByIdAsync(command.PayPeriodId, cancellationToken);
+                var container = blobContainerClientFactory.GetBlobContainerClient(Constants.BlobContainers.GeneratedInvoices);
+                var attachments = new List<(byte[]? PdfBytes, string? FileName)>(documents.Count);
+                foreach (var (invoice, pdfBlobUrl) in documents)
+                {
+                    var blob = await container.DownloadAsync(DownloadInvoice.Handler.BlobNameOf(pdfBlobUrl), cancellationToken);
+                    using var pdf = new MemoryStream();
+                    await blob.Content.CopyToAsync(pdf, cancellationToken);
+                    attachments.Add((pdf.ToArray(), $"{invoice.InvoiceNumber}.pdf"));
+                }
+
+                if (attachments.Count == 0)
+                {
+                    attachments.Add((null, null));
+                }
+
+                foreach (var (pdfBytes, fileName) in attachments)
+                {
+                    await emailService.SendPeriodClosedEmailAsync(
+                        employee.User.Email,
+                        $"{employee.User.FirstName} {employee.User.LastName}",
+                        period!.StartDate,
+                        period.EndDate,
+                        period.ClosedAt!.Value,
+                        period.GetPeriodLabel(),
+                        employee.User.PreferredLanguageCode ?? Constants.Language.English,
+                        pdfBytes,
+                        fileName,
+                        cancellationToken);
+                }
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                logger.LogError(ex, "Invoices for employee {EmployeeId} / period {PeriodId} were issued but not emailed",
+                    command.EmployeeId, command.PayPeriodId);
+            }
         }
     }
 }

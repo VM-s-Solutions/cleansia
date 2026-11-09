@@ -88,11 +88,13 @@ public class GetPeriodPays
             // currency wins, because the payout document is what the cleaner holds and "My Pay"
             // disagreeing with it is the defect this field exists to close. A cancelled invoice is
             // not a document the cleaner holds, so it cannot pull the view away from the resolved
-            // currency -- otherwise a period paid in one currency would offer a switch to a void one.
+            // currency -- otherwise a period paid in one currency would offer a switch to a void one --
+            // and it gives way to the corrected invoice that replaces it in the same currency.
             var view = string.IsNullOrWhiteSpace(query.CurrencyId)
                 ? await currencyResolutionService.ResolveCurrencyForEmployeeAsync(query.EmployeeId, cancellationToken)
                 : (await currencyRepository.GetByIdAsync(query.CurrencyId, cancellationToken))!;
-            var invoice = invoices.FirstOrDefault(i => i.CurrencyId == view.Id)
+            var invoice = invoices.FirstOrDefault(i => i.CurrencyId == view.Id && !i.IsCancelled)
+                ?? invoices.FirstOrDefault(i => i.CurrencyId == view.Id)
                 ?? (string.IsNullOrWhiteSpace(query.CurrencyId) ? invoices.FirstOrDefault(i => !i.IsCancelled) : null);
             var currencyId = invoice?.CurrencyId ?? view.Id;
             var currencyCode = invoice is null ? view.Code : invoice.Currency?.Code ?? view.Code;

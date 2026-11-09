@@ -229,7 +229,7 @@ public class InvoiceListCurrencyScopeTests(PostgresContainerFixture fixture) : B
         for (var index = 0; index < invoices.Length; index++)
         {
             var row = invoices[index];
-            var period = PayPeriod.CreateBiWeekly(new DateOnly(2026, 3, 1).AddDays(index * PayPeriod.LengthInDays));
+            var period = PayPeriod.CreateBiWeekly(new DateOnly(2026, 3, 1).AddDays(index * PayPeriod.LengthInDays)).Close("System");
             var invoice = EmployeeInvoice.Create(
                 employee.Id, period.Id, 1, row.Amount, row.Currency, $"26000002{index:D2}",
                 PayrollMockFactory.NextTestInvoiceNumber());
@@ -266,7 +266,7 @@ public class InvoiceListCurrencyScopeTests(PostgresContainerFixture fixture) : B
         context.Countries.Add(country);
         context.Currencies.AddRange(czk, eur);
 
-        var payPeriod = PayPeriod.Create(new DateOnly(2026, 3, 1), new DateOnly(2026, 3, 15));
+        var payPeriod = PayPeriod.Create(new DateOnly(2026, 3, 1), new DateOnly(2026, 3, 15)).Close("System");
         var otherPeriod = PayPeriod.Create(new DateOnly(2026, 3, 16), new DateOnly(2026, 3, 31));
         context.AddRange(payPeriod, otherPeriod);
 

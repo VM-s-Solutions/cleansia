@@ -10,7 +10,8 @@ namespace Cleansia.Tests.Features.EmployeePayroll;
 
 /// <summary>
 /// A cancelled invoice transfers nothing, so the cash its issue set off is the cleaner's to hold again
-/// (owner ruling 2026-09-28, decision 23): the cancel enters the set-off back into the ledger.
+/// (owner ruling 2026-09-28, decision 23): the cancel enters the set-off back into the ledger. Its jobs are
+/// freed too, so the corrected invoice that follows takes both again.
 /// </summary>
 public class CancelInvoiceCashSetOffTests
 {
@@ -51,6 +52,23 @@ public class CancelInvoiceCashSetOffTests
 
         Assert.True(result.IsSuccess);
         Assert.Empty(_entries);
+    }
+
+    [Fact]
+    public async Task Cancelling_An_Invoice_Frees_Its_Jobs_For_The_Corrected_Invoice()
+    {
+        var invoice = Arrange(setOff: 0m);
+        OrderEmployeePay[] pays = [PayrollMockFactory.OrderPay(basePay: 600m), PayrollMockFactory.OrderPay(basePay: 400m)];
+        invoice.AddOrderPays(pays);
+        foreach (var pay in pays)
+        {
+            pay.AssignToInvoice(invoice.Id);
+        }
+
+        var result = await Handler().Handle(new CancelInvoice.Command(invoice.Id, "Wrong deduction"), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.All(pays, pay => Assert.Null(pay.EmployeeInvoiceId));
     }
 
     private EmployeeInvoice Arrange(decimal setOff)

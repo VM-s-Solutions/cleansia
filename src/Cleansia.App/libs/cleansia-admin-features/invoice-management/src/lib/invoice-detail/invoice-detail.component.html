@@ -94,7 +94,7 @@
           [outlined]="true"
           (onClick)="onDownload()"
         />
-        }
+        } @if (facade.canRegeneratePdf()) {
         <cleansia-button
           [label]="'pages.invoice_detail.actions.regenerate_pdf' | translate"
           icon="pi pi-refresh"
@@ -103,6 +103,7 @@
           (onClick)="onRegeneratePdf()"
           [loading]="facade.actionLoading()"
         />
+        }
       </div>
     </cleansia-section>
 

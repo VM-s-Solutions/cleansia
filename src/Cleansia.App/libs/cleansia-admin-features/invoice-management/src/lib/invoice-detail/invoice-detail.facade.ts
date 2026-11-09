@@ -296,7 +296,10 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
 
   canApprove(): boolean {
     const status = this.invoice()?.status;
-    return status === EmployeeInvoiceStatus.Pending;
+    return (
+      status === EmployeeInvoiceStatus.Pending ||
+      status === EmployeeInvoiceStatus.Disputed
+    );
   }
 
   canMarkPaid(): boolean {
@@ -308,12 +311,22 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
     const status = this.invoice()?.status;
     return (
       status === EmployeeInvoiceStatus.Pending ||
-      status === EmployeeInvoiceStatus.Approved
+      status === EmployeeInvoiceStatus.Approved ||
+      status === EmployeeInvoiceStatus.Disputed
     );
   }
 
   canDownload(): boolean {
     return !!this.invoice()?.pdfBlobName;
+  }
+
+  canRegeneratePdf(): boolean {
+    const status = this.invoice()?.status;
+    return (
+      status === EmployeeInvoiceStatus.Pending ||
+      status === EmployeeInvoiceStatus.Approved ||
+      status === EmployeeInvoiceStatus.Disputed
+    );
   }
 
   canAssignVariableSymbol(): boolean {

@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Tenancy;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 
@@ -17,9 +18,10 @@ public class MarkPayPeriodPaid
     {
         private readonly IPayPeriodRepository _payPeriodRepository;
 
-        public Validator(IPayPeriodRepository payPeriodRepository)
+        public Validator(IPayPeriodRepository payPeriodRepository, ICompanySettlementReader settlementReader)
         {
             _payPeriodRepository = payPeriodRepository;
+            (int UnpaidInvoices, int UninvoicedPayRows)? books = null;
 
             RuleFor(x => x.PayPeriodId)
                 .Cascade(CascadeMode.Stop)
@@ -28,7 +30,14 @@ public class MarkPayPeriodPaid
                 .MustAsync(payPeriodRepository.ExistsAsync)
                 .WithMessage(BusinessErrorMessage.PayPeriodNotFound)
                 .MustAsync(BeClosedStatusAsync)
-                .WithMessage(BusinessErrorMessage.PayPeriodNotClosed);
+                .WithMessage(BusinessErrorMessage.PayPeriodNotClosed)
+                .MustAsync(async (payPeriodId, ct) => (await BooksAsync(payPeriodId, ct)).UninvoicedPayRows == 0)
+                .WithMessage(BusinessErrorMessage.PayPeriodHasUninvoicedPay)
+                .MustAsync(async (payPeriodId, ct) => (await BooksAsync(payPeriodId, ct)).UnpaidInvoices == 0)
+                .WithMessage(BusinessErrorMessage.PayPeriodHasUnpaidInvoices);
+
+            async Task<(int UnpaidInvoices, int UninvoicedPayRows)> BooksAsync(string payPeriodId, CancellationToken ct) =>
+                books ??= await settlementReader.ReadPayPeriodAsync(payPeriodId, ct);
         }
 
         private async Task<bool> BeClosedStatusAsync(string payPeriodId, CancellationToken cancellationToken)

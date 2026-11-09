@@ -106,8 +106,7 @@ public class GenerateInvoiceValidatorTests
     }
 
     /// <summary>
-    /// A Paid period has closed too: an admin can mark a period paid before the sweep invoices it, and its
-    /// pay must still be invoiced.
+    /// A Paid period has closed too, so pay still un-invoiced in it can be invoiced.
     /// </summary>
     [Theory]
     [InlineData(PayPeriodStatus.Open, false)]

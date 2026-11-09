@@ -108,7 +108,6 @@ public static class PolicyBuilder
         [Policy.CanClosePayPeriod] = PhysicalPolicy.AccountantOrAbove,
         [Policy.CanUpdateInvoiceAmounts] = PhysicalPolicy.AccountantOrAbove,
         [Policy.CanDisputeInvoice] = PhysicalPolicy.AccountantOrAbove,
-        [Policy.CanRejectInvoice] = PhysicalPolicy.AccountantOrAbove,
 
         // Employee Payroll — Pay Periods. Pay periods are global cycles (Note B), so an
         // employee may list them to locate their own pay; the per-row data is fetched via the

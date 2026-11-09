@@ -49,5 +49,13 @@ public class PayPeriodEntityConfiguration : TenantAuditableEntityConfiguration<P
         builder.HasIndex(e => new { e.StartDate, e.EndDate });
         builder.HasIndex(e => e.StartDate);
         builder.HasIndex(e => e.EndDate);
+
+        // At most one open period per company. Named, because an unnamed index on TenantId would replace the
+        // base configuration's. It alone decides between two writers that each found no open period, so it
+        // declares NULLS NOT DISTINCT like the other tenant-keyed arbiters.
+        builder.HasIndex(e => e.TenantId, "IX_PayPeriods_TenantId_Open")
+            .IsUnique()
+            .AreNullsDistinct(false)
+            .HasFilter($"\"Status\" = {(int)Core.Domain.Enums.PayPeriodStatus.Open}");
     }
 }

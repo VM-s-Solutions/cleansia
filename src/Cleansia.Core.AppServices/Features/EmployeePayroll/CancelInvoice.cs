@@ -97,6 +97,12 @@ public class CancelInvoice
                     CashLedgerEntry.ForSetOffReversal(invoice, invoice.CashSetOffAmount, invoice.CancelledAt!.Value));
             }
 
+            // The freed jobs are the reconciliation sweep's again, which issues the corrected invoice.
+            foreach (var pay in invoice.OrderPays)
+            {
+                pay.UnassignFromInvoice();
+            }
+
             return BusinessResult.Success(new Response(invoice.Id));
         }
     }

@@ -49,7 +49,8 @@ public class MarkInvoicePaidTests
                 invoice.Dispute("contested");
                 break;
             case EmployeeInvoiceStatus.Rejected:
-                invoice.Reject("refused");
+                // A legacy row: nothing writes Rejected any more.
+                typeof(EmployeeInvoice).GetProperty(nameof(EmployeeInvoice.Status))!.SetValue(invoice, EmployeeInvoiceStatus.Rejected);
                 break;
             case EmployeeInvoiceStatus.Cancelled:
                 invoice.Cancel("void", "admin-1");
@@ -148,6 +149,19 @@ public class MarkInvoicePaidTests
         Assert.False(result.IsSuccess);
         Assert.Equal(expectedRefusal, result.Error!.Message);
         Assert.Equal(nameof(MarkInvoicePaid.Command.InvoiceId), result.Error.Code);
+    }
+
+    [Fact]
+    public async Task A_Cancelled_Invoice_Is_Refused_Whatever_Its_Status_Says()
+    {
+        var invoice = InvoiceIn(EmployeeInvoiceStatus.Cancelled);
+        // A row disputed and approved after its cancel, before Dispute refused a cancelled invoice.
+        typeof(EmployeeInvoice).GetProperty(nameof(EmployeeInvoice.Status))!.SetValue(invoice, EmployeeInvoiceStatus.Approved);
+        Arrange(invoice);
+
+        var result = await CreateValidator().ValidateAsync(Command());
+
+        Assert.Equal(BusinessErrorMessage.InvoiceAlreadyCancelled, Assert.Single(result.Errors).ErrorMessage);
     }
 
     /// <summary>

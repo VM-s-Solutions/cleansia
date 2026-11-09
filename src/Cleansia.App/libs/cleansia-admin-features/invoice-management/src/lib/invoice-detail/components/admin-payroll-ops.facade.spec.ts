@@ -3,8 +3,6 @@ import {
   AdminClient,
   DisputeInvoiceCommand,
   DisputeInvoiceResponse,
-  RejectInvoiceCommand,
-  RejectInvoiceResponse,
   UpdateInvoiceAmountsCommand,
   UpdateInvoiceAmountsResponse,
 } from '@cleansia/admin-services';
@@ -24,7 +22,6 @@ describe('AdminPayrollOpsFacade', () => {
   let payrollClient: {
     updateInvoiceAmounts: jest.Mock;
     disputeInvoice: jest.Mock;
-    rejectInvoice: jest.Mock;
   };
   let snackbar: {
     showSuccess: jest.Mock;
@@ -39,15 +36,11 @@ describe('AdminPayrollOpsFacade', () => {
   const disputeResponse = DisputeInvoiceResponse.fromJS({
     invoiceId: 'invoice-1',
   });
-  const rejectResponse = RejectInvoiceResponse.fromJS({
-    invoiceId: 'invoice-1',
-  });
 
   beforeEach(() => {
     payrollClient = {
       updateInvoiceAmounts: jest.fn(),
       disputeInvoice: jest.fn(),
-      rejectInvoice: jest.fn(),
     };
     snackbar = {
       showSuccess: jest.fn(),
@@ -82,10 +75,10 @@ describe('AdminPayrollOpsFacade', () => {
     expect(facade.activePanel()).toBe('dispute');
     expect(facade.disputeNotes()).toBe('');
 
-    facade.openPanel('reject');
-    expect(facade.activePanel()).toBe('reject');
+    facade.openPanel('adjust');
+    expect(facade.activePanel()).toBe('adjust');
 
-    facade.openPanel('reject');
+    facade.openPanel('adjust');
     expect(facade.activePanel()).toBeNull();
   });
 
@@ -190,25 +183,6 @@ describe('AdminPayrollOpsFacade', () => {
     });
   });
 
-  it('requires reject notes and builds a typed reject command', () => {
-    payrollClient.rejectInvoice.mockReturnValue(of(rejectResponse));
-    expect(facade.canSubmitReject()).toBe(false);
-
-    facade.rejectInvoice('invoice-1', jest.fn());
-    expect(payrollClient.rejectInvoice).not.toHaveBeenCalled();
-
-    facade.setRejectNotes('  duplicate invoice  ');
-    facade.rejectInvoice('invoice-1', jest.fn());
-
-    const command: RejectInvoiceCommand =
-      payrollClient.rejectInvoice.mock.calls[0][0];
-    expect(command).toBeInstanceOf(RejectInvoiceCommand);
-    expect(command.toJSON()).toEqual({
-      invoiceId: 'invoice-1',
-      adminNotes: 'duplicate invoice',
-    });
-  });
-
   it('shows a success toast, closes the panel and re-loads on success', () => {
     payrollClient.disputeInvoice.mockReturnValue(of(disputeResponse));
     facade.openPanel('dispute');
@@ -226,10 +200,10 @@ describe('AdminPayrollOpsFacade', () => {
   });
 
   it('toggles submitting off once the request settles', () => {
-    payrollClient.rejectInvoice.mockReturnValue(of(rejectResponse));
-    facade.setRejectNotes('duplicate');
+    payrollClient.disputeInvoice.mockReturnValue(of(disputeResponse));
+    facade.setDisputeNotes('contested');
     expect(facade.submitting()).toBe(false);
-    facade.rejectInvoice('invoice-1', jest.fn());
+    facade.disputeInvoice('invoice-1', jest.fn());
     expect(facade.submitting()).toBe(false);
   });
 
@@ -273,13 +247,13 @@ describe('AdminPayrollOpsFacade', () => {
   });
 
   it('falls back to a generic error for unknown codes and does not re-load', () => {
-    payrollClient.rejectInvoice.mockReturnValue(
+    payrollClient.disputeInvoice.mockReturnValue(
       throwError(() => ({ result: { detail: 'something.unexpected' } }))
     );
-    facade.setRejectNotes('duplicate');
+    facade.setDisputeNotes('contested');
     const onSuccess = jest.fn();
 
-    facade.rejectInvoice('invoice-1', onSuccess);
+    facade.disputeInvoice('invoice-1', onSuccess);
 
     expect(facade.errorKey()).toBe('api.common.error_occurred');
     expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();

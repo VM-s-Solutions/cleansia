@@ -156,7 +156,18 @@ public class ApproveInvoicePayoutCurrencyTests
     }
 
     [Fact]
-    public async Task A_Non_Pending_Invoice_Is_Refused_For_Its_Status_Before_Its_Currency_Is_Looked_At()
+    public async Task A_Disputed_Invoice_Can_Be_Approved()
+    {
+        ArrangeInvoice(CzkId, EmployeeInvoiceStatus.Disputed);
+        ArrangePayout(currencyId: CzkId);
+
+        var result = await Validator().ValidateAsync(new ApproveInvoice.Command(InvoiceId, null));
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public async Task An_Approved_Invoice_Is_Refused_For_Its_Status_Before_Its_Currency_Is_Looked_At()
     {
         ArrangeInvoice(CzkId, EmployeeInvoiceStatus.Approved);
         ArrangePayout(currencyId: EurId);
@@ -169,12 +180,26 @@ public class ApproveInvoicePayoutCurrencyTests
         _payoutDetails.Verify(r => r.GetByEmployeeIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    [Fact]
+    public async Task A_Cancelled_Invoice_Is_Refused_Whatever_Its_Status_Says()
+    {
+        var invoice = ArrangeInvoice(CzkId, EmployeeInvoiceStatus.Pending);
+        invoice.Cancel("Wrong period", "admin-1");
+        // A row disputed after its cancel, before Dispute refused a cancelled invoice.
+        typeof(EmployeeInvoice).GetProperty(nameof(EmployeeInvoice.Status))!.SetValue(invoice, EmployeeInvoiceStatus.Disputed);
+        ArrangePayout(currencyId: CzkId);
+
+        var result = await Validator().ValidateAsync(new ApproveInvoice.Command(InvoiceId, null));
+
+        Assert.Equal(BusinessErrorMessage.InvalidInvoiceStatus, Assert.Single(result.Errors).ErrorMessage);
+    }
+
     // ── arrangement ──────────────────────────────────────────────────
 
     private ApproveInvoice.Validator Validator() => new(
         _users.Object, _session.Object, _invoiceRepository.Object, _payoutDetails.Object, _resolution.Object);
 
-    private void ArrangeInvoice(string currencyId, EmployeeInvoiceStatus status)
+    private EmployeeInvoice ArrangeInvoice(string currencyId, EmployeeInvoiceStatus status)
     {
         var invoice = EmployeeInvoice.Create(
             employeeId: EmployeeId,
@@ -189,10 +214,15 @@ public class ApproveInvoicePayoutCurrencyTests
         {
             invoice.Approve("admin-1");
         }
+        else if (status == EmployeeInvoiceStatus.Disputed)
+        {
+            invoice.Dispute("The cleaner disputes the amount");
+        }
         Assert.Equal(status, invoice.Status);
 
         _invoiceRepository.Setup(r => r.ExistsAsync(InvoiceId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         _invoiceRepository.Setup(r => r.GetByIdAsync(InvoiceId, It.IsAny<CancellationToken>())).ReturnsAsync(invoice);
+        return invoice;
     }
 
     private void ArrangePayout(

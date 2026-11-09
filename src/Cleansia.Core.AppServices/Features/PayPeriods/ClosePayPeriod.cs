@@ -73,7 +73,9 @@ public class ClosePayPeriod
         IUserSessionProvider userSessionProvider,
         IAuditContext auditContext,
         IPayPeriodClosingConfig payPeriodClosingConfig,
-        TimeProvider timeProvider)
+        TimeProvider timeProvider,
+        ITenantRepository tenantRepository,
+        ITenantProvider tenantProvider)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -92,7 +94,10 @@ public class ClosePayPeriod
             var anotherIsOpen = await payPeriodRepository
                 .GetQueryable()
                 .AnyAsync(p => p.Status == PayPeriodStatus.Open && p.Id != payPeriod.Id, cancellationToken);
-            if (!anotherIsOpen)
+            // A deactivated company has no next period, as the night run holds (ADR-0064 D2).
+            var tenantId = tenantProvider.GetCurrentTenantId();
+            var company = tenantId is null ? null : await tenantRepository.GetByIdAsync(tenantId, cancellationToken);
+            if (!anotherIsOpen && company is not { IsDeactivated: true })
             {
                 payPeriodRepository.Add(PayPeriod.CreateBiWeekly(payPeriod.EndDate.AddDays(1), payPeriodClosingConfig.LengthInDays));
             }
@@ -103,6 +108,18 @@ public class ClosePayPeriod
                 before,
                 new PeriodSnapshot(payPeriod.Id, payPeriod.EndDate, payPeriod.Status),
                 command.Reason.Trim());
+
+            // Flushed here so a lost race is a business error, not a 500 from the pipeline's commit: another
+            // close of this period committed first, and the one-open index refuses this successor.
+            try
+            {
+                await payPeriodRepository.CommitAsync(cancellationToken);
+            }
+            catch (DbUpdateException ex) when (DbConstraintViolation.IsUniqueViolation(ex))
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.PayPeriodId), BusinessErrorMessage.PayPeriodNotOpen));
+            }
 
             return BusinessResult.Success(new Response(payPeriod.Id));
         }

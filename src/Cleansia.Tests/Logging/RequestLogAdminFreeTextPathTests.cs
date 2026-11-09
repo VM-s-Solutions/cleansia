@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Cleansia.Core.AppServices.Features.Credit.Admin;
 using Cleansia.Core.AppServices.Features.Loyalty.Admin;
+using Cleansia.Core.AppServices.Features.PayPeriods;
 using Cleansia.Core.Domain.Credit;
 using Microsoft.AspNetCore.Http;
 
@@ -14,7 +15,8 @@ namespace Cleansia.Tests.Logging;
 /// decided to compensate someone: "second clean in a row went wrong, cat let out, customer distressed".
 /// <c>GrantPointsManually.Command.Reason</c> and its revoke twin are the same shape. These are short
 /// bodies with no base64 payload to hide behind, so every one of them was landing in the request log
-/// in full — the leak the document-upload paths only had by accident.</para>
+/// in full — the leak the document-upload paths only had by accident. Close now's required
+/// <c>ClosePayPeriod.Command.Reason</c> is the same shape, written about a cleaner.</para>
 ///
 /// <para>The instrument is <c>IsSensitivePath</c>, the wholesale suppression already used for
 /// <c>/auth/</c>, <c>/login</c> and the upload paths — NOT a wider field regex, which would redact
@@ -108,6 +110,26 @@ public class RequestLogAdminFreeTextPathTests
 
         var logged = await RequestLoggingHarness.RunAsync(
             middlewareType, "/api/AdminLoyalty/revoke-points", responseJson: "{}", requestJson: json,
+            method: HttpMethods.Post);
+
+        Assert.NotEmpty(logged);
+        Assert.All(logged, message => Assert.DoesNotContain(marker, message));
+        Assert.Contains(logged, message => message.Contains(Suppressed));
+    }
+
+    [Theory]
+    [MemberData(nameof(HostMiddlewareTypes))]
+    public async Task ClosePayPeriod_TheAdminsReason_IsSuppressed(Type middlewareType)
+    {
+        const string marker = "Jana Novakova leaves on Friday, final invoice";
+        var json = JsonSerializer.Serialize(new ClosePayPeriod.Command(
+            PayPeriodId: "01PAYPERIOD000000000000001",
+            Reason: marker));
+
+        AssertWouldOtherwiseBeVisible(middlewareType, json, marker);
+
+        var logged = await RequestLoggingHarness.RunAsync(
+            middlewareType, "/api/AdminPayPeriod/close", responseJson: "{}", requestJson: json,
             method: HttpMethods.Post);
 
         Assert.NotEmpty(logged);

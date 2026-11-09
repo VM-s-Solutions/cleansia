@@ -288,6 +288,12 @@ public class OrderEmployeePay : TenantAuditable
         return this;
     }
 
+    public OrderEmployeePay UnassignFromInvoice()
+    {
+        EmployeeInvoiceId = null;
+        return this;
+    }
+
     public OrderEmployeePay Anonymize()
     {
         Notes = Notes is null ? null : AnonymizationMarker.Value;

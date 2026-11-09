@@ -286,6 +286,34 @@ public sealed class CompanySettlementReaderTests(PostgresContainerFixture fixtur
         Assert.Equal(LatestCardClean, facts.LatestCardPaidCleaningDateTime);
     }
 
+    /// <summary>
+    /// Mark paid reads the same two facts for one pay period: an invoice neither paid nor cancelled, and pay no
+    /// invoice holds. Only that period's rows count, whatever its status, a settled period reads nothing, and
+    /// another company's period reads nothing either.
+    /// </summary>
+    [Fact]
+    public async Task One_Pay_Period_Reads_Only_Its_Own_Unpaid_Invoices_And_Uninvoiced_Pay()
+    {
+        await using var ctx = NewContext();
+        var reader = ReaderFor(TestTenants.Second, ctx);
+        var closed = await ctx.PayPeriods.SingleAsync(p => p.StartDate == new DateOnly(2026, 8, 16));
+        var open = await ctx.PayPeriods.SingleAsync(p => p.StartDate == new DateOnly(2026, 9, 1));
+        var otherCompanys = await ctx.PayPeriods.IgnoreQueryFilters()
+            .SingleAsync(p => p.TenantId == TestTenants.Default && p.StartDate == new DateOnly(2026, 8, 16));
+        var settled = PayPeriod.Create(new DateOnly(2026, 7, 16), new DateOnly(2026, 7, 31)).Close("admin");
+        ctx.PayPeriods.Add(settled);
+        var paid = EmployeeInvoice.Create("emp-b-5", settled.Id, 1, 100m, CurrencyId, "1100005", "INV-b-5").Approve("admin").MarkAsPaid();
+        ctx.EmployeeInvoices.Add(paid);
+        ctx.OrderEmployeePays.Add(
+            OrderEmployeePay.Create("b-pay-done", "emp-b-5", settled.Id, CurrencyId, 100m, totalPay: 100m).AssignToInvoice(paid.Id));
+        await ctx.CommitAsync(CancellationToken.None);
+
+        Assert.Equal((1, 1), await reader.ReadPayPeriodAsync(closed.Id, CancellationToken.None));
+        Assert.Equal((1, 1), await reader.ReadPayPeriodAsync(open.Id, CancellationToken.None));
+        Assert.Equal((0, 0), await reader.ReadPayPeriodAsync(settled.Id, CancellationToken.None));
+        Assert.Equal((0, 0), await reader.ReadPayPeriodAsync(otherCompanys.Id, CancellationToken.None));
+    }
+
     [Fact]
     public async Task The_Other_Companys_Mirror_Is_Counted_Under_Its_Own_Claim_Only_And_Has_No_WindDown_Cutoff()
     {

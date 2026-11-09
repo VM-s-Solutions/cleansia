@@ -19,7 +19,8 @@ namespace Cleansia.HostTests.Tests;
 ///   <item>the cleaner, on the Partner host, reads <c>Paid</c> where they read <c>Approved</c> before,
 ///   on both the detail and the list;</item>
 ///   <item>a non-admin is refused at the policy gate and the invoice is untouched;</item>
-///   <item>a second mark and a not-yet-approved invoice are each refused with their own code.</item>
+///   <item>a second mark and a not-yet-approved invoice are each refused with their own code;</item>
+///   <item>Reject is gone from the admin host: its route answers 404 and the invoice is untouched.</item>
 /// </list>
 /// </summary>
 public sealed class MarkInvoicePaidAdminOnlyTests(HostTestPostgresFixture db) : AuthzHostTestBase(db)
@@ -46,7 +47,7 @@ public sealed class MarkInvoicePaidAdminOnlyTests(HostTestPostgresFixture db) : 
             ctx.EmployeeDocuments.Add(DomainSeed.ActiveDocument(employee.Id));
 
             // One invoice per (employee, period) is a unique index, so the two states need two periods.
-            var approvedPeriod = PayPeriod.Create(new DateOnly(2026, 1, 1), new DateOnly(2026, 1, 15));
+            var approvedPeriod = PayPeriod.Create(new DateOnly(2026, 1, 1), new DateOnly(2026, 1, 15)).Close("System");
             var pendingPeriod = PayPeriod.Create(new DateOnly(2026, 1, 16), new DateOnly(2026, 1, 31));
             ctx.PayPeriods.AddRange(approvedPeriod, pendingPeriod);
 
@@ -193,5 +194,17 @@ public sealed class MarkInvoicePaidAdminOnlyTests(HostTestPostgresFixture db) : 
         var invoice = await ReadInvoiceAsync(a.PendingInvoiceId);
         Assert.Equal(EmployeeInvoiceStatus.Pending, invoice!.Status);
         Assert.Null(invoice.PaidAt);
+    }
+
+    [Fact]
+    public async Task The_admin_host_no_longer_exposes_reject()
+    {
+        var a = await ArrangeAsync();
+
+        var resp = await AdminClient(AdminToken()).PutAsync("/api/AdminPayroll/reject-invoice",
+            JsonContent.Create(new { InvoiceId = a.PendingInvoiceId, AdminNotes = "not eligible" }));
+
+        HttpAssert.IsNotFound(resp);
+        Assert.Equal(EmployeeInvoiceStatus.Pending, (await ReadInvoiceAsync(a.PendingInvoiceId))!.Status);
     }
 }

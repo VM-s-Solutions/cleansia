@@ -52,11 +52,12 @@ public class GetEarningsAnalytics
             // Scoped to the currency the dashboard labels this chart with (DashboardStatsDto.CurrencyCode
             // resolves the same way), so the label and the sums cannot disagree. This DTO carries no
             // currency of its own on purpose — adding one is a wire change on both partner contracts.
+            // A cancelled invoice's jobs move to the corrected invoice that replaces it, so it is not earnings.
             var currency = await currencyResolutionService
                 .ResolveCurrencyForEmployeeAsync(employeeId, cancellationToken);
             var invoices = (await employeeInvoiceRepository
                     .GetByEmployeeAndDateRangeAsync(employeeId, request.StartDate, request.EndDate, cancellationToken))
-                .Where(i => i.CurrencyId == currency.Id)
+                .Where(i => i.CurrencyId == currency.Id && !i.IsCancelled)
                 .ToList();
 
             var monthlyEarnings = invoices

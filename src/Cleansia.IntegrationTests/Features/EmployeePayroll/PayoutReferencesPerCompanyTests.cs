@@ -155,7 +155,7 @@ public class PayoutReferencesPerCompanyTests(PostgresContainerFixture fixture) :
         var employee = Employee.CreateWithUser(user);
         context.Add(employee);
 
-        var period = PayPeriod.Create(new DateOnly(2026, 1, 1), new DateOnly(2026, 1, 15));
+        var period = PayPeriod.Create(new DateOnly(2026, 1, 1), new DateOnly(2026, 1, 15)).Close("System");
         context.Add(period);
 
         return (employee, period);

@@ -2157,7 +2157,7 @@
       },
       "cancel_dialog": {
         "title": "Zrušiť faktúru",
-        "subtitle": "Uveďte dôvod zrušenia tejto faktúry",
+        "subtitle": "Uveďte dôvod zrušenia tejto faktúry. Do niekoľkých minút nasleduje opravená faktúra s novým číslom. Zostaví sa znova z platieb za objednávky, takže bonus alebo zrážku, ktoré ste zadali cez Upraviť sumy, na nej musíte zadať znova. Ak chcete zmeniť iba bonus alebo zrážku, použite namiesto zrušenia Upraviť sumy (schválenú faktúru najprv namietnite). Ak už bol prevod k tejto faktúre odoslaný, označte ju namiesto zrušenia ako zaplatenú.",
         "reason_label": "Dôvod zrušenia",
         "reason_placeholder": "Zadajte dôvod zrušenia...",
         "submit": "Zrušiť faktúru"
@@ -2200,14 +2200,6 @@
           "notes_hint": "Popíšte dôvod námietky...",
           "submit": "Potvrdiť námietku",
           "success": "Faktúra bola označená ako namietaná"
-        },
-        "reject": {
-          "action": "Zamietnuť faktúru",
-          "hint": "Zamietnite túto faktúru. Poznámky sú povinné.",
-          "notes": "Poznámky k zamietnutiu",
-          "notes_hint": "Popíšte dôvod zamietnutia...",
-          "submit": "Potvrdiť zamietnutie",
-          "success": "Faktúra bola zamietnutá"
         }
       }
     },
@@ -3457,6 +3449,8 @@
     "pay_period": {
       "end_too_soon": "Dátum konca musí byť najskôr zajtra. Ak chcete obdobie ukončiť dnes, použite „Uzavrieť teraz“.",
       "has_order_pays": "Nie je možné odstrániť výplatné obdobie, ktoré má priradené platby za objednávky",
+      "has_uninvoiced_pay": "Časť odmien v tomto období ešte nie je vyfakturovaná, preto ho nemožno označiť ako zaplatené. Faktúry sa vystavujú automaticky čoskoro po uzavretí obdobia.",
+      "has_unpaid_invoices": "Niektoré faktúry v tomto období ešte nie sú zaplatené. Najprv označte každú faktúru ako zaplatenú.",
       "invalid_duration": "Dátum konca je neskorší ako posledný deň, do ktorého môže výplatné obdobie trvať.",
       "not_closed": "Výplatné obdobie nie je uzavreté",
       "not_started": "Toto výplatné obdobie sa ešte nezačalo, preto ho nemožno uzavrieť.",

@@ -1,4 +1,5 @@
 using Cleansia.Core.Domain.EmployeePayroll;
+using Cleansia.Core.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -135,10 +136,11 @@ public class EmployeeInvoiceEntityConfiguration : TenantAuditableEntityConfigura
         builder.HasIndex(e => e.Status);
         // ONE INVOICE PER (EMPLOYEE, PERIOD, CURRENCY). A cleaner who worked a CZK job and a EUR job
         // in one period holds pay in two units and a tax document is in one, so the period yields one
-        // invoice per currency. All three columns are NOT NULL, so this needs no AreNullsDistinct;
-        // the (EmployeeId, PayPeriodId) lookups ride its leading columns.
+        // invoice per currency. All three columns are NOT NULL, so this needs no AreNullsDistinct. A
+        // cancelled invoice leaves the index, so the corrected invoice that replaces it can be issued.
         builder.HasIndex(e => new { e.EmployeeId, e.PayPeriodId, e.CurrencyId })
-            .IsUnique();
+            .IsUnique()
+            .HasFilter($"\"Status\" <> {(int)EmployeeInvoiceStatus.Cancelled}");
         builder.HasIndex(e => new { e.Status, e.GeneratedAt });
     }
 }

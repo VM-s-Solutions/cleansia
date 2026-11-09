@@ -9,7 +9,9 @@ using Cleansia.Infra.Common.Validations;
 using Cleansia.Infra.Services.Pdf;
 using Cleansia.Infra.Services.Pdf.Models;
 using FluentValidation;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Cleansia.Core.AppServices.Extensions;
 
@@ -20,6 +22,42 @@ public class RegenerateInvoicePdf
     public record Command(string InvoiceId, string LanguageCode) : ICommand<Response>;
 
     public record Response(string PdfBlobUrl);
+
+    /// <summary>
+    /// Renders an invoice whose amounts are saved already, in a scope of its own: a failed render records itself
+    /// and is discarded with that scope before the caller moves on, and the saved amounts stand (ADR-0072 D2).
+    /// Returns the PDF's address, or null when there is none.
+    /// </summary>
+    internal static async Task<string?> RenderSavedAsync(
+        IServiceScopeFactory serviceScopeFactory, EmployeeInvoice invoice, ILogger logger, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        try
+        {
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
+            if (!string.IsNullOrEmpty(invoice.TenantId))
+            {
+                scope.ServiceProvider.GetRequiredService<ITenantProvider>().SetTenantOverride(invoice.TenantId);
+            }
+
+            var document = await scope.ServiceProvider.GetRequiredService<IMediator>().Send(
+                new Command(invoice.Id, Constants.Language.English), cancellationToken);
+            if (document.IsFailure)
+            {
+                logger.LogWarning("Invoice {InvoiceId} was saved but its PDF is unavailable ({Error})",
+                    invoice.Id, document.Error?.Message);
+                return null;
+            }
+
+            return document.Value!.PdfBlobUrl;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // An admin can retry the existing PDF repair action.
+            logger.LogError(ex, "Invoice {InvoiceId} was saved but its PDF could not be persisted", invoice.Id);
+            return null;
+        }
+    }
 
     public class Validator : AbstractValidator<Command>
     {

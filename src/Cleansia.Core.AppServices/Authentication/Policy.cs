@@ -99,7 +99,6 @@ public class Policy
     public const string CanClosePayPeriod = nameof(CanClosePayPeriod); // AccountantOrAbove
     public const string CanUpdateInvoiceAmounts = nameof(CanUpdateInvoiceAmounts); // AccountantOrAbove
     public const string CanDisputeInvoice = nameof(CanDisputeInvoice); // AccountantOrAbove
-    public const string CanRejectInvoice = nameof(CanRejectInvoice); // AccountantOrAbove
 
     // Pay Period
     public const string CanViewPayPeriods = nameof(CanViewPayPeriods); // Admin + Employee

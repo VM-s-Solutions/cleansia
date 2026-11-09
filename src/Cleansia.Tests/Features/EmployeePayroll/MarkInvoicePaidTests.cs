@@ -49,7 +49,8 @@ public class MarkInvoicePaidTests
                 invoice.Dispute("contested");
                 break;
             case EmployeeInvoiceStatus.Rejected:
-                invoice.Reject("refused");
+                // A legacy row: nothing writes Rejected any more.
+                typeof(EmployeeInvoice).GetProperty(nameof(EmployeeInvoice.Status))!.SetValue(invoice, EmployeeInvoiceStatus.Rejected);
                 break;
             case EmployeeInvoiceStatus.Cancelled:
                 invoice.Cancel("void", "admin-1");

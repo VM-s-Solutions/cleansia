@@ -90,7 +90,6 @@ export const Policy = {
   CanClosePayPeriod: 'CanClosePayPeriod',
   CanUpdateInvoiceAmounts: 'CanUpdateInvoiceAmounts',
   CanDisputeInvoice: 'CanDisputeInvoice',
-  CanRejectInvoice: 'CanRejectInvoice',
 
   // Employee Payroll — Pay Periods
   CanViewPayPeriods: 'CanViewPayPeriods',
@@ -362,7 +361,6 @@ export const POLICY_MAP: Record<PolicyName, PhysicalPolicy> = {
   CanClosePayPeriod: PhysicalPolicy.AccountantOrAbove,
   CanUpdateInvoiceAmounts: PhysicalPolicy.AccountantOrAbove,
   CanDisputeInvoice: PhysicalPolicy.AccountantOrAbove,
-  CanRejectInvoice: PhysicalPolicy.AccountantOrAbove,
 
   // Employee Payroll — Pay Periods
   CanViewPayPeriods: PhysicalPolicy.EmployeeOrAdmin,

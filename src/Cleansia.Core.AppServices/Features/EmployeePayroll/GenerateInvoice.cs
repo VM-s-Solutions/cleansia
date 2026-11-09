@@ -9,7 +9,6 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
-using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -215,34 +214,9 @@ public class GenerateInvoice
             var documents = new List<(EmployeeInvoice Invoice, string PdfBlobUrl)>(invoices.Count);
             foreach (var invoice in invoices)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                try
+                if (await RegenerateInvoicePdf.RenderSavedAsync(serviceScopeFactory, invoice, logger, cancellationToken) is { } pdfBlobUrl)
                 {
-                    // Financial creation is already committed. A failed document commit must discard
-                    // its whole unit of work before the next currency is attempted (ADR-0072 D2).
-                    await using var scope = serviceScopeFactory.CreateAsyncScope();
-                    if (!string.IsNullOrEmpty(invoice.TenantId))
-                    {
-                        scope.ServiceProvider.GetRequiredService<ITenantProvider>().SetTenantOverride(invoice.TenantId);
-                    }
-
-                    var document = await scope.ServiceProvider.GetRequiredService<IMediator>().Send(
-                        new RegenerateInvoicePdf.Command(invoice.Id, Constants.Language.English), cancellationToken);
-                    if (document.IsFailure)
-                    {
-                        logger.LogWarning("Invoice {InvoiceId} was created but its PDF is unavailable ({Error})",
-                            invoice.Id, document.Error?.Message);
-                    }
-                    else
-                    {
-                        documents.Add((invoice, document.Value!.PdfBlobUrl));
-                    }
-                }
-                catch (Exception ex) when (ex is not OperationCanceledException)
-                {
-                    // Keep the committed financial result: an admin can retry the existing PDF repair
-                    // action, and other currencies still get their own clean rendering scope.
-                    logger.LogError(ex, "Invoice {InvoiceId} was created but its PDF could not be persisted", invoice.Id);
+                    documents.Add((invoice, pdfBlobUrl));
                 }
             }
 

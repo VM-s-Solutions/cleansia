@@ -2200,14 +2200,6 @@
           "notes_hint": "Describe the reason for the dispute...",
           "submit": "Confirm Dispute",
           "success": "Invoice marked as disputed"
-        },
-        "reject": {
-          "action": "Reject Invoice",
-          "hint": "Reject this invoice. Notes are required.",
-          "notes": "Rejection Notes",
-          "notes_hint": "Describe the reason for the rejection...",
-          "submit": "Confirm Rejection",
-          "success": "Invoice rejected"
         }
       }
     },

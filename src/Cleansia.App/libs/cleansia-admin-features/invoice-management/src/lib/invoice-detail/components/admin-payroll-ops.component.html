@@ -15,15 +15,6 @@
   (onClick)="togglePanel('dispute')"
 />
 }
-@if (canReject()) {
-<cleansia-button
-  [label]="'pages.invoice_detail.ops.reject.action' | translate"
-  icon="pi pi-ban"
-  severity="danger"
-  [outlined]="facade.activePanel() !== 'reject'"
-  (onClick)="togglePanel('reject')"
-/>
-}
 
 @if (facade.activePanel() === 'adjust') {
 <div class="detail-actions__panel">
@@ -81,31 +72,6 @@
     [loading]="facade.submitting()"
     [disabled]="!facade.canSubmitDispute()"
     (onClick)="submitDispute()"
-  />
-</div>
-}
-
-@if (facade.activePanel() === 'reject') {
-<div class="detail-actions__panel">
-  <p class="detail-actions__hint">
-    {{ 'pages.invoice_detail.ops.reject.hint' | translate }}
-  </p>
-  <cleansia-textarea
-    [label]="'pages.invoice_detail.ops.reject.notes' | translate"
-    [placeholder]="'pages.invoice_detail.ops.reject.notes_hint' | translate"
-    [ngModel]="facade.rejectNotes()"
-    (valueChanges)="onRejectNotesChange($event)"
-  />
-  @if (facade.errorKey()) {
-  <p class="detail-actions__error">{{ facade.errorKey()! | translate }}</p>
-  }
-  <cleansia-button
-    [label]="'pages.invoice_detail.ops.reject.submit' | translate"
-    icon="pi pi-ban"
-    severity="danger"
-    [loading]="facade.submitting()"
-    [disabled]="!facade.canSubmitReject()"
-    (onClick)="submitReject()"
   />
 </div>
 }

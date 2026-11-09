@@ -59,15 +59,6 @@ export class AdminPayrollOpsComponent {
     );
   });
 
-  readonly canReject = computed(() => {
-    const status = this.invoice().status;
-    return (
-      status !== EmployeeInvoiceStatus.Paid &&
-      status !== EmployeeInvoiceStatus.Rejected &&
-      status !== EmployeeInvoiceStatus.Cancelled
-    );
-  });
-
   togglePanel(panel: AdminPayrollOpsPanel): void {
     this.facade.openPanel(panel);
   }
@@ -96,10 +87,6 @@ export class AdminPayrollOpsComponent {
     this.facade.setDisputeNotes(value);
   }
 
-  onRejectNotesChange(value: string): void {
-    this.facade.setRejectNotes(value);
-  }
-
   submitAdjust(): void {
     const invoiceId = this.invoice().id;
     if (!invoiceId) return;
@@ -110,11 +97,5 @@ export class AdminPayrollOpsComponent {
     const invoiceId = this.invoice().id;
     if (!invoiceId) return;
     this.facade.disputeInvoice(invoiceId, () => this.changed.emit());
-  }
-
-  submitReject(): void {
-    const invoiceId = this.invoice().id;
-    if (!invoiceId) return;
-    this.facade.rejectInvoice(invoiceId, () => this.changed.emit());
   }
 }

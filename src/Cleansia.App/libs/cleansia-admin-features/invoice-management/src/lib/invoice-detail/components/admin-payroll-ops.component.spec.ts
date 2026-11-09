@@ -100,10 +100,8 @@ class FacadeStub {
   readonly deductionAmount = signal<string>('');
   readonly adjustNotes = signal<string>('');
   readonly disputeNotes = signal<string>('');
-  readonly rejectNotes = signal<string>('');
   readonly canSubmitAdjust = signal<boolean>(false);
   readonly canSubmitDispute = signal<boolean>(false);
-  readonly canSubmitReject = signal<boolean>(false);
   openPanel = jest.fn((panel: AdminPayrollOpsPanel) =>
     this.activePanel.set(this.activePanel() === panel ? null : panel)
   );
@@ -115,10 +113,8 @@ class FacadeStub {
   setDeductionAmount = jest.fn();
   setAdjustNotes = jest.fn();
   setDisputeNotes = jest.fn();
-  setRejectNotes = jest.fn();
   adjustAmounts = jest.fn();
   disputeInvoice = jest.fn();
-  rejectInvoice = jest.fn();
 }
 
 function makeInvoice(
@@ -182,15 +178,12 @@ describe('AdminPayrollOpsComponent', () => {
     expect(meta.onPush).toBe(true);
   });
 
-  it('renders adjust, dispute and reject actions for a pending invoice', () => {
+  it('renders the adjust and dispute actions for a pending invoice, and no reject', () => {
     setInvoice(makeInvoice({ status: EmployeeInvoiceStatus.Pending }));
-    expect(buttonLabels()).toEqual(
-      expect.arrayContaining([
-        'pages.invoice_detail.ops.adjust.action',
-        'pages.invoice_detail.ops.dispute.action',
-        'pages.invoice_detail.ops.reject.action',
-      ])
-    );
+    expect(buttonLabels()).toEqual([
+      'pages.invoice_detail.ops.adjust.action',
+      'pages.invoice_detail.ops.dispute.action',
+    ]);
   });
 
   it('renders nothing for a paid invoice', () => {
@@ -212,13 +205,6 @@ describe('AdminPayrollOpsComponent', () => {
     expect(labels).toContain('pages.invoice_detail.ops.adjust.action');
   });
 
-  it('hides the reject action when the invoice is already rejected', () => {
-    setInvoice(makeInvoice({ status: EmployeeInvoiceStatus.Rejected }));
-    expect(buttonLabels()).not.toContain(
-      'pages.invoice_detail.ops.reject.action'
-    );
-  });
-
   it('seeds the adjust panel from the current invoice amounts', () => {
     setInvoice(makeInvoice({ bonusAmount: 100, deductionAmount: 20 }));
     component.toggleAdjustPanel();
@@ -236,12 +222,6 @@ describe('AdminPayrollOpsComponent', () => {
 
     component.submitDispute();
     expect(facade.disputeInvoice).toHaveBeenCalledWith(
-      'invoice-1',
-      expect.any(Function)
-    );
-
-    component.submitReject();
-    expect(facade.rejectInvoice).toHaveBeenCalledWith(
       'invoice-1',
       expect.any(Function)
     );

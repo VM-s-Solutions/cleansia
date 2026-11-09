@@ -156,7 +156,18 @@ public class ApproveInvoicePayoutCurrencyTests
     }
 
     [Fact]
-    public async Task A_Non_Pending_Invoice_Is_Refused_For_Its_Status_Before_Its_Currency_Is_Looked_At()
+    public async Task A_Disputed_Invoice_Can_Be_Approved()
+    {
+        ArrangeInvoice(CzkId, EmployeeInvoiceStatus.Disputed);
+        ArrangePayout(currencyId: CzkId);
+
+        var result = await Validator().ValidateAsync(new ApproveInvoice.Command(InvoiceId, null));
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public async Task An_Approved_Invoice_Is_Refused_For_Its_Status_Before_Its_Currency_Is_Looked_At()
     {
         ArrangeInvoice(CzkId, EmployeeInvoiceStatus.Approved);
         ArrangePayout(currencyId: EurId);
@@ -188,6 +199,10 @@ public class ApproveInvoicePayoutCurrencyTests
         if (status == EmployeeInvoiceStatus.Approved)
         {
             invoice.Approve("admin-1");
+        }
+        else if (status == EmployeeInvoiceStatus.Disputed)
+        {
+            invoice.Dispute("The cleaner disputes the amount");
         }
         Assert.Equal(status, invoice.Status);
 

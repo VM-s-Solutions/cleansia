@@ -3,8 +3,6 @@ import {
   AdminClient,
   DisputeInvoiceCommand,
   DisputeInvoiceResponse,
-  RejectInvoiceCommand,
-  RejectInvoiceResponse,
   UpdateInvoiceAmountsCommand,
   UpdateInvoiceAmountsResponse,
 } from '@cleansia/admin-services';
@@ -37,7 +35,6 @@ export class AdminPayrollOpsFacade extends UnsubscribeControlDirective {
   readonly deductionAmount = signal<string>('');
   readonly adjustNotes = signal<string>('');
   readonly disputeNotes = signal<string>('');
-  readonly rejectNotes = signal<string>('');
 
   readonly canSubmitAdjust = computed(
     () =>
@@ -47,9 +44,6 @@ export class AdminPayrollOpsFacade extends UnsubscribeControlDirective {
   );
   readonly canSubmitDispute = computed(
     () => this.disputeNotes().trim().length > 0 && !this.submitting()
-  );
-  readonly canSubmitReject = computed(
-    () => this.rejectNotes().trim().length > 0 && !this.submitting()
   );
 
   openPanel(panel: AdminPayrollOpsPanel): void {
@@ -93,10 +87,6 @@ export class AdminPayrollOpsFacade extends UnsubscribeControlDirective {
     this.disputeNotes.set(value);
   }
 
-  setRejectNotes(value: string): void {
-    this.rejectNotes.set(value);
-  }
-
   adjustAmounts(invoiceId: string, onSuccess: () => void): void {
     const bonusAmount = parseAmount(this.bonusAmount());
     const deductionAmount = parseAmount(this.deductionAmount());
@@ -130,27 +120,8 @@ export class AdminPayrollOpsFacade extends UnsubscribeControlDirective {
     );
   }
 
-  rejectInvoice(invoiceId: string, onSuccess: () => void): void {
-    const adminNotes = this.rejectNotes().trim();
-    if (!invoiceId || !adminNotes) {
-      return;
-    }
-    const command = new RejectInvoiceCommand();
-    command.invoiceId = invoiceId;
-    command.adminNotes = adminNotes;
-    this.run(
-      this.adminClient.adminPayrollClient.rejectInvoice(command),
-      'pages.invoice_detail.ops.reject.success',
-      onSuccess
-    );
-  }
-
   private run(
-    request$: Observable<
-      | UpdateInvoiceAmountsResponse
-      | DisputeInvoiceResponse
-      | RejectInvoiceResponse
-    >,
+    request$: Observable<UpdateInvoiceAmountsResponse | DisputeInvoiceResponse>,
     successKey: string,
     onSuccess: () => void
   ): void {
@@ -179,7 +150,6 @@ export class AdminPayrollOpsFacade extends UnsubscribeControlDirective {
     this.deductionAmount.set('');
     this.adjustNotes.set('');
     this.disputeNotes.set('');
-    this.rejectNotes.set('');
     this.errorKey.set(null);
   }
 

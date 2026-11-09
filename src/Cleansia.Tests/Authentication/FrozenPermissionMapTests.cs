@@ -95,7 +95,6 @@ public class FrozenPermissionMapTests
         [Policy.CanClosePayPeriod] = PhysicalPolicy.AccountantOrAbove,
         [Policy.CanUpdateInvoiceAmounts] = PhysicalPolicy.AccountantOrAbove,    // AUD-02 settlement (additive)
         [Policy.CanDisputeInvoice] = PhysicalPolicy.AccountantOrAbove,          // AUD-02 settlement (additive)
-        [Policy.CanRejectInvoice] = PhysicalPolicy.AccountantOrAbove,           // AUD-02 settlement (additive)
 
         // Payroll — Pay Periods
         [Policy.CanViewPayPeriods] = PhysicalPolicy.EmployeeOrAdmin,     // global cycles (Note B)
@@ -330,7 +329,7 @@ public class FrozenPermissionMapTests
             Policy.CanMarkInvoicePaid, Policy.CanCancelInvoice, Policy.CanClosePayPeriod,
             Policy.CanCreatePayPeriod, Policy.CanUpdatePayPeriod,
             Policy.CanDeletePayPeriod, Policy.CanViewPayConfigs, Policy.CanViewPayConfig,
-            Policy.CanUpdateInvoiceAmounts, Policy.CanDisputeInvoice, Policy.CanRejectInvoice,
+            Policy.CanUpdateInvoiceAmounts, Policy.CanDisputeInvoice,
             Policy.CanMarkPayPeriodPaid,
             Policy.CanViewPagedInvoicesAdmin, Policy.CanViewPayPeriodsAdmin, Policy.CanViewPayPeriodAdmin,
         };

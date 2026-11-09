@@ -2200,14 +2200,6 @@
           "notes_hint": "Popíšte dôvod námietky...",
           "submit": "Potvrdiť námietku",
           "success": "Faktúra bola označená ako namietaná"
-        },
-        "reject": {
-          "action": "Zamietnuť faktúru",
-          "hint": "Zamietnite túto faktúru. Poznámky sú povinné.",
-          "notes": "Poznámky k zamietnutiu",
-          "notes_hint": "Popíšte dôvod zamietnutia...",
-          "submit": "Potvrdiť zamietnutie",
-          "success": "Faktúra bola zamietnutá"
         }
       }
     },

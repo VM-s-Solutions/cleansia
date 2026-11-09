@@ -1155,14 +1155,6 @@
           "notes_hint": "Popište důvod rozporu...",
           "submit": "Potvrdit rozpor",
           "success": "Faktura byla označena jako rozporovaná"
-        },
-        "reject": {
-          "action": "Zamítnout fakturu",
-          "hint": "Zamítněte tuto fakturu. Poznámky jsou povinné.",
-          "notes": "Poznámky k zamítnutí",
-          "notes_hint": "Popište důvod zamítnutí...",
-          "submit": "Potvrdit zamítnutí",
-          "success": "Faktura byla zamítnuta"
         }
       }
     },

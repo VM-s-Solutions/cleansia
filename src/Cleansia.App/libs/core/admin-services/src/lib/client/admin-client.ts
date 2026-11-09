@@ -14172,11 +14172,6 @@ export interface IAdminPayrollClient {
      * @param body (optional) 
      * @return OK
      */
-    rejectInvoice(body?: RejectInvoiceCommand | undefined): Observable<RejectInvoiceResponse>;
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
     generateInvoice(body?: GenerateInvoiceCommand | undefined): Observable<GenerateInvoiceResponse>;
     /**
      * @param body (optional) 
@@ -14321,83 +14316,6 @@ export class AdminPayrollClient implements IAdminPayrollClient {
             let result200: any = null;
             let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = DisputeInvoiceResponse.fromJS(resultData200);
-            return ObservableOf(result200);
-            }));
-        } else if (status === 400) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result400: any = null;
-            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, ResponseText, Headers, result400);
-            }));
-        } else if (status === 401) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result401: any = null;
-            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("Unauthorized", status, ResponseText, Headers, result401);
-            }));
-        } else if (status === 403) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result403: any = null;
-            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result403 = ProblemDetails.fromJS(resultData403);
-            return throwException("Forbidden", status, ResponseText, Headers, result403);
-            }));
-        } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
-            }));
-        }
-        return ObservableOf(null as any);
-    }
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    rejectInvoice(body?: RejectInvoiceCommand | undefined): Observable<RejectInvoiceResponse> {
-        let url = this.baseUrl + "/api/AdminPayroll/reject-invoice";
-        url = url.replace(/[?&]$/, "");
-
-        const content = JSON.stringify(body);
-
-        let options : any = {
-            body: content,
-            observe: "response",
-            responseType: "blob",
-            headers: new HttpHeaders({
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            })
-        };
-
-        return this.http.request("put", url, options).pipe(ObservableMergeMap((response : any) => {
-            return this.processRejectInvoice(response);
-        })).pipe(ObservableCatch((response: any) => {
-            if (response instanceof HttpResponseBase) {
-                try {
-                    return this.processRejectInvoice(response as any);
-                } catch (e) {
-                    return ObservableThrow(e) as any as Observable<RejectInvoiceResponse>;
-                }
-            } else
-                return ObservableThrow(response) as any as Observable<RejectInvoiceResponse>;
-        }));
-    }
-
-    protected processRejectInvoice(response: HttpResponseBase): Observable<RejectInvoiceResponse> {
-        const status = response.status;
-        const responseBlob =
-            response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
-
-        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
-        if (status === 200) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result200: any = null;
-            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result200 = RejectInvoiceResponse.fromJS(resultData200);
             return ObservableOf(result200);
             }));
         } else if (status === 400) {
@@ -34178,82 +34096,6 @@ export class RejectEmployeeResponse implements IRejectEmployeeResponse {
 export interface IRejectEmployeeResponse {
     employeeId: string | undefined;
     rejectedAt: Date;
-}
-
-export class RejectInvoiceCommand implements IRejectInvoiceCommand {
-    invoiceId!: string | undefined;
-    adminNotes!: string | undefined;
-
-    constructor(data?: IRejectInvoiceCommand) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.invoiceId = Data["invoiceId"];
-            this.adminNotes = Data["adminNotes"];
-        }
-    }
-
-    static fromJS(data: any): RejectInvoiceCommand {
-        data = typeof data === 'object' ? data : {};
-        let result = new RejectInvoiceCommand();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["invoiceId"] = this.invoiceId;
-        data["adminNotes"] = this.adminNotes;
-        return data;
-    }
-}
-
-export interface IRejectInvoiceCommand {
-    invoiceId: string | undefined;
-    adminNotes: string | undefined;
-}
-
-export class RejectInvoiceResponse implements IRejectInvoiceResponse {
-    invoiceId!: string | undefined;
-
-    constructor(data?: IRejectInvoiceResponse) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.invoiceId = Data["invoiceId"];
-        }
-    }
-
-    static fromJS(data: any): RejectInvoiceResponse {
-        data = typeof data === 'object' ? data : {};
-        let result = new RejectInvoiceResponse();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["invoiceId"] = this.invoiceId;
-        return data;
-    }
-}
-
-export interface IRejectInvoiceResponse {
-    invoiceId: string | undefined;
 }
 
 export class ResetTenantSettingResponse implements IResetTenantSettingResponse {

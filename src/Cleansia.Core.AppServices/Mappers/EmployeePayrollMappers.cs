@@ -38,6 +38,8 @@ public static class EmployeePayrollMappers
             invoice.Employee != null ? $"{invoice.Employee.User?.FirstName} {invoice.Employee.User?.LastName}".Trim() : "Unknown",
             invoice.PayPeriodId,
             invoice.PayPeriod?.GetPeriodLabel() ?? "",
+            invoice.PayPeriod?.StartDate,
+            invoice.PayPeriod?.EndDate,
             invoice.InvoiceNumber,
             invoice.VariableSymbol,
             invoice.PaymentReference,
@@ -97,16 +99,19 @@ public static class EmployeePayrollMappers
             config.CreatedOn.DateTime
         );
 
-    public static EmployeeInvoiceDetailDto MapToDetailDto(this EmployeeInvoice invoice) =>
+    public static EmployeeInvoiceDetailDto MapToDetailDto(this EmployeeInvoice invoice, string? constantSymbol = null) =>
         new(
             invoice.Id,
             invoice.EmployeeId,
             invoice.Employee != null ? $"{invoice.Employee.User?.FirstName} {invoice.Employee.User?.LastName}".Trim() : "Unknown",
             invoice.PayPeriodId,
             invoice.PayPeriod?.GetPeriodLabel() ?? "",
+            invoice.PayPeriod?.StartDate,
+            invoice.PayPeriod?.EndDate,
             invoice.InvoiceNumber,
             invoice.VariableSymbol,
             invoice.SpecificSymbol,
+            constantSymbol,
             invoice.PaymentReference,
             invoice.TotalOrders,
             invoice.SubTotal,

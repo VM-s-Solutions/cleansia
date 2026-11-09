@@ -125,7 +125,7 @@ class InvoicesWireTest {
     @Test
     fun theDetailDtoCarriesEverythingTheListOneDoesPlusItsOwn() {
         assertEquals(
-            setOf("specificSymbol", "orderPays"),
+            setOf("specificSymbol", "constantSymbol", "orderPays"),
             DETAIL_SPEC_PROPERTIES - LIST_SPEC_PROPERTIES,
         )
         assertEquals(emptySet<String>(), LIST_SPEC_PROPERTIES - DETAIL_SPEC_PROPERTIES)
@@ -600,6 +600,8 @@ class InvoicesWireTest {
             "employeeName",
             "payPeriodId",
             "payPeriodLabel",
+            "payPeriodStartDate",
+            "payPeriodEndDate",
             "invoiceNumber",
             "variableSymbol",
             "paymentReference",
@@ -624,7 +626,7 @@ class InvoicesWireTest {
             "bankTransferNote",
         )
 
-        val DETAIL_SPEC_PROPERTIES = LIST_SPEC_PROPERTIES + setOf("specificSymbol", "orderPays")
+        val DETAIL_SPEC_PROPERTIES = LIST_SPEC_PROPERTIES + setOf("specificSymbol", "constantSymbol", "orderPays")
 
         val REQUIRED_NUMBERS = listOf(
             "totalOrders",

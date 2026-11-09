@@ -128,10 +128,11 @@ describe('the kind of each pay line', () => {
       .columns.find((column) => column.id === 'lineType')
       ?.getValue?.(OrderEmployeePayDto.fromJS({ orderNumber: 'CL-1001', lineType }));
 
-  it('names a job and each share of a collected fee', () => {
+  it('names a job, each share of a collected fee and a dispute charge', () => {
     expect(lineOf(PayLineType.Job)).toBe('enums.pay_line_type.job');
     expect(lineOf(PayLineType.CancellationFeeShare)).toBe('enums.pay_line_type.cancellation_fee_share');
     expect(lineOf(PayLineType.LockoutFeeShare)).toBe('enums.pay_line_type.lockout_fee_share');
+    expect(lineOf(PayLineType.DisputeCharge)).toBe('enums.pay_line_type.dispute_charge');
   });
 
   it('prints a dash for a line type the screen does not know yet rather than a machine key', () => {
@@ -145,6 +146,7 @@ describe('the kind of each pay line', () => {
         'enums.pay_line_type.job',
         'enums.pay_line_type.cancellation_fee_share',
         'enums.pay_line_type.lockout_fee_share',
+        'enums.pay_line_type.dispute_charge',
       ])
     ).toEqual([]);
   });

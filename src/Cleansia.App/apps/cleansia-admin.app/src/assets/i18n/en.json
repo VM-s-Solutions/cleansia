@@ -281,7 +281,8 @@
     "pay_line_type": {
       "job": "Job",
       "cancellation_fee_share": "Share of a cancellation fee",
-      "lockout_fee_share": "Job reward — customer lockout"
+      "lockout_fee_share": "Job reward — customer lockout",
+      "dispute_charge": "Dispute charge"
     }
   },
   "sidebar": {

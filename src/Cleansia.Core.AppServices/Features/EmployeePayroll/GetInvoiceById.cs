@@ -31,6 +31,7 @@ public class GetInvoiceById
 
     internal class Handler(
         IEmployeeInvoiceRepository invoiceRepository,
+        ICountryInvoiceConfigRepository countryInvoiceConfigRepository,
         IOrderAccessService orderAccessService,
         IUserSessionProvider userSessionProvider)
         : IQueryHandler<Query, EmployeeInvoiceDetailDto>
@@ -41,6 +42,8 @@ public class GetInvoiceById
                 .GetAll()
                 .Include(i => i.Employee)
                     .ThenInclude(e => e.User)
+                .Include(i => i.Employee)
+                    .ThenInclude(e => e.Address)
                 .Include(i => i.PayPeriod)
                 .Include(i => i.Currency)
                 .Include(i => i.OrderPays)
@@ -67,7 +70,13 @@ public class GetInvoiceById
                 }
             }
 
-            return BusinessResult.Success(invoice.MapToDetailDto());
+            // The same country the invoice PDF reads its constant symbol from, so the transfer matches the document.
+            var countryId = invoice.Employee?.Address?.CountryId;
+            var countryConfig = countryId is null
+                ? null
+                : await countryInvoiceConfigRepository.GetByCountryIdAsync(countryId, cancellationToken);
+
+            return BusinessResult.Success(invoice.MapToDetailDto(countryConfig?.ConstantSymbol));
         }
     }
 }

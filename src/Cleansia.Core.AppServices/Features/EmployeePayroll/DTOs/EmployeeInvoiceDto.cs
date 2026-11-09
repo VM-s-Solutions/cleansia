@@ -8,6 +8,8 @@ public record EmployeeInvoiceDto(
     string EmployeeName,
     string PayPeriodId,
     string PayPeriodLabel,
+    DateOnly? PayPeriodStartDate,
+    DateOnly? PayPeriodEndDate,
     string InvoiceNumber,
     string? VariableSymbol,
     string? PaymentReference,

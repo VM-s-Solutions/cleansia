@@ -116,6 +116,8 @@ public class GetPeriodPays
             var summary = new PeriodPaySummaryDto(
                 PayPeriodId: query.PayPeriodId,
                 PayPeriodLabel: payPeriod?.GetPeriodLabel() ?? string.Empty,
+                PayPeriodStartDate: payPeriod?.StartDate,
+                PayPeriodEndDate: payPeriod?.EndDate,
                 EmployeeId: query.EmployeeId,
                 EmployeeName: employee is not null ? $"{employee.User?.FirstName} {employee.User?.LastName}".Trim() : "Unknown",
                 TotalOrders: orderPays.Count,

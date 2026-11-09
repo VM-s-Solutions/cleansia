@@ -85,4 +85,26 @@ public class EmployeeInvoiceMapperTests
         Assert.False(dto.PdfGenerationFailed);
         Assert.Null(dto.PdfGenerationError);
     }
+
+    [Fact]
+    public void Both_Invoice_Shapes_Carry_Their_Periods_Calendar_Dates_Beside_The_Label()
+    {
+        var invoice = PayrollMockFactory.Invoice(payPeriod: PayrollMockFactory.OpenPeriod(new DateOnly(2026, 11, 12)));
+
+        var row = invoice.MapToDto();
+        var detail = invoice.MapToDetailDto();
+
+        Assert.Equal((new DateOnly(2026, 11, 12), new DateOnly(2026, 11, 25)), (row.PayPeriodStartDate, row.PayPeriodEndDate));
+        Assert.Equal((new DateOnly(2026, 11, 12), new DateOnly(2026, 11, 25)), (detail.PayPeriodStartDate, detail.PayPeriodEndDate));
+        Assert.Equal(invoice.PayPeriod!.GetPeriodLabel(), row.PayPeriodLabel);
+        Assert.Equal(invoice.PayPeriod!.GetPeriodLabel(), detail.PayPeriodLabel);
+    }
+
+    [Fact]
+    public void MapToDetailDto_Carries_The_Constant_Symbol_It_Is_Given()
+    {
+        var dto = PayrollMockFactory.Invoice().MapToDetailDto(constantSymbol: "0308");
+
+        Assert.Equal("0308", dto.ConstantSymbol);
+    }
 }

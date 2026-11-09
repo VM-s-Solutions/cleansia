@@ -281,7 +281,8 @@
     "pay_line_type": {
       "job": "Zákazka",
       "cancellation_fee_share": "Podiel z poplatku za zrušenie",
-      "lockout_fee_share": "Odmena za zákazku — znemožnený vstup"
+      "lockout_fee_share": "Odmena za zákazku — znemožnený vstup",
+      "dispute_charge": "Zrážka z reklamácie"
     }
   },
   "sidebar": {

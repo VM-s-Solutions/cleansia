@@ -132,6 +132,10 @@ extension L10n {
             localized("period_pay_line_lockout_fee_share")
         }
 
+        static var lineDisputeCharge: String {
+            localized("period_pay_line_dispute_charge")
+        }
+
         static var empty: String {
             localized("period_pay_empty")
         }

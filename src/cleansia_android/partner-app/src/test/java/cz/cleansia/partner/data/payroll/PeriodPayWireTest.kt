@@ -167,6 +167,13 @@ class PeriodPayWireTest {
     }
 
     @Test
+    fun aDisputeChargeLineDecodesAsItsOwnType() = runTest {
+        val lines = loaded(payloadWithFirstLine { it + ("lineType" to JsonPrimitive(3)) }).orderPays
+
+        assertEquals(PayLineType._3, lines.first().lineType)
+    }
+
+    @Test
     fun aMissingLineTypeFailsTheMappingRatherThanReadingAsAJob() = runTest {
         assertMappingFails("lineType", payloadWithoutFirstLineKey("lineType"))
     }
@@ -493,6 +500,8 @@ class PeriodPayWireTest {
         val SUMMARY_SPEC_PROPERTIES = setOf(
             "payPeriodId",
             "payPeriodLabel",
+            "payPeriodStartDate",
+            "payPeriodEndDate",
             "employeeId",
             "employeeName",
             "totalOrders",

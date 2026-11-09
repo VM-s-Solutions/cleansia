@@ -24,9 +24,8 @@ final class PartnerWireContractTests: XCTestCase {
             weekCompletedCount: 4,
             lastMonthEarnings: 18450,
             currentPeriodEarnings: 9500,
-            currentPayPeriodStart: Date(),
-            currentPayPeriodEnd: Date(),
-            nextPayoutDate: Date(),
+            currentPayPeriodStart: OpenAPIDateWithoutTime(day: Date()),
+            currentPayPeriodEnd: OpenAPIDateWithoutTime(day: Date()),
             averageRating: 4.8,
             ratingCount: 12,
             latestInvoiceStatus: "Paid",
@@ -307,6 +306,14 @@ final class PartnerWireContractTests: XCTestCase {
         XCTAssertNil(lines.first?.feeShareCaption)
         XCTAssertEqual(lines.last?.feeShareCaption, L10n.PeriodPay.lineLockoutFeeShare)
         XCTAssertEqual(try OrderPayLine(cancellation)?.feeShareCaption, L10n.PeriodPay.lineCancellationFeeShare)
+    }
+
+    func testADisputeChargeLineDecodesAndSaysWhatItIs() throws {
+        let json = #"{"id":"pay-9","totalPay":-150,"deductionPay":150,"lineType":3}"#
+        let line = try JSONDecoder().decode(OrderEmployeePayDto.self, from: Data(json.utf8))
+
+        XCTAssertEqual(line.lineType, ._3)
+        XCTAssertEqual(try OrderPayLine(line)?.feeShareCaption, L10n.PeriodPay.lineDisputeCharge)
     }
 
     func testADisputeChargeReachesTheLineWithTheReasonThePartnerIsShown() throws {

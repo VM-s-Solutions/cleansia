@@ -14412,6 +14412,41 @@
         }
       }
     },
+    "period_pay_line_dispute_charge": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Srážka ze sporu"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dispute charge"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удержание по спору"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zrážka zo sporu"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Утримання за спором"
+          }
+        }
+      }
+    },
     "period_pay_line_lockout_fee_share": {
       "extractionState": "manual",
       "localizations": {

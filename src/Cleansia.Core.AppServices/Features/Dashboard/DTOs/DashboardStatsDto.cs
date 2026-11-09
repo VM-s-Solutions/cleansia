@@ -15,12 +15,10 @@ public record DashboardStatsDto(
     decimal LastMonthEarnings,
     decimal CurrentPeriodEarnings,
 
-    // Drives the dashboard's pay-period progress bar + "Next payout: …" line.
-    // Nullable so the field stays valid for accounts not yet attached to an
-    // active period.
-    DateTime? CurrentPayPeriodStart,
-    DateTime? CurrentPayPeriodEnd,
-    DateTime? NextPayoutDate,
+    // Drives the dashboard's pay-period progress bar. Nullable so the field
+    // stays valid for accounts not yet attached to an active period.
+    DateOnly? CurrentPayPeriodStart,
+    DateOnly? CurrentPayPeriodEnd,
 
     // Average across all OrderReviews where the rated order had this
     // employee assigned. Null when the cleaner has never been reviewed.

@@ -129,14 +129,13 @@ public class OrderEmployeePayEntityConfiguration : TenantAuditableEntityConfigur
         builder.HasIndex(e => e.EmployeeId);
         builder.HasIndex(e => e.PayPeriodId);
         builder.HasIndex(e => e.EmployeeInvoiceId);
-        // Line type 3 is a dispute charge carried to a later invoice: it sits beside its job's row, at most one
-        // per order and cleaner. The enum names it once the cleaner apps can decode the value.
+        // A dispute charge carried to a later invoice sits beside its job's row, at most one per order and cleaner.
         builder.HasIndex(e => new { e.OrderId, e.EmployeeId })
             .IsUnique()
-            .HasFilter("\"LineType\" <> 3");
+            .HasFilter($"\"LineType\" <> {(int)PayLineType.DisputeCharge}");
         builder.HasIndex(e => new { e.OrderId, e.EmployeeId }, "IX_OrderEmployeePays_OrderId_EmployeeId_DisputeCharge")
             .IsUnique()
-            .HasFilter("\"LineType\" = 3");
+            .HasFilter($"\"LineType\" = {(int)PayLineType.DisputeCharge}");
         builder.HasIndex(e => new { e.EmployeeId, e.PayPeriodId });
     }
 }

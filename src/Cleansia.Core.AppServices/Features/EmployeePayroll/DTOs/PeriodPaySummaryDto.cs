@@ -3,6 +3,8 @@ namespace Cleansia.Core.AppServices.Features.EmployeePayroll.DTOs;
 public record PeriodPaySummaryDto(
     string PayPeriodId,
     string PayPeriodLabel,
+    DateOnly? PayPeriodStartDate,
+    DateOnly? PayPeriodEndDate,
     string EmployeeId,
     string EmployeeName,
     int TotalOrders,

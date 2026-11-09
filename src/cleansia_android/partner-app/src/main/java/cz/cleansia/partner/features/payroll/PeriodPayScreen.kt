@@ -317,14 +317,15 @@ private fun JobRow(line: OrderPayLine, symbol: String) {
 }
 
 /**
- * A row that pays for a job that did not happen says why: a share of the late-cancellation fee, or the
- * job's reward after a lockout.
+ * A row that is not a job's pay says what it is: a share of the late-cancellation fee, the job's reward
+ * after a lockout, or a dispute charge.
  */
 @StringRes
 internal fun payLineCaptionRes(type: PayLineType): Int? = when (type) {
     PayLineType._0 -> null
     PayLineType._1 -> R.string.period_pay_line_cancellation_fee_share
     PayLineType._2 -> R.string.period_pay_line_lockout_fee_share
+    PayLineType._3 -> R.string.period_pay_line_dispute_charge
 }
 
 @Composable

@@ -8508,17 +8508,12 @@
           },
           "currentPayPeriodStart": {
             "type": "string",
-            "format": "date-time",
+            "format": "date",
             "nullable": true
           },
           "currentPayPeriodEnd": {
             "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
-          "nextPayoutDate": {
-            "type": "string",
-            "format": "date-time",
+            "format": "date",
             "nullable": true
           },
           "averageRating": {
@@ -8792,6 +8787,16 @@
             "type": "string",
             "nullable": true
           },
+          "payPeriodStartDate": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "payPeriodEndDate": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
           "invoiceNumber": {
             "type": "string",
             "nullable": true
@@ -8801,6 +8806,10 @@
             "nullable": true
           },
           "specificSymbol": {
+            "type": "string",
+            "nullable": true
+          },
+          "constantSymbol": {
             "type": "string",
             "nullable": true
           },
@@ -8915,6 +8924,16 @@
           },
           "payPeriodLabel": {
             "type": "string",
+            "nullable": true
+          },
+          "payPeriodStartDate": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "payPeriodEndDate": {
+            "type": "string",
+            "format": "date",
             "nullable": true
           },
           "invoiceNumber": {
@@ -11548,14 +11567,16 @@
         "enum": [
           0,
           1,
-          2
+          2,
+          3
         ],
         "type": "integer",
         "format": "int32",
         "x-enumNames": [
           "Job",
           "CancellationFeeShare",
-          "LockoutFeeShare"
+          "LockoutFeeShare",
+          "DisputeCharge"
         ]
       },
       "PaymentStatus": {
@@ -11690,6 +11711,16 @@
           },
           "payPeriodLabel": {
             "type": "string",
+            "nullable": true
+          },
+          "payPeriodStartDate": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "payPeriodEndDate": {
+            "type": "string",
+            "format": "date",
             "nullable": true
           },
           "employeeId": {

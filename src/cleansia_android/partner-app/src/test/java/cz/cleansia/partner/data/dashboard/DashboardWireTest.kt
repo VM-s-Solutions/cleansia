@@ -328,7 +328,6 @@ class DashboardWireTest {
 
         assertNull(stats.currentPayPeriodStart)
         assertNull(stats.currentPayPeriodEnd)
-        assertNull(stats.nextPayoutDate)
         assertNull(stats.averageRating)
         assertNull(stats.latestInvoiceStatus)
         assertNull(stats.currencyCode)
@@ -405,9 +404,8 @@ class DashboardWireTest {
               "weekCompletedCount": 6,
               "lastMonthEarnings": 18240.40,
               "currentPeriodEarnings": 9315.60,
-              "currentPayPeriodStart": "2026-08-01T00:00:00Z",
-              "currentPayPeriodEnd": "2026-08-15T23:59:59Z",
-              "nextPayoutDate": "2026-08-20T00:00:00Z",
+              "currentPayPeriodStart": "2026-08-01",
+              "currentPayPeriodEnd": "2026-08-14",
               "averageRating": 4.7,
               "ratingCount": 23,
               "latestInvoiceStatus": "Approved",
@@ -451,7 +449,6 @@ class DashboardWireTest {
             "currentPeriodEarnings",
             "currentPayPeriodStart",
             "currentPayPeriodEnd",
-            "nextPayoutDate",
             "averageRating",
             "ratingCount",
             "latestInvoiceStatus",
@@ -488,7 +485,6 @@ class DashboardWireTest {
         val STATS_NULLABLE_FIELDS = listOf(
             "currentPayPeriodStart",
             "currentPayPeriodEnd",
-            "nextPayoutDate",
             "averageRating",
             "latestInvoiceStatus",
             "currencyCode",

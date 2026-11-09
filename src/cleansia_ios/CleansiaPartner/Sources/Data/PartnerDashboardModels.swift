@@ -40,9 +40,9 @@ extension DashboardStats {
         currentPeriodEarnings = try dto.currentPeriodEarnings.require("currentPeriodEarnings")
         ratingCount = try dto.ratingCount.require("ratingCount")
         averageRating = dto.averageRating
-        currentPayPeriodStart = dto.currentPayPeriodStart
-        currentPayPeriodEnd = dto.currentPayPeriodEnd
-        nextPayoutDate = dto.nextPayoutDate
+        currentPayPeriodStart = dto.currentPayPeriodStart?.wrappedDate
+        currentPayPeriodEnd = dto.currentPayPeriodEnd?.wrappedDate
+        nextPayoutDate = nil
         latestInvoiceStatus = dto.latestInvoiceStatus
         currencyCode = dto.currencyCode
     }

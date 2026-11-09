@@ -8,7 +8,13 @@ struct InvoicesListContent: View {
 
     var body: some View {
         if invoices.isEmpty {
-            MascotEmptyState(image: Mascot.leaning.image, text: L10n.Invoices.empty, verticallyCentered: true)
+            // `.refreshable` reaches only a scroll view, so the empty list rests in one the height of the screen.
+            GeometryReader { pane in
+                ScrollView {
+                    MascotEmptyState(image: Mascot.leaning.image, text: L10n.Invoices.empty, verticallyCentered: true)
+                        .frame(maxWidth: .infinity, minHeight: pane.size.height)
+                }
+            }
         } else {
             ScrollView {
                 VStack(spacing: Spacing.m) {

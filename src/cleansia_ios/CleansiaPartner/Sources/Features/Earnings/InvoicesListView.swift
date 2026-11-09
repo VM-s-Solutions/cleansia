@@ -40,7 +40,12 @@ struct InvoicesListView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(CleansiaColors.background.ignoresSafeArea())
         case let .error(error):
-            ErrorRetryView(error: error) { Task { await vm.userRefresh() } }
+            GeometryReader { pane in
+                ScrollView {
+                    ErrorRetryView(error: error) { Task { await vm.userRefresh() } }
+                        .frame(maxWidth: .infinity, minHeight: pane.size.height)
+                }
+            }
         case let .loaded(invoices):
             InvoicesListContent(invoices: invoices, onOpenInvoice: onOpenInvoice)
                 .background(CleansiaColors.background.ignoresSafeArea())

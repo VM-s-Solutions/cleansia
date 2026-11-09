@@ -44,8 +44,7 @@ struct EarningsView: View {
 
     private func openInvoiceDeepLink(_ invoiceId: String?) {
         guard let invoiceId else { return }
-        path.append(EarningsRoute.invoices)
-        path.append(EarningsRoute.invoiceDetail(id: invoiceId))
+        path = NavigationPath([EarningsRoute.invoices, .invoiceDetail(id: invoiceId)])
         deepLinkInvoiceId = nil
     }
 

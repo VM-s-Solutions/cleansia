@@ -376,6 +376,44 @@ public sealed class FiscalReconciliationQueryTests : IDisposable
         Assert.Empty(due);
     }
 
+    // ── A cancelled invoice frees its slot — the pair is swept again, so the corrected invoice follows ──
+
+    [Fact]
+    public async Task Invoice_Recon_Returns_An_Employee_Whose_Invoice_Was_Cancelled()
+    {
+        await EnsureSchemaAsync();
+
+        var payPeriodId = "01HZX9N6M7Q8R9S0T1V2W3XP04";
+        var employeeId = "01HZX9N6M7Q8R9S0T1V2W3XE04";
+
+        await using (var seed = NewContext())
+        {
+            seed.Add(ClosedPeriod(payPeriodId, closedAt: DateTime.UtcNow.AddMinutes(-60)));
+
+            seed.Add(OrderEmployeePay.Create(
+                orderId: "01HZX9N6M7Q8R9S0T1V2W3XO04",
+                employeeId: employeeId,
+                payPeriodId: payPeriodId,
+                currencyId: "czk",
+                basePay: 500m,
+                totalPay: 500m));
+
+            var cancelled = EmployeeInvoice.Create(employeeId, payPeriodId, totalOrders: 1, subTotal: 500m, currencyId: "czk",
+                variableSymbol: PayrollMockFactory.TestVariableSymbol, invoiceNumber: PayrollMockFactory.TestInvoiceNumber);
+            cancelled.Cancel("Wrong deduction", "admin-1");
+            seed.Add(cancelled);
+            await seed.CommitAsync(CancellationToken.None);
+        }
+
+        await using var ctx = NewContext();
+        var repo = new PayPeriodRepository(ctx);
+        var cutoff = DateTime.UtcNow.AddMinutes(-15);
+        var due = await repo.GetInvoiceReconciliationCandidatesAsync(cutoff, take: 50, CancellationToken.None);
+
+        var candidate = Assert.Single(due);
+        Assert.Equal((payPeriodId, employeeId), (candidate.PayPeriodId, candidate.EmployeeId));
+    }
+
     // ── Invoice freshness — a period CLOSED within the threshold is NOT swept, however old it is ──
 
     [Fact]

@@ -232,6 +232,23 @@ public class PayPeriodMixedCurrencyInvoicingTests
     }
 
     [Fact]
+    public async Task A_Currency_Whose_Invoice_Was_Cancelled_Is_Invoiced_Again()
+    {
+        var cancelled = PayrollMockFactory.Invoice(currencyId: PayrollMockFactory.CurrencyId);
+        cancelled.Cancel("Wrong deduction", "admin-1");
+        _existingInvoices = [cancelled];
+        var pay = PayrollMockFactory.OrderPay(basePay: 600m);
+        _unassignedPays = [pay];
+
+        await Run();
+
+        var written = Assert.Single(_addedInvoices);
+        Assert.Equal(600m, written.TotalAmount);
+        Assert.Equal(written.Id, pay.EmployeeInvoiceId);
+        Assert.NotEqual(cancelled.Id, written.Id);
+    }
+
+    [Fact]
     public async Task Pay_In_One_Currency_Still_Yields_Exactly_One_Invoice_And_One_Email()
     {
         _unassignedPays = [PayrollMockFactory.OrderPay(basePay: 600m), PayrollMockFactory.OrderPay(basePay: 400m)];

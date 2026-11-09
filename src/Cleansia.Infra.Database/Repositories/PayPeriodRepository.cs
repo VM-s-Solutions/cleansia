@@ -67,11 +67,12 @@ public class PayPeriodRepository(CleansiaDbContext context) : BaseRepository<Pay
                 && pay.PayPeriod.ClosedAt <= olderThanUtc
                 // One invoice per currency: a pair whose CZK pay is invoiced and whose EUR pay is not
                 // is still a candidate. The message key stays per pair, and the consumer invoices every
-                // currency still open.
+                // currency still open. A cancelled invoice has freed its pay for the corrected one.
                 && !existingInvoices.Any(inv =>
                     inv.PayPeriodId == pay.PayPeriodId
                     && inv.EmployeeId == pay.EmployeeId
-                    && inv.CurrencyId == pay.CurrencyId)
+                    && inv.CurrencyId == pay.CurrencyId
+                    && inv.Status != EmployeeInvoiceStatus.Cancelled)
             group pay by new { pay.PayPeriodId, pay.EmployeeId, pay.TenantId } into g
             orderby g.Key.PayPeriodId, g.Key.EmployeeId
             select new InvoiceReconciliationItem(

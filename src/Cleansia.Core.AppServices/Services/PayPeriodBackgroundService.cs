@@ -363,7 +363,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         // have refused the second currency forever.
         var alreadyInvoiced = await _employeeInvoiceRepository
             .GetQueryable()
-            .Where(i => i.EmployeeId == employee.Id && i.PayPeriodId == periodId)
+            .Where(i => i.EmployeeId == employee.Id && i.PayPeriodId == periodId && i.Status != EmployeeInvoiceStatus.Cancelled)
             .Select(i => i.CurrencyId)
             .ToListAsync(cancellationToken);
 

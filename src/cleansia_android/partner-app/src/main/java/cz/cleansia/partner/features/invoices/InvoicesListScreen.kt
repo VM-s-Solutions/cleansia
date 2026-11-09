@@ -61,6 +61,7 @@ import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.EmployeeInvoiceStatus
 import cz.cleansia.partner.data.invoices.Invoice
 import cz.cleansia.partner.features.main.MainBottomNavInset
+import cz.cleansia.partner.features.orders.appLocale
 
 /**
  * Cleaner's invoice history.
@@ -317,7 +318,7 @@ private fun InvoiceCard(invoice: Invoice, onClick: () -> Unit) {
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSurface,
                 )
-                invoice.payPeriodLabel?.takeIf { it.isNotBlank() }?.let {
+                formatPeriod(invoice.payPeriodStartDate, invoice.payPeriodEndDate, appLocale())?.let {
                     Spacer(Modifier.height(2.dp))
                     Text(
                         text = it,

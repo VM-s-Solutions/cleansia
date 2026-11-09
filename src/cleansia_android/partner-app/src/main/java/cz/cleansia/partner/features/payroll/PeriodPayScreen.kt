@@ -51,7 +51,9 @@ import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.PayLineType
 import cz.cleansia.partner.data.payroll.OrderPayLine
 import cz.cleansia.partner.data.payroll.PeriodPaySummary
+import cz.cleansia.partner.features.invoices.formatPeriod
 import cz.cleansia.partner.features.invoices.formatShortDate
+import cz.cleansia.partner.features.orders.appLocale
 
 /**
  * Read-only period pay breakdown — matches the EarningsSummaryScreen /
@@ -166,7 +168,7 @@ private fun HeroCard(summary: PeriodPaySummary, symbol: String) {
                 style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface,
             )
-            summary.payPeriodLabel?.takeIf { it.isNotBlank() }?.let { label ->
+            formatPeriod(summary.payPeriodStartDate, summary.payPeriodEndDate, appLocale())?.let { label ->
                 Spacer(Modifier.height(2.dp))
                 Text(
                     text = label,

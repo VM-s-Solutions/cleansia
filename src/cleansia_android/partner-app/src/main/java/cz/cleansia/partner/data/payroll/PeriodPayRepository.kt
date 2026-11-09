@@ -36,7 +36,8 @@ interface PeriodPayRepository {
 
 data class PeriodPaySummary(
     val payPeriodId: String?,
-    val payPeriodLabel: String?,
+    val payPeriodStartDate: String?,
+    val payPeriodEndDate: String?,
     val employeeId: String?,
     val employeeName: String?,
     val totalOrders: Int,
@@ -124,7 +125,8 @@ class PeriodPayRepositoryImpl @Inject constructor(
  */
 internal fun PeriodPaySummaryDto.toDomain() = PeriodPaySummary(
     payPeriodId = payPeriodId,
-    payPeriodLabel = payPeriodLabel,
+    payPeriodStartDate = payPeriodStartDate,
+    payPeriodEndDate = payPeriodEndDate,
     employeeId = employeeId,
     employeeName = employeeName,
     totalOrders = totalOrders.required("totalOrders"),

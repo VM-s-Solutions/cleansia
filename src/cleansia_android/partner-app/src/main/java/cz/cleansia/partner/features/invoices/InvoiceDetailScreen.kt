@@ -65,6 +65,7 @@ import cz.cleansia.partner.R
 import cz.cleansia.partner.data.invoices.InvoiceDetail
 import cz.cleansia.partner.data.invoices.InvoicePdfState
 import cz.cleansia.partner.data.invoices.pdfState
+import cz.cleansia.partner.features.orders.appLocale
 
 /**
  * Invoice detail — matches the EarningsSummaryScreen / InvoicesListScreen
@@ -78,7 +79,7 @@ import cz.cleansia.partner.data.invoices.pdfState
  *  1. Hero — IconHalo(wallet) + grand total (headlineMedium bold) + status pill.
  *  2. Breakdown — subTotal + bonus + deduction rows, divider, total bold, then
  *     the cash set off and the bank transfer when cash was set off.
- *  3. Period — IconHalo(calendar) + payPeriodLabel + jobs micro + dates list.
+ *  3. Period — IconHalo(calendar) + the period's days + jobs micro + dates list.
  *  4. References — IconHalo(key) + invoice #/variable symbol/payment ref,
  *     monospace value, copy-to-clipboard on tap.
  *  5. Notes (optional) — only when adminNotes or bankTransferNote present.
@@ -343,7 +344,7 @@ private fun PeriodCard(
     invoice: InvoiceDetail,
     onOpenPeriodPay: (() -> Unit)? = null,
 ) {
-    val period = invoice.payPeriodLabel?.takeIf { it.isNotBlank() } ?: "—"
+    val period = formatPeriod(invoice.payPeriodStartDate, invoice.payPeriodEndDate, appLocale()) ?: "—"
     val orders = invoice.totalOrders
     val generated = formatShortDate(invoice.generatedAt)
     val approved = formatShortDate(invoice.approvedAt)

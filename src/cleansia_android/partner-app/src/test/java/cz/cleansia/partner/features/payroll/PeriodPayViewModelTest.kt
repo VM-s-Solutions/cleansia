@@ -36,7 +36,8 @@ class PeriodPayViewModelTest {
 
     private val summary = PeriodPaySummary(
         payPeriodId = "pp-1",
-        payPeriodLabel = "1 – 15 Jun 2026",
+        payPeriodStartDate = "2026-06-01",
+        payPeriodEndDate = "2026-06-15",
         employeeId = "emp-1",
         employeeName = "Jana Novak",
         totalOrders = 3,

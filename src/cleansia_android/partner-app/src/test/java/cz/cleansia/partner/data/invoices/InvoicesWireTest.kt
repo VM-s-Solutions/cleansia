@@ -382,6 +382,19 @@ class InvoicesWireTest {
         assertEquals(emptyList<OrderPayLine>(), invoice.orderPays)
     }
 
+    // --- the period's days ---------------------------------------------------------
+
+    /** The screens print the period from its days; the server's label is English whatever the cleaner reads. */
+    @Test
+    fun everyInvoiceCarriesItsPeriodDaysAsTheServerNamesThem() = runTest {
+        assertEquals(
+            listOf("2026-08-01" to "2026-08-15", "2026-08-16" to "2026-08-31"),
+            loadedList(CAPTURED_PAGE).map { it.payPeriodStartDate to it.payPeriodEndDate },
+        )
+        val detail = loadedDetail(capturedInvoice().toString())
+        assertEquals("2026-08-01" to "2026-08-15", detail.payPeriodStartDate to detail.payPeriodEndDate)
+    }
+
     // --- the currency view My Pay is opened with ---------------------------------
 
     @Test
@@ -398,7 +411,8 @@ class InvoicesWireTest {
         val invoice = loadedDetail(stripped.toString())
 
         assertNull(invoice.invoiceNumber)
-        assertNull(invoice.payPeriodLabel)
+        assertNull(invoice.payPeriodStartDate)
+        assertNull(invoice.payPeriodEndDate)
         assertNull(invoice.currencyCode)
         assertNull(invoice.currencyId)
         assertNull(invoice.variableSymbol)
@@ -482,6 +496,8 @@ class InvoicesWireTest {
                   "employeeName": "Jana Novak",
                   "payPeriodId": "pp-9",
                   "payPeriodLabel": "1 - 15 Aug 2026",
+                  "payPeriodStartDate": "2026-08-01",
+                  "payPeriodEndDate": "2026-08-15",
                   "invoiceNumber": "2026-0042",
                   "variableSymbol": "20260042",
                   "paymentReference": "CLS-2026-0042",
@@ -509,6 +525,8 @@ class InvoicesWireTest {
                   "employeeName": "Jana Novak",
                   "payPeriodId": "pp-10",
                   "payPeriodLabel": "16 - 31 Aug 2026",
+                  "payPeriodStartDate": "2026-08-16",
+                  "payPeriodEndDate": "2026-08-31",
                   "invoiceNumber": "2026-0043",
                   "variableSymbol": "20260043",
                   "paymentReference": "CLS-2026-0043",
@@ -546,6 +564,8 @@ class InvoicesWireTest {
               "employeeName": "Jana Novak",
               "payPeriodId": "pp-9",
               "payPeriodLabel": "1 - 15 Aug 2026",
+              "payPeriodStartDate": "2026-08-01",
+              "payPeriodEndDate": "2026-08-15",
               "invoiceNumber": "2026-0042",
               "variableSymbol": "20260042",
               "specificSymbol": "778899",
@@ -659,6 +679,8 @@ class InvoicesWireTest {
             "employeeName",
             "payPeriodId",
             "payPeriodLabel",
+            "payPeriodStartDate",
+            "payPeriodEndDate",
             "invoiceNumber",
             "variableSymbol",
             "specificSymbol",

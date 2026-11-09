@@ -46,9 +46,10 @@ public class PayPeriodRepository(CleansiaDbContext context) : BaseRepository<Pay
         //
         // Pay is invoiced once its period has closed, never while it runs, so an Open period is no
         // candidate however old it is; the cutoff ages the CLOSE, leaving a just-closed period to the
-        // close that is still invoicing it. A Paid period stays a candidate: an admin can mark a period
-        // paid before this sweep reaches it. The anti-join is the LEFT-of-NOT-EXISTS; group/distinct
-        // collapses the (possibly many) pay rows per (period, employee) to one re-enqueue candidate.
+        // close that is still invoicing it. A Paid period stays a candidate: one marked paid before
+        // MarkPayPeriodPaid refused un-invoiced pay may still hold some. The anti-join is the
+        // LEFT-of-NOT-EXISTS; group/distinct collapses the (possibly many) pay rows per (period, employee)
+        // to one re-enqueue candidate.
         //
         // ONE query rooted on the pay set with IgnoreQueryFilters so the ignore propagates across the
         // whole tree. Composing separate DbSets re-attaches each tenant filter, whose body is an

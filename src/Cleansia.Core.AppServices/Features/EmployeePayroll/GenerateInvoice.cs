@@ -66,7 +66,7 @@ public class GenerateInvoice
 
         // Pay is invoiced once its period has closed: an invoice issued while the period runs holds only
         // the jobs done so far, and every later job in its currency is then refused as already invoiced.
-        // A Paid period has closed too, and an admin can mark one paid before the sweep invoices it.
+        // A Paid period has closed too.
         private async Task<bool> HaveClosedAsync(string payPeriodId, CancellationToken cancellationToken)
         {
             var period = await _payPeriodRepository.GetByIdAsync(payPeriodId, cancellationToken);

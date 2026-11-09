@@ -17,7 +17,7 @@ namespace Cleansia.IntegrationTests.Features.EmployeePayroll;
 
 /// <summary>
 /// Cancelling an invoice frees its jobs, and the safety net issues the corrected invoice under a new number with
-/// the same total and the same cash set-off (D3). Each step runs in a scope of its own, as separate requests do,
+/// the same total and the same cash set-off. Each step runs in a scope of its own, as separate requests do,
 /// over the migration-built Postgres and the sweep's own candidate query.
 /// </summary>
 [Collection("PostgresCollection")]

@@ -77,7 +77,7 @@ public class PayPeriodSettlementHandlerTests
         Assert.Null(period.PaidAt);
     }
 
-    // ── MarkPayPeriodPaid validator (D6) ─────────────────────────────
+    // ── MarkPayPeriodPaid validator ──────────────────────────────────
 
     [Fact]
     public async Task MarkPayPeriodPaid_Is_Refused_While_Pay_In_The_Period_Is_Not_Invoiced()

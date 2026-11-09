@@ -436,7 +436,7 @@
 | T-0921 | The 2026-11-08 review findings for iOS, server, web and docs | M | `done` | — | Mike 2026-11-08: "Fix the findings as well. But don't focus too much"; F1 to F7, F12 and F13, each small, on PR A (#369); F12 already holds in the tree |
 | T-0922 | The 2026-11-08 Android review findings | M | `done` | — | Mike 2026-11-08: "Fix the findings as well. But don't focus too much"; F8 to F11, each small, on PR B (`feature/customer-onboarding-d-android`) |
 | T-0923 | Cleaner pay, phase 1: invoice once, after the period closes | L | `done` | — | Mike 2026-11-09: the cleaner-pay fix plan (https://claude.ai/artifact/XvfiW1obDsEqk4E1eNL56C); 9 slices |
-| T-0924 | Cleaner pay, phase 2: corrections and one open period | L | `in_review` | — | Mike 2026-11-09: the cleaner-pay fix plan (https://claude.ai/artifact/XvfiW1obDsEqk4E1eNL56C); 5 slices |
+| T-0924 | Cleaner pay, phase 2: corrections and one open period | L | `done` | — | Mike 2026-11-09: the cleaner-pay fix plan (https://claude.ai/artifact/XvfiW1obDsEqk4E1eNL56C); 5 slices |
 | T-0925 | Cleaner pay, phase 3: the screens | L | `todo` | — | Mike 2026-11-09: the cleaner-pay fix plan (https://claude.ai/artifact/XvfiW1obDsEqk4E1eNL56C); 10 slices |
 | T-0926 | Cleaner pay, phase 4: the remaining findings | M | `todo` | — | Mike 2026-11-09: the cleaner-pay fix plan (https://claude.ai/artifact/XvfiW1obDsEqk4E1eNL56C); 5 slices |
 | T-0927 | Cleaner pay, phase 5: the admin panel remarks and refunds | L | `todo` | — | Mike 2026-11-09: the cleaner-pay fix plan (https://claude.ai/artifact/XvfiW1obDsEqk4E1eNL56C); 35 slices |

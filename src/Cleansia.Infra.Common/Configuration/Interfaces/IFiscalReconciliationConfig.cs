@@ -9,8 +9,9 @@ public interface IFiscalReconciliationConfig
 {
     /// <summary>
     /// How old (in minutes) a committed-but-unrealized fiscal artifact must be before the sweep
-    /// re-enqueues it. Defaults to <b>15</b> per ADR-0002 D3.4. Orders/periods WITHIN this window
-    /// (recently committed — their normal post-commit dispatch may still be on the wire) are NOT swept.
+    /// re-enqueues it. Defaults to <b>15</b> per ADR-0002 D3.4. An order committed within this window
+    /// (its post-commit dispatch may still be on the wire), or a pay period closed within it (the close
+    /// may still be invoicing it), is NOT swept.
     /// </summary>
     int ThresholdMinutes { get; set; }
 

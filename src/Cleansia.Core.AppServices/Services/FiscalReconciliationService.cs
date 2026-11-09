@@ -29,8 +29,8 @@ public sealed class FiscalReconciliationService(
 {
     public async Task<int> ReconcileAsync(CancellationToken cancellationToken)
     {
-        // The cutoff is a tunable, not a business value (ADR-0002 D3.4): items committed WITHIN the
-        // window (their normal post-commit dispatch may still be on the wire) are NOT swept.
+        // The cutoff is a tunable, not a business value (ADR-0002 D3.4): an order committed, or a pay
+        // period closed, WITHIN the window is NOT swept, because its normal path may still be producing it.
         var cutoff = DateTime.UtcNow.AddMinutes(-config.ThresholdMinutes);
         var batchSize = config.BatchSize;
 
@@ -131,9 +131,6 @@ public sealed class FiscalReconciliationService(
 
             try
             {
-                // The invoice consumer is a Wave-0 stub (ADR-0002 D2.2 / GenerateInvoiceFunction) — we
-                // re-enqueue ONLY so the row lands when the effect ships; we do NOT generate the invoice
-                // here. LanguageCode defaults to English (the stub ignores it).
                 await queueClient.SendAsync(
                     QueueNames.GenerateInvoice,
                     new QueueEnvelope<GenerateInvoiceMessage>(

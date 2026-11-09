@@ -10,8 +10,8 @@ using Microsoft.Extensions.Logging;
 namespace Cleansia.Functions.Core.Handlers;
 
 /// <summary>
-/// Consumes the per-employee invoice fan-out and runs the command so an invoice is created and unpaid
-/// pay rows are assigned to it.
+/// Consumes the generate-invoice messages the reconciliation sweep enqueues for a closed pay period, and
+/// runs the command so an invoice is created and unpaid pay rows are assigned to it.
 ///
 /// <para><b>Queue trigger — no tenant context.</b> The employee is looked up cross-tenant by the trusted
 /// payload id and its tenant is set as the override BEFORE the command runs, or the invoice and the pay

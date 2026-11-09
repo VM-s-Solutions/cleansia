@@ -109,3 +109,20 @@ Any finding not listed above, and everything T-0920's Out of scope names.
   form (`6579b1d0d`). The branch that dropped it is gone with its test; the new test failed before the change on the
   iOS 26.3 simulator and passes with it. F13: the two inline catalog edits are routed for ratification with the
   `:1016` row (T-0920's work record and `## Review`).
+- 2026-11-09 — Architect ruling, 2026-11-09: F13's edit of `patterns-mobile.md:1046`, the address-picker row, is
+  ratified with one word changed: "no app file imports MapKit" now reads "no app source file", because the partner's
+  `JobDetailPageTests.swift` imports MapKit. The rest holds at `8f0a53252`: Core's `AddressPickerScreen`, with
+  `AddressPickerConfirmCard` and `AddressPickerCopy`, shown by `BookingAddressPickerView` and the partner's
+  `AddressSectionView`, is the one `pickerMap` caller, and both `MapProvider` signatures read as written. Test 2
+  fires on reading 1 and is answered by #368, which Mike merged on 2026-11-08 and which moved the screen into Core.
+- 2026-11-09 — Architect ruling, 2026-11-09: F13's edit of `patterns-mobile.md:2041`, the devices bullet, is
+  ratified, and two older clauses of it now match the views it names: Core's `DevicesView` keeps the revoke on the
+  current device's row, drawn as signing this device out, and the self-revoke signs out with `signOutLocal()`, not
+  `logout()`. Both are T-0422's (an owner report, shipped 2026-07-17 in #125), which never reached the catalog; the
+  "~15min" reason went with them, since the mobile access token lives 30 minutes. The section's *Deviations a
+  reviewer rejects* drops "a revoke shown on the current device", so it no longer rejects what the bullet describes.
+  Test 2 fires and is answered by T-0422; test 1 finds no deviation (both apps show Core's `DevicesView`, and
+  `DevicesViewModelTests` pins the self-revoke).
+- 2026-11-09 — Q6 (the server checks a changed phone for validity, the apps a possible length for the country): the
+  PM keeps the current behaviour, which is the documented cleaner rule (`business-rules.md#cleaner-profile-fields`).
+  Mike can still change it, to a possible-number check at `UpdateCurrentUser.cs:101`. No code changed.

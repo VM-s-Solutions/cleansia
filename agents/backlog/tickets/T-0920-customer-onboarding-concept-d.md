@@ -336,6 +336,18 @@ green; and Mike gets a customer TestFlight build.
   for ratification before PR A leaves draft, with the `:1016` row: T-0921 F13's address-picker row (`:1046`) and
   devices bullet (`:2041`), and whether `:2063` still holds (Review, below). The `:1016` draft now names the simulator
   CI hosts its tests on; the iOS 16.4 run was local.
+- 2026-11-09 — Architect ruling, 2026-11-09: `patterns-mobile.md:1016`, the `BirthDateField` row, is ratified and
+  applied from the `## Review` draft, with three fixes to match the tree: the `in: ...Date()` future-block belongs to
+  the sheet (`BirthDateField.swift:113`), the onboarding is the sheet's one caller besides the field outside the
+  tests, and the unguarded environment pin sits in `BirthDateWheelSheet`. Test 2 fires and is answered: Mike's Q1
+  "Go with A" set the sheet, the one shared sheet keeps the binding, the Greenwich pin, the seed and the future-block
+  in one place, and `birth_date_picker_is_the_shared_one` (T1-CI, `swiftlint lint --strict`) still enforces the row,
+  with its three residuals named. Test 1 finds no deviation (the `## Review` sweep, rerun at `8f0a53252`).
+- 2026-11-09 — Architect ruling, 2026-11-09: the *No auth header image* bullet (`patterns-mobile.md:2063` as routed)
+  still holds and stays as written. It defers its list to `docs/mobile-app/patterns.md#auth-screens`, which since
+  commit 4 records Mike's pick of concept D (2026-11-08) and no longer counts the profile completion as an auth
+  screen; at `8f0a53252` no file under either app's `Features/Auth` draws a mascot, and `AuthHeaderImage` is gone.
+  No catalog edit, so nothing routes.
 
 ## Review
 

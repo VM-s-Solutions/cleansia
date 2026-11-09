@@ -64,3 +64,16 @@ The plan's "Not doing" list. Anything found outside these slices is reported to 
 
 - 2026-11-09 — Filed from the plan page. Not started.
 - 2026-11-09 — An exception to the P3.1 commit's claim that every new or changed test fails against the code before it: two changed Android tests pass there. InvoicesWireTest.theDetailDtoCarriesEverythingTheListOneDoesPlusItsOwn compares two constants in the test file, and DashboardWireTest.nullableByDesignStatsFieldsStayNullRatherThanBecomingPlaceholders only lost its nextPayoutDate assertion. Neither tests money; the three serial-name tests beside them fail before the change as they should.
+- 2026-11-09 — P3.1, backend and contract (with the DisputeCharge label in admin web, partner web, Android and iOS): 7c3072e1a; the cancelled-invoice set-off and transfer fix: 035b6812f.
+- 2026-11-09 — P3.2, admin web: 952a28959.
+- 2026-11-09 — P3.3, admin web: f231b3518.
+- 2026-11-09 — P3.4, partner web: 87562e630.
+- 2026-11-09 — P3.5, Android: 25906a200; comment fixes fada8caa8 and 6b8917c0d.
+- 2026-11-09 — P3.6, iOS: 1b56370cb.
+- 2026-11-09 — P3.7, iOS: 4e708d4fa.
+- 2026-11-09 — P3.8, iOS: f1ae3964d.
+- 2026-11-09 — P3.9, admin web: 7033116e4.
+- 2026-11-09 — P3.10, partner web: 88764e64a; Android: 8910bd5bf.
+- 2026-11-09 — The one regeneration: admin and partner web clients and the partner mobile spec, committed in 7c3072e1a; the customer mobile spec was re-dumped and is unchanged.
+- 2026-11-09 — Money review of P3.1 and P3.3: amounts re-derived by hand match (M1-M6 pass), and every new money test fails with its change reverted. Verdict changes requested on one must item, the ruling code in a test comment, fixed in fada8caa8. Of the nice items in scope, the cancelled-invoice figures (fixed in 035b6812f), the stale route comment (6b8917c0d) and the two Android tests that pass on the parent (recorded above) are closed; ConstantSymbol on the invoice detail waits on Mike. Four findings outside the branch are reported, not fixed: partner web's Cash I hold text, Android's invoice list blanking on a failed employee lookup, Close now on a period not yet started, and a legacy Rejected invoice blocking Mark paid.
+- 2026-11-09 — In review as PR 3.

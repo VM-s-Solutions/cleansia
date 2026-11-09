@@ -3449,6 +3449,8 @@
     "pay_period": {
       "end_too_soon": "Dátum konca musí byť najskôr zajtra. Ak chcete obdobie ukončiť dnes, použite „Uzavrieť teraz“.",
       "has_order_pays": "Nie je možné odstrániť výplatné obdobie, ktoré má priradené platby za objednávky",
+      "has_uninvoiced_pay": "Časť odmien v tomto období ešte nie je vyfakturovaná, preto ho nemožno označiť ako zaplatené. Faktúry sa vystavujú automaticky čoskoro po uzavretí obdobia.",
+      "has_unpaid_invoices": "Niektoré faktúry v tomto období ešte nie sú zaplatené. Najprv označte každú faktúru ako zaplatenú.",
       "invalid_duration": "Dátum konca je neskorší ako posledný deň, do ktorého môže výplatné obdobie trvať.",
       "not_closed": "Výplatné obdobie nie je uzavreté",
       "not_started": "Toto výplatné obdobie sa ešte nezačalo, preto ho nemožno uzavrieť.",

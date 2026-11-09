@@ -412,6 +412,8 @@ public static class BusinessErrorMessage
     public const string HasOrderPays = "pay_period.has_order_pays";
     public const string PayPeriodNotClosed = "pay_period.not_closed";
     public const string PayPeriodNotStarted = "pay_period.not_started";
+    public const string PayPeriodHasUninvoicedPay = "pay_period.has_uninvoiced_pay";
+    public const string PayPeriodHasUnpaidInvoices = "pay_period.has_unpaid_invoices";
     // Change end date's end is tomorrow at the earliest; ending the period today is Close now.
     public const string PayPeriodEndTooSoon = "pay_period.end_too_soon";
 

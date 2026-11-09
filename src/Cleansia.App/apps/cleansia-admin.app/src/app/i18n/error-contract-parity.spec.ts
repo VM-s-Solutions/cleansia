@@ -666,6 +666,10 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'pay_config.service_or_package_required',
   'pay_period.end_too_soon',
   'pay_period.has_order_pays',
+  // Mark paid waits until all the period's pay is invoiced and every invoice in it is paid or cancelled.
+  // AdminPayPeriodController.MarkPayPeriodPaid.
+  'pay_period.has_uninvoiced_pay',
+  'pay_period.has_unpaid_invoices',
   'pay_period.invalid_duration',
   'pay_period.not_closed',
   'pay_period.not_started',

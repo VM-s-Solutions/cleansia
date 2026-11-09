@@ -7,4 +7,10 @@ namespace Cleansia.Core.Domain.Tenancy;
 public interface ICompanySettlementReader
 {
     Task<CompanySettlementFacts> ReadAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The two pay facts of <see cref="ReadAsync"/> for one pay period, under the same predicates: invoices
+    /// neither paid nor cancelled, and pay rows no invoice holds. Marking the period paid refuses on them.
+    /// </summary>
+    Task<(int UnpaidInvoices, int UninvoicedPayRows)> ReadPayPeriodAsync(string payPeriodId, CancellationToken cancellationToken);
 }

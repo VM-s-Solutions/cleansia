@@ -1,3 +1,4 @@
+using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Orders;
@@ -56,16 +57,8 @@ public sealed class CompanySettlementReader(CleansiaDbContext context, ITenantPr
         var openPayPeriods = await context.PayPeriods
             .CountAsync(p => p.Status == PayPeriodStatus.Open, cancellationToken);
         var closedPeriods = context.PayPeriods.Where(p => p.Status == PayPeriodStatus.Closed);
-        var unpaidInvoices = await context.EmployeeInvoices
-            .CountAsync(
-                i => i.Status != EmployeeInvoiceStatus.Paid
-                    && i.Status != EmployeeInvoiceStatus.Cancelled
-                    && closedPeriods.Any(p => p.Id == i.PayPeriodId),
-                cancellationToken);
-        var uninvoicedPayRows = await context.OrderEmployeePays
-            .CountAsync(
-                pay => pay.EmployeeInvoiceId == null && closedPeriods.Any(p => p.Id == pay.PayPeriodId),
-                cancellationToken);
+        var unpaidInvoices = await UnpaidInvoicesIn(closedPeriods).CountAsync(cancellationToken);
+        var uninvoicedPayRows = await UninvoicedPayIn(closedPeriods).CountAsync(cancellationToken);
         var openDisputes = await context.Disputes
             .CountAsync(d => OpenDisputeStatuses.Contains(d.Status), cancellationToken);
         var cleanersHoldingCash = await context.CashLedgerEntries
@@ -98,6 +91,22 @@ public sealed class CompanySettlementReader(CleansiaDbContext context, ITenantPr
             CleanersHoldingCash: cleanersHoldingCash,
             LatestCardPaidCleaningDateTime: latestCardPaidCleaning);
     }
+
+    public async Task<(int UnpaidInvoices, int UninvoicedPayRows)> ReadPayPeriodAsync(
+        string payPeriodId, CancellationToken cancellationToken)
+    {
+        var period = context.PayPeriods.Where(p => p.Id == payPeriodId);
+        return (await UnpaidInvoicesIn(period).CountAsync(cancellationToken),
+            await UninvoicedPayIn(period).CountAsync(cancellationToken));
+    }
+
+    private IQueryable<EmployeeInvoice> UnpaidInvoicesIn(IQueryable<PayPeriod> periods) =>
+        context.EmployeeInvoices.Where(i => i.Status != EmployeeInvoiceStatus.Paid
+            && i.Status != EmployeeInvoiceStatus.Cancelled
+            && periods.Any(p => p.Id == i.PayPeriodId));
+
+    private IQueryable<OrderEmployeePay> UninvoicedPayIn(IQueryable<PayPeriod> periods) =>
+        context.OrderEmployeePays.Where(pay => pay.EmployeeInvoiceId == null && periods.Any(p => p.Id == pay.PayPeriodId));
 
     private async Task<int> CountOpenOrdersOnOrAfterWindDownFromAsync(CancellationToken cancellationToken)
     {

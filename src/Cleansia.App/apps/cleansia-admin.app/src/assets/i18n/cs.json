@@ -3113,10 +3113,15 @@
       "created_by": "Vytvořil",
       "modified_at": "Upraveno dne",
       "modified_by": "Upravil",
-      "close_period": "Uzavřít platební období",
       "not_found": "Platební období nenalezeno",
       "ops": {
         "title": "Operace vyúčtování",
+        "close_now": {
+          "action": "Uzavřít nyní",
+          "hint": "Toto období skončí dnes místo {{ end }}. Přibližně do 20 minut dostane každý uklízeč, který v něm má odměnu, fakturu e-mailem. Další období začne zítra, potrvá nastavený počet dní ({{ days }}) a připadnou do něj zakázky dokončené po uzavření. Uzavřené období nelze znovu otevřít.",
+          "reason": "Důvod (uloží se do auditního záznamu)",
+          "submit": "Uzavřít období nyní"
+        },
         "mark_paid": {
           "action": "Označit období jako zaplacené",
           "hint": "Označte toto uzavřené platební období jako zaplacené. Tím se vyúčtování dokončí.",

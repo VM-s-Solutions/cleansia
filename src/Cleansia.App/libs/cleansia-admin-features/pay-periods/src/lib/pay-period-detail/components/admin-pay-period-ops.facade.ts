@@ -1,6 +1,8 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import {
   AdminClient,
+  ClosePayPeriodCommand,
+  ClosePayPeriodResponse,
   MarkPayPeriodPaidCommand,
   MarkPayPeriodPaidResponse,
 } from '@cleansia/admin-services';
@@ -20,6 +22,11 @@ export class AdminPayPeriodOpsFacade extends UnsubscribeControlDirective {
   readonly submitting = signal<boolean>(false);
   readonly errorKey = signal<string | null>(null);
 
+  readonly closeNowReason = signal<string>('');
+  readonly canSubmitCloseNow = computed(
+    () => this.closeNowReason().trim().length > 0 && !this.submitting()
+  );
+
   openPanel(panel: AdminPayPeriodOpsPanel): void {
     if (this.activePanel() === panel) {
       this.closePanel();
@@ -32,6 +39,10 @@ export class AdminPayPeriodOpsFacade extends UnsubscribeControlDirective {
   closePanel(): void {
     this.activePanel.set(null);
     this.resetInputs();
+  }
+
+  setCloseNowReason(value: string): void {
+    this.closeNowReason.set(value);
   }
 
   markPaid(payPeriodId: string, onSuccess: () => void): void {
@@ -47,8 +58,23 @@ export class AdminPayPeriodOpsFacade extends UnsubscribeControlDirective {
     );
   }
 
+  closeNow(payPeriodId: string, onSuccess: () => void): void {
+    const reason = this.closeNowReason().trim();
+    if (!payPeriodId || !reason) {
+      return;
+    }
+    const command = new ClosePayPeriodCommand();
+    command.payPeriodId = payPeriodId;
+    command.reason = reason;
+    this.run(
+      this.adminClient.adminPayPeriodClient.close(command),
+      'pay_periods.messages.close_success',
+      onSuccess
+    );
+  }
+
   private run(
-    request$: Observable<MarkPayPeriodPaidResponse>,
+    request$: Observable<MarkPayPeriodPaidResponse | ClosePayPeriodResponse>,
     successKey: string,
     onSuccess: () => void
   ): void {
@@ -73,6 +99,7 @@ export class AdminPayPeriodOpsFacade extends UnsubscribeControlDirective {
   }
 
   private resetInputs(): void {
+    this.closeNowReason.set('');
     this.errorKey.set(null);
   }
 

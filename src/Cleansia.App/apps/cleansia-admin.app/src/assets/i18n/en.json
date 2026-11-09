@@ -3113,10 +3113,15 @@
       "created_by": "Created By",
       "modified_at": "Modified At",
       "modified_by": "Modified By",
-      "close_period": "Close Pay Period",
       "not_found": "Pay period not found",
       "ops": {
         "title": "Settlement Operations",
+        "close_now": {
+          "action": "Close now",
+          "hint": "This period ends today instead of {{ end }}. Within about 20 minutes every cleaner with pay in it gets an invoice by e-mail. The next period starts tomorrow and runs {{ days }} days, and jobs finished after you close go into it. A closed period can't be reopened.",
+          "reason": "Reason (kept in the audit log)",
+          "submit": "Close the period now"
+        },
         "mark_paid": {
           "action": "Mark Period as Paid",
           "hint": "Mark this closed pay period as paid. This finalizes the settlement.",

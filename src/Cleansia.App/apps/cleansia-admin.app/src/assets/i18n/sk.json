@@ -3492,6 +3492,7 @@
         "already_exists": "Faktúra už existuje",
         "already_paid": "Faktúra už bola označená ako zaplatená",
         "cannot_cancel_paid": "Nie je možné zrušiť zaplatenú faktúru",
+        "changed_concurrently": "Túto faktúru v rovnakom čase zmenil iný administrátor. Načítajte ju znova a skúste to znova.",
         "invalid_status": "Neplatný stav faktúry",
         "not_approved": "Faktúru je potrebné najskôr schváliť, až potom ju možno označiť ako zaplatenú",
         "not_found": "Faktúra nebola nájdená",

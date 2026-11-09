@@ -675,6 +675,11 @@ const SHARED_KEYS_NOT_REACHABLE_HERE: ReadonlyArray<{
   reason: string;
 }> = [
   {
+    key: 'payroll.invoice.changed_concurrently',
+    reason:
+      'Emitted by UnitOfWorkPipelineBehavior only when a commit loses on the EmployeeInvoice xmin token. Every command that writes an invoice (generate, approve, mark paid, cancel, dispute, adjust, assign reference, regenerate PDF) is dispatched by Cleansia.Web.Admin; this host only reads invoices.',
+  },
+  {
     key: 'tenant.archived',
     reason:
       'The archived-company write guard (ADR-0064 D3) refuses a books write of a company frozen for archive at the commit; a cleaner of such a company is deactivated and refused at sign-in with auth.company_deactivated before any write, so the one caller who could reach it here is an administrator using the partner app (ADR-0064 O-1), a residual the batch left untranslated on this host: the admin app is where a frozen company is acted on and carries the sentence.',

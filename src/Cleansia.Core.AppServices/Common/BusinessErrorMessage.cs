@@ -391,6 +391,7 @@ public static class BusinessErrorMessage
     public const string InvoiceAlreadyCancelled = "payroll.invoice.already_cancelled";
     public const string InvoiceAlreadyPaid = "payroll.invoice.already_paid";
     public const string InvoiceNotApproved = "payroll.invoice.not_approved";
+    public const string InvoiceChangedConcurrently = "payroll.invoice.changed_concurrently";
     public const string InvoiceReferenceUnavailable = "payroll.invoice.reference_unavailable";
     public const string InvoiceReferenceMissing = "payroll.invoice.reference_missing";
     public const string InvoiceReferenceCapacityExhausted = "payroll.invoice.reference_capacity_exhausted";

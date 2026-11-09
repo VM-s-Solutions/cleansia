@@ -4,7 +4,7 @@ title: "Cleaner pay, phase 4: the remaining findings"
 size: M
 owner: Michael Chaban
 created: 2026-11-09
-updated: 2026-11-09
+updated: 2026-11-10
 depends_on: [T-0925]
 blocks: []
 stories: []
@@ -46,7 +46,7 @@ Branch `fix/pay-findings`.
 - [ ] **P4.3** Blob paths use a fixed date format, and e-mails format the period in the recipient's language.
 - [ ] **P4.4** $ A dispute charge on an already-invoiced job becomes a deduction on the cleaner's next invoice. Its design, including what happens when that invoice would go negative, is written in this ticket and approved by Mike before Phase 2 starts (P1.8, D12).
 - [ ] ~~**P4.5** Optional: a QR Platba code in the payment block of CZK invoice PDFs.~~ Dropped: Mike accepted the leaner Phase 4 on 2026-11-10.
-- [ ] **mrc-1** An invoice gets a concurrency token, so two admin actions on one invoice cannot both commit (a Mark paid racing a Cancel would set the cash off twice). Folded in by Mike on 2026-11-10.
+- [x] **mrc-1** An invoice gets a concurrency token, so two admin actions on one invoice cannot both commit (a Mark paid racing a Cancel would set the cash off twice). Folded in by Mike on 2026-11-10.
 - [ ] **F4** Partner web's Cash I hold text says the cash is set off when the next invoice is issued, not against the next payout. Folded in by Mike on 2026-11-10.
 - [ ] **F5** Android's partner invoice list keeps its rows when the employee-id lookup or a refresh fails, as iOS does since P3.6. Folded in by Mike on 2026-11-10.
 - [ ] **F6** Close now is not offered on a period that has not started yet. Folded in by Mike on 2026-11-10.
@@ -337,3 +337,4 @@ The plan's "Not doing" list. Anything found outside these slices is reported to 
   names `SendEmployeePeriodClosedEmailAsync`, which P1.3's loop reaches: P4.4 skips its e-mail when every row of the
   cleaner moved on (D7).
 - 2026-11-10 — Mike answered "A" to folding mrc-1, F4, F5 and F6 into this phase; P4.5 is dropped. Phase 4 starts on `fix/pay-findings`, run with the lean workflow.
+- 2026-11-10 — mrc-1 built: `EmployeeInvoice` carries the Postgres `xmin` token, and a commit that loses on it comes back from the unit of work as `payroll.invoice.changed_concurrently` (admin app, five locales; partner and customer specs say why they cannot reach it). Race test on real Postgres: a cancel that read the invoice before a mark paid committed is refused, and the paid invoice keeps its jobs and its single cash set-off. `Initial` regenerated once, `20261109143607` to `20261109234823`; MS-2's one owed DEV reset moves to the new id.

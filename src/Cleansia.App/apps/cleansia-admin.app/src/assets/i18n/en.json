@@ -3492,6 +3492,7 @@
         "already_exists": "Invoice already exists",
         "already_paid": "Invoice has already been marked paid",
         "cannot_cancel_paid": "Cannot cancel a paid invoice",
+        "changed_concurrently": "Another administrator changed this invoice at the same time. Reload it and try again.",
         "invalid_status": "Invalid invoice status",
         "not_approved": "Invoice must be approved before it can be marked paid",
         "not_found": "Invoice not found",

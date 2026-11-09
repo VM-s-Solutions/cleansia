@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20261109143607_Initial")]
+    [Migration("20261109234823_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -1876,6 +1876,12 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<string>("VariableSymbol")
                         .HasMaxLength(10)
                         .HasColumnType("character varying(10)");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 

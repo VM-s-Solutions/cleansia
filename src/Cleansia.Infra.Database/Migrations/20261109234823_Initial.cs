@@ -2153,6 +2153,7 @@ namespace Cleansia.Infra.Database.Migrations
                     CancellationReason = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
                     CancelledAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     CancelledBy = table.Column<string>(type: "text", nullable: true),
+                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),

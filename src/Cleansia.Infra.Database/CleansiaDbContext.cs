@@ -426,6 +426,7 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
         ApplyMembershipConcurrencyToken(modelBuilder);
         ApplyLoyaltyAccountConcurrencyToken(modelBuilder);
         ApplyReferralConcurrencyToken(modelBuilder);
+        ApplyEmployeeInvoiceConcurrencyToken(modelBuilder);
 
         ApplyTenantQueryFilters(modelBuilder);
     }
@@ -488,6 +489,18 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
         // A release and a rejection of one held referral each read it held; without the token both commit
         // and the row ends rejected with the release's grants standing. The later commit conflicts instead.
         modelBuilder.Entity<Referral>()
+            .Property<uint>("xmin")
+            .ValueGeneratedOnAddOrUpdate()
+            .IsConcurrencyToken();
+    }
+
+    private void ApplyEmployeeInvoiceConcurrencyToken(ModelBuilder modelBuilder)
+    {
+        if (Database.ProviderName != "Npgsql.EntityFrameworkCore.PostgreSQL") return;
+
+        // Two admin actions that both read one invoice approved (a mark paid and a cancel) would both commit,
+        // and the cancel would hand back cash the paid invoice set off. The later commit conflicts instead.
+        modelBuilder.Entity<EmployeeInvoice>()
             .Property<uint>("xmin")
             .ValueGeneratedOnAddOrUpdate()
             .IsConcurrencyToken();

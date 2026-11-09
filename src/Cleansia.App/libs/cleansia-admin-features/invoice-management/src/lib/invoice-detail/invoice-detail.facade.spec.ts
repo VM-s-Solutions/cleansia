@@ -1,11 +1,14 @@
 import { TestBed } from '@angular/core/testing';
 import {
   AdminClient,
+  AdminPayoutDetailsService,
   ApproveInvoiceCommand,
   AssignInvoiceVariableSymbolCommand,
   CancelInvoiceCommand,
+  EmployeeInvoiceDetailDto,
   EmployeeInvoiceStatus,
   MarkInvoicePaidCommand,
+  MaskedPayoutDetails,
   RegenerateInvoicePdfCommand,
 } from '@cleansia/admin-services';
 import { DialogService as ConfirmDialogService, SnackbarService } from '@cleansia/services';
@@ -23,6 +26,7 @@ describe('InvoiceDetailFacade', () => {
   let regenerateMock: jest.Mock;
   let assignVariableSymbolMock: jest.Mock;
   let confirmMock: jest.Mock;
+  let getForEmployeeMock: jest.Mock;
   let snackbar: {
     showSuccess: jest.Mock;
     showSuccessTranslated: jest.Mock;
@@ -47,6 +51,9 @@ describe('InvoiceDetailFacade', () => {
       })
     );
     confirmMock = jest.fn().mockReturnValue(of(true));
+    getForEmployeeMock = jest
+      .fn()
+      .mockReturnValue(of(MaskedPayoutDetails.fromJS({ maskedAccount: '**** 4321' })));
     snackbar = {
       showSuccess: jest.fn(),
       showSuccessTranslated: jest.fn(),
@@ -74,6 +81,7 @@ describe('InvoiceDetailFacade', () => {
         },
         { provide: DialogService, useValue: { open: jest.fn() } },
         { provide: ConfirmDialogService, useValue: { confirmTranslated: confirmMock } },
+        { provide: AdminPayoutDetailsService, useValue: { getForEmployee: getForEmployeeMock } },
         { provide: SnackbarService, useValue: snackbar },
         {
           provide: TranslateService,
@@ -370,6 +378,19 @@ describe('InvoiceDetailFacade', () => {
     });
   });
 
+  it("names the pay period by its dates in the session's language", () => {
+    expect(
+      facade.formatPayPeriod(
+        EmployeeInvoiceDetailDto.fromJS({
+          payPeriodLabel: 'Nov 01 - Nov 14, 2026',
+          payPeriodStartDate: '2026-11-01',
+          payPeriodEndDate: '2026-11-14',
+        })
+      )
+    ).toBe('1. 11. 2026 – 14. 11. 2026');
+    expect(facade.formatPayPeriod(EmployeeInvoiceDetailDto.fromJS({}))).toBe('-');
+  });
+
   it('renders an absent amount and date as a dash', () => {
     expect(facade.formatCurrency(null)).toBe('-');
     expect(facade.formatCurrency(12.5, 'EUR')).toBe('12,50\u00a0€');
@@ -461,6 +482,108 @@ describe('InvoiceDetailFacade', () => {
         invoiceId: 'invoice-1',
         languageCode: 'cs',
       });
+    });
+  });
+
+  describe('the mark-paid confirm', () => {
+    beforeEach(() => {
+      detailsMock.mockReturnValue(
+        of({ id: 'invoice-1', employeeId: 'employee-1', status: EmployeeInvoiceStatus.Approved })
+      );
+      facade.loadInvoiceDetail('invoice-1');
+    });
+
+    it('opens on the masked account the invoice will be paid to, sending nothing yet', () => {
+      facade.toggleMarkPaid();
+
+      expect(facade.markPaidOpen()).toBe(true);
+      expect(getForEmployeeMock).toHaveBeenCalledWith('employee-1');
+      expect(facade.payoutDetails()?.maskedAccount).toBe('**** 4321');
+      expect(facade.payoutLoading()).toBe(false);
+      expect(facade.payoutFailed()).toBe(false);
+      expect(markPaidMock).not.toHaveBeenCalled();
+    });
+
+    it('tells an account not on file from one that failed to load', () => {
+      getForEmployeeMock.mockReturnValue(of(null));
+      facade.toggleMarkPaid();
+
+      expect(facade.payoutDetails()).toBeNull();
+      expect(facade.payoutFailed()).toBe(false);
+
+      facade.toggleMarkPaid();
+      expect(facade.markPaidOpen()).toBe(false);
+
+      getForEmployeeMock.mockReturnValue(throwError(() => new Error('boom')));
+      facade.toggleMarkPaid();
+
+      expect(facade.payoutDetails()).toBeNull();
+      expect(facade.payoutFailed()).toBe(true);
+      expect(facade.payoutLoading()).toBe(false);
+    });
+
+    it('sends the bank note typed in the confirm, trimmed', () => {
+      facade.toggleMarkPaid();
+      facade.setBankTransferNote('  FIO 2026-11-20 ref 88  ');
+
+      facade.confirmMarkPaid();
+
+      const command: MarkInvoicePaidCommand = markPaidMock.mock.calls[0][0];
+      expect(command).toBeInstanceOf(MarkInvoicePaidCommand);
+      expect(command.toJSON()).toEqual({
+        invoiceId: 'invoice-1',
+        bankTransferNote: 'FIO 2026-11-20 ref 88',
+        adminNotes: undefined,
+      });
+    });
+
+    it('sends no note when the field is blank', () => {
+      facade.toggleMarkPaid();
+      facade.setBankTransferNote('   ');
+
+      facade.confirmMarkPaid();
+
+      const command: MarkInvoicePaidCommand = markPaidMock.mock.calls[0][0];
+      expect(command.toJSON()).toEqual({
+        invoiceId: 'invoice-1',
+        bankTransferNote: undefined,
+        adminNotes: undefined,
+      });
+    });
+
+    it('starts each opening with an empty note', () => {
+      facade.toggleMarkPaid();
+      facade.setBankTransferNote('stale');
+      facade.toggleMarkPaid();
+
+      facade.toggleMarkPaid();
+
+      expect(facade.bankTransferNote()).toBe('');
+    });
+
+    it('closes and re-reads the invoice once the mark lands', () => {
+      facade.toggleMarkPaid();
+
+      facade.confirmMarkPaid();
+
+      expect(facade.markPaidOpen()).toBe(false);
+      expect(detailsMock).toHaveBeenCalledTimes(2);
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
+        'pages.invoice_detail.messages.mark_paid_success'
+      );
+    });
+
+    it('stays open with the note when the mark is refused', () => {
+      markPaidMock.mockReturnValue(throwError(() => new Error('payroll.invoice.not_approved')));
+      facade.toggleMarkPaid();
+      facade.setBankTransferNote('FIO 88');
+
+      facade.confirmMarkPaid();
+
+      expect(facade.markPaidOpen()).toBe(true);
+      expect(facade.bankTransferNote()).toBe('FIO 88');
+      expect(detailsMock).toHaveBeenCalledTimes(1);
+      expect(facade.actionLoading()).toBe(false);
     });
   });
 });

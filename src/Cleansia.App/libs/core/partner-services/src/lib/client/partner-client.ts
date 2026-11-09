@@ -7696,7 +7696,6 @@ export class DashboardStatsDto implements IDashboardStatsDto {
     currentPeriodEarnings!: number;
     currentPayPeriodStart!: Date | undefined;
     currentPayPeriodEnd!: Date | undefined;
-    nextPayoutDate!: Date | undefined;
     averageRating!: number | undefined;
     ratingCount!: number;
     latestInvoiceStatus!: string | undefined;
@@ -7725,7 +7724,6 @@ export class DashboardStatsDto implements IDashboardStatsDto {
             this.currentPeriodEarnings = Data["currentPeriodEarnings"];
             this.currentPayPeriodStart = Data["currentPayPeriodStart"] ? new Date(Data["currentPayPeriodStart"].toString()) : undefined as any;
             this.currentPayPeriodEnd = Data["currentPayPeriodEnd"] ? new Date(Data["currentPayPeriodEnd"].toString()) : undefined as any;
-            this.nextPayoutDate = Data["nextPayoutDate"] ? new Date(Data["nextPayoutDate"].toString()) : undefined as any;
             this.averageRating = Data["averageRating"];
             this.ratingCount = Data["ratingCount"];
             this.latestInvoiceStatus = Data["latestInvoiceStatus"];
@@ -7752,9 +7750,8 @@ export class DashboardStatsDto implements IDashboardStatsDto {
         data["weekCompletedCount"] = this.weekCompletedCount;
         data["lastMonthEarnings"] = this.lastMonthEarnings;
         data["currentPeriodEarnings"] = this.currentPeriodEarnings;
-        data["currentPayPeriodStart"] = this.currentPayPeriodStart ? this.currentPayPeriodStart.toISOString() : undefined as any;
-        data["currentPayPeriodEnd"] = this.currentPayPeriodEnd ? this.currentPayPeriodEnd.toISOString() : undefined as any;
-        data["nextPayoutDate"] = this.nextPayoutDate ? this.nextPayoutDate.toISOString() : undefined as any;
+        data["currentPayPeriodStart"] = this.currentPayPeriodStart ? formatDate(this.currentPayPeriodStart) : undefined as any;
+        data["currentPayPeriodEnd"] = this.currentPayPeriodEnd ? formatDate(this.currentPayPeriodEnd) : undefined as any;
         data["averageRating"] = this.averageRating;
         data["ratingCount"] = this.ratingCount;
         data["latestInvoiceStatus"] = this.latestInvoiceStatus;
@@ -7776,7 +7773,6 @@ export interface IDashboardStatsDto {
     currentPeriodEarnings: number;
     currentPayPeriodStart: Date | undefined;
     currentPayPeriodEnd: Date | undefined;
-    nextPayoutDate: Date | undefined;
     averageRating: number | undefined;
     ratingCount: number;
     latestInvoiceStatus: string | undefined;
@@ -8135,9 +8131,12 @@ export class EmployeeInvoiceDetailDto implements IEmployeeInvoiceDetailDto {
     employeeName!: string | undefined;
     payPeriodId!: string | undefined;
     payPeriodLabel!: string | undefined;
+    payPeriodStartDate!: Date | undefined;
+    payPeriodEndDate!: Date | undefined;
     invoiceNumber!: string | undefined;
     variableSymbol!: string | undefined;
     specificSymbol!: string | undefined;
+    constantSymbol!: string | undefined;
     paymentReference!: string | undefined;
     totalOrders!: number;
     subTotal!: number;
@@ -8176,9 +8175,12 @@ export class EmployeeInvoiceDetailDto implements IEmployeeInvoiceDetailDto {
             this.employeeName = Data["employeeName"];
             this.payPeriodId = Data["payPeriodId"];
             this.payPeriodLabel = Data["payPeriodLabel"];
+            this.payPeriodStartDate = Data["payPeriodStartDate"] ? new Date(Data["payPeriodStartDate"].toString()) : undefined as any;
+            this.payPeriodEndDate = Data["payPeriodEndDate"] ? new Date(Data["payPeriodEndDate"].toString()) : undefined as any;
             this.invoiceNumber = Data["invoiceNumber"];
             this.variableSymbol = Data["variableSymbol"];
             this.specificSymbol = Data["specificSymbol"];
+            this.constantSymbol = Data["constantSymbol"];
             this.paymentReference = Data["paymentReference"];
             this.totalOrders = Data["totalOrders"];
             this.subTotal = Data["subTotal"];
@@ -8221,9 +8223,12 @@ export class EmployeeInvoiceDetailDto implements IEmployeeInvoiceDetailDto {
         data["employeeName"] = this.employeeName;
         data["payPeriodId"] = this.payPeriodId;
         data["payPeriodLabel"] = this.payPeriodLabel;
+        data["payPeriodStartDate"] = this.payPeriodStartDate ? formatDate(this.payPeriodStartDate) : undefined as any;
+        data["payPeriodEndDate"] = this.payPeriodEndDate ? formatDate(this.payPeriodEndDate) : undefined as any;
         data["invoiceNumber"] = this.invoiceNumber;
         data["variableSymbol"] = this.variableSymbol;
         data["specificSymbol"] = this.specificSymbol;
+        data["constantSymbol"] = this.constantSymbol;
         data["paymentReference"] = this.paymentReference;
         data["totalOrders"] = this.totalOrders;
         data["subTotal"] = this.subTotal;
@@ -8259,9 +8264,12 @@ export interface IEmployeeInvoiceDetailDto {
     employeeName: string | undefined;
     payPeriodId: string | undefined;
     payPeriodLabel: string | undefined;
+    payPeriodStartDate: Date | undefined;
+    payPeriodEndDate: Date | undefined;
     invoiceNumber: string | undefined;
     variableSymbol: string | undefined;
     specificSymbol: string | undefined;
+    constantSymbol: string | undefined;
     paymentReference: string | undefined;
     totalOrders: number;
     subTotal: number;
@@ -8291,6 +8299,8 @@ export class EmployeeInvoiceDto implements IEmployeeInvoiceDto {
     employeeName!: string | undefined;
     payPeriodId!: string | undefined;
     payPeriodLabel!: string | undefined;
+    payPeriodStartDate!: Date | undefined;
+    payPeriodEndDate!: Date | undefined;
     invoiceNumber!: string | undefined;
     variableSymbol!: string | undefined;
     paymentReference!: string | undefined;
@@ -8330,6 +8340,8 @@ export class EmployeeInvoiceDto implements IEmployeeInvoiceDto {
             this.employeeName = Data["employeeName"];
             this.payPeriodId = Data["payPeriodId"];
             this.payPeriodLabel = Data["payPeriodLabel"];
+            this.payPeriodStartDate = Data["payPeriodStartDate"] ? new Date(Data["payPeriodStartDate"].toString()) : undefined as any;
+            this.payPeriodEndDate = Data["payPeriodEndDate"] ? new Date(Data["payPeriodEndDate"].toString()) : undefined as any;
             this.invoiceNumber = Data["invoiceNumber"];
             this.variableSymbol = Data["variableSymbol"];
             this.paymentReference = Data["paymentReference"];
@@ -8369,6 +8381,8 @@ export class EmployeeInvoiceDto implements IEmployeeInvoiceDto {
         data["employeeName"] = this.employeeName;
         data["payPeriodId"] = this.payPeriodId;
         data["payPeriodLabel"] = this.payPeriodLabel;
+        data["payPeriodStartDate"] = this.payPeriodStartDate ? formatDate(this.payPeriodStartDate) : undefined as any;
+        data["payPeriodEndDate"] = this.payPeriodEndDate ? formatDate(this.payPeriodEndDate) : undefined as any;
         data["invoiceNumber"] = this.invoiceNumber;
         data["variableSymbol"] = this.variableSymbol;
         data["paymentReference"] = this.paymentReference;
@@ -8401,6 +8415,8 @@ export interface IEmployeeInvoiceDto {
     employeeName: string | undefined;
     payPeriodId: string | undefined;
     payPeriodLabel: string | undefined;
+    payPeriodStartDate: Date | undefined;
+    payPeriodEndDate: Date | undefined;
     invoiceNumber: string | undefined;
     variableSymbol: string | undefined;
     paymentReference: string | undefined;
@@ -12818,6 +12834,7 @@ export enum PayLineType {
     Job = 0,
     CancellationFeeShare = 1,
     LockoutFeeShare = 2,
+    DisputeCharge = 3,
 }
 
 export class PayPeriodDto implements IPayPeriodDto {
@@ -12832,6 +12849,9 @@ export class PayPeriodDto implements IPayPeriodDto {
     paidAt!: Date | undefined;
     notes!: string | undefined;
     latestEndDate!: Date;
+    invoiceCount!: number | undefined;
+    unpaidInvoiceCount!: number | undefined;
+    uninvoicedPayCount!: number | undefined;
 
     constructor(data?: IPayPeriodDto) {
         if (data) {
@@ -12855,6 +12875,9 @@ export class PayPeriodDto implements IPayPeriodDto {
             this.paidAt = Data["paidAt"] ? new Date(Data["paidAt"].toString()) : undefined as any;
             this.notes = Data["notes"];
             this.latestEndDate = Data["latestEndDate"] ? new Date(Data["latestEndDate"].toString()) : undefined as any;
+            this.invoiceCount = Data["invoiceCount"];
+            this.unpaidInvoiceCount = Data["unpaidInvoiceCount"];
+            this.uninvoicedPayCount = Data["uninvoicedPayCount"];
         }
     }
 
@@ -12878,6 +12901,9 @@ export class PayPeriodDto implements IPayPeriodDto {
         data["paidAt"] = this.paidAt ? this.paidAt.toISOString() : undefined as any;
         data["notes"] = this.notes;
         data["latestEndDate"] = this.latestEndDate ? formatDate(this.latestEndDate) : undefined as any;
+        data["invoiceCount"] = this.invoiceCount;
+        data["unpaidInvoiceCount"] = this.unpaidInvoiceCount;
+        data["uninvoicedPayCount"] = this.uninvoicedPayCount;
         return data;
     }
 }
@@ -12894,6 +12920,9 @@ export interface IPayPeriodDto {
     paidAt: Date | undefined;
     notes: string | undefined;
     latestEndDate: Date;
+    invoiceCount: number | undefined;
+    unpaidInvoiceCount: number | undefined;
+    uninvoicedPayCount: number | undefined;
 }
 
 export enum PayPeriodStatus {
@@ -13046,6 +13075,8 @@ export interface IPeriodCurrencyDto {
 export class PeriodPaySummaryDto implements IPeriodPaySummaryDto {
     payPeriodId!: string | undefined;
     payPeriodLabel!: string | undefined;
+    payPeriodStartDate!: Date | undefined;
+    payPeriodEndDate!: Date | undefined;
     employeeId!: string | undefined;
     employeeName!: string | undefined;
     totalOrders!: number;
@@ -13075,6 +13106,8 @@ export class PeriodPaySummaryDto implements IPeriodPaySummaryDto {
         if (Data) {
             this.payPeriodId = Data["payPeriodId"];
             this.payPeriodLabel = Data["payPeriodLabel"];
+            this.payPeriodStartDate = Data["payPeriodStartDate"] ? new Date(Data["payPeriodStartDate"].toString()) : undefined as any;
+            this.payPeriodEndDate = Data["payPeriodEndDate"] ? new Date(Data["payPeriodEndDate"].toString()) : undefined as any;
             this.employeeId = Data["employeeId"];
             this.employeeName = Data["employeeName"];
             this.totalOrders = Data["totalOrders"];
@@ -13112,6 +13145,8 @@ export class PeriodPaySummaryDto implements IPeriodPaySummaryDto {
         data = typeof data === 'object' ? data : {};
         data["payPeriodId"] = this.payPeriodId;
         data["payPeriodLabel"] = this.payPeriodLabel;
+        data["payPeriodStartDate"] = this.payPeriodStartDate ? formatDate(this.payPeriodStartDate) : undefined as any;
+        data["payPeriodEndDate"] = this.payPeriodEndDate ? formatDate(this.payPeriodEndDate) : undefined as any;
         data["employeeId"] = this.employeeId;
         data["employeeName"] = this.employeeName;
         data["totalOrders"] = this.totalOrders;
@@ -13142,6 +13177,8 @@ export class PeriodPaySummaryDto implements IPeriodPaySummaryDto {
 export interface IPeriodPaySummaryDto {
     payPeriodId: string | undefined;
     payPeriodLabel: string | undefined;
+    payPeriodStartDate: Date | undefined;
+    payPeriodEndDate: Date | undefined;
     employeeId: string | undefined;
     employeeName: string | undefined;
     totalOrders: number;

@@ -77,6 +77,19 @@ public class GetPeriodPaysCurrencyScopeTests
     }
 
     [Fact]
+    public async Task The_Summary_Carries_Its_Periods_Calendar_Dates_Beside_The_Label()
+    {
+        ArrangeInvoices([]);
+        ArrangePays(PayrollMockFactory.OrderPay(basePay: 300m));
+
+        var result = await CreateHandler().Handle(new GetPeriodPays.Query(EmployeeId, PayPeriodId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal((new DateOnly(2026, 1, 1), new DateOnly(2026, 1, 14)), (result.Value!.PayPeriodStartDate, result.Value.PayPeriodEndDate));
+        Assert.Equal(PayrollMockFactory.OpenPeriod().GetPeriodLabel(), result.Value.PayPeriodLabel);
+    }
+
+    [Fact]
     public async Task A_Period_Invoiced_Only_In_Another_Currency_Shows_That_Invoice_And_Its_Rows()
     {
         var eurInvoice = InvoiceIn(EurId, "EUR");

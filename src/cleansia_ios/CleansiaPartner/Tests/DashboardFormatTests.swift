@@ -50,6 +50,51 @@ final class DashboardFormatTests: XCTestCase {
         XCTAssertFalse(try compactSource("Dashboard/DashboardFormat.swift").contains("plainMoney"))
     }
 
+    // MARK: - The pay period
+
+    /// The period's days are the server's calendar days and today is the phone's. At 21:00 on the 15th in Los
+    /// Angeles, already the 16th in Prague, a period of the 3rd to the 16th is on its 13th day of 14 with one left.
+    func testThePeriodCountsCalendarDaysFromThePhonesToday() throws {
+        let start = try utcDay("2026-11-03")
+        let end = try utcDay("2026-11-16")
+        let now = try XCTUnwrap(ISO8601DateFormatter().date(from: "2026-11-16T05:00:00Z"))
+        let window = try XCTUnwrap(PayPeriodWindow(stats: .stub(
+            currentPayPeriodStart: start,
+            currentPayPeriodEnd: end
+        )))
+        let expected: [String: (day: Int, left: Int)] = ["America/Los_Angeles": (13, 1), "Europe/Prague": (14, 0)]
+
+        for (zone, want) in expected {
+            let timeZone = try XCTUnwrap(TimeZone(identifier: zone))
+            let progress = DashboardFormat.payPeriodProgress(start: start, end: end, now: now, timeZone: timeZone)
+            XCTAssertEqual(progress.day, want.day, zone)
+            XCTAssertEqual(progress.total, 14, zone)
+            XCTAssertEqual(window.daysRemaining(now: now, timeZone: timeZone), want.left, zone)
+        }
+    }
+
+    func testTheFigureIsThisPeriodsPayNotYetInvoicedAndSaysWhenItWillBe() throws {
+        L10n.bundle = try localeBundle("en")
+        XCTAssertEqual(L10n.Earnings.currentPeriod, "This period, not invoiced yet")
+        XCTAssertEqual(L10n.Earnings.invoicedOnClose("Nov 16, 2026"), "Invoiced when the period closes on Nov 16, 2026")
+        for language in ["cs", "sk", "uk", "ru"] {
+            L10n.bundle = try localeBundle(language)
+            XCTAssertTrue(L10n.Earnings.invoicedOnClose("16.").hasSuffix(" 16."), language)
+            XCTAssertNotEqual(L10n.Earnings.currentPeriod, "This period, not invoiced yet", language)
+        }
+    }
+
+    /// Both cards label the figure and name the day the period closes into an invoice, and neither promises a
+    /// payout date: payouts are manual transfers until they are automated.
+    func testBothPeriodCardsSayWhenThePayIsInvoicedAndNeverWhenItIsPaid() throws {
+        for path in ["Dashboard/DashboardCards.swift", "Earnings/EarningsContent.swift"] {
+            let source = try compactSource(path)
+            XCTAssertTrue(source.contains("Text(L10n.Earnings.currentPeriod)"), path)
+            XCTAssertTrue(source.contains("L10n.Earnings.invoicedOnClose(CalendarDay.text("), path)
+            XCTAssertFalse(source.lowercased().contains("payout"), path)
+        }
+    }
+
     // MARK: - The next job's hero
 
     func testTheLabelFollowsTheJobsStatus() throws {
@@ -169,6 +214,10 @@ final class DashboardFormatTests: XCTestCase {
 
     private let english = Locale(identifier: "en")
     private let russian = Locale(identifier: "ru")
+
+    private func utcDay(_ text: String) throws -> Date {
+        try XCTUnwrap(ISO8601DateFormatter().date(from: "\(text)T00:00:00Z"))
+    }
 
     private func at(year: Int = 2026, month: Int = 11, day: Int, hour: Int, minute: Int = 0) -> Date {
         let components = DateComponents(year: year, month: month, day: day, hour: hour, minute: minute)

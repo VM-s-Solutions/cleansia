@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.PayPeriods.DTOs;
 using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Tenancy;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
@@ -28,7 +29,9 @@ public class GetPayPeriodById
 
     internal class Handler(
         IPayPeriodRepository payPeriodRepository,
-        IPayPeriodClosingConfig payPeriodClosingConfig)
+        IPayPeriodClosingConfig payPeriodClosingConfig,
+        ICompanySettlementReader settlementReader,
+        IEmployeeInvoiceRepository employeeInvoiceRepository)
         : IQueryHandler<Query, PayPeriodDto>
     {
         public async Task<BusinessResult<PayPeriodDto>> Handle(Query query, CancellationToken cancellationToken)
@@ -40,7 +43,17 @@ public class GetPayPeriodById
                     nameof(query.PayPeriodId), BusinessErrorMessage.PayPeriodNotFound));
             }
 
-            return BusinessResult.Success(payPeriod.MapToDto(payPeriodClosingConfig.LengthInDays));
+            var (unpaidInvoices, uninvoicedPayRows) =
+                await settlementReader.ReadPayPeriodAsync(payPeriod.Id, cancellationToken);
+            var invoiceCount = await employeeInvoiceRepository.GetCountAsync(
+                i => i.PayPeriodId == payPeriod.Id, cancellationToken);
+
+            return BusinessResult.Success(payPeriod.MapToDto(payPeriodClosingConfig.LengthInDays) with
+            {
+                InvoiceCount = invoiceCount,
+                UnpaidInvoiceCount = unpaidInvoices,
+                UninvoicedPayCount = uninvoicedPayRows,
+            });
         }
     }
 }

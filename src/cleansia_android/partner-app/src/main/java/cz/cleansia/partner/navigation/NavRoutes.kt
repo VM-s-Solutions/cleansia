@@ -65,7 +65,7 @@ sealed interface NavRoute {
      * Pay & Earnings summary — destination from the dashboard earnings
      * card and the Quick Action "Pay history" tile. Always shows
      * meaningful content (today/week/month earnings, pay-period
-     * progress, next payout) even for cleaners with no invoices yet;
+     * progress) even for cleaners with no invoices yet;
      * drills into [Invoices] for full history.
      */
     @Serializable data object Earnings : NavRoute

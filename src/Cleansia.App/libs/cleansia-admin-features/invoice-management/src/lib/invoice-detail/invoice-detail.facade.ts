@@ -1,17 +1,19 @@
 import { Injectable, inject, signal } from '@angular/core';
 import {
   AdminClient,
+  AdminPayoutDetailsService,
   ApproveInvoiceCommand,
   AssignInvoiceVariableSymbolCommand,
   CancelInvoiceCommand,
   EmployeeInvoiceDetailDto,
   EmployeeInvoiceStatus,
   MarkInvoicePaidCommand,
+  MaskedPayoutDetails,
   RegenerateInvoicePdfCommand,
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { DialogService as ConfirmDialogService, SnackbarService } from '@cleansia/services';
-import { formatDate, formatMoney, localeFor } from '@cleansia/utils';
+import { formatDate, formatMoney, formatPayPeriodRange, localeFor } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
 import { catchError, filter, finalize, of, takeUntil } from 'rxjs';
@@ -28,10 +30,17 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
   private readonly dialogService = inject(DialogService);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
+  private readonly payoutDetailsService = inject(AdminPayoutDetailsService);
 
   readonly invoice = signal<EmployeeInvoiceDetailDto | null>(null);
   readonly loading = signal<boolean>(false);
   readonly actionLoading = signal<boolean>(false);
+
+  readonly markPaidOpen = signal<boolean>(false);
+  readonly bankTransferNote = signal<string>('');
+  readonly payoutDetails = signal<MaskedPayoutDetails | null>(null);
+  readonly payoutLoading = signal<boolean>(false);
+  readonly payoutFailed = signal<boolean>(false);
 
   loadInvoiceDetail(invoiceId: string): void {
     this.loading.set(true);
@@ -78,6 +87,27 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
       });
   }
 
+  toggleMarkPaid(): void {
+    if (this.markPaidOpen()) {
+      this.markPaidOpen.set(false);
+      return;
+    }
+    const employeeId = this.invoice()?.employeeId;
+    if (!employeeId) return;
+
+    this.bankTransferNote.set('');
+    this.markPaidOpen.set(true);
+    this.loadPayoutDetails(employeeId);
+  }
+
+  setBankTransferNote(value: string): void {
+    this.bankTransferNote.set(value);
+  }
+
+  confirmMarkPaid(): void {
+    this.markAsPaid(this.bankTransferNote().trim() || undefined);
+  }
+
   markAsPaid(bankTransferNote?: string): void {
     const inv = this.invoice();
     if (!inv?.id) return;
@@ -102,9 +132,28 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
           this.snackbarService.showSuccessTranslated(
             'pages.invoice_detail.messages.mark_paid_success'
           );
+          this.markPaidOpen.set(false);
           this.loadInvoiceDetail(invoiceId);
         }
       });
+  }
+
+  private loadPayoutDetails(employeeId: string): void {
+    this.payoutLoading.set(true);
+    this.payoutFailed.set(false);
+    this.payoutDetails.set(null);
+
+    this.payoutDetailsService
+      .getForEmployee(employeeId)
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => {
+          this.payoutFailed.set(true);
+          return of(null);
+        }),
+        finalize(() => this.payoutLoading.set(false))
+      )
+      .subscribe((details) => this.payoutDetails.set(details));
   }
 
   assignVariableSymbol(): void {
@@ -282,6 +331,16 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
 
   formatDateTime(date: string | Date | null | undefined): string {
     return formatDate(date, this.translate.currentLang, 'dateTime') || '-';
+  }
+
+  formatPayPeriod(invoice: EmployeeInvoiceDetailDto): string {
+    return (
+      formatPayPeriodRange(
+        invoice.payPeriodStartDate,
+        invoice.payPeriodEndDate,
+        this.translate.currentLang
+      ) || '-'
+    );
   }
 
   formatCurrency(

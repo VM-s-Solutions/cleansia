@@ -11,6 +11,7 @@ final class InvoicesListViewModel: ViewModel {
     private let staleness: InvoicesStaleness
     private let snackbar: SnackbarController
     private var inFlight = false
+    private var employeeId: String?
 
     init(client: PartnerPayrollClient, staleness: InvoicesStaleness, snackbar: SnackbarController) {
         self.client = client
@@ -50,15 +51,14 @@ final class InvoicesListViewModel: ViewModel {
         }
         defer { refreshPhase = .idle }
 
-        // E1: resolve the caller's OWN employeeId server-side and query only
-        // that. An unresolvable id yields an empty list — never a blind or
-        // foreign-scoped query.
-        guard case let .success(employeeId) = await client.currentEmployeeId() else {
-            state = .loaded([])
-            return
+        let result: ApiResult<[Invoice]> = switch await ownEmployeeId() {
+        case let .success(id):
+            await client.getPagedInvoices(employeeId: id)
+        case let .failure(error):
+            .failure(error)
         }
 
-        switch await client.getPagedInvoices(employeeId: employeeId) {
+        switch result {
         case let .success(invoices):
             state = .loaded(invoices)
             staleness.markFresh()
@@ -68,5 +68,16 @@ final class InvoicesListViewModel: ViewModel {
                 state = .error(error)
             }
         }
+    }
+
+    /// Never unscoped: the server keeps an administrator's filter as sent, so a read without the caller's own id
+    /// would list the company's invoices. Kept once read, so a refresh has one request fewer to fail on.
+    private func ownEmployeeId() async -> ApiResult<String> {
+        if let employeeId { return .success(employeeId) }
+        let result = await client.currentEmployeeId()
+        if case let .success(id) = result {
+            employeeId = id
+        }
+        return result
     }
 }

@@ -281,7 +281,8 @@
     "pay_line_type": {
       "job": "Zakázka",
       "cancellation_fee_share": "Podíl z poplatku za zrušení",
-      "lockout_fee_share": "Odměna za zakázku — znemožněný vstup"
+      "lockout_fee_share": "Odměna za zakázku — znemožněný vstup",
+      "dispute_charge": "Srážka ze sporu"
     }
   },
   "sidebar": {
@@ -859,6 +860,8 @@
       "pay_period": "Platební období",
       "total_orders": "Objednávky",
       "total_amount": "Celková částka",
+      "cash_set_off": "Započtená hotovost",
+      "transfer_amount": "K převodu",
       "status": "Stav",
       "pdf_status": "PDF",
       "generated_at": "Vygenerováno",
@@ -870,6 +873,7 @@
         "search": "Vyhledávání",
         "search_placeholder": "Hledat dle čísla faktury nebo partnera",
         "status": "Stav faktury",
+        "pay_period": "Platební období",
         "currency": "Měna"
       },
       "invoice_status": {
@@ -1075,6 +1079,7 @@
       "employee_name": "Partner",
       "pay_period": "Platební období",
       "variable_symbol": "Variabilní symbol",
+      "constant_symbol": "Konstantní symbol",
       "specific_symbol": "Specifický symbol",
       "total_orders": "Celkem objednávek",
       "generated_at": "Vygenerováno",
@@ -1083,6 +1088,8 @@
       "bonus_amount": "Bonusy",
       "deduction_amount": "Srážky",
       "total_amount": "Celková částka",
+      "cash_set_off": "Započtená hotovost",
+      "transfer_amount": "Částka k převodu",
       "approval_payment_info": "Informace o schválení a platbě",
       "approved_at": "Schváleno dne",
       "approved_by": "Schválil",
@@ -1121,6 +1128,10 @@
         "title": "Přiřadit variabilní symbol?",
         "message": "Tímto faktuře přidělíte variabilní symbol a přegenerujete její PDF. Číslo už nelze změnit, znovu použít ani přidělit jiné faktuře.",
         "yes": "Přiřadit"
+      },
+      "mark_paid_confirm": {
+        "hint": "Pošlete částku k převodu na bankovní účet partnera s těmito symboly a pak to zde potvrďte. Zaplacenou fakturu už nelze změnit.",
+        "submit": "Potvrdit odeslání převodu"
       },
       "messages": {
         "load_error": "Nepodařilo se načíst detail faktury",
@@ -3073,7 +3084,6 @@
       "filter_by_year": "Filtrovat podle roku",
       "reset": "Resetovat filtry",
       "columns": {
-        "period_label": "Období",
         "start_date": "Datum začátku",
         "end_date": "Datum konce",
         "duration": "Délka trvání",
@@ -3083,9 +3093,12 @@
         "actions": "Akce"
       },
       "view_details": "Zobrazit detail",
-      "no_records": "Nebyla nalezena žádná platební období",
-      "days": "dní"
+      "no_records": "Nebyla nalezena žádná platební období"
     },
+    "days_one": "{{count}} den",
+    "days_few": "{{count}} dny",
+    "days_many": "{{count}} dne",
+    "days_other": "{{count}} dní",
     "detail": {
       "title": "Detail platebního období",
       "back_to_list": "Zpět na platební období",
@@ -3097,26 +3110,35 @@
       "start_date": "Datum začátku",
       "end_date": "Datum konce",
       "duration": "Délka trvání",
-      "days": "dní",
       "closed_at": "Uzavřeno dne",
       "closed_by": "Uzavřel",
+      "paid_at": "Zaplaceno dne",
       "notes": "Poznámky",
       "created_at": "Vytvořeno dne",
       "created_by": "Vytvořil",
       "modified_at": "Upraveno dne",
       "modified_by": "Upravil",
       "not_found": "Platební období nenalezeno",
+      "invoices": {
+        "title": "Faktury",
+        "all": "Všechny faktury",
+        "unpaid": "Nezaplacené faktury",
+        "uninvoiced_pay": "Položky odměn bez faktury",
+        "view": "Zobrazit faktury"
+      },
       "ops": {
         "title": "Operace vyúčtování",
         "close_now": {
           "action": "Uzavřít nyní",
           "hint": "Toto období skončí dnes místo {{ end }}. Přibližně do 20 minut dostane každý uklízeč, který v něm má odměnu, fakturu e-mailem. Další období začne zítra, potrvá nastavený počet dní ({{ days }}) a připadnou do něj zakázky dokončené po uzavření. Uzavřené období nelze znovu otevřít.",
+          "hint_past_end": "Toto období skončilo {{ end }} a ještě nebylo uzavřeno. Přibližně do 20 minut dostane každý uklízeč, který v něm má odměnu, fakturu e-mailem. Další období začíná {{ next }}, potrvá nastavený počet dní ({{ days }}) a připadnou do něj zakázky dokončené po uzavření. Uzavřené období nelze znovu otevřít.",
           "reason": "Důvod (uloží se do auditního záznamu)",
           "submit": "Uzavřít období nyní"
         },
         "mark_paid": {
           "action": "Označit období jako zaplacené",
           "hint": "Označte toto uzavřené platební období jako zaplacené. Tím se vyúčtování dokončí.",
+          "blocked": "Dostupné, až budou všechny faktury tohoto období zaplacené nebo zrušené a všechny jeho odměny vyfakturované.",
           "submit": "Potvrdit zaplacení",
           "success": "Platební období bylo označeno jako zaplacené"
         }

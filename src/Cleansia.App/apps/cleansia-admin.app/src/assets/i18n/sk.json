@@ -281,7 +281,8 @@
     "pay_line_type": {
       "job": "Zákazka",
       "cancellation_fee_share": "Podiel z poplatku za zrušenie",
-      "lockout_fee_share": "Odmena za zákazku — znemožnený vstup"
+      "lockout_fee_share": "Odmena za zákazku — znemožnený vstup",
+      "dispute_charge": "Zrážka z reklamácie"
     }
   },
   "sidebar": {
@@ -859,6 +860,8 @@
       "pay_period": "Výplatné obdobie",
       "total_orders": "Objednávky",
       "total_amount": "Celková suma",
+      "cash_set_off": "Započítaná hotovosť",
+      "transfer_amount": "Na prevod",
       "status": "Stav",
       "pdf_status": "PDF",
       "generated_at": "Vygenerované",
@@ -870,6 +873,7 @@
         "search": "Hľadať",
         "search_placeholder": "Hľadať podľa čísla faktúry alebo partnera",
         "status": "Stav faktúry",
+        "pay_period": "Výplatné obdobie",
         "currency": "Mena"
       },
       "invoice_status": {
@@ -2120,6 +2124,7 @@
       "employee_name": "Partner",
       "pay_period": "Výplatné obdobie",
       "variable_symbol": "Variabilný symbol",
+      "constant_symbol": "Konštantný symbol",
       "specific_symbol": "Špecifický symbol",
       "total_orders": "Celkový počet objednávok",
       "generated_at": "Vygenerované dňa",
@@ -2128,6 +2133,8 @@
       "bonus_amount": "Bonus",
       "deduction_amount": "Zrážka",
       "total_amount": "Celková suma",
+      "cash_set_off": "Započítaná hotovosť",
+      "transfer_amount": "Suma na prevod",
       "approval_payment_info": "Informácie o schválení a platbe",
       "approved_at": "Schválené dňa",
       "approved_by": "Schválil",
@@ -2166,6 +2173,10 @@
         "title": "Priradiť variabilný symbol?",
         "message": "Týmto faktúre pridelíte variabilný symbol a obnovíte jej PDF. Číslo už nemožno zmeniť, znova použiť ani prideliť inej faktúre.",
         "yes": "Priradiť"
+      },
+      "mark_paid_confirm": {
+        "hint": "Pošlite sumu na prevod na bankový účet partnera s týmito symbolmi a potom to tu potvrďte. Zaplatenú faktúru už nemožno zmeniť.",
+        "submit": "Potvrdiť odoslanie prevodu"
       },
       "messages": {
         "load_error": "Nepodarilo sa načítať detail faktúry",
@@ -3073,7 +3084,6 @@
       "filter_by_year": "Filtrovať podľa roku",
       "reset": "Obnoviť filtre",
       "columns": {
-        "period_label": "Obdobie",
         "start_date": "Dátum začiatku",
         "end_date": "Dátum konca",
         "duration": "Trvanie",
@@ -3083,9 +3093,12 @@
         "actions": "Akcie"
       },
       "view_details": "Zobraziť detail",
-      "no_records": "Žiadne výplatné obdobia",
-      "days": "dní"
+      "no_records": "Žiadne výplatné obdobia"
     },
+    "days_one": "{{count}} deň",
+    "days_few": "{{count}} dni",
+    "days_many": "{{count}} dňa",
+    "days_other": "{{count}} dní",
     "detail": {
       "title": "Detail výplatného obdobia",
       "back_to_list": "Späť na výplatné obdobia",
@@ -3097,26 +3110,35 @@
       "start_date": "Dátum začiatku",
       "end_date": "Dátum konca",
       "duration": "Trvanie",
-      "days": "dní",
       "closed_at": "Uzavreté dňa",
       "closed_by": "Uzavrel",
+      "paid_at": "Zaplatené dňa",
       "notes": "Poznámky",
       "created_at": "Vytvorené dňa",
       "created_by": "Vytvoril",
       "modified_at": "Upravené dňa",
       "modified_by": "Upravil",
       "not_found": "Výplatné obdobie nebolo nájdené",
+      "invoices": {
+        "title": "Faktúry",
+        "all": "Všetky faktúry",
+        "unpaid": "Nezaplatené faktúry",
+        "uninvoiced_pay": "Položky odmien bez faktúry",
+        "view": "Zobraziť faktúry"
+      },
       "ops": {
         "title": "Operácie vyúčtovania",
         "close_now": {
           "action": "Uzavrieť teraz",
           "hint": "Toto obdobie sa skončí dnes namiesto {{ end }}. Približne do 20 minút dostane každý upratovač, ktorý v ňom má odmenu, faktúru e-mailom. Ďalšie obdobie sa začne zajtra, potrvá nastavený počet dní ({{ days }}) a pripadnú doň zákazky dokončené po uzavretí. Uzavreté obdobie nemožno znova otvoriť.",
+          "hint_past_end": "Toto obdobie sa skončilo {{ end }} a ešte nebolo uzavreté. Približne do 20 minút dostane každý upratovač, ktorý v ňom má odmenu, faktúru e-mailom. Ďalšie obdobie sa začína {{ next }}, potrvá nastavený počet dní ({{ days }}) a pripadnú doň zákazky dokončené po uzavretí. Uzavreté obdobie nemožno znova otvoriť.",
           "reason": "Dôvod (uloží sa do auditného záznamu)",
           "submit": "Uzavrieť obdobie teraz"
         },
         "mark_paid": {
           "action": "Označiť obdobie ako zaplatené",
           "hint": "Označte toto uzavreté výplatné obdobie ako zaplatené. Tým sa vyúčtovanie dokončí.",
+          "blocked": "Dostupné, keď budú všetky faktúry tohto obdobia zaplatené alebo zrušené a všetky jeho odmeny vyfakturované.",
           "submit": "Potvrdiť zaplatenie",
           "success": "Výplatné obdobie bolo označené ako zaplatené"
         }

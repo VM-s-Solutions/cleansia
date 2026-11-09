@@ -53,16 +53,31 @@ export class AdminPayPeriodOpsComponent {
     () => this.payPeriod().status === PayPeriodStatus[PayPeriodStatus.Closed]
   );
 
+  readonly canMarkPaid = computed(() => {
+    const payPeriod = this.payPeriod();
+    return !payPeriod.unpaidInvoiceCount && !payPeriod.uninvoicedPayCount;
+  });
+
   // Close now's successor runs the configured length, which reaches the client only as this period's latest end.
   readonly closeNowHint = computed(() => {
     const payPeriod = this.payPeriod();
+    const nextStart = new Date(payPeriod.endDate.getTime() + DAY_MS);
     return {
-      end: formatDate(payPeriod.endDate, this.lang(), 'utcDate'),
-      days:
-        Math.round(
-          (payPeriod.latestEndDate.getTime() - payPeriod.startDate.getTime()) /
-            DAY_MS
-        ) + 1,
+      // Past its end the server keeps the end and starts the next period the day after it, not tomorrow.
+      key:
+        Date.now() >= nextStart.getTime()
+          ? 'pay_periods.detail.ops.close_now.hint_past_end'
+          : 'pay_periods.detail.ops.close_now.hint',
+      params: {
+        end: formatDate(payPeriod.endDate, this.lang(), 'utcDate'),
+        next: formatDate(nextStart, this.lang(), 'utcDate'),
+        days:
+          Math.round(
+            (payPeriod.latestEndDate.getTime() -
+              payPeriod.startDate.getTime()) /
+              DAY_MS
+          ) + 1,
+      },
     };
   });
 

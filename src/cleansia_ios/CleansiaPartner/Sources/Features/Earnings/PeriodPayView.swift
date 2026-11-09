@@ -78,7 +78,8 @@ private struct PeriodPayErrorView: View {
 
         private static var sample: PeriodPaySummary {
             PeriodPaySummary(
-                payPeriodLabel: "1 – 15 Jun 2026",
+                payPeriodStart: Date(timeIntervalSince1970: 1_780_272_000),
+                payPeriodEnd: Date(timeIntervalSince1970: 1_781_481_600),
                 totalOrders: 3,
                 totalBasePay: 3600,
                 totalExtrasPay: 300,
@@ -104,7 +105,8 @@ private struct PeriodPayErrorView: View {
 
         private static var emptySample: PeriodPaySummary {
             PeriodPaySummary(
-                payPeriodLabel: nil,
+                payPeriodStart: nil,
+                payPeriodEnd: nil,
                 totalOrders: 0,
                 totalBasePay: 0,
                 totalExtrasPay: 0,

@@ -44,8 +44,7 @@ struct EarningsView: View {
 
     private func openInvoiceDeepLink(_ invoiceId: String?) {
         guard let invoiceId else { return }
-        path.append(EarningsRoute.invoices)
-        path.append(EarningsRoute.invoiceDetail(id: invoiceId))
+        path = NavigationPath([EarningsRoute.invoices, .invoiceDetail(id: invoiceId)])
         deepLinkInvoiceId = nil
     }
 
@@ -134,7 +133,6 @@ struct EarningsView: View {
                 averageRating: 4.8,
                 currentPayPeriodStart: Date(timeIntervalSinceNow: -6 * 86400),
                 currentPayPeriodEnd: Date(timeIntervalSinceNow: 8 * 86400),
-                nextPayoutDate: Date(timeIntervalSinceNow: 8 * 86400),
                 latestInvoiceStatus: nil,
                 currencyCode: "CZK"
             )

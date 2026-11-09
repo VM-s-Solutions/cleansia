@@ -87,6 +87,7 @@ export class PayPeriodManagementComponent implements OnInit {
 
   ngOnInit(): void {
     this.facade.loadPayPeriods();
+    this.facade.loadOpenPeriod();
   }
 
   viewPayPeriodDetails(payPeriod: PayPeriodDto): void {

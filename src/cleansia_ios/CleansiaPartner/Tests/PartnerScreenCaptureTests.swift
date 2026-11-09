@@ -202,11 +202,13 @@ final class PartnerScreenCaptureTests: XCTestCase {
         let issued = Date(timeIntervalSince1970: 1_762_340_400)
         let invoices = [
             Invoice.stub(
-                id: "inv-2", invoiceNumber: "INV-2026-0042", payPeriodLabel: "1 – 15 Oct 2026", totalOrders: 9,
+                id: "inv-2", invoiceNumber: "INV-2026-0042", payPeriodStart: Date(timeIntervalSince1970: 1_790_812_800),
+                payPeriodEnd: Date(timeIntervalSince1970: 1_792_022_400), totalOrders: 9,
                 totalAmount: 4120.3, status: ._1, generatedAt: issued
             ),
             Invoice.stub(
-                id: "inv-1", invoiceNumber: "INV-2026-0041", payPeriodLabel: "16 – 30 Sep 2026", totalOrders: 12,
+                id: "inv-1", invoiceNumber: "INV-2026-0041", payPeriodStart: Date(timeIntervalSince1970: 1_789_516_800),
+                payPeriodEnd: Date(timeIntervalSince1970: 1_790_726_400), totalOrders: 12,
                 totalAmount: 5312.75, status: ._2, generatedAt: issued.addingTimeInterval(-15 * 86400),
                 paidAt: issued.addingTimeInterval(-10 * 86400)
             )

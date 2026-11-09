@@ -95,6 +95,7 @@
             </div>
           </form>
         </cleansia-filter-drawer>
+        @if (!facade.hasOpenPeriod()) {
         <cleansia-button
           *cleansiaPermission="Policy.CanCreatePayPeriod"
           [label]="'pay_periods.create_new' | translate"
@@ -102,6 +103,7 @@
           severity="primary"
           (onClick)="openCreateDialog()"
         />
+        }
       </div>
     </div>
 

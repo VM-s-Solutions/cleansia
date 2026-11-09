@@ -97,6 +97,25 @@ class DashboardScreenTest {
         assertFalse("the bare figure formatter must be gone", code().contains("fun formatMoney("))
     }
 
+    /**
+     * The period's days arrive as calendar dates. Read as instants they named the wrong day west of Greenwich, and a
+     * date-only value failed the parse and hid the card. Payouts are manual, so no payout date is promised.
+     */
+    @Test
+    fun `the pay-period card reads calendar days and says when the figure is invoiced`() {
+        val payPeriod = functionBody("private fun PayPeriodCard(")
+        assertTrue(payPeriod.contains("val start = calendarDate(stats.currentPayPeriodStart) ?: return"))
+        assertTrue(payPeriod.contains("val end = calendarDate(stats.currentPayPeriodEnd) ?: return"))
+        assertFalse("the period's days must not pass through a time zone", Regex("""Instant|ZoneId""").containsMatchIn(payPeriod))
+        assertTrue("the figure must carry the label it has on Pay & Earnings", payPeriod.contains("R.string.earnings_current_period"))
+        assertTrue(
+            "the hint must name the period's last day in the app's language",
+            payPeriod.contains("formatShortDate(stats.currentPayPeriodEnd, appLocale())") &&
+                payPeriod.contains("R.string.earnings_invoiced_on_close"),
+        )
+        assertFalse("Next payout leaves the cleaner apps", code().contains("payout", ignoreCase = true))
+    }
+
     /** A koruna figure reads "Kč" whatever the phone's language, the rule the week card already follows. */
     @Test
     fun `a koruna figure is grouped and labelled Kc on an English and a Ukrainian phone`() {

@@ -27,6 +27,8 @@ export class PayPeriodManagementFacade extends UnsubscribeControlDirective {
   readonly initialLoading = signal<boolean>(true);
   readonly totalRecords = signal<number>(0);
   readonly creating = signal<boolean>(false);
+  // The server creates a period only while none is open, so Create stays hidden until a read says none is.
+  readonly hasOpenPeriod = signal<boolean>(true);
 
   readonly createStartDate = signal<Date | null>(null);
 
@@ -113,6 +115,20 @@ export class PayPeriodManagementFacade extends UnsubscribeControlDirective {
       });
   }
 
+  loadOpenPeriod(): void {
+    this.adminClient.adminPayPeriodClient
+      .getPaged(PayPeriodStatus.Open, undefined, undefined, 0, 1)
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => of(null))
+      )
+      .subscribe((response) => {
+        if (response) {
+          this.hasOpenPeriod.set(response.total > 0);
+        }
+      });
+  }
+
   onPageChange(event: PaginationState): void {
     this.currentOffset.set(event.first);
     this.currentLimit.set(event.rows);
@@ -194,6 +210,7 @@ export class PayPeriodManagementFacade extends UnsubscribeControlDirective {
           this.snackbarService.showSuccessTranslated('pay_periods.messages.create_success');
           onSuccess();
           this.loadPayPeriods();
+          this.loadOpenPeriod();
         }
       });
   }

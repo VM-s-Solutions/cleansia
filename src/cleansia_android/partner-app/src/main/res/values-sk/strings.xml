@@ -40,19 +40,26 @@
     <string name="profile_section_contact">Kontakt</string>
     <string name="email_readonly_helper">Pre zmenu e-mailovej adresy kontaktujte podporu.</string>
     <string name="earnings_title">Zárobky</string>
-    <string name="earnings_current_period">Aktuálne výplatné obdobie</string>
-    <string name="earnings_estimate_helper">Odhad do uzávierky obdobia</string>
+    <string name="earnings_current_period">Toto obdobie, zatiaľ nevyfakturované</string>
+    <string name="earnings_invoiced_on_close">Vyfakturuje sa pri uzávierke obdobia dňa %1$s</string>
     <string name="earnings_today">Dnes</string>
     <string name="earnings_this_week">Tento týždeň</string>
     <string name="earnings_last_month">Minulý mesiac</string>
-    <string name="earnings_jobs_done_count">%d upratovaní</string>
+    <plurals name="earnings_jobs_done_count">
+        <item quantity="one">%d upratovanie</item>
+        <item quantity="few">%d upratovania</item>
+        <item quantity="other">%d upratovaní</item>
+    </plurals>
     <string name="earnings_pay_period">Výplatné obdobie</string>
-    <string name="earnings_days_remaining">Zostáva %d dní</string>
-    <string name="earnings_next_payout">Ďalšia výplata</string>
+    <plurals name="earnings_days_remaining">
+        <item quantity="one">Zostáva %d deň</item>
+        <item quantity="few">Zostávajú %d dni</item>
+        <item quantity="other">Zostáva %d dní</item>
+    </plurals>
     <string name="earnings_view_invoices">Zobraziť faktúry</string>
     <string name="earnings_view_invoices_subtitle">História výplat a stavy faktúr</string>
     <string name="earnings_cash_held_title">Hotovosť u mňa</string>
-    <string name="earnings_cash_held_subtitle">Hotovosť, ktorú ste prevzali pri dverách a ešte ste ju neodovzdali. Započíta sa proti vašej ďalšej výplate.</string>
+    <string name="earnings_cash_held_subtitle">Hotovosť, ktorú ste prevzali pri dverách a ešte ste ju neodovzdali. Započíta sa pri vystavení vašej ďalšej faktúry.</string>
     <string name="earnings_cash_held_limit">Limit %1$s</string>
     <string name="earnings_cash_held_jobs_hidden">Držíte viac, než je limit, preto sa vám zákazky za hotovosť nezobrazujú, kým hotovosť neodovzdáte.</string>
     <string name="email">E-mail</string>
@@ -97,7 +104,6 @@
     <string name="dash_available_now_count">%1$d voľných zákaziek</string>
     <string name="dash_no_jobs_yet_title">Zatiaľ žiadne zákazky</string>
     <string name="dash_no_jobs_yet_subtitle">Skontrolujte voľné zákazky alebo upravte dostupnosť</string>
-    <string name="dash_current_period">Aktuálne obdobie</string>
     <string name="dash_state_free_today">Dnes máte voľno</string>
     <string name="dash_state_one_today">1 zákazka dnes</string>
     <string name="dash_state_many_today">%1$d zákaziek dnes</string>
@@ -117,7 +123,6 @@
     <string name="dash_earnings_view_details">Zobraziť detaily</string>
     <string name="dash_avg_per_job">Priem./zákazka</string>
     <string name="dash_pay_period_progress">Deň %1$d z %2$d</string>
-    <string name="dash_next_payout">Ďalšia výplata: %1$s</string>
     <string name="dash_last_month_earnings">Zarobené</string>
     <string name="dash_last_month_jobs">Dokončené</string>
     <string name="dash_last_month_section">Minulý mesiac</string>
@@ -216,9 +221,17 @@
     <string name="invoice_details">Detail faktúry</string>
     <string name="no_invoices">Žiadne faktúry</string>
     <string name="invoices_summary_label">Celkovo zarobené</string>
-    <string name="invoices_summary_count">Celkom %1$d faktúr</string>
+    <plurals name="invoices_summary_count">
+        <item quantity="one">Celkom %1$d faktúra</item>
+        <item quantity="few">Celkom %1$d faktúry</item>
+        <item quantity="other">Celkom %1$d faktúr</item>
+    </plurals>
     <string name="invoice_card_total">Celkom</string>
-    <string name="invoice_card_jobs_count">%1$d zákaziek</string>
+    <plurals name="invoice_card_jobs_count">
+        <item quantity="one">%1$d zákazka</item>
+        <item quantity="few">%1$d zákazky</item>
+        <item quantity="other">%1$d zákaziek</item>
+    </plurals>
     <string name="invoice_card_paid_on">Vyplatené %1$s</string>
     <string name="invoice_card_generated_on">Vystavené %1$s</string>
 
@@ -379,12 +392,18 @@
     <string name="subtotal">Medzisúčet</string>
     <string name="bonus">Bonus</string>
     <string name="deductions">Zrážky</string>
+    <string name="invoice_cash_set_off">Započítaná hotovosť</string>
+    <string name="invoice_bank_transfer">Prevodom na váš účet</string>
     <string name="invoice_notes">Poznámky</string>
     <!-- Invoice Details v2 — redesign cards -->
     <string name="invoice_hero_total">Celková suma faktúry</string>
     <string name="invoice_breakdown_section">Rozpis</string>
     <string name="invoice_period_label">Platobné obdobie</string>
-    <string name="invoice_period_jobs">%1$d zákaziek</string>
+    <plurals name="invoice_period_jobs">
+        <item quantity="one">%1$d zákazka</item>
+        <item quantity="few">%1$d zákazky</item>
+        <item quantity="other">%1$d zákaziek</item>
+    </plurals>
     <string name="invoice_period_generated">Vygenerované</string>
     <string name="invoice_period_approved">Schválené</string>
     <string name="invoice_period_paid">Zaplatené</string>
@@ -814,7 +833,11 @@
     <!-- ── Výplata za obdobie (iba na čítanie) ── -->
     <string name="period_pay_title">Výplata za obdobie</string>
     <string name="period_pay_hero_label">Celkom za obdobie</string>
-    <string name="period_pay_jobs_count">%1$d zákaziek</string>
+    <plurals name="period_pay_jobs_count">
+        <item quantity="one">%1$d zákazka</item>
+        <item quantity="few">%1$d zákazky</item>
+        <item quantity="other">%1$d zákaziek</item>
+    </plurals>
     <string name="period_pay_breakdown_section">Rozpis výplaty</string>
     <string name="period_pay_base">Základná odmena</string>
     <string name="period_pay_extras">Príplatky</string>
@@ -827,6 +850,7 @@
     <string name="period_pay_line_deduction_reason">Zrážka %1$s: %2$s</string>
     <string name="period_pay_line_cancellation_fee_share">Váš podiel z poplatku za neskoré zrušenie</string>
     <string name="period_pay_line_lockout_fee_share">Vaša odmena za zákazku, kam ste sa nemohli dostať</string>
+    <string name="period_pay_line_dispute_charge">Zrážka zo sporu</string>
     <string name="invoice_view_period_pay">Zobraziť výplatu za obdobie</string>
     <string name="photo_encode_failed">Túto fotku sa nepodarilo spracovať. Skúste prosím inú.</string>
     <string name="document_read_failed">Tento súbor sa nepodarilo načítať. Skúste prosím iný.</string>

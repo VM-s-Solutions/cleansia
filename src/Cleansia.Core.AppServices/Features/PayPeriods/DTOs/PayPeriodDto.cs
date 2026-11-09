@@ -11,4 +11,9 @@ public record PayPeriodDto(
     string? ClosedBy,
     DateTime? PaidAt,
     string? Notes,
-    DateOnly LatestEndDate);
+    DateOnly LatestEndDate,
+    // Company-wide, so only the admin's single-period read fills them: the partner host lists this DTO to
+    // every cleaner.
+    int? InvoiceCount = null,
+    int? UnpaidInvoiceCount = null,
+    int? UninvoicedPayCount = null);

@@ -20,6 +20,7 @@ struct PeriodPayContent: View {
 }
 
 private struct HeroCard: View {
+    @Environment(\.locale) private var locale
     let summary: PeriodPaySummary
     let currencyCode: String?
 
@@ -33,8 +34,12 @@ private struct HeroCard: View {
                 Text(EarningsFormat.decimalMoney(summary.grandTotal, currencyCode: currencyCode))
                     .cleansiaFont(CleansiaTypography.headlineMedium)
                     .foregroundColor(CleansiaColors.onSurface)
-                if let label = summary.payPeriodLabel, !label.isEmpty {
-                    Text(label)
+                if let period = EarningsFormat.period(
+                    start: summary.payPeriodStart,
+                    end: summary.payPeriodEnd,
+                    locale: locale
+                ) {
+                    Text(period)
                         .font(CleansiaTypography.labelSmall)
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
                 }
@@ -172,13 +177,14 @@ private struct JobRow: View {
 }
 
 extension OrderPayLine {
-    /// A row that pays for a job that did not happen says why: a share of the late-cancellation fee, or the
-    /// job's reward after a lockout.
+    /// A row that is not a job's pay says what it is: a share of the late-cancellation fee, the job's reward
+    /// after a lockout, or a dispute charge.
     var feeShareCaption: String? {
         switch lineType {
         case ._0: nil
         case ._1: L10n.PeriodPay.lineCancellationFeeShare
         case ._2: L10n.PeriodPay.lineLockoutFeeShare
+        case ._3: L10n.PeriodPay.lineDisputeCharge
         }
     }
 }

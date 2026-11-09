@@ -23,7 +23,6 @@ public class PayrollUniqueIndexTests(PostgresContainerFixture fixture) : BaseInt
 {
     private const string CountryId = "country-cz-pay-index";
     private const string CurrencyId = "currency-czk-pay-index";
-    private const PayLineType DisputeCharge = (PayLineType)3;
 
     private sealed record Graph(string EmployeeId, string OrderId, string PeriodId);
 
@@ -123,11 +122,11 @@ public class PayrollUniqueIndexTests(PostgresContainerFixture fixture) : BaseInt
             {
                 var context = provider.GetRequiredService<CleansiaDbContext>();
 
-                context.AddRange(Pay(graph, PayLineType.Job), Pay(graph, DisputeCharge));
+                context.AddRange(Pay(graph, PayLineType.Job), Pay(graph, PayLineType.DisputeCharge));
                 await context.CommitAsync(CancellationToken.None);
 
                 var refusals = new List<bool>();
-                foreach (var lineType in new[] { PayLineType.Job, DisputeCharge })
+                foreach (var lineType in new[] { PayLineType.Job, PayLineType.DisputeCharge })
                 {
                     var second = Pay(graph, lineType);
                     context.Add(second);

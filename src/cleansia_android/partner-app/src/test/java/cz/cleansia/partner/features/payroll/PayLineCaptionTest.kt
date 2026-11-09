@@ -18,4 +18,9 @@ class PayLineCaptionTest {
         assertEquals(R.string.period_pay_line_cancellation_fee_share, payLineCaptionRes(PayLineType._1))
         assertEquals(R.string.period_pay_line_lockout_fee_share, payLineCaptionRes(PayLineType._2))
     }
+
+    @Test
+    fun `a dispute charge line says it is one`() {
+        assertEquals(R.string.period_pay_line_dispute_charge, payLineCaptionRes(PayLineType._3))
+    }
 }

@@ -41,11 +41,15 @@ separate reviewer re-derives the amounts by hand and checks that each new test f
 
 Branch `fix/pay-corrections`. One migration regen.
 
-- [ ] **P2.1** Indexes and refund columns in one Initial regen: the invoice unique index ignores Cancelled invoices, one open period per tenant, and `FailedOn`, `RepaidOn`, `RepaymentMethod` and `RepaymentReference` on Refund, plus any column from P4.4's design.
-- [ ] **P2.2** $ Cancel frees its jobs and the safety net reissues the invoice within minutes; Cancel is offered for Pending, Approved and Disputed invoices.
-- [ ] **P2.3** $ `GenerateInvoice` e-mails the invoice with its PDF, under the same rules as the night run.
-- [ ] **P2.4** Approve accepts Disputed, Adjust is allowed only for Pending and Disputed and re-renders the PDF, Reject is removed, and Regenerate PDF is hidden on Paid and Cancelled.
-- [ ] **P2.5** $ Mark period as paid refuses while any pay is un-invoiced or any invoice is neither Paid nor Cancelled.
+- [x] **P2.1** Indexes and refund columns in one Initial regen: the invoice unique index ignores Cancelled invoices, one open period per tenant, and `FailedOn`, `RepaidOn`, `RepaymentMethod` and `RepaymentReference` on Refund, plus the two pay-row index changes of P4.4's design, which needs no column.
+- [x] **P2.2** $ Cancel frees its jobs and the safety net reissues the invoice within minutes; Cancel is offered for Pending, Approved and Disputed invoices.
+- [x] **P2.3** $ `GenerateInvoice` e-mails the invoice with its PDF, under the same rules as the night run.
+- [x] **P2.4** Approve accepts Disputed, Adjust is allowed only for Pending and Disputed and re-renders the PDF, Reject is removed, and Regenerate PDF is hidden on Paid and Cancelled.
+- [x] **P2.5** $ Mark period as paid refuses while any pay is un-invoiced or any invoice is neither Paid nor Cancelled.
+
+Also carried, as deliberate additions: the two follow-ups to P1.4 from Phase 1's security review. **sec-2** keeps Close
+now's free-text reason out of the request log on all five hosts, and **sec-4** stops Close now from opening a next period
+for a deactivated company.
 
 ## Done
 
@@ -115,3 +119,22 @@ The plan's "Not doing" list. Anything found outside these slices is reported to 
   Cleansia.IntegrationTests 1057/1057, Cleansia.HostTests 519/519, and no pending model change. The admin and partner
   error-contract parity specs (22/22, 21/21), the 5,347 tests of the 71 affected web projects, both web typechecks and
   the admin production build pass, and so do the backlog, docs-refs and catalog-claims checkers.
+- 2026-11-09 — The money re-review of `0d97a3a54` and `c9fb04bee` passed: the amounts were re-derived by hand and on
+  Postgres, no job counts twice and no pay row is lost on My Pay, the pay report or the cleaner's earnings, and every
+  new test in both commits failed on its parent. It found mrr-1: a cancelled invoice could still be disputed, which put
+  it back in the invoice index, blocked its corrected invoice and let it be approved and paid against a set-off the
+  cash ledger had already given back. It also found mrr-2: two claims of the fixes that no test pinned.
+- 2026-11-09 — mrr-1 fixed test-first in `531b6b38b`: Dispute refuses a cancelled invoice with
+  `payroll.invoice.already_cancelled`, `EmployeeInvoice.Dispute` throws on one, and Approve and Mark paid refuse a
+  cancelled invoice whatever its status says. `8d93395d3` pins mrr-2's two claims. Tests: 4 unit cases failed before
+  the change, and each of the 4 mrr-2 mutants now fails a test. The separate check of both commits passed: the four
+  tests fail on the parent, and on Postgres a cancelled invoice is refused by Dispute, Approve and Mark paid, its jobs
+  stay free for the corrected invoice, and the cash ledger nets to 0. Two more of its points were not fixed: no test
+  pins that Dispute accepts an uncancelled invoice (mrc-2), and two new test comments say a cancelled invoice with
+  another status exists only from before the fix, which the race below can still produce (mrc-3).
+- 2026-11-09 — Reported to Mike, not fixed: mrc-1. An invoice has no concurrency token, so two admin actions on one
+  invoice within milliseconds can overwrite each other. Two such races move money, and both predate this branch: Mark
+  paid over a Cancel leaves a paid, cancelled invoice whose set-off was already given back, and two Cancels give the
+  set-off back twice. The check's proposed fix is a shadow `xmin` token on `EmployeeInvoice`, which adds no column but
+  needs the Initial regenerated.
+- 2026-11-09 — Shipped: #373 merged to master as db134fff.

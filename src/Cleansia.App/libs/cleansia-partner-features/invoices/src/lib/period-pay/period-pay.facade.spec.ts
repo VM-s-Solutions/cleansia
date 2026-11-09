@@ -5,10 +5,11 @@ import {
   EmployeeItem,
   PagedDataOfPayPeriodDto,
   PartnerClient,
+  PayPeriodStatus,
   PeriodPaySummaryDto,
 } from '@cleansia/partner-services';
 import { TranslateService } from '@ngx-translate/core';
-import { EMPTY, of, Subject, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { PeriodPayFacade } from './period-pay.facade';
 
 describe('PeriodPayFacade', () => {
@@ -16,13 +17,14 @@ describe('PeriodPayFacade', () => {
   let employeeClient: { getCurrentEmployee: jest.Mock };
   let payPeriodClient: { getPagedPayPeriods: jest.Mock };
   let employeePayrollClient: { getPeriodPays: jest.Mock; getPagedInvoices: jest.Mock; getCashHeld: jest.Mock };
+  let langChange: Subject<{ lang: string }>;
 
   const employee = EmployeeItem.fromJS({ id: 'emp-1' });
 
   const periodsPage = PagedDataOfPayPeriodDto.fromJS({
     data: [
-      { id: 'period-2', periodLabel: '16.5. - 31.5.2026', status: 'Open' },
-      { id: 'period-1', periodLabel: '1.5. - 15.5.2026', status: 'Paid' },
+      { id: 'period-2', periodLabel: 'Nov 15 - Nov 28, 2026', startDate: '2026-11-15', endDate: '2026-11-28', status: 'Open' },
+      { id: 'period-1', periodLabel: 'Nov 01 - Nov 14, 2026', startDate: '2026-11-01', endDate: '2026-11-14', status: 'Paid' },
     ],
     total: 2,
   });
@@ -53,6 +55,7 @@ describe('PeriodPayFacade', () => {
       getPagedInvoices: jest.fn(),
       getCashHeld: jest.fn(() => of([])),
     };
+    langChange = new Subject<{ lang: string }>();
 
     TestBed.configureTestingModule({
       providers: [
@@ -61,7 +64,7 @@ describe('PeriodPayFacade', () => {
           provide: PartnerClient,
           useValue: { employeeClient, payPeriodClient, employeePayrollClient },
         },
-        { provide: TranslateService, useValue: { currentLang: 'cs', onLangChange: EMPTY } },
+        { provide: TranslateService, useValue: { currentLang: 'cs', onLangChange: langChange } },
       ],
     });
 
@@ -79,6 +82,63 @@ describe('PeriodPayFacade', () => {
     expect(facade.initialLoading()).toBe(false);
     expect(facade.loading()).toBe(false);
     expect(facade.hasError()).toBe(false);
+  });
+
+  // A period made ahead by hand sorts first by its start, yet the pay being earned now is in the open one.
+  it('selects the open period rather than the newest one', () => {
+    payPeriodClient.getPagedPayPeriods.mockReturnValue(
+      of(
+        PagedDataOfPayPeriodDto.fromJS({
+          data: [
+            { id: 'period-3', status: PayPeriodStatus[PayPeriodStatus.Closed] },
+            { id: 'period-2', status: PayPeriodStatus[PayPeriodStatus.Open] },
+            { id: 'period-1', status: PayPeriodStatus[PayPeriodStatus.Paid] },
+          ],
+          total: 3,
+        })
+      )
+    );
+
+    facade.init();
+
+    expect(facade.selectedPeriodId()).toBe('period-2');
+    expect(employeePayrollClient.getPeriodPays).toHaveBeenCalledWith('emp-1', 'period-2', undefined);
+  });
+
+  it('selects the newest period when none is open', () => {
+    payPeriodClient.getPagedPayPeriods.mockReturnValue(
+      of(
+        PagedDataOfPayPeriodDto.fromJS({
+          data: [
+            { id: 'period-2', status: PayPeriodStatus[PayPeriodStatus.Closed] },
+            { id: 'period-1', status: PayPeriodStatus[PayPeriodStatus.Paid] },
+          ],
+          total: 2,
+        })
+      )
+    );
+
+    facade.init();
+
+    expect(facade.selectedPeriodId()).toBe('period-2');
+  });
+
+  it('names each period by its days in the language of the session, not by the English label', () => {
+    facade.init();
+
+    expect(facade.periodOptions()).toEqual([
+      { label: '15. 11. 2026 – 28. 11. 2026', value: 'period-2' },
+      { label: '1. 11. 2026 – 14. 11. 2026', value: 'period-1' },
+    ]);
+    expect(facade.periodOptions().map((option) => option.label).join()).not.toContain('Nov');
+  });
+
+  it('names the periods again when the session switches language', () => {
+    facade.init();
+
+    langChange.next({ lang: 'en' });
+
+    expect(facade.periodOptions()[0].label).toBe('Nov 15, 2026 – Nov 28, 2026');
   });
 
   it('scopes the summary call to the session employee and the selected period', () => {

@@ -4,6 +4,7 @@ import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { formatDate } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
+import { formatPayPeriodDuration } from '../pay-period-management/pay-period-management.models';
 
 @Injectable()
 export class PayPeriodDetailFacade extends UnsubscribeControlDirective {
@@ -31,7 +32,11 @@ export class PayPeriodDetailFacade extends UnsubscribeControlDirective {
   }
 
   formatDate(date: string | Date | null | undefined): string {
-    return formatDate(date, this.translate.currentLang) || '-';
+    return formatDate(date, this.translate.currentLang, 'utcDate') || '-';
+  }
+
+  formatDuration(days: number): string {
+    return formatPayPeriodDuration(days, this.translate);
   }
 
   formatDateTime(date: string | Date | null | undefined): string {

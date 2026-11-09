@@ -10,8 +10,8 @@ extension L10n {
             localized("earnings_current_period")
         }
 
-        static var estimateHelper: String {
-            localized("earnings_estimate_helper")
+        static func invoicedOnClose(_ date: String) -> String {
+            format("earnings_invoiced_on_close", date)
         }
 
         static var today: String {
@@ -27,7 +27,7 @@ extension L10n {
         }
 
         static func jobsDoneCount(_ count: Int) -> String {
-            format("earnings_jobs_done_count", count)
+            plural("earnings_jobs_done_count", count)
         }
 
         static var payPeriod: String {
@@ -35,11 +35,7 @@ extension L10n {
         }
 
         static func daysRemaining(_ count: Int) -> String {
-            format("earnings_days_remaining", count)
-        }
-
-        static var nextPayout: String {
-            localized("earnings_next_payout")
+            plural("earnings_days_remaining", count)
         }
 
         static var viewInvoices: String {
@@ -77,7 +73,7 @@ extension L10n {
         }
 
         static func jobsCount(_ count: Int) -> String {
-            format("period_pay_jobs_count", count)
+            plural("period_pay_jobs_count", count)
         }
 
         static var breakdownSection: String {
@@ -132,6 +128,10 @@ extension L10n {
             localized("period_pay_line_lockout_fee_share")
         }
 
+        static var lineDisputeCharge: String {
+            localized("period_pay_line_dispute_charge")
+        }
+
         static var empty: String {
             localized("period_pay_empty")
         }
@@ -163,7 +163,7 @@ extension L10n {
         }
 
         static func summaryCount(_ count: Int) -> String {
-            format("invoices_summary_count", count)
+            plural("invoices_summary_count", count)
         }
 
         static var empty: String {
@@ -175,7 +175,7 @@ extension L10n {
         }
 
         static func cardJobsCount(_ count: Int) -> String {
-            format("invoice_card_jobs_count", count)
+            plural("invoice_card_jobs_count", count)
         }
 
         static func cardPaidOn(_ date: String) -> String {
@@ -214,12 +214,20 @@ extension L10n {
             localized("total")
         }
 
+        static var cashSetOff: String {
+            localized("invoice_cash_set_off")
+        }
+
+        static var bankTransfer: String {
+            localized("invoice_bank_transfer")
+        }
+
         static var periodLabel: String {
             localized("invoice_period_label")
         }
 
         static func periodJobs(_ count: Int) -> String {
-            format("invoice_period_jobs", count)
+            plural("invoice_period_jobs", count)
         }
 
         static var periodGenerated: String {

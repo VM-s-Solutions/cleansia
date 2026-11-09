@@ -1,4 +1,4 @@
-import { formatDate } from './date-formatters.utils';
+import { formatDate, formatPayPeriodRange } from './date-formatters.utils';
 
 const noon = new Date(2026, 8, 21, 10, 30);
 
@@ -33,5 +33,20 @@ describe('formatDate', () => {
 
   it('falls back to the default locale for an unknown language', () => {
     expect(formatDate(noon, undefined)).toBe('Sep 21, 2026');
+  });
+});
+
+describe('formatPayPeriodRange', () => {
+  const start = new Date('2026-11-01T00:00:00Z');
+  const end = new Date('2026-11-14T00:00:00Z');
+
+  it('names a pay period by its first and last day, as calendar days in the language of the session', () => {
+    expect(formatPayPeriodRange(start, end, 'cs')).toBe('1. 11. 2026 – 14. 11. 2026');
+    expect(formatPayPeriodRange(start, end, 'en')).toBe('Nov 1, 2026 – Nov 14, 2026');
+  });
+
+  it('prints nothing when either day is missing', () => {
+    expect(formatPayPeriodRange(start, undefined, 'cs')).toBe('');
+    expect(formatPayPeriodRange(undefined, end, 'cs')).toBe('');
   });
 });

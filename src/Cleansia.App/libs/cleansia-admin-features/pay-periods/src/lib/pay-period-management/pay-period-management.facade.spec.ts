@@ -112,6 +112,34 @@ describe('PayPeriodManagementFacade', () => {
     expect(year).toBeUndefined();
   });
 
+  describe('whether a period is open', () => {
+    it('asks the server for one open period, whatever the list shows', () => {
+      facade.applyFilter({ status: PayPeriodStatus.Paid, year: 2025 });
+      getPagedMock.mockClear();
+      getPagedMock.mockReturnValue(of({ data: [{ id: 'p-open' }], total: 1 }));
+
+      facade.loadOpenPeriod();
+
+      expect(getPagedMock).toHaveBeenCalledWith(PayPeriodStatus.Open, undefined, undefined, 0, 1);
+      expect(facade.hasOpenPeriod()).toBe(true);
+    });
+
+    it('offers Create once the server has no open period', () => {
+      facade.loadOpenPeriod();
+
+      expect(facade.hasOpenPeriod()).toBe(false);
+    });
+
+    it('keeps Create hidden until the answer lands, and when the read fails', () => {
+      expect(facade.hasOpenPeriod()).toBe(true);
+
+      getPagedMock.mockReturnValue(throwError(() => new Error('boom')));
+      facade.loadOpenPeriod();
+
+      expect(facade.hasOpenPeriod()).toBe(true);
+    });
+  });
+
   describe('create dialog default', () => {
     const calendarDay = (date: Date | null) =>
       date ? [date.getFullYear(), date.getMonth() + 1, date.getDate()] : null;
@@ -192,7 +220,11 @@ describe('PayPeriodManagementFacade', () => {
       });
     });
 
-    it('toasts, closes and re-reads once the create lands', () => {
+    it('toasts, closes and re-reads the list and the open period once the create lands', () => {
+      facade.loadOpenPeriod();
+      expect(facade.hasOpenPeriod()).toBe(false);
+      getPagedMock.mockClear();
+      getPagedMock.mockReturnValue(of({ data: [{ id: 'period-new' }], total: 1 }));
       facade.setCreateStartDate(new Date(2026, 9, 19));
       const onSuccess = jest.fn();
 
@@ -200,7 +232,9 @@ describe('PayPeriodManagementFacade', () => {
 
       expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith('pay_periods.messages.create_success');
       expect(onSuccess).toHaveBeenCalledTimes(1);
-      expect(getPagedMock).toHaveBeenCalledTimes(1);
+      expect(getPagedMock).toHaveBeenCalledTimes(2);
+      expect(getPagedMock).toHaveBeenCalledWith(PayPeriodStatus.Open, undefined, undefined, 0, 1);
+      expect(facade.hasOpenPeriod()).toBe(true);
       expect(facade.creating()).toBe(false);
     });
 

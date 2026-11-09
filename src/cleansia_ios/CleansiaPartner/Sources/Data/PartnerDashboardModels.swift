@@ -23,7 +23,6 @@ struct DashboardStats: Equatable {
     let averageRating: Double?
     let currentPayPeriodStart: Date?
     let currentPayPeriodEnd: Date?
-    let nextPayoutDate: Date?
     let latestInvoiceStatus: String?
     let currencyCode: String?
 }
@@ -40,9 +39,8 @@ extension DashboardStats {
         currentPeriodEarnings = try dto.currentPeriodEarnings.require("currentPeriodEarnings")
         ratingCount = try dto.ratingCount.require("ratingCount")
         averageRating = dto.averageRating
-        currentPayPeriodStart = dto.currentPayPeriodStart
-        currentPayPeriodEnd = dto.currentPayPeriodEnd
-        nextPayoutDate = dto.nextPayoutDate
+        currentPayPeriodStart = dto.currentPayPeriodStart?.wrappedDate
+        currentPayPeriodEnd = dto.currentPayPeriodEnd?.wrappedDate
         latestInvoiceStatus = dto.latestInvoiceStatus
         currencyCode = dto.currencyCode
     }
@@ -79,7 +77,6 @@ extension AvailableJobsPreview {
             averageRating: nil,
             currentPayPeriodStart: nil,
             currentPayPeriodEnd: nil,
-            nextPayoutDate: nil,
             latestInvoiceStatus: nil,
             currencyCode: nil
         )

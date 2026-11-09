@@ -35,6 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -50,7 +51,9 @@ import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.PayLineType
 import cz.cleansia.partner.data.payroll.OrderPayLine
 import cz.cleansia.partner.data.payroll.PeriodPaySummary
+import cz.cleansia.partner.features.invoices.formatPeriod
 import cz.cleansia.partner.features.invoices.formatShortDate
+import cz.cleansia.partner.features.orders.appLocale
 
 /**
  * Read-only period pay breakdown — matches the EarningsSummaryScreen /
@@ -165,7 +168,7 @@ private fun HeroCard(summary: PeriodPaySummary, symbol: String) {
                 style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface,
             )
-            summary.payPeriodLabel?.takeIf { it.isNotBlank() }?.let { label ->
+            formatPeriod(summary.payPeriodStartDate, summary.payPeriodEndDate, appLocale())?.let { label ->
                 Spacer(Modifier.height(2.dp))
                 Text(
                     text = label,
@@ -175,7 +178,7 @@ private fun HeroCard(summary: PeriodPaySummary, symbol: String) {
             }
             if (summary.totalOrders > 0) {
                 Text(
-                    text = stringResource(R.string.period_pay_jobs_count, summary.totalOrders),
+                    text = pluralStringResource(R.plurals.period_pay_jobs_count, summary.totalOrders, summary.totalOrders),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -317,14 +320,15 @@ private fun JobRow(line: OrderPayLine, symbol: String) {
 }
 
 /**
- * A row that pays for a job that did not happen says why: a share of the late-cancellation fee, or the
- * job's reward after a lockout.
+ * A row that is not a job's pay says what it is: a share of the late-cancellation fee, the job's reward
+ * after a lockout, or a dispute charge.
  */
 @StringRes
 internal fun payLineCaptionRes(type: PayLineType): Int? = when (type) {
     PayLineType._0 -> null
     PayLineType._1 -> R.string.period_pay_line_cancellation_fee_share
     PayLineType._2 -> R.string.period_pay_line_lockout_fee_share
+    PayLineType._3 -> R.string.period_pay_line_dispute_charge
 }
 
 @Composable

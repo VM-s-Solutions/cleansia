@@ -176,7 +176,7 @@
       "available_orders": "Available Orders",
       "my_active_orders": "My Active Orders",
       "completed_this_month": "Completed This Month",
-      "pending_earnings": "Pending Earnings",
+      "pending_earnings": "This period, not invoiced yet",
       "vs_last_month": "vs last month",
       "upcoming_orders": "Upcoming Orders",
       "view_all": "View All",
@@ -508,6 +508,8 @@
       "generated_date": "Generated Date",
       "total_orders": "Total Orders",
       "total_amount": "Total Amount",
+      "cash_set_off": "Cash Set Off",
+      "transfer_amount": "Bank Transfer to You",
       "status": "Status",
       "view_details": "View Details",
       "download_pdf": "Download PDF",
@@ -1262,7 +1264,8 @@
     "pay_line_type": {
       "job": "Job",
       "cancellation_fee_share": "Your share of the late-cancellation fee",
-      "lockout_fee_share": "Your reward for the job — the customer did not let you in"
+      "lockout_fee_share": "Your reward for the job — the customer did not let you in",
+      "dispute_charge": "Dispute charge"
     }
   },
   "help": {

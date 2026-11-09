@@ -122,6 +122,14 @@ class PeriodPayWireTest {
         )
     }
 
+    /** The screen prints the period from its days; the server's label is English whatever the cleaner reads. */
+    @Test
+    fun theSummaryCarriesItsPeriodDaysAsTheServerNamesThem() = runTest {
+        val summary = loaded(CAPTURED_PAYLOAD)
+
+        assertEquals("2026-08-01" to "2026-08-15", summary.payPeriodStartDate to summary.payPeriodEndDate)
+    }
+
     @Test
     fun everyLineNamesItsOwnCurrency() = runTest {
         val summary = loaded(CAPTURED_PAYLOAD)
@@ -164,6 +172,13 @@ class PeriodPayWireTest {
         val lines = loaded(payloadWithFirstLine { it + ("lineType" to JsonPrimitive(2)) }).orderPays
 
         assertEquals(listOf(PayLineType._2, PayLineType._0), lines.map { it.lineType })
+    }
+
+    @Test
+    fun aDisputeChargeLineDecodesAsItsOwnType() = runTest {
+        val lines = loaded(payloadWithFirstLine { it + ("lineType" to JsonPrimitive(3)) }).orderPays
+
+        assertEquals(PayLineType._3, lines.first().lineType)
     }
 
     @Test
@@ -296,7 +311,8 @@ class PeriodPayWireTest {
             ).toString(),
         )
 
-        assertNull(summary.payPeriodLabel)
+        assertNull(summary.payPeriodStartDate)
+        assertNull(summary.payPeriodEndDate)
         assertNull(summary.invoiceId)
         assertNull(summary.orderPays.first().orderNumber)
         assertNull(summary.orderPays.first().createdOn)
@@ -416,6 +432,8 @@ class PeriodPayWireTest {
             {
               "payPeriodId": "pp-9",
               "payPeriodLabel": "1 - 15 Aug 2026",
+              "payPeriodStartDate": "2026-08-01",
+              "payPeriodEndDate": "2026-08-15",
               "employeeId": "emp-7",
               "employeeName": "Jana Novak",
               "totalOrders": 2,
@@ -493,6 +511,8 @@ class PeriodPayWireTest {
         val SUMMARY_SPEC_PROPERTIES = setOf(
             "payPeriodId",
             "payPeriodLabel",
+            "payPeriodStartDate",
+            "payPeriodEndDate",
             "employeeId",
             "employeeName",
             "totalOrders",
@@ -552,7 +572,15 @@ class PeriodPayWireTest {
             "totalPay",
         )
 
-        val NULLABLE_STRINGS = listOf("payPeriodLabel", "invoiceId", "employeeName", "payPeriodId", "employeeId")
+        val NULLABLE_STRINGS = listOf(
+            "payPeriodLabel",
+            "payPeriodStartDate",
+            "payPeriodEndDate",
+            "invoiceId",
+            "employeeName",
+            "payPeriodId",
+            "employeeId",
+        )
 
         val LINE_NULLABLE_STRINGS = listOf("orderNumber", "createdOn", "orderId", "deductionReason")
     }

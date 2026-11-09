@@ -5,7 +5,7 @@ import {
   EmployeeInvoiceStatus,
 } from '@cleansia/admin-services';
 import { TableColumn, TableAction } from '@cleansia/components';
-import { formatDate, formatMoney, localeFor } from '@cleansia/utils';
+import { formatDate, formatMoney, formatPayPeriodRange, localeFor } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 
 export type InvoicePdfState = 'ready' | 'failed' | 'pending';
@@ -26,35 +26,36 @@ export function getInvoiceTableColumns(
   statusTemplate?: TemplateRef<EmployeeInvoiceDto>,
   pdfStatusTemplate?: TemplateRef<EmployeeInvoiceDto>
 ): TableColumn<EmployeeInvoiceDto>[] {
+  const money = (row: EmployeeInvoiceDto, amount: number): string =>
+    formatMoney(amount, row.currencyCode, localeFor(translate.currentLang), { fractionDigits: 2 });
   return [
     {
       id: 'invoiceNumber',
       field: 'invoiceNumber',
       header: 'pages.invoice_management.invoice_number',
       sortable: true,
-      width: '12%',
+      width: '10%',
     },
     {
       id: 'employeeName',
       field: 'employeeName',
       header: 'pages.invoice_management.employee_name',
-      sortable: true,
-      width: '15%',
+      width: '13%',
     },
     {
       id: 'payPeriodLabel',
       field: 'payPeriodLabel',
       header: 'pages.invoice_management.pay_period',
-      sortable: true,
       width: '12%',
+      getValue: (row: EmployeeInvoiceDto) =>
+        formatPayPeriodRange(row.payPeriodStartDate, row.payPeriodEndDate, translate.currentLang),
     },
     {
       id: 'totalOrders',
       numeric: true,
       field: 'totalOrders',
       header: 'pages.invoice_management.total_orders',
-      sortable: true,
-      width: '8%',
+      width: '6%',
     },
     {
       id: 'totalAmount',
@@ -62,18 +63,31 @@ export function getInvoiceTableColumns(
       field: 'totalAmount',
       header: 'pages.invoice_management.total_amount',
       sortable: true,
-      width: '12%',
-      getValue: (row: EmployeeInvoiceDto) =>
-        formatMoney(row.totalAmount, row.currencyCode, localeFor(translate.currentLang), {
-          fractionDigits: 2,
-        }),
+      width: '10%',
+      getValue: (row: EmployeeInvoiceDto) => money(row, row.totalAmount),
+    },
+    {
+      id: 'cashSetOffAmount',
+      numeric: true,
+      field: 'cashSetOffAmount',
+      header: 'pages.invoice_management.cash_set_off',
+      width: '10%',
+      getValue: (row: EmployeeInvoiceDto) => money(row, row.cashSetOffAmount),
+    },
+    {
+      id: 'transferAmount',
+      numeric: true,
+      field: 'transferAmount',
+      header: 'pages.invoice_management.transfer_amount',
+      width: '10%',
+      getValue: (row: EmployeeInvoiceDto) => money(row, row.transferAmount),
     },
     {
       id: 'status',
       field: 'status',
       header: 'pages.invoice_management.status',
       sortable: true,
-      width: '10%',
+      width: '9%',
       align: 'center',
       customTemplate: statusTemplate,
     },
@@ -82,7 +96,7 @@ export function getInvoiceTableColumns(
       field: 'pdfGenerationFailed',
       header: 'pages.invoice_management.pdf_status',
       sortable: false,
-      width: '10%',
+      width: '8%',
       align: 'center',
       customTemplate: pdfStatusTemplate,
     },

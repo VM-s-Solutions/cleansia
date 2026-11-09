@@ -2652,41 +2652,6 @@
         }
       }
     },
-    "dash_current_period": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aktuální období"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This pay period"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Текущий период"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aktuálne obdobie"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Поточний період"
-          }
-        }
-      }
-    },
     "dash_earn_up_to": {
       "extractionState": "stale",
       "localizations": {
@@ -3033,41 +2998,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Наступне замовлення"
-          }
-        }
-      }
-    },
-    "dash_next_payout": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Další výplata: %1$@"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Next payout: %1$@"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Следующая выплата: %1$@"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ďalšia výplata: %1$@"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Наступна виплата: %1$@"
           }
         }
       }
@@ -6578,31 +6508,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hotovost, kterou jste převzali u dveří a ještě neodevzdali. Započte se proti vaší další výplatě."
+            "value": "Hotovost, kterou jste převzali u dveří a ještě neodevzdali. Započte se při vystavení vaší další faktury."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cash you took at the door and have not handed over yet. It is set off against your next payout."
+            "value": "Cash you took at the door and have not handed over yet. It is set off when your next invoice is issued."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Наличные, которые вы получили у двери и ещё не сдали. Они будут зачтены в счёт вашей следующей выплаты."
+            "value": "Наличные, которые вы получили у двери и ещё не сдали. Они будут зачтены, когда будет выставлен ваш следующий счёт."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hotovosť, ktorú ste prevzali pri dverách a ešte ste ju neodovzdali. Započíta sa proti vašej ďalšej výplate."
+            "value": "Hotovosť, ktorú ste prevzali pri dverách a ešte ste ju neodovzdali. Započíta sa pri vystavení vašej ďalšej faktúry."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Готівка, яку ви отримали біля дверей і ще не передали. Її буде зараховано в рахунок вашої наступної виплати."
+            "value": "Готівка, яку ви отримали біля дверей і ще не передали. Її буде зараховано, коли буде виставлено ваш наступний рахунок."
           }
         }
       }
@@ -6648,31 +6578,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Aktuální výplatní období"
+            "value": "Toto období, zatím nevyfakturováno"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Current pay period"
+            "value": "This period, not invoiced yet"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Текущий платёжный период"
+            "value": "Этот период, ещё не в счёте"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Aktuálne výplatné obdobie"
+            "value": "Toto obdobie, zatiaľ nevyfakturované"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Поточний платіжний період"
+            "value": "Цей період, ще не в рахунку"
           }
         }
       }
@@ -6681,68 +6611,164 @@
       "extractionState": "stale",
       "localizations": {
         "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zbývá %1$d dní"
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zbývají %1$ld dny"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zbývá %1$ld den"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zbývá %1$ld dní"
+                }
+              }
+            }
           }
         },
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$d days remaining"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld day remaining"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld days remaining"
+                }
+              }
+            }
           }
         },
         "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Осталось %1$d дней"
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Осталось %1$ld дня"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Осталось %1$ld дней"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Остался %1$ld день"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Осталось %1$ld дня"
+                }
+              }
+            }
           }
         },
         "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zostáva %1$d dní"
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zostávajú %1$ld dni"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zostáva %1$ld deň"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zostáva %1$ld dní"
+                }
+              }
+            }
           }
         },
         "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Залишилось %1$d днів"
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Залишилось %1$ld дні"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Залишилось %1$ld днів"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Залишився %1$ld день"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Залишилось %1$ld дня"
+                }
+              }
+            }
           }
         }
       }
     },
-    "earnings_estimate_helper": {
-      "extractionState": "stale",
+    "earnings_invoiced_on_close": {
+      "extractionState": "manual",
       "localizations": {
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Odhad do uzávěrky období"
+            "value": "Vyfakturuje se při uzávěrce období dne %1$@"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Estimated until the period closes"
+            "value": "Invoiced when the period closes on %1$@"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Оценка до закрытия периода"
+            "value": "Будет включено в счёт, когда период закроется %1$@"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Odhad do uzávierky obdobia"
+            "value": "Vyfakturuje sa pri uzávierke obdobia dňa %1$@"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Оцінка до закриття періоду"
+            "value": "Буде включено до рахунку, коли період закриється %1$@"
           }
         }
       }
@@ -6751,33 +6777,129 @@
       "extractionState": "stale",
       "localizations": {
         "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$d úklidů"
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld úklidy"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld úklid"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld úklidů"
+                }
+              }
+            }
           }
         },
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$d jobs done"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld job done"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld jobs done"
+                }
+              }
+            }
           }
         },
         "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Заданий выполнено: %1$d"
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld задания выполнено"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld заданий выполнено"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld задание выполнено"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld задания выполнено"
+                }
+              }
+            }
           }
         },
         "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$d upratovaní"
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld upratovania"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld upratovanie"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld upratovaní"
+                }
+              }
+            }
           }
         },
         "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Робіт виконано: %1$d"
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld роботи виконані"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld робіт виконано"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld робота виконана"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld роботи виконано"
+                }
+              }
+            }
           }
         }
       }
@@ -6813,41 +6935,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Минулий місяць"
-          }
-        }
-      }
-    },
-    "earnings_next_payout": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Další výplata"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Next payout"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Следующая выплата"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ďalšia výplata"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Наступна виплата"
           }
         }
       }
@@ -8077,6 +8164,41 @@
         }
       }
     },
+    "invoice_bank_transfer": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Převodem na váš účet"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bank transfer to you"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перевод на ваш счёт"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prevodom na váš účet"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Переказ на ваш рахунок"
+          }
+        }
+      }
+    },
     "invoice_breakdown_section": {
       "extractionState": "stale",
       "localizations": {
@@ -8151,33 +8273,129 @@
       "extractionState": "stale",
       "localizations": {
         "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$d zakázek"
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld zakázky"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld zakázka"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld zakázek"
+                }
+              }
+            }
           }
         },
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$d jobs included"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld job included"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld jobs included"
+                }
+              }
+            }
           }
         },
         "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Заказов: %1$d"
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld заказа"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld заказов"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld заказ"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld заказа"
+                }
+              }
+            }
           }
         },
         "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$d zákaziek"
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld zákazky"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld zákazka"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld zákaziek"
+                }
+              }
+            }
           }
         },
         "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Робіт: %1$d"
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld роботи"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld робіт"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld робота"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld роботи"
+                }
+              }
+            }
           }
         }
       }
@@ -8248,6 +8466,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Сума"
+          }
+        }
+      }
+    },
+    "invoice_cash_set_off": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Započtená hotovost"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cash set off"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Зачтённые наличные"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Započítaná hotovosť"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Зарахована готівка"
           }
         }
       }
@@ -8676,33 +8929,129 @@
       "extractionState": "stale",
       "localizations": {
         "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$d zakázek"
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld zakázky"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld zakázka"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld zakázek"
+                }
+              }
+            }
           }
         },
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$d jobs included"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld job included"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld jobs included"
+                }
+              }
+            }
           }
         },
         "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$d заказов"
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld заказа"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld заказов"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld заказ"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld заказа"
+                }
+              }
+            }
           }
         },
         "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$d zákaziek"
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld zákazky"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld zákazka"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld zákaziek"
+                }
+              }
+            }
           }
         },
         "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$d замовлень"
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld замовлення"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld замовлень"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld замовлення"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld замовлення"
+                }
+              }
+            }
           }
         }
       }
@@ -9096,33 +9445,129 @@
       "extractionState": "stale",
       "localizations": {
         "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Celkem %1$d faktur"
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Celkem %1$ld faktury"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Celkem %1$ld faktura"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Celkem %1$ld faktur"
+                }
+              }
+            }
           }
         },
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Across %1$d invoices"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Across %1$ld invoice"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Across %1$ld invoices"
+                }
+              }
+            }
           }
         },
         "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Всего %1$d счетов"
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Всего %1$ld счёта"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Всего %1$ld счетов"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Всего %1$ld счёт"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Всего %1$ld счёта"
+                }
+              }
+            }
           }
         },
         "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Celkom %1$d faktúr"
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Celkom %1$ld faktúry"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Celkom %1$ld faktúra"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Celkom %1$ld faktúr"
+                }
+              }
+            }
           }
         },
         "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Всього %1$d рахунків"
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Всього %1$ld рахунки"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Всього %1$ld рахунків"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Всього %1$ld рахунок"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Всього %1$ld рахунку"
+                }
+              }
+            }
           }
         }
       }
@@ -14241,33 +14686,129 @@
       "extractionState": "stale",
       "localizations": {
         "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$d zakázek"
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld zakázky"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld zakázka"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld zakázek"
+                }
+              }
+            }
           }
         },
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$d jobs included"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld job included"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld jobs included"
+                }
+              }
+            }
           }
         },
         "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$d заказов"
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld заказа"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld заказов"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld заказ"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld заказа"
+                }
+              }
+            }
           }
         },
         "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$d zákaziek"
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld zákazky"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld zákazka"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld zákaziek"
+                }
+              }
+            }
           }
         },
         "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$d замовлень"
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld замовлення"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld замовлень"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld замовлення"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$ld замовлення"
+                }
+              }
+            }
           }
         }
       }
@@ -14408,6 +14949,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Утримання %1$@: %2$@"
+          }
+        }
+      }
+    },
+    "period_pay_line_dispute_charge": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Srážka ze sporu"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dispute charge"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удержание по спору"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zrážka zo sporu"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Утримання за спором"
           }
         }
       }

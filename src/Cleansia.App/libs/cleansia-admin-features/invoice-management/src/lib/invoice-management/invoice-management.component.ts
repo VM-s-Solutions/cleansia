@@ -8,7 +8,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { EmployeeInvoiceDto, EmployeeInvoiceStatus } from '@cleansia/admin-services';
 import {
   CleansiaCheckboxComponent,
@@ -59,6 +59,7 @@ import {
 })
 export class InvoiceManagementComponent implements OnInit {
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   protected readonly facade = inject(InvoiceManagementFacade);
   private readonly translate = inject(TranslateService);
 
@@ -88,7 +89,13 @@ export class InvoiceManagementComponent implements OnInit {
 
   ngOnInit(): void {
     this.facade.loadCurrencies();
-    this.facade.loadInvoices();
+    this.facade.loadPayPeriods();
+    const payPeriodId = this.route.snapshot.queryParamMap.get('payPeriodId');
+    if (payPeriodId) {
+      this.facade.showPayPeriod(payPeriodId);
+    } else {
+      this.facade.loadInvoices();
+    }
   }
 
   viewInvoiceDetails(invoice: EmployeeInvoiceDto): void {

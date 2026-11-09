@@ -6,11 +6,12 @@ import {
   CashHeldDto,
   PartnerClient,
   PayPeriodDto,
+  PayPeriodStatus,
   PeriodPaySummaryDto,
   SortDefinition,
   SortDirection,
 } from '@cleansia/partner-services';
-import { currentLanguage } from '@cleansia/utils';
+import { currentLanguage, formatPayPeriodRange } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
 import { PeriodCurrency, getPeriodCurrencies } from './period-pay.models';
@@ -35,11 +36,12 @@ export class PeriodPayFacade extends UnsubscribeControlDirective {
   readonly cashHeldLoading = signal<boolean>(false);
   readonly cashHeldError = signal<boolean>(false);
 
-  readonly periodOptions = computed<ICleansiaSelectOption[]>(() =>
-    this.payPeriods()
+  readonly periodOptions = computed<ICleansiaSelectOption[]>(() => {
+    const lang = this.lang();
+    return this.payPeriods()
       .filter((period) => !!period.id)
-      .map((period) => ({ label: period.periodLabel ?? '', value: period.id }))
-  );
+      .map((period) => ({ label: formatPayPeriodRange(period.startDate, period.endDate, lang), value: period.id }));
+  });
 
   readonly currencyOptions = computed<ICleansiaSelectOption[]>(() =>
     this.periodCurrencies().map((currency) => ({ label: currency.code, value: currency.id }))
@@ -173,9 +175,11 @@ export class PeriodPayFacade extends UnsubscribeControlDirective {
         }
         const periods = paged.data ?? [];
         this.payPeriods.set(periods);
-        const latestPeriodId = periods[0]?.id;
-        if (latestPeriodId) {
-          this.selectPeriod(latestPeriodId);
+        const shownPeriodId = (
+          periods.find((period) => period.status === PayPeriodStatus[PayPeriodStatus.Open]) ?? periods[0]
+        )?.id;
+        if (shownPeriodId) {
+          this.selectPeriod(shownPeriodId);
         } else {
           this.initialLoading.set(false);
         }

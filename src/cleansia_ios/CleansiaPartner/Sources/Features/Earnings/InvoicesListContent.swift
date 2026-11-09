@@ -8,11 +8,20 @@ struct InvoicesListContent: View {
 
     var body: some View {
         if invoices.isEmpty {
-            MascotEmptyState(image: Mascot.leaning.image, text: L10n.Invoices.empty, verticallyCentered: true)
+            // `.refreshable` reaches only a scroll view, so the empty list rests in one the height of the screen.
+            GeometryReader { pane in
+                ScrollView {
+                    MascotEmptyState(image: Mascot.leaning.image, text: L10n.Invoices.empty, verticallyCentered: true)
+                        .frame(maxWidth: .infinity, minHeight: pane.size.height)
+                }
+            }
         } else {
             ScrollView {
                 VStack(spacing: Spacing.m) {
-                    InvoicesSummaryCard(invoices: invoices)
+                    let paid = invoices.paid
+                    if !paid.isEmpty {
+                        InvoicesSummaryCard(paid: paid)
+                    }
                     ForEach(invoices) { invoice in
                         InvoiceCard(invoice: invoice, onOpen: onOpenInvoice)
                     }
@@ -25,15 +34,7 @@ struct InvoicesListContent: View {
 }
 
 private struct InvoicesSummaryCard: View {
-    let invoices: [Invoice]
-
-    private var total: Double {
-        invoices.reduce(0) { $0 + $1.totalAmount }
-    }
-
-    private var currencyCode: String? {
-        invoices.lazy.compactMap(\.currencyCode).first
-    }
+    let paid: [Invoice]
 
     var body: some View {
         HStack(spacing: Spacing.m) {
@@ -42,10 +43,12 @@ private struct InvoicesSummaryCard: View {
                 Text(L10n.Invoices.summaryLabel)
                     .font(CleansiaTypography.labelMedium)
                     .foregroundColor(CleansiaColors.primaryText)
-                Text(EarningsFormat.decimalMoney(total, currencyCode: currencyCode))
-                    .cleansiaFont(CleansiaTypography.headlineMedium)
-                    .foregroundColor(CleansiaColors.onSurface)
-                Text(L10n.Invoices.summaryCount(invoices.count))
+                ForEach(Array(paid.totalsByCurrency.enumerated()), id: \.offset) { _, total in
+                    Text(EarningsFormat.decimalMoney(total.amount, currencyCode: total.currencyCode))
+                        .cleansiaFont(CleansiaTypography.headlineMedium)
+                        .foregroundColor(CleansiaColors.onSurface)
+                }
+                Text(L10n.Invoices.summaryCount(paid.count))
                     .font(CleansiaTypography.labelSmall)
                     .foregroundColor(CleansiaColors.onSurfaceVariant)
             }
@@ -96,8 +99,12 @@ private struct InvoiceCard: View {
                 Text(invoice.invoiceNumber ?? "—")
                     .font(CleansiaTypography.titleMedium)
                     .foregroundColor(CleansiaColors.onSurface)
-                if let label = invoice.payPeriodLabel, !label.isEmpty {
-                    Text(label)
+                if let period = EarningsFormat.period(
+                    start: invoice.payPeriodStart,
+                    end: invoice.payPeriodEnd,
+                    locale: locale
+                ) {
+                    Text(period)
                         .font(CleansiaTypography.labelSmall)
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
                 }
@@ -151,5 +158,23 @@ private struct MetaLabel: View {
             Text(text).font(CleansiaTypography.labelSmall)
         }
         .foregroundColor(CleansiaColors.onSurfaceVariant)
+    }
+}
+
+extension [Invoice] {
+    /// Total earned counts an invoice once it is Paid: until then it is not money received.
+    var paid: [Invoice] {
+        filter { $0.status == ._3 }
+    }
+
+    /// One total per currency, in the order the list first names each: a koruna and a euro invoice are never one sum.
+    var totalsByCurrency: [(currencyCode: String?, amount: Double)] {
+        reduce(into: []) { totals, invoice in
+            if let index = totals.firstIndex(where: { $0.currencyCode == invoice.currencyCode }) {
+                totals[index].amount += invoice.totalAmount
+            } else {
+                totals.append((invoice.currencyCode, invoice.totalAmount))
+            }
+        }
     }
 }

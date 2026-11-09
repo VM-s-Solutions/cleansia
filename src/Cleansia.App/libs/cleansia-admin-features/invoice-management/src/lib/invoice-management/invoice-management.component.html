@@ -36,6 +36,21 @@
 
             <div class="filter-section">
               <h3 class="filter-section-title">
+                {{ 'pages.invoice_management.filters.pay_period' | translate }}
+              </h3>
+              <cleansia-select
+                [options]="facade.payPeriodOptions()"
+                [label]="'pages.invoice_management.filters.pay_period' | translate"
+                [showClear]="true"
+                [showErrors]="false"
+                [filter]="true"
+                formControlName="payPeriodId"
+                appendTo="body"
+              />
+            </div>
+
+            <div class="filter-section">
+              <h3 class="filter-section-title">
                 {{ 'pages.invoice_management.filters.currency' | translate }}
               </h3>
               <cleansia-select

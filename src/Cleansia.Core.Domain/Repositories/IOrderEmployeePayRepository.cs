@@ -36,11 +36,11 @@ public interface IOrderEmployeePayRepository : IRepository<OrderEmployeePay, str
         string employeeId, string payPeriodId, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Sum of TotalPay across OrderEmployeePay rows owned by an employee
-    /// that aren't yet attached to an invoice. Used by the dashboard
-    /// "pending earnings" widget.
+    /// Sum of TotalPay across an employee's rows in one pay period and currency that no invoice holds yet.
+    /// Used by the dashboard's current-period figure.
     /// </summary>
-    Task<decimal> SumPendingEarningsAsync(string employeeId, string currencyId, CancellationToken cancellationToken);
+    Task<decimal> SumPendingEarningsAsync(
+        string employeeId, string payPeriodId, string currencyId, CancellationToken cancellationToken);
 
     /// <summary>
     /// All OrderEmployeePay rows for an employee in a specific pay period

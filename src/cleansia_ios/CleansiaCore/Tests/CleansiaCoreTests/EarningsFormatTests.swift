@@ -82,4 +82,53 @@ final class EarningsFormatTests: XCTestCase {
             EarningsFormat.shortDate(date, locale: Locale(identifier: "en"))
         )
     }
+
+    /// A pay period's days arrive as midnight UTC; read in the phone's zone, the period began and ended a day
+    /// early west of Greenwich.
+    func testAPeriodIsTheDaysTheServerNamesInEveryZone() throws {
+        let start = try day("2026-11-03")
+        let end = try day("2026-11-16")
+        for zone in ["America/Los_Angeles", "Europe/Prague", "Pacific/Kiritimati"] {
+            try inSystemZone(zone) {
+                XCTAssertEqual(
+                    EarningsFormat.period(start: start, end: end, locale: english),
+                    "Nov 3, 2026 – Nov 16, 2026",
+                    zone
+                )
+            }
+        }
+    }
+
+    func testAPeriodNamesItsDaysInTheLanguageGiven() throws {
+        let czech = try XCTUnwrap(EarningsFormat.period(
+            start: day("2026-11-03"),
+            end: day("2026-11-16"),
+            locale: Locale(identifier: "cs")
+        ))
+        XCTAssertFalse(czech.contains("Nov"), czech)
+        XCTAssertTrue(czech.hasPrefix("3.") && czech.contains("16.") && czech.hasSuffix("2026"), czech)
+    }
+
+    func testAPeriodMissingADayIsNoPeriod() throws {
+        XCTAssertNil(try EarningsFormat.period(start: nil, end: day("2026-11-16"), locale: english))
+        XCTAssertNil(try EarningsFormat.period(start: day("2026-11-03"), end: nil, locale: english))
+    }
+
+    private let english = Locale(identifier: "en")
+
+    private func day(_ text: String) throws -> Date {
+        try XCTUnwrap(ISO8601DateFormatter().date(from: "\(text)T00:00:00Z"))
+    }
+
+    /// `TimeZone.current` is the system's zone, which `NSTimeZone.default` does not move.
+    private func inSystemZone(_ identifier: String, _ body: () throws -> Void) rethrows {
+        let saved = getenv("TZ").map { String(cString: $0) }
+        setenv("TZ", identifier, 1)
+        NSTimeZone.resetSystemTimeZone()
+        defer {
+            if let saved { setenv("TZ", saved, 1) } else { unsetenv("TZ") }
+            NSTimeZone.resetSystemTimeZone()
+        }
+        try body()
+    }
 }

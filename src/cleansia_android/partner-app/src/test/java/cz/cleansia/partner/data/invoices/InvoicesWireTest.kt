@@ -125,7 +125,7 @@ class InvoicesWireTest {
     @Test
     fun theDetailDtoCarriesEverythingTheListOneDoesPlusItsOwn() {
         assertEquals(
-            setOf("specificSymbol", "orderPays"),
+            setOf("specificSymbol", "constantSymbol", "orderPays"),
             DETAIL_SPEC_PROPERTIES - LIST_SPEC_PROPERTIES,
         )
         assertEquals(emptySet<String>(), LIST_SPEC_PROPERTIES - DETAIL_SPEC_PROPERTIES)
@@ -190,6 +190,22 @@ class InvoicesWireTest {
         assertEquals(40.25, invoice.deductionAmount, 0.0)
         assertEquals(1500.25, invoice.totalAmount, 0.0)
         assertEquals(3, invoice.totalOrders)
+    }
+
+    /** The cash the cleaner held is set off against the invoice; the transfer is what reaches their account. */
+    @Test
+    fun theDetailCarriesTheCashSetOffAndTheTransferWithTheirLiteralValues() = runTest {
+        val invoice = loadedDetail(capturedInvoice().toString())
+
+        assertEquals(300.00, invoice.cashSetOffAmount, 0.0)
+        assertEquals(1200.25, invoice.transferAmount, 0.0)
+    }
+
+    @Test
+    fun aMissingSetOffOrTransferFailsTheDetailRatherThanReadingZero() = runTest {
+        listOf("cashSetOffAmount", "transferAmount").forEach { field ->
+            assertDetailMappingFails(field, (capturedInvoice() - field).toString())
+        }
     }
 
     @Test
@@ -366,6 +382,19 @@ class InvoicesWireTest {
         assertEquals(emptyList<OrderPayLine>(), invoice.orderPays)
     }
 
+    // --- the period's days ---------------------------------------------------------
+
+    /** The screens print the period from its days; the server's label is English whatever the cleaner reads. */
+    @Test
+    fun everyInvoiceCarriesItsPeriodDaysAsTheServerNamesThem() = runTest {
+        assertEquals(
+            listOf("2026-08-01" to "2026-08-15", "2026-08-16" to "2026-08-31"),
+            loadedList(CAPTURED_PAGE).map { it.payPeriodStartDate to it.payPeriodEndDate },
+        )
+        val detail = loadedDetail(capturedInvoice().toString())
+        assertEquals("2026-08-01" to "2026-08-15", detail.payPeriodStartDate to detail.payPeriodEndDate)
+    }
+
     // --- the currency view My Pay is opened with ---------------------------------
 
     @Test
@@ -382,7 +411,8 @@ class InvoicesWireTest {
         val invoice = loadedDetail(stripped.toString())
 
         assertNull(invoice.invoiceNumber)
-        assertNull(invoice.payPeriodLabel)
+        assertNull(invoice.payPeriodStartDate)
+        assertNull(invoice.payPeriodEndDate)
         assertNull(invoice.currencyCode)
         assertNull(invoice.currencyId)
         assertNull(invoice.variableSymbol)
@@ -466,6 +496,8 @@ class InvoicesWireTest {
                   "employeeName": "Jana Novak",
                   "payPeriodId": "pp-9",
                   "payPeriodLabel": "1 - 15 Aug 2026",
+                  "payPeriodStartDate": "2026-08-01",
+                  "payPeriodEndDate": "2026-08-15",
                   "invoiceNumber": "2026-0042",
                   "variableSymbol": "20260042",
                   "paymentReference": "CLS-2026-0042",
@@ -493,6 +525,8 @@ class InvoicesWireTest {
                   "employeeName": "Jana Novak",
                   "payPeriodId": "pp-10",
                   "payPeriodLabel": "16 - 31 Aug 2026",
+                  "payPeriodStartDate": "2026-08-16",
+                  "payPeriodEndDate": "2026-08-31",
                   "invoiceNumber": "2026-0043",
                   "variableSymbol": "20260043",
                   "paymentReference": "CLS-2026-0043",
@@ -530,6 +564,8 @@ class InvoicesWireTest {
               "employeeName": "Jana Novak",
               "payPeriodId": "pp-9",
               "payPeriodLabel": "1 - 15 Aug 2026",
+              "payPeriodStartDate": "2026-08-01",
+              "payPeriodEndDate": "2026-08-15",
               "invoiceNumber": "2026-0042",
               "variableSymbol": "20260042",
               "specificSymbol": "778899",
@@ -539,6 +575,8 @@ class InvoicesWireTest {
               "bonusAmount": 120.40,
               "deductionAmount": 40.25,
               "totalAmount": 1500.25,
+              "cashSetOffAmount": 300.00,
+              "transferAmount": 1200.25,
               "currencyCode": "CZK",
               "currencyId": "cur-czk",
               "status": 3,
@@ -600,6 +638,8 @@ class InvoicesWireTest {
             "employeeName",
             "payPeriodId",
             "payPeriodLabel",
+            "payPeriodStartDate",
+            "payPeriodEndDate",
             "invoiceNumber",
             "variableSymbol",
             "paymentReference",
@@ -624,7 +664,7 @@ class InvoicesWireTest {
             "bankTransferNote",
         )
 
-        val DETAIL_SPEC_PROPERTIES = LIST_SPEC_PROPERTIES + setOf("specificSymbol", "orderPays")
+        val DETAIL_SPEC_PROPERTIES = LIST_SPEC_PROPERTIES + setOf("specificSymbol", "constantSymbol", "orderPays")
 
         val REQUIRED_NUMBERS = listOf(
             "totalOrders",
@@ -639,6 +679,8 @@ class InvoicesWireTest {
             "employeeName",
             "payPeriodId",
             "payPeriodLabel",
+            "payPeriodStartDate",
+            "payPeriodEndDate",
             "invoiceNumber",
             "variableSymbol",
             "specificSymbol",

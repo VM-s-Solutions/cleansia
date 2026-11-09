@@ -27,11 +27,8 @@ struct EarningsContent: View {
 }
 
 private struct HeadlineEarningsCard: View {
+    @Environment(\.locale) private var locale
     let stats: DashboardStats
-
-    private var isEstimate: Bool {
-        stats.latestInvoiceStatus?.isEmpty ?? true
-    }
 
     var body: some View {
         HStack(spacing: Spacing.m) {
@@ -43,8 +40,8 @@ private struct HeadlineEarningsCard: View {
                 Text(EarningsFormat.wholeMoney(stats.currentPeriodEarnings, currencyCode: stats.currencyCode))
                     .cleansiaFont(CleansiaTypography.headlineMedium)
                     .foregroundColor(CleansiaColors.onSurface)
-                if isEstimate {
-                    Text(L10n.Earnings.estimateHelper)
+                if let end = stats.currentPayPeriodEnd {
+                    Text(L10n.Earnings.invoicedOnClose(CalendarDay.text(end, locale: locale)))
                         .font(CleansiaTypography.labelSmall)
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
                 }
@@ -113,24 +110,17 @@ private struct BreakdownRow: View {
 struct PayPeriodWindow {
     let start: Date
     let end: Date
-    let nextPayout: Date?
     let currencyCode: String?
 
     init?(stats: DashboardStats) {
         guard let start = stats.currentPayPeriodStart, let end = stats.currentPayPeriodEnd else { return nil }
         self.start = start
         self.end = end
-        nextPayout = stats.nextPayoutDate
         currencyCode = stats.currencyCode
     }
 
-    var daysRemaining: Int {
-        let days = Calendar.current.dateComponents(
-            [.day],
-            from: Calendar.current.startOfDay(for: Date()),
-            to: Calendar.current.startOfDay(for: end)
-        ).day ?? 0
-        return max(days, 0)
+    func daysRemaining(now: Date = Date(), timeZone: TimeZone = .current) -> Int {
+        max(DashboardFormat.days(from: CalendarDay.startOfDay(now, in: timeZone), to: end), 0)
     }
 }
 
@@ -149,35 +139,18 @@ private struct PayPeriodCardView: View {
                     Text(rangeLine)
                         .font(CleansiaTypography.titleMedium)
                         .foregroundColor(CleansiaColors.onSurface)
-                    Text(L10n.Earnings.daysRemaining(period.daysRemaining))
+                    Text(L10n.Earnings.daysRemaining(period.daysRemaining()))
                         .font(CleansiaTypography.labelSmall)
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
                 }
                 Spacer(minLength: 0)
-            }
-            if let payout = period.nextPayout {
-                EarningsDivider().padding(.vertical, Spacing.m)
-                HStack(spacing: Spacing.xs) {
-                    Image(systemName: "checkmark.circle")
-                        .font(.system(size: 18))
-                        .foregroundColor(CleansiaColors.onSurfaceVariant)
-                    Text(L10n.Earnings.nextPayout)
-                        .font(CleansiaTypography.bodyMedium)
-                        .foregroundColor(CleansiaColors.onSurfaceVariant)
-                    Spacer()
-                    Text(EarningsFormat.shortDate(payout, locale: locale) ?? "")
-                        .font(CleansiaTypography.bodyMedium)
-                        .foregroundColor(CleansiaColors.onSurface)
-                }
             }
         }
         .cardPadding()
     }
 
     private var rangeLine: String {
-        let start = EarningsFormat.shortDate(period.start, locale: locale) ?? ""
-        let end = EarningsFormat.shortDate(period.end, locale: locale) ?? ""
-        return "\(start) – \(end)"
+        EarningsFormat.period(start: period.start, end: period.end, locale: locale) ?? ""
     }
 }
 

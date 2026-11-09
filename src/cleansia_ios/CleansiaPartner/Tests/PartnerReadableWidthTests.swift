@@ -213,7 +213,7 @@ private extension View {
 /// whose safe area is exactly the one given: the system's own is dropped and the given one laid in, so every
 /// simulator reads the same insets. The window that was key before is key again on `close()`.
 @MainActor
-private final class HostedCanvas {
+final class HostedCanvas {
     let window: UIWindow
     let host: UIViewController
     private let previous: UIWindow?

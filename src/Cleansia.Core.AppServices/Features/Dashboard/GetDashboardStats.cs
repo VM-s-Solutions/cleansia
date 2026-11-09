@@ -32,10 +32,6 @@ public class GetDashboardStats
         IAppConfigurationProvider configurationProvider)
         : IQueryHandler<Query, DashboardStatsDto>
     {
-        // Payroll runs ~5 business days after the period closes. Sane default
-        // until PayPeriod gains an explicit PayoutDate field.
-        private const int PayoutOffsetDays = 5;
-
         public async Task<BusinessResult<DashboardStatsDto>> Handle(Query query, CancellationToken cancellationToken)
         {
             var role = userSessionProvider.GetTypedUserClaim(ClaimTypes.Role)?.Value;
@@ -187,19 +183,12 @@ public class GetDashboardStats
             var latestInvoice = await employeeInvoiceRepository.GetLatestInvoiceAsync(
                 employeeId, cancellationToken);
 
-            var pendingEarnings = await orderEmployeePayRepository.SumPendingEarningsAsync(employeeId, currency.Id, cancellationToken);
-
-            // Pay-period context. Active period drives the progress bar; the
-            // payout date is derived from EndDate + offset (since PayPeriod
-            // doesn't yet have an explicit PayoutDate). All nullable — the
-            // mobile screen renders the section only when CurrentPayPeriodStart
-            // is set.
+            // The open period is where new pay lands, so its un-invoiced pay is the cleaner's current figure.
             var activePeriod = await payPeriodRepository.GetActivePeriodAsync(cancellationToken);
-            DateTime? periodStart = activePeriod is null ? null
-                : DateTime.SpecifyKind(activePeriod.StartDate.ToDateTime(TimeOnly.MinValue), DateTimeKind.Utc);
-            DateTime? periodEnd = activePeriod is null ? null
-                : DateTime.SpecifyKind(activePeriod.EndDate.ToDateTime(TimeOnly.MaxValue), DateTimeKind.Utc);
-            DateTime? nextPayoutDate = periodEnd?.AddDays(PayoutOffsetDays);
+            var currentPeriodEarnings = activePeriod is null
+                ? 0m
+                : await orderEmployeePayRepository.SumPendingEarningsAsync(
+                    employeeId, activePeriod.Id, currency.Id, cancellationToken);
 
             // Aggregate rating across reviews on orders this employee was on.
             var (avgRating, ratingCount) = await orderRepository.GetAverageRatingForEmployeeAsync(
@@ -215,14 +204,9 @@ public class GetDashboardStats
                 WeekEarnings: weekEarnings,
                 WeekCompletedCount: completedCounts.Week,
                 LastMonthEarnings: lastMonthEarnings,
-                // The latest invoice stands in only when it is in the display currency; an EUR invoice
-                // under a CZK label is the exact mislabel this scoping exists to prevent.
-                CurrentPeriodEarnings: pendingEarnings > 0
-                    ? pendingEarnings
-                    : latestInvoice?.CurrencyId == currency.Id ? latestInvoice.TotalAmount : 0m,
-                CurrentPayPeriodStart: periodStart,
-                CurrentPayPeriodEnd: periodEnd,
-                NextPayoutDate: nextPayoutDate,
+                CurrentPeriodEarnings: currentPeriodEarnings,
+                CurrentPayPeriodStart: activePeriod?.StartDate,
+                CurrentPayPeriodEnd: activePeriod?.EndDate,
                 AverageRating: avgRating,
                 RatingCount: ratingCount,
                 LatestInvoiceStatus: latestInvoice?.Status.ToString(),

@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,7 +22,6 @@ import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.CalendarMonth
-import androidx.compose.material.icons.outlined.EventAvailable
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -40,6 +38,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -53,10 +52,11 @@ import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.R
 import cz.cleansia.partner.data.dashboard.DashboardStats
 import cz.cleansia.partner.data.payroll.CashHeld
+import cz.cleansia.partner.features.invoices.calendarDate
+import cz.cleansia.partner.features.invoices.formatPeriod
+import cz.cleansia.partner.features.invoices.formatShortDate
+import cz.cleansia.partner.features.orders.appLocale
 import java.time.LocalDate
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 /**
  * "Pay & Earnings" summary — the destination from the dashboard's
@@ -66,7 +66,7 @@ import java.util.Locale
  * which is empty for any cleaner whose first pay period hasn't closed
  * yet — confusing and unhelpful. This screen always has meaningful
  * content (today / week / month earnings, jobs done, pay-period
- * progress, next payout date) and offers "View all invoices" as a
+ * progress) and offers "View all invoices" as a
  * deliberate drill-down for cleaners who do have history.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -138,13 +138,13 @@ fun EarningsSummaryScreen(
 }
 
 /**
- * Hero card — current pay-period earnings, with "estimated" footnote
- * when the period is still open. The big number on this screen.
+ * Hero card — this period's pay that no invoice holds yet, and the day the period closes into an invoice. The big
+ * number on this screen.
  */
 @Composable
 private fun HeadlineEarningsCard(stats: DashboardStats?) {
     val symbol = remember(stats?.currencyCode) { CurrencySymbols.forCode(stats?.currencyCode) }
-    val isEstimate = stats?.latestInvoiceStatus.isNullOrBlank()
+    val closesOn = formatShortDate(stats?.currentPayPeriodEnd, appLocale())
 
     Row(
         modifier = Modifier
@@ -173,9 +173,9 @@ private fun HeadlineEarningsCard(stats: DashboardStats?) {
                 style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface,
             )
-            if (isEstimate) {
+            closesOn?.let {
                 Text(
-                    text = stringResource(R.string.earnings_estimate_helper),
+                    text = stringResource(R.string.earnings_invoiced_on_close, it),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -203,28 +203,19 @@ private fun BreakdownGrid(stats: DashboardStats?) {
         BreakdownRow(
             label = stringResource(R.string.earnings_today),
             value = formatWholeMoney(stats?.todayEarnings, symbol),
-            secondary = stringResource(
-                R.string.earnings_jobs_done_count,
-                stats?.todayCompletedCount ?: 0,
-            ),
+            secondary = (stats?.todayCompletedCount ?: 0).let { pluralStringResource(R.plurals.earnings_jobs_done_count, it, it) },
         )
         Divider()
         BreakdownRow(
             label = stringResource(R.string.earnings_this_week),
             value = formatWholeMoney(stats?.weekEarnings, symbol),
-            secondary = stringResource(
-                R.string.earnings_jobs_done_count,
-                stats?.weekCompletedCount ?: 0,
-            ),
+            secondary = (stats?.weekCompletedCount ?: 0).let { pluralStringResource(R.plurals.earnings_jobs_done_count, it, it) },
         )
         Divider()
         BreakdownRow(
             label = stringResource(R.string.earnings_last_month),
             value = formatWholeMoney(stats?.lastMonthEarnings, symbol),
-            secondary = stringResource(
-                R.string.earnings_jobs_done_count,
-                stats?.lastMonthCompletedOrders ?: 0,
-            ),
+            secondary = (stats?.lastMonthCompletedOrders ?: 0).let { pluralStringResource(R.plurals.earnings_jobs_done_count, it, it) },
         )
     }
 }
@@ -258,15 +249,14 @@ private fun BreakdownRow(label: String, value: String, secondary: String) {
 }
 
 /**
- * Pay-period progress card — start/end dates + days remaining and the
- * expected next payout date. Hidden if no active period (the backend
+ * Pay-period progress card — start/end dates + days remaining. Hidden if no active period (the backend
  * returns null while the cleaner is between periods).
  */
 @Composable
 private fun PayPeriodCard(stats: DashboardStats) {
-    val start = parseIsoDate(stats.currentPayPeriodStart) ?: return
-    val end = parseIsoDate(stats.currentPayPeriodEnd) ?: return
-    val payout = parseIsoDate(stats.nextPayoutDate)
+    val locale = appLocale()
+    val range = formatPeriod(stats.currentPayPeriodStart, stats.currentPayPeriodEnd, locale) ?: return
+    val end = calendarDate(stats.currentPayPeriodEnd) ?: return
     val today = LocalDate.now()
     val daysLeft = (java.time.temporal.ChronoUnit.DAYS.between(today, end)).toInt().coerceAtLeast(0)
 
@@ -292,39 +282,14 @@ private fun PayPeriodCard(stats: DashboardStats) {
                     color = primaryText(),
                 )
                 Text(
-                    text = "${formatShort(start)} – ${formatShort(end)}",
+                    text = range,
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    text = stringResource(R.string.earnings_days_remaining, daysLeft),
+                    text = pluralStringResource(R.plurals.earnings_days_remaining, daysLeft, daysLeft),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-        if (payout != null) {
-            Spacer(Modifier.height(Spacing.M))
-            Divider()
-            Spacer(Modifier.height(Spacing.M))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Outlined.EventAvailable,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(18.dp),
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = stringResource(R.string.earnings_next_payout),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.weight(1f),
-                )
-                Text(
-                    text = formatShort(payout),
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.onSurface,
                 )
             }
         }
@@ -449,17 +414,6 @@ private fun Divider() {
             .height(1.dp)
             .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
     )
-}
-
-private val shortDateFormatter = DateTimeFormatter.ofPattern("d MMM", Locale.getDefault())
-
-private fun formatShort(date: LocalDate): String = date.format(shortDateFormatter)
-
-private fun parseIsoDate(iso: String?): LocalDate? {
-    if (iso.isNullOrBlank()) return null
-    return runCatching { ZonedDateTime.parse(iso).toLocalDate() }
-        .getOrNull()
-        ?: runCatching { LocalDate.parse(iso) }.getOrNull()
 }
 
 /**

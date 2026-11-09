@@ -7,6 +7,7 @@ export const PAY_LINE_TYPE_LABEL_KEYS: Readonly<Record<PayLineType, string>> = {
   [PayLineType.Job]: 'enums.pay_line_type.job',
   [PayLineType.CancellationFeeShare]: 'enums.pay_line_type.cancellation_fee_share',
   [PayLineType.LockoutFeeShare]: 'enums.pay_line_type.lockout_fee_share',
+  [PayLineType.DisputeCharge]: 'enums.pay_line_type.dispute_charge',
 };
 
 export function getOrderPaysTableDefinition(

@@ -197,6 +197,8 @@ final class InvoiceDetailViewModelTests: XCTestCase {
             bonusAmount: 0,
             deductionAmount: 0,
             totalAmount: 100,
+            cashSetOffAmount: 0,
+            transferAmount: 100,
             currencyCode: "CZK",
             status: ._1,
             pdfGenerationFailed: failed

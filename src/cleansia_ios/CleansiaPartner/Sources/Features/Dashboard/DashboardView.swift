@@ -417,8 +417,7 @@ private struct HeroRowCard: View {
                 payPeriod: DashboardData.PayPeriod(
                     start: Date(timeIntervalSinceNow: -6 * 86400),
                     end: Date(timeIntervalSinceNow: 8 * 86400),
-                    earnings: 9500,
-                    nextPayoutDate: Date(timeIntervalSinceNow: 8 * 86400)
+                    earnings: 9500
                 ),
                 lastMonthEarnings: 18450,
                 lastMonthCompletedOrders: 22,

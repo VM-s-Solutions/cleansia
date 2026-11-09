@@ -13,7 +13,7 @@ import {
 import { SnackbarService } from '@cleansia/services';
 import { currentLanguage } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
-import { catchError, of, takeUntil } from 'rxjs';
+import { catchError, finalize, of, takeUntil } from 'rxjs';
 import { buildFilterChips, buildInvoiceStatusOptions } from './invoices.helpers';
 
 @Injectable()
@@ -96,6 +96,7 @@ export class InvoicesFacade extends UnsubscribeControlDirective {
     const employeeId = this.currentEmployeeId();
 
     if (!employeeId) {
+      this.loadCurrentEmployee();
       return;
     }
 
@@ -120,20 +121,15 @@ export class InvoicesFacade extends UnsubscribeControlDirective {
       )
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => {
-          this.loading.set(false);
-          return of(null);
-        })
+        catchError(() => of(null)),
+        finalize(() => this.loading.set(false))
       )
       .subscribe((pagedData: PagedDataOfEmployeeInvoiceDto | null) => {
-        if (pagedData && pagedData.data) {
-          this.invoices.set(pagedData.data);
+        // A failed read keeps the rows on screen; the interceptor has already said why.
+        if (pagedData) {
+          this.invoices.set(pagedData.data ?? []);
           this.totalRecords.set(pagedData.total ?? 0);
-        } else {
-          this.invoices.set([]);
-          this.totalRecords.set(0);
         }
-        this.loading.set(false);
       });
   }
 

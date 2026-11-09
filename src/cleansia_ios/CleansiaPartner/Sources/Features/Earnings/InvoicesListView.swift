@@ -40,7 +40,12 @@ struct InvoicesListView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(CleansiaColors.background.ignoresSafeArea())
         case let .error(error):
-            ErrorRetryView(error: error) { Task { await vm.userRefresh() } }
+            GeometryReader { pane in
+                ScrollView {
+                    ErrorRetryView(error: error) { Task { await vm.userRefresh() } }
+                        .frame(maxWidth: .infinity, minHeight: pane.size.height)
+                }
+            }
         case let .loaded(invoices):
             InvoicesListContent(invoices: invoices, onOpenInvoice: onOpenInvoice)
                 .background(CleansiaColors.background.ignoresSafeArea())
@@ -65,7 +70,8 @@ struct InvoicesListView: View {
             (try? [
                 EmployeeInvoiceDto(
                     id: "inv-1",
-                    payPeriodLabel: "1 – 15 Jun 2026",
+                    payPeriodStartDate: OpenAPIDateWithoutTime(day: Date(timeIntervalSince1970: 1_780_272_000)),
+                    payPeriodEndDate: OpenAPIDateWithoutTime(day: Date(timeIntervalSince1970: 1_781_481_600)),
                     invoiceNumber: "INV-2026-001",
                     totalOrders: 3,
                     totalAmount: 4200,
@@ -75,7 +81,8 @@ struct InvoicesListView: View {
                 ),
                 EmployeeInvoiceDto(
                     id: "inv-2",
-                    payPeriodLabel: "16 – 31 May 2026",
+                    payPeriodStartDate: OpenAPIDateWithoutTime(day: Date(timeIntervalSince1970: 1_778_889_600)),
+                    payPeriodEndDate: OpenAPIDateWithoutTime(day: Date(timeIntervalSince1970: 1_780_185_600)),
                     invoiceNumber: "INV-2026-000",
                     totalOrders: 2,
                     totalAmount: 2800,

@@ -107,6 +107,17 @@ private struct BreakdownCard: View {
                 code: invoice.currencyCode,
                 bold: true
             )
+
+            if invoice.cashSetOffAmount > 0 {
+                EarningsDivider().padding(.vertical, Spacing.xs)
+                MoneyRow(label: L10n.Invoices.cashSetOff, amount: -invoice.cashSetOffAmount, code: invoice.currencyCode)
+                MoneyRow(
+                    label: L10n.Invoices.bankTransfer,
+                    amount: invoice.transferAmount,
+                    code: invoice.currencyCode,
+                    bold: true
+                )
+            }
         }
         .cardPadding()
     }
@@ -131,7 +142,11 @@ private struct PeriodCard: View {
                     Text(L10n.Invoices.periodLabel)
                         .font(CleansiaTypography.labelMedium)
                         .foregroundColor(CleansiaColors.primaryText)
-                    Text(invoice.payPeriodLabel?.nilIfEmpty ?? "—")
+                    Text(EarningsFormat.period(
+                        start: invoice.payPeriodStart,
+                        end: invoice.payPeriodEnd,
+                        locale: locale
+                    ) ?? "—")
                         .font(CleansiaTypography.titleMedium)
                         .foregroundColor(CleansiaColors.onSurface)
                     if invoice.totalOrders > 0 {

@@ -75,8 +75,12 @@ public class GetDashboardStatsHandlerTests
             .Setup(r => r.GetAverageRatingForEmployeeAsync(CallerEmployeeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((4.5, 12));
 
+        _payPeriodRepository
+            .Setup(r => r.GetActivePeriodAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(PayrollMockFactory.OpenPeriod(new DateOnly(2026, 11, 12)));
         _orderEmployeePayRepository
-            .Setup(r => r.SumPendingEarningsAsync(CallerEmployeeId, CzkId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.SumPendingEarningsAsync(
+                CallerEmployeeId, PayrollMockFactory.PayPeriodId, CzkId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(750m);
         _orderEmployeePayRepository
             .Setup(r => r.GetTotalPayByOrderIdsAsync(
@@ -138,9 +142,8 @@ public class GetDashboardStatsHandlerTests
         Assert.Equal(1, dto.TodayCompletedCount);
         Assert.Equal(3, dto.WeekCompletedCount);
         Assert.Equal(750m, dto.CurrentPeriodEarnings);
-        Assert.Null(dto.CurrentPayPeriodStart);
-        Assert.Null(dto.CurrentPayPeriodEnd);
-        Assert.Null(dto.NextPayoutDate);
+        Assert.Equal(new DateOnly(2026, 11, 12), dto.CurrentPayPeriodStart);
+        Assert.Equal(new DateOnly(2026, 11, 25), dto.CurrentPayPeriodEnd);
         Assert.Equal(4.5, dto.AverageRating);
         Assert.Equal(12, dto.RatingCount);
         Assert.Null(dto.LatestInvoiceStatus);
@@ -272,28 +275,76 @@ public class GetDashboardStatsHandlerTests
         Assert.Equal(500m, result.Value.WeekEarnings);
         Assert.Equal("CZK", result.Value.CurrencyCode);
         _orderEmployeePayRepository.Verify(
-            r => r.SumPendingEarningsAsync(CallerEmployeeId, CzkId, It.IsAny<CancellationToken>()), Times.Once);
+            r => r.SumPendingEarningsAsync(
+                CallerEmployeeId, PayrollMockFactory.PayPeriodId, CzkId, It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     /// <summary>
-    /// The latest invoice stands in for pending earnings only when it is in the display currency; its
-    /// STATUS is still reported, because a status has no unit.
+    /// The figure is the open period's pay that no invoice holds yet, nothing else: an invoice already issued in
+    /// the same currency does not stand in for an empty period, and its status is still reported.
     /// </summary>
     [Fact]
-    public async Task A_Latest_Invoice_In_Another_Currency_Does_Not_Stand_In_For_Pending_Earnings()
+    public async Task A_Latest_Invoice_Does_Not_Stand_In_For_The_Open_Periods_Pay()
     {
         _orderEmployeePayRepository
-            .Setup(r => r.SumPendingEarningsAsync(CallerEmployeeId, CzkId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.SumPendingEarningsAsync(
+                CallerEmployeeId, PayrollMockFactory.PayPeriodId, CzkId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(0m);
         _employeeInvoiceRepository
             .Setup(r => r.GetLatestInvoiceAsync(CallerEmployeeId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(PayrollMockFactory.Invoice(subTotal: 20m, currencyId: EurId));
+            .ReturnsAsync(PayrollMockFactory.Invoice(subTotal: 600m, currencyId: CzkId));
 
         var result = await CreateHandler().Handle(new GetDashboardStats.Query(), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(0m, result.Value.CurrentPeriodEarnings);
         Assert.Equal("Pending", result.Value.LatestInvoiceStatus);
+    }
+
+    /// <summary>
+    /// A dispute charge waiting in the open period for the next invoice comes off the period's pay, so the figure
+    /// can be below zero: 0 of pay and a 150 charge read -150.
+    /// </summary>
+    [Fact]
+    public async Task A_Charge_Waiting_In_The_Open_Period_Leaves_The_Figure_Below_Zero()
+    {
+        _orderEmployeePayRepository
+            .Setup(r => r.SumPendingEarningsAsync(
+                CallerEmployeeId, PayrollMockFactory.PayPeriodId, CzkId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(-150m);
+
+        var result = await CreateHandler().Handle(new GetDashboardStats.Query(), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(-150m, result.Value.CurrentPeriodEarnings);
+    }
+
+    /// <summary>
+    /// With no open period there is no window to draw and no period's pay to show, even when an earlier invoice
+    /// exists, and no pay row is read.
+    /// </summary>
+    [Fact]
+    public async Task With_No_Open_Period_There_Are_No_Dates_And_No_Current_Pay()
+    {
+        _payPeriodRepository
+            .Setup(r => r.GetActivePeriodAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync((PayPeriod?)null);
+        _employeeInvoiceRepository
+            .Setup(r => r.GetLatestInvoiceAsync(CallerEmployeeId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(PayrollMockFactory.Invoice(subTotal: 600m, currencyId: CzkId));
+
+        var result = await CreateHandler().Handle(new GetDashboardStats.Query(), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Null(result.Value.CurrentPayPeriodStart);
+        Assert.Null(result.Value.CurrentPayPeriodEnd);
+        Assert.Equal(0m, result.Value.CurrentPeriodEarnings);
+        Assert.Equal("Pending", result.Value.LatestInvoiceStatus);
+        _orderEmployeePayRepository.Verify(
+            r => r.SumPendingEarningsAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     [Fact]

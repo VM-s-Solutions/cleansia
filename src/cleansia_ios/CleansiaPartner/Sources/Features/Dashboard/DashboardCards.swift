@@ -80,7 +80,7 @@ struct PayPeriodCard: View {
         Button(action: onClick) {
             VStack(alignment: .leading, spacing: Spacing.xs) {
                 HStack {
-                    Text(L10n.Dashboard.currentPeriod)
+                    Text(L10n.Earnings.currentPeriod)
                         .font(CleansiaTypography.labelMedium)
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
                     Spacer()
@@ -95,11 +95,9 @@ struct PayPeriodCard: View {
                     .animation(.default, value: period.earnings)
                 ProgressView(value: progress.fraction)
                     .tint(CleansiaColors.primary)
-                if let payout = period.nextPayoutDate {
-                    Text(L10n.Dashboard.nextPayout(DashboardFormat.payoutDate(payout, locale: locale)))
-                        .font(CleansiaTypography.labelSmall)
-                        .foregroundColor(CleansiaColors.onSurfaceVariant)
-                }
+                Text(L10n.Earnings.invoicedOnClose(CalendarDay.text(period.end, locale: locale)))
+                    .font(CleansiaTypography.labelSmall)
+                    .foregroundColor(CleansiaColors.onSurfaceVariant)
             }
             .cardPadding()
         }

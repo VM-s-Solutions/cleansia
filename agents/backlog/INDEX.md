@@ -432,7 +432,7 @@
 | T-0917 | iOS long-term refactor — shared Core pieces, one locale source, lag fixes and build health | L | `done` | — | Mike 2026-11-07: "Don't do the quick fixes, I want you to do the fixes that actually matter and win in long term"; iOS only, items from the verified audit of that day |
 | T-0918 | Android long-term refactor — minified staging builds, lag fixes, shared pieces in :core, dead code and docs drift | L | `done` | — | Mike 2026-11-07: "I want you to do the fixes that actually matter and win in long term"; the Android part of the audit-20261107 program, beside #366 and #368 |
 | T-0919 | Partner job map — frames the place across the 180th meridian (iOS) and keeps the door on screen in windows shorter than the pin line (Android) | S | `done` | — | Found 2026-11-07 while checking T-0914; Mike asked the same day for every bug found to be fixed; the Android half is fixed and measured on the API 35 emulator; the iOS half is fixed in Core, test-first on iOS 16.4 and 26.3 |
-| T-0922 | The 2026-11-08 Android review findings | M | `in_progress` | — | Mike 2026-11-08: "Fix the findings as well. But don't focus too much"; F8 to F11, each small, on PR B (`feature/customer-onboarding-d-android`) |
+| T-0922 | The 2026-11-08 Android review findings | M | `in_review` | — | Mike 2026-11-08: "Fix the findings as well. But don't focus too much"; F8 to F11, each small, on PR B (`feature/customer-onboarding-d-android`) |
 
 > **T-0785–T-0799 filed 2026-09-20** — the UI-polish and dead-code batch, on the owner's ruling of
 > that day (*"I want to polish alignments in admin app a bit on all of the overview/detail pages.

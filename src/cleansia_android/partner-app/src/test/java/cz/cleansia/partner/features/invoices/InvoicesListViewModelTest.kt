@@ -53,7 +53,7 @@ class InvoicesListViewModelTest {
     )
 
     @Test
-    fun `init loads the page and the rollup sums every invoice`() = runTest {
+    fun `init loads the page, and Total earned sums its paid invoices`() = runTest {
         coEvery { invoicesRepository.getMyInvoices(EMPLOYEE_ID) } returns
             ApiResult.Success(listOf(invoice("inv-1", 1500.25), invoice("inv-2", 2400.75)))
 
@@ -61,7 +61,7 @@ class InvoicesListViewModelTest {
         advanceUntilIdle()
 
         assertEquals(2, vm.uiState.value.invoices.size)
-        assertEquals(3901.00, vm.uiState.value.invoices.sumOf { it.totalAmount }, 0.0001)
+        assertEquals(listOf<Pair<String?, Double>>("CZK" to 3901.00), totalsByCurrency(paidInvoices(vm.uiState.value.invoices)).toList())
         assertTrue(vm.uiState.value.hasLoadedOnce)
     }
 
@@ -88,13 +88,13 @@ class InvoicesListViewModelTest {
 
         val vm = viewModel()
         advanceUntilIdle()
-        assertEquals(3901.00, vm.uiState.value.invoices.sumOf { it.totalAmount }, 0.0001)
+        assertEquals(listOf<Pair<String?, Double>>("CZK" to 3901.00), totalsByCurrency(paidInvoices(vm.uiState.value.invoices)).toList())
 
         vm.refresh()
         advanceUntilIdle()
 
         assertEquals(good, vm.uiState.value.invoices)
-        assertEquals(3901.00, vm.uiState.value.invoices.sumOf { it.totalAmount }, 0.0001)
+        assertEquals(listOf<Pair<String?, Double>>("CZK" to 3901.00), totalsByCurrency(paidInvoices(vm.uiState.value.invoices)).toList())
         verify { snackbar.showError("translated error") }
     }
 

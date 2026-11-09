@@ -40,19 +40,24 @@
     <string name="profile_section_contact">Contact</string>
     <string name="email_readonly_helper">Contact support to change your email address.</string>
     <string name="earnings_title">Pay &amp; Earnings</string>
-    <string name="earnings_current_period">Current pay period</string>
-    <string name="earnings_estimate_helper">Estimated until the period closes</string>
+    <string name="earnings_current_period">This period, not invoiced yet</string>
+    <string name="earnings_invoiced_on_close">Invoiced when the period closes on %1$s</string>
     <string name="earnings_today">Today</string>
     <string name="earnings_this_week">This week</string>
     <string name="earnings_last_month">Last month</string>
-    <string name="earnings_jobs_done_count">%d jobs done</string>
+    <plurals name="earnings_jobs_done_count">
+        <item quantity="one">%d job done</item>
+        <item quantity="other">%d jobs done</item>
+    </plurals>
     <string name="earnings_pay_period">Pay period</string>
-    <string name="earnings_days_remaining">%d days remaining</string>
-    <string name="earnings_next_payout">Next payout</string>
+    <plurals name="earnings_days_remaining">
+        <item quantity="one">%d day remaining</item>
+        <item quantity="other">%d days remaining</item>
+    </plurals>
     <string name="earnings_view_invoices">View all invoices</string>
     <string name="earnings_view_invoices_subtitle">See past payouts and invoice statuses</string>
     <string name="earnings_cash_held_title">Cash I hold</string>
-    <string name="earnings_cash_held_subtitle">Cash you took at the door and have not handed over yet. It is set off against your next payout.</string>
+    <string name="earnings_cash_held_subtitle">Cash you took at the door and have not handed over yet. It is set off when your next invoice is issued.</string>
     <string name="earnings_cash_held_limit">Limit %1$s</string>
     <string name="earnings_cash_held_jobs_hidden">You hold more than the limit, so cash jobs are hidden from you until you hand cash over.</string>
     <string name="email">Email</string>
@@ -97,7 +102,6 @@
     <string name="dash_available_now_count">%1$d jobs available</string>
     <string name="dash_no_jobs_yet_title">No jobs yet</string>
     <string name="dash_no_jobs_yet_subtitle">Check available work or update your availability</string>
-    <string name="dash_current_period">This pay period</string>
     <string name="dash_state_free_today">You\'re free today</string>
     <string name="dash_state_one_today">1 job today</string>
     <string name="dash_state_many_today">%1$d jobs today</string>
@@ -117,7 +121,6 @@
     <string name="dash_earnings_view_details">View details</string>
     <string name="dash_avg_per_job">Avg/job</string>
     <string name="dash_pay_period_progress">Day %1$d of %2$d</string>
-    <string name="dash_next_payout">Next payout: %1$s</string>
     <string name="dash_last_month_earnings">Earned</string>
     <string name="dash_last_month_jobs">Completed</string>
     <string name="dash_last_month_section">Last month</string>
@@ -216,9 +219,15 @@
     <string name="invoice_details">Invoice Details</string>
     <string name="no_invoices">No invoices found</string>
     <string name="invoices_summary_label">Total earned</string>
-    <string name="invoices_summary_count">Across %1$d invoices</string>
+    <plurals name="invoices_summary_count">
+        <item quantity="one">Across %1$d invoice</item>
+        <item quantity="other">Across %1$d invoices</item>
+    </plurals>
     <string name="invoice_card_total">Total</string>
-    <string name="invoice_card_jobs_count">%1$d jobs included</string>
+    <plurals name="invoice_card_jobs_count">
+        <item quantity="one">%1$d job included</item>
+        <item quantity="other">%1$d jobs included</item>
+    </plurals>
     <string name="invoice_card_paid_on">Paid on %1$s</string>
     <string name="invoice_card_generated_on">Generated %1$s</string>
 
@@ -379,12 +388,17 @@
     <string name="subtotal">Subtotal</string>
     <string name="bonus">Bonus</string>
     <string name="deductions">Deductions</string>
+    <string name="invoice_cash_set_off">Cash set off</string>
+    <string name="invoice_bank_transfer">Bank transfer to you</string>
     <string name="invoice_notes">Notes</string>
     <!-- Invoice Details v2 — redesign cards -->
     <string name="invoice_hero_total">Invoice total</string>
     <string name="invoice_breakdown_section">Breakdown</string>
     <string name="invoice_period_label">Pay period</string>
-    <string name="invoice_period_jobs">%1$d jobs included</string>
+    <plurals name="invoice_period_jobs">
+        <item quantity="one">%1$d job included</item>
+        <item quantity="other">%1$d jobs included</item>
+    </plurals>
     <string name="invoice_period_generated">Generated</string>
     <string name="invoice_period_approved">Approved</string>
     <string name="invoice_period_paid">Paid</string>
@@ -850,7 +864,10 @@
     <!-- ── Period pay (read-only) ── -->
     <string name="period_pay_title">Period pay</string>
     <string name="period_pay_hero_label">Period total</string>
-    <string name="period_pay_jobs_count">%1$d jobs included</string>
+    <plurals name="period_pay_jobs_count">
+        <item quantity="one">%1$d job included</item>
+        <item quantity="other">%1$d jobs included</item>
+    </plurals>
     <string name="period_pay_breakdown_section">Pay breakdown</string>
     <string name="period_pay_base">Base pay</string>
     <string name="period_pay_extras">Extras</string>

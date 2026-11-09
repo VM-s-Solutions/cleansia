@@ -47,6 +47,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -75,7 +76,8 @@ import cz.cleansia.partner.data.invoices.pdfState
  *
  * Card stack (top to bottom):
  *  1. Hero — IconHalo(wallet) + grand total (headlineMedium bold) + status pill.
- *  2. Breakdown — subTotal + bonus + deduction rows, divider, total bold.
+ *  2. Breakdown — subTotal + bonus + deduction rows, divider, total bold, then
+ *     the cash set off and the bank transfer when cash was set off.
  *  3. Period — IconHalo(calendar) + payPeriodLabel + jobs micro + dates list.
  *  4. References — IconHalo(key) + invoice #/variable symbol/payment ref,
  *     monospace value, copy-to-clipboard on tap.
@@ -325,6 +327,14 @@ private fun BreakdownCard(invoice: InvoiceDetail) {
             symbol = symbol,
             bold = true,
         )
+
+        if (invoice.cashSetOffAmount > 0.0) {
+            Spacer(Modifier.height(Spacing.S))
+            Divider()
+            Spacer(Modifier.height(Spacing.S))
+            MoneyRow(stringResource(R.string.invoice_cash_set_off), -invoice.cashSetOffAmount, symbol)
+            MoneyRow(stringResource(R.string.invoice_bank_transfer), invoice.transferAmount, symbol, bold = true)
+        }
     }
 }
 
@@ -368,7 +378,7 @@ private fun PeriodCard(
                 )
                 if (orders > 0) {
                     Text(
-                        text = stringResource(R.string.invoice_period_jobs, orders),
+                        text = pluralStringResource(R.plurals.invoice_period_jobs, orders, orders),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

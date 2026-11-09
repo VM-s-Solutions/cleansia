@@ -40,19 +40,28 @@
     <string name="profile_section_contact">Контакт</string>
     <string name="email_readonly_helper">Для смены адреса электронной почты обратитесь в поддержку.</string>
     <string name="earnings_title">Доходы</string>
-    <string name="earnings_current_period">Текущий платёжный период</string>
-    <string name="earnings_estimate_helper">Оценка до закрытия периода</string>
+    <string name="earnings_current_period">Этот период, ещё не в счёте</string>
+    <string name="earnings_invoiced_on_close">Будет включено в счёт, когда период закроется %1$s</string>
     <string name="earnings_today">Сегодня</string>
     <string name="earnings_this_week">Эта неделя</string>
     <string name="earnings_last_month">Прошлый месяц</string>
-    <string name="earnings_jobs_done_count">Заданий выполнено: %d</string>
+    <plurals name="earnings_jobs_done_count">
+        <item quantity="one">%d задание выполнено</item>
+        <item quantity="few">%d задания выполнено</item>
+        <item quantity="many">%d заданий выполнено</item>
+        <item quantity="other">%d задания выполнено</item>
+    </plurals>
     <string name="earnings_pay_period">Платёжный период</string>
-    <string name="earnings_days_remaining">Осталось %d дней</string>
-    <string name="earnings_next_payout">Следующая выплата</string>
+    <plurals name="earnings_days_remaining">
+        <item quantity="one">Остался %d день</item>
+        <item quantity="few">Осталось %d дня</item>
+        <item quantity="many">Осталось %d дней</item>
+        <item quantity="other">Осталось %d дня</item>
+    </plurals>
     <string name="earnings_view_invoices">Просмотреть счета</string>
     <string name="earnings_view_invoices_subtitle">История выплат и статусы счетов</string>
     <string name="earnings_cash_held_title">Наличные у меня</string>
-    <string name="earnings_cash_held_subtitle">Наличные, которые вы получили у двери и ещё не сдали. Они будут зачтены в счёт вашей следующей выплаты.</string>
+    <string name="earnings_cash_held_subtitle">Наличные, которые вы получили у двери и ещё не сдали. Они будут зачтены, когда будет выставлен ваш следующий счёт.</string>
     <string name="earnings_cash_held_limit">Лимит %1$s</string>
     <string name="earnings_cash_held_jobs_hidden">У вас больше лимита, поэтому заказы с оплатой наличными скрыты, пока вы не сдадите наличные.</string>
     <string name="email">Электронная почта</string>
@@ -97,7 +106,6 @@
     <string name="dash_available_now_count">%1$d свободных заказов</string>
     <string name="dash_no_jobs_yet_title">Пока нет заказов</string>
     <string name="dash_no_jobs_yet_subtitle">Проверьте доступные заказы или обновите расписание</string>
-    <string name="dash_current_period">Текущий период</string>
     <string name="dash_state_free_today">Сегодня вы свободны</string>
     <string name="dash_state_one_today">1 заказ сегодня</string>
     <string name="dash_state_many_today">%1$d заказов сегодня</string>
@@ -117,7 +125,6 @@
     <string name="dash_earnings_view_details">Подробнее</string>
     <string name="dash_avg_per_job">Сред./заказ</string>
     <string name="dash_pay_period_progress">День %1$d из %2$d</string>
-    <string name="dash_next_payout">Следующая выплата: %1$s</string>
     <string name="dash_last_month_earnings">Заработано</string>
     <string name="dash_last_month_jobs">Выполнено</string>
     <string name="dash_last_month_section">Прошлый месяц</string>
@@ -216,9 +223,19 @@
     <string name="invoice_details">Детали счета</string>
     <string name="no_invoices">Счета не найдены</string>
     <string name="invoices_summary_label">Всего заработано</string>
-    <string name="invoices_summary_count">Всего %1$d счетов</string>
+    <plurals name="invoices_summary_count">
+        <item quantity="one">Всего %1$d счёт</item>
+        <item quantity="few">Всего %1$d счёта</item>
+        <item quantity="many">Всего %1$d счетов</item>
+        <item quantity="other">Всего %1$d счёта</item>
+    </plurals>
     <string name="invoice_card_total">Сумма</string>
-    <string name="invoice_card_jobs_count">Заказов: %1$d</string>
+    <plurals name="invoice_card_jobs_count">
+        <item quantity="one">%1$d заказ</item>
+        <item quantity="few">%1$d заказа</item>
+        <item quantity="many">%1$d заказов</item>
+        <item quantity="other">%1$d заказа</item>
+    </plurals>
     <string name="invoice_card_paid_on">Оплачено %1$s</string>
     <string name="invoice_card_generated_on">Создано %1$s</string>
 
@@ -379,12 +396,19 @@
     <string name="subtotal">Промежуточный итог</string>
     <string name="bonus">Бонус</string>
     <string name="deductions">Удержания</string>
+    <string name="invoice_cash_set_off">Зачтённые наличные</string>
+    <string name="invoice_bank_transfer">Перевод на ваш счёт</string>
     <string name="invoice_notes">Заметки</string>
     <!-- Invoice Details v2 — redesign cards -->
     <string name="invoice_hero_total">Общая сумма счёта</string>
     <string name="invoice_breakdown_section">Разбивка</string>
     <string name="invoice_period_label">Платежный период</string>
-    <string name="invoice_period_jobs">%1$d заказов</string>
+    <plurals name="invoice_period_jobs">
+        <item quantity="one">%1$d заказ</item>
+        <item quantity="few">%1$d заказа</item>
+        <item quantity="many">%1$d заказов</item>
+        <item quantity="other">%1$d заказа</item>
+    </plurals>
     <string name="invoice_period_generated">Сформирован</string>
     <string name="invoice_period_approved">Утвержден</string>
     <string name="invoice_period_paid">Оплачен</string>
@@ -817,7 +841,12 @@
     <!-- ── Оплата за период (только чтение) ── -->
     <string name="period_pay_title">Оплата за период</string>
     <string name="period_pay_hero_label">Итого за период</string>
-    <string name="period_pay_jobs_count">%1$d заказов</string>
+    <plurals name="period_pay_jobs_count">
+        <item quantity="one">%1$d заказ</item>
+        <item quantity="few">%1$d заказа</item>
+        <item quantity="many">%1$d заказов</item>
+        <item quantity="other">%1$d заказа</item>
+    </plurals>
     <string name="period_pay_breakdown_section">Структура оплаты</string>
     <string name="period_pay_base">Базовая оплата</string>
     <string name="period_pay_extras">Доплаты</string>

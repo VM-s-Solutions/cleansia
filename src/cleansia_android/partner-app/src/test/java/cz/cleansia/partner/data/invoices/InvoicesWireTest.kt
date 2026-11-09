@@ -192,6 +192,22 @@ class InvoicesWireTest {
         assertEquals(3, invoice.totalOrders)
     }
 
+    /** The cash the cleaner held is set off against the invoice; the transfer is what reaches their account. */
+    @Test
+    fun theDetailCarriesTheCashSetOffAndTheTransferWithTheirLiteralValues() = runTest {
+        val invoice = loadedDetail(capturedInvoice().toString())
+
+        assertEquals(300.00, invoice.cashSetOffAmount, 0.0)
+        assertEquals(1200.25, invoice.transferAmount, 0.0)
+    }
+
+    @Test
+    fun aMissingSetOffOrTransferFailsTheDetailRatherThanReadingZero() = runTest {
+        listOf("cashSetOffAmount", "transferAmount").forEach { field ->
+            assertDetailMappingFails(field, (capturedInvoice() - field).toString())
+        }
+    }
+
     @Test
     fun aMissingListMoneyKeyFailsTheMappingRatherThanReadingZero() = runTest {
         REQUIRED_NUMBERS.forEach { field ->
@@ -539,6 +555,8 @@ class InvoicesWireTest {
               "bonusAmount": 120.40,
               "deductionAmount": 40.25,
               "totalAmount": 1500.25,
+              "cashSetOffAmount": 300.00,
+              "transferAmount": 1200.25,
               "currencyCode": "CZK",
               "currencyId": "cur-czk",
               "status": 3,

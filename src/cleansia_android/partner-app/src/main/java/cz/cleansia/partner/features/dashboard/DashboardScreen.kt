@@ -79,7 +79,10 @@ import cz.cleansia.partner.api.model.OrderListItem
 import cz.cleansia.partner.api.model.OrderStatus
 import cz.cleansia.partner.data.dashboard.AvailableJobsPreview
 import cz.cleansia.partner.data.dashboard.DashboardStats
+import cz.cleansia.partner.features.invoices.calendarDate
+import cz.cleansia.partner.features.invoices.formatShortDate
 import cz.cleansia.partner.features.main.MainBottomNavInset
+import cz.cleansia.partner.features.orders.appLocale
 import cz.cleansia.partner.features.orders.toOrderStatus
 import cz.cleansia.partner.features.orders.PendingOffersCardContent
 import cz.cleansia.partner.features.orders.PendingOffersCardUiState
@@ -824,8 +827,8 @@ internal fun resolveCurrencySymbol(serverCode: String?): String = CurrencySymbol
 @Composable
 private fun PayPeriodCard(stats: DashboardStats, onClick: () -> Unit) {
     val currencySymbol = remember(stats.currencyCode) { resolveCurrencySymbol(stats.currencyCode) }
-    val start = parseUtcDate(stats.currentPayPeriodStart) ?: return
-    val end = parseUtcDate(stats.currentPayPeriodEnd) ?: return
+    val start = calendarDate(stats.currentPayPeriodStart) ?: return
+    val end = calendarDate(stats.currentPayPeriodEnd) ?: return
     val today = LocalDate.now()
 
     val totalDays = (ChronoUnit.DAYS.between(start, end).toInt() + 1).coerceAtLeast(1)
@@ -852,7 +855,7 @@ private fun PayPeriodCard(stats: DashboardStats, onClick: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = stringResource(R.string.dash_current_period),
+                    text = stringResource(R.string.earnings_current_period),
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -879,10 +882,10 @@ private fun PayPeriodCard(stats: DashboardStats, onClick: () -> Unit) {
                 trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
                 drawStopIndicator = {},
             )
-            stats.nextPayoutDate?.let { isoPayout ->
+            formatShortDate(stats.currentPayPeriodEnd, appLocale())?.let { closesOn ->
                 Spacer(Modifier.height(Spacing.S))
                 Text(
-                    text = stringResource(R.string.dash_next_payout, formatPayoutDate(isoPayout)),
+                    text = stringResource(R.string.earnings_invoiced_on_close, closesOn),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -1167,17 +1170,4 @@ private fun greeting(firstName: String?): String {
         hour < 18 -> stringResource(R.string.good_afternoon)
         else -> stringResource(R.string.good_evening)
     }
-}
-
-private fun formatPayoutDate(iso: String): String = runCatching {
-    val instant = Instant.parse(iso)
-    val local = instant.atZone(ZoneId.systemDefault()).toLocalDate()
-    local.format(DateTimeFormatter.ofPattern("EEE, d MMM", Locale.getDefault()))
-}.getOrDefault(iso)
-
-private fun parseUtcDate(iso: String?): LocalDate? {
-    if (iso.isNullOrBlank()) return null
-    return runCatching {
-        Instant.parse(iso).atZone(ZoneId.systemDefault()).toLocalDate()
-    }.getOrNull()
 }

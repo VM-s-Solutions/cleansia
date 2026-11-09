@@ -35,6 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -175,7 +176,7 @@ private fun HeroCard(summary: PeriodPaySummary, symbol: String) {
             }
             if (summary.totalOrders > 0) {
                 Text(
-                    text = stringResource(R.string.period_pay_jobs_count, summary.totalOrders),
+                    text = pluralStringResource(R.plurals.period_pay_jobs_count, summary.totalOrders, summary.totalOrders),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

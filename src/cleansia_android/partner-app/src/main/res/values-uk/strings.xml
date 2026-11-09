@@ -40,19 +40,28 @@
     <string name="profile_section_contact">Контакт</string>
     <string name="email_readonly_helper">Для зміни електронної адреси зверніться до підтримки.</string>
     <string name="earnings_title">Заробітки</string>
-    <string name="earnings_current_period">Поточний платіжний період</string>
-    <string name="earnings_estimate_helper">Оцінка до закриття періоду</string>
+    <string name="earnings_current_period">Цей період, ще не в рахунку</string>
+    <string name="earnings_invoiced_on_close">Буде включено до рахунку, коли період закриється %1$s</string>
     <string name="earnings_today">Сьогодні</string>
     <string name="earnings_this_week">Цей тиждень</string>
     <string name="earnings_last_month">Минулий місяць</string>
-    <string name="earnings_jobs_done_count">Робіт виконано: %d</string>
+    <plurals name="earnings_jobs_done_count">
+        <item quantity="one">%d робота виконана</item>
+        <item quantity="few">%d роботи виконані</item>
+        <item quantity="many">%d робіт виконано</item>
+        <item quantity="other">%d роботи виконано</item>
+    </plurals>
     <string name="earnings_pay_period">Платіжний період</string>
-    <string name="earnings_days_remaining">Залишилось %d днів</string>
-    <string name="earnings_next_payout">Наступна виплата</string>
+    <plurals name="earnings_days_remaining">
+        <item quantity="one">Залишився %d день</item>
+        <item quantity="few">Залишилось %d дні</item>
+        <item quantity="many">Залишилось %d днів</item>
+        <item quantity="other">Залишилось %d дня</item>
+    </plurals>
     <string name="earnings_view_invoices">Переглянути рахунки</string>
     <string name="earnings_view_invoices_subtitle">Історія виплат та статуси рахунків</string>
     <string name="earnings_cash_held_title">Готівка в мене</string>
-    <string name="earnings_cash_held_subtitle">Готівка, яку ви отримали біля дверей і ще не передали. Її буде зараховано в рахунок вашої наступної виплати.</string>
+    <string name="earnings_cash_held_subtitle">Готівка, яку ви отримали біля дверей і ще не передали. Її буде зараховано, коли буде виставлено ваш наступний рахунок.</string>
     <string name="earnings_cash_held_limit">Ліміт %1$s</string>
     <string name="earnings_cash_held_jobs_hidden">У вас більше, ніж дозволяє ліміт, тому замовлення з оплатою готівкою приховані, доки ви не передасте готівку.</string>
     <string name="email">Електронна пошта</string>
@@ -97,7 +106,6 @@
     <string name="dash_available_now_count">%1$d вільних замовлень</string>
     <string name="dash_no_jobs_yet_title">Поки що немає замовлень</string>
     <string name="dash_no_jobs_yet_subtitle">Перегляньте доступні замовлення або оновіть доступність</string>
-    <string name="dash_current_period">Поточний період</string>
     <string name="dash_state_free_today">Сьогодні ви вільні</string>
     <string name="dash_state_one_today">1 замовлення сьогодні</string>
     <string name="dash_state_many_today">%1$d замовлень сьогодні</string>
@@ -117,7 +125,6 @@
     <string name="dash_earnings_view_details">Деталі</string>
     <string name="dash_avg_per_job">Серед./замовл.</string>
     <string name="dash_pay_period_progress">День %1$d з %2$d</string>
-    <string name="dash_next_payout">Наступна виплата: %1$s</string>
     <string name="dash_last_month_earnings">Заробили</string>
     <string name="dash_last_month_jobs">Виконано</string>
     <string name="dash_last_month_section">Минулого місяця</string>
@@ -216,9 +223,19 @@
     <string name="invoice_details">Деталі рахунку</string>
     <string name="no_invoices">Рахунків не знайдено</string>
     <string name="invoices_summary_label">Усього зароблено</string>
-    <string name="invoices_summary_count">Всього %1$d рахунків</string>
+    <plurals name="invoices_summary_count">
+        <item quantity="one">Всього %1$d рахунок</item>
+        <item quantity="few">Всього %1$d рахунки</item>
+        <item quantity="many">Всього %1$d рахунків</item>
+        <item quantity="other">Всього %1$d рахунку</item>
+    </plurals>
     <string name="invoice_card_total">Сума</string>
-    <string name="invoice_card_jobs_count">Робіт: %1$d</string>
+    <plurals name="invoice_card_jobs_count">
+        <item quantity="one">%1$d робота</item>
+        <item quantity="few">%1$d роботи</item>
+        <item quantity="many">%1$d робіт</item>
+        <item quantity="other">%1$d роботи</item>
+    </plurals>
     <string name="invoice_card_paid_on">Сплачено %1$s</string>
     <string name="invoice_card_generated_on">Створено %1$s</string>
 
@@ -379,12 +396,19 @@
     <string name="subtotal">Проміжний підсумок</string>
     <string name="bonus">Бонус</string>
     <string name="deductions">Утримання</string>
+    <string name="invoice_cash_set_off">Зарахована готівка</string>
+    <string name="invoice_bank_transfer">Переказ на ваш рахунок</string>
     <string name="invoice_notes">Нотатки</string>
     <!-- Invoice Details v2 — redesign cards -->
     <string name="invoice_hero_total">Загальна сума рахунку</string>
     <string name="invoice_breakdown_section">Розбивка</string>
     <string name="invoice_period_label">Платіжний період</string>
-    <string name="invoice_period_jobs">%1$d замовлень</string>
+    <plurals name="invoice_period_jobs">
+        <item quantity="one">%1$d замовлення</item>
+        <item quantity="few">%1$d замовлення</item>
+        <item quantity="many">%1$d замовлень</item>
+        <item quantity="other">%1$d замовлення</item>
+    </plurals>
     <string name="invoice_period_generated">Сформовано</string>
     <string name="invoice_period_approved">Затверджено</string>
     <string name="invoice_period_paid">Сплачено</string>
@@ -817,7 +841,12 @@
     <!-- ── Оплата за період (лише читання) ── -->
     <string name="period_pay_title">Оплата за період</string>
     <string name="period_pay_hero_label">Усього за період</string>
-    <string name="period_pay_jobs_count">%1$d замовлень</string>
+    <plurals name="period_pay_jobs_count">
+        <item quantity="one">%1$d замовлення</item>
+        <item quantity="few">%1$d замовлення</item>
+        <item quantity="many">%1$d замовлень</item>
+        <item quantity="other">%1$d замовлення</item>
+    </plurals>
     <string name="period_pay_breakdown_section">Розбивка оплати</string>
     <string name="period_pay_base">Базова оплата</string>
     <string name="period_pay_extras">Додаткові послуги</string>

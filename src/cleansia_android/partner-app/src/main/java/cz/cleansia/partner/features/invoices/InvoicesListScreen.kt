@@ -42,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -57,6 +58,7 @@ import cz.cleansia.core.ui.components.SudsRefreshIndicator
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.R
+import cz.cleansia.partner.api.model.EmployeeInvoiceStatus
 import cz.cleansia.partner.data.invoices.Invoice
 import cz.cleansia.partner.features.main.MainBottomNavInset
 
@@ -74,9 +76,9 @@ import cz.cleansia.partner.features.main.MainBottomNavInset
  *  1. TopAppBar (back arrow only when shown as a pushed destination —
  *     from Earnings → "View all invoices"). When shown as the bottom-nav
  *     tab the navigation-icon slot is empty so the title sits flush.
- *  2. Hero summary card — lifetime paid total + invoice count. Only
- *     rendered when there's at least one invoice; on empty state the
- *     mascot owns the screen.
+ *  2. Hero summary card — Total earned: the Paid invoices' totals, one
+ *     per currency, and their count. Only rendered once an invoice is
+ *     paid; on empty state the mascot owns the screen.
  *  3. LazyColumn of [InvoiceCard]s with the period sub-line, status
  *     badge, jobs-included count, generated-on date, and a right
  *     chevron affordance so the row reads as tappable.
@@ -166,6 +168,7 @@ fun InvoicesListScreen(
                         }
                     }
                 } else {
+                    val paid = remember(uiState.invoices) { paidInvoices(uiState.invoices) }
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(
@@ -176,8 +179,10 @@ fun InvoicesListScreen(
                         ),
                         verticalArrangement = Arrangement.spacedBy(Spacing.M),
                     ) {
-                        item(key = "summary") {
-                            SummaryCard(invoices = uiState.invoices)
+                        if (paid.isNotEmpty()) {
+                            item(key = "summary") {
+                                SummaryCard(paid = paid)
+                            }
                         }
                         items(uiState.invoices, key = { it.id }) { invoice ->
                             InvoiceCard(
@@ -232,24 +237,10 @@ private fun Header(onNavigateBack: (() -> Unit)?) {
     }
 }
 
-/**
- * Hero rollup. Sums totalAmount across all invoices in the view and
- * shows the per-cleaner lifetime total — the "you've earned" framing
- * mirrors the EarningsSummaryScreen hero card.
- *
- * Currency follows the FIRST invoice in the list (they should all share
- * a currency for a given cleaner; if they don't, we render the largest
- * group's code which is still the right answer 99% of the time).
- */
+/** Hero rollup: one figure per currency of the Paid invoices, and how many they are. */
 @Composable
-private fun SummaryCard(invoices: List<Invoice>) {
-    val total = remember(invoices) {
-        invoices.sumOf { it.totalAmount }
-    }
-    val code = remember(invoices) {
-        invoices.firstNotNullOfOrNull { it.currencyCode }
-    }
-    val symbol = remember(code) { CurrencySymbols.forCode(code) }
+private fun SummaryCard(paid: List<Invoice>) {
+    val totals = remember(paid) { totalsByCurrency(paid) }
 
     Row(
         modifier = Modifier
@@ -273,13 +264,15 @@ private fun SummaryCard(invoices: List<Invoice>) {
                 color = primaryText(),
             )
             Spacer(Modifier.height(2.dp))
+            totals.forEach { (code, total) ->
+                Text(
+                    text = formatMoney(total, CurrencySymbols.forCode(code)),
+                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
             Text(
-                text = formatMoney(total, symbol),
-                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Text(
-                text = stringResource(R.string.invoices_summary_count, invoices.size),
+                text = pluralStringResource(R.plurals.invoices_summary_count, paid.size, paid.size),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -383,7 +376,7 @@ private fun InvoiceCard(invoice: Invoice, onClick: () -> Unit) {
                         )
                         Spacer(Modifier.width(6.dp))
                         Text(
-                            text = stringResource(R.string.invoice_card_jobs_count, orders),
+                            text = pluralStringResource(R.plurals.invoice_card_jobs_count, orders, orders),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -434,3 +427,10 @@ private fun EmptyState() {
         verticallyCentered = true,
     )
 }
+
+/** The invoices Total earned counts: an invoice is money received only once it is Paid. */
+internal fun paidInvoices(invoices: List<Invoice>): List<Invoice> = invoices.filter { it.status == EmployeeInvoiceStatus._3 }
+
+/** One total per currency, in the order the list first names each: koruna and euro are never one sum. */
+internal fun totalsByCurrency(invoices: List<Invoice>): Map<String?, Double> =
+    invoices.groupBy { it.currencyCode }.mapValues { (_, rows) -> rows.sumOf { it.totalAmount } }

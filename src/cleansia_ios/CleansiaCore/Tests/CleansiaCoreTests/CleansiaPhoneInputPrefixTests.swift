@@ -50,6 +50,27 @@ final class CleansiaPhoneInputPrefixTests: XCTestCase {
         XCTAssertNil(countryCode(in: canvas))
     }
 
+    /// Digits typed after the code are stored behind it, while the field shows only them.
+    func testTypedNationalDigitsAreStoredBehindTheCallingCode() async throws {
+        let phone = PhoneBox("")
+        let canvas = host(phone)
+        defer { canvas.close() }
+        await canvas.settle(until: { self.field(in: canvas) != nil && self.countryCode(in: canvas) != nil })
+        let field = try XCTUnwrap(field(in: canvas))
+        let typing = try XCTUnwrap(field.delegate as? MaskedPhoneTextField.Coordinator)
+
+        _ = typing.textField(
+            field,
+            shouldChangeCharactersIn: NSRange(location: 0, length: 0),
+            replacementString: "77712"
+        )
+        await canvas.settle(until: { phone.value == "+42077712" })
+
+        XCTAssertEqual(phone.value, "+42077712")
+        XCTAssertEqual(field.text, "777 12")
+        XCTAssertNotNil(countryCode(in: canvas), "the code stays in front of the typed digits")
+    }
+
     func testThePrefixSwitchStartsAnEmptyFieldAtThePlus() async throws {
         let phone = PhoneBox("")
         let canvas = host(phone)

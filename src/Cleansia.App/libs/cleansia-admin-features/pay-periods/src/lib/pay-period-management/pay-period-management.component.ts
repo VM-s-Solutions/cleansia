@@ -94,7 +94,7 @@ export class PayPeriodManagementComponent implements OnInit {
   }
 
   openCreateDialog(): void {
-    this.facade.setCreateStartDate(null);
+    this.facade.prepareCreate();
     this.showCreateDialog.set(true);
   }
 

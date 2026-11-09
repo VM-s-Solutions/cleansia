@@ -143,6 +143,33 @@ export class PayPeriodManagementFacade extends UnsubscribeControlDirective {
     this.filterForm.patchValue({ year: value });
   }
 
+  prepareCreate(): void {
+    this.createStartDate.set(null);
+
+    this.adminClient.adminPayPeriodClient
+      .getPaged(
+        undefined,
+        undefined,
+        [new SortDefinition({ field: 'endDate', direction: SortDirection.Descending })],
+        0,
+        1
+      )
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => of(null))
+      )
+      .subscribe((response) => {
+        const latestEnd = response?.data?.[0]?.endDate;
+        if (!latestEnd || this.createStartDate()) return;
+
+        // The end arrives as a UTC midnight and the calendar picks local days; the server refuses a start after today.
+        const dayAfter = new Date(latestEnd.getUTCFullYear(), latestEnd.getUTCMonth(), latestEnd.getUTCDate() + 1);
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        this.createStartDate.set(dayAfter < today ? dayAfter : today);
+      });
+  }
+
   setCreateStartDate(date: Date | null): void {
     this.createStartDate.set(date);
   }

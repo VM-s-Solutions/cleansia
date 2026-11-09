@@ -3,7 +3,11 @@ import {
   AdminClient,
   CreatePayPeriodCommand,
   CreatePayPeriodResponse,
+  PagedDataOfPayPeriodDto,
+  PayPeriodDto,
   PayPeriodStatus,
+  SortDefinition,
+  SortDirection,
 } from '@cleansia/admin-services';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
@@ -106,6 +110,72 @@ describe('PayPeriodManagementFacade', () => {
     const [status, year] = getPagedMock.mock.calls.at(-1) ?? [];
     expect(status).toBeUndefined();
     expect(year).toBeUndefined();
+  });
+
+  describe('create dialog default', () => {
+    const calendarDay = (date: Date | null) =>
+      date ? [date.getFullYear(), date.getMonth() + 1, date.getDate()] : null;
+    const latestEndingOn = (endDate: string) =>
+      of(PagedDataOfPayPeriodDto.fromJS({ data: [{ id: 'p-latest', endDate }], total: 1 }));
+
+    afterEach(() => jest.useRealTimers());
+
+    it('reads the one period with the latest end, whatever the list shows', () => {
+      facade.applyFilter({ status: PayPeriodStatus.Paid, year: 2025 });
+      getPagedMock.mockClear();
+
+      facade.prepareCreate();
+
+      expect(getPagedMock).toHaveBeenCalledWith(
+        undefined,
+        undefined,
+        [new SortDefinition({ field: 'endDate', direction: SortDirection.Descending })],
+        0,
+        1
+      );
+    });
+
+    it('defaults the start to the day after the latest end', () => {
+      jest.useFakeTimers({ now: new Date(2026, 10, 9, 12) });
+      getPagedMock.mockReturnValue(latestEndingOn('2026-10-31'));
+
+      facade.prepareCreate();
+
+      expect(calendarDay(facade.createStartDate())).toEqual([2026, 11, 1]);
+    });
+
+    it('defaults to today while the latest period runs past it, since the server refuses a later start', () => {
+      jest.useFakeTimers({ now: new Date(2026, 10, 9, 12) });
+      getPagedMock.mockReturnValue(latestEndingOn('2026-11-14'));
+
+      facade.prepareCreate();
+
+      expect(calendarDay(facade.createStartDate())).toEqual([2026, 11, 9]);
+    });
+
+    it('leaves the start empty when there is no period yet or the read fails', () => {
+      facade.setCreateStartDate(new Date(2026, 0, 1));
+
+      facade.prepareCreate();
+      expect(facade.createStartDate()).toBeNull();
+
+      getPagedMock.mockReturnValue(throwError(() => new Error('boom')));
+      facade.prepareCreate();
+      expect(facade.createStartDate()).toBeNull();
+    });
+
+    it('keeps a start the admin picked before the read lands', () => {
+      const response$ = new Subject<PagedDataOfPayPeriodDto>();
+      getPagedMock.mockReturnValue(response$);
+
+      facade.prepareCreate();
+      facade.setCreateStartDate(new Date(2026, 10, 3));
+      response$.next(
+        PagedDataOfPayPeriodDto.fromJS({ data: [PayPeriodDto.fromJS({ endDate: '2026-10-31' })], total: 1 })
+      );
+
+      expect(calendarDay(facade.createStartDate())).toEqual([2026, 11, 3]);
+    });
   });
 
   describe('create', () => {

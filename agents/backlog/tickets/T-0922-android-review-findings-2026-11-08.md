@@ -69,3 +69,4 @@ Any finding not listed above. The rest of #370's out-of-scope list stays reporte
   reaches, and its last line now counts those methods (`52386d4b4`): at `97a7ce140`, partner 99 and customer 107 of
   828 and 907 lock-holding methods, 0 rejected. There both minified staging builds start on the API 35 emulator, F9
   to F11 included, with an empty crash buffer and no FATAL, VerifyError or Serializer line.
+- 2026-11-09 — Shipped: #371 merged to master as 08edb60f6.

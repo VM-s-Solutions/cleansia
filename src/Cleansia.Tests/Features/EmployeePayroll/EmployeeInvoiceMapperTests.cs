@@ -107,4 +107,22 @@ public class EmployeeInvoiceMapperTests
 
         Assert.Equal("0308", dto.ConstantSymbol);
     }
+
+    [Fact]
+    public void A_Cancelled_Invoice_Shows_No_Cash_Set_Off_And_No_Transfer()
+    {
+        var invoice = PayrollMockFactory.Invoice(subTotal: 1000m);
+        invoice.SetOffCash(250m);
+        Assert.Equal((250m, 750m), (invoice.MapToDto().CashSetOffAmount, invoice.MapToDto().TransferAmount));
+
+        invoice.Cancel("reissue", "admin-1");
+
+        var row = invoice.MapToDto();
+        var detail = invoice.MapToDetailDto();
+
+        Assert.Equal((0m, 0m), (row.CashSetOffAmount, row.TransferAmount));
+        Assert.Equal((0m, 0m), (detail.CashSetOffAmount, detail.TransferAmount));
+        Assert.Equal(1000m, row.TotalAmount);
+        Assert.Equal(250m, invoice.CashSetOffAmount);
+    }
 }

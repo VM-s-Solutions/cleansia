@@ -860,6 +860,8 @@
       "pay_period": "Pay Period",
       "total_orders": "Orders",
       "total_amount": "Total Amount",
+      "cash_set_off": "Cash Set Off",
+      "transfer_amount": "To Transfer",
       "status": "Status",
       "pdf_status": "PDF",
       "generated_at": "Generated",
@@ -2122,6 +2124,7 @@
       "employee_name": "Partner",
       "pay_period": "Pay Period",
       "variable_symbol": "Variable Symbol",
+      "constant_symbol": "Constant Symbol",
       "specific_symbol": "Specific Symbol",
       "total_orders": "Total Orders",
       "generated_at": "Generated At",
@@ -2130,6 +2133,8 @@
       "bonus_amount": "Bonus",
       "deduction_amount": "Deduction",
       "total_amount": "Total Amount",
+      "cash_set_off": "Cash Set Off",
+      "transfer_amount": "Amount to Transfer",
       "approval_payment_info": "Approval & Payment Information",
       "approved_at": "Approved At",
       "approved_by": "Approved By",
@@ -2168,6 +2173,10 @@
         "title": "Assign payment reference?",
         "message": "This claims a payment reference for this invoice and regenerates its PDF. The number can never be changed, reused or given to another invoice.",
         "yes": "Assign"
+      },
+      "mark_paid_confirm": {
+        "hint": "Send the amount to transfer to the partner's bank account with these symbols, then confirm it here. A paid invoice can't be changed afterwards.",
+        "submit": "Confirm the transfer was sent"
       },
       "messages": {
         "load_error": "Failed to load invoice details",

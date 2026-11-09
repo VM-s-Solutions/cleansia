@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, OnDestroy, OnInit } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
   EmployeeInvoiceDetailDto,
@@ -12,6 +13,7 @@ import {
   CleansiaSectionComponent,
   CleansiaStatusBadgeComponent,
   CleansiaTableComponent,
+  CleansiaTextareaComponent,
   CleansiaTitleComponent,
   TableColumn,
   TableAction,
@@ -34,6 +36,7 @@ import { getOrderPaysTableDefinition } from './invoice-detail.models';
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     CleansiaButtonComponent,
     TranslatePipe,
     CleansiaTitleComponent,
@@ -41,6 +44,7 @@ import { getOrderPaysTableDefinition } from './invoice-detail.models';
     CleansiaSectionComponent,
     CleansiaStatusBadgeComponent,
     CleansiaTableComponent,
+    CleansiaTextareaComponent,
     ToastModule,
     CleansiaPermissionDirective,
     AdminPayrollOpsComponent,
@@ -91,7 +95,15 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
   }
 
   onMarkPaid(): void {
-    this.facade.markAsPaid();
+    this.facade.toggleMarkPaid();
+  }
+
+  onBankTransferNoteChange(value: string): void {
+    this.facade.setBankTransferNote(value);
+  }
+
+  onConfirmMarkPaid(): void {
+    this.facade.confirmMarkPaid();
   }
 
   onCancel(): void {

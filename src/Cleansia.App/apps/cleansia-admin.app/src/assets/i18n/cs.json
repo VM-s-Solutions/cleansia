@@ -860,6 +860,8 @@
       "pay_period": "Platební období",
       "total_orders": "Objednávky",
       "total_amount": "Celková částka",
+      "cash_set_off": "Započtená hotovost",
+      "transfer_amount": "K převodu",
       "status": "Stav",
       "pdf_status": "PDF",
       "generated_at": "Vygenerováno",
@@ -1077,6 +1079,7 @@
       "employee_name": "Partner",
       "pay_period": "Platební období",
       "variable_symbol": "Variabilní symbol",
+      "constant_symbol": "Konstantní symbol",
       "specific_symbol": "Specifický symbol",
       "total_orders": "Celkem objednávek",
       "generated_at": "Vygenerováno",
@@ -1085,6 +1088,8 @@
       "bonus_amount": "Bonusy",
       "deduction_amount": "Srážky",
       "total_amount": "Celková částka",
+      "cash_set_off": "Započtená hotovost",
+      "transfer_amount": "Částka k převodu",
       "approval_payment_info": "Informace o schválení a platbě",
       "approved_at": "Schváleno dne",
       "approved_by": "Schválil",
@@ -1123,6 +1128,10 @@
         "title": "Přiřadit variabilní symbol?",
         "message": "Tímto faktuře přidělíte variabilní symbol a přegenerujete její PDF. Číslo už nelze změnit, znovu použít ani přidělit jiné faktuře.",
         "yes": "Přiřadit"
+      },
+      "mark_paid_confirm": {
+        "hint": "Pošlete částku k převodu na bankovní účet partnera s těmito symboly a pak to zde potvrďte. Zaplacenou fakturu už nelze změnit.",
+        "submit": "Potvrdit odeslání převodu"
       },
       "messages": {
         "load_error": "Nepodařilo se načíst detail faktury",

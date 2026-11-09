@@ -58,8 +58,8 @@
           *cleansiaPermission="Policy.CanMarkInvoicePaid"
           [label]="'pages.invoice_detail.actions.mark_paid' | translate"
           icon="pi pi-money-bill"
+          [outlined]="!facade.markPaidOpen()"
           (onClick)="onMarkPaid()"
-          [loading]="facade.actionLoading()"
         />
         } @if (facade.canAssignVariableSymbol()) {
         <cleansia-button
@@ -103,6 +103,52 @@
           (onClick)="onRegeneratePdf()"
           [loading]="facade.actionLoading()"
         />
+        } @if (facade.canMarkPaid() && facade.markPaidOpen()) {
+        <div class="detail-actions__panel">
+          <p class="detail-actions__hint">
+            {{ 'pages.invoice_detail.mark_paid_confirm.hint' | translate }}
+          </p>
+          <div class="detail-grid">
+            <div class="detail-grid__item">
+              <span class="detail-grid__label">{{ 'pages.invoice_detail.transfer_amount' | translate }}</span>
+              <span class="detail-grid__value">{{ facade.formatCurrency(invoice.transferAmount, invoice.currencyCode) }}</span>
+            </div>
+            <div class="detail-grid__item">
+              <span class="detail-grid__label">{{ 'pages.invoice_detail.variable_symbol' | translate }}</span>
+              <span class="detail-grid__value">{{ invoice.variableSymbol || '-' }}</span>
+            </div>
+            <div class="detail-grid__item">
+              <span class="detail-grid__label">{{ 'pages.invoice_detail.constant_symbol' | translate }}</span>
+              <span class="detail-grid__value">{{ invoice.constantSymbol || '-' }}</span>
+            </div>
+            <div class="detail-grid__item">
+              <span class="detail-grid__label">{{ 'pages.employee_detail.payout_details.masked_account' | translate }}</span>
+              <span class="detail-grid__value">
+                @if (facade.payoutLoading()) {
+                {{ 'global.loading' | translate }}
+                } @else if (facade.payoutFailed()) {
+                {{ 'pages.employee_detail.payout_details.load_error' | translate }}
+                } @else if (facade.payoutDetails()?.maskedAccount; as maskedAccount) {
+                {{ maskedAccount }}
+                } @else {
+                {{ 'pages.employee_detail.payout_details.none' | translate }}
+                }
+              </span>
+            </div>
+          </div>
+          <cleansia-textarea
+            [label]="'pages.invoice_detail.bank_transfer_note' | translate"
+            [maxLength]="500"
+            [ngModel]="facade.bankTransferNote()"
+            (valueChanges)="onBankTransferNoteChange($event)"
+          />
+          <cleansia-button
+            [label]="'pages.invoice_detail.mark_paid_confirm.submit' | translate"
+            icon="pi pi-check"
+            [loading]="facade.actionLoading()"
+            (onClick)="onConfirmMarkPaid()"
+          />
+        </div>
         }
       </div>
     </cleansia-section>
@@ -153,6 +199,14 @@
         <div class="detail-ledger__row detail-ledger__row--total">
           <span class="detail-ledger__label">{{ 'pages.invoice_detail.total_amount' | translate }}</span>
           <span class="detail-ledger__value">{{ facade.formatCurrency(invoice.totalAmount, invoice.currencyCode) }}</span>
+        </div>
+        <div class="detail-ledger__row detail-ledger__row--negative">
+          <span class="detail-ledger__label">{{ 'pages.invoice_detail.cash_set_off' | translate }}</span>
+          <span class="detail-ledger__value">- {{ facade.formatCurrency(invoice.cashSetOffAmount, invoice.currencyCode) }}</span>
+        </div>
+        <div class="detail-ledger__row detail-ledger__row--total">
+          <span class="detail-ledger__label">{{ 'pages.invoice_detail.transfer_amount' | translate }}</span>
+          <span class="detail-ledger__value">{{ facade.formatCurrency(invoice.transferAmount, invoice.currencyCode) }}</span>
         </div>
       </div>
     </cleansia-section>

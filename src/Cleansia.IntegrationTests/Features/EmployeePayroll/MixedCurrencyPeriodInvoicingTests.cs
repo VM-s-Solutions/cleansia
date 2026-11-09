@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.EmployeePayroll;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
@@ -14,6 +15,8 @@ using Cleansia.TestUtilities.MockDataFactories.EmployeePayroll;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Moq;
 
 namespace Cleansia.IntegrationTests.Features.EmployeePayroll;
 
@@ -131,6 +134,45 @@ public class MixedCurrencyPeriodInvoicingTests(PostgresContainerFixture fixture)
                 Assert.Equal(2, await context.Set<EmployeeInvoice>()
                     .IgnoreQueryFilters()
                     .CountAsync(i => i.EmployeeId == _employeeId && i.PayPeriodId == _payPeriodId));
+            },
+            transactional: false);
+    }
+
+    /// <summary>
+    /// The cleaner is e-mailed once the invoices are issued. Neither document renders here, because the seed holds
+    /// no company to issue them against, so one e-mail without an attachment goes out, as the night run sends.
+    /// </summary>
+    [Fact]
+    public async Task The_Cleaner_Is_Emailed_Once_The_Invoices_Are_Issued()
+    {
+        var sent = new List<(string Email, byte[]? Pdf)>();
+
+        await TestMethod(
+            setup: services =>
+            {
+                var email = new Mock<IEmailService>();
+                email
+                    .Setup(e => e.SendPeriodClosedEmailAsync(
+                        It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateOnly>(), It.IsAny<DateOnly>(),
+                        It.IsAny<DateTime>(), It.IsAny<string>(), It.IsAny<string>(),
+                        It.IsAny<byte[]?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                    .Callback<string, string, DateOnly, DateOnly, DateTime, string, string, byte[]?, string?, CancellationToken>(
+                        (address, _, _, _, _, _, _, pdf, _, _) => sent.Add((address, pdf)))
+                    .ReturnsAsync("message-id");
+                services.Replace(ServiceDescriptor.Scoped(_ => email.Object));
+                return Task.CompletedTask;
+            },
+            arrange: SeedAsync,
+            act: async provider => await provider.GetRequiredService<IMediator>()
+                .Send(new GenerateInvoice.Command(_employeeId, _payPeriodId)),
+            assert: (CleansiaDbContext _, BusinessResult<GenerateInvoice.Response> result) =>
+            {
+                Assert.True(result.IsSuccess, $"GenerateInvoice failed with: {result.Error?.Message}");
+                Assert.Equal(2, result.Value!.InvoiceIds.Count);
+                var (address, pdf) = Assert.Single(sent);
+                Assert.Equal("mixed-emp@cleansia.test", address);
+                Assert.Null(pdf);
+                return Task.CompletedTask;
             },
             transactional: false);
     }

@@ -147,7 +147,9 @@ public class InvoicePdfBlobNameRoundTripTests
         services.AddScoped<ITenantProvider>(_ => new Mock<ITenantProvider>().Object);
         await using var root = services.BuildServiceProvider();
         var handler = new GenerateInvoice.Handler(_invoiceRepository.Object, pays.Object, allocator.Object,
-            new Mock<ICashLedgerRepository>().Object, root.GetRequiredService<IServiceScopeFactory>(), NullLogger<GenerateInvoice.Handler>.Instance);
+            new Mock<ICashLedgerRepository>().Object, new Mock<IPayPeriodRepository>().Object, new Mock<IEmployeeRepository>().Object,
+            new Mock<IEmailService>().Object, _blobContainerClientFactory.Object, root.GetRequiredService<IServiceScopeFactory>(),
+            NullLogger<GenerateInvoice.Handler>.Instance);
 
         var created = await handler.Handle(new GenerateInvoice.Command(pay.EmployeeId, pay.PayPeriodId), CancellationToken.None);
         var downloaded = await DownloadAsync();
@@ -272,7 +274,8 @@ public class InvoicePdfBlobNameRoundTripTests
         });
         await using var root = services.BuildServiceProvider();
         var handler = new GenerateInvoice.Handler(_invoiceRepository.Object, pays.Object, allocator.Object,
-            new Mock<ICashLedgerRepository>().Object, root.GetRequiredService<IServiceScopeFactory>(),
+            new Mock<ICashLedgerRepository>().Object, new Mock<IPayPeriodRepository>().Object, new Mock<IEmployeeRepository>().Object,
+            new Mock<IEmailService>().Object, _blobContainerClientFactory.Object, root.GetRequiredService<IServiceScopeFactory>(),
             NullLogger<GenerateInvoice.Handler>.Instance);
 
         var result = await handler.Handle(new GenerateInvoice.Command(first.EmployeeId, first.PayPeriodId), CancellationToken.None);

@@ -1,15 +1,18 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.EmployeePayroll;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.TestUtilities.MockDataFactories.EmployeePayroll;
 using MediatR;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
+using MockQueryable;
 using Moq;
 
 namespace Cleansia.Tests.Features.EmployeePayroll;
@@ -31,9 +34,36 @@ public class GenerateInvoiceCommandHandlerTests
     private readonly Mock<ICashLedgerRepository> _cashLedger = new();
     private readonly Mock<IMediator> _mediator = new();
     private readonly Mock<IServiceScopeFactory> _scopeFactory = new();
+    private readonly Mock<IPayPeriodRepository> _payPeriodRepository = new();
+    private readonly Mock<IEmployeeRepository> _employeeRepository = new();
+    private readonly Mock<IEmailService> _emailService = new();
+    private readonly Mock<IBlobContainerClientFactory> _blobContainerClientFactory = new();
+    private readonly Mock<IBlobContainerClient> _blobContainerClient = new();
+
+    private const string CleanerEmail = "jana.novakova@cleansia.test";
+    private static readonly byte[] Pdf = [37, 80, 68, 70];
+    private readonly PayPeriod _period = PayrollMockFactory.ClosedPeriod();
+    private readonly Employee _cleaner = Cleaner();
+    private readonly List<(string Email, string Language, DateOnly Start, DateOnly End, byte[]? Pdf, string? FileName)> _emails = [];
 
     public GenerateInvoiceCommandHandlerTests()
     {
+        _payPeriodRepository.Setup(r => r.GetByIdAsync(PayPeriodId, It.IsAny<CancellationToken>())).ReturnsAsync(_period);
+        _employeeRepository.Setup(r => r.GetQueryable()).Returns(() => new[] { _cleaner }.AsQueryable().BuildMock());
+        _blobContainerClientFactory
+            .Setup(f => f.GetBlobContainerClient(Constants.BlobContainers.GeneratedInvoices))
+            .Returns(_blobContainerClient.Object);
+        _blobContainerClient
+            .Setup(c => c.DownloadAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => new BlobFile(new MemoryStream(Pdf), "application/pdf"));
+        _emailService
+            .Setup(e => e.SendPeriodClosedEmailAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateOnly>(), It.IsAny<DateOnly>(),
+                It.IsAny<DateTime>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<byte[]?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .Callback<string, string, DateOnly, DateOnly, DateTime, string, string, byte[]?, string?, CancellationToken>(
+                (email, _, start, end, _, _, language, pdf, fileName, _) => _emails.Add((email, language, start, end, pdf, fileName)))
+            .ReturnsAsync("message-id");
         _payoutReferenceAllocator
             .Setup(a => a.AllocateAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(BusinessResult.Success(PayrollMockFactory.TestVariableSymbol));
@@ -58,6 +88,10 @@ public class GenerateInvoiceCommandHandlerTests
         _orderPayRepository.Object,
         _payoutReferenceAllocator.Object,
         _cashLedger.Object,
+        _payPeriodRepository.Object,
+        _employeeRepository.Object,
+        _emailService.Object,
+        _blobContainerClientFactory.Object,
         _scopeFactory.Object,
         NullLogger<GenerateInvoice.Handler>.Instance);
 
@@ -251,6 +285,92 @@ public class GenerateInvoiceCommandHandlerTests
 
         Assert.True(result.IsFailure);
         _mediator.Verify(m => m.Send(It.IsAny<RegenerateInvoicePdf.Command>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    // ── The invoice e-mail, under the night run's rules ──────────────
+
+    [Fact]
+    public async Task Each_Issued_Invoice_Is_Emailed_Once_With_Its_Pdf_In_The_Cleaners_Language()
+    {
+        ArrangeOrderPays(PayrollMockFactory.OrderPay(currencyId: "currency-1"), PayrollMockFactory.OrderPay(currencyId: "currency-2"));
+        _payoutReferenceAllocator
+            .Setup(a => a.AllocateInvoiceNumberAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => BusinessResult.Success(PayrollMockFactory.NextTestInvoiceNumber()));
+        var added = new List<EmployeeInvoice>();
+        _invoiceRepository.Setup(r => r.Add(It.IsAny<EmployeeInvoice>())).Callback<EmployeeInvoice>(added.Add);
+
+        var result = await CreateHandler().Handle(new GenerateInvoice.Command(EmployeeId, PayPeriodId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(2, added.Count);
+        Assert.Equal(added.Select(i => $"{i.InvoiceNumber}.pdf").Order(), _emails.Select(e => e.FileName!).Order());
+        Assert.All(_emails, e =>
+        {
+            Assert.Equal((CleanerEmail, "cs", _period.StartDate, _period.EndDate), (e.Email, e.Language, e.Start, e.End));
+            Assert.Equal(Pdf, e.Pdf);
+        });
+    }
+
+    [Fact]
+    public async Task Only_A_Cleaner_With_An_Active_Account_And_An_Email_Is_Emailed()
+    {
+        ArrangeOrderPays(PayrollMockFactory.OrderPay());
+        await CreateHandler().Handle(new GenerateInvoice.Command(EmployeeId, PayPeriodId), CancellationToken.None);
+        Assert.Single(_emails);
+
+        _emails.Clear();
+        _cleaner.User!.IsActive = false;
+        ArrangeOrderPays(PayrollMockFactory.OrderPay());
+        var result = await CreateHandler().Handle(new GenerateInvoice.Command(EmployeeId, PayPeriodId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Empty(_emails);
+    }
+
+    [Fact]
+    public async Task An_Invoice_Whose_Pdf_Did_Not_Render_Is_Still_Announced_Without_An_Attachment()
+    {
+        ArrangeOrderPays(PayrollMockFactory.OrderPay());
+        _mediator.Setup(m => m.Send(It.IsAny<RegenerateInvoicePdf.Command>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResult.Failure<RegenerateInvoicePdf.Response>(
+                new Error(nameof(RegenerateInvoicePdf.Command.InvoiceId), BusinessErrorMessage.PdfGenerationFailed)));
+
+        var result = await CreateHandler().Handle(new GenerateInvoice.Command(EmployeeId, PayPeriodId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        var sent = Assert.Single(_emails);
+        Assert.Equal((CleanerEmail, (string?)null), (sent.Email, sent.FileName));
+        Assert.Null(sent.Pdf);
+        _blobContainerClient.Verify(c => c.DownloadAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task A_Failed_Email_Leaves_The_Invoice_Issued()
+    {
+        ArrangeOrderPays(PayrollMockFactory.OrderPay());
+        _emailService
+            .Setup(e => e.SendPeriodClosedEmailAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateOnly>(), It.IsAny<DateOnly>(),
+                It.IsAny<DateTime>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<byte[]?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new HttpRequestException("SendGrid is unavailable"));
+
+        var result = await CreateHandler().Handle(new GenerateInvoice.Command(EmployeeId, PayPeriodId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        _invoiceRepository.Verify(r => r.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _emailService.Verify(e => e.SendPeriodClosedEmailAsync(
+            CleanerEmail, It.IsAny<string>(), It.IsAny<DateOnly>(), It.IsAny<DateOnly>(),
+            It.IsAny<DateTime>(), It.IsAny<string>(), It.IsAny<string>(),
+            It.IsAny<byte[]?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    private static Employee Cleaner()
+    {
+        var user = User.CreateWithPassword(CleanerEmail, "Password1", "Jana", "Nováková", UserProfile.Employee, languageCode: "cs");
+        var employee = Employee.CreateWithUser(user);
+        employee.Id = EmployeeId;
+        return employee;
     }
 
     // PayrollMockFactory derives TotalPay from the components, so a pay where the min/max clamp

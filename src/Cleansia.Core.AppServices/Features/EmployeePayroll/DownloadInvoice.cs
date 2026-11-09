@@ -86,7 +86,7 @@ public class DownloadInvoice
         // The row holds the absolute address the writers get back from the container (the archive
         // copies by it), while the client reads by name within the container: the name is what
         // follows the container segment, unescaped the way the address escaped it.
-        private static string BlobNameOf(string pdfBlobUrl)
+        internal static string BlobNameOf(string pdfBlobUrl)
         {
             if (!Uri.TryCreate(pdfBlobUrl, UriKind.Absolute, out var address))
             {

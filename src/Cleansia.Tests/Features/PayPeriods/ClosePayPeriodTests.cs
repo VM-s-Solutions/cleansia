@@ -4,6 +4,7 @@ using Cleansia.Core.AppServices.Features.PayPeriods;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Tenancy;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Tests.Services;
 using Cleansia.TestUtilities.MockDataFactories.EmployeePayroll;
@@ -27,7 +28,10 @@ public class ClosePayPeriodTests
 
     // ── Handler ──────────────────────────────────────────────────────
 
+    private const string TenantId = "cleansia-cz";
+
     private readonly Mock<IAuditContext> _audit = new();
+    private readonly Mock<ITenantRepository> _tenants = new();
     private readonly List<PayPeriod> _added = [];
 
     private ClosePayPeriod.Handler Handler(
@@ -43,8 +47,42 @@ public class ClosePayPeriodTests
         }
         var session = new Mock<IUserSessionProvider>();
         session.Setup(s => s.GetUserEmail()).Returns(AdminEmail);
+        var tenantProvider = new Mock<ITenantProvider>();
+        tenantProvider.Setup(p => p.GetCurrentTenantId()).Returns(TenantId);
         return new ClosePayPeriod.Handler(
-            repository.Object, session.Object, _audit.Object, PayPeriodTestServices.ClosingConfig(lengthSetting), _clock);
+            repository.Object, session.Object, _audit.Object, PayPeriodTestServices.ClosingConfig(lengthSetting), _clock,
+            _tenants.Object, tenantProvider.Object);
+    }
+
+    /// <summary>
+    /// A deactivated company has no next period (ADR-0064 D2), as the night run already holds: Close now ends its
+    /// open period and opens none after it.
+    /// </summary>
+    [Fact]
+    public async Task Handler_For_A_Deactivated_Company_Closes_The_Period_And_Opens_No_Successor()
+    {
+        var company = Tenant.Create(TenantId, "Cleansia CZ s.r.o.").Deactivate("admin-1", _clock.GetUtcNow());
+        _tenants.Setup(r => r.GetByIdAsync(TenantId, It.IsAny<CancellationToken>())).ReturnsAsync(company);
+        var period = PayrollMockFactory.OpenPeriod();
+
+        var result = await Handler(period).Handle(new ClosePayPeriod.Command(PayPeriodId, "The company wound down"), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(PayPeriodStatus.Closed, period.Status);
+        Assert.Empty(_added);
+    }
+
+    [Fact]
+    public async Task Handler_For_An_Active_Company_Opens_The_Successor()
+    {
+        _tenants.Setup(r => r.GetByIdAsync(TenantId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Tenant.Create(TenantId, "Cleansia CZ s.r.o."));
+
+        var result = await Handler(PayrollMockFactory.OpenPeriod())
+            .Handle(new ClosePayPeriod.Command(PayPeriodId, "A cleaner left mid-period"), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Single(_added);
     }
 
     [Fact]

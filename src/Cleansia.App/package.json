@@ -68,12 +68,14 @@
     "nx": {
       "smol-toml": "^1.9.1",
       "brace-expansion": "^5.0.12",
-      "axios": "^1.20.0"
+      "axios": "^1.20.0",
+      "follow-redirects": "^1.16.2"
     },
     "sockjs": {
       "uuid": "^11.1.1"
     },
     "webpack-dev-middleware@7.4.2": "^7.4.6",
+    "vite@7.3.6": "^7.3.7",
     "piscina": "^5.3.2",
     "handlebars": "^4.7.10",
     "js-yaml@3": {

@@ -145,6 +145,58 @@ describe('InvoiceDetailFacade', () => {
     expect(facade.canMarkPaid()).toBe(true);
   });
 
+  describe('the approve gate', () => {
+    it.each([EmployeeInvoiceStatus.Pending, EmployeeInvoiceStatus.Disputed])(
+      'offers approving in status %s',
+      (status) => {
+        detailsMock.mockReturnValue(of({ id: 'invoice-1', status }));
+        facade.loadInvoiceDetail('invoice-1');
+
+        expect(facade.canApprove()).toBe(true);
+      }
+    );
+
+    it.each([
+      EmployeeInvoiceStatus.Approved,
+      EmployeeInvoiceStatus.Paid,
+      EmployeeInvoiceStatus.Rejected,
+      EmployeeInvoiceStatus.Cancelled,
+    ])('withholds approving in status %s', (status) => {
+      detailsMock.mockReturnValue(of({ id: 'invoice-1', status }));
+      facade.loadInvoiceDetail('invoice-1');
+
+      expect(facade.canApprove()).toBe(false);
+    });
+  });
+
+  describe('the PDF regeneration gate', () => {
+    it.each([
+      EmployeeInvoiceStatus.Pending,
+      EmployeeInvoiceStatus.Approved,
+      EmployeeInvoiceStatus.Disputed,
+    ])('offers regenerating the PDF in status %s', (status) => {
+      detailsMock.mockReturnValue(of({ id: 'invoice-1', status }));
+      facade.loadInvoiceDetail('invoice-1');
+
+      expect(facade.canRegeneratePdf()).toBe(true);
+    });
+
+    it.each([
+      EmployeeInvoiceStatus.Paid,
+      EmployeeInvoiceStatus.Rejected,
+      EmployeeInvoiceStatus.Cancelled,
+    ])('withholds regenerating the PDF in status %s', (status) => {
+      detailsMock.mockReturnValue(of({ id: 'invoice-1', status }));
+      facade.loadInvoiceDetail('invoice-1');
+
+      expect(facade.canRegeneratePdf()).toBe(false);
+    });
+
+    it('offers nothing before an invoice is loaded', () => {
+      expect(facade.canRegeneratePdf()).toBe(false);
+    });
+  });
+
   describe('the cancel gate', () => {
     it.each([
       EmployeeInvoiceStatus.Pending,

@@ -18,7 +18,6 @@ extension DashboardStats {
         averageRating: Double? = nil,
         currentPayPeriodStart: Date? = nil,
         currentPayPeriodEnd: Date? = nil,
-        nextPayoutDate: Date? = nil,
         latestInvoiceStatus: String? = nil,
         currencyCode: String? = nil
     ) -> DashboardStats {
@@ -35,7 +34,6 @@ extension DashboardStats {
             averageRating: averageRating,
             currentPayPeriodStart: currentPayPeriodStart,
             currentPayPeriodEnd: currentPayPeriodEnd,
-            nextPayoutDate: nextPayoutDate,
             latestInvoiceStatus: latestInvoiceStatus,
             currencyCode: currencyCode
         )

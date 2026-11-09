@@ -133,7 +133,6 @@ struct EarningsView: View {
                 averageRating: 4.8,
                 currentPayPeriodStart: Date(timeIntervalSinceNow: -6 * 86400),
                 currentPayPeriodEnd: Date(timeIntervalSinceNow: 8 * 86400),
-                nextPayoutDate: Date(timeIntervalSinceNow: 8 * 86400),
                 latestInvoiceStatus: nil,
                 currencyCode: "CZK"
             )

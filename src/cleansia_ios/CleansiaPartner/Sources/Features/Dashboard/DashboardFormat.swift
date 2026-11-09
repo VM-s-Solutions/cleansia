@@ -64,22 +64,21 @@ enum DashboardFormat {
         return String(format: "%.1f", value)
     }
 
-    static func payoutDate(_ date: Date, locale: Locale = .current) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = locale
-        formatter.setLocalizedDateFormatFromTemplate("EEE d MMM")
-        return formatter.string(from: date)
+    /// The period's ends are the server's calendar days, each midnight UTC, and today is the phone's own date
+    /// pinned the same way, so no time zone moves a day.
+    static func payPeriodProgress(
+        start: Date,
+        end: Date,
+        now: Date = Date(),
+        timeZone: TimeZone = .current
+    ) -> PayPeriodProgress {
+        let totalDays = max(days(from: start, to: end) + 1, 1)
+        let elapsed = days(from: start, to: CalendarDay.startOfDay(now, in: timeZone)) + 1
+        return PayPeriodProgress(day: min(max(elapsed, 1), totalDays), total: totalDays)
     }
 
-    static func payPeriodProgress(start: Date, end: Date, now: Date = Date()) -> PayPeriodProgress {
-        let calendar = Calendar.current
-        let startDay = calendar.startOfDay(for: start)
-        let endDay = calendar.startOfDay(for: end)
-        let today = calendar.startOfDay(for: now)
-        let totalDays = max((calendar.dateComponents([.day], from: startDay, to: endDay).day ?? 0) + 1, 1)
-        let elapsed = (calendar.dateComponents([.day], from: startDay, to: today).day ?? 0) + 1
-        let dayIndex = min(max(elapsed, 1), totalDays)
-        return PayPeriodProgress(day: dayIndex, total: totalDays)
+    static func days(from start: Date, to end: Date) -> Int {
+        CalendarDay.calendar.dateComponents([.day], from: start, to: end).day ?? 0
     }
 
     private static func roundedThousands(_ amount: Double) -> String {

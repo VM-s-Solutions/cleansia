@@ -10,8 +10,8 @@ extension L10n {
             localized("earnings_current_period")
         }
 
-        static var estimateHelper: String {
-            localized("earnings_estimate_helper")
+        static func invoicedOnClose(_ date: String) -> String {
+            format("earnings_invoiced_on_close", date)
         }
 
         static var today: String {
@@ -36,10 +36,6 @@ extension L10n {
 
         static func daysRemaining(_ count: Int) -> String {
             format("earnings_days_remaining", count)
-        }
-
-        static var nextPayout: String {
-            localized("earnings_next_payout")
         }
 
         static var viewInvoices: String {

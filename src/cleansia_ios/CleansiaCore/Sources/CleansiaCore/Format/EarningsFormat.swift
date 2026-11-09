@@ -53,6 +53,12 @@ public enum EarningsFormat {
         return formatter.string(from: date)
     }
 
+    /// A pay period by its first and last day, the calendar days the server names; nil unless both arrived.
+    public static func period(start: Date?, end: Date?, locale: Locale = CoreL10n.locale) -> String? {
+        guard let start, let end else { return nil }
+        return "\(CalendarDay.text(start, locale: locale)) – \(CalendarDay.text(end, locale: locale))"
+    }
+
     private static func money(
         _ amount: Double,
         currencyCode: String?,

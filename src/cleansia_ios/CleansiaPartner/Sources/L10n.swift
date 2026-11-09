@@ -155,16 +155,8 @@ enum L10n {
             localized("dash_earnings_view_details")
         }
 
-        static var currentPeriod: String {
-            localized("dash_current_period")
-        }
-
         static func payPeriodProgress(_ day: Int, _ total: Int) -> String {
             format("dash_pay_period_progress", day, total)
-        }
-
-        static func nextPayout(_ date: String) -> String {
-            format("dash_next_payout", date)
         }
 
         static var lastMonthSection: String {

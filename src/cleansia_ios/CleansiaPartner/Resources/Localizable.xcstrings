@@ -2652,41 +2652,6 @@
         }
       }
     },
-    "dash_current_period": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aktuální období"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This pay period"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Текущий период"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aktuálne obdobie"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Поточний період"
-          }
-        }
-      }
-    },
     "dash_earn_up_to": {
       "extractionState": "stale",
       "localizations": {
@@ -3033,41 +2998,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Наступне замовлення"
-          }
-        }
-      }
-    },
-    "dash_next_payout": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Další výplata: %1$@"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Next payout: %1$@"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Следующая выплата: %1$@"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ďalšia výplata: %1$@"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Наступна виплата: %1$@"
           }
         }
       }
@@ -6648,31 +6578,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Aktuální výplatní období"
+            "value": "Toto období, zatím nevyfakturováno"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Current pay period"
+            "value": "This period, not invoiced yet"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Текущий платёжный период"
+            "value": "Этот период, ещё не в счёте"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Aktuálne výplatné obdobie"
+            "value": "Toto obdobie, zatiaľ nevyfakturované"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Поточний платіжний період"
+            "value": "Цей період, ще не в рахунку"
           }
         }
       }
@@ -6712,37 +6642,37 @@
         }
       }
     },
-    "earnings_estimate_helper": {
-      "extractionState": "stale",
+    "earnings_invoiced_on_close": {
+      "extractionState": "manual",
       "localizations": {
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Odhad do uzávěrky období"
+            "value": "Vyfakturuje se při uzávěrce období dne %1$@"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Estimated until the period closes"
+            "value": "Invoiced when the period closes on %1$@"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Оценка до закрытия периода"
+            "value": "Будет включено в счёт, когда период закроется %1$@"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Odhad do uzávierky obdobia"
+            "value": "Vyfakturuje sa pri uzávierke obdobia dňa %1$@"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Оцінка до закриття періоду"
+            "value": "Буде включено до рахунку, коли період закриється %1$@"
           }
         }
       }
@@ -6813,41 +6743,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Минулий місяць"
-          }
-        }
-      }
-    },
-    "earnings_next_payout": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Další výplata"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Next payout"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Следующая выплата"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ďalšia výplata"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Наступна виплата"
           }
         }
       }

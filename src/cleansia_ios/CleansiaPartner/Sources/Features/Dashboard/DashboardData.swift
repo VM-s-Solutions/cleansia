@@ -26,7 +26,6 @@ struct DashboardData: Equatable {
         let start: Date
         let end: Date
         let earnings: Double
-        let nextPayoutDate: Date?
     }
 
     var averagePerJob: Double {
@@ -50,12 +49,7 @@ struct DashboardData: Equatable {
     ) -> DashboardData {
         let payPeriod: PayPeriod? = {
             guard let start = stats.currentPayPeriodStart, let end = stats.currentPayPeriodEnd else { return nil }
-            return PayPeriod(
-                start: start,
-                end: end,
-                earnings: stats.currentPeriodEarnings,
-                nextPayoutDate: stats.nextPayoutDate
-            )
+            return PayPeriod(start: start, end: end, earnings: stats.currentPeriodEarnings)
         }()
 
         return DashboardData(

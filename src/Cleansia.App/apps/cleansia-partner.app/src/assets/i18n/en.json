@@ -935,6 +935,7 @@
     },
     "validation": {
       "invalid_password": "Invalid password",
+      "invalid_phone_number": "Please enter a valid phone number.",
       "invalid_date": "Invalid date",
       "date_must_be_in_past": "Date must be in the past",
       "invalid_age": "Invalid age",

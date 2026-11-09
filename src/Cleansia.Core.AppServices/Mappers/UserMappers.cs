@@ -47,7 +47,8 @@ public static class UserMappers
                 MemberSince: user.CreatedOn,
                 TotalBookings: stats?.TotalBookings ?? 0,
                 TotalSavings: stats?.TotalSavings ?? 0m,
-                SavingsCurrencyCode: stats?.SavingsCurrencyCode);
+                SavingsCurrencyCode: stats?.SavingsCurrencyCode,
+                IsNamePlaceholder: user.IsNamePlaceholder());
     }
 
     public static UserItem? MapToDetailDto(this User? user)

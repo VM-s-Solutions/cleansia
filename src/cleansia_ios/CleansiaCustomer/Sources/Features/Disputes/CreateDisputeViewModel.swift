@@ -30,6 +30,9 @@ final class CreateDisputeViewModel: ViewModel {
     /// Files attached before the dispute exists, uploaded to it in order once the create is acknowledged.
     @Published private(set) var pickedEvidence: [PickedEvidence] = []
 
+    /// Picks still being prepared. Submit stays shut until they land, or it would file the dispute without them.
+    @Published private(set) var preparingEvidence = 0
+
     private let repository: DisputeRepository
     private let orderClient: OrderClient
     private let snackbar: SnackbarController
@@ -77,9 +80,12 @@ final class CreateDisputeViewModel: ViewModel {
         return range.contains(text.count)
     }
 
-    func addEvidence(_ source: EvidenceSource, fileName: String) {
+    func addEvidence(_ source: EvidenceSource, fileName: String) async {
         guard !submitState.isSubmitting else { return }
-        switch EvidencePreparer.prepare(source) {
+        preparingEvidence += 1
+        let prepared = await EvidencePreparer.prepare(source)
+        preparingEvidence -= 1
+        switch prepared {
         case let .success(file):
             pickedEvidence.append(PickedEvidence(id: UUID().uuidString, fileName: fileName, file: file))
         case let .failure(error):
@@ -94,7 +100,7 @@ final class CreateDisputeViewModel: ViewModel {
     }
 
     func submit(reason: Int, description: String) async {
-        guard !submitState.isSubmitting else { return }
+        guard !submitState.isSubmitting, preparingEvidence == 0 else { return }
         guard let orderId else {
             submitState = .error(L10n.Disputes.createMissingOrder)
             return

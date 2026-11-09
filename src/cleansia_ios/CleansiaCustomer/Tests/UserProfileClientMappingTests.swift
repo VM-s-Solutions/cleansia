@@ -191,6 +191,38 @@ final class UserProfileClientMappingTests: XCTestCase {
             XCTAssertNil(command.birthDate)
         }
     }
+
+    // MARK: - The name the server stood in for
+
+    /// Only a server older than the member leaves it out. Its profile still loads, with the flag false, as every
+    /// build read it before.
+    func testAnAbsentPlaceholderFlagReadsFalseAndTheProfileLoads() throws {
+        let user = try MyProfileDto.wireComplete(isNamePlaceholder: nil).toDomain(id: "user-1")
+
+        XCTAssertFalse(user.isNamePlaceholder)
+        XCTAssertEqual(user.fullName, "Jane Doe")
+    }
+
+    func testAPlaceholderFlagMapsThrough() throws {
+        XCTAssertTrue(try MyProfileDto.wireComplete(isNamePlaceholder: true).toDomain(id: "user-1").isNamePlaceholder)
+        XCTAssertFalse(try MyProfileDto.wireComplete(isNamePlaceholder: false).toDomain(id: "user-1").isNamePlaceholder)
+    }
+
+    /// The flag beside them is defaulted, and they still refuse: a blank name would be posted back over the
+    /// account's, and a missing confirmation would claim the address unconfirmed.
+    func testABlankFirstNameOrAMissingEmailConfirmationIsRefused() {
+        XCTAssertThrowsError(try MyProfileDto.wireComplete(firstName: " ").toDomain(id: "user-1"))
+        XCTAssertThrowsError(try MyProfileDto.wireComplete(isEmailConfirmed: nil).toDomain(id: "user-1"))
+    }
+
+    func testOnlyTheAppleRelayAddressReadsHidden() {
+        for hidden in ["x7k2p9q8r4@privaterelay.appleid.com", "X@PrivateRelay.AppleID.com"] {
+            XCTAssertTrue(ProfileFixtures.user(email: hidden).isEmailHiddenByApple, hidden)
+        }
+        for shown in ["jana@gmail.com", "privaterelay.appleid.com@gmail.com", "a@private.icloud.com"] {
+            XCTAssertFalse(ProfileFixtures.user(email: shown).isEmailHiddenByApple, shown)
+        }
+    }
 }
 
 private extension MyProfileDto {
@@ -198,22 +230,26 @@ private extension MyProfileDto {
     /// fixture cannot assert against something the app would refuse in production.
     static func wireComplete(
         email: String = "jane@example.com",
+        firstName: String? = "Jane",
+        isEmailConfirmed: Bool? = true,
         profilePhoto: BlobFileDto? = nil,
         memberSince: Date? = nil,
         totalBookings: Int = 0,
         totalSavings: Double = 0,
-        savingsCurrencyCode: String? = nil
+        savingsCurrencyCode: String? = nil,
+        isNamePlaceholder: Bool? = nil
     ) -> MyProfileDto {
         MyProfileDto(
             email: email,
-            firstName: "Jane",
+            firstName: firstName,
             lastName: "Doe",
-            isEmailConfirmed: true,
+            isEmailConfirmed: isEmailConfirmed,
             profilePhoto: profilePhoto,
             memberSince: memberSince,
             totalBookings: totalBookings,
             totalSavings: totalSavings,
-            savingsCurrencyCode: savingsCurrencyCode
+            savingsCurrencyCode: savingsCurrencyCode,
+            isNamePlaceholder: isNamePlaceholder
         )
     }
 }

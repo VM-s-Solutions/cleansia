@@ -9,6 +9,7 @@ using Cleansia.Core.Blobs.Abstractions.Extensions;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Infra.Common.Attributes;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -60,6 +61,10 @@ public class UpdateCurrentUser
             // phone and every save was rejected as a duplicate — including one that
             // only changed the avatar, on a field the customer never touched.
             RuleFor(c => c.PhoneNumber)
+                .Cascade(CascadeMode.Stop)
+                .MustAsync(BeAValidPhoneNumberUnlessUnchangedAsync)
+                .WithMessage(BusinessErrorMessage.InvalidPhoneNumber)
+                .WithErrorCode(nameof(Command.PhoneNumber))
                 .MustAsync(UserWithPhoneNumberNotExistsAsync)
                 .WithMessage(BusinessErrorMessage.ExistingPhoneNumber)
                 .WithErrorCode(nameof(Command.PhoneNumber))
@@ -86,6 +91,21 @@ public class UpdateCurrentUser
             var user = await _userRepository.GetByIdAsync(
                 _userSessionProvider.GetUserId() ?? string.Empty, cancellationToken);
             return user is not null;
+        }
+
+        // A profile edit sends the stored phone back unchanged, so a number stored before this check
+        // would otherwise block every later edit of the account.
+        private async Task<bool> BeAValidPhoneNumberUnlessUnchangedAsync(string phoneNumber,
+            CancellationToken cancellationToken)
+        {
+            if (new PhoneNumberAttribute().IsValid(phoneNumber))
+            {
+                return true;
+            }
+
+            var user = await _userRepository.GetByIdAsync(
+                _userSessionProvider.GetUserId() ?? string.Empty, cancellationToken);
+            return user?.PhoneNumber == phoneNumber;
         }
 
         private async Task<bool> UserWithPhoneNumberNotExistsAsync(Command command, string phoneNumber,

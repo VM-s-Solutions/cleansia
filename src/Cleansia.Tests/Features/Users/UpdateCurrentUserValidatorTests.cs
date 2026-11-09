@@ -36,7 +36,7 @@ public class UpdateCurrentUserValidatorTests
         return user;
     }
 
-    private void ArrangeOwner(bool confirmed = true)
+    private User ArrangeOwner(bool confirmed = true)
     {
         var user = User.CreateWithPassword(UserEmail, "Password1", "First", "Last");
         if (confirmed)
@@ -54,6 +54,7 @@ public class UpdateCurrentUserValidatorTests
         _userRepository
             .Setup(r => r.GetByIdAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
+        return user;
     }
 
     private void ArrangePhoneFree(string phone) =>
@@ -65,7 +66,7 @@ public class UpdateCurrentUserValidatorTests
         Id: UserId,
         FirstName: "First",
         LastName: "Last",
-        PhoneNumber: "+420123456789",
+        PhoneNumber: "+420777123456",
         BirthDate: null,
         Photo: null,
         LanguageCode: null);
@@ -74,7 +75,7 @@ public class UpdateCurrentUserValidatorTests
     public async Task Valid_Command_Passes()
     {
         ArrangeOwner();
-        ArrangePhoneFree("+420123456789");
+        ArrangePhoneFree("+420777123456");
 
         var result = await CreateValidator().ValidateAsync(Valid());
 
@@ -85,7 +86,7 @@ public class UpdateCurrentUserValidatorTests
     public async Task Unconfirmed_Email_Fails_NotExistingUserWithEmail()
     {
         ArrangeOwner(confirmed: false);
-        ArrangePhoneFree("+420123456789");
+        ArrangePhoneFree("+420777123456");
 
         var result = await CreateValidator().ValidateAsync(Valid());
 
@@ -96,7 +97,7 @@ public class UpdateCurrentUserValidatorTests
     public async Task Unresolvable_Session_Subject_Fails_NotAllowedToUpdateUser()
     {
         ArrangeOwner();
-        ArrangePhoneFree("+420123456789");
+        ArrangePhoneFree("+420777123456");
         _userRepository
             .Setup(r => r.GetByIdAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)null);
@@ -110,7 +111,7 @@ public class UpdateCurrentUserValidatorTests
     public async Task Empty_FirstName_Fails_Required()
     {
         ArrangeOwner();
-        ArrangePhoneFree("+420123456789");
+        ArrangePhoneFree("+420777123456");
 
         var result = await CreateValidator().ValidateAsync(Valid() with { FirstName = string.Empty });
 
@@ -123,7 +124,7 @@ public class UpdateCurrentUserValidatorTests
     public async Task FirstName_Too_Long_Fails_MaxLength()
     {
         ArrangeOwner();
-        ArrangePhoneFree("+420123456789");
+        ArrangePhoneFree("+420777123456");
 
         var result = await CreateValidator().ValidateAsync(Valid() with { FirstName = new string('x', 51) });
 
@@ -136,7 +137,7 @@ public class UpdateCurrentUserValidatorTests
     public async Task Empty_LastName_Fails_Required()
     {
         ArrangeOwner();
-        ArrangePhoneFree("+420123456789");
+        ArrangePhoneFree("+420777123456");
 
         var result = await CreateValidator().ValidateAsync(Valid() with { LastName = string.Empty });
 
@@ -149,7 +150,7 @@ public class UpdateCurrentUserValidatorTests
     public async Task LastName_Too_Long_Fails_MaxLength()
     {
         ArrangeOwner();
-        ArrangePhoneFree("+420123456789");
+        ArrangePhoneFree("+420777123456");
 
         var result = await CreateValidator().ValidateAsync(Valid() with { LastName = new string('x', 51) });
 
@@ -162,7 +163,7 @@ public class UpdateCurrentUserValidatorTests
     public async Task Future_BirthDate_Fails_DateMustBeInPast()
     {
         ArrangeOwner();
-        ArrangePhoneFree("+420123456789");
+        ArrangePhoneFree("+420777123456");
 
         var future = DateOnly.FromDateTime(DateTime.Today).AddDays(1);
         var result = await CreateValidator().ValidateAsync(Valid() with { BirthDate = future });
@@ -179,7 +180,7 @@ public class UpdateCurrentUserValidatorTests
         var other = User.CreateWithPassword("other@cleansia.cz", "Password1", "O", "T");
         other.Id = "another-user";
         _userRepository
-            .Setup(r => r.GetByPhoneNumberAsync("+420123456789", It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByPhoneNumberAsync("+420777123456", It.IsAny<CancellationToken>()))
             .ReturnsAsync(other);
 
         var result = await CreateValidator().ValidateAsync(Valid());
@@ -189,11 +190,56 @@ public class UpdateCurrentUserValidatorTests
             && e.ErrorMessage == BusinessErrorMessage.ExistingPhoneNumber);
     }
 
+    [Theory]
+    [InlineData("777123456")]
+    [InlineData("+42077712")]
+    [InlineData("+420123456789")]
+    [InlineData("not a phone")]
+    public async Task Changed_Phone_Libphonenumber_Does_Not_Hold_Valid_Fails_InvalidPhoneNumber(string phone)
+    {
+        ArrangeOwner();
+        ArrangePhoneFree(phone);
+
+        var result = await CreateValidator().ValidateAsync(Valid() with { PhoneNumber = phone });
+
+        Assert.Contains(result.Errors, e =>
+            e.ErrorCode == nameof(UpdateCurrentUser.Command.PhoneNumber)
+            && e.ErrorMessage == BusinessErrorMessage.InvalidPhoneNumber);
+    }
+
+    [Theory]
+    [InlineData("+420 777123456")]
+    [InlineData("+421905123456")]
+    public async Task Changed_Phone_Valid_In_International_Form_Passes(string phone)
+    {
+        ArrangeOwner();
+        ArrangePhoneFree(phone);
+
+        var result = await CreateValidator().ValidateAsync(Valid() with { PhoneNumber = phone });
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public async Task Stored_Phone_Sent_Back_Unchanged_Passes_Even_When_Not_Valid()
+    {
+        const string storedPhone = "777123456";
+        var owner = ArrangeOwner();
+        owner.Update("First", "Last", storedPhone);
+        _userRepository
+            .Setup(r => r.GetByPhoneNumberAsync(storedPhone, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(owner);
+
+        var result = await CreateValidator().ValidateAsync(Valid() with { PhoneNumber = storedPhone });
+
+        Assert.True(result.IsValid);
+    }
+
     [Fact]
     public async Task Avatar_Over_TenMebibytes_Fails_FileSizeExceeded()
     {
         ArrangeOwner();
-        ArrangePhoneFree("+420123456789");
+        ArrangePhoneFree("+420777123456");
 
         var result = await CreateValidator().ValidateAsync(Valid() with { Photo = Avatar(TenMebibytes + 1024) });
 
@@ -204,7 +250,7 @@ public class UpdateCurrentUserValidatorTests
     public async Task Avatar_Under_TenMebibytes_Passes()
     {
         ArrangeOwner();
-        ArrangePhoneFree("+420123456789");
+        ArrangePhoneFree("+420777123456");
 
         var result = await CreateValidator().ValidateAsync(Valid() with { Photo = Avatar(TenMebibytes - 1024) });
 

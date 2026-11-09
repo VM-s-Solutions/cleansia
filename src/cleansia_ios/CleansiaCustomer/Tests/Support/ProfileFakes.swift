@@ -141,7 +141,9 @@ enum ProfileFixtures {
         firstName: String = "Jane",
         lastName: String = "Doe",
         phoneNumber: String? = "+420123456789",
-        profilePhoto: ProfilePhoto? = nil
+        birthDate: Date? = nil,
+        profilePhoto: ProfilePhoto? = nil,
+        isNamePlaceholder: Bool = false
     ) -> CurrentUserProfile {
         CurrentUserProfile(
             id: id,
@@ -149,10 +151,11 @@ enum ProfileFixtures {
             firstName: firstName,
             lastName: lastName,
             phoneNumber: phoneNumber,
-            birthDate: nil,
+            birthDate: birthDate,
             preferredLanguageCode: "en",
             isEmailConfirmed: true,
-            profilePhoto: profilePhoto
+            profilePhoto: profilePhoto,
+            isNamePlaceholder: isNamePlaceholder
         )
     }
 

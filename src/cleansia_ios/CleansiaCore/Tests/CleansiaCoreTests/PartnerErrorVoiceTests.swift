@@ -83,7 +83,6 @@ final class PartnerErrorVoiceTests: XCTestCase {
         PartnerOnlyKey("validation.payout.looks_like_card", emitters: "UpdateBankDetails"),
         PartnerOnlyKey("validation.payout.scheme_not_supported", emitters: "UpdateBankDetails"),
         PartnerOnlyKey("validation.payout.swift_required", emitters: "UpdateBankDetails"),
-        PartnerOnlyKey("validation.invalid_phone_number", emitters: "UpdatePersonalInfo"),
         PartnerOnlyKey(
             "validation.passport_id.invalid_length",
             emitters: "UpdateIdentificationInfo, UpdateEmployee, AdminUpdateEmployee"
@@ -219,7 +218,7 @@ final class PartnerErrorVoiceTests: XCTestCase {
         "validation.invalid_age": "UpdateCurrentUser",
         "validation.invalid_date": "UpdateCurrentUser",
         "validation.invalid_password": "GoogleAuth, Login, LoginValidator +1 more",
-        "validation.invalid_phone_number": "UpdatePersonalInfo",
+        "validation.invalid_phone_number": "UpdateCurrentUser, UpdatePersonalInfo",
         "validation.passport_id.invalid_length": "UpdateEmployee, UpdateIdentificationInfo",
         "validation.payout.account_number_required": "PayoutDetailsValidator",
         "validation.payout.country_not_supported": "PayoutDetailsValidator, UpdateBankDetails",

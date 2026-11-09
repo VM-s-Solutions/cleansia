@@ -335,9 +335,11 @@ struct JobBandMapLayout: Equatable {
         return bandHeight > 0 ? band * Double(size.height / bandHeight) : band
     }
 
-    /// The pin's tip at 72 % of the visible band.
+    /// The pin's tip at 72 % of the visible band, or mid-map on a map no taller than that line, where the door would
+    /// otherwise land past the map's foot.
     var pinAnchor: CGFloat {
-        size.height > 0 ? (top + visible * 0.72) / size.height : 0.5
+        let line = top + visible * 0.72
+        return size.height > line ? line / size.height : 0.5
     }
 
     var chipY: CGFloat {

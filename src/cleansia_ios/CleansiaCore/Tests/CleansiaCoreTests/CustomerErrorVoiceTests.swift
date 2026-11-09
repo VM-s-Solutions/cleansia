@@ -244,6 +244,7 @@ final class CustomerErrorVoiceTests: XCTestCase {
         "validation.invalid_age": "UpdateCurrentUser",
         "validation.invalid_date": "UpdateCurrentUser",
         "validation.invalid_password": "AppleAuth, GoogleAuth, Login +2 more",
+        "validation.invalid_phone_number": "UpdateCurrentUser",
         "validation.must_be_positive": "QuoteOrder, ValidatePromoCode"
     ]
 

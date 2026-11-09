@@ -55,7 +55,7 @@ final class PhoneNumberKitDisplayFormatterTests: XCTestCase {
         for possible in ["+420777123456", "+421905123456", "+420 728 089 247", "+420609123456"] {
             XCTAssertTrue(PhoneNumberKitDisplayFormatter.isPossibleNumber(possible), possible)
         }
-        for impossible in ["777123456", "420777123456", "+", "", "+1", "+4201", "+4219051234567"] {
+        for impossible in ["777123456", "420777123456", "+", "", "+1", "+4201", "+42077712", "+4219051234567"] {
             XCTAssertFalse(PhoneNumberKitDisplayFormatter.isPossibleNumber(impossible), impossible)
         }
     }
@@ -66,6 +66,12 @@ final class PhoneNumberKitDisplayFormatterTests: XCTestCase {
         for unassigned in ["+0123456789", "+9991234567", "+999 123 456 789"] {
             XCTAssertFalse(PhoneNumberKitDisplayFormatter.isPossibleNumber(unassigned), unassigned)
         }
+    }
+
+    func testTheCallingCodeOfARegion() {
+        XCTAssertEqual(PhoneNumberKitDisplayFormatter.callingCode(for: "CZ"), "+420")
+        XCTAssertEqual(PhoneNumberKitDisplayFormatter.callingCode(for: "sk"), "+421")
+        XCTAssertNil(PhoneNumberKitDisplayFormatter.callingCode(for: "ZZ"))
     }
 
     func testEngineWiredToTheRealFormatterKeepsTheWireFormat() {

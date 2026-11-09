@@ -127,6 +127,30 @@ final class ComponentTextInkTests: XCTestCase {
         XCTAssertEqual(CleansiaPrimaryButton.ink(pressable: true, disabled: nil), CleansiaColors.onPrimary)
     }
 
+    /// A filled button that cannot be pressed reads in both modes: slate-600 on slate-200 in light mode, slate-400 on
+    /// the raised dark surface in dark mode. The primary at half under a white label read 2.01:1. A loading button
+    /// shares the look, so its spinner takes the label's ink.
+    func testTheDisabledButtonReadsInBothModes() throws {
+        XCTAssertEqual(
+            contrast(
+                resolved(CleansiaColors.onDisabledContainer, .light),
+                resolved(CleansiaColors.disabledContainer, .light)
+            ),
+            6.15,
+            accuracy: 0.01
+        )
+        XCTAssertEqual(
+            contrast(
+                resolved(CleansiaColors.onDisabledContainer, .dark),
+                resolved(CleansiaColors.disabledContainer, .dark)
+            ),
+            4.84,
+            accuracy: 0.01
+        )
+        let button = try compactSource("Components/CleansiaButton.swift")
+        XCTAssertTrue(button.contains(".tint(Self.ink(pressable:pressable,disabled:disabledContentColor))"))
+    }
+
     /// Blue text on the primary container reads 4.5:1 in both modes (finding 2026-10-05): in dark mode the
     /// container is sky-700, where the text ink's sky-400 read 2.77:1, so badge text takes
     /// `primaryTextOnContainer` (sky-100 in dark, the text ink's sky-700 in light). The devices screen's This

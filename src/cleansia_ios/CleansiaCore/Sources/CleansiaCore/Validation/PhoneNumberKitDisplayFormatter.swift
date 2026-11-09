@@ -37,6 +37,11 @@ public struct PhoneNumberKitDisplayFormatter: PhoneDisplayFormatting {
         return digits.hasPrefix(String(number.countryCode))
     }
 
+    /// "+420" for "CZ".
+    public static func callingCode(for region: String) -> String? {
+        utility.countryCode(for: region.uppercased()).map { "+\($0)" }
+    }
+
     /// Parsing the bundled metadata is expensive; one instance serves every field.
     private static let utility = PhoneNumberUtility()
 }

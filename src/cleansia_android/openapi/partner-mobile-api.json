@@ -10481,6 +10481,9 @@
           "savingsCurrencyCode": {
             "type": "string",
             "nullable": true
+          },
+          "isNamePlaceholder": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false

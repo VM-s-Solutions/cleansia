@@ -115,8 +115,9 @@ green; and Mike gets a customer TestFlight build.
   nezobrazí."), and no customer-app string in any locale promises birthday perks.
 - [ ] **AC6 — the sheet stores nothing until a wheel moves.** Given the birth date is not set, When she opens its
   sheet and closes it with Done or a swipe down without moving a wheel, Then no birth date is stored and the row still
-  reads "Not set". When she moves a wheel, Then the day on the wheels is stored and the row shows it. On Android a JVM
-  test covers this through the view model. See open point 1: iOS stores the day shown on Done today.
+  reads "Not set". When she moves a wheel, Then the day on the wheels is stored and the row shows it. On Android a
+  source test on the sheet and the minified build's emulator walk cover this; the view model never sees the sheet.
+  See open point 1: iOS stores the day shown on Done today.
 - [ ] **AC7 — the name step for a hidden-name Apple account.** Given an Apple account whose stored first name is
   Cleansia or whose stored last name is Customer, the words the server writes for a part that neither Apple nor the
   e-mail gave, When she reaches the iOS onboarding, Then the server tells the app that the name is made up, and the
@@ -349,6 +350,49 @@ green; and Mike gets a customer TestFlight build.
   screen; at `8f0a53252` no file under either app's `Features/Auth` draws a mascot, and `AuthHeaderImage` is gone.
   No catalog edit, so nothing routes.
 - 2026-11-09 — Shipped, the server signal and the iOS half: #369 merged to master as 45146bd5d.
+- 2026-11-08 — Built T-0920's Android half, PR B (#371), on `feature/customer-onboarding-d-android`, from master at
+  5b57d65b2 after #370. The customer onboarding shows the mascot (waving, a thumbs-up at "Ready to book"), the
+  readiness card with done, open and waiting rows, and the cleaner's example in the phone step. A phone counts as done
+  only when libphonenumber holds its length possible for its country (`isPossiblePhoneNumber`, Q6's default). The
+  shared phone field can draw `+420` before the national digits, off by default, so the partner's two phone fields did
+  not change; tapping the prefix switches to the free form and keeps the digits (Q2's default). An Apple relay e-mail
+  reads "Hidden by Apple", and a long e-mail keeps its domain. The birth date opens the system's day, month and year
+  wheels in a half-height sheet: a wheel stores its day as it moves, Done only closes, there is no Cancel, and an
+  untouched sheet stores nothing (Q1, answered A by Mike on 2026-11-08). "Birthday perks" is gone in all five locales.
+  TalkBack reads each row once, ending with its state, and the `+420` prefix once. Commits 68a654c67, 1e8878664,
+  58cac494a, 2bd7b977f, d3450ec05 and 97a7ce140. Tests: core 419, partner 1270 and customer 1853 (3542) before;
+  425, 1270 and 1865 (3560) at d3450ec05, 0 failures; at 97a7ce140, with T-0922's fixes in, 426, 1271 and 1866
+  (3563), 0 failures. Red runs: `part3/logs/red-CleansiaPhoneInputPrefixTest.log`,
+  `red-ProfileOnboardingScreenTest-compile.log`, `red-ProfileOnboardingScreenTest-ac6.log`,
+  `red-OnboardingChecklistTest-compile.log`, `red-ProfileOnboardingScreenTest-c3-pins.log`,
+  `red-PrimaryTextTest-compile.log`, `red-CleansiaButtonTest.log`, `red-ProfileOnboardingScreenTest-ac8-cleared.log`
+  and `fix-red-rev3.log`.
+- 2026-11-08 — The grey disabled button, commit 2bd7b977f, alone: slate-600 on slate-200 (6.15:1) and slate-400 on
+  `#283548` (4.84:1), the loading spinner in the label's ink; 31 call sites in the two apps change only while disabled
+  or loading (listed in the commit); the five customer screens that draw Material's `Button` keep their own colours.
+  Shot before and after in one emulator session: every changed app pixel sits inside a button's bounds.
+- 2026-11-08 — TalkBack, read from its own speech log on the API 35 emulator, said each row's texts again after its
+  state ("Name, Jana Dvořáková, done. Name. Jana Dvořáková"). The rows now clear their texts and keep the one
+  description (d3450ec05), as the brief's section 7.4 prescribes; it now says "Name, Jana Dvořáková, done", and the
+  birth date row "Birth date, Optional. Never shown to your cleaner., not done", then its role, Button. The `+420`
+  prefix still read its code twice ("Country code +420. +420. Button"); 97a7ce140 clears its text the same way, and
+  TalkBack now says "Country code +420. Button" (`talkback/97a7ce140-FxOnboardingEmpty`).
+- The ADR-0018 D1 line for the Android name step is already in this ticket's work record (PR A, 2026-11-08). Component
+  differences: Android's wheels are the system spinner; Android's Edit profile and the partner's personal details keep
+  Material's calendar (Out of scope).
+- AC6 on Android is proven by a source test on the sheet (`ProfileOnboardingScreenTest`) and the minified build's
+  emulator walk, not through the view model, which never sees the sheet; AC6's last sentence now says so, as the PM
+  agreed on 2026-11-08 (Q9).
+- Evidence (out of tree, `/Users/michael/cleansia-work.noindex/onboarding-d-20261108/android/part3/`):
+  `side-by-side-android.html`, `captures/` (34 frames on API 35 and 2 on API 30, the decision-5 before and after),
+  `talkback/`, `walk/` (the staging start and stand-in walk screenshots), `logs/`. At 97a7ce140 (PR B's code head,
+  F9 to F11 included) both staging builds start with an empty crash buffer (`walk/start-gate-97a7ce140.json`), and
+  `check-r8-monitor.py` over their dex rejects 0: partner 828 methods with a monitor of 41006 parsed, 99 of them with
+  switch targets unchecked; customer 907 of 63103, 107. The APK for a phone: `apk/customer-staging-97a7ce140.apk`,
+  SHA-256 3abcbae0e5e27cb5ce1490933b5c98ceabf6462b34bceca9178b9a8b3796700e.
+- Gates: compile and unit tests of the three modules (3563 at 97a7ce140, 0 failures); `check-consistency mobile` (the one E1 at
+  `OrdersListViewModel.kt:92`, unchanged); `check-docs-refs` (0 unresolved); `check-catalog-claims` (C1 0, C2 0, C3 0);
+  `check-backlog-consistency` (C1 0, C2 0, reach 0); every PR check (Android CI, iOS CI, Docs CI, Frontend CI, Booking policy parity, Secret scan) passed on its first run at b5c050eed, #371.
 
 ## Review
 

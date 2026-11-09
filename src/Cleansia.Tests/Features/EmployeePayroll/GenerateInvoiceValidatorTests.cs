@@ -1,14 +1,16 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.EmployeePayroll;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.TestUtilities.MockDataFactories.EmployeePayroll;
 using Moq;
 
 namespace Cleansia.Tests.Features.EmployeePayroll;
 
 /// <summary>
 /// Every failure path of <see cref="GenerateInvoice.Validator"/> plus the clean pass:
-/// required-field guards, existence guards, the per-currency InvoiceAlreadyExists guard
-///, the NoUnpaidOrderPays guard, and a fully valid command. Asserts on the
+/// required-field guards, existence guards, the closed-period guard, the per-currency
+/// InvoiceAlreadyExists guard, the NoUnpaidOrderPays guard, and a fully valid command. Asserts on the
 /// BusinessErrorMessage constant, never a literal.
 /// </summary>
 public class GenerateInvoiceValidatorTests
@@ -27,6 +29,8 @@ public class GenerateInvoiceValidatorTests
             .Setup(r => r.ExistsAsync(EmployeeId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         _payPeriodRepository
             .Setup(r => r.ExistsAsync(PayPeriodId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _payPeriodRepository
+            .Setup(r => r.GetByIdAsync(PayPeriodId, It.IsAny<CancellationToken>())).ReturnsAsync(PayrollMockFactory.ClosedPeriod());
         _invoiceRepository
             .Setup(r => r.ExistsForUnassignedPayCurrencyAsync(EmployeeId, PayPeriodId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
@@ -99,6 +103,22 @@ public class GenerateInvoiceValidatorTests
         Assert.Contains(result.Errors, e =>
             e.PropertyName == nameof(GenerateInvoice.Command.PayPeriodId)
             && e.ErrorMessage == BusinessErrorMessage.PayPeriodNotFound);
+    }
+
+    [Theory]
+    [InlineData(PayPeriodStatus.Open)]
+    [InlineData(PayPeriodStatus.Paid)]
+    public async Task A_Period_That_Is_Not_Closed_Fails_PayPeriodNotClosed(PayPeriodStatus status)
+    {
+        _payPeriodRepository
+            .Setup(r => r.GetByIdAsync(PayPeriodId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(status == PayPeriodStatus.Open ? PayrollMockFactory.OpenPeriod() : PayrollMockFactory.PaidPeriod());
+
+        var result = await CreateValidator().ValidateAsync(Valid());
+
+        Assert.Contains(result.Errors, e =>
+            e.PropertyName == nameof(GenerateInvoice.Command.PayPeriodId)
+            && e.ErrorMessage == BusinessErrorMessage.PayPeriodNotClosed);
     }
 
     [Fact]

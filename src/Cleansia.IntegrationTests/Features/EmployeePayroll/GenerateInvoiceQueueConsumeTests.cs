@@ -159,7 +159,7 @@ public class GenerateInvoiceQueueConsumeTests(PostgresContainerFixture fixture) 
         employee.TenantId = TenantId;
         context.Add(employee);
 
-        var payPeriod = PayPeriod.Create(new DateOnly(2026, 1, 1), new DateOnly(2026, 1, 15));
+        var payPeriod = PayPeriod.Create(new DateOnly(2026, 1, 1), new DateOnly(2026, 1, 15)).Close("System");
         payPeriod.TenantId = TenantId;
         context.Add(payPeriod);
 

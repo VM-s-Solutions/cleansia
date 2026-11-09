@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.EmployeePayroll;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -24,6 +25,7 @@ public class GenerateInvoice
 
     public class Validator : AbstractValidator<Command>
     {
+        private readonly IPayPeriodRepository _payPeriodRepository;
         private readonly IEmployeeInvoiceRepository _employeeInvoiceRepository;
         private readonly IOrderEmployeePayRepository _orderEmployeePayRepository;
 
@@ -33,6 +35,7 @@ public class GenerateInvoice
             IEmployeeInvoiceRepository employeeInvoiceRepository,
             IOrderEmployeePayRepository orderEmployeePayRepository)
         {
+            _payPeriodRepository = payPeriodRepository;
             _employeeInvoiceRepository = employeeInvoiceRepository;
             _orderEmployeePayRepository = orderEmployeePayRepository;
 
@@ -48,7 +51,9 @@ public class GenerateInvoice
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
                 .MustAsync(payPeriodRepository.ExistsAsync)
-                .WithMessage(BusinessErrorMessage.PayPeriodNotFound);
+                .WithMessage(BusinessErrorMessage.PayPeriodNotFound)
+                .MustAsync(BeClosedStatusAsync)
+                .WithMessage(BusinessErrorMessage.PayPeriodNotClosed);
 
             RuleFor(x => x)
                 .MustAsync(NoInvoiceExistsForAnUnassignedPayCurrencyAsync)
@@ -57,6 +62,14 @@ public class GenerateInvoice
             RuleFor(x => x)
                 .MustAsync(NoUnpaidOrderPaysExist)
                 .WithMessage(BusinessErrorMessage.NoUnpaidOrderPays);
+        }
+
+        // Pay is invoiced once its period has closed: an invoice issued while the period runs holds only
+        // the jobs done so far, and every later job in its currency is then refused as already invoiced.
+        private async Task<bool> BeClosedStatusAsync(string payPeriodId, CancellationToken cancellationToken)
+        {
+            var period = await _payPeriodRepository.GetByIdAsync(payPeriodId, cancellationToken);
+            return period!.Status == PayPeriodStatus.Closed;
         }
 
         // PER CURRENCY: one invoice per (employee, period, currency), so the rule passes while every

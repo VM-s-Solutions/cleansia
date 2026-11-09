@@ -78,7 +78,7 @@ public class PayoutReferenceProductionCensusTests(PostgresContainerFixture fixtu
                 services.Replace(ServiceDescriptor.Scoped<IEmailService>(_ => new SilentEmailService()));
                 return Task.CompletedTask;
             },
-            arrange: context => SeedEmployeesWithUnpaidPays(context, count: 1, closedPeriod: true),
+            arrange: context => SeedEmployeesWithUnpaidPays(context, count: 1, expiredOpenPeriod: true),
             act: async provider =>
             {
                 await provider.GetRequiredService<IPayPeriodBackgroundService>()
@@ -122,7 +122,7 @@ public class PayoutReferenceProductionCensusTests(PostgresContainerFixture fixtu
             },
             arrange: async context =>
             {
-                await SeedEmployeesWithUnpaidPays(context, count: 1, closedPeriod: true);
+                await SeedEmployeesWithUnpaidPays(context, count: 1, expiredOpenPeriod: true);
                 await SeedSecondCompanyEmployeeWithUnpaidPay(context);
             },
             act: async provider =>
@@ -275,7 +275,7 @@ public class PayoutReferenceProductionCensusTests(PostgresContainerFixture fixtu
     }
 
     private static async Task SeedEmployeesWithUnpaidPays(
-        CleansiaDbContext context, int count, bool closedPeriod = false)
+        CleansiaDbContext context, int count, bool expiredOpenPeriod = false)
     {
         EmployeeIds.Clear();
 
@@ -291,10 +291,10 @@ public class PayoutReferenceProductionCensusTests(PostgresContainerFixture fixtu
         context.Countries.Add(country);
         context.Currencies.Add(currency);
 
-        // An EXPIRED window, so the batch's own "close what is due" selector picks it up.
-        var payPeriod = closedPeriod
+        // The batch closes an expired Open period itself; the command invoices only a Closed one.
+        var payPeriod = expiredOpenPeriod
             ? PayPeriod.Create(DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-30)), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-2)))
-            : PayPeriod.Create(new DateOnly(2026, 1, 1), new DateOnly(2026, 1, 15));
+            : PayPeriod.Create(new DateOnly(2026, 1, 1), new DateOnly(2026, 1, 15)).Close("System");
         context.Add(payPeriod);
 
         var employees = new List<Employee>();

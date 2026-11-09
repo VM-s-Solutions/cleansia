@@ -8,6 +8,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import cz.cleansia.core.notifications.NotificationFeedRepository
 import cz.cleansia.core.notifications.PushTokenRepository
 import cz.cleansia.core.settings.AppLocale
 import cz.cleansia.partner.MainActivity

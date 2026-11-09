@@ -92,7 +92,7 @@ object NotificationDeepLink {
             invoiceId?.takeIf { it.isNotBlank() }?.let { NavRoute.InvoiceDetail(invoiceId = it) }
                 ?: NavRoute.Earnings
         // Digest — no single order to open. Land on the bottom-nav
-        // scaffold (Main). NavRoute.Orders is a nested tab inside Main,
+        // scaffold (Main). The Orders tab is nested inside Main,
         // not a root destination, so navigating to it directly throws
         // "Destination cannot be found in navigation graph". Main opens
         // on Dashboard; the new-jobs callout on the dashboard plus the

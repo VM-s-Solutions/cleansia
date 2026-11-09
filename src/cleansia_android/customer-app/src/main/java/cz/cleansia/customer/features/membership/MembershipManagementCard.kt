@@ -79,7 +79,7 @@ fun MembershipManagementCard(
     val submitState by viewModel.submitState.collectAsStateWithLifecycle()
     val trialEndsAt by viewModel.trialEndsAt.collectAsStateWithLifecycle()
     val offeredTrialDays by viewModel.offeredTrialDays.collectAsStateWithLifecycle()
-    val submitting = submitState is cz.cleansia.customer.ui.state.ActionState.Submitting
+    val submitting = submitState is cz.cleansia.core.ui.state.ActionState.Submitting
     val trialEndText = trialEndsAt?.let { formatPeriodEnd(it.toString()) }
 
     var showCancelDialog by remember { mutableStateOf(false) }

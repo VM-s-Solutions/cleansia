@@ -1,21 +1,19 @@
 package cz.cleansia.customer.features.main
 
 import cz.cleansia.core.snackbar.SnackbarInsetScope
+import cz.cleansia.core.ui.components.FloatingIslandBar
+import cz.cleansia.core.ui.components.FloatingIslandSlot
+import cz.cleansia.core.ui.showTab
 
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
@@ -23,10 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CardGiftcard
 import androidx.compose.material.icons.outlined.CleaningServices
@@ -35,7 +30,6 @@ import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Receipt
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -53,12 +47,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import cz.cleansia.customer.R
@@ -72,7 +61,6 @@ import cz.cleansia.customer.features.profile.ProfileTab
 import cz.cleansia.customer.features.profile.ProfileViewModel
 import cz.cleansia.customer.features.rewards.RewardsTab
 import cz.cleansia.customer.ui.theme.CleansiaTheme
-import cz.cleansia.core.ui.theme.primaryText
 
 enum class MainTab { Home, Orders, Rewards, Profile }
 
@@ -111,7 +99,7 @@ fun MainShell(
     shellViewModel: MainShellViewModel = hiltViewModel(),
 ) {
     // Pager-driven tab state — `selected` is derived from `pagerState.currentPage`
-    // and changing it animates the pager. rememberSaveable on the initial-page
+    // and changing it moves the pager. rememberSaveable on the initial-page
     // index so the tab survives process death + nav-back recompositions.
     val initialTabOrdinal = rememberSaveable {
         MainTab.entries.firstOrNull { it.name == initialTabName }?.ordinal ?: MainTab.Home.ordinal
@@ -120,7 +108,7 @@ fun MainShell(
     val selected = MainTab.entries[pagerState.currentPage]
     val tabScope = rememberCoroutineScope()
     val selectTab: (MainTab) -> Unit = { target ->
-        tabScope.launch { pagerState.animateScrollToPage(target.ordinal) }
+        tabScope.launch { pagerState.showTab(target.ordinal) }
     }
     var bookingSheetOpen by remember { mutableStateOf(false) }
     // Tracks the order id whose data should pre-fill the booking sheet. Set by
@@ -202,10 +190,6 @@ fun MainShell(
         val emailOk = refreshed.email.isNotBlank()
         val complete = phoneOk && nameOk && emailOk
         val seen = shellViewModel.appSettings.hasSeenOnboarding(refreshed.id)
-        android.util.Log.d(
-            "OnboardingGate",
-            "decision: phoneOk=$phoneOk nameOk=$nameOk emailOk=$emailOk complete=$complete hasSeen=$seen",
-        )
         if (!complete && !seen) {
             onNavigateToOnboarding()
         }
@@ -472,95 +456,47 @@ private fun CustomBottomBar(
     onSelect: (MainTab) -> Unit,
     onBookClick: () -> Unit,
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+    FloatingIslandBar(
+        overlay = {
+            // Elevated Book FAB — half-overlapping the top of the pill
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .offset(y = (-12).dp),
+            ) {
+                BookFab(onBookClick)
+            }
+        },
     ) {
-        // Floating pill — rounded, elevated, sits inset from the screen edges.
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(64.dp)
-                .clip(RoundedCornerShape(32.dp))
-                .background(MaterialTheme.colorScheme.surface)
-                .border(
-                    width = 1.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant,
-                    shape = RoundedCornerShape(32.dp),
-                )
-                .padding(horizontal = 8.dp)
-                .selectableGroup(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            NavSlot(MainTab.Home, Icons.Outlined.Home, R.string.nav_home, selected, onSelect, Modifier.weight(1f))
-            NavSlot(MainTab.Orders, Icons.Outlined.Receipt, R.string.nav_orders, selected, onSelect, Modifier.weight(1f))
-            // Center spacer for FAB
-            Spacer(Modifier.size(72.dp))
-            NavSlot(MainTab.Rewards, Icons.Outlined.CardGiftcard, R.string.nav_rewards, selected, onSelect, Modifier.weight(1f))
-            NavSlot(MainTab.Profile, Icons.Outlined.Person, R.string.nav_profile, selected, onSelect, Modifier.weight(1f))
-        }
-
-        // Elevated Book FAB — half-overlapping the top of the pill
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .offset(y = (-12).dp),
-        ) {
-            BookFab(onBookClick)
-        }
-    }
-}
-
-@Composable
-private fun NavSlot(
-    tab: MainTab,
-    icon: ImageVector,
-    labelRes: Int,
-    currentSelected: MainTab,
-    onSelect: (MainTab) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val isSelected = tab == currentSelected
-    // The selected tab's icon and label are one control, so one ink: the text blue. The pill under them
-    // is a fill and keeps the primary.
-    val color = if (isSelected) MaterialTheme.colorScheme.primaryText else MaterialTheme.colorScheme.onSurfaceVariant
-    // Animate dot width on selection — 0 when unselected, 20dp pill when selected
-    val dotWidth by animateDpAsState(
-        targetValue = if (isSelected) 20.dp else 0.dp,
-        animationSpec = androidx.compose.animation.core.tween(durationMillis = 200),
-        label = "nav-dot",
-    )
-    Column(
-        modifier = modifier
-            .selectable(
-                selected = isSelected,
-                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
-                indication = null,
-                role = Role.Tab,
-                onClick = { onSelect(tab) },
-            )
-            .padding(horizontal = 4.dp, vertical = 6.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(24.dp))
-        Spacer(Modifier.height(2.dp))
-        Text(
-            stringResource(labelRes),
-            style = MaterialTheme.typography.labelSmall.copy(fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal),
-            color = color,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            textAlign = TextAlign.Center,
+        FloatingIslandSlot(
+            selected = selected == MainTab.Home,
+            icon = Icons.Outlined.Home,
+            label = stringResource(R.string.nav_home),
+            onClick = { onSelect(MainTab.Home) },
+            modifier = Modifier.weight(1f),
         )
-        Spacer(Modifier.height(3.dp))
-        // Animated active indicator — pill that grows in when selected
-        Box(
-            modifier = Modifier
-                .size(width = dotWidth, height = 3.dp)
-                .clip(androidx.compose.foundation.shape.RoundedCornerShape(999.dp))
-                .background(MaterialTheme.colorScheme.primary),
+        FloatingIslandSlot(
+            selected = selected == MainTab.Orders,
+            icon = Icons.Outlined.Receipt,
+            label = stringResource(R.string.nav_orders),
+            onClick = { onSelect(MainTab.Orders) },
+            modifier = Modifier.weight(1f),
+        )
+        // Center spacer for FAB
+        Spacer(Modifier.size(72.dp))
+        FloatingIslandSlot(
+            selected = selected == MainTab.Rewards,
+            icon = Icons.Outlined.CardGiftcard,
+            label = stringResource(R.string.nav_rewards),
+            onClick = { onSelect(MainTab.Rewards) },
+            modifier = Modifier.weight(1f),
+        )
+        FloatingIslandSlot(
+            selected = selected == MainTab.Profile,
+            icon = Icons.Outlined.Person,
+            label = stringResource(R.string.nav_profile),
+            onClick = { onSelect(MainTab.Profile) },
+            modifier = Modifier.weight(1f),
         )
     }
 }

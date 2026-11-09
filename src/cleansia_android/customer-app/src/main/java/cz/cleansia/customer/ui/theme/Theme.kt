@@ -22,6 +22,13 @@ internal val LightColors = lightColorScheme(
     onSecondary = LightSurface,
     secondaryContainer = Sky50,
     onSecondaryContainer = Sky900,
+    // Unset, the tertiary roles are M3's baseline mauve (#7D5260, container #FFD8E4), which showed on Home's
+    // milestone card and on the address list's not-serviced glyph. Ours is the partner app's amber, what both
+    // apps mean by an advisory note.
+    tertiary = Amber800,
+    onTertiary = LightSurface,
+    tertiaryContainer = Amber100,
+    onTertiaryContainer = Amber900,
     background = LightBackground,
     onBackground = LightTextPrimary,
     surface = LightSurface,
@@ -60,6 +67,11 @@ internal val DarkColors = darkColorScheme(
     onSecondary = Sky900,
     secondaryContainer = Sky800,
     onSecondaryContainer = Sky100,
+    // Unset, M3's baseline mauve (#EFB8C8, container #633B48); the dark steps of the same amber.
+    tertiary = WarningStar,
+    onTertiary = Amber950,
+    tertiaryContainer = Amber900,
+    onTertiaryContainer = Amber100,
     background = DarkBackground,
     onBackground = DarkTextPrimary,
     surface = DarkSurface,

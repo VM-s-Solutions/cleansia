@@ -72,13 +72,22 @@ class OrderRepository @Inject constructor(
     /** A page the server answered with no rows at all ends paging; the counter alone cannot. */
     private var exhausted = false
 
+    // Nothing returns from inside a synchronized(sessionLock) block: a return there made R8 drop a catch-all
+    // that ART's verifier requires, and the minified app failed to start.
+    private val sessionLock = Any()
+    private var sessionGeneration = 0L
+
     /**
      * Fetch page 0 and replace the cache. Intended for pull-to-refresh and
-     * initial screen loads.
+     * initial screen loads. The splash's read outlives sign-out, so a page asked
+     * for before [clear] can land after the next account signs in: it is dropped
+     * and answered with the silent [ApiError.Network], and it does not hold off
+     * the next account's own read.
      */
     suspend fun refresh(): ApiResult<Unit> = wireResult {
-        if (_loading.value) return ApiResult.Success(Unit)
-        _loading.value = true
+        val generation = synchronized(sessionLock) {
+            if (_loading.value) null else sessionGeneration.also { _loading.value = true }
+        } ?: return ApiResult.Success(Unit)
         try {
             val resp = networkCall { api.getMyOrders(offset = 0, limit = pageSize) }
                 ?: return networkError()
@@ -86,17 +95,24 @@ class OrderRepository @Inject constructor(
                 return httpError(resp.errorBody(), resp.code())
             }
             val body = resp.requiredBody()
-            _orders.value = body.data
-            receivedSoFar = body.receivedCount
-            exhausted = body.receivedCount == 0
-            // Backend PagedData wrapper exposes total under `total`; expose it as
-            // totalRecords in the repo API to keep consumers agnostic of the wire name.
-            _totalRecords.value = body.total
-            _loaded.value = true
-            staleness.markFresh()
-            return ApiResult.Success(Unit)
+            val sameSession = synchronized(sessionLock) {
+                if (generation == sessionGeneration) {
+                    _orders.value = body.data
+                    receivedSoFar = body.receivedCount
+                    exhausted = body.receivedCount == 0
+                    // Backend PagedData wrapper exposes total under `total`; expose it as
+                    // totalRecords in the repo API to keep consumers agnostic of the wire name.
+                    _totalRecords.value = body.total
+                    _loaded.value = true
+                    staleness.markFresh()
+                    true
+                } else {
+                    false
+                }
+            }
+            return if (sameSession) ApiResult.Success(Unit) else networkError()
         } finally {
-            _loading.value = false
+            synchronized(sessionLock) { if (generation == sessionGeneration) _loading.value = false }
         }
     }
 
@@ -282,11 +298,15 @@ class OrderRepository @Inject constructor(
 
     /** Wipe the in-memory cache on every wipe trigger. -> /mobile-app/patterns#session-wipe */
     override suspend fun clear() {
-        _orders.value = emptyList()
-        _totalRecords.value = 0
-        receivedSoFar = 0
-        exhausted = false
-        _loaded.value = false
-        staleness.reset()
+        synchronized(sessionLock) {
+            sessionGeneration++
+            _loading.value = false
+            _orders.value = emptyList()
+            _totalRecords.value = 0
+            receivedSoFar = 0
+            exhausted = false
+            _loaded.value = false
+            staleness.reset()
+        }
     }
 }

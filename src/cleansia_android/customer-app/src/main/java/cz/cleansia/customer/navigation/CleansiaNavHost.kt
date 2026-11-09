@@ -1,10 +1,6 @@
 package cz.cleansia.customer.navigation
 import cz.cleansia.core.auth.SessionEvent
 
-import androidx.compose.animation.AnimatedContentTransitionScope
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -17,7 +13,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -49,42 +44,14 @@ import cz.cleansia.customer.features.profile.SecurityScreen
 import cz.cleansia.customer.features.rewards.RewardsActivityScreen
 import cz.cleansia.customer.features.splash.SplashScreen
 import cz.cleansia.customer.features.splash.SplashViewModel
-
-// ── Transition specs ──
-// Horizontal push (settings drill-down, auth stack) — 280ms
-private const val PUSH_DUR = 280
-
-private val pushEnter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> androidx.compose.animation.EnterTransition = {
-    slideIntoContainer(
-        AnimatedContentTransitionScope.SlideDirection.Left,
-        animationSpec = tween(PUSH_DUR),
-    ) + fadeIn(tween(PUSH_DUR))
-}
-private val pushExit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> androidx.compose.animation.ExitTransition = {
-    slideOutOfContainer(
-        AnimatedContentTransitionScope.SlideDirection.Left,
-        animationSpec = tween(PUSH_DUR),
-    ) + fadeOut(tween(PUSH_DUR))
-}
-private val popEnter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> androidx.compose.animation.EnterTransition = {
-    slideIntoContainer(
-        AnimatedContentTransitionScope.SlideDirection.Right,
-        animationSpec = tween(PUSH_DUR),
-    ) + fadeIn(tween(PUSH_DUR))
-}
-private val popExit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> androidx.compose.animation.ExitTransition = {
-    slideOutOfContainer(
-        AnimatedContentTransitionScope.SlideDirection.Right,
-        animationSpec = tween(PUSH_DUR),
-    ) + fadeOut(tween(PUSH_DUR))
-}
-
-private val fadeEnterLong: AnimatedContentTransitionScope<NavBackStackEntry>.() -> androidx.compose.animation.EnterTransition = {
-    fadeIn(tween(400))
-}
-private val fadeExitLong: AnimatedContentTransitionScope<NavBackStackEntry>.() -> androidx.compose.animation.ExitTransition = {
-    fadeOut(tween(400))
-}
+import cz.cleansia.core.ui.fadeEnter
+import cz.cleansia.core.ui.fadeEnterLong
+import cz.cleansia.core.ui.fadeExit
+import cz.cleansia.core.ui.fadeExitLong
+import cz.cleansia.core.ui.popEnter
+import cz.cleansia.core.ui.popExit
+import cz.cleansia.core.ui.pushEnter
+import cz.cleansia.core.ui.pushExit
 
 @Composable
 fun CleansiaNavHost(
@@ -282,10 +249,10 @@ fun CleansiaNavHost(
             )
         }
         composable<Routes.Home>(
-            enterTransition = { fadeIn(tween(PUSH_DUR)) },
-            exitTransition = { fadeOut(tween(PUSH_DUR)) },
-            popEnterTransition = { fadeIn(tween(PUSH_DUR)) },
-            popExitTransition = { fadeOut(tween(PUSH_DUR)) },
+            enterTransition = fadeEnter,
+            exitTransition = fadeExit,
+            popEnterTransition = fadeEnter,
+            popExitTransition = fadeExit,
         ) { backStackEntry ->
             val landingTab = backStackEntry.toRoute<Routes.Home>().tab
             MainShell(
@@ -360,7 +327,7 @@ fun CleansiaNavHost(
             val vm: cz.cleansia.customer.features.profile.ProfileViewModel = hiltViewModel()
             val user by vm.currentUser.collectAsStateWithLifecycle()
             val saveState by vm.saveState.collectAsStateWithLifecycle()
-            val saving = saveState is cz.cleansia.customer.ui.state.ActionState.Submitting
+            val saving = saveState is cz.cleansia.core.ui.state.ActionState.Submitting
 
             cz.cleansia.customer.features.profile.ProfileOnboardingScreen(
                 user = user,
@@ -384,7 +351,7 @@ fun CleansiaNavHost(
             val vm: cz.cleansia.customer.features.profile.ProfileViewModel = hiltViewModel()
             val user by vm.currentUser.collectAsStateWithLifecycle()
             val saveState by vm.saveState.collectAsStateWithLifecycle()
-            val saving = saveState is cz.cleansia.customer.ui.state.ActionState.Submitting
+            val saving = saveState is cz.cleansia.core.ui.state.ActionState.Submitting
             val avatarDraft by vm.avatarDraft.collectAsStateWithLifecycle()
             val avatarState by vm.avatarState.collectAsStateWithLifecycle()
 
@@ -396,7 +363,7 @@ fun CleansiaNavHost(
                 user = user,
                 saving = saving,
                 avatarPhoto = cz.cleansia.customer.features.profile.avatarPhotoFor(user, avatarDraft),
-                avatarBusy = avatarState is cz.cleansia.customer.ui.state.ActionState.Submitting,
+                avatarBusy = avatarState is cz.cleansia.core.ui.state.ActionState.Submitting,
                 onBack = { navController.popBackStack() },
                 onPickPhoto = vm::pickAvatar,
                 onRemovePhoto = vm::removeAvatar,
@@ -484,7 +451,7 @@ fun CleansiaNavHost(
         ) {
             val vm: cz.cleansia.customer.features.profile.DeleteAccountViewModel = hiltViewModel()
             val deleteState by vm.deleteState.collectAsStateWithLifecycle()
-            val loading = deleteState is cz.cleansia.customer.ui.state.ActionState.Submitting
+            val loading = deleteState is cz.cleansia.core.ui.state.ActionState.Submitting
 
             cz.cleansia.customer.features.profile.DeleteAccountScreen(
                 userEmail = vm.userEmail,

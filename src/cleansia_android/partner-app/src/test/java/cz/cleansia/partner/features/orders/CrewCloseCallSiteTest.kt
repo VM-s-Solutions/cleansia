@@ -63,7 +63,7 @@ class CrewCloseCallSiteTest {
             "the screen must wire the mark to the view model",
             detailScreen.contains("onMarkMyPartDone = viewModel::markMyPartDone"),
         )
-        val own = body(detailScreen, "private fun OwnJobDetail(")
+        val own = body(detailScreen, "private fun ownJobDetail(")
         assertTrue("her job's move must take the step", arguments(own, "pinnedMove(").contains("completionStep = completionStep"))
         val footer = body(detailScreen, "private fun StickyActionFooter(")
         assertTrue("the footer must pass the mark to the action", arguments(footer, "OrderPrimaryAction(").contains("onMarkMyPartDone = onMarkMyPartDone"))

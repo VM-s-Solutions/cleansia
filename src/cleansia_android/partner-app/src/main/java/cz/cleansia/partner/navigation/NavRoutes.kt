@@ -36,9 +36,6 @@ sealed interface NavRoute {
 
     @Serializable data object Main : NavRoute
 
-    @Serializable data object Dashboard : NavRoute
-
-    @Serializable data object Orders : NavRoute
     /** [showRemovalReason] is set by the removal notice alone: only that entry asks the server why. */
     @Serializable data class OrderDetail(val orderId: String, val showRemovalReason: Boolean = false) : NavRoute
 

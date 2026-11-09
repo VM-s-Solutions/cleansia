@@ -70,38 +70,15 @@
     <string name="nav_home">Domov</string>
     <string name="nav_book">Rezervovať</string>
     <string name="nav_orders">Objednávky</string>
-    <string name="nav_offers">Ponuky</string>
     <string name="nav_rewards">Odmeny</string>
     <string name="nav_profile">Profil</string>
-    <string name="offers_placeholder">Ponuky a akcie už čoskoro</string>
 
     <!-- Rewards tab -->
     <string name="rewards_title">Odmeny</string>
-    <string name="rewards_subtitle">Výhody a uznanie pre verných zákazníkov</string>
-    <string name="rewards_completed_orders">Dokončené rezervácie</string>
-    <string name="rewards_bookings_label">rezervácií</string>
-    <string name="rewards_next_milestone">Ešte %1$d na odomknutie %2$s</string>
-    <string name="rewards_all_tiers_unlocked">Odomkli ste všetky úrovne — ďakujeme!</string>
-    <string name="rewards_tiers_title">Míľniky</string>
-
-    <string name="rewards_referral_title">Pozvať kamaráta</string>
-    <string name="rewards_referral_your_code">Váš kód</string>
-    <string name="rewards_referral_share">Zdieľať kód</string>
-    <string name="rewards_referral_no_joins">Buďte prvý — zdieľajte svoj kód</string>
 
     <!-- Home — address bar -->
     <string name="home_address_label">Upratovanie na adrese</string>
     <string name="home_address_placeholder">Vyberte adresu</string>
-
-    <!-- Home — upcoming order -->
-    <string name="home_upcoming_empty_title">Žiadne plánované upratovanie</string>
-    <string name="home_upcoming_empty_subtitle">Objednajte si prvé upratovanie.</string>
-
-    <!-- Home — reorder -->
-    <string name="home_reorder_title">Objednať znova</string>
-    <string name="home_reorder_service_name">Domáce upratovanie</string>
-    <string name="home_reorder_details">2 izby · Naposledy 2. apríla</string>
-    <string name="home_reorder_cta">Objednať znova</string>
 
     <!-- Smart upsell carousel slides -->
     <string name="home_upsell_plus_top">Cleansia Plus</string>
@@ -160,9 +137,6 @@
     <string name="home_upsell_chip_times">%1$d×</string>
     <string name="home_upsell_referral_desc">Získate kredit %1$s po dokončení jeho prvého upratovania a kamarát dostane kredit, ak sa na jeho trhu ponúka.</string>
 
-    <string name="home_hero2_top">Jar je tu</string>
-    <string name="home_hero2_title">Hĺbkové upratovanie + okná v jednom</string>
-
     <!-- Home — trust strip -->
     <string name="home_trust_same_day">Dnes</string>
 
@@ -183,47 +157,16 @@
     <string name="home_recent_title">Nedávne rezervácie</string>
     <string name="home_recent_see_all">Zobraziť všetko</string>
     <string name="home_recent_fallback_title">Upratovanie</string>
-    <string name="home_book_again">Rezervovať znova</string>
 
     <!-- Home — milestone -->
-    <string name="home_milestone_title">Pokrok k ďalšej úrovni</string>
     <string name="home_milestone_title_v2">%1$s — Pokrok k ďalšej úrovni</string>
 
     <!-- Home — seasonal -->
-
-    <!-- Home — quick actions -->
-    <string name="home_quick_book">Rezervovať</string>
-    <string name="home_quick_orders">Objednávky</string>
-    <string name="home_quick_track">Sledovať</string>
-
-    <!-- Home — services -->
-    <string name="home_services_title_short">Obľúbené služby</string>
-    <string name="home_services_from">Od</string>
-    <string name="home_services_see_all">Zobraziť všetko</string>
-
-    <string name="home_service_household_name">Domáce</string>
-
-    <string name="home_service_upholstery_name">Čalúnenie</string>
-
-    <string name="home_service_windows_name">Okná</string>
-
-    <!-- Home — promo carousel -->
-    <string name="home_promo_title">Pre vás</string>
-
-    <string name="home_hero_slide1_title">Čisto za pár hodín</string>
-    <string name="home_hero_book_now">Rezervovať</string>
-
-    <string name="home_hero_slide2_title">Hĺbkové upratovanie, pokojný týždeň</string>
-    <string name="home_hero_slide2_subtitle">Koberce, čalúnenie, okná — všetko počas jednej návštevy.</string>
-    <string name="home_hero_slide2_cta">Preskúmať</string>
 
     <!-- Orders tab -->
     <string name="orders_title">Moje objednávky</string>
     <string name="orders_empty_title">Zatiaľ žiadne objednávky</string>
     <string name="orders_empty_subtitle">Vaše rezervované upratovania sa tu zobrazia.</string>
-    <string name="orders_upcoming">Nadchádzajúce</string>
-    <string name="orders_past">Minulé objednávky</string>
-    <string name="orders_rebook">Rezervovať znova</string>
     <string name="orders_status_new">Nová</string>
     <string name="orders_status_pending">Čaká</string>
     <string name="orders_status_confirmed">Potvrdená</string>
@@ -249,8 +192,6 @@
     <string name="orders_empty_cta">Rezervovať prvé upratovanie</string>
 
     <!-- Order detail -->
-    <string name="order_detail_title">Objednávka č. %1$s</string>
-    <string name="order_detail_created">Vytvorené %1$s</string>
     <string name="order_detail_section_details">Detaily upratovania</string>
     <string name="order_detail_address">Adresa</string>
     <string name="order_detail_headline_default">Rezervácia prijatá</string>
@@ -264,12 +205,6 @@
     <string name="order_detail_subhead_on_the_way">Smeruje k vašej adrese</string>
     <string name="order_detail_subhead_in_progress">Upratovanie sa začalo</string>
     <string name="order_detail_subhead_in_progress_eta">Predpokladaný čas %1$d minút</string>
-    <string name="order_detail_progress_percent">%1$d %% hotovo</string>
-    <string name="order_detail_step_booked">Rezervované</string>
-    <string name="order_detail_step_accepted">Prijaté</string>
-    <string name="order_detail_step_on_the_way">Na ceste</string>
-    <string name="order_detail_step_started">Začaté</string>
-    <string name="order_detail_step_finished">Dokončené</string>
     <string name="order_detail_rooms">Nehnuteľnosť</string>
     <string name="order_detail_estimated">Predpokladaný čas</string>
     <string name="order_detail_actual_time">Skutočný čas</string>
@@ -278,7 +213,6 @@
     <string name="order_detail_total">Celkom</string>
     <string name="order_paid_with_credit">Zaplatené kreditom</string>
     <string name="order_paid_by_card">Zaplatené kartou</string>
-    <string name="order_detail_confirmation">Potvrdzovací kód</string>
     <string name="order_detail_cleaners">Vaša upratovačka</string>
     <string name="order_detail_instructions">Pokyny</string>
     <string name="order_detail_special_instructions">Špeciálne pokyny</string>
@@ -286,14 +220,9 @@
     <string name="order_detail_notes">Poznámky</string>
     <string name="order_detail_your_review">Vaše hodnotenie</string>
     <string name="order_detail_leave_review">Ohodnoťte upratovanie</string>
-    <string name="order_detail_rate_experience">Ako sa vám upratovanie páčilo?</string>
-    <string name="order_detail_review_comment">Pridajte komentár (nepovinné)</string>
-    <string name="order_detail_submit_review">Odoslať hodnotenie</string>
     <string name="order_detail_timeline">Časová os stavu</string>
     <string name="order_detail_timeline_new_cleaner">Znova ponúknuté upratovačom</string>
-    <string name="order_detail_rebook">Rezervovať toto upratovanie znova</string>
     <string name="order_detail_download_receipt">Stiahnuť účtenku</string>
-    <string name="order_detail_report_issue">Nahlásiť problém</string>
     <string name="order_detail_error_title">Objednávku sa nepodarilo načítať</string>
     <string name="order_detail_error_message">Skontrolujte pripojenie na internet a skúste to znova.</string>
     <string name="order_detail_error_retry">Skúsiť znova</string>
@@ -336,8 +265,6 @@
     </plurals>
     <string name="order_cancel_express_waiver_forfeit">Zrušením tiež vyčerpáte jednu z expresných objednávok zahrnutých vo vašom členstve na tento mesiac.</string>
     <string name="order_cancel_fee_neutral">Naozaj chcete túto rezerváciu zrušiť?</string>
-    <string name="order_cancel_reason_label">Dôvod (nepovinný)</string>
-    <string name="order_cancel_reason_placeholder">Povedzte nám, čo sa zmenilo…</string>
     <string name="order_cancel_reason_picker_label">Prečo rušíte objednávku?</string>
     <string name="order_cancel_reason_schedule">Zmena v kalendári</string>
     <string name="order_cancel_reason_mistake">Omylom som objednal</string>
@@ -404,13 +331,10 @@
     <string name="order_photos_view_button">Zobraziť všetko</string>
     <string name="order_photos_tab_before">Pred</string>
     <string name="order_photos_tab_after">Po</string>
-    <string name="order_photos_summary_before">Pred — %1$d</string>
-    <string name="order_photos_summary_after">Po — %1$d</string>
     <string name="order_photos_empty_before">Žiadne fotografie pred upratovaním.</string>
     <string name="order_photos_empty_after">Žiadne fotografie po upratovaní.</string>
     <string name="order_photos_error_title">Nepodarilo sa načítať fotografie.</string>
     <string name="order_photos_error_retry">Skúsiť znova</string>
-    <string name="order_photos_metadata_by">Vyhotovil(a) %1$s</string>
     <string name="common_close">Zavrieť</string>
 
     <!-- Booking review: the contract sentence and the request to start within the withdrawal period -->
@@ -418,11 +342,8 @@
     <string name="consent_early_performance_draft_2026_09_29">Žiadam, aby sa upratovanie začalo v 14-dňovej lehote na odstúpenie od zmluvy, a beriem na vedomie, že po úplnom vykonaní upratovania právo na odstúpenie strácam.</string>
 
     <!-- Profile tab -->
-    <string name="profile_greeting">Ahoj!</string>
-    <string name="profile_email_placeholder">vy@example.com</string>
     <string name="profile_row_edit">Upraviť</string>
     <string name="profile_row_addresses">Uložené adresy</string>
-    <string name="profile_row_payment">Platobné metódy</string>
     <string name="profile_row_notifications">Upozornenia</string>
     <string name="profile_row_security">Zabezpečenie</string>
     <string name="profile_row_help">Pomoc a podpora</string>
@@ -433,12 +354,10 @@
     <string name="profile_logout_dialog_cancel">Zrušiť</string>
     <string name="profile_app_version">Cleansia · v0.1.0</string>
     <string name="profile_stat_bookings">Rezervácie</string>
-    <string name="profile_stat_favorite">Obľúbený</string>
     <string name="profile_stat_saved">Uložené</string>
     <string name="profile_stat_member_since">Členom od</string>
     <string name="profile_tier_plus">Plus</string>
     <string name="profile_tier_regular">Základné</string>
-    <string name="profile_section_account">Účet</string>
     <string name="profile_section_personal">Osobné</string>
     <string name="profile_section_contact">Kontakt</string>
     <string name="profile_section_preferences">Predvoľby</string>
@@ -462,44 +381,6 @@
     <string name="profile_avatar_upload_success">Profilová fotka bola aktualizovaná</string>
     <string name="profile_avatar_remove_success">Profilová fotka bola odstránená</string>
     <string name="profile_save_success">Profil úspešne uložený</string>
-
-    <!-- Profile — addresses -->
-    <string name="profile_addresses_title">Uložené adresy</string>
-    <string name="profile_addresses_add">Pridať adresu</string>
-    <string name="profile_addresses_default">Predvolená</string>
-
-    <!-- Add address -->
-    <string name="add_address_title">Nová adresa</string>
-    <string name="add_address_section_label">Pomenujte adresu</string>
-    <string name="add_address_section_label_sub">Vyberte prednastavený alebo zadajte vlastný názov</string>
-    <string name="add_address_section_address">Kde sa nachádza?</string>
-    <string name="add_address_section_address_sub">Ulica, mesto a PSČ</string>
-    <string name="add_address_preset_home">Domov</string>
-    <string name="add_address_preset_work">Práca</string>
-    <string name="add_address_preset_other">Iné</string>
-    <string name="add_address_label_custom">Vlastný názov</string>
-    <string name="add_address_street">Ulica a popisné číslo</string>
-    <string name="add_address_city">Mesto</string>
-    <string name="add_address_zip">PSČ</string>
-    <string name="add_address_set_default">Nastaviť ako predvolenú</string>
-    <string name="add_address_set_default_sub">Predvybraté pri rezervácii upratovania</string>
-    <string name="add_address_save">Uložiť adresu</string>
-
-    <!-- Address validation -->
-    <string name="address_field_street">Ulica</string>
-    <string name="address_field_city">Mesto</string>
-    <string name="address_field_zip">PSČ</string>
-    <string name="address_error_required">%1$s je povinné</string>
-    <string name="address_error_too_short">%1$s je príliš krátke</string>
-    <string name="address_error_too_long">%1$s je príliš dlhé</string>
-    <string name="address_error_invalid_zip">Neplatné PSČ (formát napr. 120 00)</string>
-
-    <!-- Profile — payment methods -->
-    <string name="payment_methods_title">Platobné metódy</string>
-    <string name="payment_methods_add_card">Pridať novú kartu</string>
-    <string name="payment_methods_default">Predvolená</string>
-    <string name="payment_methods_expires">Platí do %1$s/%2$02d</string>
-    <string name="payment_methods_empty">Zatiaľ žiadne platobné metódy</string>
 
     <!-- Profile — notifications -->
     <string name="notifications_title">Upozornenia</string>
@@ -529,7 +410,6 @@
     <string name="notifications_dispute_reply">Odpovede na reklamácie</string>
     <string name="notifications_dispute_reply_desc">Keď podpora odpovie na vašu reklamáciu</string>
     <string name="busy_booking">Vytvárame vašu objednávku…</string>
-    <string name="busy_payment">Spracovávame platbu…</string>
     <string name="busy_subscribe_plus">Aktivujeme Cleansia Plus…</string>
 
     <!-- Profile — help & support -->
@@ -597,13 +477,9 @@
     <string name="booking_step_indicator">Krok %1$d z %2$d</string>
     <string name="booking_continue">Pokračovať</string>
     <string name="booking_continue_price">Pokračovať · %1$s</string>
-    <string name="booking_confirm">Potvrdiť a zaplatiť</string>
-    <string name="booking_confirm_price">Potvrdiť a zaplatiť · %1$s</string>
     <string name="booking_slide_to_confirm">Posuňte pre potvrdenie</string>
     <string name="booking_slide_to_confirm_price">Posuňte pre platbu · %1$s</string>
-    <string name="booking_total">Celkom</string>
     <string name="booking_arrival_window">Upratovačka príde do 1 hodiny</string>
-    <string name="booking_slot_unavailable">Obsadené</string>
     <string name="booking_slot_express" formatted="false">Expres +20 %</string>
     <string name="booking_slot_express_waived">Expres · bez príplatku</string>
     <string name="booking_express_waiver_available">Plus pokrýva 20%% expresný príplatok — %1$d zostáva tento kalendárny mesiac.</string>
@@ -638,7 +514,6 @@
     <string name="booking_trust_insured">Poistené až do %1$s</string>
 
     <string name="booking_pick_service">Vyberte službu</string>
-    <string name="booking_or_package">Alebo zvoľte balík</string>
     <string name="booking_packages_featured">Odporúčané balíky</string>
     <string name="booking_package_includes">OBSAHUJE</string>
     <string name="booking_package_includes_prefix">Obsahuje:</string>
@@ -660,21 +535,17 @@
     <string name="booking_twice_package_confirm">Pridať balík</string>
     <string name="booking_your_home">Váš domov</string>
     <string name="booking_size_limit_caption">Najviac %1$d izieb a %2$d kúpeľne</string>
-    <string name="booking_search_services">Hľadať služby</string>
     <string name="booking_no_results">Žiadne služby nezodpovedajú vášmu hľadaniu</string>
     <string name="booking_cat_all">Všetko</string>
     <string name="booking_catalog_loading">Načítavanie služieb…</string>
     <string name="booking_catalog_error">Služby sa nepodarilo načítať</string>
     <string name="booking_catalog_empty">Momentálne nie sú dostupné žiadne služby</string>
     <string name="booking_catalog_retry">Skúsiť znova</string>
-    <string name="booking_rooms">Izby</string>
-    <string name="booking_bathrooms">Kúpeľne</string>
 
     <string name="booking_where">Kde</string>
     <string name="booking_select_address_hint">Vyberte z uložených alebo pridajte novú</string>
     <string name="booking_when">Vyberte dátum</string>
     <string name="booking_today">Dnes</string>
-    <string name="booking_new_address">Vybrať na mape</string>
 
     <!-- Address picker (map) -->
     <string name="address_picker_title">Adresa upratovania</string>
@@ -685,9 +556,7 @@
     <string name="address_picker_my_location">Moja poloha</string>
     <string name="address_picker_my_location_unavailable">Polohu sa nepodarilo získať. Skontrolujte, či je zapnuté GPS, a skúste to znova.</string>
     <string name="address_picker_my_location_denied">Prístup k polohe bol zamietnutý. Povoľte ho v Nastaveniach.</string>
-    <string name="address_picker_search">Hľadať adresu</string>
     <string name="address_picker_search_hint">Ulica, mesto alebo PSČ…</string>
-    <string name="address_picker_search_prompt">Zadajte aspoň 2 znaky pre vyhľadávanie</string>
     <string name="address_picker_searching">Hľadám…</string>
     <string name="address_picker_no_results">Žiadne výsledky. Skúste iné hľadanie.</string>
     <string name="booking_address_default">Predvolená</string>
@@ -712,14 +581,7 @@
     <string name="common_cancel">Zrušiť</string>
     <string name="common_got_it">Rozumiem</string>
     <string name="common_details">Detaily</string>
-    <string name="booking_street">Ulica</string>
-    <string name="booking_city">Mesto</string>
-    <string name="booking_zip">PSČ</string>
     <string name="booking_select_time">Vyberte čas</string>
-    <string name="booking_all_times">Zobraziť všetko</string>
-    <string name="booking_time_morning">Ráno</string>
-    <string name="booking_time_afternoon">Popoludnie</string>
-    <string name="booking_time_evening">Večer</string>
 
     <!-- Booking extras (Confirm step add-on toggles) -->
     <string name="booking_extras_header">Doplnky</string>
@@ -776,10 +638,7 @@
     <string name="booking_summary_credit_card_only">Kredit sa uplatní len pri platbe kartou.</string>
 
     <!-- Promo code -->
-    <string name="booking_promo_code_label">Máte zľavový kód?</string>
-    <string name="booking_promo_code_placeholder">WELCOME20</string>
     <string name="booking_promo_code_validating">Overujem…</string>
-    <string name="booking_promo_code_valid">Kód uplatnený: -%1$s</string>
     <string name="booking_promo_code_error_not_found">Kód nebol nájdený</string>
     <string name="booking_promo_code_error_inactive">Kód už nie je dostupný</string>
     <string name="booking_promo_code_error_expired">Tento kód vypršal</string>
@@ -838,13 +697,8 @@
     <string name="booking_access_instructions_hint">Pokyny ku vstupu? (nepovinné)</string>
 
     <string name="booking_success_t1_title">Rezervácia prijatá</string>
-    <string name="booking_success_t1_desc">Práve teraz</string>
     <string name="booking_success_t2_title">Prideľujeme upratovačku</string>
     <string name="booking_success_t2_desc">Dáme vám vedieť, hneď ako ju nájdeme</string>
-    <string name="booking_success_t3_title">Upratovačka potvrdená</string>
-    <string name="booking_success_t3_desc">Tu uvidíte jej profil</string>
-    <string name="booking_success_t4_title">Deň upratovania</string>
-    <string name="booking_success_t4_desc">Pripomenieme hodinu vopred</string>
     <string name="booking_success_view_orders">Zobraziť objednávku</string>
     <string name="booking_success_go_home">Späť domov</string>
     <string name="booking_success_total_label">Celkom</string>
@@ -898,7 +752,6 @@
 
     <!-- Cleansia Plus subscription -->
     <string name="membership_plus_title">Cleansia Plus</string>
-    <string name="membership_plus_subtitle">Lepší spôsob, ako udržiavať domov čistý</string>
     <string name="membership_disclosure">Predplatné sa obnovuje automaticky, kým ho nezrušíte. Po zrušení platia výhody do konca zaplateného obdobia. Ak sa platbu za obnovenie nepodarí strhnúť, výhody sa pozastavia a zrušenie potom platí okamžite.</string>
     <string name="plus_not_available_in_market">Plus zatiaľ nie je na vašom trhu k dispozícii</string>
 
@@ -918,8 +771,6 @@
     <!-- Plan switcher -->
     <string name="membership_plan_monthly">Mesačné</string>
     <string name="membership_plan_annual">Ročné</string>
-    <string name="membership_plan_savings_badge">Ušetríte %1$d%%</string>
-    <string name="membership_plan_per_month_billed_annually">%1$s / mesiac — účtované ročne ako %2$s</string>
     <string name="membership_plan_per_month">%1$s / mesiac</string>
     <string name="membership_plan_per_year">%1$s / rok</string>
 
@@ -963,14 +814,12 @@
     <string name="membership_success_perk_express">Expresné termíny bez príplatku</string>
     <string name="membership_success_cta_setup_recurring">Nastaviť pravidelné upratovanie</string>
     <string name="membership_success_cta_back_home">Späť na hlavnú</string>
-    <string name="membership_active_status">Aktívne</string>
     <string name="membership_renews_on">Obnoví sa %1$s</string>
     <string name="membership_trial_until">Skúšobné obdobie zadarmo do %1$s</string>
     <string name="membership_cancelled_until">Aktívne do %1$s</string>
     <string name="membership_cancel_success_trial">Cleansia Plus zrušené — nič vám nenaúčtujeme a výhody platia do konca skúšobného obdobia.</string>
     <string name="membership_cancel_success_now">Cleansia Plus zrušené — nič ďalšie vám nenaúčtujeme.</string>
     <string name="membership_active_until">Aktívne do %1$s</string>
-    <string name="membership_status_ending">Zrušenie vyžiadané</string>
     <string name="membership_status_ending_badge">KONČÍ</string>
     <string name="membership_status_active_badge">PLUS · AKTÍVNE</string>
     <string name="membership_then_ends_hint">Výhody Plus týmto dňom skončia.</string>
@@ -986,7 +835,6 @@
     <string name="membership_cancel_dialog_message_trial">Skúšobné obdobie skončí %1$s a dovtedy vám výhody zostanú. Žiadna platba nenasleduje, takže vám nič nenaúčtujeme.</string>
     <string name="membership_cancel_dialog_message_now">Členstvo skončí okamžite. Nezaplatené obnovenie vám nenaúčtujeme a nič ďalšie už tiež nie.</string>
     <string name="membership_cancel_dialog_confirm">Zrušiť</string>
-    <string name="membership_subscribed_success">Vitajte v Cleansia Plus!</string>
     <string name="membership_already_active">Už ste členom Plus.</string>
 
     <!-- Recurring bookings -->
@@ -1035,7 +883,6 @@
     <string name="recurring_create_bathrooms_label">Kúpeľne</string>
     <string name="recurring_create_address_label">Adresa</string>
     <string name="recurring_create_address_default">PREDVOLENÁ</string>
-    <string name="recurring_create_address_empty">Najprv si v profile uložte adresu.</string>
     <string name="recurring_create_services_label">Čo upratovať</string>
     <string name="recurring_create_services_loading">Načítavanie služieb…</string>
     <string name="recurring_create_section_packages">Balíky</string>
@@ -1252,10 +1099,6 @@
     <string name="loyalty_tier_silver_mopper">Strieborný mopár</string>
     <string name="loyalty_tier_gold_polisher">Zlatý leštič</string>
     <string name="loyalty_tier_platinum_sparkler">Platinový žiarič</string>
-    <string name="loyalty_tier_label_short_bronze">Bronz</string>
-    <string name="loyalty_tier_label_short_silver">Striebro</string>
-    <string name="loyalty_tier_label_short_gold">Zlato</string>
-    <string name="loyalty_tier_label_short_platinum">Platina</string>
     <string name="loyalty_lifetime_points">Body za celé obdobie</string>
     <string name="credit_your_credit">Váš kredit</string>
     <string name="credit_auto_applied_share">Automaticky sa odpočíta z vašej ďalšej objednávky platenej kartou, až do výšky %1$d %% jej ceny.</string>
@@ -1296,7 +1139,6 @@
     <string name="loyalty_referral_section_title">Pozvite priateľov</string>
     <string name="loyalty_referral_subtitle">Zdieľajte svoj kód. Po prvom dokončenom upratovaní kamaráta získate kredit %1$s a on dostane kredit, ak sa na jeho trhu ponúka.</string>
     <string name="loyalty_referral_subtitle_no_figure">Zdieľajte svoj kód s kamarátmi, nech ho zadajú pri registrácii.</string>
-    <string name="loyalty_referral_code_label">Váš kód</string>
     <string name="loyalty_referral_share_button">Zdieľať</string>
     <string name="loyalty_referral_copy_button">Kopírovať</string>
     <string name="loyalty_referral_copied_toast">Kód skopírovaný</string>
@@ -1304,8 +1146,6 @@
     <string name="loyalty_referral_stats_empty">Buďte prvý — zdieľajte svoj kód</string>
     <string name="loyalty_referral_stats_qualified">%1$d priateľ sa pripojil · %2$d kvalifikovaných</string>
     <string name="loyalty_referral_share_failed">Zdieľanie sa nepodarilo otvoriť. Kód bol skopírovaný.</string>
-    <string name="referral_code_field_collapsed">Mám kód odporúčania</string>
-    <string name="referral_code_field_label">Kód odporúčania</string>
     <string name="referral_code_field_placeholder">X3K9P2</string>
     <string name="referral_code_validating">Overujem…</string>
     <string name="error_referral_not_found">Kód odporúčania nebol nájdený</string>
@@ -1586,10 +1426,8 @@
     <string name="order_photos_phase_count">%1$s · %2$d</string>
     <string name="booking_cash_needs_saved_card">Pre platbu v hotovosti uložte platnú kartu v mene objednávky.</string>
     <string name="error_order_cash_requires_saved_card">Platba v hotovosti vyžaduje platnú uloženú kartu v mene objednávky.</string>
-    <string name="booking_success_confirmed_title">Rezervácia potvrdená</string>
     <string name="booking_success_details_loading">Načítanie údajov rezervácie…</string>
     <string name="booking_success_details_unavailable">Údaje rezervácie sú dočasne nedostupné.</string>
-    <string name="booking_success_cleaner_assigned">Upratovač priradený</string>
     <string name="booking_success_finding">Zatiaľ ju neprevzal žiadny upratovač.</string>
     <string name="booking_success_finding_sub">Dáme vám vedieť, hneď ako ju niekto prevezme.</string>
     <plurals name="booking_success_crew">

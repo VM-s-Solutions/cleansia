@@ -6,6 +6,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -13,6 +14,8 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import cz.cleansia.core.ui.theme.CleansiaShapes
 import cz.cleansia.core.ui.theme.CleansiaTypography
+import cz.cleansia.partner.LocalAppSettings
+import cz.cleansia.partner.core.settings.ThemePreference
 
 internal val LightColors = lightColorScheme(
     primary = Sky600,
@@ -120,4 +123,14 @@ fun CleansiaPartnerTheme(
         shapes = CleansiaShapes,
         content = content,
     )
+}
+
+@Composable @ReadOnlyComposable
+fun isDark(): Boolean {
+    val pref = LocalAppSettings.current.theme
+    return when (pref) {
+        ThemePreference.System -> isSystemInDarkTheme()
+        ThemePreference.Light -> false
+        ThemePreference.Dark -> true
+    }
 }

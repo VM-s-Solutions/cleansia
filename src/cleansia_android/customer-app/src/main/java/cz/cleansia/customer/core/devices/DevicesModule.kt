@@ -1,5 +1,6 @@
 package cz.cleansia.customer.core.devices
 
+import cz.cleansia.core.devices.DeviceManagementApi
 import cz.cleansia.customer.core.auth.AuthRetrofit
 import dagger.Module
 import dagger.Provides

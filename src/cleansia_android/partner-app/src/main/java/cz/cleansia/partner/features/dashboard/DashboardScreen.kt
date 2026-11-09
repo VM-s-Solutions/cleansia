@@ -68,6 +68,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.config.CleansiaWeb
 import cz.cleansia.core.money.CurrencySymbols
+import cz.cleansia.core.money.formatMoney
 import cz.cleansia.core.ui.components.statusBarFade
 import cz.cleansia.core.ui.openOrCopy
 import cz.cleansia.core.ui.theme.Spacing
@@ -809,8 +810,7 @@ private fun WeeklyEarningsHero(stats: DashboardStats?, onClick: () -> Unit) {
  */
 internal fun formatMoneyWithSymbol(amount: Double?, symbol: String, fallback: String): String {
     if (amount == null || amount <= 0.0) return fallback
-    val rounded = String.format(Locale.getDefault(), "%,.0f", amount).replace(',', ' ')
-    return if (symbol.isBlank()) rounded else "$rounded $symbol"
+    return formatMoney(amount, symbol, fractionDigits = 0).replace(',', ' ')
 }
 
 /**

@@ -29,7 +29,7 @@ import cz.cleansia.customer.core.payments.toPaymentSheetParams
 import cz.cleansia.customer.features.payments.UnpaidReceivable
 import cz.cleansia.customer.features.recurring.RecurringAuthoringGate
 import cz.cleansia.core.snackbar.SnackbarController
-import cz.cleansia.customer.ui.state.ActionState
+import cz.cleansia.core.ui.state.ActionState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File

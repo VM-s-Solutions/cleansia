@@ -116,6 +116,34 @@ class SurfaceRolesTest {
         assertTrue(contrast(Sky900, Sky400) < 4.5)
     }
 
+    /**
+     * Left unset, the tertiary roles are M3's baseline mauve (#7D5260 / #EFB8C8, containers #FFD8E4 / #633B48),
+     * which showed on Home's milestone card and the address list's not-serviced glyph. They are the partner app's
+     * amber now, and each pair reads 4.5:1.
+     */
+    @Test
+    fun `the tertiary roles are the app's amber, not Material's mauve baseline`() {
+        val ambers = setOf(Amber100, Amber800, Amber900, Amber950, WarningStar, LightSurface)
+        listOf("light" to LightColors, "dark" to DarkColors).forEach { (name, scheme) ->
+            mapOf(
+                "tertiary" to scheme.tertiary,
+                "onTertiary" to scheme.onTertiary,
+                "tertiaryContainer" to scheme.tertiaryContainer,
+                "onTertiaryContainer" to scheme.onTertiaryContainer,
+            ).forEach { (role, color) ->
+                assertTrue("$name $role is #${"%08X".format(color.toArgb())}", color in ambers)
+            }
+            mapOf(
+                "onTertiary on tertiary" to (scheme.onTertiary to scheme.tertiary),
+                "onTertiaryContainer on tertiaryContainer" to (scheme.onTertiaryContainer to scheme.tertiaryContainer),
+                "tertiary on the card" to (scheme.tertiary to scheme.surface),
+            ).forEach { (pair, colors) ->
+                val ratio = contrast(colors.first, colors.second)
+                assertTrue("$name $pair: ${"%.2f".format(ratio)}:1", ratio >= 4.5)
+            }
+        }
+    }
+
     /** The argument list of the call whose `(` ends just before [from], up to its matching `)`. */
     private fun argumentsFrom(text: String, from: Int): String {
         var depth = 1

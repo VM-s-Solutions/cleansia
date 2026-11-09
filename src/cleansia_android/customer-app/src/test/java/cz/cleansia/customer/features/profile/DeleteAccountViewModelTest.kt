@@ -9,7 +9,7 @@ import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.user.UserRepository
 import cz.cleansia.customer.testing.MainDispatcherRule
-import cz.cleansia.customer.ui.state.ActionState
+import cz.cleansia.core.ui.state.ActionState
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every

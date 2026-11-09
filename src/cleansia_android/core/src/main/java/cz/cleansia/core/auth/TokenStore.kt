@@ -101,9 +101,6 @@ class TokenStore(context: Context) {
          */
         val trustedDeviceToken: String? get() = refreshToken.takeIf { it.isNotBlank() }
 
-        fun isAccessExpired(nowMs: Long = System.currentTimeMillis()): Boolean =
-            nowMs >= accessTokenExpiresAt
-
         fun isRefreshExpired(nowMs: Long = System.currentTimeMillis()): Boolean =
             nowMs >= refreshTokenExpiresAt
     }

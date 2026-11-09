@@ -436,6 +436,38 @@ class OrderRepositoryTest {
         assertEquals(false, repo.loaded.value)
     }
 
+    /**
+     * The splash's read outlives sign-out: the page it asked for one account must not land in the next
+     * account's cache, and the read still in flight must not hold off the next account's own.
+     */
+    @Test
+    fun refresh_givenAPageAskedBeforeClear_dropsItAndLetsTheNextAccountRead() = runTest {
+        val pageOfA = kotlinx.coroutines.CompletableDeferred<Response<OrderListResponseDto>>()
+        val pageOfB = kotlinx.coroutines.CompletableDeferred<Response<OrderListResponseDto>>()
+        coEvery { api.getMyOrders(offset = 0, limit = 20) } coAnswers { pageOfA.await() }
+        val repo = newRepo()
+        val readOfA = async { repo.refresh() }
+        runCurrent()
+
+        repo.clear()
+        coEvery { api.getMyOrders(offset = 0, limit = 20) } coAnswers { pageOfB.await() }
+        val readOfB = async { repo.refresh() }
+        runCurrent()
+        pageOfA.complete(Response.success(OrderListResponseDto(total = 1, data = listOf(listItem("order-of-A")))))
+
+        assertTrue((readOfA.await() as ApiResult.Error).error is ApiError.Network)
+        assertEquals(emptyList<OrderListItemDto>(), repo.orders.value)
+        assertFalse(repo.loaded.value)
+        assertTrue("the next account's read is still in flight", repo.loading.value)
+
+        pageOfB.complete(Response.success(OrderListResponseDto(total = 1, data = listOf(listItem("order-of-B")))))
+
+        assertTrue(readOfB.await() is ApiResult.Success)
+        assertEquals(listOf("order-of-B"), repo.orders.value.map { it.id })
+        assertFalse(repo.loading.value)
+        coVerify(exactly = 2) { api.getMyOrders(offset = 0, limit = 20) }
+    }
+
     // ── staleness watermark ──
 
     @Test

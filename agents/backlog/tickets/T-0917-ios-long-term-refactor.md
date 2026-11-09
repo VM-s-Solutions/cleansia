@@ -206,3 +206,4 @@ Where the verifier corrected an auditor, the verifier's note wins.
   `CustomerReadableWidthTests`, one in `LiveActivitySessionCleanupTests`); Customer on iOS 26.3: 1949, none failing.
   The same four runs at -O whole-module with MallocScribble, on `7bb79ccd0`, give the same results. Evidence in
   `ios-longterm-20261107/fix/`.
+- 2026-11-08 — Shipped: #368 merged to master as b5c9823c2.

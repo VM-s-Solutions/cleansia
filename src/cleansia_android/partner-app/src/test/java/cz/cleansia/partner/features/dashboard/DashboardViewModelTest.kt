@@ -9,7 +9,7 @@ import cz.cleansia.partner.core.auth.UserProfileStore
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.core.network.ApiErrorTranslator
-import cz.cleansia.partner.core.notifications.NotificationFeedRepository
+import cz.cleansia.core.notifications.NotificationFeedRepository
 import cz.cleansia.partner.api.model.OrderListItem
 import cz.cleansia.partner.data.dashboard.AvailableJobsPreview
 import cz.cleansia.partner.data.dashboard.DashboardRepository

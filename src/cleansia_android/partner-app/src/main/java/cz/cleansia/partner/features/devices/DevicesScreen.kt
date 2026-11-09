@@ -53,12 +53,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.components.CleansiaTextButton
+import cz.cleansia.core.ui.components.IconHalo
 import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.core.ui.theme.Spacing
-import cz.cleansia.core.ui.theme.primaryIconOnContainer
 import cz.cleansia.core.ui.theme.primaryTextOnContainer
 import cz.cleansia.partner.R
-import cz.cleansia.partner.core.devices.UserDeviceDto
+import cz.cleansia.core.devices.UserDeviceDto
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -300,23 +300,6 @@ private fun CurrentDeviceChip() {
             text = stringResource(R.string.devices_this_device),
             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
             color = MaterialTheme.colorScheme.primaryTextOnContainer,
-        )
-    }
-}
-
-@Composable
-private fun IconHalo(icon: ImageVector) {
-    Box(
-        modifier = Modifier
-            .size(44.dp)
-            .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primaryIconOnContainer,
-            modifier = Modifier.size(22.dp),
         )
     }
 }

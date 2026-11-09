@@ -308,7 +308,8 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
     const status = this.invoice()?.status;
     return (
       status === EmployeeInvoiceStatus.Pending ||
-      status === EmployeeInvoiceStatus.Approved
+      status === EmployeeInvoiceStatus.Approved ||
+      status === EmployeeInvoiceStatus.Disputed
     );
   }
 

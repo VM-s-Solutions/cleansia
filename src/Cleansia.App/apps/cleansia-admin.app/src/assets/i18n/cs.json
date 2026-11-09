@@ -1112,7 +1112,7 @@
       },
       "cancel_dialog": {
         "title": "Zrušit fakturu",
-        "subtitle": "Prosím uveďte důvod zrušení této faktury",
+        "subtitle": "Prosím uveďte důvod zrušení této faktury. Do několika minut následuje opravená faktura s novým číslem. Pokud chcete změnit jen bonus nebo srážku, použijte místo zrušení Upravit částky (schválenou fakturu nejprve rozporujte).",
         "reason_label": "Důvod zrušení",
         "reason_placeholder": "Zadejte důvod zrušení...",
         "submit": "Zrušit fakturu"

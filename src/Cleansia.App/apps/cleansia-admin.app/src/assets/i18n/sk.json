@@ -2157,7 +2157,7 @@
       },
       "cancel_dialog": {
         "title": "Zrušiť faktúru",
-        "subtitle": "Uveďte dôvod zrušenia tejto faktúry",
+        "subtitle": "Uveďte dôvod zrušenia tejto faktúry. Do niekoľkých minút nasleduje opravená faktúra s novým číslom. Ak chcete zmeniť iba bonus alebo zrážku, použite namiesto zrušenia Upraviť sumy (schválenú faktúru najprv namietnite).",
         "reason_label": "Dôvod zrušenia",
         "reason_placeholder": "Zadajte dôvod zrušenia...",
         "submit": "Zrušiť faktúru"

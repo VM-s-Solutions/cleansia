@@ -145,6 +145,30 @@ describe('InvoiceDetailFacade', () => {
     expect(facade.canMarkPaid()).toBe(true);
   });
 
+  describe('the cancel gate', () => {
+    it.each([
+      EmployeeInvoiceStatus.Pending,
+      EmployeeInvoiceStatus.Approved,
+      EmployeeInvoiceStatus.Disputed,
+    ])('offers cancelling in status %s', (status) => {
+      detailsMock.mockReturnValue(of({ id: 'invoice-1', status }));
+      facade.loadInvoiceDetail('invoice-1');
+
+      expect(facade.canCancel()).toBe(true);
+    });
+
+    it.each([
+      EmployeeInvoiceStatus.Paid,
+      EmployeeInvoiceStatus.Rejected,
+      EmployeeInvoiceStatus.Cancelled,
+    ])('withholds cancelling in status %s', (status) => {
+      detailsMock.mockReturnValue(of({ id: 'invoice-1', status }));
+      facade.loadInvoiceDetail('invoice-1');
+
+      expect(facade.canCancel()).toBe(false);
+    });
+  });
+
   describe('the payment-reference gate', () => {
     const assignable = [
       EmployeeInvoiceStatus.Pending,

@@ -104,7 +104,12 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
 
         if (hasOpen) return;
 
-        var period = PayPeriod.CreateBiWeekly(DateOnly.FromDateTime(DateTime.UtcNow), _payPeriodClosingConfig.LengthInDays);
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var latestEnd = await _payPeriodRepository
+            .GetQueryable()
+            .MaxAsync(p => (DateOnly?)p.EndDate, cancellationToken);
+        var start = latestEnd >= today ? latestEnd.Value.AddDays(1) : today;
+        var period = PayPeriod.CreateBiWeekly(start, _payPeriodClosingConfig.LengthInDays);
         _payPeriodRepository.Add(period);
         await _unitOfWork.CommitAsync(cancellationToken);
 

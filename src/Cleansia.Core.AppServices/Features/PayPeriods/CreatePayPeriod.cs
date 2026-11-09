@@ -26,16 +26,26 @@ public class CreatePayPeriod
             IUserRepository userRepository,
             IUserSessionProvider userSessionProvider,
             IPayPeriodRepository payPeriodRepository,
-            IPayPeriodClosingConfig payPeriodClosingConfig)
+            IPayPeriodClosingConfig payPeriodClosingConfig,
+            TimeProvider timeProvider)
         {
             _payPeriodRepository = payPeriodRepository;
             _payPeriodClosingConfig = payPeriodClosingConfig;
 
             RuleFor(x => x).SetValidator(new UserEmailValidator<Command>(userRepository, userSessionProvider));
 
+            // Pay joins the open period whatever its dates, so a second open period, or one starting later,
+            // would take pay earned before it starts.
             RuleFor(x => x.StartDate)
+                .Cascade(CascadeMode.Stop)
                 .NotEmpty()
-                .WithMessage(BusinessErrorMessage.Required);
+                .WithMessage(BusinessErrorMessage.Required)
+                .Must(startDate => startDate <= DateOnly.FromDateTime(timeProvider.GetUtcNow().UtcDateTime))
+                .WithMessage(BusinessErrorMessage.InvalidDate);
+
+            RuleFor(x => x)
+                .MustAsync(async (_, cancellationToken) => !await payPeriodRepository.ExistsActivePeriodAsync(cancellationToken))
+                .WithMessage(BusinessErrorMessage.CompanyHasOpenPayPeriod);
 
             RuleFor(x => x)
                 .MustAsync(BeNoOverlappingPeriodAsync)

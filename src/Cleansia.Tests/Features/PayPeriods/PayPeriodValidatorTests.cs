@@ -40,13 +40,17 @@ public class PayPeriodValidatorTests
     private static readonly DateOnly Start = new(2026, 1, 1);
     private static readonly DateOnly End = new(2026, 1, 14);
 
+    // 14 Jan 2026 is in the past on the real clock, so every period rule reads this one.
+    private readonly StubTimeProvider _clock = new(new DateTimeOffset(2026, 1, 5, 10, 0, 0, TimeSpan.Zero));
+
     // ── CreatePayPeriod ──────────────────────────────────────────────
 
     private CreatePayPeriod.Validator CreateValidator(int? lengthSetting = null) => new(
         _userRepository.Object,
         _session.Object,
         _payPeriodRepository.Object,
-        PayPeriodTestServices.ClosingConfig(lengthSetting));
+        PayPeriodTestServices.ClosingConfig(lengthSetting),
+        _clock);
 
     private CreatePayPeriod.Command ValidCreate() => new(Start, Notes: null);
 
@@ -92,6 +96,39 @@ public class PayPeriodValidatorTests
         var result = await CreateValidator(lengthSetting).ValidateAsync(ValidCreate());
 
         Assert.Equal(BusinessErrorMessage.OverlappingPeriod, Assert.Single(result.Errors).ErrorMessage);
+    }
+
+    /// <summary>One open period per company: pay joins the open one, so a second would only split it.</summary>
+    [Fact]
+    public async Task Create_While_A_Period_Is_Open_Fails_CompanyHasOpenPayPeriod()
+    {
+        ArrangeConfirmedSession();
+        _payPeriodRepository.Setup(r => r.ExistsActivePeriodAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
+        var result = await CreateValidator().ValidateAsync(ValidCreate());
+
+        Assert.Equal(BusinessErrorMessage.CompanyHasOpenPayPeriod, Assert.Single(result.Errors).ErrorMessage);
+    }
+
+    /// <summary>A period that starts later would still take today's pay, since pay joins the open period.</summary>
+    [Theory]
+    [InlineData(4, true)]
+    [InlineData(5, true)]
+    [InlineData(6, false)]
+    public async Task Create_Refuses_A_Start_After_Today(int day, bool valid)
+    {
+        ArrangeConfirmedSession();
+        var start = new DateOnly(2026, 1, day);
+
+        var result = await CreateValidator().ValidateAsync(ValidCreate() with { StartDate = start });
+
+        Assert.Equal(valid, result.IsValid);
+        if (!valid)
+        {
+            var error = Assert.Single(result.Errors);
+            Assert.Equal(nameof(CreatePayPeriod.Command.StartDate), error.PropertyName);
+            Assert.Equal(BusinessErrorMessage.InvalidDate, error.ErrorMessage);
+        }
     }
 
     [Fact]
@@ -270,5 +307,10 @@ public class PayPeriodValidatorTests
         var result = await UpdateValidator().ValidateAsync(ValidUpdate());
 
         Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.OverlappingPeriod);
+    }
+
+    private sealed class StubTimeProvider(DateTimeOffset now) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => now;
     }
 }

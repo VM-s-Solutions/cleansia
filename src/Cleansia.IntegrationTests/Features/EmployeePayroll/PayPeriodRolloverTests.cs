@@ -118,6 +118,42 @@ public class PayPeriodRolloverTests(PostgresContainerFixture fixture) : BaseInte
             transactional: false);
     }
 
+    /// <summary>
+    /// The bootstrap never overlaps a period that already ran: it starts today, or the day after the latest
+    /// period's end when that end is today or later.
+    /// </summary>
+    [Theory]
+    [InlineData(-5, 0)]
+    [InlineData(0, 1)]
+    [InlineData(2, 3)]
+    public async Task The_Bootstrap_Starts_Today_Or_The_Day_After_The_Latest_End_Whichever_Is_Later(int latestEnd, int expectedStart)
+    {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var latest = PayPeriod.Create(today.AddDays(latestEnd - 13), today.AddDays(latestEnd)).Close("System");
+
+        await TestMethod(
+            setup: RegisterBatch,
+            arrange: async context =>
+            {
+                context.Add(latest);
+                await context.CommitAsync(CancellationToken.None);
+            },
+            act: async provider =>
+            {
+                await provider.GetRequiredService<IPayPeriodBackgroundService>()
+                    .EnsureOpenPeriodAsync(CancellationToken.None);
+                return true;
+            },
+            assert: async (context, _) =>
+            {
+                var opened = await context.PayPeriods.IgnoreQueryFilters().SingleAsync(p => p.Status == PayPeriodStatus.Open);
+
+                Assert.Equal(today.AddDays(expectedStart), opened.StartDate);
+                Assert.Equal(today.AddDays(expectedStart + 13), opened.EndDate);
+            },
+            transactional: false);
+    }
+
     [Fact]
     public async Task Pay_Calculated_While_The_Close_Is_Invoicing_Lands_In_The_Next_Period()
     {

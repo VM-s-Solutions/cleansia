@@ -221,7 +221,8 @@ public class InvoiceDocumentLanguageTests
         _payoutReferenceAllocator.Object,
         new Mock<ITenantRepository>().Object,
         new Mock<ICashLedgerRepository>().Object,
-        PayPeriodTestServices.ScopeFactory(CreateService));
+        PayPeriodTestServices.ScopeFactory(CreateService),
+        PayPeriodTestServices.ClosingConfig());
 
     private Task<BusinessResult<RegenerateInvoicePdf.Response>> ReRender(string languageCode) =>
         new RegenerateInvoicePdf.Handler(

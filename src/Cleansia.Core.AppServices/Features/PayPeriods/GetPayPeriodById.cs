@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.PayPeriods.DTOs;
 using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 
@@ -26,7 +27,8 @@ public class GetPayPeriodById
     }
 
     internal class Handler(
-        IPayPeriodRepository payPeriodRepository)
+        IPayPeriodRepository payPeriodRepository,
+        IPayPeriodClosingConfig payPeriodClosingConfig)
         : IQueryHandler<Query, PayPeriodDto>
     {
         public async Task<BusinessResult<PayPeriodDto>> Handle(Query query, CancellationToken cancellationToken)
@@ -38,7 +40,7 @@ public class GetPayPeriodById
                     nameof(query.PayPeriodId), BusinessErrorMessage.PayPeriodNotFound));
             }
 
-            return BusinessResult.Success(payPeriod.MapToDto());
+            return BusinessResult.Success(payPeriod.MapToDto(payPeriodClosingConfig.LengthInDays));
         }
     }
 }

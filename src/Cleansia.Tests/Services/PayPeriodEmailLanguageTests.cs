@@ -196,7 +196,8 @@ public class PayPeriodEmailLanguageTests
             _payoutReferenceAllocator.Object,
         new Mock<ITenantRepository>().Object,
         new Mock<ICashLedgerRepository>().Object,
-        PayPeriodTestServices.ScopeFactory(CreateCloseService));
+        PayPeriodTestServices.ScopeFactory(CreateCloseService),
+        PayPeriodTestServices.ClosingConfig());
     }
 
     private PeriodReminderBackgroundService CreateReminderService()

@@ -6,7 +6,10 @@ namespace Cleansia.Core.Domain.EmployeePayroll;
 
 public class PayPeriod : TenantAuditable
 {
-    /// <summary>A pay period runs this many days, start and end inclusive (owner decision 2026-10-04).</summary>
+    /// <summary>
+    /// The days, start and end inclusive, that both cleaner agreements promise a pay period runs (owner decision
+    /// 2026-10-04). The hosts read the length from PayPeriodClosing:LengthInDays, which defaults to this.
+    /// </summary>
     public const int LengthInDays = 14;
 
     [Required]
@@ -41,9 +44,9 @@ public class PayPeriod : TenantAuditable
         }
 
         var duration = endDate.DayNumber - startDate.DayNumber;
-        if (duration < 7 || duration > 31)
+        if (duration < 1 || duration > 31)
         {
-            throw new ArgumentException("Pay period must be between 7 and 31 days", nameof(endDate));
+            throw new ArgumentException("Pay period must be between 1 and 31 days", nameof(endDate));
         }
 
         return new PayPeriod
@@ -55,9 +58,9 @@ public class PayPeriod : TenantAuditable
         };
     }
 
-    public static PayPeriod CreateBiWeekly(DateOnly startDate, string? notes = null)
+    public static PayPeriod CreateBiWeekly(DateOnly startDate, int lengthInDays = LengthInDays, string? notes = null)
     {
-        var endDate = startDate.AddDays(LengthInDays - 1);
+        var endDate = startDate.AddDays(lengthInDays - 1);
         return Create(startDate, endDate, notes);
     }
 
@@ -89,9 +92,9 @@ public class PayPeriod : TenantAuditable
         }
 
         var duration = endDate.DayNumber - startDate.DayNumber;
-        if (duration < 7 || duration > 31)
+        if (duration < 1 || duration > 31)
         {
-            throw new ArgumentException("Pay period must be between 7 and 31 days", nameof(endDate));
+            throw new ArgumentException("Pay period must be between 1 and 31 days", nameof(endDate));
         }
 
         StartDate = startDate;

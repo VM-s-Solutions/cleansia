@@ -4,6 +4,7 @@ using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -27,7 +28,8 @@ public class UpdatePayPeriod
         public Validator(
             IUserRepository userRepository,
             IUserSessionProvider userSessionProvider,
-            IPayPeriodRepository payPeriodRepository)
+            IPayPeriodRepository payPeriodRepository,
+            IPayPeriodClosingConfig payPeriodClosingConfig)
         {
             _payPeriodRepository = payPeriodRepository;
 
@@ -52,7 +54,7 @@ public class UpdatePayPeriod
                 .WithMessage(BusinessErrorMessage.Required)
                 .Must((cmd, endDate) => endDate > cmd.StartDate)
                 .WithMessage(BusinessErrorMessage.InvalidDate)
-                .Must((cmd, endDate) => endDate == cmd.StartDate.AddDays(PayPeriod.LengthInDays - 1))
+                .Must((cmd, endDate) => endDate == cmd.StartDate.AddDays(payPeriodClosingConfig.LengthInDays - 1))
                 .WithMessage(BusinessErrorMessage.InvalidDuration);
 
             RuleFor(x => x)

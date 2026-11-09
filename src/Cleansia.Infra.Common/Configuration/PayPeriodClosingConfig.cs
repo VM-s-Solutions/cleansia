@@ -11,4 +11,6 @@ public class PayPeriodClosingConfig(IConfiguration configuration)
     : AutoBindConfig(configuration, "PayPeriodClosing"), IPayPeriodClosingConfig
 {
     public bool Enabled { get; set; } = true;
+
+    public int LengthInDays { get; set; } = 14;
 }

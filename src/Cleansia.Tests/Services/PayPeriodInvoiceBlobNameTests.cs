@@ -196,7 +196,8 @@ public class PayPeriodInvoiceBlobNameTests
         _payoutReferenceAllocator.Object,
         new Mock<ITenantRepository>().Object,
         new Mock<ICashLedgerRepository>().Object,
-        PayPeriodTestServices.ScopeFactory(CreateService));
+        PayPeriodTestServices.ScopeFactory(CreateService),
+        PayPeriodTestServices.ClosingConfig());
 
     private static PayPeriod ExpiredPeriod(string id, string tenantId)
     {

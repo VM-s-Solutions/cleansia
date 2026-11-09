@@ -8,6 +8,7 @@ using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Sorting;
 using Cleansia.Core.Domain.Specifications;
+using Cleansia.Infra.Common.Configuration.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,7 +22,8 @@ public class GetPagedPayPeriods
     }
 
     internal class Handler(
-        IPayPeriodRepository payPeriodRepository)
+        IPayPeriodRepository payPeriodRepository,
+        IPayPeriodClosingConfig payPeriodClosingConfig)
         : IRequestHandler<Request, PagedData<PayPeriodDto>>
     {
         public async Task<PagedData<PayPeriodDto>> Handle(Request request, CancellationToken cancellationToken)
@@ -32,11 +34,12 @@ public class GetPagedPayPeriods
 
             var filter = specification.SatisfiedBy();
 
+            var lengthInDays = payPeriodClosingConfig.LengthInDays;
             var totalItems = await payPeriodRepository.GetCountAsync(filter, cancellationToken);
             var items = await payPeriodRepository
                 .GetPagedSort<PayPeriodSort>(request.Offset, request.Limit, filter, request.Sort.MapToDomain())
                 .AsNoTracking()
-                .Select(period => period.MapToDto())
+                .Select(period => period.MapToDto(lengthInDays))
                 .ToListAsync(cancellationToken);
 
             return items.MapToDto(totalItems, request);

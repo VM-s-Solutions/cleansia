@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 
@@ -12,7 +13,6 @@ public class CreatePayPeriod
 {
     public record Command(
         DateOnly StartDate,
-        DateOnly EndDate,
         string? Notes) : ICommand<Response>;
 
     public record Response(string PayPeriodId);
@@ -20,28 +20,22 @@ public class CreatePayPeriod
     public class Validator : AbstractValidator<Command>
     {
         private readonly IPayPeriodRepository _payPeriodRepository;
+        private readonly IPayPeriodClosingConfig _payPeriodClosingConfig;
 
         public Validator(
             IUserRepository userRepository,
             IUserSessionProvider userSessionProvider,
-            IPayPeriodRepository payPeriodRepository)
+            IPayPeriodRepository payPeriodRepository,
+            IPayPeriodClosingConfig payPeriodClosingConfig)
         {
             _payPeriodRepository = payPeriodRepository;
+            _payPeriodClosingConfig = payPeriodClosingConfig;
 
             RuleFor(x => x).SetValidator(new UserEmailValidator<Command>(userRepository, userSessionProvider));
 
             RuleFor(x => x.StartDate)
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required);
-
-            RuleFor(x => x.EndDate)
-                .Cascade(CascadeMode.Stop)
-                .NotEmpty()
-                .WithMessage(BusinessErrorMessage.Required)
-                .Must((cmd, endDate) => endDate > cmd.StartDate)
-                .WithMessage(BusinessErrorMessage.InvalidDate)
-                .Must((cmd, endDate) => endDate == cmd.StartDate.AddDays(PayPeriod.LengthInDays - 1))
-                .WithMessage(BusinessErrorMessage.InvalidDuration);
 
             RuleFor(x => x)
                 .MustAsync(BeNoOverlappingPeriodAsync)
@@ -55,18 +49,19 @@ public class CreatePayPeriod
         private async Task<bool> BeNoOverlappingPeriodAsync(Command command, CancellationToken cancellationToken)
         {
             var hasOverlap = await _payPeriodRepository.HasOverlappingPeriodAsync(
-                command.StartDate, command.EndDate, null, cancellationToken);
+                command.StartDate, command.StartDate.AddDays(_payPeriodClosingConfig.LengthInDays - 1), null, cancellationToken);
             return !hasOverlap;
         }
     }
 
     public class Handler(
-        IPayPeriodRepository payPeriodRepository)
+        IPayPeriodRepository payPeriodRepository,
+        IPayPeriodClosingConfig payPeriodClosingConfig)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
-            var payPeriod = PayPeriod.Create(command.StartDate, command.EndDate, command.Notes);
+            var payPeriod = PayPeriod.CreateBiWeekly(command.StartDate, payPeriodClosingConfig.LengthInDays, command.Notes);
 
             payPeriodRepository.Add(payPeriod);
 

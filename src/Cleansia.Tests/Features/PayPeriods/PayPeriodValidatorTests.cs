@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.PayPeriods;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Tests.Services;
 using Cleansia.TestUtilities.MockDataFactories.EmployeePayroll;
 using Moq;
 
@@ -41,12 +42,13 @@ public class PayPeriodValidatorTests
 
     // ── CreatePayPeriod ──────────────────────────────────────────────
 
-    private CreatePayPeriod.Validator CreateValidator() => new(
+    private CreatePayPeriod.Validator CreateValidator(int? lengthSetting = null) => new(
         _userRepository.Object,
         _session.Object,
-        _payPeriodRepository.Object);
+        _payPeriodRepository.Object,
+        PayPeriodTestServices.ClosingConfig(lengthSetting));
 
-    private CreatePayPeriod.Command ValidCreate() => new(Start, End, Notes: null);
+    private CreatePayPeriod.Command ValidCreate() => new(Start, Notes: null);
 
     [Fact]
     public async Task Create_Valid_Command_Passes()
@@ -74,44 +76,22 @@ public class PayPeriodValidatorTests
         Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.NotExistingUserWithEmail);
     }
 
-    [Fact]
-    public async Task Create_End_Before_Start_Fails_InvalidDate()
-    {
-        ArrangeConfirmedSession();
-        _payPeriodRepository
-            .Setup(r => r.HasOverlappingPeriodAsync(It.IsAny<DateOnly>(), It.IsAny<DateOnly>(), null, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
-
-        var result = await CreateValidator().ValidateAsync(ValidCreate() with { EndDate = Start.AddDays(-1) });
-
-        Assert.Contains(result.Errors, e =>
-            e.PropertyName == nameof(CreatePayPeriod.Command.EndDate)
-            && e.ErrorMessage == BusinessErrorMessage.InvalidDate);
-    }
-
     /// <summary>
-    /// The framework agreement and the self-billing agreement settle after each pay period of 14 days
-    /// (owner decision 2026-10-04), so a period an administrator creates by hand is 14 days, start and end
-    /// inclusive, and nothing else: a week, a 13- or 15-day span and a month are all refused.
+    /// The server sets the end, start plus the configured length, so the overlap check covers that span.
     /// </summary>
     [Theory]
-    [InlineData(4)]
-    [InlineData(7)]
-    [InlineData(13)]
-    [InlineData(15)]
-    [InlineData(31)]
-    public async Task Create_A_Period_Not_Of_14_Days_Fails_InvalidDuration(int days)
+    [InlineData(null, 14)]
+    [InlineData(3, 3)]
+    public async Task Create_Checks_Overlap_Over_The_Configured_Length(int? lengthSetting, int days)
     {
         ArrangeConfirmedSession();
         _payPeriodRepository
-            .Setup(r => r.HasOverlappingPeriodAsync(It.IsAny<DateOnly>(), It.IsAny<DateOnly>(), null, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
+            .Setup(r => r.HasOverlappingPeriodAsync(Start, Start.AddDays(days - 1), null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
 
-        var result = await CreateValidator().ValidateAsync(ValidCreate() with { EndDate = Start.AddDays(days - 1) });
+        var result = await CreateValidator(lengthSetting).ValidateAsync(ValidCreate());
 
-        var error = Assert.Single(result.Errors);
-        Assert.Equal(nameof(CreatePayPeriod.Command.EndDate), error.PropertyName);
-        Assert.Equal(BusinessErrorMessage.InvalidDuration, error.ErrorMessage);
+        Assert.Equal(BusinessErrorMessage.OverlappingPeriod, Assert.Single(result.Errors).ErrorMessage);
     }
 
     [Fact]
@@ -144,10 +124,11 @@ public class PayPeriodValidatorTests
 
     // ── UpdatePayPeriod ──────────────────────────────────────────────
 
-    private UpdatePayPeriod.Validator UpdateValidator() => new(
+    private UpdatePayPeriod.Validator UpdateValidator(int? lengthSetting = null) => new(
         _userRepository.Object,
         _session.Object,
-        _payPeriodRepository.Object);
+        _payPeriodRepository.Object,
+        PayPeriodTestServices.ClosingConfig(lengthSetting));
 
     private UpdatePayPeriod.Command ValidUpdate() => new(PayPeriodId, Start, End, Notes: null);
 
@@ -255,6 +236,26 @@ public class PayPeriodValidatorTests
         var error = Assert.Single(result.Errors);
         Assert.Equal(nameof(UpdatePayPeriod.Command.EndDate), error.PropertyName);
         Assert.Equal(BusinessErrorMessage.InvalidDuration, error.ErrorMessage);
+    }
+
+    [Theory]
+    [InlineData(3, true)]
+    [InlineData(4, false)]
+    public async Task Update_With_A_Three_Day_Setting_Takes_Three_Days_And_Refuses_A_Fourth(int days, bool valid)
+    {
+        ArrangeConfirmedSession();
+        ArrangeOpenPeriod();
+        _payPeriodRepository
+            .Setup(r => r.HasOverlappingPeriodAsync(It.IsAny<DateOnly>(), It.IsAny<DateOnly>(), PayPeriodId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        var result = await UpdateValidator(lengthSetting: 3).ValidateAsync(ValidUpdate() with { EndDate = Start.AddDays(days - 1) });
+
+        Assert.Equal(valid, result.IsValid);
+        if (!valid)
+        {
+            Assert.Equal(BusinessErrorMessage.InvalidDuration, Assert.Single(result.Errors).ErrorMessage);
+        }
     }
 
     [Fact]

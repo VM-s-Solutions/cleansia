@@ -8,11 +8,14 @@ using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Infra.Common.Configuration;
+using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.Infra.Database;
 using Cleansia.TestUtilities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
@@ -21,8 +24,9 @@ namespace Cleansia.IntegrationTests.Features.EmployeePayroll;
 
 /// <summary>
 /// The nightly rollover on Postgres. The store must report the period closed and hold exactly one open
-/// period that starts the day after it and runs 14 days (owner decision 2026-10-04), as does the period
-/// the bootstrap opens when none is open. The close and that successor are durable before the first
+/// period that starts the day after it and runs the configured length, 14 days unless
+/// PayPeriodClosing:LengthInDays says otherwise (owner decisions 2026-10-04 and 2026-11-09), as does the
+/// period the bootstrap opens when none is open. The close and that successor are durable before the first
 /// invoice, so pay calculated while the run is still invoicing lands in the successor.
 /// </summary>
 [Collection("PostgresCollection")]
@@ -41,14 +45,28 @@ public class PayPeriodRolloverTests(PostgresContainerFixture fixture) : BaseInte
         return Task.CompletedTask;
     }
 
-    [Fact]
-    public async Task An_Expired_Period_With_Nothing_To_Invoice_Closes_And_Its_Successor_Opens()
+    private static Func<IServiceCollection, Task> RegisterBatch(int? lengthSetting) => async services =>
+    {
+        await RegisterBatch(services);
+        if (lengthSetting is not null)
+        {
+            services.Replace(ServiceDescriptor.Singleton<IPayPeriodClosingConfig>(new PayPeriodClosingConfig(
+                new ConfigurationBuilder()
+                    .AddInMemoryCollection([new KeyValuePair<string, string?>("PayPeriodClosing:LengthInDays", lengthSetting.ToString())])
+                    .Build())));
+        }
+    };
+
+    [Theory]
+    [InlineData(null, 14)]
+    [InlineData(3, 3)]
+    public async Task An_Expired_Period_With_Nothing_To_Invoice_Closes_And_Its_Successor_Opens(int? lengthSetting, int days)
     {
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var expired = PayPeriod.Create(today.AddDays(-31), today.AddDays(-2));
 
         await TestMethod(
-            setup: RegisterBatch,
+            setup: RegisterBatch(lengthSetting),
             arrange: async context =>
             {
                 context.Add(expired);
@@ -67,19 +85,21 @@ public class PayPeriodRolloverTests(PostgresContainerFixture fixture) : BaseInte
                 Assert.Equal(PayPeriodStatus.Closed, periods.Single(p => p.Id == expired.Id).Status);
                 var successor = Assert.Single(periods, p => p.Status == PayPeriodStatus.Open);
                 Assert.Equal(expired.EndDate.AddDays(1), successor.StartDate);
-                Assert.Equal(expired.EndDate.AddDays(14), successor.EndDate);
+                Assert.Equal(expired.EndDate.AddDays(days), successor.EndDate);
                 Assert.Equal(TestTenants.Default, successor.TenantId);
             },
             transactional: false);
     }
 
-    [Fact]
-    public async Task With_No_Open_Period_The_Bootstrap_Opens_Fourteen_Days_From_Today()
+    [Theory]
+    [InlineData(null, 14)]
+    [InlineData(3, 3)]
+    public async Task With_No_Open_Period_The_Bootstrap_Opens_The_Configured_Length_From_Today(int? lengthSetting, int days)
     {
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
         await TestMethod(
-            setup: RegisterBatch,
+            setup: RegisterBatch(lengthSetting),
             arrange: (CleansiaDbContext _) => Task.CompletedTask,
             act: async provider =>
             {
@@ -93,7 +113,7 @@ public class PayPeriodRolloverTests(PostgresContainerFixture fixture) : BaseInte
 
                 Assert.Equal(PayPeriodStatus.Open, opened.Status);
                 Assert.Equal(today, opened.StartDate);
-                Assert.Equal(today.AddDays(13), opened.EndDate);
+                Assert.Equal(today.AddDays(days - 1), opened.EndDate);
             },
             transactional: false);
     }

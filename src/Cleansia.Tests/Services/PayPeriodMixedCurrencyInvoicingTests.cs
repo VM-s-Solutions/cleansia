@@ -409,7 +409,8 @@ public class PayPeriodMixedCurrencyInvoicingTests
         _payoutReferenceAllocator.Object,
         new Mock<ITenantRepository>().Object,
         _cashLedger.Object,
-        PayPeriodTestServices.ScopeFactory(CreateService));
+        PayPeriodTestServices.ScopeFactory(CreateService),
+        PayPeriodTestServices.ClosingConfig());
 
     private static Employee Cleaner()
     {

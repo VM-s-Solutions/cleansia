@@ -20,4 +20,10 @@ public interface IPayPeriodClosingConfig
 {
     /// <summary>Master switch. When false the nightly pay-period timer is a no-op.</summary>
     bool Enabled { get; set; }
+
+    /// <summary>
+    /// How many days a pay period runs, start and end inclusive, wherever one is created or extended. 14, the
+    /// period both cleaner agreements promise; only the DEV template sets 3 (owner ruling 2026-11-09).
+    /// </summary>
+    int LengthInDays { get; set; }
 }

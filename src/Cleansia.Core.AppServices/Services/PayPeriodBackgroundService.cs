@@ -10,6 +10,7 @@ using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Payments;
+using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Services.Pdf;
 using Cleansia.Infra.Services.Pdf.Models;
 using Microsoft.EntityFrameworkCore;
@@ -43,6 +44,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
     private readonly ITenantRepository _tenantRepository;
     private readonly ICashLedgerRepository _cashLedgerRepository;
     private readonly IServiceScopeFactory _serviceScopeFactory;
+    private readonly IPayPeriodClosingConfig _payPeriodClosingConfig;
 
     public PayPeriodBackgroundService(
         IPayPeriodRepository payPeriodRepository,
@@ -64,7 +66,8 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         IPayoutReferenceAllocator payoutReferenceAllocator,
         ITenantRepository tenantRepository,
         ICashLedgerRepository cashLedgerRepository,
-        IServiceScopeFactory serviceScopeFactory)
+        IServiceScopeFactory serviceScopeFactory,
+        IPayPeriodClosingConfig payPeriodClosingConfig)
     {
         _payPeriodRepository = payPeriodRepository;
         _employeeRepository = employeeRepository;
@@ -86,6 +89,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         _tenantRepository = tenantRepository;
         _cashLedgerRepository = cashLedgerRepository;
         _serviceScopeFactory = serviceScopeFactory;
+        _payPeriodClosingConfig = payPeriodClosingConfig;
     }
 
     public async Task EnsureOpenPeriodAsync(CancellationToken cancellationToken = default)
@@ -100,7 +104,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
 
         if (hasOpen) return;
 
-        var period = PayPeriod.CreateBiWeekly(DateOnly.FromDateTime(DateTime.UtcNow));
+        var period = PayPeriod.CreateBiWeekly(DateOnly.FromDateTime(DateTime.UtcNow), _payPeriodClosingConfig.LengthInDays);
         _payPeriodRepository.Add(period);
         await _unitOfWork.CommitAsync(cancellationToken);
 
@@ -193,7 +197,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
 
             if (!hasActivePeriod)
             {
-                var newPeriod = PayPeriod.CreateBiWeekly(period.EndDate.AddDays(1));
+                var newPeriod = PayPeriod.CreateBiWeekly(period.EndDate.AddDays(1), _payPeriodClosingConfig.LengthInDays);
                 _payPeriodRepository.Add(newPeriod);
 
                 _logger.LogInformation(

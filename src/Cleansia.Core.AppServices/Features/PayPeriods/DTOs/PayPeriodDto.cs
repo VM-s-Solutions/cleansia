@@ -10,4 +10,5 @@ public record PayPeriodDto(
     DateTime? ClosedAt,
     string? ClosedBy,
     DateTime? PaidAt,
-    string? Notes);
+    string? Notes,
+    DateOnly LatestEndDate);

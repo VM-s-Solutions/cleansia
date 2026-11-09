@@ -570,6 +570,10 @@ var apiStartupSettings = env == 'prod' ? {} : {
   WEBSITE_WARMUP_STATUSES: '200'
 }
 
+// DEV pay periods last 3 days, so testers see a whole pay cycle within days (owner ruling 2026-11-09). Every
+// other stage keeps the 14 days both cleaner agreements promise, the default in PayPeriodClosingConfig.
+var payPeriodSettings = env == 'dev' ? { PayPeriodClosing__LengthInDays: '3' } : {}
+
 var apiBaseSettings = union({
   ConnectionStrings__ConnectionString: kvRef(keyVaultUri, 'ConnectionStrings--cleansia-db')
   JwtSettings__Secret: kvRef(keyVaultUri, 'Jwt--Key')
@@ -609,7 +613,7 @@ var apiBaseSettings = union({
   // Development settings that switch it off never load here, because every deployed host runs as
   // Production. DEV skips it so test cleaners with made-up IČOs can be approved (owner default).
   Ares__Enabled: env == 'prod' ? 'true' : 'false'
-}, storageSettings, sendGridSettings, containerStartSettings, devPackageSettings, apiStartupSettings)
+}, storageSettings, sendGridSettings, containerStartSettings, devPackageSettings, apiStartupSettings, payPeriodSettings)
 
 // FCM push dispatch — the Functions queue consumer is the ONLY dispatcher; FcmPushDispatcher is a
 // deliberate no-op while this is unset, so pushes are silently ACKed until the secret exists. Value:
@@ -919,7 +923,7 @@ module functionApp 'modules/functionApp.bicep' = {
     // App Insights export above, not a substitute for it. A blank DSN disables Sentry silently rather
     // than throwing, so an unpopulated secret costs the per-error detail and the first-occurrence mail
     // while leaving only threshold alerts. Populate it.
-    extraAppSettings: union(sendGridSettings, fiscalSettings, fcmSettings, apnsSettings, cronSettings, {
+    extraAppSettings: union(sendGridSettings, fiscalSettings, fcmSettings, apnsSettings, cronSettings, payPeriodSettings, {
       Sentry__Dsn: kvRef(keyVaultUri, 'Sentry--Dsn')
     })
     tags: commonTags

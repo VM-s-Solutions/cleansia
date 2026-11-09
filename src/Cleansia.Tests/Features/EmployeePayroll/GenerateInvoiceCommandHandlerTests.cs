@@ -327,6 +327,21 @@ public class GenerateInvoiceCommandHandlerTests
         Assert.Empty(_emails);
     }
 
+    [Theory]
+    [InlineData(false, CleanerEmail)]
+    [InlineData(true, "")]
+    public async Task An_Inactive_Cleaner_Or_One_Without_An_Email_Is_Not_Emailed(bool cleanerActive, string email)
+    {
+        _cleaner.IsActive = cleanerActive;
+        typeof(User).GetProperty(nameof(User.Email))!.SetValue(_cleaner.User, email);
+        ArrangeOrderPays(PayrollMockFactory.OrderPay());
+
+        var result = await CreateHandler().Handle(new GenerateInvoice.Command(EmployeeId, PayPeriodId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Empty(_emails);
+    }
+
     [Fact]
     public async Task An_Invoice_Whose_Pdf_Did_Not_Render_Is_Still_Announced_Without_An_Attachment()
     {

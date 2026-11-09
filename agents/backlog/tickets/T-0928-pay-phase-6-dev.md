@@ -60,3 +60,4 @@ The plan's "Not doing" list. Anything found outside these slices is reported to 
 ## Work record
 
 - 2026-11-09 — Filed from the plan page. Not started.
+- 2026-11-10 — P6.1 skipped, Mike's answer "A": master already holds Phases 1 to 3 and the Phase 2 Initial, so DEV gets one reset and deploy after Phase 4 (P6.2), with his OK.

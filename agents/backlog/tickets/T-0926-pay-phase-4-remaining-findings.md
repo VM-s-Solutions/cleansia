@@ -45,7 +45,11 @@ Branch `fix/pay-findings`.
 - [ ] **P4.2** Period-end reminders go only to cleaners with work in the period.
 - [ ] **P4.3** Blob paths use a fixed date format, and e-mails format the period in the recipient's language.
 - [ ] **P4.4** $ A dispute charge on an already-invoiced job becomes a deduction on the cleaner's next invoice. Its design, including what happens when that invoice would go negative, is written in this ticket and approved by Mike before Phase 2 starts (P1.8, D12).
-- [ ] **P4.5** Optional: a QR Platba code in the payment block of CZK invoice PDFs; ask Mike before adding a QR library.
+- [ ] ~~**P4.5** Optional: a QR Platba code in the payment block of CZK invoice PDFs.~~ Dropped: Mike accepted the leaner Phase 4 on 2026-11-10.
+- [ ] **mrc-1** An invoice gets a concurrency token, so two admin actions on one invoice cannot both commit (a Mark paid racing a Cancel would set the cash off twice). Folded in by Mike on 2026-11-10.
+- [ ] **F4** Partner web's Cash I hold text says the cash is set off when the next invoice is issued, not against the next payout. Folded in by Mike on 2026-11-10.
+- [ ] **F5** Android's partner invoice list keeps its rows when the employee-id lookup or a refresh fails, as iOS does since P3.6. Folded in by Mike on 2026-11-10.
+- [ ] **F6** Close now is not offered on a period that has not started yet. Folded in by Mike on 2026-11-10.
 
 ## Design (P1.8)
 
@@ -332,3 +336,4 @@ The plan's "Not doing" list. Anything found outside these slices is reported to 
   invoice. Q3: a charge later pay never covers stays blocked, and Mike decides each case; no code. Section 8 now also
   names `SendEmployeePeriodClosedEmailAsync`, which P1.3's loop reaches: P4.4 skips its e-mail when every row of the
   cleaner moved on (D7).
+- 2026-11-10 — Mike answered "A" to folding mrc-1, F4, F5 and F6 into this phase; P4.5 is dropped. Phase 4 starts on `fix/pay-findings`, run with the lean workflow.

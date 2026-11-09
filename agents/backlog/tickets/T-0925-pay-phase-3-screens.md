@@ -63,3 +63,4 @@ The plan's "Not doing" list. Anything found outside these slices is reported to 
 ## Work record
 
 - 2026-11-09 — Filed from the plan page. Not started.
+- 2026-11-09 — An exception to the P3.1 commit's claim that every new or changed test fails against the code before it: two changed Android tests pass there. InvoicesWireTest.theDetailDtoCarriesEverythingTheListOneDoesPlusItsOwn compares two constants in the test file, and DashboardWireTest.nullableByDesignStatsFieldsStayNullRatherThanBecomingPlaceholders only lost its nextPayoutDate assertion. Neither tests money; the three serial-name tests beside them fail before the change as they should.

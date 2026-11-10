@@ -1463,4 +1463,12 @@
     <string name="booking_success_no_cleaner_cash">Если его никто не возьмёт, мы бесплатно отменим его и начислим вам кредит.</string>
     <string name="booking_success_cash_on_day">Оплатите наличными клинеру в день уборки.</string>
     <string name="auth_email_placeholder">customer@example.com</string>
+    <string name="dispute_reason_chargeback">Возврат платежа банком</string>
+    <string name="dispute_status_pending">Ожидает рассмотрения</string>
+    <string name="dispute_status_under_review">На рассмотрении</string>
+    <string name="dispute_status_waiting_for_response">Ожидает вашего ответа</string>
+    <string name="dispute_status_resolved">Решено</string>
+    <string name="dispute_status_closed">Закрыто</string>
+    <string name="dispute_status_escalated">Передано выше</string>
+    <string name="error_dispute_cleaning_not_started">Оспорить можно только после начала уборки.</string>
 </resources>

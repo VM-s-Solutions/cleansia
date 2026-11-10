@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import cz.cleansia.core.ui.theme.primaryText
+import cz.cleansia.customer.R
 import cz.cleansia.customer.ui.theme.Amber800
 import cz.cleansia.customer.ui.theme.Green400
 import cz.cleansia.customer.ui.theme.Green800
@@ -17,7 +18,8 @@ import cz.cleansia.customer.ui.theme.WarningStar
  * Colour keyed off the backend dispute status VALUE, which is 1-indexed — amber while pending, sky
  * while in review or awaiting a reply, green resolved, slate closed, red escalated.
  *
- * **Keyed on the numeric value, not the name**, because the name is not on the wire.
+ * **Keyed on the numeric value, not the name**, because the generated enum's name is the client's, not the
+ * backend's wording.
  * -> /flows/cancellation-refund-dispute
  */
 @Composable
@@ -39,4 +41,26 @@ internal fun disputeStatusInk(statusValue: Int?, scheme: ColorScheme): Color {
         6 -> scheme.error                           // Escalated
         else -> if (dark) Slate300 else Slate600    // Closed, and a status this build does not know
     }
+}
+
+fun disputeReasonLabelRes(value: Int?): Int? = when (value) {
+    1 -> R.string.dispute_reason_quality_issue
+    2 -> R.string.dispute_reason_service_not_provided
+    3 -> R.string.dispute_reason_service_incomplete
+    4 -> R.string.dispute_reason_damaged_property
+    5 -> R.string.dispute_reason_unauthorized_charge
+    6 -> R.string.dispute_reason_incorrect_amount
+    7 -> R.string.dispute_reason_other
+    8 -> R.string.dispute_reason_chargeback
+    else -> null
+}
+
+fun disputeStatusLabelRes(value: Int?): Int? = when (value) {
+    1 -> R.string.dispute_status_pending
+    2 -> R.string.dispute_status_under_review
+    3 -> R.string.dispute_status_waiting_for_response
+    4 -> R.string.dispute_status_resolved
+    5 -> R.string.dispute_status_closed
+    6 -> R.string.dispute_status_escalated
+    else -> null
 }

@@ -1463,4 +1463,12 @@
     <string name="booking_success_no_cleaner_cash">Keď ju nikto neprevezme, zrušíme ju zadarmo a pridáme vám kredit.</string>
     <string name="booking_success_cash_on_day">Zaplaťte v hotovosti upratovačovi v deň upratovania.</string>
     <string name="auth_email_placeholder">customer@example.com</string>
+    <string name="dispute_reason_chargeback">Spätné stornovanie platby</string>
+    <string name="dispute_status_pending">Čaká na vybavenie</string>
+    <string name="dispute_status_under_review">Posudzuje sa</string>
+    <string name="dispute_status_waiting_for_response">Čaká na vašu odpoveď</string>
+    <string name="dispute_status_resolved">Vyriešené</string>
+    <string name="dispute_status_closed">Uzavreté</string>
+    <string name="dispute_status_escalated">Odovzdané ďalej</string>
+    <string name="error_dispute_cleaning_not_started">Spor možno podať, až keď upratovanie začalo.</string>
 </resources>

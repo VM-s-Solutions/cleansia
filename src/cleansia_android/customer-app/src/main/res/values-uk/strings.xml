@@ -1463,4 +1463,12 @@
     <string name="booking_success_no_cleaner_cash">Якщо його ніхто не візьме, ми безкоштовно скасуємо його й нарахуємо вам кредит.</string>
     <string name="booking_success_cash_on_day">Сплатіть готівкою клінеру в день прибирання.</string>
     <string name="auth_email_placeholder">customer@example.com</string>
+    <string name="dispute_reason_chargeback">Повернення платежу банком</string>
+    <string name="dispute_status_pending">Очікує розгляду</string>
+    <string name="dispute_status_under_review">На розгляді</string>
+    <string name="dispute_status_waiting_for_response">Очікує вашої відповіді</string>
+    <string name="dispute_status_resolved">Вирішено</string>
+    <string name="dispute_status_closed">Закрито</string>
+    <string name="dispute_status_escalated">Передано далі</string>
+    <string name="error_dispute_cleaning_not_started">Оскаржити можна лише після початку прибирання.</string>
 </resources>

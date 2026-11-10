@@ -79,7 +79,9 @@ import cz.cleansia.customer.core.disputes.DisputeMessageDto
 import cz.cleansia.customer.core.disputes.openEvidencePdfFromUrl
 import cz.cleansia.core.format.disputeAllowsMessages
 import cz.cleansia.core.format.formatOrderDateTime
+import cz.cleansia.customer.ui.format.disputeReasonLabelRes
 import cz.cleansia.customer.ui.format.disputeStatusColor
+import cz.cleansia.customer.ui.format.disputeStatusLabelRes
 import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.customer.core.orders.ReceiptOpenResult
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
@@ -349,12 +351,12 @@ private fun HeaderCard(dispute: DisputeDetailsDto) {
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                text = dispute.reason?.name ?: "—",
+                text = disputeReasonLabelRes(dispute.reason?.value)?.let { stringResource(it) } ?: "—",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                 color = MaterialTheme.colorScheme.onSurface,
             )
             OrderStatusPill(
-                label = dispute.status?.name ?: "—",
+                label = disputeStatusLabelRes(dispute.status?.value)?.let { stringResource(it) } ?: "—",
                 ink = statusColor,
                 washAlpha = 0.14f,
             )

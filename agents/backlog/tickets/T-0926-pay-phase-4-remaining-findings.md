@@ -41,7 +41,7 @@ separate reviewer re-derives the amounts by hand and checks that each new test f
 
 Branch `fix/pay-findings`.
 
-- [ ] **P4.1** A rejected pay calculation logs at Error with the order, the employee and the reason; the admin-override question is noted for Mike.
+- [x] **P4.1** A rejected pay calculation logs at Error with the order, the employee and the reason; the admin-override question is noted for Mike.
 - [ ] **P4.2** Period-end reminders go only to cleaners with work in the period.
 - [ ] **P4.3** Blob paths use a fixed date format, and e-mails format the period in the recipient's language.
 - [x] **P4.4** $ A dispute charge on an already-invoiced job becomes a deduction on the cleaner's next invoice. Its design, including what happens when that invoice would go negative, is written in this ticket and approved by Mike before Phase 2 starts (P1.8, D12).
@@ -339,3 +339,9 @@ The plan's "Not doing" list. Anything found outside these slices is reported to 
 - 2026-11-10 — Mike answered "A" to folding mrc-1, F4, F5 and F6 into this phase; P4.5 is dropped. Phase 4 starts on `fix/pay-findings`, run with the lean workflow.
 - 2026-11-10 — mrc-1 built: `EmployeeInvoice` carries the Postgres `xmin` token, and a commit that loses on it comes back from the unit of work as `payroll.invoice.changed_concurrently` (admin app, five locales; partner and customer specs say why they cannot reach it). Race test on real Postgres: a cancel that read the invoice before a mark paid committed is refused, and the paid invoice keeps its jobs and its single cash set-off. `Initial` regenerated once, `20261109143607` to `20261109234823`; MS-2's one owed DEV reset moves to the new id.
 - 2026-11-10 — P4.4 built as the approved design: a charge on an invoiced job becomes a `DisputeCharge` line in the open period (`CarryDisputeCharge`), refused before any money moves when the job row is already charged, a line is already carried, the charge is above the job's pay, or no period is open. Both invoice writers take whole charges oldest first (`EmployeeInvoice.FitDisputeCharges`), move the rest to the open period (`MoveToPeriod`) and commit the move with the invoice or alone; `CreateFromOrderPays` throws below zero; a cleaner whose only rows wait gets no period-closed e-mail; the PDF skips the line; the job-row readers skip it. Admin hint and `api.dispute.cleaner_charge_not_chargeable` reworded in five locales. Postgres cases: the carried charge deducted by the next close and retaken after a cancel, the whole-charge wait, one charge per job under a double resolve, and the e-mail skip. No schema or contract change. Waits for the money review.
+- 2026-11-10 — P4.1 built: a pay calculation the validator rejects logs at Error with the order, the employee and the
+  reason key, so the alerting fires; a pay row that already exists is a redelivery and logs at Information. **Question
+  for Mike, not built:** an admin override to Completed (`AdminOverrideOrderStatus`) does not pass through
+  `CompleteOrder`, so it calculates no pay for the crew. The one exception is an override from In progress on an unpaid
+  cash order, whose door debt queues the crew's pay. Should every override to Completed pay the crew? Today it stays as
+  it is.

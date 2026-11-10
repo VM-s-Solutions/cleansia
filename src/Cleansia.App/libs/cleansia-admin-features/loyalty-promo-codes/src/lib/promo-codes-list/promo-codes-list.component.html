@@ -58,6 +58,8 @@
             emptyMessage: 'pages.promo_codes.empty_list'
           }"
           [loading]="facade.loading()"
+          [clickableRows]="true"
+          (rowClick)="facade.navigateToDetail($event)"
           (pageChange)="onPageChange($event)"
         />
       }

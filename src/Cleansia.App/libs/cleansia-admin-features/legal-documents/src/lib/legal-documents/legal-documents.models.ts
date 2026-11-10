@@ -50,7 +50,6 @@ export function pickPreviewLanguage(
 }
 
 export function getLegalVersionTableDefinition(
-  defs: { onPreview: (row: LegalDocumentVersionDto) => void },
   translate: TranslateService
 ): { columns: TableColumn<LegalDocumentVersionDto>[]; actions: TableAction<LegalDocumentVersionDto>[] } {
   return {
@@ -107,22 +106,11 @@ export function getLegalVersionTableDefinition(
         width: '14%',
       },
     ],
-    actions: [
-      {
-        icon: 'pi pi-eye',
-        tooltip: translate.instant('pages.legal_documents.preview'),
-        color: 'info',
-        onClick: (row: LegalDocumentVersionDto) => defs.onPreview(row),
-      },
-    ],
+    actions: [],
   };
 }
 
 export function getLegalTextTableDefinition(
-  defs: {
-    onShow: (row: LegalDocumentTextSummaryDto) => void;
-    isShown: (row: LegalDocumentTextSummaryDto) => boolean;
-  },
   translate: TranslateService
 ): { columns: TableColumn<LegalDocumentTextSummaryDto>[]; actions: TableAction<LegalDocumentTextSummaryDto>[] } {
   return {
@@ -146,14 +134,6 @@ export function getLegalTextTableDefinition(
         width: '50%',
       },
     ],
-    actions: [
-      {
-        icon: 'pi pi-eye',
-        tooltip: translate.instant('pages.legal_documents.show_language'),
-        color: 'info',
-        visible: (row: LegalDocumentTextSummaryDto) => !defs.isShown(row),
-        onClick: (row: LegalDocumentTextSummaryDto) => defs.onShow(row),
-      },
-    ],
+    actions: [],
   };
 }

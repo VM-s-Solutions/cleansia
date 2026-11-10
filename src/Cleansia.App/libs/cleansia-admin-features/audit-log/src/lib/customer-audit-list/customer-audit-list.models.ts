@@ -14,7 +14,6 @@ export interface CustomerAuditTemplates {
 }
 
 export function getCustomerAuditTableDefinition(
-  defs: { onView: (row: CustomerActionAuditDto) => void },
   translate: TranslateService,
   templates: CustomerAuditTemplates
 ): {
@@ -71,15 +70,7 @@ export function getCustomerAuditTableDefinition(
         customTemplate: templates.outcome,
       },
     ],
-    actions: [
-      {
-        icon: 'pi pi-eye',
-        color: 'primary',
-        tooltip: translate.instant('pages.audit_log.customers.entry.view'),
-        visible: (row: CustomerActionAuditDto) => !!row.id,
-        onClick: defs.onView,
-      },
-    ],
+    actions: [],
   };
 }
 

@@ -53,7 +53,6 @@ export class CustomersListComponent implements OnInit {
   protected readonly table = computed(() => {
     this.facade.lang();
     return getCustomerTableDefinition(
-      { onView: (row) => this.facade.openCustomer(row) },
       this.translate,
       this.statusTemplate()
     );

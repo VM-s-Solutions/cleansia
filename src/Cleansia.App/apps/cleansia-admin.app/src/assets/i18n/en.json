@@ -927,7 +927,6 @@
       "entry": {
         "title": "Audit Entry",
         "description": "The before and after snapshot recorded for this action. Changed fields are highlighted.",
-        "view": "View details",
         "back": "Back",
         "load_error": "Failed to load the audit entry",
         "changes_title": "Changes",
@@ -967,7 +966,6 @@
         "entry": {
           "title": "Customer action",
           "description": "What the customer did, from which client, and the evidence the platform kept about it.",
-          "view": "View details",
           "back": "Back",
           "load_error": "Failed to load the customer action",
           "when": "When",
@@ -992,7 +990,6 @@
       "timeline": {
         "load_error": "Failed to load the timeline",
         "no_entries": "Nothing recorded yet",
-        "view": "View details",
         "columns": {
           "occurred_on": "When",
           "source": "Source",
@@ -1399,10 +1396,8 @@
       "load_error": "Failed to load legal documents",
       "text_load_error": "Failed to load this text",
       "retry": "Try again",
-      "preview": "Preview",
       "preview_title": "Preview",
       "close_preview": "Close preview",
-      "show_language": "Show this language",
       "all_markets": "All markets",
       "audience": {
         "customer": "Customer",
@@ -1724,7 +1719,6 @@
       },
       "no_templates": "No templates found",
       "translation_key_tooltip": "Click to copy as template variable",
-      "view_translations": "View Translations",
       "back_to_email_types": "Back to Email Types",
       "no_translations_for_language": "No translations available for this language",
       "email_type_detail": {

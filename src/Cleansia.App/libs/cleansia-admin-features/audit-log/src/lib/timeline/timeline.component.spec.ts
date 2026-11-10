@@ -84,4 +84,45 @@ describe('TimelineComponent', () => {
     expect(customerAuditClient.timeline.mock.calls[2][2]).toBe('order-2');
     expect(offsetOfCall(2)).toBe(0);
   });
+
+  describe('row click', () => {
+    function renderRows(): HTMLTableRowElement[] {
+      customerAuditClient.timeline.mockReturnValue(
+        of(
+          PagedDataOfTimelineEntryDto.fromJS({
+            data: [
+              { source: TimelineSource.Customer, id: 'row-1', resourceType: 'Order', resourceId: 'order-1' },
+              { source: TimelineSource.Employee, id: 'row-2', resourceType: 'Order', resourceId: 'order-1' },
+            ],
+            total: 2,
+          })
+        )
+      );
+      fixture.componentRef.setInput('userId', 'user-1');
+      fixture.detectChanges();
+      return Array.from(fixture.nativeElement.querySelectorAll('tbody .table__row'));
+    }
+
+    it('opens a customer entry from its row, and leaves an employee row inert', () => {
+      const viewEntry = jest.spyOn(fixture.componentInstance, 'viewEntry');
+      const [customer, employee] = renderRows();
+
+      expect(customer.getAttribute('tabindex')).toBe('0');
+      expect(employee.getAttribute('tabindex')).toBeNull();
+      (customer.querySelector('td') as HTMLElement).click();
+      (employee.querySelector('td') as HTMLElement).click();
+
+      expect(viewEntry).toHaveBeenCalledTimes(1);
+      expect(viewEntry.mock.calls[0][0].id).toBe('row-1');
+    });
+
+    it('lets the resource link keep its own target instead of opening the entry', () => {
+      const viewEntry = jest.spyOn(fixture.componentInstance, 'viewEntry');
+      const [customer] = renderRows();
+
+      (customer.querySelector('a.cleansia-audit-link') as HTMLAnchorElement).click();
+
+      expect(viewEntry).not.toHaveBeenCalled();
+    });
+  });
 });

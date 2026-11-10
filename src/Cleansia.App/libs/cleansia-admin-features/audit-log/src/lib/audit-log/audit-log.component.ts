@@ -26,7 +26,6 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { AuditLogSegmentComponent } from '../audit-log-segment/audit-log-segment.component';
 import { AuditLogFacade } from './audit-log.facade';
 import {
-  getAuditLogTableActions,
   getAuditLogTableColumns,
   getOutcomeClass,
   getOutcomeLabelKey,
@@ -64,7 +63,7 @@ export class AuditLogComponent implements OnInit {
     this.facade.lang();
     return {
       columns: getAuditLogTableColumns(this.translate, this.outcomeTemplate()),
-      actions: getAuditLogTableActions(this.translate, (audit) => this.viewEntry(audit)),
+      actions: [],
     };
   });
 

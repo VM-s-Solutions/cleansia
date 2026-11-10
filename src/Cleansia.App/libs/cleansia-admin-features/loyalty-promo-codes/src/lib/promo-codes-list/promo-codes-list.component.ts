@@ -67,7 +67,6 @@ export class PromoCodesListComponent implements OnInit {
     this.facade.lang();
     return getPromoCodeTableDefinition(
       {
-        onView: (row) => this.facade.navigateToDetail(row),
         onEdit: (row) => this.facade.navigateToEdit(row),
         onDeactivate: (row) => this.facade.deactivate(row),
       },

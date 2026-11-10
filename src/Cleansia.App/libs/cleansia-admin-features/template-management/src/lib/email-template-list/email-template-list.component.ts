@@ -52,9 +52,6 @@ export class EmailTemplateListComponent implements OnInit, OnDestroy {
 
   private rebuildTableDefinitions(): void {
     const tableDef = getEmailTypeTableDefinition(
-      {
-        onViewDetail: (row) => this.facade.navigateToDetail(row.emailType),
-      },
       this.translate,
       this.languagesTemplate()
     );

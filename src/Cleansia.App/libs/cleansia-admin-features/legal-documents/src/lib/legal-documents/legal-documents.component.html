@@ -36,6 +36,8 @@
           emptyMessage: 'pages.legal_documents.no_versions'
         }"
         [loading]="facade.loading()"
+        [clickableRows]="true"
+        (rowClick)="facade.preview($event)"
       />
       }
     </cleansia-section>
@@ -92,6 +94,8 @@
           paginator: false,
           emptyMessage: 'pages.legal_documents.no_texts'
         }"
+        [clickableRows]="canShowText"
+        (rowClick)="facade.showLanguage($event)"
       />
 
       @if (facade.documentLoading()) {

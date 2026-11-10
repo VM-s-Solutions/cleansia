@@ -82,7 +82,7 @@ describe('legal-documents models', () => {
     });
 
     it('renders audience, type, market fallback, date, in-force and languages through their columns', () => {
-      const { columns } = getLegalVersionTableDefinition({ onPreview: jest.fn() }, translate);
+      const { columns } = getLegalVersionTableDefinition(translate);
       const valueOf = (id: string) => columns.find((c) => c.id === id)?.getValue?.(version);
 
       expect(valueOf('audience')).toBe('pages.legal_documents.audience.customer');
@@ -94,39 +94,20 @@ describe('legal-documents models', () => {
     });
 
     it('shows the market ISO code when the version is market-specific', () => {
-      const { columns } = getLegalVersionTableDefinition({ onPreview: jest.fn() }, translate);
+      const { columns } = getLegalVersionTableDefinition(translate);
       const market = columns.find((c) => c.id === 'market');
 
       expect(
         market?.getValue?.(LegalDocumentVersionDto.fromJS({ ...version, countryId: 'cz', countryIsoCode: 'CZ' }))
       ).toBe('CZ');
     });
-
-    it('has a single preview action that hands the row back', () => {
-      const onPreview = jest.fn();
-      const { actions } = getLegalVersionTableDefinition({ onPreview }, translate);
-
-      expect(actions).toHaveLength(1);
-      actions[0].onClick(version);
-      expect(onPreview).toHaveBeenCalledWith(version);
-    });
   });
 
   describe('getLegalTextTableDefinition', () => {
-    it('lists language, title and hash, and hides the show action on the language already shown', () => {
-      const onShow = jest.fn();
-      const [en, cs] = texts('en', 'cs');
-      const { columns, actions } = getLegalTextTableDefinition(
-        { onShow, isShown: (row) => row.language === 'en' },
-        translate
-      );
+    it('lists language, title and hash', () => {
+      const { columns } = getLegalTextTableDefinition(translate);
 
       expect(columns.map((c) => c.id)).toEqual(['language', 'title', 'contentHash']);
-      expect(actions).toHaveLength(1);
-      expect(actions[0].visible?.(en)).toBe(false);
-      expect(actions[0].visible?.(cs)).toBe(true);
-      actions[0].onClick(cs);
-      expect(onShow).toHaveBeenCalledWith(cs);
     });
   });
 });

@@ -9,6 +9,8 @@
       [actions]="actions"
       [config]="{ paginator: false, emptyMessage: 'pages.template_management.no_templates' }"
       [loading]="facade.loading()"
+      [clickableRows]="true"
+      (rowClick)="facade.navigateToDetail($event.emailType)"
     >
     </cleansia-table>
     }

@@ -14,7 +14,6 @@ export interface TimelineTemplates {
 }
 
 export function getTimelineTableDefinition(
-  defs: { onView: (row: TimelineEntryDto) => void },
   translate: TranslateService,
   templates: TimelineTemplates
 ): {
@@ -71,15 +70,7 @@ export function getTimelineTableDefinition(
         customTemplate: templates.outcome,
       },
     ],
-    actions: [
-      {
-        icon: 'pi pi-eye',
-        color: 'primary',
-        tooltip: translate.instant('pages.audit_log.timeline.view'),
-        visible: hasTimelineEntryDetail,
-        onClick: defs.onView,
-      },
-    ],
+    actions: [],
   };
 }
 

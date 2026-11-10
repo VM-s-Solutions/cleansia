@@ -59,6 +59,9 @@ export class LegalDocumentsComponent implements AfterViewInit, OnDestroy {
   textColumns!: TableColumn<LegalDocumentTextSummaryDto>[];
   textActions!: TableAction<LegalDocumentTextSummaryDto>[];
 
+  protected readonly canShowText = (row: LegalDocumentTextSummaryDto): boolean =>
+    row.language !== this.facade.language();
+
   private readonly destroy$ = new Subject<void>();
 
   ngAfterViewInit(): void {
@@ -91,20 +94,11 @@ export class LegalDocumentsComponent implements AfterViewInit, OnDestroy {
   }
 
   private rebuildTableDefinitions(): void {
-    const versionDef = getLegalVersionTableDefinition(
-      { onPreview: (row) => this.facade.preview(row) },
-      this.translate
-    );
+    const versionDef = getLegalVersionTableDefinition(this.translate);
     this.versionColumns = versionDef.columns;
     this.versionActions = versionDef.actions;
 
-    const textDef = getLegalTextTableDefinition(
-      {
-        onShow: (row) => this.facade.showLanguage(row),
-        isShown: (row) => row.language === this.facade.language(),
-      },
-      this.translate
-    );
+    const textDef = getLegalTextTableDefinition(this.translate);
     this.textColumns = textDef.columns;
     this.textActions = textDef.actions;
   }

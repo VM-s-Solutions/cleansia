@@ -5,9 +5,6 @@ import { formatDate } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 
 export function getEmailTypeTableDefinition(
-  defs: {
-    onViewDetail: (row: EmailTypeListItemDto) => void;
-  },
   translate: TranslateService,
   languagesTemplate?: TemplateRef<EmailTypeListItemDto>
 ): { columns: TableColumn<EmailTypeListItemDto>[]; actions: TableAction<EmailTypeListItemDto>[] } {
@@ -45,13 +42,6 @@ export function getEmailTypeTableDefinition(
         width: '15%',
       },
     ],
-    actions: [
-      {
-        icon: 'pi pi-eye',
-        tooltip: translate.instant('pages.template_management.view_translations'),
-        color: 'info',
-        onClick: (row: EmailTypeListItemDto) => defs.onViewDetail(row),
-      },
-    ],
+    actions: [],
   };
 }

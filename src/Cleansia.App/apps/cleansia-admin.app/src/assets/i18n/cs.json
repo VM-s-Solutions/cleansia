@@ -927,7 +927,6 @@
       "entry": {
         "title": "Záznam auditu",
         "description": "Snímek stavu před a po této akci. Změněná pole jsou zvýrazněna.",
-        "view": "Zobrazit detail",
         "back": "Zpět",
         "load_error": "Nepodařilo se načíst záznam auditu",
         "changes_title": "Změny",
@@ -967,7 +966,6 @@
         "entry": {
           "title": "Akce zákazníka",
           "description": "Co zákazník udělal, z jakého klienta a jaké důkazy si k tomu platforma uložila.",
-          "view": "Zobrazit detail",
           "back": "Zpět",
           "load_error": "Akci zákazníka se nepodařilo načíst",
           "when": "Kdy",
@@ -992,7 +990,6 @@
       "timeline": {
         "load_error": "Časovou osu se nepodařilo načíst",
         "no_entries": "Zatím nic zaznamenáno",
-        "view": "Zobrazit detail",
         "columns": {
           "occurred_on": "Kdy",
           "source": "Původ",
@@ -1502,10 +1499,8 @@
       "load_error": "Právní dokumenty se nepodařilo načíst",
       "text_load_error": "Tento text se nepodařilo načíst",
       "retry": "Zkusit znovu",
-      "preview": "Náhled",
       "preview_title": "Náhled",
       "close_preview": "Zavřít náhled",
-      "show_language": "Zobrazit tento jazyk",
       "all_markets": "Všechny trhy",
       "audience": {
         "customer": "Zákazník",
@@ -1827,7 +1822,6 @@
       },
       "no_templates": "Žádné šablony nenalezeny",
       "translation_key_tooltip": "Klikněte pro zkopírování jako proměnnou šablony",
-      "view_translations": "Zobrazit překlady",
       "back_to_email_types": "Zpět na typy e-mailů",
       "no_translations_for_language": "Pro tento jazyk nejsou k dispozici žádné překlady",
       "email_type_detail": {

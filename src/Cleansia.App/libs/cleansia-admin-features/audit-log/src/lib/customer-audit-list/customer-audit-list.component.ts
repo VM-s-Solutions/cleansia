@@ -62,7 +62,6 @@ export class CustomerAuditListComponent implements OnInit {
   protected readonly table = computed(() => {
     this.facade.lang();
     return getCustomerAuditTableDefinition(
-      { onView: (audit) => this.viewEntry(audit) },
       this.translate,
       {
         user: this.userTemplate(),

@@ -1,6 +1,7 @@
 import {
   booleanAttribute,
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   computed,
   inject,
@@ -23,7 +24,7 @@ import {
   NgControl,
   NgModel,
 } from '@angular/forms';
-import { Subject } from 'rxjs';
+import { Subject, takeUntil } from 'rxjs';
 import { InputSize } from './cleansia-base-form.models';
 
 @Component({
@@ -35,6 +36,7 @@ export abstract class CleansiaBaseFormInputComponent
   implements ControlValueAccessor, OnInit, OnChanges, OnDestroy
 {
   private injector = inject(Injector);
+  private readonly cdr = inject(ChangeDetectorRef);
   protected ngControl: NgControl | null = null;
 
   formControl = new FormControl(); // Initialized here, updated in ngOnInit
@@ -110,6 +112,10 @@ export abstract class CleansiaBaseFormInputComponent
         }
       }
     }
+
+    // A form-level markAllAsTouched reaches no input of this OnPush view, so the control's own
+    // events mark it for check, or a failed submit leaves an untouched field's error hidden.
+    this.formControl?.events.pipe(takeUntil(this.destroyed$)).subscribe(() => this.cdr.markForCheck());
 
     if (this.disabledInput()) {
       this.formControl.disable();

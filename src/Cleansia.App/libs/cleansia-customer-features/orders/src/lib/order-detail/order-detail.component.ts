@@ -11,7 +11,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CleansiaButtonComponent, CleansiaTextareaComponent } from '@cleansia/components';
-import { OrderStatusLabelPipe } from '@cleansia/pipes';
+import { EnumLabelPipe, OrderStatusLabelPipe, enumLabelKey } from '@cleansia/pipes';
 import {
   dirtinessLevelOption,
   DisputeReason,
@@ -48,6 +48,7 @@ interface TimelineStep {
   done: boolean;
   current: boolean;
   meta?: string;
+  metaKey?: string;
   danger?: boolean;
 }
 
@@ -89,6 +90,7 @@ interface EntryDetail {
     CleansiaButtonComponent,
     CleansiaTextareaComponent,
     OrderStatusLabelPipe,
+    EnumLabelPipe,
     OrderPreferredOfferComponent,
     AmountDueComponent,
   ],
@@ -290,7 +292,7 @@ export class OrderDetailComponent implements OnInit {
 
     const steps: TimelineStep[] = [
       { key: 'awaiting', done: true, current: !paid && !refunded && !failed,
-        meta: order.paymentType?.name },
+        metaKey: enumLabelKey('payment_type', order.paymentType?.name) },
     ];
 
     if (failed) {

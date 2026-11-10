@@ -260,6 +260,22 @@ describe('CleansiaCustomerNavbarComponent (mobile sheet)', () => {
     expect(switcher<LanguageSwitcherStubComponent>('.customer-navbar__right cleansia-language-switcher').appendTo()).toBeNull();
   });
 
+  it('shows no profile name in the user card', () => {
+    const store = TestBed.inject(MockStore);
+    store.overrideSelector(selectCustomerCurrentUser, {
+      firstName: 'Jana',
+      lastName: 'Nováková',
+      email: 'jana@example.test',
+      profile: { name: 'Employee' },
+    } as unknown as ReturnType<typeof selectCustomerCurrentUser>);
+    store.refreshState();
+    fixture.detectChanges();
+
+    const card = fixture.nativeElement.querySelector('.customer-navbar__user-card') as HTMLElement;
+    expect(card.textContent).toContain('Jana');
+    expect(card.textContent).not.toContain('Employee');
+  });
+
   it('on a recurring-bookings page, lights only the recurring row, not Cleansia Plus', async () => {
     const router = TestBed.inject(Router);
     router.resetConfig([{ path: 'membership/recurring', component: BlankPageStubComponent }]);

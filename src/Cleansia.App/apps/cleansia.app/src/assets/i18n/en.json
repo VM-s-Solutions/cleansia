@@ -2355,7 +2355,12 @@
       "paid": "Paid",
       "failed": "Failed",
       "refunded": "Refunded",
-      "disputed": "Disputed"
+      "disputed": "Disputed",
+      "partially_refunded": "Partially refunded"
+    },
+    "payment_type": {
+      "cash": "Cash",
+      "card": "Card"
     }
   },
   "aria": {

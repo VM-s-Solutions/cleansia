@@ -166,7 +166,6 @@ export class CleansiaCustomerNavbarComponent implements OnInit, OnDestroy {
   });
 
   readonly isEmailConfirmed = computed(() => this.currentUser()?.isEmailConfirmed ?? false);
-  readonly userProfileType = computed(() => this.currentUser()?.profile?.name ?? null);
 
   constructor() {
     if (this.isBrowser) {

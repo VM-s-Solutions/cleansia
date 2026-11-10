@@ -3580,7 +3580,9 @@
       "lines_required": "Vyberte aspoň jednu službu alebo balík na vrátenie.",
       "nothing_refundable": "Na tejto objednávke už nie je čo vrátiť.",
       "order_not_refundable": "Túto objednávku nie je možné vrátiť.",
-      "override_reason_required": "Na vrátenie mimo povolenej lehoty sa vyžaduje odôvodnenie."
+      "override_reason_required": "Na vrátenie mimo povolenej lehoty sa vyžaduje odôvodnenie.",
+      "not_found": "Táto refundácia sa pri tejto objednávke nenašla.",
+      "not_retryable": "Túto refundáciu nemožno zopakovať. Zopakovať možno len neodoslanú refundáciu a refundácia zo sporu sa opakuje opätovným vyriešením sporu."
     },
     "service": {
       "category_not_found": "Kategória služby sa nenašla.",

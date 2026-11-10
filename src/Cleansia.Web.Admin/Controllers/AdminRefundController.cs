@@ -26,6 +26,19 @@ public class AdminRefundController(IMediator mediator) : ApiController(mediator)
         return Ok(result);
     }
 
+    [HttpPost("retry")]
+    [Permission(Policy.CanIssueRefund)]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(RetryRefund.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> RetryRefund([FromBody] RetryRefund.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<RetryRefund.Response>(result);
+    }
+
     [HttpPost("partial")]
     [Permission(Policy.CanIssueRefund)]
     // S5 / ADR-0003: narrow brute-force window on this money-out mutation. Reuses the REGISTERED "auth"

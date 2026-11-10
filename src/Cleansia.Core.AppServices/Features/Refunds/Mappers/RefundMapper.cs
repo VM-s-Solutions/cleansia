@@ -29,7 +29,7 @@ public static class RefundMapper
             RepaymentMethod: refund.RepaymentMethod?.MapToCode(),
             RepaymentReference: refund.RepaymentReference,
             StripeRefundId: refund.StripeRefundId,
-            CanRetry: refund.CanRetry());
+            CanRetry: refund.CanRetry(refund.Order.CurrentStatus));
 
     /// <summary>
     /// A failed date tells money still owed (Failed, Bounced) from a refund that had nothing left to give back
@@ -68,12 +68,12 @@ public static class RefundMapper
     /// A dispute's refund is retried by resolving the dispute again; a cancellation's only once its order is
     /// cancelled, since a guest's refund is claimed before a cancel that may have failed.
     /// </summary>
-    public static bool CanRetry(this Refund refund) =>
+    public static bool CanRetry(this Refund refund, OrderStatus orderStatus) =>
         refund.MapToState() == RefundState.NotSent
         && refund.MapToOrigin() switch
         {
             RefundOrigin.Dispute => false,
-            RefundOrigin.Cancellation => refund.Order!.CurrentStatus == OrderStatus.Cancelled,
+            RefundOrigin.Cancellation => orderStatus == OrderStatus.Cancelled,
             _ => true,
         };
 }

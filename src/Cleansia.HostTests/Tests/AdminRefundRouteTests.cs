@@ -1,4 +1,6 @@
+using System.Net.Http.Json;
 using System.Text.Json;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Payments;
 using Cleansia.HostTests.Infrastructure;
@@ -12,6 +14,7 @@ namespace Cleansia.HostTests.Tests;
 public sealed class AdminRefundRouteTests(HostTestPostgresFixture db) : AuthzHostTestBase(db)
 {
     private const string GetPagedRoute = "/api/AdminRefund/get-paged";
+    private const string RetryRoute = "/api/AdminRefund/retry";
     private const string SupportId = "refund-support";
     private const string AccountantId = "refund-accountant";
 
@@ -70,5 +73,17 @@ public sealed class AdminRefundRouteTests(HostTestPostgresFixture db) : AuthzHos
         Assert.Equal(s.NotSentId, row.GetProperty("id").GetString());
         Assert.Equal(nameof(RefundState.NotSent), row.GetProperty("state").GetProperty("name").GetString());
         Assert.True(row.GetProperty("canRetry").GetBoolean());
+    }
+
+    [Fact]
+    public async Task Support_Clears_The_Retry_Gate_An_Accountant_Does_Not_And_A_Refund_Of_Another_Order_Is_Not_Found()
+    {
+        var s = await ArrangeAsync();
+
+        HttpAssert.IsForbidden(await Admin(AccountantId, AdminRole.Accountant)
+            .PostAsJsonAsync(RetryRoute, new { orderId = "any", refundId = s.NotSentId }));
+        await HttpAssert.AssertBusinessErrorAsync(
+            await Admin(SupportId, AdminRole.Support).PostAsJsonAsync(RetryRoute, new { orderId = "another-order", refundId = s.NotSentId }),
+            BusinessErrorMessage.RefundNotFound);
     }
 }

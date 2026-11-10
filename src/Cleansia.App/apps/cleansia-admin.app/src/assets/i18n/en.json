@@ -3580,7 +3580,9 @@
       "lines_required": "Select at least one service or package to refund.",
       "nothing_refundable": "There is nothing left to refund on this order.",
       "order_not_refundable": "This order is not eligible for a refund.",
-      "override_reason_required": "A justification is required to refund outside the allowed window."
+      "override_reason_required": "A justification is required to refund outside the allowed window.",
+      "not_found": "This refund was not found on this order.",
+      "not_retryable": "This refund cannot be retried. Only a refund that was not sent can be retried, and a dispute's refund is retried by resolving the dispute again."
     },
     "service": {
       "category_not_found": "Service category not found.",

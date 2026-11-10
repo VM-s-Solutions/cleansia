@@ -47,9 +47,9 @@ Branch `fix/pay-findings`.
 - [x] **P4.4** $ A dispute charge on an already-invoiced job becomes a deduction on the cleaner's next invoice. Its design, including what happens when that invoice would go negative, is written in this ticket and approved by Mike before Phase 2 starts (P1.8, D12).
 - [ ] ~~**P4.5** Optional: a QR Platba code in the payment block of CZK invoice PDFs.~~ Dropped: Mike accepted the leaner Phase 4 on 2026-11-10.
 - [x] **mrc-1** An invoice gets a concurrency token, so two admin actions on one invoice cannot both commit (a Mark paid racing a Cancel would set the cash off twice). Folded in by Mike on 2026-11-10.
-- [ ] **F4** Partner web's Cash I hold text says the cash is set off when the next invoice is issued, not against the next payout. Folded in by Mike on 2026-11-10.
+- [x] **F4** Partner web's Cash I hold text says the cash is set off when the next invoice is issued, not against the next payout. Folded in by Mike on 2026-11-10.
 - [x] **F5** Android's partner invoice list keeps its rows when the employee-id lookup or a refresh fails, as iOS does since P3.6. Folded in by Mike on 2026-11-10.
-- [ ] **F6** Close now is not offered on a period that has not started yet. Folded in by Mike on 2026-11-10.
+- [x] **F6** Close now is not offered on a period that has not started yet. Folded in by Mike on 2026-11-10.
 
 ## Design (P1.8)
 
@@ -355,3 +355,13 @@ The plan's "Not doing" list. Anything found outside these slices is reported to 
   the generic error snackbar; with nothing loaded the empty list stays pullable. The list is never read without the
   caller's own id. A failed refresh already kept its rows. Unlike iOS there is no full-screen error with retry on a
   first-load failure; the pull is the retry.
+- 2026-11-10 — F6 built: admin's Close now is offered on an open period only once its start date is today or earlier
+  (UTC), the same check `ClosePayPeriod` makes on the server.
+- 2026-11-10 — F4 built: partner web's Cash I hold text says the cash is set off when the next invoice is issued, in
+  all five locales and in the mobile apps' words.
+- 2026-11-10 — Review fixes. P4.1: the handler read the validation pipeline's generic sentinel instead of the refusal
+  keys, so a redelivery logged at Error and every rejection logged "A validation problem occurred."; it now reads the
+  validation errors (`AuditErrorCode.Resolve` for the reason), and its tests return the pipeline's real shape. mrc-1
+  gains the swapped race (a mark paid losing to a cancel) and P4.4 a mixed-currency case; both passed before, as the
+  code was already right. Not built, by proportionality: an admin action that commits between the night run's invoice
+  commit and its PDF stamp makes the stamp lose on the token, leaving the invoice without its PDF until Regenerate PDF.

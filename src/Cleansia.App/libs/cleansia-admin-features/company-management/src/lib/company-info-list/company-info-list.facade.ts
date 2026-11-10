@@ -139,11 +139,13 @@ export class CompanyInfoListFacade extends UnsubscribeControlDirective {
   }
 
   private deleteCompanyInfoConfirmed(id: string): void {
+    this.loading.set(true);
     this.adminClient.adminCompanyClient
       .delete(id)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null))
+        catchError(() => of(null)),
+        finalize(() => this.loading.set(false))
       )
       .subscribe((response: DeleteCompanyInfoResponse | null) => {
         if (response) {

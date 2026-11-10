@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { AdminClient, CompanyInfoListItem, PagedDataOfCompanyInfoListItem } from '@cleansia/admin-services';
 import { DialogService, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { EMPTY, of } from 'rxjs';
+import { EMPTY, of, Subject } from 'rxjs';
 import { CompanyInfoListFacade } from './company-info-list.facade';
 
 describe('CompanyInfoListFacade', () => {
@@ -79,5 +79,21 @@ describe('CompanyInfoListFacade', () => {
       expect(deleteMock).not.toHaveBeenCalled();
       expect(getPagedMock).not.toHaveBeenCalled();
     });
+  });
+
+  it('holds the list loading while a company delete is in flight, and clears it after it lands or fails', () => {
+    const landing = new Subject<never>();
+    deleteMock.mockReturnValue(landing.asObservable());
+    facade.deleteCompanyInfo(CompanyInfoListItem.fromJS({ id: 'ci-1' }));
+    expect(facade.loading()).toBe(true);
+    landing.complete();
+    expect(facade.loading()).toBe(false);
+
+    const failing = new Subject<never>();
+    deleteMock.mockReturnValue(failing.asObservable());
+    facade.deleteCompanyInfo(CompanyInfoListItem.fromJS({ id: 'ci-1' }));
+    expect(facade.loading()).toBe(true);
+    failing.error(new Error('boom'));
+    expect(facade.loading()).toBe(false);
   });
 });

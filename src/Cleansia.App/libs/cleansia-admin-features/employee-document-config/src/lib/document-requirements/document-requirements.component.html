@@ -42,7 +42,7 @@
             [columns]="columns"
             [actions]="actions"
             [config]="tableConfig"
-            [loading]="facade.loading()"
+            [loading]="facade.loading() || facade.saving()"
           />
         </cleansia-section>
 

@@ -195,11 +195,13 @@ export class ExtraManagementFacade extends UnsubscribeControlDirective {
   }
 
   private deactivateExtraConfirmed(id: string): void {
+    this.loading.set(true);
     this.adminClient.adminExtraClient
       .deactivate(id)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null))
+        catchError(() => of(null)),
+        finalize(() => this.loading.set(false))
       )
       .subscribe((response) => {
         if (response) {
@@ -214,11 +216,13 @@ export class ExtraManagementFacade extends UnsubscribeControlDirective {
   activateExtra(extra: ExtraListItem): void {
     if (!extra.id) return;
 
+    this.loading.set(true);
     this.adminClient.adminExtraClient
       .activate(extra.id)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null))
+        catchError(() => of(null)),
+        finalize(() => this.loading.set(false))
       )
       .subscribe((response) => {
         if (response) {
@@ -246,11 +250,13 @@ export class ExtraManagementFacade extends UnsubscribeControlDirective {
   }
 
   private deleteExtraConfirmed(id: string): void {
+    this.loading.set(true);
     this.adminClient.adminExtraClient
       .delete(id)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null))
+        catchError(() => of(null)),
+        finalize(() => this.loading.set(false))
       )
       .subscribe((response) => {
         if (response) {

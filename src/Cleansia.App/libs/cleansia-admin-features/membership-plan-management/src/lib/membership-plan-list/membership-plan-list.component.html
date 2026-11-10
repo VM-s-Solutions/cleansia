@@ -68,7 +68,7 @@
             emptyMessage: 'pages.membership_plans.empty',
             hover: true
           }"
-          [loading]="facade.loading()"
+          [loading]="facade.loading() || facade.deactivating()"
           (pageChange)="onPageChange($event)"
         />
       }

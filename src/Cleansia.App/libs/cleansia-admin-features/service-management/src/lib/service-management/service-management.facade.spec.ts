@@ -7,7 +7,7 @@ import {
 } from '@cleansia/admin-services';
 import { DialogService, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { EMPTY, of, throwError } from 'rxjs';
+import { EMPTY, of, Subject, throwError } from 'rxjs';
 import { ServiceManagementFacade } from './service-management.facade';
 
 describe('ServiceManagementFacade', () => {
@@ -239,5 +239,21 @@ describe('ServiceManagementFacade', () => {
       expect(facade.defaultCurrencyCode()).toBeNull();
       expect(facade.formatCurrency(45.1)).toBe('45,10');
     });
+  });
+
+  it('holds the list loading while a service switch-on is in flight, and clears it after it lands or fails', () => {
+    const landing = new Subject<never>();
+    activateMock.mockReturnValue(landing.asObservable());
+    facade.activateService(ServiceListItem.fromJS({ id: 's-1' }));
+    expect(facade.loading()).toBe(true);
+    landing.complete();
+    expect(facade.loading()).toBe(false);
+
+    const failing = new Subject<never>();
+    activateMock.mockReturnValue(failing.asObservable());
+    facade.activateService(ServiceListItem.fromJS({ id: 's-1' }));
+    expect(facade.loading()).toBe(true);
+    failing.error(new Error('boom'));
+    expect(facade.loading()).toBe(false);
   });
 });

@@ -106,11 +106,13 @@ export class LanguageManagementFacade extends UnsubscribeControlDirective {
   }
 
   private deleteLanguageConfirmed(id: string): void {
+    this.loading.set(true);
     this.adminClient.adminLanguageClient
       .delete(id)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null))
+        catchError(() => of(null)),
+        finalize(() => this.loading.set(false))
       )
       .subscribe((response) => {
         if (response) {

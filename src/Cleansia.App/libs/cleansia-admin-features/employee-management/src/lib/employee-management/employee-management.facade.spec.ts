@@ -8,7 +8,7 @@ import {
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
-import { EMPTY, of, throwError } from 'rxjs';
+import { EMPTY, of, Subject, throwError } from 'rxjs';
 import { EmployeeManagementFacade } from './employee-management.facade';
 
 describe('EmployeeManagementFacade', () => {
@@ -160,5 +160,21 @@ describe('EmployeeManagementFacade', () => {
       expect(request).toBeInstanceOf(RejectEmployeeRequest);
       expect(request.toJSON()).toEqual({ reason: 'incomplete profile' });
     });
+  });
+
+  it('holds the list loading while an approval is in flight, and clears it after it lands or fails', () => {
+    const landing = new Subject<never>();
+    approveMock.mockReturnValue(landing.asObservable());
+    facade.approveEmployee('emp-1', 'country-1');
+    expect(facade.loading()).toBe(true);
+    landing.complete();
+    expect(facade.loading()).toBe(false);
+
+    const failing = new Subject<never>();
+    approveMock.mockReturnValue(failing.asObservable());
+    facade.approveEmployee('emp-1', 'country-1');
+    expect(facade.loading()).toBe(true);
+    failing.error(new Error('boom'));
+    expect(facade.loading()).toBe(false);
   });
 });

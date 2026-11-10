@@ -158,11 +158,13 @@ export class EmployeeManagementFacade extends UnsubscribeControlDirective {
     const request = new ApproveEmployeeRequest();
     request.workCountryId = workCountryId;
     request.notes = notes;
+    this.loading.set(true);
     this.adminClient.adminEmployeeClient
       .approve(employeeId, request)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null))
+        catchError(() => of(null)),
+        finalize(() => this.loading.set(false))
       )
       .subscribe((response) => {
         if (response) {
@@ -215,9 +217,14 @@ export class EmployeeManagementFacade extends UnsubscribeControlDirective {
   }
 
   private loadCountries(onDone?: () => void): void {
+    this.loading.set(true);
     this.adminClient.adminCountryClient
       .getOverview()
-      .pipe(takeUntil(this.destroyed$), catchError(() => of([])))
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => of([])),
+        finalize(() => this.loading.set(false))
+      )
       .subscribe((countries) => {
         const currentLang = this.translate.currentLang;
         const options: ICleansiaSelectOption[] = (countries ?? []).map((country) => {
@@ -237,11 +244,13 @@ export class EmployeeManagementFacade extends UnsubscribeControlDirective {
   rejectEmployee(employeeId: string, reason: string): void {
     const request = new RejectEmployeeRequest();
     request.reason = reason;
+    this.loading.set(true);
     this.adminClient.adminEmployeeClient
       .reject(employeeId, request)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null))
+        catchError(() => of(null)),
+        finalize(() => this.loading.set(false))
       )
       .subscribe((response) => {
         if (response) {

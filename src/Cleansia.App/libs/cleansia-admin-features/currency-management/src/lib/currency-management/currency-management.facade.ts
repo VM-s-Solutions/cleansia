@@ -63,11 +63,13 @@ export class CurrencyManagementFacade extends UnsubscribeControlDirective {
   }
 
   private setDefaultCurrencyConfirmed(id: string): void {
+    this.loading.set(true);
     this.adminClient.adminCurrencyClient
       .setDefault(id)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null))
+        catchError(() => of(null)),
+        finalize(() => this.loading.set(false))
       )
       .subscribe((response) => {
         if (response) {
@@ -94,11 +96,13 @@ export class CurrencyManagementFacade extends UnsubscribeControlDirective {
   }
 
   private deactivateCurrencyConfirmed(id: string): void {
+    this.loading.set(true);
     this.adminClient.adminCurrencyClient
       .deactivate(id)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null))
+        catchError(() => of(null)),
+        finalize(() => this.loading.set(false))
       )
       .subscribe((response) => {
         if (response) {
@@ -126,11 +130,13 @@ export class CurrencyManagementFacade extends UnsubscribeControlDirective {
   }
 
   private activateCurrencyConfirmed(id: string): void {
+    this.loading.set(true);
     this.adminClient.adminCurrencyClient
       .activate(id)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null))
+        catchError(() => of(null)),
+        finalize(() => this.loading.set(false))
       )
       .subscribe((response) => {
         if (response) {
@@ -162,11 +168,13 @@ export class CurrencyManagementFacade extends UnsubscribeControlDirective {
   }
 
   private deleteCurrencyConfirmed(id: string): void {
+    this.loading.set(true);
     this.adminClient.adminCurrencyClient
       .delete(id)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null))
+        catchError(() => of(null)),
+        finalize(() => this.loading.set(false))
       )
       .subscribe((response: unknown) => {
         if (response) {

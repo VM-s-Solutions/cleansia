@@ -235,11 +235,13 @@ export class InvoiceManagementFacade extends UnsubscribeControlDirective {
   downloadInvoice(invoice: EmployeeInvoiceDto): void {
     if (!invoice.id) return;
 
+    this.loading.set(true);
     this.adminClient.adminInvoiceClient
       .download(invoice.id)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null))
+        catchError(() => of(null)),
+        finalize(() => this.loading.set(false))
       )
       .subscribe((response) => {
         if (response && response.data) {

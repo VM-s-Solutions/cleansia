@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { AdminClient, AdminUserListItem, PagedDataOfAdminUserListItem } from '@cleansia/admin-services';
 import { DialogService, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { EMPTY, of } from 'rxjs';
+import { EMPTY, of, Subject } from 'rxjs';
 import { AdminUserManagementFacade } from './admin-user-management.facade';
 
 describe('AdminUserManagementFacade', () => {
@@ -95,5 +95,21 @@ describe('AdminUserManagementFacade', () => {
       expect(activateMock).not.toHaveBeenCalled();
       expect(getPagedMock).not.toHaveBeenCalled();
     });
+  });
+
+  it('holds the list loading while a user switch-off is in flight, and clears it after it lands or fails', () => {
+    const landing = new Subject<never>();
+    deactivateMock.mockReturnValue(landing.asObservable());
+    facade.toggleUserStatus(AdminUserListItem.fromJS({ id: 'u-1', isActive: true }));
+    expect(facade.loading()).toBe(true);
+    landing.complete();
+    expect(facade.loading()).toBe(false);
+
+    const failing = new Subject<never>();
+    deactivateMock.mockReturnValue(failing.asObservable());
+    facade.toggleUserStatus(AdminUserListItem.fromJS({ id: 'u-1', isActive: true }));
+    expect(facade.loading()).toBe(true);
+    failing.error(new Error('boom'));
+    expect(facade.loading()).toBe(false);
   });
 });

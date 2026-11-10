@@ -240,9 +240,11 @@ end date** moves the open period's end earlier or later, never past its last all
 and new end in the audit log. → [Admin — pay periods](/admin-app/pay-periods)
 
 Each employee's invoice work uses fresh dependencies under the period's operator, receiving only its
-ID, dates, close instant and the start and end dates. Invoice, reference, cash-setoff and document commits
+ID, its start and end dates and the close instant. Invoice, reference, cash-setoff and document commits
 see the period already `Closed`. A failed employee scope is disposed before a plain-email fallback starts in a
-clean scope. A failed successor or read step ends the tick, with the period already closed. These writes
+clean scope. A failed successor step ends the tick before the commit, so nothing is saved and the period
+stays open for the next night. A failed read of the cleaners to invoice comes after the commit, so it ends
+the tick with the period already closed, and the sweep invoices it. These writes
 record what is due; they do not transfer a payout.
 
 **The period-end reminder** goes 3 days and 1 day before the end, and only to a cleaner who has a job or a

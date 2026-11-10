@@ -121,11 +121,11 @@ struct DisputeRowCard: View {
                     .foregroundColor(CleansiaColors.onSurface)
                 Spacer()
                 DisputeStatusPill(
-                    label: DisputeStatusPresentation.label(dispute.statusName),
+                    label: L10n.Disputes.status(dispute.statusValue),
                     color: DisputeStatusPresentation.color(dispute.statusValue)
                 )
             }
-            Text(verbatim: dispute.reasonName ?? "—")
+            Text(verbatim: L10n.Disputes.reason(dispute.reasonValue))
                 .font(CleansiaTypography.bodyMedium)
                 .foregroundColor(CleansiaColors.onSurfaceVariant)
                 .lineLimit(1)
@@ -216,16 +216,14 @@ private struct DisputesEmptyView: View {
                 DisputeRowCard(dispute: DisputeListEntry(
                     id: "1",
                     displayOrderNumber: "1042",
-                    reasonName: "Quality issue",
-                    statusName: "Pending",
+                    reasonValue: 1,
                     statusValue: 1,
                     createdOn: Date()
                 ))
                 DisputeRowCard(dispute: DisputeListEntry(
                     id: "2",
                     displayOrderNumber: "1043",
-                    reasonName: "Damaged property",
-                    statusName: "Resolved",
+                    reasonValue: 4,
                     statusValue: 4,
                     createdOn: Date()
                 ))

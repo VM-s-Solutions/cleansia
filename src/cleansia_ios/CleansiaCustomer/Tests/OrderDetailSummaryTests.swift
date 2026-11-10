@@ -160,14 +160,14 @@ final class OrderDetailSummaryTests: XCTestCase {
         XCTAssertEqual(status(value: 5), .disputed)
     }
 
-    /// `PartiallyRefunded` (6) has no label on either platform, so it falls back
-    /// to the wire name rather than reading as one of the five above.
-    func testPartiallyRefundedFallsBackToTheWireName() {
-        XCTAssertEqual(status(value: 6, name: "PartiallyRefunded"), .named("PartiallyRefunded"))
+    func testPartiallyRefundedIsItsOwnStatus() {
+        XCTAssertEqual(status(value: 6, name: "PartiallyRefunded"), .partiallyRefunded)
+        XCTAssertEqual(status(value: 6), .partiallyRefunded)
     }
 
-    func testAPaymentStatusWithNoCodeAndNoNameIsNotRendered() {
-        XCTAssertNil(status(value: 6))
+    func testAnUnmappedPaymentStatusFallsBackToTheWireNameOrIsNotRendered() {
+        XCTAssertEqual(status(value: 9, name: "Newer"), .named("Newer"))
+        XCTAssertNil(status(value: 9))
         XCTAssertNil(OrderPriceBreakdown.resolve(OrderFixtures.detail()).paymentStatus)
     }
 

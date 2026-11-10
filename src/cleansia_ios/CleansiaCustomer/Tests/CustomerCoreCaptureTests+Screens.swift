@@ -190,8 +190,8 @@ extension CustomerCoreCaptureTests {
         let opened = Date(timeIntervalSince1970: 1_762_340_400)
         let cards = [DisputeFixtures.entry(id: "d-1"), DisputeFixtures.entry(id: "d-2", statusValue: 3)]
         let thread = DisputeDetail(
-            id: "d-1", displayOrderNumber: "1042", reasonName: "Quality issue",
-            description: "Cleaner skipped the kitchen entirely", statusName: "Pending", statusValue: 1,
+            id: "d-1", displayOrderNumber: "1042", reasonValue: 1,
+            description: "Cleaner skipped the kitchen entirely", statusValue: 1,
             createdOn: opened,
             messages: [DisputeMessage(
                 id: "m-1", body: "We are looking into it.", isStaffMessage: true,

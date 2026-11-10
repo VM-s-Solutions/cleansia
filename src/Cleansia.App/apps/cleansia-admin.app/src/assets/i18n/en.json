@@ -2951,7 +2951,7 @@
             },
             "refund_needs_retry": {
               "title": "A refund needs a retry",
-              "body": "The refund of {{amount}} on order {{orderNumber}} has not gone through, and it is not retried automatically. Retry it once from the dispute or the order: that checks it with Stripe, records it if Stripe made it and closes it if Stripe failed it. A refund Stripe failed cannot be sent again: then refund the money another way — the full refund if it was not the one that failed, a partial refund of other lines, or credit."
+              "body": "The refund of {{amount}} on order {{orderNumber}} has not gone through, and it is not retried automatically. Open the order and use its Refunds button: retry the refund once there, which checks it with Stripe, records it if Stripe made it and closes it if Stripe failed it, or record how the customer was repaid. A refund Stripe failed cannot be sent again: then refund the money another way — the full refund if it was not the one that failed, a partial refund of other lines, or credit — and record it there."
             },
             "refund_without_cancel": {
               "title": "A refund was asked for a cancellation that did not go through",

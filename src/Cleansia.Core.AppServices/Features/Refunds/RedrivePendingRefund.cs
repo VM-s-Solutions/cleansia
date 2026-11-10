@@ -119,6 +119,9 @@ public class RedrivePendingRefund
                 && (await refundRepository.GetByIdAsync(row.Id, cancellationToken))?.Status
                     == RefundStatus.Failed;
 
+            // An approved refund that did not go out is told at the first run past the minimum age; a
+            // cancellation's keeps its hourly retries and is told after the day.
+            var alertDue = alertKey == AdminNotificationEventCatalog.RefundNeedsRetry || row.CreatedOn <= command.AlertBefore;
             if (result is { IsSuccess: true })
             {
                 wentThrough = true;
@@ -139,7 +142,7 @@ public class RedrivePendingRefund
                         cancellationToken);
                 }
             }
-            else if (!nothingOwed && !raisedBySeam && row.CreatedOn <= command.AlertBefore
+            else if (!nothingOwed && !raisedBySeam && alertDue
                 && !string.IsNullOrEmpty(row.TenantId)
                 && !await userNotificationRepository.AnyForEventIgnoringTenantAsync(
                     row.TenantId, alertKey, "orderId", row.OrderId, cancellationToken))

@@ -357,6 +357,69 @@ public class RedrivePendingRefundsTests
         Assert.Equal("1000 CZK", alert.Args["amount"]);
     }
 
+    /// <summary>
+    /// A refund an administrator approved that Stripe refused is raised at the first hourly run once it is half an
+    /// hour old, so somebody hears within about ninety minutes that the money did not go out.
+    /// </summary>
+    [Theory]
+    [InlineData(RefundReason.AdminDiscretion, "refund:order-1:admin:line-1")]
+    [InlineData(RefundReason.AdminDiscretion, "refund:order-1:admin:full")]
+    [InlineData(RefundReason.DisputeResolution, "refund:order-1:dispute:dispute-1")]
+    public async Task Another_Actions_Refund_Pending_Half_An_Hour_Is_Raised_For_A_Retry(RefundReason reason, string refundKey)
+    {
+        Arrange(PendingRefund("order-1", TimeSpan.FromMinutes(31), reason: reason, refundKey: refundKey));
+
+        var result = await RunAsync();
+
+        Assert.Equal(1, result.Value!.Alerted);
+        Assert.Equal(AdminNotificationEventCatalog.RefundNeedsRetry, Assert.Single(_raised).Key);
+    }
+
+    [Fact]
+    public async Task Another_Actions_Refund_Pending_Under_Half_An_Hour_Raises_Nothing()
+    {
+        Arrange(PendingRefund(
+            "order-1", TimeSpan.FromMinutes(29), reason: RefundReason.DisputeResolution, refundKey: "refund:order-1:dispute:dispute-1"));
+
+        var result = await RunAsync();
+
+        Assert.Equal(0, result.Value!.Alerted);
+        Assert.Empty(_raised);
+    }
+
+    [Fact]
+    public async Task A_Cancellations_Refund_Is_Still_Retried_Quietly_For_A_Day_And_Raised_After_It()
+    {
+        var young = PendingRefund("order-1", TimeSpan.FromHours(2));
+        var old = PendingRefund("order-2", TimeSpan.FromHours(25));
+        Arrange(young, old);
+        RedriveFails(young);
+        RedriveFails(old);
+
+        var result = await RunAsync();
+
+        Assert.Equal(1, result.Value!.Alerted);
+        var alert = Assert.Single(_raised);
+        Assert.Equal(AdminNotificationEventCatalog.RefundStuck, alert.Key);
+        Assert.Equal("order-2", alert.Args["orderId"]);
+    }
+
+    [Fact]
+    public async Task Another_Actions_Refund_Raised_Within_The_Hour_Is_Not_Raised_Again_On_The_Next_Run()
+    {
+        Arrange(PendingRefund(
+            "order-1", TimeSpan.FromMinutes(95), reason: RefundReason.DisputeResolution, refundKey: "refund:order-1:dispute:dispute-1"));
+        _userNotifications
+            .Setup(r => r.AnyForEventIgnoringTenantAsync(TenantId, AdminNotificationEventCatalog.RefundNeedsRetry, "orderId", "order-1",
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        var result = await RunAsync();
+
+        Assert.Equal(0, result.Value!.Alerted);
+        Assert.Empty(_raised);
+    }
+
     private Refund PendingFullRefund(decimal creditApplied = 0m)
     {
         var refund = PendingRefund(

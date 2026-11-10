@@ -13,9 +13,10 @@ namespace Cleansia.Core.AppServices.Features.Refunds;
 
 /// <summary>
 /// Every hour, re-drive the card refunds of cancelled orders that Stripe refused or could not be reached
-/// for, each on the key it was created with, and tell the company's administrators about any refund still
-/// owed and not through a day after it was asked for, saying whether this job retries it or they must
-/// (owner ruling 2026-09-28). A refund with nothing left to give back is closed instead. A refund Stripe
+/// for, each on the key it was created with, and tell the company's administrators about a cancellation's
+/// refund still owed and not through a day after it was asked for, and about any other refund still owed
+/// at the first run once it is half an hour old, saying whether this job retries it or they must
+/// (owner rulings 2026-09-28 and 2026-11-08). A refund with nothing left to give back is closed instead. A refund Stripe
 /// made on the key and then failed is closed too, and raised for a retry at once, however young.
 /// → /flows/cancellation-refund-dispute#refund
 /// </summary>

@@ -90,6 +90,59 @@ public class InvoiceConcurrentAdminActionTests(PostgresContainerFixture fixture)
             transactional: false);
     }
 
+    [Fact]
+    public async Task A_Mark_Paid_That_Read_The_Invoice_Before_A_Cancel_Committed_Is_Refused_And_The_Cash_Is_Set_Off_Once()
+    {
+        await TestMethod(
+            arrange: SeedAsync,
+            act: async provider =>
+            {
+                var generated = await SendAsync(provider, new GenerateInvoice.Command(_employeeId, _payPeriodId));
+                Assert.True(generated.IsSuccess, $"GenerateInvoice failed with: {generated.Error?.Message}");
+                var invoiceId = Assert.Single(generated.Value!.InvoiceIds);
+
+                using (var scope = provider.CreateScope())
+                {
+                    var context = scope.ServiceProvider.GetRequiredService<CleansiaDbContext>();
+                    var invoice = await context.Set<EmployeeInvoice>().SingleAsync(i => i.Id == invoiceId);
+                    invoice.Approve("admin@cleansia.test");
+                    await context.CommitAsync(CancellationToken.None);
+                }
+
+                using var payingAdmin = provider.CreateScope();
+                await payingAdmin.ServiceProvider.GetRequiredService<IEmployeeInvoiceRepository>()
+                    .GetByIdAsync(invoiceId, CancellationToken.None);
+
+                var cancelled = await SendAsync(provider, new CancelInvoice.Command(invoiceId, "Wrong deduction"));
+                Assert.True(cancelled.IsSuccess, $"CancelInvoice failed with: {cancelled.Error?.Message}");
+
+                var paid = await payingAdmin.ServiceProvider.GetRequiredService<IMediator>()
+                    .Send(new MarkInvoicePaid.Command(invoiceId, "Transfer 1", null));
+                return (InvoiceId: invoiceId, Paid: paid);
+            },
+            assert: async (CleansiaDbContext context, (string InvoiceId, BusinessResult<MarkInvoicePaid.Response> Paid) result) =>
+            {
+                Assert.True(result.Paid.IsFailure);
+                var refusal = Assert.IsAssignableFrom<IValidationResult>(result.Paid);
+                Assert.Contains(refusal.Errors, e => e.Message == BusinessErrorMessage.InvoiceChangedConcurrently);
+
+                var invoice = await context.Set<EmployeeInvoice>()
+                    .IgnoreQueryFilters()
+                    .SingleAsync(i => i.Id == result.InvoiceId);
+                Assert.True(invoice.IsCancelled);
+                Assert.NotEqual(EmployeeInvoiceStatus.Paid, invoice.Status);
+
+                // Set off by the invoice, handed back by the cancel: 250 held, for the corrected invoice to set off once.
+                var ledger = await context.Set<CashLedgerEntry>()
+                    .IgnoreQueryFilters()
+                    .Where(e => e.EmployeeId == _employeeId && e.CurrencyId == CurrencyId)
+                    .Select(e => e.Amount)
+                    .ToListAsync();
+                Assert.Equal([-250m, 250m, 250m], ledger.Order());
+            },
+            transactional: false);
+    }
+
     private static async Task<BusinessResult<TResponse>> SendAsync<TResponse>(
         IServiceProvider provider, IRequest<BusinessResult<TResponse>> request)
     {

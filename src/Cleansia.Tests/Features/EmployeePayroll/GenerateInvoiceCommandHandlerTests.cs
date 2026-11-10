@@ -306,6 +306,24 @@ public class GenerateInvoiceCommandHandlerTests
     }
 
     [Fact]
+    public async Task A_Charge_In_One_Currency_Leaves_The_Invoice_In_Another_Alone()
+    {
+        var charge = DisputeCharge(150m, currencyId: "currency-czk");
+        ArrangeOrderPays(PayrollMockFactory.OrderPay(basePay: 100m, currencyId: "currency-eur"), charge);
+        ArrangeOpenPeriod();
+        var added = new List<EmployeeInvoice>();
+        _invoiceRepository.Setup(r => r.Add(It.IsAny<EmployeeInvoice>())).Callback<EmployeeInvoice>(added.Add);
+
+        var result = await CreateHandler().Handle(new GenerateInvoice.Command(EmployeeId, PayPeriodId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        var invoice = Assert.Single(added);
+        Assert.Equal("currency-eur", invoice.CurrencyId);
+        Assert.Equal((100m, 0m, 100m), (invoice.SubTotal, invoice.DeductionAmount, invoice.TotalAmount));
+        Assert.Equal((OpenPeriodId, (string?)null), (charge.PayPeriodId, charge.EmployeeInvoiceId));
+    }
+
+    [Fact]
     public async Task A_Charge_Alone_Issues_No_Invoice_Claims_No_Reference_And_Waits_In_The_Open_Period()
     {
         var charge = DisputeCharge(150m);
@@ -451,9 +469,9 @@ public class GenerateInvoiceCommandHandlerTests
         _payPeriodRepository.Setup(r => r.GetActivePeriodAsync(It.IsAny<CancellationToken>())).ReturnsAsync(open);
     }
 
-    private static OrderEmployeePay DisputeCharge(decimal amount)
+    private static OrderEmployeePay DisputeCharge(decimal amount, string currencyId = PayrollMockFactory.CurrencyId)
     {
-        var job = PayrollMockFactory.OrderPay(basePay: 600m, payPeriodId: "period-earlier");
+        var job = PayrollMockFactory.OrderPay(basePay: 600m, payPeriodId: "period-earlier", currencyId: currencyId);
         job.AssignToInvoice("invoice-earlier");
         return job.CarryDisputeCharge(PayPeriodId, "dispute-1", amount, "Bathroom left uncleaned");
     }

@@ -7,6 +7,7 @@ import {
   DisputeDetails,
   DisputeSettlementPreference,
   DisputeStatus,
+  PaymentType,
   ResolveDisputeCleanerCharge,
   ResolveDisputeCommand,
   UpdateDisputeStatusCommand,
@@ -39,6 +40,7 @@ export class DisputeDetailFacade extends UnsubscribeControlDirective {
 
   readonly dispute = signal<DisputeDetails | null>(null);
   readonly crew = signal<AssignedEmployeeDto[]>([]);
+  readonly paidInCash = signal<boolean>(false);
   readonly loading = signal<boolean>(false);
   readonly hasError = signal<boolean>(false);
 
@@ -55,6 +57,13 @@ export class DisputeDetailFacade extends UnsubscribeControlDirective {
   readonly settlesInCredit = computed(
     () => this.dispute()?.settlementPreference === DisputeSettlementPreference.Credit
   );
+
+  readonly settlementLabelKey = computed(() => {
+    if (this.settlesInCredit()) return 'pages.disputes_management.resolve.settlement.credit';
+    return this.paidInCash()
+      ? 'pages.disputes_management.resolve.settlement.cash_refund'
+      : 'pages.disputes_management.resolve.settlement.card_refund';
+  });
 
   readonly isTerminal = computed(() => {
     const status = this.dispute()?.status?.value;
@@ -78,7 +87,7 @@ export class DisputeDetailFacade extends UnsubscribeControlDirective {
       .subscribe((response) => {
         if (response) {
           this.dispute.set(response);
-          this.loadCrew(response.orderId);
+          this.loadOrder(response.orderId);
         }
       });
   }
@@ -165,15 +174,8 @@ export class DisputeDetailFacade extends UnsubscribeControlDirective {
       });
   }
 
-  private loadCrew(orderId: string | undefined): void {
-    if (
-      !orderId ||
-      this.isTerminal() ||
-      !this.permissions.hasPolicy(Policy.CanResolveDispute) ||
-      !this.permissions.hasPolicy(Policy.CanViewOrderDetailAdmin)
-    ) {
-      return;
-    }
+  private loadOrder(orderId: string | undefined): void {
+    if (!orderId || !this.permissions.hasPolicy(Policy.CanViewOrderDetailAdmin)) return;
 
     this.orderClient
       .details(orderId)
@@ -181,7 +183,12 @@ export class DisputeDetailFacade extends UnsubscribeControlDirective {
         takeUntil(this.destroyed$),
         catchError(() => of(null))
       )
-      .subscribe((order) => this.crew.set(order?.assignedEmployees ?? []));
+      .subscribe((order) => {
+        this.paidInCash.set(order?.paymentType?.value === PaymentType.Cash);
+        if (!this.isTerminal() && this.permissions.hasPolicy(Policy.CanResolveDispute)) {
+          this.crew.set(order?.assignedEmployees ?? []);
+        }
+      });
   }
 
   private moneyLabel(amount: number | undefined): string {

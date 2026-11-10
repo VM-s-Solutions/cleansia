@@ -71,6 +71,10 @@
           <span class="detail-grid__label">{{ 'pages.disputes_management.columns.reason' | translate }}</span>
           <span class="detail-grid__value">{{ facade.reasonLabelKey() | translate }}</span>
         </div>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.disputes_management.resolve.settlement_preference' | translate }}</span>
+          <span class="detail-grid__value">{{ facade.settlementLabelKey() | translate }}</span>
+        </div>
         @if (hasRefundAmount()) {
         <div class="detail-grid__item">
           <span class="detail-grid__label">{{ 'pages.disputes_management.detail.refund_requested' | translate }}</span>
@@ -217,18 +221,6 @@
       </p>
       } @else {
       <form [formGroup]="resolveForm" class="cleansia-dispute-detail__form">
-        <div class="detail-grid">
-          <div class="detail-grid__item">
-            <span class="detail-grid__label">{{ 'pages.disputes_management.resolve.settlement_preference' | translate }}</span>
-            <span class="detail-grid__value">
-              @if (facade.settlesInCredit()) {
-              {{ 'pages.disputes_management.resolve.settlement.credit' | translate }}
-              } @else {
-              {{ 'pages.disputes_management.resolve.settlement.card_refund' | translate }}
-              }
-            </span>
-          </div>
-        </div>
         <cleansia-text-input
           formControlName="refundAmount"
           dataType="number"
@@ -239,6 +231,8 @@
           <i class="pi pi-info-circle"></i>
           @if (facade.settlesInCredit()) {
           {{ 'pages.disputes_management.resolve.credit_disclaimer' | translate }}
+          } @else if (facade.paidInCash()) {
+          {{ 'pages.disputes_management.resolve.cash_warning' | translate }}
           } @else {
           {{ 'pages.disputes_management.resolve.refund_disclaimer' | translate }}
           }

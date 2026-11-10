@@ -7,6 +7,7 @@ import {
   DisputeSettlementPreference,
   DisputeStatus,
   OrderItem,
+  PaymentType,
 } from '@cleansia/admin-services';
 import { PermissionService, Policy, SnackbarService } from '@cleansia/services';
 import { TranslateModule } from '@ngx-translate/core';
@@ -264,6 +265,59 @@ describe('DisputeDetailComponent', () => {
       expect(text).toContain('pages.disputes_management.resolve.refund_disclaimer');
       expect(text).not.toContain('pages.disputes_management.resolve.settlement.credit');
       expect(text).not.toContain('pages.disputes_management.resolve.credit_disclaimer');
+    });
+
+    const paidBy = (paymentType: PaymentType) =>
+      orderClient.details.mockReturnValue(of(OrderItem.fromJS({ paymentType: { value: paymentType }, assignedEmployees: [] })));
+
+    it('reads a card refund on a cash order as money back, and warns that an amount will be refused', () => {
+      disputeClient.details.mockReturnValue(of(openDispute(DisputeSettlementPreference.CardRefund)));
+      paidBy(PaymentType.Cash);
+      const text = setup().el.textContent;
+
+      expect(text).toContain('pages.disputes_management.resolve.settlement.cash_refund');
+      expect(text).toContain('pages.disputes_management.resolve.cash_warning');
+      expect(text).not.toContain('pages.disputes_management.resolve.refund_disclaimer');
+    });
+
+    it('keeps the credit wording on a cash order, with no warning', () => {
+      disputeClient.details.mockReturnValue(of(openDispute(DisputeSettlementPreference.Credit)));
+      paidBy(PaymentType.Cash);
+      const text = setup().el.textContent;
+
+      expect(text).toContain('pages.disputes_management.resolve.settlement.credit');
+      expect(text).not.toContain('pages.disputes_management.resolve.cash_warning');
+    });
+
+    it('reads a card refund on a card order as a card refund', () => {
+      disputeClient.details.mockReturnValue(of(openDispute(DisputeSettlementPreference.CardRefund)));
+      paidBy(PaymentType.Card);
+      const text = setup().el.textContent;
+
+      expect(text).toContain('pages.disputes_management.resolve.settlement.card_refund');
+      expect(text).not.toContain('pages.disputes_management.resolve.cash_warning');
+    });
+
+    it('shows the choice on a settled dispute to an admin who cannot resolve', () => {
+      deniedPolicies.add(Policy.CanResolveDispute);
+      disputeClient.details.mockReturnValue(
+        of(
+          DisputeDetails.fromJS({
+            id: 'dispute-1',
+            orderId: 'order-1',
+            status: { type: 'DisputeStatus', name: 'Resolved', value: DisputeStatus.Resolved },
+            settlementPreference: DisputeSettlementPreference.CardRefund,
+            messages: [],
+          })
+        )
+      );
+      withCrew();
+      const text = setup().el.textContent;
+
+      expect(orderClient.details).toHaveBeenCalledWith('order-1');
+      expect(component.crewOptions()).toEqual([]);
+      expect(text).toContain('pages.disputes_management.resolve.settlement_preference');
+      expect(text).toContain('pages.disputes_management.resolve.settlement.card_refund');
     });
 
     it('offers a charge to the cleaner only when the order has a crew', () => {

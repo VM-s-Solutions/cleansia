@@ -7,6 +7,7 @@ import {
   DisputeSettlementPreference,
   DisputeStatus,
   OrderItem,
+  PaymentType,
   ResolveDisputeCleanerCharge,
   ResolveDisputeCommand,
   UpdateDisputeStatusCommand,
@@ -332,7 +333,7 @@ describe('DisputeDetailFacade', () => {
     expect(facade.crew().map((employee) => employee.employeeId)).toEqual(['emp-1', 'emp-2']);
   });
 
-  it('does not load the crew of a settled dispute', () => {
+  it('loads the order of a settled dispute, but not its crew', () => {
     disputeClient.details.mockReturnValue(
       of(
         DisputeDetails.fromJS({
@@ -342,24 +343,60 @@ describe('DisputeDetailFacade', () => {
         })
       )
     );
+    orderClient.details.mockReturnValue(
+      of(
+        OrderItem.fromJS({
+          paymentType: { value: PaymentType.Cash, name: 'Cash' },
+          assignedEmployees: [{ id: 'seat-1', employeeId: 'emp-1', fullName: 'Jana Nová' }],
+        })
+      )
+    );
+
+    facade.loadDispute('dispute-1');
+
+    expect(orderClient.details).toHaveBeenCalledWith('order-1');
+    expect(facade.crew()).toEqual([]);
+    expect(facade.paidInCash()).toBe(true);
+  });
+
+  it('loads the order but not the crew for an admin who cannot resolve', () => {
+    grantedPolicies.delete(Policy.CanResolveDispute);
+    disputeClient.details.mockReturnValue(of(details));
+    orderClient.details.mockReturnValue(
+      of(OrderItem.fromJS({ assignedEmployees: [{ id: 'seat-1', employeeId: 'emp-1', fullName: 'Jana Nová' }] }))
+    );
+
+    facade.loadDispute('dispute-1');
+
+    expect(orderClient.details).toHaveBeenCalledWith('order-1');
+    expect(facade.crew()).toEqual([]);
+  });
+
+  it('does not load the order for an admin who may not view it', () => {
+    grantedPolicies.delete(Policy.CanViewOrderDetailAdmin);
+    disputeClient.details.mockReturnValue(of(details));
 
     facade.loadDispute('dispute-1');
 
     expect(orderClient.details).not.toHaveBeenCalled();
-    expect(facade.crew()).toEqual([]);
+    expect(facade.paidInCash()).toBe(false);
   });
 
-  it.each([Policy.CanResolveDispute, Policy.CanViewOrderDetailAdmin])(
-    'does not load the crew without %s',
-    (policy) => {
-      grantedPolicies.delete(policy);
-      disputeClient.details.mockReturnValue(of(details));
+  it.each([
+    ['cash, card refund chosen', PaymentType.Cash, DisputeSettlementPreference.CardRefund, 'cash_refund'],
+    ['cash, credit chosen', PaymentType.Cash, DisputeSettlementPreference.Credit, 'credit'],
+    ['card, card refund chosen', PaymentType.Card, DisputeSettlementPreference.CardRefund, 'card_refund'],
+    ['card, credit chosen', PaymentType.Card, DisputeSettlementPreference.Credit, 'credit'],
+  ])('labels the settlement the customer chose on a %s order', (_case, paymentType, settlementPreference, label) => {
+    disputeClient.details.mockReturnValue(
+      of(DisputeDetails.fromJS({ id: 'dispute-1', orderId: 'order-1', settlementPreference }))
+    );
+    orderClient.details.mockReturnValue(of(OrderItem.fromJS({ paymentType: { value: paymentType } })));
 
-      facade.loadDispute('dispute-1');
+    facade.loadDispute('dispute-1');
 
-      expect(orderClient.details).not.toHaveBeenCalled();
-    }
-  );
+    expect(facade.settlementLabelKey()).toBe(`pages.disputes_management.resolve.settlement.${label}`);
+  });
 
   it('leaves the crew empty when the order cannot be read', () => {
     disputeClient.details.mockReturnValue(of(details));

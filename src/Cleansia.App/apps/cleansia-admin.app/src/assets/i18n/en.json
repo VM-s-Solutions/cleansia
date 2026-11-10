@@ -2713,9 +2713,11 @@
         "settlement_preference": "Customer's choice of settlement",
         "settlement": {
           "card_refund": "Refund to card",
-          "credit": "Credit to their balance"
+          "credit": "Credit to their balance",
+          "cash_refund": "Money back (paid in cash)"
         },
         "credit_disclaimer": "The customer chose credit: the amount is added to their credit balance instead of being refunded to the card.",
+        "cash_warning": "This order was paid in cash, so a refund amount will be refused. Return the money by hand and leave the amount empty.",
         "charge": {
           "toggle": "Charge the cleaner",
           "hint": "Only when the dispute finds the cleaner at fault. The amount is deducted from their pay for this order, and they see the reason on it. When that pay is already invoiced, the amount comes off their next invoice.",

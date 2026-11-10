@@ -2713,9 +2713,11 @@
         "settlement_preference": "Spôsob vyrovnania zvolený zákazníkom",
         "settlement": {
           "card_refund": "Vrátenie na kartu",
-          "credit": "Kredit na účet"
+          "credit": "Kredit na účet",
+          "cash_refund": "Vrátenie peňazí (platené v hotovosti)"
         },
         "credit_disclaimer": "Zákazník zvolil kredit: suma sa pripíše na jeho kreditný zostatok, nevracia sa na kartu.",
+        "cash_warning": "Táto zákazka bola zaplatená v hotovosti, takže suma na vrátenie bude odmietnutá. Peniaze vráťte osobne a sumu nechajte prázdnu.",
         "charge": {
           "toggle": "Strhnúť upratovačovi",
           "hint": "Len ak reklamácia zistila chybu upratovača. Suma sa strhne z jeho odmeny za túto zákazku a dôvod pri nej uvidí. Ak je odmena už vyfakturovaná, suma sa strhne z jeho ďalšej faktúry.",

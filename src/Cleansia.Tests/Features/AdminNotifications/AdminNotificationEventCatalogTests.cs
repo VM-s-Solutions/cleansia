@@ -47,6 +47,23 @@ public sealed class AdminNotificationEventCatalogTests
     }
 
     [Fact]
+    public void Critical_Is_Inside_All_Without_Duplicates_And_Every_Other_Key_Is_A_Pinned_Info_Key()
+    {
+        Assert.Equal(AdminNotificationEventCatalog.Critical.Count, AdminNotificationEventCatalog.Critical.Distinct().Count());
+        Assert.Empty(AdminNotificationEventCatalog.Critical.Except(AdminNotificationEventCatalog.All));
+        Assert.Equal(
+            new[]
+            {
+                AdminNotificationEventCatalog.OrderNew,
+                AdminNotificationEventCatalog.PaymentFailed,
+                AdminNotificationEventCatalog.CompanyWindDownRequested,
+                AdminNotificationEventCatalog.CompanyWindDownRun,
+                AdminNotificationEventCatalog.CompanyArchived,
+            }.OrderBy(k => k),
+            AdminNotificationEventCatalog.All.Except(AdminNotificationEventCatalog.Critical).OrderBy(k => k));
+    }
+
+    [Fact]
     public void The_Domain_Keys_The_AppServices_Table_And_The_Feed_Keyset_Are_One_Set()
     {
         Assert.Equal(AdminNotificationEventCatalog.All, AdminEventCatalog.All.Select(e => e.Key).ToList());

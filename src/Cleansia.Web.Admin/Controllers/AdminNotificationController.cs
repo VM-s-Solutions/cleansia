@@ -25,9 +25,12 @@ public class AdminNotificationController(IMediator mediator) : ApiController(med
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<PagedData<UserNotificationDto>> GetPaged(
-        [FromQuery] GetPagedUserNotifications.Request request, CancellationToken cancellationToken)
+        [FromQuery] GetPagedUserNotifications.Request request,
+        CancellationToken cancellationToken,
+        [FromQuery] bool critical = false)
     {
         request.Audience = NotificationFeedAudience.Admin;
+        request.ShowCriticalOnly(critical);
         return await Mediator.Send(request, cancellationToken);
     }
 

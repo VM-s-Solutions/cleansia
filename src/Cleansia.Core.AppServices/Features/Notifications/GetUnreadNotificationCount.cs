@@ -21,7 +21,9 @@ public class GetUnreadNotificationCount
 
             var count = await userNotificationRepository.GetUnreadCountAsync(
                 userId,
-                NotificationFeedEventKeys.For(query.Audience),
+                query.Audience == NotificationFeedAudience.Admin
+                    ? AdminNotificationEventCatalog.Critical
+                    : NotificationFeedEventKeys.For(query.Audience),
                 cancellationToken);
 
             return BusinessResult.Success(new UnreadNotificationCountDto(count));

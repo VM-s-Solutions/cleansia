@@ -109,7 +109,11 @@ public sealed class AdminNotificationRouteTests(HostTestPostgresFixture db) : Au
 
         var count = await client.GetAsync(UnreadCountRoute);
         HttpAssert.IsOk(count);
-        Assert.Equal(2, (await BodyAsync(count)).GetProperty("count").GetInt32());
+        Assert.Equal(1, (await BodyAsync(count)).GetProperty("count").GetInt32());
+
+        var critical = await BodyAsync(await client.GetAsync($"{GetPagedRoute}?critical=true"));
+        Assert.Equal(1, critical.GetProperty("total").GetInt32());
+        Assert.Equal(_ownDisputeRowId, Assert.Single(critical.GetProperty("data").EnumerateArray()).GetProperty("id").GetString());
     }
 
     [Fact]
@@ -135,7 +139,7 @@ public sealed class AdminNotificationRouteTests(HostTestPostgresFixture db) : Au
         var markRead = await client.PostAsJsonAsync(MarkReadRoute, new { id = _ownDisputeRowId });
         HttpAssert.IsOk(markRead);
         Assert.Equal(_ownDisputeRowId, (await BodyAsync(markRead)).GetProperty("id").GetString());
-        Assert.Equal(1, (await BodyAsync(await client.GetAsync(UnreadCountRoute))).GetProperty("count").GetInt32());
+        Assert.Equal(0, (await BodyAsync(await client.GetAsync(UnreadCountRoute))).GetProperty("count").GetInt32());
 
         var markAll = await client.PostAsJsonAsync(MarkAllReadRoute, new { });
         HttpAssert.IsOk(markAll);

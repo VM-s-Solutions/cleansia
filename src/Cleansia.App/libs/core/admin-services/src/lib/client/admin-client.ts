@@ -10683,9 +10683,10 @@ export interface IAdminNotificationClient {
      * @param sort (optional) 
      * @param offset (optional) 
      * @param limit (optional) 
+     * @param critical (optional) 
      * @return OK
      */
-    getPaged(audience?: NotificationFeedAudience | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfUserNotificationDto>;
+    getPaged(audience?: NotificationFeedAudience | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined, critical?: boolean | undefined): Observable<PagedDataOfUserNotificationDto>;
     /**
      * @return OK
      */
@@ -10720,9 +10721,10 @@ export class AdminNotificationClient implements IAdminNotificationClient {
      * @param sort (optional) 
      * @param offset (optional) 
      * @param limit (optional) 
+     * @param critical (optional) 
      * @return OK
      */
-    getPaged(audience?: NotificationFeedAudience | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfUserNotificationDto> {
+    getPaged(audience?: NotificationFeedAudience | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined, critical?: boolean | undefined): Observable<PagedDataOfUserNotificationDto> {
         let url = this.baseUrl + "/api/AdminNotification/get-paged?";
         if (audience === null)
             throw new globalThis.Error("The parameter 'audience' cannot be null.");
@@ -10745,6 +10747,10 @@ export class AdminNotificationClient implements IAdminNotificationClient {
             throw new globalThis.Error("The parameter 'limit' cannot be null.");
         else if (limit !== undefined)
             url += "Limit=" + encodeURIComponent("" + limit) + "&";
+        if (critical === null)
+            throw new globalThis.Error("The parameter 'critical' cannot be null.");
+        else if (critical !== undefined)
+            url += "critical=" + encodeURIComponent("" + critical) + "&";
         url = url.replace(/[?&]$/, "");
 
         let options : any = {

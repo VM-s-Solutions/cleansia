@@ -57,7 +57,9 @@ public sealed class GetUnreadNotificationCountHandlerTests : IDisposable
                 UserNotification.Create(UserId, NotificationEventCatalog.LoyaltyTierUpgrade, "{}", null),
                 read,
                 UserNotification.Create(UserId, NotificationEventCatalog.NewJobsAvailable, "{}", null),
-                UserNotification.Create(OtherUserId, NotificationEventCatalog.OrderCleanerAssigned, "{}", null));
+                UserNotification.Create(OtherUserId, NotificationEventCatalog.OrderCleanerAssigned, "{}", null),
+                UserNotification.Create(UserId, AdminNotificationEventCatalog.DisputeFiled, "{}", null),
+                UserNotification.Create(UserId, AdminNotificationEventCatalog.OrderNew, "{}", null));
             await seed.CommitAsync(CancellationToken.None);
         }
     }
@@ -88,6 +90,13 @@ public sealed class GetUnreadNotificationCountHandlerTests : IDisposable
     {
         await SeedAsync();
         Assert.Equal(1, await CountAsync(NotificationFeedAudience.Partner));
+    }
+
+    [Fact]
+    public async Task Admin_Badge_Counts_Only_The_Critical_Rows()
+    {
+        await SeedAsync();
+        Assert.Equal(1, await CountAsync(NotificationFeedAudience.Admin));
     }
 
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider

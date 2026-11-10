@@ -50,4 +50,26 @@ public static class AdminNotificationEventCatalog
         CompanyArchived,
         ReferralHeld,
     ];
+
+    /// <summary>
+    /// The events a person must act on. The console's badge and bell count these alone; every other key
+    /// is info, shown on the Notifications page and e-mailed as before.
+    /// </summary>
+    public static readonly IReadOnlyList<string> Critical =
+    [
+        OrderCrewLost,
+        OrderCrewShort,
+        OrderCleanerNotStarted,
+        OrderNoCleanerYet,
+        OrderLockoutReported,
+        OrderCashNotPaid,
+        DisputeFiled,
+        DisputeChargeback,
+        DisputeChargebackUnmatched,
+        RefundStuck,
+        RefundNeedsRetry,
+        RefundWithoutCancel,
+        ErasureFailed,
+        ReferralHeld,
+    ];
 }

@@ -108,6 +108,16 @@ describe('DisputeDetailComponent', () => {
     expect(el.querySelector('.detail-grid')).toBeTruthy();
   });
 
+  it('shows the reason in words, never its code name', () => {
+    disputeClient.details.mockReturnValue(
+      of(DisputeDetails.fromJS({ id: 'dispute-1', reason: { name: 'ServiceIncomplete', value: 3 }, messages: [] }))
+    );
+    const text = setup().el.textContent;
+
+    expect(text).toContain('enums.dispute_reason.service_incomplete');
+    expect(text).not.toContain('ServiceIncomplete');
+  });
+
   it('shows what the resolution moved beside what it asked for', () => {
     disputeClient.details.mockReturnValue(
       of(

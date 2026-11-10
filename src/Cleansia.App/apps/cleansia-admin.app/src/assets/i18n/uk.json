@@ -238,6 +238,17 @@
       "closed": "Закрито",
       "escalated": "Ескальовано"
     },
+    "dispute_reason": {
+      "quality_issue": "Проблема з якістю",
+      "service_not_provided": "Послугу не надано",
+      "service_incomplete": "Послугу надано не повністю",
+      "damaged_property": "Пошкоджене майно",
+      "unauthorized_charge": "Несанкціоноване списання",
+      "incorrect_amount": "Невірна сума",
+      "other": "Інше",
+      "chargeback": "Чарджбек (оскарження платежу)",
+      "unknown": "Невідома причина"
+    },
     "pay_period_status": {
       "open": "Відкритий",
       "closed": "Закритий",

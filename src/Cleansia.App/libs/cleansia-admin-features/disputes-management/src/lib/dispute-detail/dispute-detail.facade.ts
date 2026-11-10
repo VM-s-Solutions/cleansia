@@ -16,6 +16,7 @@ import { PermissionService, Policy, SnackbarService } from '@cleansia/services';
 import { formatMoney, localeFor } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
+import { disputeReasonLabelKey } from '../disputes-management/disputes-management.models';
 
 const TERMINAL_STATUSES: ReadonlySet<DisputeStatus> = new Set([
   DisputeStatus.Resolved,
@@ -48,6 +49,8 @@ export class DisputeDetailFacade extends UnsubscribeControlDirective {
   readonly refundAmountLabel = computed(() => this.moneyLabel(this.dispute()?.refundAmount));
   readonly cardRefundedLabel = computed(() => this.moneyLabel(this.dispute()?.cardRefundedAmount));
   readonly creditReturnedLabel = computed(() => this.moneyLabel(this.dispute()?.creditReturnedAmount));
+
+  readonly reasonLabelKey = computed(() => disputeReasonLabelKey(this.dispute()?.reason?.value));
 
   readonly settlesInCredit = computed(
     () => this.dispute()?.settlementPreference === DisputeSettlementPreference.Credit

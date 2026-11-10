@@ -82,4 +82,17 @@ describe('DisputesManagementComponent', () => {
     expect(facade.hasError()).toBe(true);
     expect(el.querySelector('.not-found-state')).toBeTruthy();
   });
+
+  it('shows the reason in words, never its code name', () => {
+    disputeClient.getPaged.mockReturnValue(
+      of({
+        data: [DisputeListItem.fromJS({ id: 'd-1', reason: { name: 'ServiceIncomplete', value: 3 } })],
+        total: 1,
+      })
+    );
+    const text = setup().el.textContent;
+
+    expect(text).toContain('enums.dispute_reason.service_incomplete');
+    expect(text).not.toContain('ServiceIncomplete');
+  });
 });

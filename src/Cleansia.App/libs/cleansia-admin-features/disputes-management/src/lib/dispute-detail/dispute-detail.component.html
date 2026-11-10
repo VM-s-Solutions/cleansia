@@ -63,7 +63,7 @@
       <div class="detail-grid">
         <div class="detail-grid__item">
           <span class="detail-grid__label">{{ 'pages.disputes_management.columns.reason' | translate }}</span>
-          <span class="detail-grid__value">{{ dispute.reason?.name }}</span>
+          <span class="detail-grid__value">{{ facade.reasonLabelKey() | translate }}</span>
         </div>
         @if (hasRefundAmount()) {
         <div class="detail-grid__item">

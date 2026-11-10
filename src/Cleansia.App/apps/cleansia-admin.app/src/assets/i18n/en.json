@@ -238,6 +238,17 @@
       "closed": "Closed",
       "escalated": "Escalated"
     },
+    "dispute_reason": {
+      "quality_issue": "Quality issue",
+      "service_not_provided": "Service not provided",
+      "service_incomplete": "Service incomplete",
+      "damaged_property": "Damaged property",
+      "unauthorized_charge": "Unauthorized charge",
+      "incorrect_amount": "Incorrect amount",
+      "other": "Other",
+      "chargeback": "Chargeback",
+      "unknown": "Unknown reason"
+    },
     "pay_period_status": {
       "open": "Open",
       "closed": "Closed",

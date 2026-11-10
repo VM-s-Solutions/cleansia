@@ -238,6 +238,17 @@
       "closed": "Закрыт",
       "escalated": "Эскалирован"
     },
+    "dispute_reason": {
+      "quality_issue": "Проблема с качеством",
+      "service_not_provided": "Услуга не оказана",
+      "service_incomplete": "Услуга оказана не полностью",
+      "damaged_property": "Повреждение имущества",
+      "unauthorized_charge": "Несанкционированное списание",
+      "incorrect_amount": "Неверная сумма",
+      "other": "Другое",
+      "chargeback": "Чарджбек (оспаривание платежа)",
+      "unknown": "Неизвестная причина"
+    },
     "pay_period_status": {
       "open": "Открыт",
       "closed": "Закрыт",

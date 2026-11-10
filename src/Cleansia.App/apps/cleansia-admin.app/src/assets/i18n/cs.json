@@ -238,6 +238,17 @@
       "closed": "Uzavřeno",
       "escalated": "Eskalováno"
     },
+    "dispute_reason": {
+      "quality_issue": "Problém s kvalitou",
+      "service_not_provided": "Služba nebyla poskytnuta",
+      "service_incomplete": "Nedokončená služba",
+      "damaged_property": "Poškozený majetek",
+      "unauthorized_charge": "Neoprávněný poplatek",
+      "incorrect_amount": "Nesprávná částka",
+      "other": "Jiné",
+      "chargeback": "Zpětná platba (chargeback)",
+      "unknown": "Neznámý důvod"
+    },
     "pay_period_status": {
       "open": "Otevřeno",
       "closed": "Uzavřeno",

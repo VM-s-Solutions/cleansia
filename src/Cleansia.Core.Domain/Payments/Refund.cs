@@ -133,7 +133,7 @@ public class Refund : TenantAuditable
     /// <summary>
     /// Stamp a card refund Stripe failed after accepting it, with the day it said so and its refund id. A
     /// pending row closes as <see cref="RefundStatus.Failed"/>; a succeeded row stays succeeded, because the
-    /// money left and came back and still counts as refunded in revenue and the loyalty clawback (D23), and
+    /// money left and came back and still counts as refunded in revenue and the loyalty clawback, and
     /// reopening it would free room to send the same money to the same dead card. Answers whether this call
     /// set the date, so the first of the webhook and a retry to learn it is the one that tells anybody.
     /// </summary>

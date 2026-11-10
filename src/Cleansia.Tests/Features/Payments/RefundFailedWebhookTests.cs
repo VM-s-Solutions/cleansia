@@ -24,7 +24,7 @@ namespace Cleansia.Tests.Features.Payments;
 /// <summary>
 /// Stripe's refund.failed: a card refund that failed after Stripe accepted it. The row is found by the
 /// RefundKey metadata under its own company. A Succeeded row stays Succeeded, because the money still counts
-/// as refunded (D23), and a Pending row turns Failed; both get the failed date and Stripe's refund id, and
+/// as refunded, and a Pending row turns Failed; both get the failed date and Stripe's refund id, and
 /// the one delivery that sets the date tells the company's administrators once. A key no order refund
 /// carries, a receivable's own refund key and a redelivered event change nothing.
 /// </summary>

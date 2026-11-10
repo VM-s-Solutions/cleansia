@@ -762,7 +762,7 @@ public class HandlePaymentNotification
         /// administrators of every company.
         /// </summary>
         /// <summary>
-        /// A card refund Stripe failed after accepting it (D23). charge.refund.updated stays unsubscribed: it
+        /// A card refund Stripe failed after accepting it. charge.refund.updated stays unsubscribed: it
         /// reports the same failure a second time. A receivable's own refund carries no row, so its key, like an
         /// unknown one, is only logged.
         /// </summary>

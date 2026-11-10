@@ -23,8 +23,9 @@ public class StripeRefundLookupTests
     {
         var transport = new RecordingHandler(Ok(Refund("re_1", 75000, "succeeded", RefundKey)));
 
-        await Client(transport).RefundPaymentIntentAsync("pi_x", 750m, RefundKey, CancellationToken.None);
+        var id = await Client(transport).RefundPaymentIntentAsync("pi_x", 750m, RefundKey, CancellationToken.None);
 
+        Assert.Equal("re_1", id);
         var request = Assert.Single(transport.Requests);
         Assert.Equal((HttpMethod.Post, "/v1/refunds"), (request.Method, request.Path));
         Assert.Contains($"metadata[RefundKey]={RefundKey}", request.Body);
@@ -37,8 +38,9 @@ public class StripeRefundLookupTests
         var transport = new RecordingHandler(
             Ok(Session("cs_x", "pi_x")), Ok(Refund("re_1", 75000, "succeeded", RefundKey)));
 
-        await Client(transport).RefundCheckoutSessionAsync("cs_x", 750m, RefundKey, CancellationToken.None);
+        var id = await Client(transport).RefundCheckoutSessionAsync("cs_x", 750m, RefundKey, CancellationToken.None);
 
+        Assert.Equal("re_1", id);
         var request = transport.Requests[^1];
         Assert.Equal((HttpMethod.Post, "/v1/refunds"), (request.Method, request.Path));
         Assert.Contains("payment_intent=pi_x", request.Body);

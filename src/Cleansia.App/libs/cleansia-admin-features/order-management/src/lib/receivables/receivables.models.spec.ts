@@ -20,7 +20,7 @@ describe('receivables table', () => {
   function definition(allowed: string[]) {
     const permissions = { hasPolicy: (policy: string) => allowed.includes(policy) } as unknown as PermissionService;
     return getReceivablesTableDefinition(
-      { onViewOrder: jest.fn(), onWriteOff: jest.fn(), isBusy: () => false },
+      { onWriteOff: jest.fn(), isBusy: () => false },
       translate,
       permissions
     );

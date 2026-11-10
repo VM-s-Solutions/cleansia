@@ -7,6 +7,7 @@ import { ProductivityMetricsDto } from '@cleansia/partner-services';
 import { currentLanguage, formatDate, formatMoney, localeFor } from '@cleansia/utils';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Skeleton } from 'primeng/skeleton';
+import { monthName } from '../dashboard-labels';
 
 @Component({
   selector: 'cleansia-productivity-gauges',
@@ -43,6 +44,11 @@ export class CleansiaProductivityGaugesComponent {
       { fractionDigits: 2 }
     )
   );
+
+  protected readonly highestEarningMonthName = computed(() => {
+    const month = this.data()?.personalBests?.highestEarningMonth;
+    return month ? monthName(month.year, month.month, this.lang()) : '';
+  });
 
   protected readonly formattedMostOrdersDate = computed(() =>
     formatDate(this.data()?.personalBests?.mostOrdersDate, this.lang())

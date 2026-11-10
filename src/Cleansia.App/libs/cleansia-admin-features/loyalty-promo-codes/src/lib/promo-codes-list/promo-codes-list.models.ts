@@ -78,7 +78,6 @@ export function formatType(
 
 export function getPromoCodeTableDefinition(
   defs: {
-    onView: (row: PromoCodeListItem) => void;
     onEdit: (row: PromoCodeListItem) => void;
     onDeactivate: (row: PromoCodeListItem) => void;
   },
@@ -156,12 +155,6 @@ export function getPromoCodeTableDefinition(
       },
     ],
     actions: [
-      {
-        icon: 'pi pi-eye',
-        tooltip: translate.instant('global.actions.view'),
-        color: 'info',
-        onClick: (row) => defs.onView(row),
-      },
       {
         icon: 'pi pi-pencil',
         tooltip: translate.instant('global.actions.edit'),

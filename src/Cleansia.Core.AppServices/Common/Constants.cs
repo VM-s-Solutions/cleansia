@@ -51,6 +51,8 @@ public class Constants
         public const string ChargeDisputeUpdated = "charge.dispute.updated";
         public const string ChargeDisputeClosed = "charge.dispute.closed";
 
+        public const string RefundFailed = "refund.failed";
+
         public static bool IsOrderEvent(string eventType) =>
             eventType is CompletedSession
                       or ExpiredSession

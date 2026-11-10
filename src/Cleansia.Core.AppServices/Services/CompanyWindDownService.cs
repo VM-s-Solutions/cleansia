@@ -42,7 +42,6 @@ public sealed class CompanyWindDownService(
 {
     private const int NoticePageSize = 200;
     private const string CreditDischargeNote = "company wind-down";
-    private const string PeriodCloseNote = "Company wind-down";
     private const string AnonymisedEmailSuffix = "@anonymized.local";
 
     // InProgress is left out on purpose: a clean under way finishes, and the admin's status override
@@ -538,7 +537,7 @@ public sealed class CompanyWindDownService(
 
         foreach (var period in open)
         {
-            await payPeriodBackgroundService.ClosePeriodAsync(period, PeriodCloseNote, openNext: false, cancellationToken);
+            await payPeriodBackgroundService.ClosePeriodAsync(period, openNext: false, cancellationToken);
         }
 
         return (open.Count, null);

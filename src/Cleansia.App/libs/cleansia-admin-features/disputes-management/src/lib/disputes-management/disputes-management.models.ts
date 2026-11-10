@@ -5,9 +5,6 @@ import { formatDate, formatMoney, localeFor } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 
 export function getDisputeTableDefinition(
-  defs: {
-    onViewDetails: (row: DisputeListItem) => void;
-  },
   translate: TranslateService,
   statusTemplate?: TemplateRef<DisputeListItem>,
   reasonTemplate?: TemplateRef<DisputeListItem>
@@ -74,14 +71,7 @@ export function getDisputeTableDefinition(
         getValue: (row: DisputeListItem) => formatDate(row?.createdOn, translate.currentLang),
       },
     ],
-    actions: [
-      {
-        icon: 'pi pi-eye',
-        tooltip: translate.instant('pages.disputes_management.actions.view_details'),
-        color: 'info',
-        onClick: (row: DisputeListItem) => defs.onViewDetails(row),
-      },
-    ],
+    actions: [],
   };
 }
 
@@ -94,6 +84,22 @@ export const DISPUTE_STATUS_LABEL_KEYS: Readonly<Record<number, string>> = {
   [DisputeStatus.Closed]: 'pages.disputes_management.status.closed',
   [DisputeStatus.Escalated]: 'pages.disputes_management.status.escalated',
 };
+
+/** Mirrors the server's DisputeReason; the admin client carries it only as a `Code`. */
+const DISPUTE_REASON_LABEL_KEYS: Readonly<Record<number, string>> = {
+  1: 'enums.dispute_reason.quality_issue',
+  2: 'enums.dispute_reason.service_not_provided',
+  3: 'enums.dispute_reason.service_incomplete',
+  4: 'enums.dispute_reason.damaged_property',
+  5: 'enums.dispute_reason.unauthorized_charge',
+  6: 'enums.dispute_reason.incorrect_amount',
+  7: 'enums.dispute_reason.other',
+  8: 'enums.dispute_reason.chargeback',
+};
+
+export function disputeReasonLabelKey(value: number | undefined): string {
+  return (value != null && DISPUTE_REASON_LABEL_KEYS[value]) || 'enums.dispute_reason.unknown';
+}
 
 export interface DisputeStatusOption {
   label: string;

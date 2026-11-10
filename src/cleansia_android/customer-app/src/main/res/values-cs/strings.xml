@@ -1465,4 +1465,12 @@
     <string name="booking_success_no_cleaner_cash">Když ji nikdo nepřevezme, zrušíme ji zdarma a\u00A0přidáme vám kredit.</string>
     <string name="booking_success_cash_on_day">Zaplaťte v\u00A0hotovosti uklízeči v\u00A0den úklidu.</string>
     <string name="auth_email_placeholder">customer@example.com</string>
+    <string name="dispute_reason_chargeback">Zpětné stornování platby</string>
+    <string name="dispute_status_pending">Čeká na vyřízení</string>
+    <string name="dispute_status_under_review">Posuzuje se</string>
+    <string name="dispute_status_waiting_for_response">Čeká na vaši odpověď</string>
+    <string name="dispute_status_resolved">Vyřešeno</string>
+    <string name="dispute_status_closed">Uzavřeno</string>
+    <string name="dispute_status_escalated">Předáno dál</string>
+    <string name="error_dispute_cleaning_not_started">Spor lze podat, až když úklid začal.</string>
 </resources>

@@ -74,14 +74,13 @@ public sealed class SendSitewidePromoFanoutTenantScopeTests : IDisposable
         var sentUserIds = new List<string>();
         var queueClient = new Mock<IQueueClient>();
         queueClient
-            .Setup(q => q.SendAsync(It.IsAny<string>(), It.IsAny<SendPushNotificationMessage>(), It.IsAny<CancellationToken>()))
-            .Callback<string, SendPushNotificationMessage, CancellationToken>((_, msg, _2) => sentUserIds.Add(msg.UserId))
+            .Setup(q => q.SendAsync(It.IsAny<string>(), It.IsAny<QueueEnvelope<SendPushNotificationMessage>>(), It.IsAny<CancellationToken>()))
+            .Callback<string, QueueEnvelope<SendPushNotificationMessage>, CancellationToken>((_, msg, _2) => sentUserIds.Add(msg.Payload.UserId))
             .Returns(Task.CompletedTask);
 
         await using var ctx = NewContext();
         var handler = new SendSitewidePromoFanoutHandler(
             new UserNotificationPreferencesRepository(ctx),
-            new UserRepository(ctx),
             queueClient.Object,
             new NoOpCampaignProgressStore(),
             new FixedTenantProvider(tenantId: null),

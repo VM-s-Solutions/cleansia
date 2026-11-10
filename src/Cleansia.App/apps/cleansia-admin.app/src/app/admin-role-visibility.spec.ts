@@ -19,6 +19,7 @@ const SUPPORT_SIDEBAR = [
   'sidebar.employees',
   'sidebar.orders',
   'sidebar.receivables',
+  'sidebar.refunds',
   'sidebar.customers',
   'sidebar.disputes',
   'sidebar.services',

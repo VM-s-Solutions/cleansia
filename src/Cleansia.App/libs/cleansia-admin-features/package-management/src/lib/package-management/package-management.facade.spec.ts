@@ -7,7 +7,7 @@ import {
 } from '@cleansia/admin-services';
 import { DialogService, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { EMPTY, of, throwError } from 'rxjs';
+import { EMPTY, of, Subject, throwError } from 'rxjs';
 import { PackageManagementFacade } from './package-management.facade';
 
 describe('PackageManagementFacade', () => {
@@ -289,5 +289,21 @@ describe('PackageManagementFacade', () => {
       expect(facade.packages().length).toBe(2);
       expect(facade.includesRetiredService(facade.packages()[1])).toBe(false);
     });
+  });
+
+  it('holds the list loading while a package switch-on is in flight, and clears it after it lands or fails', () => {
+    const landing = new Subject<never>();
+    activateMock.mockReturnValue(landing.asObservable());
+    facade.activatePackage(PackageListItem.fromJS({ id: 'p-1' }));
+    expect(facade.loading()).toBe(true);
+    landing.complete();
+    expect(facade.loading()).toBe(false);
+
+    const failing = new Subject<never>();
+    activateMock.mockReturnValue(failing.asObservable());
+    facade.activatePackage(PackageListItem.fromJS({ id: 'p-1' }));
+    expect(facade.loading()).toBe(true);
+    failing.error(new Error('boom'));
+    expect(facade.loading()).toBe(false);
   });
 });

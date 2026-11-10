@@ -28,6 +28,11 @@ public class GetPagedUserNotifications
 
         /// <summary>Server-enriched: always overwritten by the host controller, never trusted from the client.</summary>
         public NotificationFeedAudience Audience { get; set; }
+
+        // A method, not a bindable property, so the partner and customer feeds' contracts never gain it.
+        internal bool? Critical { get; private set; }
+
+        public void FilterCritical(bool? critical) => Critical = critical;
     }
 
     internal class Handler(
@@ -54,7 +59,9 @@ public class GetPagedUserNotifications
                 ? request
                 : new Request { Offset = request.Offset, Limit = MaxPageSize, Audience = request.Audience };
 
-            var eventKeys = NotificationFeedEventKeys.For(page.Audience);
+            var eventKeys = request is { Audience: NotificationFeedAudience.Admin, Critical: { } critical }
+                ? AdminNotificationEventCatalog.All.Where(key => AdminNotificationEventCatalog.Critical.Contains(key) == critical).ToList()
+                : NotificationFeedEventKeys.For(request.Audience);
             var filter = UserNotificationSpecification.Create(userId, eventKeys).SatisfiedBy();
 
             var totalItems = await userNotificationRepository.GetCountAsync(filter, cancellationToken);

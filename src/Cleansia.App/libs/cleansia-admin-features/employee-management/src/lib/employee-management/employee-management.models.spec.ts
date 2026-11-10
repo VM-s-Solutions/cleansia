@@ -19,7 +19,7 @@ describe('employee-management models', () => {
       hasPolicy: (policy: string) => allowed.includes(policy),
     } as unknown as PermissionService;
     const found = getEmployeeTableDefinition(
-      { onApprove: jest.fn(), onReject: jest.fn(), onViewDetails: jest.fn() },
+      { onApprove: jest.fn(), onReject: jest.fn() },
       translate,
       permissions
     ).actions.find((a) => a.tooltip === tooltip);

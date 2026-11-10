@@ -36,6 +36,7 @@ import {
   getTimelineSourceClass,
   getTimelineSourceLabelKey,
   getTimelineTableDefinition,
+  hasTimelineEntryDetail,
 } from './timeline.models';
 
 @Component({
@@ -67,6 +68,8 @@ export class TimelineComponent implements AfterViewInit, OnDestroy {
   readonly actorTemplate = viewChild<TemplateRef<TimelineEntryDto>>('actorTemplate');
   readonly resourceTemplate = viewChild<TemplateRef<TimelineEntryDto>>('resourceTemplate');
   readonly outcomeTemplate = viewChild<TemplateRef<TimelineEntryDto>>('outcomeTemplate');
+
+  protected readonly hasTimelineEntryDetail = hasTimelineEntryDetail;
 
   timelineColumns!: TableColumn<TimelineEntryDto>[];
   timelineActions!: TableAction<TimelineEntryDto>[];
@@ -107,7 +110,6 @@ export class TimelineComponent implements AfterViewInit, OnDestroy {
 
   private rebuildTableDefinitions(): void {
     const definition = getTimelineTableDefinition(
-      { onView: (entry) => this.viewEntry(entry) },
       this.translate,
       {
         source: this.sourceTemplate(),

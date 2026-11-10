@@ -35,7 +35,7 @@ import {
 } from '@cleansia/components';
 import { formatReferralCredit } from '@cleansia/admin-features/loyalty-referrals';
 import { CleansiaPermissionDirective } from '@cleansia/directives';
-import { Policy } from '@cleansia/services';
+import { CleansiaAdminRoute, Policy } from '@cleansia/services';
 import { formatDate } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Subject, takeUntil } from 'rxjs';
@@ -430,6 +430,14 @@ export class UserLoyaltyDetailComponent
         return this.translate.instant(
           'pages.loyalty_user_detail.activity.source.ManualGrant'
         );
+      case LoyaltyEarnSource.OrderPartiallyRefunded:
+        return this.translate.instant(
+          'pages.loyalty_user_detail.activity.source.OrderPartiallyRefunded'
+        );
+      case LoyaltyEarnSource.ManualRevoke:
+        return this.translate.instant(
+          'pages.loyalty_user_detail.activity.source.ManualRevoke'
+        );
       default:
         return '';
     }
@@ -465,6 +473,12 @@ export class UserLoyaltyDetailComponent
         () => this.dialogVisible.set(false)
       );
     }
+  }
+
+  viewRefunds(): void {
+    const userId = this.userId();
+    if (!userId) return;
+    this.router.navigate([CleansiaAdminRoute.ORDER_MANAGEMENT, 'refunds'], { queryParams: { userId } });
   }
 
   openIssueCredit(): void {

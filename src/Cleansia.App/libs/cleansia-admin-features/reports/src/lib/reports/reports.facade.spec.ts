@@ -48,7 +48,11 @@ describe('ReportsFacade', () => {
         },
         {
           provide: TranslateService,
-          useValue: { instant: (k: string) => k, currentLang: 'en-GB', onLangChange },
+          useValue: {
+            instant: (k: string) => ({ 'enums.payment_type.card': 'Card', 'enums.invoice_status.approved': 'Approved' })[k] ?? k,
+            currentLang: 'en-GB',
+            onLangChange,
+          },
         },
       ],
     });
@@ -197,5 +201,18 @@ describe('ReportsFacade', () => {
       { id: 'cur-czk', code: 'CZK', isDefault: true },
       { id: 'cur-eur', code: 'EUR', isDefault: false },
     ]);
+  });
+
+  it('words a payment type and an invoice status, keeping the raw code when no key exists', () => {
+    expect(facade.enumLabel('payment_type', 'Card')).toBe('Card');
+    expect(facade.enumLabel('invoice_status', 'Approved')).toBe('Approved');
+    expect(facade.enumLabel('invoice_status', 'Mystery')).toBe('Mystery');
+  });
+
+  it('writes a payroll month in the UI language from its year and month', () => {
+    expect(facade.monthLabel(2026, 11)).toBe('November 2026');
+    TestBed.inject(TranslateService).currentLang = 'cs';
+    onLangChange.next({ lang: 'cs' });
+    expect(facade.monthLabel(2026, 11)).toBe('listopad 2026');
   });
 });

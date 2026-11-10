@@ -6,6 +6,7 @@ import { PermissionService, Policy } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import {
   getGdprRequestStatusOptions,
+  processedByLabel,
   getGdprRequestTableDefinition,
 } from './data-protection.models';
 
@@ -108,6 +109,15 @@ describe('data-protection models', () => {
       const failed = row(GdprRequestStatus.Failed);
       retry.onClick(failed);
       expect(defs.onRetry).toHaveBeenCalledWith(failed);
+    });
+  });
+
+  describe('processedByLabel', () => {
+    it('words the self and system actors and passes an admin e-mail through unchanged', () => {
+      expect(processedByLabel('self', translate)).toBe('pages.data_protection.requests.actor.self');
+      expect(processedByLabel('system', translate)).toBe('pages.data_protection.requests.actor.system');
+      expect(processedByLabel('admin@cleansia.cz', translate)).toBe('admin@cleansia.cz');
+      expect(processedByLabel(undefined, translate)).toBe('—');
     });
   });
 });

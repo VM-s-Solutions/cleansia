@@ -674,6 +674,10 @@ public static class BusinessErrorMessage
     public const string RefundLinesRequired = "refund.lines_required";
     public const string RefundLineInvalid = "refund.line_invalid";
     public const string RefundOverrideReasonRequired = "refund.override_reason_required";
+    public const string RefundNotFound = "refund.not_found";
+    public const string RefundNotRetryable = "refund.not_retryable";
+    public const string RefundNotOwed = "refund.not_owed";
+    public const string RefundCreditUnavailable = "refund.credit_unavailable";
 
     // GDPR
     public const string GdprDeletionAlreadyPending = "gdpr.deletion_already_pending";
@@ -775,6 +779,9 @@ public static class BusinessErrorMessage
     public const string LegalDocumentNotFound = "legal.document_not_found";
     /// <summary>A cleaner accepted a text that is not of the document in force for their market today.</summary>
     public const string LegalDocumentNotInForce = "legal.document_not_in_force";
+
+    // Marketing
+    public const string MarketingNoOptedInCustomers = "marketing.no_opted_in_customers";
 
     // Admin action audit log
     public const string AuditNotFound = "audit.not_found";

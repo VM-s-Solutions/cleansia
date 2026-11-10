@@ -138,6 +138,7 @@
                 [buttonSize]="'small'"
                 [ariaLabel]="'pages.profile.download' | translate"
                 [tooltip]="'pages.profile.download' | translate"
+                [loading]="facade.downloadingId() === doc.documentId"
                 (onClick)="facade.downloadEmployeeDocument(doc.documentId!, doc.fileName!)"
               />
               <!--

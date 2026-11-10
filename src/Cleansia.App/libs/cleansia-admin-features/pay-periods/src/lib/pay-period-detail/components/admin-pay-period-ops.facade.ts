@@ -5,12 +5,15 @@ import {
   ClosePayPeriodResponse,
   MarkPayPeriodPaidCommand,
   MarkPayPeriodPaidResponse,
+  PayPeriodDto,
+  UpdatePayPeriodCommand,
+  UpdatePayPeriodResponse,
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { resolveApiErrorKey, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { Observable, catchError, finalize, of, takeUntil } from 'rxjs';
-import { AdminPayPeriodOpsPanel } from './admin-pay-period-ops.models';
+import { AdminPayPeriodOpsPanel, localDay } from './admin-pay-period-ops.models';
 
 @Injectable()
 export class AdminPayPeriodOpsFacade extends UnsubscribeControlDirective {
@@ -26,6 +29,9 @@ export class AdminPayPeriodOpsFacade extends UnsubscribeControlDirective {
   readonly canSubmitCloseNow = computed(
     () => this.closeNowReason().trim().length > 0 && !this.submitting()
   );
+
+  readonly changeEndDate = signal<Date | null>(null);
+  readonly canSubmitChangeEnd = computed(() => !!this.changeEndDate() && !this.submitting());
 
   openPanel(panel: AdminPayPeriodOpsPanel): void {
     if (this.activePanel() === panel) {
@@ -43,6 +49,10 @@ export class AdminPayPeriodOpsFacade extends UnsubscribeControlDirective {
 
   setCloseNowReason(value: string): void {
     this.closeNowReason.set(value);
+  }
+
+  setChangeEndDate(value: Date | null): void {
+    this.changeEndDate.set(value);
   }
 
   markPaid(payPeriodId: string, onSuccess: () => void): void {
@@ -73,8 +83,25 @@ export class AdminPayPeriodOpsFacade extends UnsubscribeControlDirective {
     );
   }
 
+  // Cleaners receive a period's notes, so the change sends none and the stored ones stay.
+  changeEnd(payPeriod: PayPeriodDto, onSuccess: () => void): void {
+    const endDate = this.changeEndDate();
+    if (!payPeriod.id || !endDate) {
+      return;
+    }
+    const command = new UpdatePayPeriodCommand();
+    command.payPeriodId = payPeriod.id;
+    command.startDate = localDay(payPeriod.startDate);
+    command.endDate = endDate;
+    this.run(
+      this.adminClient.adminPayPeriodClient.update(command),
+      'pay_periods.detail.ops.change_end.success',
+      onSuccess
+    );
+  }
+
   private run(
-    request$: Observable<MarkPayPeriodPaidResponse | ClosePayPeriodResponse>,
+    request$: Observable<MarkPayPeriodPaidResponse | ClosePayPeriodResponse | UpdatePayPeriodResponse>,
     successKey: string,
     onSuccess: () => void
   ): void {
@@ -100,6 +127,7 @@ export class AdminPayPeriodOpsFacade extends UnsubscribeControlDirective {
 
   private resetInputs(): void {
     this.closeNowReason.set('');
+    this.changeEndDate.set(null);
     this.errorKey.set(null);
   }
 

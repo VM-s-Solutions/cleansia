@@ -91,7 +91,11 @@
       "audit_log_customers": "Customer actions",
       "audit_log_customer_entry": "Customer action",
       "receivables": "Receivables",
-      "cash_held": "Cash held by cleaners"
+      "cash_held": "Cash held by cleaners",
+      "pay_configs": "Pay Configs",
+      "pay_config_create": "Create Pay Config",
+      "pay_config_edit": "Edit Pay Config",
+      "refunds": "Refunds"
     }
   },
   "components": {
@@ -104,9 +108,9 @@
     "brand_mark_alt": "Cleansia",
     "notifications_panel": {
       "open": "Open notifications",
-      "title": "Notifications",
+      "title": "Critical notifications",
       "view_all": "View all notifications",
-      "empty": "No notifications yet"
+      "empty": "No critical notifications"
     }
   },
   "global": {
@@ -169,13 +173,6 @@
       "success": "Success",
       "error": "Error"
     },
-    "languages": {
-      "en": "English",
-      "cs": "Czech",
-      "de": "German",
-      "sk": "Slovak",
-      "pl": "Polish"
-    },
     "show_password": "Show password",
     "hide_password": "Hide password"
   },
@@ -188,6 +185,22 @@
       "in_progress": "In Progress",
       "completed": "Completed",
       "cancelled": "Cancelled"
+    },
+    "payment_type": {
+      "cash": "Cash",
+      "card": "Card"
+    },
+    "email_type": {
+      "confirmation_email": "Confirmation e-mail",
+      "reset_password": "Password reset",
+      "order_receipt": "Order receipt",
+      "period_closed": "Pay period closed",
+      "period_end_reminder": "Pay period ending reminder",
+      "order_status_update": "Order status update",
+      "promo_code": "Promo code",
+      "company_wind_down_customer": "Company wind-down (customer)",
+      "company_wind_down_cleaner": "Company wind-down (cleaner)",
+      "admin_notification": "Admin notification"
     },
     "payment_status": {
       "pending": "Pending",
@@ -224,6 +237,17 @@
       "resolved": "Resolved",
       "closed": "Closed",
       "escalated": "Escalated"
+    },
+    "dispute_reason": {
+      "quality_issue": "Quality issue",
+      "service_not_provided": "Service not provided",
+      "service_incomplete": "Service incomplete",
+      "damaged_property": "Damaged property",
+      "unauthorized_charge": "Unauthorized charge",
+      "incorrect_amount": "Incorrect amount",
+      "other": "Other",
+      "chargeback": "Chargeback",
+      "unknown": "Unknown reason"
     },
     "pay_period_status": {
       "open": "Open",
@@ -283,6 +307,24 @@
       "cancellation_fee_share": "Share of a cancellation fee",
       "lockout_fee_share": "Job reward — customer lockout",
       "dispute_charge": "Dispute charge"
+    },
+    "refund_state": {
+      "not_sent": "Not sent",
+      "refunded": "Refunded",
+      "failed": "Failed",
+      "bounced": "Bounced",
+      "repaid": "Repaid",
+      "closed": "Closed"
+    },
+    "refund_origin": {
+      "cancellation": "Cancellation",
+      "dispute": "Dispute",
+      "full_refund": "Full refund",
+      "partial_refund": "Partial refund"
+    },
+    "refund_repayment_method": {
+      "bank_transfer": "Bank transfer",
+      "credit": "Credit"
     }
   },
   "sidebar": {
@@ -323,6 +365,7 @@
     "notifications": "Notifications",
     "profile": "My Profile",
     "receivables": "Receivables",
+    "refunds": "Refunds",
     "customers": "Customers",
     "cash_held": "Cash held"
   },
@@ -345,7 +388,6 @@
       "actions": "Actions",
       "approve": "Approve",
       "reject": "Reject",
-      "view_details": "View Details",
       "no_employees": "No partners to display",
       "filters": {
         "search": "Search",
@@ -599,7 +641,6 @@
       "payment_status_label": "Payment Status",
       "assigned_employees": "Assigned",
       "actions": "Actions",
-      "view_details": "View Details",
       "no_orders": "No orders found",
       "filters": {
         "search": "Search",
@@ -850,7 +891,8 @@
       "completion": {
         "label": "Marked done",
         "pending": "Not yet"
-      }
+      },
+      "refunds": "Refunds"
     },
     "invoice_management": {
       "title": "Invoice Management",
@@ -866,7 +908,6 @@
       "pdf_status": "PDF",
       "generated_at": "Generated",
       "actions": "Actions",
-      "view_details": "View Details",
       "download": "Download PDF",
       "no_invoices": "No invoices found",
       "filters": {
@@ -930,7 +971,6 @@
       "entry": {
         "title": "Audit Entry",
         "description": "The before and after snapshot recorded for this action. Changed fields are highlighted.",
-        "view": "View details",
         "back": "Back",
         "load_error": "Failed to load the audit entry",
         "changes_title": "Changes",
@@ -970,7 +1010,6 @@
         "entry": {
           "title": "Customer action",
           "description": "What the customer did, from which client, and the evidence the platform kept about it.",
-          "view": "View details",
           "back": "Back",
           "load_error": "Failed to load the customer action",
           "when": "When",
@@ -995,7 +1034,6 @@
       "timeline": {
         "load_error": "Failed to load the timeline",
         "no_entries": "Nothing recorded yet",
-        "view": "View details",
         "columns": {
           "occurred_on": "When",
           "source": "Source",
@@ -1402,10 +1440,8 @@
       "load_error": "Failed to load legal documents",
       "text_load_error": "Failed to load this text",
       "retry": "Try again",
-      "preview": "Preview",
       "preview_title": "Preview",
       "close_preview": "Close preview",
-      "show_language": "Show this language",
       "all_markets": "All markets",
       "audience": {
         "customer": "Customer",
@@ -1727,7 +1763,6 @@
       },
       "no_templates": "No templates found",
       "translation_key_tooltip": "Click to copy as template variable",
-      "view_translations": "View Translations",
       "back_to_email_types": "Back to Email Types",
       "no_translations_for_language": "No translations available for this language",
       "email_type_detail": {
@@ -2367,7 +2402,8 @@
           "preview": "Couldn't preview impact",
           "apply": "Some thresholds couldn't be saved"
         }
-      }
+      },
+      "no_tiers": "No loyalty tiers are configured."
     },
     "customers": {
       "title": "Customers",
@@ -2412,7 +2448,8 @@
       },
       "actions": {
         "grant": "Grant points",
-        "revoke": "Revoke points"
+        "revoke": "Revoke points",
+        "refunds": "Refunds"
       },
       "activity": {
         "title": "Activity log",
@@ -2432,7 +2469,9 @@
           "OrderCompleted": "Order completed",
           "OrderCancelled": "Order cancelled",
           "Referral": "Referral bonus",
-          "ManualGrant": "Manual adjustment"
+          "ManualGrant": "Manual adjustment",
+          "OrderPartiallyRefunded": "Order partially refunded",
+          "ManualRevoke": "Manual revocation"
         }
       },
       "grant_dialog": {
@@ -2587,6 +2626,7 @@
     "sitewide_push": {
       "title": "Sitewide Push",
       "subtitle": "Send a one-off promotional push to every customer opted in to marketing notifications. Fan-out runs asynchronously; expect delivery within a few minutes for typical recipient counts.",
+      "email_not_available": "E-mail campaigns are not available yet. This page sends push notifications only.",
       "titles_section": "Notification title (per locale)",
       "bodies_section": "Notification body (per locale)",
       "locale": {
@@ -2606,7 +2646,7 @@
       "confirm_send": "This will queue a push notification to every customer who has opted in to marketing. Once enqueued the fan-out runs unstoppable — there is no recall.",
       "validation_error": "Please fill in all locale fields before sending.",
       "send_success": "Sitewide promo enqueued. Fan-out is now running in the background.",
-      "send_error": "Failed to enqueue the promo. Check your inputs and try again."
+      "already_sent": "This exact campaign was already sent. Change the text to send it again."
     },
     "disputes_management": {
       "title": "Disputes",
@@ -2621,9 +2661,6 @@
         "status": "Status",
         "refund_amount": "Refund requested",
         "created_on": "Created"
-      },
-      "actions": {
-        "view_details": "View details"
       },
       "status": {
         "pending": "Pending",
@@ -2642,6 +2679,9 @@
         "credit_returned": "Returned as credit",
         "description": "Description",
         "resolution_notes": "Resolution notes",
+        "evidence": "Evidence ({{count}})",
+        "no_evidence": "The customer sent no evidence.",
+        "evidence_unavailable": "Preview unavailable, reload the page.",
         "messages": "Messages",
         "no_messages": "No messages yet.",
         "staff": "Staff",
@@ -2666,24 +2706,28 @@
         "refund_amount": "Refund amount",
         "refund_amount_placeholder": "Leave empty to resolve without a refund",
         "refund_disclaimer": "Entering an amount requests a refund processed via Stripe. The refund is not guaranteed to settle immediately and may remain pending if Stripe declines it.",
-        "notes": "Resolution notes",
+        "notes": "Resolution notes (required)",
         "notes_placeholder": "Explain how this dispute was resolved…",
+        "notes_required": "Add resolution notes before you resolve the dispute.",
         "submit": "Resolve dispute",
         "submitted": "Dispute resolution submitted",
         "settlement_preference": "Customer's choice of settlement",
         "settlement": {
           "card_refund": "Refund to card",
-          "credit": "Credit to their balance"
+          "credit": "Credit to their balance",
+          "cash_refund": "Money back (paid in cash)"
         },
         "credit_disclaimer": "The customer chose credit: the amount is added to their credit balance instead of being refunded to the card.",
+        "cash_warning": "This order was paid in cash, so a refund amount will be refused. Return the money by hand and leave the amount empty.",
         "charge": {
           "toggle": "Charge the cleaner",
           "hint": "Only when the dispute finds the cleaner at fault. The amount is deducted from their pay for this order, and they see the reason on it. When that pay is already invoiced, the amount comes off their next invoice.",
           "cleaner": "Cleaner",
           "amount": "Amount to deduct",
-          "reason": "Reason",
+          "reason": "Reason the cleaner sees",
           "reason_placeholder": "The cleaner sees this reason on their pay record…",
-          "unnamed": "Unnamed cleaner"
+          "unnamed": "Unnamed cleaner",
+          "incomplete": "To charge the cleaner, choose the cleaner and enter the amount and the reason the cleaner sees."
         }
       }
     },
@@ -2790,7 +2834,11 @@
         "retry_confirm_message": "This re-runs the erasure of the account of user {{userId}}. If it succeeds, the account is permanently anonymized and any unused customer credit on it is written off, with no payout and no way to restore it. This cannot be undone.",
         "retry_confirm_yes": "Retry",
         "retry_success": "Deletion retried. The account is now erased.",
-        "retry_error": "Couldn't retry the deletion."
+        "retry_error": "Couldn't retry the deletion.",
+        "actor": {
+          "self": "The customer",
+          "system": "Automatically"
+        }
       },
       "request_status": {
         "Pending": "Pending",
@@ -2855,6 +2903,23 @@
       "empty": "Nothing to read",
       "empty_hint": "New orders, lost cleaners, disputes, failed payments and company milestones will show up here.",
       "unread": "Unread",
+      "critical": "Critical",
+      "tabs": {
+        "all": "All",
+        "critical": "Critical",
+        "info": "Info"
+      },
+      "types": {
+        "order": "Order",
+        "cleaner": "Cleaner",
+        "dispute": "Dispute",
+        "payment": "Payment",
+        "refund": "Refund",
+        "referral": "Referral",
+        "data_protection": "Data protection",
+        "company": "Company",
+        "other": "Other"
+      },
       "messages": {
         "marked_all_read": "{{count}} marked as read"
       },
@@ -2888,6 +2953,10 @@
             "no_cleaner_yet": {
               "title": "An order still has no cleaner",
               "body": "Order {{orderNumber}} on {{cleaningDateTime}} still has nobody on it. Assign a cleaner from the order; if nobody takes it, it is cancelled automatically after its start. To call it off before then, cancel it as a no-show from the order: the customer gets the same refund and apology credit."
+            },
+            "no_cleaner_soon": {
+              "title": "An order starting soon has no cleaner",
+              "body": "Order {{orderNumber}} on {{cleaningDateTime}} starts within two hours and still has nobody on it. Assign a cleaner from the order now; if nobody takes it, it is cancelled automatically after its start. To call it off, cancel it as a no-show from the order: the customer gets the same refund and apology credit."
             },
             "lockout_reported": {
               "title": "The cleaner cannot get in",
@@ -2923,11 +2992,15 @@
             },
             "refund_needs_retry": {
               "title": "A refund needs a retry",
-              "body": "The refund of {{amount}} on order {{orderNumber}} has not gone through, and it is not retried automatically. Retry it once from the dispute or the order: that checks it with Stripe, records it if Stripe made it and closes it if Stripe failed it. A refund Stripe failed cannot be sent again: then refund the money another way — the full refund if it was not the one that failed, a partial refund of other lines, or credit."
+              "body": "The refund of {{amount}} on order {{orderNumber}} has not gone through, and it is not retried automatically. Open the order and use its Refunds button: retry the refund once there, which checks it with Stripe, records it if Stripe made it and closes it if Stripe failed it, or record how the customer was repaid. A refund Stripe failed cannot be sent again: then refund the money another way — the full refund if it was not the one that failed, a partial refund of other lines, or credit — and record it there."
             },
             "refund_without_cancel": {
               "title": "A refund was asked for a cancellation that did not go through",
               "body": "The refund of {{amount}} on order {{orderNumber}} was asked of Stripe for a cancellation that did not go through, and it is not retried automatically. If the booking is still open, cancel the order; if the clean went ahead, do not issue a refund on it: reconcile this claim in Stripe first."
+            },
+            "refund_bounced": {
+              "title": "A refund did not reach the customer",
+              "body": "Stripe reports that the card refund of {{amount}} on order {{orderNumber}} failed, so the money did not reach the customer. Repay the customer by bank transfer, or as credit if they choose it, and record that on the Refunds page."
             }
           },
           "erasure": {
@@ -3021,7 +3094,6 @@
         "write_off_note": "Write-off note"
       },
       "actions": {
-        "view_order": "Open the order",
         "write_off": "Write off"
       },
       "write_off": {
@@ -3033,6 +3105,64 @@
       },
       "messages": {
         "write_off_success": "Receivable written off"
+      }
+    },
+    "refunds": {
+      "title": "Refunds",
+      "description": "Card refunds of the company's orders. Not sent means Stripe has not confirmed the refund yet; Failed and Bounced are money still owed to the customer. A row opens its order.",
+      "guest": "Guest",
+      "filters": {
+        "state": "State",
+        "needs_action": "Needs action",
+        "requested_from": "Requested from",
+        "requested_to": "Requested to"
+      },
+      "scope": {
+        "order": "Showing the refunds of one order.",
+        "customer": "Showing the refunds of one customer.",
+        "clear": "Show all"
+      },
+      "load_error": "Could not load the refunds.",
+      "retry_load": "Try again",
+      "empty": "No refunds.",
+      "columns": {
+        "order": "Order",
+        "customer": "Customer",
+        "origin": "Origin",
+        "amount": "Amount",
+        "state": "State",
+        "requested_on": "Requested",
+        "last_changed_on": "Last change"
+      },
+      "actions": {
+        "retry": "Retry",
+        "open_dispute": "Open dispute",
+        "record_repayment": "Record repayment"
+      },
+      "hints": {
+        "retried_hourly": "Retried every hour",
+        "waiting_for_admin": "Waiting for an admin",
+        "repaid_transfer": "Repaid by transfer {{reference}}",
+        "repaid_credit": "Repaid as credit"
+      },
+      "retry_confirm": {
+        "title": "Retry the refund",
+        "body": "Retry the refund of {{amount}} on order {{order}}? Stripe is asked first, so it is never sent twice.",
+        "yes": "Retry"
+      },
+      "repayment": {
+        "title": "Record a repayment",
+        "lede": "Transfer the exact amount to the customer first, then record it here. The console does not send the money.",
+        "reference": "Transfer reference",
+        "reference_hint": "For example: the variable symbol",
+        "credit_chosen": "The customer chose credit",
+        "credit_needs_account": "Credit is only for a customer with an account.",
+        "record_transfer": "Record transfer",
+        "record_credit": "Record as credit"
+      },
+      "messages": {
+        "retry_done": "Refund retried",
+        "repayment_recorded": "Repayment recorded"
       }
     },
     "cash_held": {
@@ -3071,6 +3201,7 @@
   },
   "pay_periods": {
     "title": "Pay Period Management",
+    "closed_by_system": "Automatically",
     "description": "Manage pay periods, close periods, and track partner payments",
     "create_new": "Create New Pay Period",
     "filters": {
@@ -3092,7 +3223,6 @@
         "closed_by": "Closed By",
         "actions": "Actions"
       },
-      "view_details": "View Details",
       "no_records": "No pay periods found"
     },
     "days_one": "{{count}} day",
@@ -3134,6 +3264,13 @@
           "hint_past_end": "This period ended on {{ end }} and has not been closed yet. Within about 20 minutes every cleaner with pay in it gets an invoice by e-mail. The next period runs from {{ next }} for {{ days }} days, and jobs finished after you close go into it. A closed period can't be reopened.",
           "reason": "Reason (kept in the audit log)",
           "submit": "Close the period now"
+        },
+        "change_end": {
+          "action": "Change end date",
+          "hint": "The period then closes the night after the new end date, and the next one starts the day after it. Jobs already finished stay in this period. To end it today, use “Close now”.",
+          "end_date": "New end date",
+          "submit": "Save the new end date",
+          "success": "End date changed"
         },
         "mark_paid": {
           "action": "Mark Period as Paid",
@@ -3378,6 +3515,9 @@
       "tier_config_not_found": "Loyalty tier configuration not found.",
       "tier_perks_json_invalid": "The tier perks must be valid JSON."
     },
+    "marketing": {
+      "no_opted_in_customers": "No customer in your company has promotional notifications switched on, so this push would reach nobody."
+    },
     "membership": {
       "plan": {
         "action_failed": "The membership plan action failed. Try again.",
@@ -3550,7 +3690,11 @@
       "lines_required": "Select at least one service or package to refund.",
       "nothing_refundable": "There is nothing left to refund on this order.",
       "order_not_refundable": "This order is not eligible for a refund.",
-      "override_reason_required": "A justification is required to refund outside the allowed window."
+      "override_reason_required": "A justification is required to refund outside the allowed window.",
+      "not_found": "This refund was not found on this order.",
+      "not_retryable": "This refund cannot be retried. Only a refund that was not sent can be retried, and a dispute's refund is retried by resolving the dispute again.",
+      "not_owed": "Only a failed or bounced refund that has not been repaid can be recorded as repaid.",
+      "credit_unavailable": "Credit is not available for this customer: they have no account, their account was erased, or their company's books are closed. Repay by bank transfer."
     },
     "service": {
       "category_not_found": "Service category not found.",

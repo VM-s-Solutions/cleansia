@@ -17,6 +17,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ChartConfiguration, ChartType } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
 import { Skeleton } from 'primeng/skeleton';
+import { monthName } from '../dashboard-labels';
 
 @Component({
   selector: 'cleansia-earnings-chart',
@@ -85,6 +86,7 @@ export class CleansiaEarningsChartComponent {
 
   constructor() {
     effect(() => {
+      this.lang();
       const currentData = this.data();
       if (currentData) {
         this.updateChartData(currentData);
@@ -101,7 +103,7 @@ export class CleansiaEarningsChartComponent {
       return;
     }
 
-    const labels = currentData.monthlyEarnings.map((m) => m.monthName);
+    const labels = currentData.monthlyEarnings.map((m) => monthName(m.year, m.month, this.lang()));
     const earnings = currentData.monthlyEarnings.map((m) => m.amount);
 
     this.lineChartData = {

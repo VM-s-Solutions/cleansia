@@ -1842,6 +1842,8 @@ public class RefundServiceTests
         Assert.Equal(BusinessErrorMessage.RefundFailed, result.Error?.Message);
         Assert.Equal(0, _stripe.RefundCallCount);
         Assert.Equal(RefundStatus.Failed, refund.Status);
+        Assert.NotNull(refund.FailedOn);
+        Assert.Equal("re_failed", refund.StripeRefundId);
         Assert.Equal([(RefundStatus.Failed, 1)], committed);
         Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
         var alert = Assert.Single(_raised);
@@ -1917,6 +1919,22 @@ public class RefundServiceTests
         Assert.Empty(_stripe.Lookups);
         Assert.Equal(1, _stripe.RefundCallCount);
         Assert.Equal(RefundStatus.Succeeded, Assert.Single(added).Status);
+    }
+
+    [Fact]
+    public async Task A_Refund_The_Webhook_Already_Marked_Failed_Raises_Nothing_More_When_The_Same_Key_Is_Retried()
+    {
+        var order = CreateCardPaidOrder(1000m);
+        ArrangeOrder(order);
+        ArrangeConsumed(0m);
+        var refund = ArrangeRetriedRefund(order, 1000m, new StripeRefundSnapshot("re_failed", 1000m, Failed: true));
+        Assert.True(refund.MarkFailedByStripe("re_failed", DateTimeOffset.UtcNow));
+
+        var result = await RetryAsync(RetryPath.ReusedRow, refund, 1000m);
+
+        Assert.Equal(BusinessErrorMessage.RefundFailed, result.Error?.Message);
+        Assert.Equal(0, _stripe.RefundCallCount);
+        Assert.Empty(_raised);
     }
 
     private sealed class RecordingStripeClient : IStripeClient

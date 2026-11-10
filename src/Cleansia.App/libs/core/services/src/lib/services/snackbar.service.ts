@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { MessageService } from 'primeng/api';
-import { extractApiErrorCode } from './api-error';
+import { extractApiErrorCode, GENERIC_API_ERROR_KEY } from './api-error';
 
 const DEFAULT_SNACKBAR_DURATION = 3_000;
 
@@ -30,9 +30,7 @@ export const DEFAULT_SNACKBAR_ERROR_MAPPINGS: Readonly<Record<string, string>> =
   // account actually uses ('auth.google_type_error', 'auth.apple_type_error',
   // the neutral 'auth.external_type_error', and the mirror case
   // 'auth.internal_type_error'). The login facades report through
-  // `showApiError`, which looks up this map and otherwise prints the raw key,
-  // so without these entries the login screen shows 'auth.apple_type_error'
-  // verbatim. The HTTP interceptor resolves the same keys under `api.` itself.
+  // `showApiError`. The HTTP interceptor resolves the same keys under `api.` itself.
   authgoogletypeerror: 'api.auth.google_type_error',
   authappletypeerror: 'api.auth.apple_type_error',
   authexternaltypeerror: 'api.auth.external_type_error',
@@ -40,14 +38,12 @@ export const DEFAULT_SNACKBAR_ERROR_MAPPINGS: Readonly<Record<string, string>> =
   // Password reset. The forgot-password facades report through `showApiError`
   // too, and `showSnackbar` clears the message queue — so the facade's snackbar
   // replaces the interceptor's already-translated one and is the message the
-  // user actually reads. Without these entries it prints the raw
-  // 'auth.invalid_reset_token' on screen.
+  // user actually reads.
   authinvalidresettoken: 'api.auth.invalid_reset_token',
   authsameresetpassword: 'api.auth.same_reset_password',
   // Social sign-in that matches no account. The sign-in pair asserts no terms
   // tick, so the backend refuses rather than provisioning, and the login
-  // facade's showApiError replaces the interceptor's translated snackbar —
-  // without this entry the screen prints 'auth.social_account_not_found'.
+  // facade's showApiError replaces the interceptor's translated snackbar.
   authsocialaccountnotfound: 'api.auth.social_account_not_found',
   // A missed order lookup. The admin incident-file scope is an order id typed by
   // hand, so 'order.not_found' is a routine refusal there, and the facade's
@@ -109,73 +105,22 @@ export class SnackbarService {
   }
 
   /**
-   * Extracts the error message from an API exception and attempts to translate it.
-   * Looks for the error message in the following order:
-   * 1. result.detail (standard ASP.NET Core problem details)
-   * 2. result.title
-   * 3. error.message
-   * 4. fallback translation key
+   * Resolves an API failure to a translated message: the code through the error map, then
+   * `api.<code>`, then the code as a bundle key, then the caller's fallback, then the generic
+   * message. A raw code, response text or exception message never reaches the screen.
    */
   extractApiErrorMessage(error: unknown, fallbackKey?: string): string {
-    const fallbackMessage = fallbackKey
-      ? this.translate.instant(fallbackKey)
-      : this.translate.instant('api.common.error_occurred');
-
-    if (!error) {
-      return fallbackMessage;
-    }
-
-    const apiError = error as { message?: string; response?: string };
-
-    let errorDetail = extractApiErrorCode(error);
-
-    // extractApiErrorCode yields no code when the response is a non-JSON
-    // string; surface that raw string if it reads like an error message.
-    if (!errorDetail && apiError.response) {
-      try {
-        JSON.parse(apiError.response);
-      } catch {
-        if (
-          !apiError.response.startsWith('<') &&
-          apiError.response.length < 500
-        ) {
-          errorDetail = apiError.response;
-        }
+    const code = error ? extractApiErrorCode(error) : undefined;
+    if (code) {
+      const mapped = this.errorMappings[code.toLowerCase().replace(/[^a-z]/g, '')];
+      for (const key of [mapped, `api.${code}`, code]) {
+        if (!key) continue;
+        const message = this.translate.instant(key);
+        if (message !== key) return message;
       }
     }
 
-    // If no error detail found, use the error message or fallback
-    if (!errorDetail) {
-      return apiError.message || fallbackMessage;
-    }
-
-    // Try to translate the error detail as a key (e.g., "AfterPhotosRequiredToComplete" -> "api.order.after_photos.required")
-    const translationKey = this.convertToTranslationKey(errorDetail);
-    const translatedMessage = this.translate.instant(translationKey);
-
-    // If translation key was found, use it; otherwise use the original error detail
-    return translatedMessage !== translationKey
-      ? translatedMessage
-      : errorDetail;
-  }
-
-  /**
-   * Converts a PascalCase or camelCase error message to a translation key.
-   * E.g., "AfterPhotosRequiredToComplete" -> "api.order.after_photos.required"
-   * This is a best-effort conversion for common patterns.
-   */
-  private convertToTranslationKey(errorMessage: string): string {
-    // Normalize the error message for lookup
-    const normalizedMessage = errorMessage
-      .toLowerCase()
-      .replace(/[^a-z]/g, '');
-
-    if (this.errorMappings[normalizedMessage]) {
-      return this.errorMappings[normalizedMessage];
-    }
-
-    // Return the original message as a key (won't translate but won't break)
-    return errorMessage;
+    return this.translate.instant(fallbackKey ?? GENERIC_API_ERROR_KEY);
   }
 
   private showSnackbar(

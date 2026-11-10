@@ -9,7 +9,6 @@ import {
 import {
   FilterChip,
   ICleansiaSelectOption,
-  TableAction,
   TableColumn,
 } from '@cleansia/components';
 import { formatDate } from '@cleansia/utils';
@@ -66,21 +65,6 @@ export function getAuditLogTableColumns(
       width: '10%',
       align: 'center',
       customTemplate: outcomeTemplate,
-    },
-  ];
-}
-
-export function getAuditLogTableActions(
-  translate: TranslateService,
-  onView: (row: AdminActionAuditDto) => void
-): TableAction<AdminActionAuditDto>[] {
-  return [
-    {
-      icon: 'pi pi-eye',
-      color: 'primary',
-      tooltip: translate.instant('pages.audit_log.entry.view'),
-      visible: (row: AdminActionAuditDto) => !!row.id,
-      onClick: onView,
     },
   ];
 }

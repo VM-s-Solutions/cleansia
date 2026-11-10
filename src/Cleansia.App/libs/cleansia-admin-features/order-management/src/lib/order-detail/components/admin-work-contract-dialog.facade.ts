@@ -10,6 +10,7 @@ import {
   buildWorkContractAcceptanceRows,
   WORK_CONTRACT_FACTS_KEY,
 } from './admin-work-contract-dialog.models';
+import { ExtraNames, extraLabel, loadExtraNames } from '../extra-names';
 
 interface ContractRead {
   contract: WorkContractDto;
@@ -28,6 +29,7 @@ export class AdminWorkContractDialogFacade extends UnsubscribeControlDirective {
   readonly loading = signal(false);
   readonly loadFailed = signal(false);
   readonly language = signal<string>(this.translate.currentLang);
+  private readonly extraNames = signal<ExtraNames>({});
 
   // The document read behind the hash is Administrator-only, while the order detail is open to
   // every admin role; a read the session cannot make is never attempted.
@@ -38,7 +40,9 @@ export class AdminWorkContractDialogFacade extends UnsubscribeControlDirective {
   );
 
   readonly factRows = computed(() =>
-    buildWorkContractFactRows(this.contract()?.facts, this.language(), WORK_CONTRACT_FACTS_KEY)
+    buildWorkContractFactRows(this.contract()?.facts, this.language(), WORK_CONTRACT_FACTS_KEY, (slug) =>
+      extraLabel(slug, this.extraNames())
+    )
   );
 
   readonly acceptanceRows = computed(() =>
@@ -65,6 +69,7 @@ export class AdminWorkContractDialogFacade extends UnsubscribeControlDirective {
 
   load(acceptanceId: string): void {
     this.acceptanceId = acceptanceId;
+    loadExtraNames(this.adminClient).pipe(takeUntil(this.destroyed$)).subscribe((names) => this.extraNames.set(names));
     this.fetch();
   }
 

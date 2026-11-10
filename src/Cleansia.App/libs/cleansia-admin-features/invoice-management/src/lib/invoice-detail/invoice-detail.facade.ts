@@ -35,6 +35,7 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
   readonly invoice = signal<EmployeeInvoiceDetailDto | null>(null);
   readonly loading = signal<boolean>(false);
   readonly actionLoading = signal<boolean>(false);
+  readonly downloading = signal<boolean>(false);
 
   readonly markPaidOpen = signal<boolean>(false);
   readonly bankTransferNote = signal<string>('');
@@ -277,11 +278,13 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
     const inv = this.invoice();
     if (!inv?.id) return;
 
+    this.downloading.set(true);
     this.adminClient.adminInvoiceClient
       .download(inv.id)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null))
+        catchError(() => of(null)),
+        finalize(() => this.downloading.set(false))
       )
       .subscribe((response) => {
         if (response && response.data) {

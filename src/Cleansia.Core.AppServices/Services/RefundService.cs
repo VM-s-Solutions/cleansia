@@ -261,6 +261,69 @@ public sealed class RefundService(
         return await SettleAsync(order, refund, creditShare, actorId, retry: true, cancellationToken);
     }
 
+    public async Task<BusinessResult<RefundResult>> RecordRepaymentAsync(
+        Refund refund, RefundRepaymentMethod method, string? reference, string actorId, CancellationToken cancellationToken)
+    {
+        var order = await orderRepository.GetByIdAsync(refund.OrderId, cancellationToken);
+        if (order is null)
+        {
+            return BusinessResult.Failure<RefundResult>(new Error(
+                nameof(refund.OrderId), BusinessErrorMessage.OrderNotFound));
+        }
+
+        // The re-drive's room and credit share, with no Stripe call and no clamp: the money already left, so a
+        // refund that no longer fits whole is refused rather than recorded as less than was paid.
+        var consumed = await CardRefundedOrOwedAsync(refundRepository, order.Id, refund.RefundKey, cancellationToken);
+        if (CardRefundCeiling(order, consumed) < refund.Amount)
+        {
+            return BusinessResult.Failure<RefundResult>(new Error(
+                nameof(refund.Amount), BusinessErrorMessage.RefundNothingRefundable));
+        }
+
+        var creditOnThisKey = await creditAccountRepository.GetReturnedForRefundAsync(
+            refund.RefundKey, cancellationToken);
+        var creditAlreadyReturned = await creditAccountRepository.GetReturnedTotalForOrderAsync(
+            order.Id, cancellationToken) - creditOnThisKey;
+        var settledInCredit = await creditAccountRepository.GetDisputeSettledTotalForOrderAsync(
+            order.Id, cancellationToken);
+        var cardCharged = CardChargedAmount(order);
+        var slice = creditOnThisKey > 0m || cardCharged <= 0m
+            ? refund.Amount + creditOnThisKey
+            : Math.Round(refund.Amount * order.TotalPrice / cardCharged, 2, MidpointRounding.AwayFromZero);
+        var held = await HeldToWhatIsLeftAsync(
+            order, slice, refund.RefundKey, creditAlreadyReturned, settledInCredit, cancellationToken);
+        var creditShare = creditOnThisKey > 0m ? 0m : SplitAcrossTenders(order, held, creditAlreadyReturned).Credit;
+        if (held < slice)
+        {
+            if (held - creditOnThisKey < refund.Amount)
+            {
+                return BusinessResult.Failure<RefundResult>(new Error(
+                    nameof(refund.Amount), BusinessErrorMessage.RefundNothingRefundable));
+            }
+
+            creditShare = CreditBesideCard(held, refund.Amount, creditShare, creditOnThisKey);
+        }
+
+        refund.MarkRepaid(method, reference, DateTimeOffset.UtcNow);
+
+        // The credit return is raw SQL that commits on its own unless a transaction is open; the customer's credit
+        // lock opens one, so it lands with the stamp and the payment status or not at all.
+        if (creditShare > 0m && !string.IsNullOrEmpty(order.UserId))
+        {
+            await creditAccountRepository.LockForUserAsync(order.UserId, cancellationToken);
+        }
+
+        await RecordGivenBackAsync(order, refund, creditShare, actorId, cancellationToken);
+
+        return BusinessResult.Success(new RefundResult(
+            RefundId: refund.Id,
+            RefundKey: refund.RefundKey,
+            Amount: refund.Amount,
+            Status: refund.Status,
+            ResolvedToExisting: false,
+            CreditReturned: await creditAccountRepository.GetReturnedForRefundAsync(refund.RefundKey, cancellationToken)));
+    }
+
     /// <summary>
     /// The card money a retry of <paramref name="refund"/> leaves room for on the charge: refunds Stripe
     /// confirmed, and the pending refunds it must count. A pending refund counts only those claimed before it.
@@ -339,8 +402,11 @@ public sealed class RefundService(
                 // Committed here with the administrators' alert, as the claim is: a caller that fails on refund.failed
                 // rolls back, a row left pending would keep counting in every ceiling money Stripe never paid, and
                 // once closed no job selects it again, so the alert is the only thing that gets the money paid.
-                refund.MarkFailed();
-                await RaiseForRetryAsync(order, refund, cancellationToken);
+                if (refund.MarkFailedByStripe(made.Id, DateTimeOffset.UtcNow))
+                {
+                    await RaiseForRetryAsync(order, refund, cancellationToken);
+                }
+
                 await refundRepository.CommitAsync(cancellationToken);
                 logger.LogError(
                     "Stripe failed refund {StripeRefundId} it made for order {OrderId} on refund {RefundId}; the refund is closed and nothing is sent again.",
@@ -382,21 +448,7 @@ public sealed class RefundService(
         const int maxAttempts = 3;
         for (var attempt = 1; ; attempt++)
         {
-            // A second settle of this key (sent twice, or the wind-down's re-drive beside the hourly one or itself)
-            // may have committed it already; it is left out of the total and counted once, as this refund's amount.
-            var succeededConsumed = await refundRepository.GetSucceededRefundTotalForOrderAsync(
-                order.Id, refundKey, cancellationToken);
-
-            // The credit leg is independently idempotent; an erased account receives only its card refund.
-            await ReturnCreditShareAsync(order, creditShare, refundKey, actorId, cancellationToken);
-
-            order.UpdatePaymentStatus(IsFullyRefunded(
-                    order,
-                    succeededConsumed + refund.Amount,
-                    await creditAccountRepository.GetReturnedTotalForOrderAsync(order.Id, cancellationToken),
-                    await creditAccountRepository.GetDisputeSettledTotalForOrderAsync(order.Id, cancellationToken))
-                ? PaymentStatus.Refunded
-                : PaymentStatus.PartiallyRefunded);
+            await RecordGivenBackAsync(order, refund, creditShare, actorId, cancellationToken);
             try
             {
                 await refundRepository.CommitAsync(cancellationToken);
@@ -422,6 +474,29 @@ public sealed class RefundService(
             Status: RefundStatus.Succeeded,
             ResolvedToExisting: false,
             CreditReturned: await creditAccountRepository.GetReturnedForRefundAsync(refundKey, cancellationToken)));
+    }
+
+    /// <summary>
+    /// What a refund that has left the company does to the order: its credit share goes back and the payment
+    /// status is re-derived. A second settle of this key (sent twice, or the wind-down's re-drive beside the hourly
+    /// one or itself) may have committed it already; it is left out of the total and counted once, as this
+    /// refund's amount. The credit leg is independently idempotent; an erased account receives only its card refund.
+    /// </summary>
+    private async Task RecordGivenBackAsync(
+        Order order, Refund refund, decimal creditShare, string actorId, CancellationToken cancellationToken)
+    {
+        var succeededConsumed = await refundRepository.GetSucceededRefundTotalForOrderAsync(
+            order.Id, refund.RefundKey, cancellationToken);
+
+        await ReturnCreditShareAsync(order, creditShare, refund.RefundKey, actorId, cancellationToken);
+
+        order.UpdatePaymentStatus(IsFullyRefunded(
+                order,
+                succeededConsumed + refund.Amount,
+                await creditAccountRepository.GetReturnedTotalForOrderAsync(order.Id, cancellationToken),
+                await creditAccountRepository.GetDisputeSettledTotalForOrderAsync(order.Id, cancellationToken))
+            ? PaymentStatus.Refunded
+            : PaymentStatus.PartiallyRefunded);
     }
 
     /// <summary>

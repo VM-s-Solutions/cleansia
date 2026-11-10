@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { OrderStatus, OrderStatusTrackDto } from '@cleansia/admin-services';
+import { OrderStatus, OrderStatusTrackDto, PaymentType } from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
   CleansiaLoaderComponent,
@@ -16,6 +16,7 @@ import {
   CleansiaAdminRoute,
   Policy,
 } from '@cleansia/services';
+import { OrderStatusLabelPipe } from '@cleansia/pipes';
 import { TranslatePipe } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
 import {
@@ -36,6 +37,7 @@ import { OrderDetailFacade } from './order-detail.facade';
     CleansiaSectionComponent,
     CleansiaStatusBadgeComponent,
     TranslatePipe,
+    OrderStatusLabelPipe,
     AdminOrderOpsComponent,
     AdminOrderPhotosComponent,
     AdminOrderRefundComponent,
@@ -69,6 +71,16 @@ export class OrderDetailComponent implements OnInit {
     this.router.navigate(
       buildAuditResourceHistoryRoute(AuditResourceType.Order, orderId)
     );
+  }
+
+  isCardOrder(): boolean {
+    return this.facade.order()?.paymentType?.value === PaymentType.Card;
+  }
+
+  viewRefunds(): void {
+    const orderId = this.facade.order()?.id;
+    if (!orderId) return;
+    this.router.navigate([CleansiaAdminRoute.ORDER_MANAGEMENT, 'refunds'], { queryParams: { orderId } });
   }
 
   exportIncidentFile(): void {

@@ -172,7 +172,7 @@
           totalRecords: facade.myTotalRecords(),
           emptyMessage: 'pages.orders.no_my_orders'
         }"
-        [loading]="facade.myLoading()"
+        [loading]="facade.myLoading() || facade.startingOrder()"
         (pageChange)="facade.onMyOrdersPageChange($event)"
         (sortChange)="facade.onMySortChange($event)"
         (rowClick)="viewOrderDetails($event)"

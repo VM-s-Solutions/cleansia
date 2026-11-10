@@ -10683,9 +10683,10 @@ export interface IAdminNotificationClient {
      * @param sort (optional) 
      * @param offset (optional) 
      * @param limit (optional) 
+     * @param critical (optional) 
      * @return OK
      */
-    getPaged(audience?: NotificationFeedAudience | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfUserNotificationDto>;
+    getPaged(audience?: NotificationFeedAudience | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined, critical?: boolean | undefined): Observable<PagedDataOfUserNotificationDto>;
     /**
      * @return OK
      */
@@ -10720,9 +10721,10 @@ export class AdminNotificationClient implements IAdminNotificationClient {
      * @param sort (optional) 
      * @param offset (optional) 
      * @param limit (optional) 
+     * @param critical (optional) 
      * @return OK
      */
-    getPaged(audience?: NotificationFeedAudience | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfUserNotificationDto> {
+    getPaged(audience?: NotificationFeedAudience | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined, critical?: boolean | undefined): Observable<PagedDataOfUserNotificationDto> {
         let url = this.baseUrl + "/api/AdminNotification/get-paged?";
         if (audience === null)
             throw new globalThis.Error("The parameter 'audience' cannot be null.");
@@ -10745,6 +10747,10 @@ export class AdminNotificationClient implements IAdminNotificationClient {
             throw new globalThis.Error("The parameter 'limit' cannot be null.");
         else if (limit !== undefined)
             url += "Limit=" + encodeURIComponent("" + limit) + "&";
+        if (critical === null)
+            throw new globalThis.Error("The parameter 'critical' cannot be null.");
+        else if (critical !== undefined)
+            url += "critical=" + encodeURIComponent("" + critical) + "&";
         url = url.replace(/[?&]$/, "");
 
         let options : any = {
@@ -15685,6 +15691,28 @@ export class AdminReferralClient implements IAdminReferralClient {
 
 export interface IAdminRefundClient {
     /**
+     * @param states (optional) 
+     * @param userId (optional) 
+     * @param orderId (optional) 
+     * @param requestedFrom (optional) 
+     * @param requestedTo (optional) 
+     * @param sort (optional) 
+     * @param offset (optional) 
+     * @param limit (optional) 
+     * @return OK
+     */
+    getPaged(states?: RefundState[] | undefined, userId?: string | undefined, orderId?: string | undefined, requestedFrom?: Date | undefined, requestedTo?: Date | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfRefundListItem>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    retry(body?: RetryRefundCommand | undefined): Observable<RetryRefundResponse>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    recordRepayment(body?: RecordRefundRepaymentCommand | undefined): Observable<RecordRefundRepaymentResponse>;
+    /**
      * @param body (optional) 
      * @return OK
      */
@@ -15702,6 +15730,277 @@ export class AdminRefundClient implements IAdminRefundClient {
     constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(ADMINAPIBASEURL) baseUrl?: string) {
         this.http = http;
         this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * @param states (optional) 
+     * @param userId (optional) 
+     * @param orderId (optional) 
+     * @param requestedFrom (optional) 
+     * @param requestedTo (optional) 
+     * @param sort (optional) 
+     * @param offset (optional) 
+     * @param limit (optional) 
+     * @return OK
+     */
+    getPaged(states?: RefundState[] | undefined, userId?: string | undefined, orderId?: string | undefined, requestedFrom?: Date | undefined, requestedTo?: Date | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfRefundListItem> {
+        let url = this.baseUrl + "/api/AdminRefund/get-paged?";
+        if (states === null)
+            throw new globalThis.Error("The parameter 'states' cannot be null.");
+        else if (states !== undefined)
+            states && states.forEach(item => { url += "Filter.States=" + encodeURIComponent("" + item) + "&"; });
+        if (userId === null)
+            throw new globalThis.Error("The parameter 'userId' cannot be null.");
+        else if (userId !== undefined)
+            url += "Filter.UserId=" + encodeURIComponent("" + userId) + "&";
+        if (orderId === null)
+            throw new globalThis.Error("The parameter 'orderId' cannot be null.");
+        else if (orderId !== undefined)
+            url += "Filter.OrderId=" + encodeURIComponent("" + orderId) + "&";
+        if (requestedFrom === null)
+            throw new globalThis.Error("The parameter 'requestedFrom' cannot be null.");
+        else if (requestedFrom !== undefined)
+            url += "Filter.RequestedFrom=" + encodeURIComponent(requestedFrom ? "" + requestedFrom.toISOString() : "") + "&";
+        if (requestedTo === null)
+            throw new globalThis.Error("The parameter 'requestedTo' cannot be null.");
+        else if (requestedTo !== undefined)
+            url += "Filter.RequestedTo=" + encodeURIComponent(requestedTo ? "" + requestedTo.toISOString() : "") + "&";
+        if (sort === null)
+            throw new globalThis.Error("The parameter 'sort' cannot be null.");
+        else if (sort !== undefined)
+            sort && sort.forEach((item, index) => {
+                for (const attr in item)
+        			if (item.hasOwnProperty(attr)) {
+        				url += "Sort[" + index + "]." + attr + "=" + encodeURIComponent("" + (item as any)[attr]) + "&";
+        			}
+            });
+        if (offset === null)
+            throw new globalThis.Error("The parameter 'offset' cannot be null.");
+        else if (offset !== undefined)
+            url += "Offset=" + encodeURIComponent("" + offset) + "&";
+        if (limit === null)
+            throw new globalThis.Error("The parameter 'limit' cannot be null.");
+        else if (limit !== undefined)
+            url += "Limit=" + encodeURIComponent("" + limit) + "&";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetPaged(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGetPaged(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<PagedDataOfRefundListItem>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<PagedDataOfRefundListItem>;
+        }));
+    }
+
+    protected processGetPaged(response: HttpResponseBase): Observable<PagedDataOfRefundListItem> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = PagedDataOfRefundListItem.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    retry(body?: RetryRefundCommand | undefined): Observable<RetryRefundResponse> {
+        let url = this.baseUrl + "/api/AdminRefund/retry";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processRetry(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processRetry(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<RetryRefundResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<RetryRefundResponse>;
+        }));
+    }
+
+    protected processRetry(response: HttpResponseBase): Observable<RetryRefundResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = RetryRefundResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    recordRepayment(body?: RecordRefundRepaymentCommand | undefined): Observable<RecordRefundRepaymentResponse> {
+        let url = this.baseUrl + "/api/AdminRefund/record-repayment";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processRecordRepayment(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processRecordRepayment(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<RecordRefundRepaymentResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<RecordRefundRepaymentResponse>;
+        }));
+    }
+
+    protected processRecordRepayment(response: HttpResponseBase): Observable<RecordRefundRepaymentResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = RecordRefundRepaymentResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
     }
 
     /**
@@ -32660,6 +32959,62 @@ export interface IPagedDataOfReceivableListItem {
     data: ReceivableListItem[] | undefined;
 }
 
+export class PagedDataOfRefundListItem implements IPagedDataOfRefundListItem {
+    pageNumber!: number;
+    pageSize!: number;
+    total!: number;
+    data!: RefundListItem[] | undefined;
+
+    constructor(data?: IPagedDataOfRefundListItem) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.pageNumber = Data["pageNumber"];
+            this.pageSize = Data["pageSize"];
+            this.total = Data["total"];
+            if (Array.isArray(Data["data"])) {
+                this.data = [] as any;
+                for (let item of Data["data"])
+                    this.data!.push(RefundListItem.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): PagedDataOfRefundListItem {
+        data = typeof data === 'object' ? data : {};
+        let result = new PagedDataOfRefundListItem();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["pageNumber"] = this.pageNumber;
+        data["pageSize"] = this.pageSize;
+        data["total"] = this.total;
+        if (Array.isArray(this.data)) {
+            data["data"] = [];
+            for (let item of this.data)
+                data["data"].push(item ? item.toJSON() : undefined as any);
+        }
+        return data;
+    }
+}
+
+export interface IPagedDataOfRefundListItem {
+    pageNumber: number;
+    pageSize: number;
+    total: number;
+    data: RefundListItem[] | undefined;
+}
+
 export class PagedDataOfServiceListItem implements IPagedDataOfServiceListItem {
     pageNumber!: number;
     pageSize!: number;
@@ -33853,6 +34208,94 @@ export interface IRecordCashRemittanceResponse {
     id: string | undefined;
 }
 
+export class RecordRefundRepaymentCommand implements IRecordRefundRepaymentCommand {
+    orderId!: string | undefined;
+    refundId!: string | undefined;
+    method!: RefundRepaymentMethod;
+    reference!: string | undefined;
+
+    constructor(data?: IRecordRefundRepaymentCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.orderId = Data["orderId"];
+            this.refundId = Data["refundId"];
+            this.method = Data["method"];
+            this.reference = Data["reference"];
+        }
+    }
+
+    static fromJS(data: any): RecordRefundRepaymentCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new RecordRefundRepaymentCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["orderId"] = this.orderId;
+        data["refundId"] = this.refundId;
+        data["method"] = this.method;
+        data["reference"] = this.reference;
+        return data;
+    }
+}
+
+export interface IRecordRefundRepaymentCommand {
+    orderId: string | undefined;
+    refundId: string | undefined;
+    method: RefundRepaymentMethod;
+    reference: string | undefined;
+}
+
+export class RecordRefundRepaymentResponse implements IRecordRefundRepaymentResponse {
+    refundId!: string | undefined;
+    state!: Code;
+
+    constructor(data?: IRecordRefundRepaymentResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.refundId = Data["refundId"];
+            this.state = Data["state"] ? Code.fromJS(Data["state"]) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): RecordRefundRepaymentResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new RecordRefundRepaymentResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["refundId"] = this.refundId;
+        data["state"] = this.state ? this.state.toJSON() : undefined as any;
+        return data;
+    }
+}
+
+export interface IRecordRefundRepaymentResponse {
+    refundId: string | undefined;
+    state: Code;
+}
+
 export enum ReferralStatus {
     Accepted = 1,
     Qualified = 2,
@@ -33896,11 +34339,129 @@ export interface IRefreshTokenCommand {
     token: string | undefined;
 }
 
+export class RefundListItem implements IRefundListItem {
+    id!: string | undefined;
+    orderId!: string | undefined;
+    displayOrderNumber!: string | undefined;
+    disputeId!: string | undefined;
+    userId!: string | undefined;
+    customerName!: string | undefined;
+    hasAccount!: boolean;
+    amount!: number;
+    currencyCode!: string | undefined;
+    origin!: Code;
+    state!: Code;
+    requestedOn!: Date;
+    lastChangedOn!: Date;
+    repaidOn!: Date | undefined;
+    repaymentMethod!: Code;
+    repaymentReference!: string | undefined;
+    stripeRefundId!: string | undefined;
+    canRetry!: boolean;
+
+    constructor(data?: IRefundListItem) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.orderId = Data["orderId"];
+            this.displayOrderNumber = Data["displayOrderNumber"];
+            this.disputeId = Data["disputeId"];
+            this.userId = Data["userId"];
+            this.customerName = Data["customerName"];
+            this.hasAccount = Data["hasAccount"];
+            this.amount = Data["amount"];
+            this.currencyCode = Data["currencyCode"];
+            this.origin = Data["origin"] ? Code.fromJS(Data["origin"]) : undefined as any;
+            this.state = Data["state"] ? Code.fromJS(Data["state"]) : undefined as any;
+            this.requestedOn = Data["requestedOn"] ? new Date(Data["requestedOn"].toString()) : undefined as any;
+            this.lastChangedOn = Data["lastChangedOn"] ? new Date(Data["lastChangedOn"].toString()) : undefined as any;
+            this.repaidOn = Data["repaidOn"] ? new Date(Data["repaidOn"].toString()) : undefined as any;
+            this.repaymentMethod = Data["repaymentMethod"] ? Code.fromJS(Data["repaymentMethod"]) : undefined as any;
+            this.repaymentReference = Data["repaymentReference"];
+            this.stripeRefundId = Data["stripeRefundId"];
+            this.canRetry = Data["canRetry"];
+        }
+    }
+
+    static fromJS(data: any): RefundListItem {
+        data = typeof data === 'object' ? data : {};
+        let result = new RefundListItem();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["orderId"] = this.orderId;
+        data["displayOrderNumber"] = this.displayOrderNumber;
+        data["disputeId"] = this.disputeId;
+        data["userId"] = this.userId;
+        data["customerName"] = this.customerName;
+        data["hasAccount"] = this.hasAccount;
+        data["amount"] = this.amount;
+        data["currencyCode"] = this.currencyCode;
+        data["origin"] = this.origin ? this.origin.toJSON() : undefined as any;
+        data["state"] = this.state ? this.state.toJSON() : undefined as any;
+        data["requestedOn"] = this.requestedOn ? this.requestedOn.toISOString() : undefined as any;
+        data["lastChangedOn"] = this.lastChangedOn ? this.lastChangedOn.toISOString() : undefined as any;
+        data["repaidOn"] = this.repaidOn ? this.repaidOn.toISOString() : undefined as any;
+        data["repaymentMethod"] = this.repaymentMethod ? this.repaymentMethod.toJSON() : undefined as any;
+        data["repaymentReference"] = this.repaymentReference;
+        data["stripeRefundId"] = this.stripeRefundId;
+        data["canRetry"] = this.canRetry;
+        return data;
+    }
+}
+
+export interface IRefundListItem {
+    id: string | undefined;
+    orderId: string | undefined;
+    displayOrderNumber: string | undefined;
+    disputeId: string | undefined;
+    userId: string | undefined;
+    customerName: string | undefined;
+    hasAccount: boolean;
+    amount: number;
+    currencyCode: string | undefined;
+    origin: Code;
+    state: Code;
+    requestedOn: Date;
+    lastChangedOn: Date;
+    repaidOn: Date | undefined;
+    repaymentMethod: Code;
+    repaymentReference: string | undefined;
+    stripeRefundId: string | undefined;
+    canRetry: boolean;
+}
+
 export enum RefundReason {
     CustomerCancellation = 1,
     DisputeResolution = 2,
     AdminDiscretion = 3,
     ServiceNotRendered = 4,
+}
+
+export enum RefundRepaymentMethod {
+    BankTransfer = 1,
+    Credit = 2,
+}
+
+export enum RefundState {
+    NotSent = 1,
+    Refunded = 2,
+    Failed = 3,
+    Bounced = 4,
+    Repaid = 5,
+    Closed = 6,
 }
 
 export class RegenerateInvoicePdfCommand implements IRegenerateInvoicePdfCommand {
@@ -34341,6 +34902,86 @@ export class ResolveDocumentDeletionRequestResponse implements IResolveDocumentD
 export interface IResolveDocumentDeletionRequestResponse {
     requestId: string | undefined;
     status: DocumentDeletionRequestStatus;
+}
+
+export class RetryRefundCommand implements IRetryRefundCommand {
+    orderId!: string | undefined;
+    refundId!: string | undefined;
+
+    constructor(data?: IRetryRefundCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.orderId = Data["orderId"];
+            this.refundId = Data["refundId"];
+        }
+    }
+
+    static fromJS(data: any): RetryRefundCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new RetryRefundCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["orderId"] = this.orderId;
+        data["refundId"] = this.refundId;
+        return data;
+    }
+}
+
+export interface IRetryRefundCommand {
+    orderId: string | undefined;
+    refundId: string | undefined;
+}
+
+export class RetryRefundResponse implements IRetryRefundResponse {
+    refundId!: string | undefined;
+    state!: Code;
+
+    constructor(data?: IRetryRefundResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.refundId = Data["refundId"];
+            this.state = Data["state"] ? Code.fromJS(Data["state"]) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): RetryRefundResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new RetryRefundResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["refundId"] = this.refundId;
+        data["state"] = this.state ? this.state.toJSON() : undefined as any;
+        return data;
+    }
+}
+
+export interface IRetryRefundResponse {
+    refundId: string | undefined;
+    state: Code;
 }
 
 export class RevealOrderAccessInstructionsRevealedAccessInstructions implements IRevealOrderAccessInstructionsRevealedAccessInstructions {

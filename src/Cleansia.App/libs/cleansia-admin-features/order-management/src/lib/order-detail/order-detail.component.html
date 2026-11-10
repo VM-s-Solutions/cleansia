@@ -24,6 +24,16 @@
           [disabled]="!facade.order()?.id"
           (onClick)="viewAuditHistory()"
         />
+        @if (isCardOrder()) {
+        <cleansia-button
+          class="cleansia-order-detail__refunds"
+          icon="pi pi-replay"
+          severity="secondary"
+          [outlined]="true"
+          [label]="'pages.order_detail.refunds' | translate"
+          (onClick)="viewRefunds()"
+        />
+        }
         <!-- The subject lookup that precedes the file reads the audit timeline, so both policies gate it. -->
         <ng-container *cleansiaPermission="Policy.CanViewAuditLog">
           <cleansia-button
@@ -249,7 +259,7 @@
       <div class="detail-grid">
         <div class="detail-grid__item">
           <span class="detail-grid__label">{{ 'pages.order_detail.payment_type' | translate }}</span>
-          <span class="detail-grid__value">{{ facade.order()?.paymentType?.name || '-' }}</span>
+          <span class="detail-grid__value">{{ facade.paymentTypeKey() ? (facade.paymentTypeKey()! | translate) : '-' }}</span>
         </div>
         <div class="detail-grid__item">
           <span class="detail-grid__label">{{ 'pages.order_detail.payment_status' | translate }}</span>
@@ -448,7 +458,7 @@
             <i [class]="getStatusHistoryIcon(status)"></i>
           </div>
           <div class="status-content">
-            <span class="status-name">{{ status.status.name }}</span>
+            <span class="status-name">{{ status.status | orderStatusLabel }}</span>
             <span class="status-date">{{ facade.formatDateTime(status.createdOn) }}</span>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AdminDisputeClient, DisputeListItem } from '@cleansia/admin-services';
+import { Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 import { DisputesManagementComponent } from './disputes-management.component';
@@ -54,6 +55,18 @@ describe('DisputesManagementComponent', () => {
     expect(el.querySelector('cleansia-table')).toBeTruthy();
   });
 
+  it('opens the dispute when its row is clicked', () => {
+    disputeClient.getPaged.mockReturnValue(
+      of({ data: [DisputeListItem.fromJS({ id: 'd-1' })], total: 1 })
+    );
+    const navigate = jest.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    const { el } = setup();
+
+    (el.querySelector('tbody .table__row td') as HTMLElement).click();
+
+    expect(navigate).toHaveBeenCalledWith(['dispute-management', 'd-1']);
+  });
+
   it('renders the empty state with no rows', () => {
     disputeClient.getPaged.mockReturnValue(of({ data: [], total: 0 }));
     const { facade } = setup();
@@ -68,5 +81,18 @@ describe('DisputesManagementComponent', () => {
 
     expect(facade.hasError()).toBe(true);
     expect(el.querySelector('.not-found-state')).toBeTruthy();
+  });
+
+  it('shows the reason in words, never its code name', () => {
+    disputeClient.getPaged.mockReturnValue(
+      of({
+        data: [DisputeListItem.fromJS({ id: 'd-1', reason: { name: 'ServiceIncomplete', value: 3 } })],
+        total: 1,
+      })
+    );
+    const text = setup().el.textContent;
+
+    expect(text).toContain('enums.dispute_reason.service_incomplete');
+    expect(text).not.toContain('ServiceIncomplete');
   });
 });

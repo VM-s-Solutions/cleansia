@@ -208,7 +208,7 @@
             <span class="cl-trk__fact-label">
               {{ 'pages.track_order.payment_type' | translate }}
             </span>
-            <div class="cl-trk__fact-value">{{ order.paymentType | orderStatusLabel }}</div>
+            <div class="cl-trk__fact-value">{{ order.paymentType | enumLabel: 'payment_type' }}</div>
           </div>
         </div>
       </section>

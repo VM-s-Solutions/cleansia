@@ -28,11 +28,6 @@ enum DisputeStatusPresentation {
     /// colour (1.2:1).
     static let neutralInk = ink(light: 0x475569, dark: 0xCBD5E1)
 
-    static func label(_ name: String?) -> String {
-        guard let name, !name.isBlank else { return "—" }
-        return name
-    }
-
     private static func ink(light: UInt32, dark: UInt32) -> Color {
         Color(UIColor { traits in
             let hex = traits.userInterfaceStyle == .dark ? dark : light

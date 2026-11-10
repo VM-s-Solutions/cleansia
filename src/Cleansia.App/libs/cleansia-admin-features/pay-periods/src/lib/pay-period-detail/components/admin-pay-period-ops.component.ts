@@ -11,6 +11,7 @@ import { FormsModule } from '@angular/forms';
 import { PayPeriodDto, PayPeriodStatus } from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
+  CleansiaCalendarComponent,
   CleansiaTextareaComponent,
 } from '@cleansia/components';
 import { CleansiaPermissionDirective } from '@cleansia/directives';
@@ -18,7 +19,7 @@ import { Policy } from '@cleansia/services';
 import { currentLanguage, formatDate } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { AdminPayPeriodOpsFacade } from './admin-pay-period-ops.facade';
-import { AdminPayPeriodOpsPanel } from './admin-pay-period-ops.models';
+import { AdminPayPeriodOpsPanel, localDay } from './admin-pay-period-ops.models';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -30,6 +31,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
     FormsModule,
     TranslatePipe,
     CleansiaTextareaComponent,
+    CleansiaCalendarComponent,
     CleansiaButtonComponent,
     CleansiaPermissionDirective,
   ],
@@ -51,6 +53,17 @@ export class AdminPayPeriodOpsComponent {
       payPeriod.status === PayPeriodStatus[PayPeriodStatus.Open] &&
       payPeriod.startDate.getTime() <= Date.now()
     );
+  });
+
+  // The server refuses an end on or before today (UTC) or the start, and past the configured length.
+  readonly changeEndRange = computed(() => {
+    const payPeriod = this.payPeriod();
+    if (payPeriod.status !== PayPeriodStatus[PayPeriodStatus.Open]) return null;
+    const tomorrow = localDay(new Date(Date.now()), 1);
+    const dayAfterStart = localDay(payPeriod.startDate, 1);
+    const min = tomorrow > dayAfterStart ? tomorrow : dayAfterStart;
+    const max = localDay(payPeriod.latestEndDate);
+    return min <= max ? { min, max } : null;
   });
 
   readonly isClosed = computed(
@@ -87,6 +100,22 @@ export class AdminPayPeriodOpsComponent {
 
   togglePanel(panel: AdminPayPeriodOpsPanel): void {
     this.facade.openPanel(panel);
+  }
+
+  toggleChangeEnd(): void {
+    this.facade.openPanel('changeEnd');
+    const range = this.changeEndRange();
+    if (this.facade.activePanel() !== 'changeEnd' || !range) return;
+    const end = localDay(this.payPeriod().endDate);
+    this.facade.setChangeEndDate(end < range.min ? range.min : end > range.max ? range.max : end);
+  }
+
+  onChangeEndDate(value: Date | null): void {
+    this.facade.setChangeEndDate(value);
+  }
+
+  submitChangeEnd(): void {
+    this.facade.changeEnd(this.payPeriod(), () => this.changed.emit());
   }
 
   onCloseNowReasonChange(value: string): void {

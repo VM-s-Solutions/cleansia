@@ -55,7 +55,9 @@ import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.disputes.DisputeListItemDto
 import cz.cleansia.core.format.formatOrderDateTime
+import cz.cleansia.customer.ui.format.disputeReasonLabelRes
 import cz.cleansia.customer.ui.format.disputeStatusColor
+import cz.cleansia.customer.ui.format.disputeStatusLabelRes
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.components.OrderStatusPill
 import cz.cleansia.core.ui.components.SudsRefreshIndicator
@@ -249,14 +251,14 @@ private fun DisputeRow(
                 color = MaterialTheme.colorScheme.onSurface,
             )
             OrderStatusPill(
-                label = dispute.status?.name ?: "—",
+                label = disputeStatusLabelRes(dispute.status?.value)?.let { stringResource(it) } ?: "—",
                 ink = statusColor,
                 washAlpha = 0.14f,
             )
         }
         Spacer(Modifier.height(6.dp))
         Text(
-            text = dispute.reason?.name ?: "—",
+            text = disputeReasonLabelRes(dispute.reason?.value)?.let { stringResource(it) } ?: "—",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,

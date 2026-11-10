@@ -69,6 +69,10 @@ export class PayPeriodDetailComponent implements OnInit, OnDestroy {
     return this.facade.formatDateTime(date);
   }
 
+  formatClosedBy(closedBy: string | undefined): string {
+    return this.facade.formatClosedBy(closedBy);
+  }
+
   formatDuration(days: number): string {
     return this.facade.formatDuration(days);
   }

@@ -10,8 +10,10 @@ import {
   buildMarkReadCommand,
   buildNotificationRows,
   newestCreatedOn,
+  NOTIFICATION_CRITICAL_FLAG,
   NOTIFICATIONS_PAGE_SIZE,
   NotificationRow,
+  NotificationSeverity,
 } from './notifications.models';
 
 const PAGE = 'pages.notifications';
@@ -31,6 +33,7 @@ export class NotificationsFacade extends UnsubscribeControlDirective {
   readonly markingAll = signal<boolean>(false);
   readonly openingId = signal<string | null>(null);
   readonly first = signal<number>(0);
+  readonly severity = signal<NotificationSeverity>('all');
   readonly pageSize = NOTIFICATIONS_PAGE_SIZE;
 
   private readonly items = signal<UserNotificationDto[]>([]);
@@ -58,7 +61,7 @@ export class NotificationsFacade extends UnsubscribeControlDirective {
     this.hasError.set(false);
 
     this.adminClient.adminNotificationClient
-      .getPaged(undefined, undefined, this.first(), this.pageSize)
+      .getPaged(undefined, undefined, this.first(), this.pageSize, NOTIFICATION_CRITICAL_FLAG[this.severity()])
       .pipe(
         takeUntil(this.destroyed$),
         catchError(() => {
@@ -79,6 +82,12 @@ export class NotificationsFacade extends UnsubscribeControlDirective {
           this.initialLoading.set(false);
         }
       });
+  }
+
+  selectSeverity(severity: NotificationSeverity): void {
+    this.severity.set(severity);
+    this.first.set(0);
+    this.load();
   }
 
   onPageChange(first: number): void {

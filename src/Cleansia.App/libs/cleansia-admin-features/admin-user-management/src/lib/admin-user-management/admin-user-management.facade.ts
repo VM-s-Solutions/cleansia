@@ -125,11 +125,13 @@ export class AdminUserManagementFacade extends UnsubscribeControlDirective {
   deactivateUser(user: AdminUserListItem): void {
     if (!user.id) return;
 
+    this.loading.set(true);
     this.adminClient.adminUserClient
       .deactivate(user.id)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null))
+        catchError(() => of(null)),
+        finalize(() => this.loading.set(false))
       )
       .subscribe((response) => {
         if (response) {
@@ -144,11 +146,13 @@ export class AdminUserManagementFacade extends UnsubscribeControlDirective {
   activateUser(user: AdminUserListItem): void {
     if (!user.id) return;
 
+    this.loading.set(true);
     this.adminClient.adminUserClient
       .activate(user.id)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null))
+        catchError(() => of(null)),
+        finalize(() => this.loading.set(false))
       )
       .subscribe((response) => {
         if (response) {

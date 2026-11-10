@@ -7,7 +7,7 @@ import {
 } from '@cleansia/admin-services';
 import { DialogService, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { PayConfigManagementFacade } from './pay-config-management.facade';
 
 describe('PayConfigManagementFacade', () => {
@@ -197,5 +197,21 @@ describe('PayConfigManagementFacade', () => {
     it('still renders nothing for an absent amount', () => {
       expect(facade.formatCurrency(undefined, 'CZK')).toBe('');
     });
+  });
+
+  it('holds the list loading while a pay config delete is in flight, and clears it after it lands or fails', () => {
+    const landing = new Subject<never>();
+    deleteMock.mockReturnValue(landing.asObservable());
+    facade.deletePayConfig(EmployeePayConfigDto.fromJS({ id: 'pc-1' }));
+    expect(facade.loading()).toBe(true);
+    landing.complete();
+    expect(facade.loading()).toBe(false);
+
+    const failing = new Subject<never>();
+    deleteMock.mockReturnValue(failing.asObservable());
+    facade.deletePayConfig(EmployeePayConfigDto.fromJS({ id: 'pc-1' }));
+    expect(facade.loading()).toBe(true);
+    failing.error(new Error('boom'));
+    expect(facade.loading()).toBe(false);
   });
 });

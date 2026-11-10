@@ -10,7 +10,7 @@ import {
 } from '@cleansia/services';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
-import { EMPTY, of, throwError } from 'rxjs';
+import { EMPTY, of, Subject, throwError } from 'rxjs';
 import { ProfileDocumentsFacade } from './profile-documents.facade';
 
 describe('ProfileDocumentsFacade', () => {
@@ -19,6 +19,7 @@ describe('ProfileDocumentsFacade', () => {
     getMyDocuments: jest.Mock;
     requestMyDocumentDeletion: jest.Mock;
     replaceMyDocument: jest.Mock;
+    downloadMyDocument: jest.Mock;
   };
   let snackbar: {
     showSuccess: jest.Mock;
@@ -35,6 +36,7 @@ describe('ProfileDocumentsFacade', () => {
       getMyDocuments: jest.fn().mockReturnValue(of({ documents: [] })),
       requestMyDocumentDeletion: jest.fn().mockReturnValue(of({})),
       replaceMyDocument: jest.fn().mockReturnValue(of({})),
+      downloadMyDocument: jest.fn(),
     };
     snackbar = {
       showSuccess: jest.fn(),
@@ -200,5 +202,21 @@ describe('ProfileDocumentsFacade', () => {
       facade.replaceDocument('doc-1', new File(['x'], 'a.png', { type: 'image/png' }))
     ).rejects.toBeTruthy();
     expect(facade.replacingDocumentId()).toBeNull();
+  });
+
+  it('names the document being downloaded while the download is in flight, and clears it after it lands or fails', () => {
+    const landing = new Subject<never>();
+    employeeClient.downloadMyDocument.mockReturnValue(landing.asObservable());
+    facade.downloadEmployeeDocument('doc-1', 'passport.png');
+    expect(facade.downloadingId()).toBe('doc-1');
+    landing.complete();
+    expect(facade.downloadingId()).toBe(null);
+
+    const failing = new Subject<never>();
+    employeeClient.downloadMyDocument.mockReturnValue(failing.asObservable());
+    facade.downloadEmployeeDocument('doc-1', 'passport.png');
+    expect(facade.downloadingId()).toBe('doc-1');
+    failing.error(new Error('boom'));
+    expect(facade.downloadingId()).toBe(null);
   });
 });

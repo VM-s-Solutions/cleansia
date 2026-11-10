@@ -522,6 +522,113 @@ public class CleanerReminderSweepTests
             steps);
     }
 
+    private void NoCleanerSoonAlerted(Order order, Times times) =>
+        _adminNotifier.Verify(n => n.NotifyAsync(
+            It.Is<AdminEvent>(e => e.Key == AdminNotificationEventCatalog.OrderNoCleanerSoon && e.Subject == order.Id),
+            It.IsAny<CancellationToken>()), times);
+
+    [Fact]
+    public async Task A_Job_Nobody_Has_Taken_Ninety_Minutes_Out_Raises_The_Urgent_Alert_Alone()
+    {
+        var order = UnstaffedJob("order-soon", hoursOut: 1.5);
+        OnTheBoard(order);
+        AdminEvent? raised = null;
+        _adminNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<AdminEvent>(), It.IsAny<CancellationToken>()))
+            .Callback<AdminEvent, CancellationToken>((adminEvent, _) => raised = adminEvent)
+            .Returns(Task.CompletedTask);
+
+        var result = await Handler().Handle(new SendCleanerJobReminders.Command(), CancellationToken.None);
+
+        Assert.Equal(0, result.Value!.NoCleanerAlerts);
+        Assert.Equal(1, result.Value.NoCleanerSoonAlerts);
+        _adminNotifier.Verify(n => n.NotifyAsync(It.IsAny<AdminEvent>(), It.IsAny<CancellationToken>()), Times.Once);
+        Assert.NotNull(raised);
+        Assert.Equal(AdminNotificationEventCatalog.OrderNoCleanerSoon, raised.Key);
+        Assert.Equal("tenant-a", raised.TenantId);
+        Assert.Equal(order.Id, raised.Subject);
+        Assert.Equal(["orderNumber", "cleaningDateTime", "orderId"], raised.Args.Keys);
+        _unitOfWork.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task A_Job_Five_Hours_Out_Raises_The_Day_Ahead_Alert_Alone()
+    {
+        var order = UnstaffedJob("order-five-hours", hoursOut: 5);
+        OnTheBoard(order);
+
+        var result = await Handler().Handle(new SendCleanerJobReminders.Command(), CancellationToken.None);
+
+        Assert.Equal(1, result.Value!.NoCleanerAlerts);
+        Assert.Equal(0, result.Value.NoCleanerSoonAlerts);
+        NoCleanerAlerted(order, Times.Once());
+        NoCleanerSoonAlerted(order, Times.Never());
+    }
+
+    [Fact]
+    public async Task A_Job_Already_Reported_A_Day_Ahead_Gets_The_Urgent_Alert_At_Two_Hours()
+    {
+        var order = UnstaffedJob("order-reported-earlier", hoursOut: 1.5);
+        _userNotifications
+            .Setup(r => r.AnyForEventIgnoringTenantAsync(
+                "tenant-a", AdminNotificationEventCatalog.OrderNoCleanerYet, "orderId", order.Id,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        OnTheBoard(order);
+
+        var result = await Handler().Handle(new SendCleanerJobReminders.Command(), CancellationToken.None);
+
+        Assert.Equal(1, result.Value!.NoCleanerSoonAlerts);
+        NoCleanerSoonAlerted(order, Times.Once());
+    }
+
+    [Fact]
+    public async Task A_Job_Already_Given_The_Urgent_Alert_Is_Not_Given_It_Again()
+    {
+        var order = UnstaffedJob("order-urgent-sent", hoursOut: 1.5);
+        _userNotifications
+            .Setup(r => r.AnyForEventIgnoringTenantAsync(
+                "tenant-a", AdminNotificationEventCatalog.OrderNoCleanerSoon, "orderId", order.Id,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        OnTheBoard(order);
+
+        var result = await Handler().Handle(new SendCleanerJobReminders.Command(), CancellationToken.None);
+
+        Assert.Equal(0, result.Value!.NoCleanerSoonAlerts);
+        Assert.Equal(0, result.Value.NoCleanerAlerts);
+        _adminNotifier.Verify(n => n.NotifyAsync(It.IsAny<AdminEvent>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task A_Job_Two_Hours_Out_Whose_Status_Changed_Within_The_Hour_Raises_Nothing_Yet()
+    {
+        var order = UnstaffedJob("order-soon-fresh", hoursOut: 1.5);
+        var row = OrderStatusTrack.Create(OrderStatus.New, order);
+        row.Created("test", DateTimeOffset.UtcNow.AddMinutes(-30));
+        order.AddOrderStatus(row);
+        OnTheBoard(order);
+
+        var result = await Handler().Handle(new SendCleanerJobReminders.Command(), CancellationToken.None);
+
+        Assert.Equal(0, result.Value!.NoCleanerSoonAlerts);
+        _adminNotifier.Verify(n => n.NotifyAsync(It.IsAny<AdminEvent>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData(24, 24, false)]
+    [InlineData(24, 25, false)]
+    [InlineData(24, 0, false)]
+    [InlineData(24, 2, true)]
+    [InlineData(3, 2, true)]
+    public void The_Urgent_Lead_Stays_Below_The_Day_Ahead_Lead(int noCleanerLeadHours, int soonLeadHours, bool valid)
+    {
+        var command = new SendCleanerJobReminders.Command(
+            NoCleanerLeadHours: noCleanerLeadHours, NoCleanerSoonLeadHours: soonLeadHours);
+
+        Assert.Equal(valid, new SendCleanerJobReminders.Validator().Validate(command).IsValid);
+    }
+
     [Fact]
     public async Task A_Job_With_No_Company_Is_Skipped_Without_Reading_The_Feed()
     {
@@ -533,7 +640,7 @@ public class CleanerReminderSweepTests
     }
 
     [Theory]
-    [InlineData(1, 0, true)]
+    [InlineData(3, 0, true)]
     [InlineData(168, 240, true)]
     [InlineData(0, 60, false)]
     [InlineData(169, 60, false)]

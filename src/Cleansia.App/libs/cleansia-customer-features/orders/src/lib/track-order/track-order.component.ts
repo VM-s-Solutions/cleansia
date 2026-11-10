@@ -19,7 +19,7 @@ import {
   LookupOrderBatchResponse,
 } from '@cleansia/customer-services';
 import { OrderStatus, PaymentStatus } from '@cleansia/models';
-import { OrderStatusIconPipe, OrderStatusLabelPipe } from '@cleansia/pipes';
+import { EnumLabelPipe, OrderStatusIconPipe, OrderStatusLabelPipe } from '@cleansia/pipes';
 import { CleansiaCustomerRoute } from '@cleansia/services';
 import { formatMoney, localeFor } from '@cleansia/utils';
 import { statusReachedAt } from '../order-status-history.models';
@@ -40,6 +40,7 @@ import { TrackOrderFacade } from './track-order.facade';
     CleansiaScrollTopComponent,
     FoamEdgeComponent,
     OrderStatusLabelPipe,
+    EnumLabelPipe,
     OrderStatusIconPipe,
     DialogModule,
   ],

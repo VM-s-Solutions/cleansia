@@ -66,7 +66,7 @@ describe('AdminWorkContractDialogFacade', () => {
         AdminWorkContractDialogFacade,
         {
           provide: AdminClient,
-          useValue: { adminOrderClient: { getWorkContract }, adminLegalClient: { getDocument } },
+          useValue: { adminOrderClient: { getWorkContract }, adminLegalClient: { getDocument }, adminExtraClient: { getPaged: jest.fn().mockReturnValue(of({ data: [] })) } },
         },
         { provide: DynamicDialogRef, useValue: dialogRef },
         { provide: PermissionService, useValue: { hasPolicy } },

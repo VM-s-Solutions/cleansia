@@ -72,7 +72,6 @@ export class EmployeeManagementComponent implements OnInit {
       {
         onApprove: (row) => this.facade.openApproveDialog(row),
         onReject: (row) => this.facade.openRejectDialog(row),
-        onViewDetails: (row) => this.viewEmployeeDetails(row),
       },
       this.translate,
       this.permissions,

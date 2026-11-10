@@ -497,7 +497,8 @@
         "complete_job": "Complete job",
         "marked_done": "Marked as done. Once everyone on this job has marked their part, any of you can complete it.",
         "crew_done": "Marked as done. Everyone on this job has now marked their part."
-      }
+      },
+      "photo_thumbnail": "Photo thumbnail"
     },
     "invoices": {
       "title": "My Invoices",
@@ -761,12 +762,16 @@
         "photo_read_failed": "Failed to read photo file. Please try again.",
         "photo_deleted": "Photo deleted successfully.",
         "photo_delete_failed": "Failed to delete photo. Please try again.",
-        "lockout_reported": "Reported. An administrator will confirm it."
+        "lockout_reported": "Reported. An administrator will confirm it.",
+        "issue_reported": "Issue reported.",
+        "note_added": "Note added."
       },
       "invoices": {
         "invoice_generated": "Invoice generated from time logs.",
         "invoice_preview": "Invoice preview opened.",
-        "invoice_downloaded": "Invoice downloaded successfully."
+        "invoice_downloaded": "Invoice downloaded successfully.",
+        "no_invoice_selected": "No invoice selected.",
+        "print_failed": "Failed to print the invoice. Please try again."
       },
       "payslips": {
         "load_failed": "Failed to load payslips. Please try again.",
@@ -812,7 +817,9 @@
       "load_more": "Load More",
       "retry": "Retry",
       "confirm": "Confirm",
-      "delete": "Delete"
+      "delete": "Delete",
+      "previous": "Previous",
+      "next": "Next"
     },
     "dialog": {
       "confirm": "Confirm",
@@ -1266,6 +1273,13 @@
       "cancellation_fee_share": "Your share of the late-cancellation fee",
       "lockout_fee_share": "Your reward for the job — the customer did not let you in",
       "dispute_charge": "Dispute charge"
+    },
+    "extra_name": {
+      "inside_oven": "Inside oven cleaning",
+      "inside_fridge": "Inside fridge cleaning",
+      "interior_windows": "Interior windows",
+      "laundry_ironing": "Laundry & ironing",
+      "pet_hair_supplement": "Pet hair deep-clean"
     }
   },
   "help": {

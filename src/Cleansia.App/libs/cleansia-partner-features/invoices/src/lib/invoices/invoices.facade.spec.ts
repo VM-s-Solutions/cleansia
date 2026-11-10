@@ -8,7 +8,7 @@ import {
 } from '@cleansia/partner-services';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateModule } from '@ngx-translate/core';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { InvoicesFacade } from './invoices.facade';
 
 describe('InvoicesFacade', () => {
@@ -120,5 +120,22 @@ describe('InvoicesFacade', () => {
     facade.downloadInvoice(facade.invoices()[1]);
 
     expect(employeePayrollClient.downloadInvoice).toHaveBeenCalledWith('inv-2');
+  });
+
+  it('holds the list loading while a download is in flight, and clears it after it lands or fails', () => {
+    const facade = create();
+    const landing = new Subject<never>();
+    employeePayrollClient.downloadInvoice.mockReturnValue(landing.asObservable());
+    facade.downloadInvoice(facade.invoices()[1]);
+    expect(facade.loading()).toBe(true);
+    landing.complete();
+    expect(facade.loading()).toBe(false);
+
+    const failing = new Subject<never>();
+    employeePayrollClient.downloadInvoice.mockReturnValue(failing.asObservable());
+    facade.downloadInvoice(facade.invoices()[1]);
+    expect(facade.loading()).toBe(true);
+    failing.error(new Error('boom'));
+    expect(facade.loading()).toBe(false);
   });
 });

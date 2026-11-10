@@ -75,12 +75,9 @@ public sealed class SendSitewidePromoFanoutResumeTests : IDisposable
 
     private SendSitewidePromoFanoutHandler CreateHandler(IQueueClient queueClient, int pageSize = 200)
     {
-        // ONE shared context for both repos: the handler joins the two queryables, and EF rejects a
-        // join spanning two context instances.
         var ctx = NewContext();
         return new SendSitewidePromoFanoutHandler(
             new UserNotificationPreferencesRepository(ctx),
-            new UserRepository(ctx),
             queueClient,
             _progress,
             new FixedTenantProvider(TestTenants.Default),
@@ -112,8 +109,8 @@ public sealed class SendSitewidePromoFanoutResumeTests : IDisposable
         var sentUserIds = new List<string>();
         var okQueue = new Mock<IQueueClient>();
         okQueue
-            .Setup(q => q.SendAsync(It.IsAny<string>(), It.IsAny<SendPushNotificationMessage>(), It.IsAny<CancellationToken>()))
-            .Callback<string, SendPushNotificationMessage, CancellationToken>((_, msg, _2) => sentUserIds.Add(msg.UserId))
+            .Setup(q => q.SendAsync(It.IsAny<string>(), It.IsAny<QueueEnvelope<SendPushNotificationMessage>>(), It.IsAny<CancellationToken>()))
+            .Callback<string, QueueEnvelope<SendPushNotificationMessage>, CancellationToken>((_, msg, _2) => sentUserIds.Add(msg.Payload.UserId))
             .Returns(Task.CompletedTask);
 
         // The redelivery must SEEK past USER-1 (the cursor), NOT restart at offset 0.
@@ -132,7 +129,7 @@ public sealed class SendSitewidePromoFanoutResumeTests : IDisposable
 
         var queue = new Mock<IQueueClient>();
         queue
-            .Setup(q => q.SendAsync(It.IsAny<string>(), It.IsAny<SendPushNotificationMessage>(), It.IsAny<CancellationToken>()))
+            .Setup(q => q.SendAsync(It.IsAny<string>(), It.IsAny<QueueEnvelope<SendPushNotificationMessage>>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         // Page size 2 forces a real second page, proving the cursor advances across page boundaries (AC4).
@@ -152,8 +149,8 @@ public sealed class SendSitewidePromoFanoutResumeTests : IDisposable
         var firstRun = new List<string>();
         var firstQueue = new Mock<IQueueClient>();
         firstQueue
-            .Setup(q => q.SendAsync(It.IsAny<string>(), It.IsAny<SendPushNotificationMessage>(), It.IsAny<CancellationToken>()))
-            .Callback<string, SendPushNotificationMessage, CancellationToken>((_, msg, _2) => firstRun.Add(msg.UserId))
+            .Setup(q => q.SendAsync(It.IsAny<string>(), It.IsAny<QueueEnvelope<SendPushNotificationMessage>>(), It.IsAny<CancellationToken>()))
+            .Callback<string, QueueEnvelope<SendPushNotificationMessage>, CancellationToken>((_, msg, _2) => firstRun.Add(msg.Payload.UserId))
             .Returns(Task.CompletedTask);
 
         await CreateHandler(firstQueue.Object).HandleAsync(Serialize(Campaign()), CancellationToken.None);
@@ -164,7 +161,7 @@ public sealed class SendSitewidePromoFanoutResumeTests : IDisposable
         await CreateHandler(secondQueue.Object).HandleAsync(Serialize(Campaign()), CancellationToken.None);
 
         secondQueue.Verify(
-            q => q.SendAsync(It.IsAny<string>(), It.IsAny<SendPushNotificationMessage>(), It.IsAny<CancellationToken>()),
+            q => q.SendAsync(It.IsAny<string>(), It.IsAny<QueueEnvelope<SendPushNotificationMessage>>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -178,14 +175,14 @@ public sealed class SendSitewidePromoFanoutResumeTests : IDisposable
         var sent = new List<string>();
         var queue = new Mock<IQueueClient>();
         queue
-            .Setup(q => q.SendAsync(It.IsAny<string>(), It.IsAny<SendPushNotificationMessage>(), It.IsAny<CancellationToken>()))
-            .Callback<string, SendPushNotificationMessage, CancellationToken>((_, msg, _2) =>
+            .Setup(q => q.SendAsync(It.IsAny<string>(), It.IsAny<QueueEnvelope<SendPushNotificationMessage>>(), It.IsAny<CancellationToken>()))
+            .Callback<string, QueueEnvelope<SendPushNotificationMessage>, CancellationToken>((_, msg, _2) =>
             {
-                if (msg.UserId == "USER-1")
+                if (msg.Payload.UserId == "USER-1")
                 {
                     throw new InvalidOperationException("one bad enqueue");
                 }
-                sent.Add(msg.UserId);
+                sent.Add(msg.Payload.UserId);
             })
             .Returns(Task.CompletedTask);
 

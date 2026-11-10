@@ -178,7 +178,7 @@ extension L10n {
             localized("open_settings")
         }
 
-        static func reason(_ value: Int) -> String {
+        static func reason(_ value: Int?) -> String {
             switch value {
             case 1: localized("dispute_reason_quality_issue")
             case 2: localized("dispute_reason_service_not_provided")
@@ -186,7 +186,21 @@ extension L10n {
             case 4: localized("dispute_reason_damaged_property")
             case 5: localized("dispute_reason_unauthorized_charge")
             case 6: localized("dispute_reason_incorrect_amount")
-            default: localized("dispute_reason_other")
+            case 7: localized("dispute_reason_other")
+            case 8: localized("dispute_reason_chargeback")
+            default: "—"
+            }
+        }
+
+        static func status(_ value: Int?) -> String {
+            switch value {
+            case 1: localized("dispute_status_pending")
+            case 2: localized("dispute_status_under_review")
+            case 3: localized("dispute_status_waiting_for_response")
+            case 4: localized("dispute_status_resolved")
+            case 5: localized("dispute_status_closed")
+            case 6: localized("dispute_status_escalated")
+            default: "—"
             }
         }
 

@@ -112,6 +112,7 @@
           *cleansiaPermission="Policy.CanApproveEmployee"
           [label]="'pages.employee_detail.actions.approve_employee' | translate"
           icon="pi pi-check"
+          [loading]="facade.decisionPending()"
           (onClick)="facade.openApproveEmployeeDialog()"
         />
         }
@@ -122,6 +123,7 @@
           icon="pi pi-times"
           severity="danger"
           [outlined]="true"
+          [loading]="facade.decisionPending()"
           (onClick)="facade.openRejectEmployeeDialog()"
         />
         }
@@ -658,6 +660,7 @@
         [outlined]="true"
         [tooltip]="'pages.employee_detail.delete_override' | translate"
         [ariaLabel]="'pages.employee_detail.delete_override' | translate"
+        [loading]="facade.deletingPayConfigId() === item.configId"
         (onClick)="confirmDeletePayConfig(item)"
       />
       }

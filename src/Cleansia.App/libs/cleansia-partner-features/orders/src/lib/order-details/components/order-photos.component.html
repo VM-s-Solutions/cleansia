@@ -59,6 +59,7 @@
         <cleansia-button
           [label]="'pages.order_details.save_photos' | translate"
           [icon]="'pi pi-save'"
+          [loading]="saving()"
           [disabled]="saving()"
           (onClick)="savePhotos()"
         />
@@ -320,7 +321,7 @@
   @if (loading()) {
   <div class="order-photos__loader">
     <i class="pi pi-spin pi-spinner"></i>
-    <span>{{ 'global.messages.loading' | translate }}</span>
+    <span>{{ 'global.loading' | translate }}</span>
   </div>
   }
 </cleansia-section>

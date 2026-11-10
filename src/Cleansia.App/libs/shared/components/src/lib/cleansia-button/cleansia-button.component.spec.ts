@@ -228,6 +228,35 @@ describe('CleansiaButtonComponent (content-sized action)', () => {
 
     expect(offenders).toEqual([]);
   });
+
+  /**
+   * The inner control is a type="button" unless `buttonType` says otherwise, so a `type="submit"`
+   * on the wrapper is swallowed and the form's (ngSubmit) never fires. A button that is neither a
+   * submit, a link nor bound to a click does nothing.
+   */
+  it('gives every button something to do, in every template', () => {
+    const offenders: string[] = [];
+    for (const dir of ['libs', 'apps']) {
+      const root = join(WORKSPACE_ROOT, dir);
+      for (const entry of readdirSync(root, { recursive: true, withFileTypes: true })) {
+        if (!entry.isFile() || !entry.name.endsWith('.component.html')) {
+          continue;
+        }
+        const file = join(entry.parentPath, entry.name);
+        const html = readFileSync(file, 'utf-8');
+        for (const tag of openingTags(html, 'cleansia-button')) {
+          const clicks = /\((onClick|clickFn|click)\)\s*=/.test(tag.attributes);
+          const submits = /(^|\s)\[?buttonType\]?\s*=/.test(tag.attributes);
+          const links = /(^|\s)\[?(routerLink|href)\]?\s*=/.test(tag.attributes);
+          if (!clicks && !submits && !links) {
+            offenders.push(`${relative(WORKSPACE_ROOT, file)}:${tag.line}`);
+          }
+        }
+      }
+    }
+
+    expect(offenders).toEqual([]);
+  });
 });
 
 function openingTags(html: string, element: string): { attributes: string; line: number }[] {

@@ -133,7 +133,7 @@ describe('AdminNotificationsLauncherComponent', () => {
     expect(count()).toBeNull();
   });
 
-  it('opens the panel on the bell and reads the latest notifications into it', async () => {
+  it('opens the panel on the bell and reads the latest critical notifications into it', async () => {
     await render();
     expect(getPaged).not.toHaveBeenCalled();
 
@@ -141,6 +141,7 @@ describe('AdminNotificationsLauncherComponent', () => {
 
     expect(popover().overlayVisible).toBe(true);
     expect(getPaged).toHaveBeenCalledTimes(1);
+    expect(getPaged).toHaveBeenCalledWith(undefined, undefined, 0, NOTIFICATIONS_PAGE_SIZE, true);
     expect(panel()?.textContent).toContain('components.notifications_panel.title');
     expect(rows()).toHaveLength(2);
     expect(bell()?.getAttribute('aria-expanded')).toBe('true');

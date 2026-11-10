@@ -1463,4 +1463,12 @@
     <string name="booking_success_no_cleaner_cash">If no cleaner can take it, we cancel it free of charge and give you credit.</string>
     <string name="booking_success_cash_on_day">Please pay in cash to the cleaner on the day.</string>
     <string name="auth_email_placeholder">customer@example.com</string>
+    <string name="dispute_reason_chargeback">Chargeback</string>
+    <string name="dispute_status_pending">Pending</string>
+    <string name="dispute_status_under_review">Under review</string>
+    <string name="dispute_status_waiting_for_response">Waiting for your reply</string>
+    <string name="dispute_status_resolved">Resolved</string>
+    <string name="dispute_status_closed">Closed</string>
+    <string name="dispute_status_escalated">Escalated</string>
+    <string name="error_dispute_cleaning_not_started">You can only dispute a booking once the cleaning has started.</string>
 </resources>

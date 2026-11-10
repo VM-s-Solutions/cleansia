@@ -8,8 +8,8 @@ import {
   signal,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
-import { DisputeStatus } from '@cleansia/admin-services';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { DisputeEvidenceDto, DisputeStatus } from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
   CleansiaCheckboxComponent,
@@ -28,6 +28,7 @@ import {
   buildAuditResourceHistoryRoute,
   CleansiaAdminRoute,
   Policy,
+  SnackbarService,
 } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { DisputeDetailFacade } from './dispute-detail.facade';
@@ -37,6 +38,8 @@ import {
 } from '../disputes-management/disputes-management.models';
 
 const CLEANER_CHARGE_REASON_MAX = 500;
+const RESOLUTION_NOTES_MAX = 2000;
+const IMAGE_PATH = /\.(jpe?g|png|gif|webp)$/i;
 
 @Component({
   selector: 'cleansia-admin-dispute-detail',
@@ -44,6 +47,7 @@ const CLEANER_CHARGE_REASON_MAX = 500;
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    RouterLink,
     TranslatePipe,
     CleansiaButtonComponent,
     CleansiaCheckboxComponent,
@@ -65,9 +69,12 @@ export class DisputeDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
+  private readonly snackbar = inject(SnackbarService);
   protected readonly facade = inject(DisputeDetailFacade);
 
   protected readonly Policy = Policy;
+  protected readonly resolutionNotesMax = RESOLUTION_NOTES_MAX;
+  protected readonly orderManagementRoute = CleansiaAdminRoute.ORDER_MANAGEMENT;
 
   private disputeId = '';
   statusOptions: DisputeStatusOption[] = [];
@@ -91,7 +98,7 @@ export class DisputeDetailComponent implements OnInit {
 
   readonly resolveForm = this.fb.nonNullable.group({
     refundAmount: [null as number | null],
-    resolutionNotes: [''],
+    resolutionNotes: ['', [Validators.required, Validators.maxLength(RESOLUTION_NOTES_MAX)]],
     charge: this.fb.nonNullable.group({
       employeeId: [null as string | null, Validators.required],
       amount: [null as number | null, [Validators.required, Validators.min(0.01)]],
@@ -126,6 +133,10 @@ export class DisputeDetailComponent implements OnInit {
     return this.facade.dispute()?.refundAmount != null;
   }
 
+  isImageEvidence(item: DisputeEvidenceDto): boolean {
+    return IMAGE_PATH.test(item.filePath ?? '');
+  }
+
   onStatusSelected(value: DisputeStatus | null): void {
     this.selectedStatus.set(value);
   }
@@ -142,6 +153,11 @@ export class DisputeDetailComponent implements OnInit {
 
   submitResolve(): void {
     const { refundAmount, resolutionNotes, charge } = this.resolveForm.getRawValue();
+    if (!resolutionNotes.trim()) {
+      this.resolveForm.controls.resolutionNotes.markAsTouched();
+      this.snackbar.showErrorTranslated('pages.disputes_management.resolve.notes_required');
+      return;
+    }
     if (!this.chargingCleaner() || !this.canChargeCleaner()) {
       this.facade.resolve(this.disputeId, refundAmount, resolutionNotes);
       return;
@@ -150,6 +166,7 @@ export class DisputeDetailComponent implements OnInit {
     const chargeGroup = this.resolveForm.controls.charge;
     if (chargeGroup.invalid || !charge.employeeId || charge.amount == null) {
       chargeGroup.markAllAsTouched();
+      this.snackbar.showErrorTranslated('pages.disputes_management.resolve.charge.incomplete');
       return;
     }
     this.facade.resolve(this.disputeId, refundAmount, resolutionNotes, {

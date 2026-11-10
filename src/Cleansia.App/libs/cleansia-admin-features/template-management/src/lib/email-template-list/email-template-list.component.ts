@@ -10,6 +10,7 @@ import {
   TableAction,
 } from '@cleansia/components';
 import { EmailTypeListItemDto } from '@cleansia/admin-services';
+import { languageDisplayName } from '@cleansia/utils';
 import { EmailTemplateListFacade } from './email-template-list.facade';
 import { getEmailTypeTableDefinition } from './email-template-list.models';
 
@@ -52,9 +53,6 @@ export class EmailTemplateListComponent implements OnInit, OnDestroy {
 
   private rebuildTableDefinitions(): void {
     const tableDef = getEmailTypeTableDefinition(
-      {
-        onViewDetail: (row) => this.facade.navigateToDetail(row.emailType),
-      },
       this.translate,
       this.languagesTemplate()
     );
@@ -66,7 +64,7 @@ export class EmailTemplateListComponent implements OnInit, OnDestroy {
   getTranslatedLanguages(languages: string[] | undefined): string {
     if (!languages || languages.length === 0) return '';
     return languages
-      .map(code => this.translate.instant(`global.languages.${code.toLowerCase()}`))
+      .map(code => languageDisplayName(code, this.translate.currentLang))
       .join(', ');
   }
 

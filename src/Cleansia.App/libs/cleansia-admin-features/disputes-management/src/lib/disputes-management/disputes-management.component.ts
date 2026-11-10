@@ -29,7 +29,7 @@ import { CleansiaAdminRoute } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Subject, takeUntil } from 'rxjs';
 import { DisputesManagementFacade } from './disputes-management.facade';
-import { getDisputeTableDefinition } from './disputes-management.models';
+import { disputeReasonLabelKey, getDisputeTableDefinition } from './disputes-management.models';
 
 @Component({
   selector: 'cleansia-admin-disputes-management',
@@ -84,7 +84,6 @@ export class DisputesManagementComponent implements AfterViewInit, OnDestroy {
 
   private rebuildTableDefinitions(): void {
     const tableDef = getDisputeTableDefinition(
-      { onViewDetails: this.viewDisputeDetails.bind(this) },
       this.translate,
       this.statusTemplate(),
       this.reasonTemplate()
@@ -98,8 +97,8 @@ export class DisputesManagementComponent implements AfterViewInit, OnDestroy {
     this.router.navigate([CleansiaAdminRoute.DISPUTE_MANAGEMENT, dispute.id]);
   }
 
-  getReasonLabel(dispute: DisputeListItem): string {
-    return dispute.reason?.name ?? '';
+  getReasonLabelKey(dispute: DisputeListItem): string {
+    return disputeReasonLabelKey(dispute.reason?.value);
   }
 
   onSortChange(event: { field: string; order: number }): void {

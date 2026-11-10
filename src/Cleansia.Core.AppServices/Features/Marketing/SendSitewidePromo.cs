@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
@@ -35,7 +36,7 @@ public static class SendSitewidePromo
 
     public class Validator : AbstractValidator<Command>
     {
-        public Validator()
+        public Validator(IUserNotificationPreferencesRepository preferencesRepository, ITenantProvider tenantProvider)
         {
             RuleFor(x => x.TitleEn).NotEmpty().MaximumLength(120);
             RuleFor(x => x.TitleCs).NotEmpty().MaximumLength(120);
@@ -51,12 +52,18 @@ public static class SendSitewidePromo
             RuleFor(x => x.BodySk).NotEmpty().MaximumLength(500);
             RuleFor(x => x.BodyUk).NotEmpty().MaximumLength(500);
             RuleFor(x => x.BodyRu).NotEmpty().MaximumLength(500);
+
+            RuleFor(x => x)
+                .MustAsync(async (_, ct) => (await preferencesRepository.GetPromoRecipientsAsync(
+                    tenantProvider.GetCurrentTenantId(), afterUserId: null, take: 1, ct)).Count > 0)
+                .WithMessage(BusinessErrorMessage.MarketingNoOptedInCustomers);
         }
     }
 
     public class Handler(
         IPendingDispatch pendingDispatch,
         IOutboxMessageRepository outboxMessageRepository,
+        ICampaignProgressStore campaignProgressStore,
         ITenantProvider tenantProvider) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -88,7 +95,7 @@ public static class SendSitewidePromo
 
             var existing = await outboxMessageRepository.GetByQueueAndKeyAsync(
                 QueueNames.SitewidePromoFanout, campaignId, cancellationToken);
-            if (existing is not null)
+            if (existing is not null || (await campaignProgressStore.GetAsync(campaignId, cancellationToken)).IsComplete)
             {
                 return BusinessResult.Success(new Response(Enqueued: false));
             }

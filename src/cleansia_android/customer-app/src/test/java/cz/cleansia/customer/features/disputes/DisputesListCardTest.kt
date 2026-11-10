@@ -44,6 +44,14 @@ class DisputesListCardTest {
     }
 
     @Test
+    fun `the row reads reason and status by value, never the enum name`() {
+        assertFalse(disputeRow.contains("?.name"))
+        val detail = File(moduleDir, "src/main/java/cz/cleansia/customer/features/disputes/DisputeDetailScreen.kt").readText()
+        assertFalse(detail.contains("reason?.name"))
+        assertFalse(detail.contains("status?.name"))
+    }
+
+    @Test
     fun `the card paints no left accent strip`() {
         assertFalse("the card still stretches to fit a strip: IntrinsicSize", disputeRow.contains("IntrinsicSize"))
         assertFalse("the card still draws a full-height strip", disputeRow.contains("fillMaxHeight"))

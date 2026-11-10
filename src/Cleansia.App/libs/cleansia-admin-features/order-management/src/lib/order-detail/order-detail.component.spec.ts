@@ -11,11 +11,12 @@ import {
   DirtinessLevel,
   OrderItem,
   OrderStatus,
+  PaymentType,
   UserItem,
 } from '@cleansia/admin-services';
 import { CleansiaButtonComponent } from '@cleansia/components';
-import { PermissionService, SnackbarService } from '@cleansia/services';
-import { TranslateModule } from '@ngx-translate/core';
+import { CleansiaAdminRoute, PermissionService, SnackbarService } from '@cleansia/services';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { of, Subject, throwError } from 'rxjs';
 import {
   AdminOrderOpsComponent,
@@ -55,7 +56,7 @@ describe('OrderDetailComponent — incident file', () => {
     await TestBed.configureTestingModule({
       imports: [OrderDetailComponent, TranslateModule.forRoot()],
       providers: [
-        { provide: AdminClient, useValue: { adminOrderClient: { details, customer } } },
+        { provide: AdminClient, useValue: { adminOrderClient: { details, customer }, adminExtraClient: { getPaged: jest.fn().mockReturnValue(of({ data: [] })) } } },
         { provide: AdminGdprClient, useValue: { incidentFile: jest.fn() } },
         { provide: CustomerAuditClient, useValue: { timeline: jest.fn() } },
         {
@@ -347,5 +348,42 @@ describe('OrderDetailComponent — incident file', () => {
 
       expect(fixture.debugElement.query(By.css('.employee-card'))).toBeNull();
     });
+  });
+
+  it('words the status history and the payment type in the UI language', () => {
+    details.mockReturnValue(
+      of(
+        OrderItem.fromJS({
+          id: 'order-1',
+          paymentType: { name: 'Card' },
+          statusHistory: [{ createdOn: new Date(), status: { name: 'InProgress' } }],
+        })
+      )
+    );
+    const translate = TestBed.inject(TranslateService);
+    translate.setTranslation('cs', {
+      enums: { order_status: { in_progress: 'Probíhá' }, payment_type: { card: 'Karta' } },
+    });
+    translate.use('cs');
+    const text = render().nativeElement.textContent as string;
+
+    expect(text).toContain('Probíhá');
+    expect(text).toContain('Karta');
+    expect(text).not.toContain('InProgress');
+  });
+
+  it('offers Refunds on a card order, opening the Refunds page filtered to it, and none on a cash order', () => {
+    details.mockReturnValue(of(OrderItem.fromJS({ id: 'order-1', paymentType: { value: PaymentType.Card, name: 'Card' } })));
+    const fixture = render();
+    const button = fixture.debugElement.query(By.css('.cleansia-order-detail__refunds'));
+
+    expect(button).toBeTruthy();
+    (button.componentInstance as CleansiaButtonComponent).onClick.emit(new MouseEvent('click'));
+    expect(TestBed.inject(Router).navigate).toHaveBeenCalledWith([CleansiaAdminRoute.ORDER_MANAGEMENT, 'refunds'], {
+      queryParams: { orderId: 'order-1' },
+    });
+
+    details.mockReturnValue(of(OrderItem.fromJS({ id: 'order-2', paymentType: { value: PaymentType.Cash, name: 'Cash' } })));
+    expect(render().debugElement.query(By.css('.cleansia-order-detail__refunds'))).toBeNull();
   });
 });

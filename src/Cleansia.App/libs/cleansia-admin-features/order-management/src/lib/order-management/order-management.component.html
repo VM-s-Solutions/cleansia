@@ -142,6 +142,8 @@
           hover: true
         }"
         [loading]="facade.loading()"
+        [clickableRows]="true"
+        (rowClick)="viewOrderDetails($event)"
         (pageChange)="facade.onPageChange($event)"
         (sortChange)="facade.onSortChange($event)"
       >

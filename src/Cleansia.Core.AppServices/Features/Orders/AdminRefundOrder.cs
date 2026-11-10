@@ -59,7 +59,7 @@ public class AdminRefundOrder
     {
         // Stable full-refund purpose for the deterministic RefundKey (refund:{OrderId}:admin:full). One
         // per order, so a retried admin refund-only collapses on the same key and never double-refunds.
-        private const string FullRefundRequestId = "full";
+        internal const string FullRefundRequestId = "full";
 
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {

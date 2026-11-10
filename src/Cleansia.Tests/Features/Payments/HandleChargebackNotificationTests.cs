@@ -113,6 +113,7 @@ public class HandleChargebackNotificationTests
             _tenantRepository.Object,
             Mock.Of<ISavedCardRepository>(),
             Mock.Of<IReceivableRepository>(),
+            Mock.Of<IRefundRepository>(),
             NullLogger<HandlePaymentNotification.Handler>.Instance)!;
 
     private static Order ArrangeOrder()

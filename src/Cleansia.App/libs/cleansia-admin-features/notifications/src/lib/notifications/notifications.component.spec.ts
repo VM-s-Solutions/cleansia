@@ -28,7 +28,16 @@ function page(items: UserNotificationDto[], total = items.length): PagedDataOfUs
   return PagedDataOfUserNotificationDto.fromJS({ pageNumber: 1, pageSize: NOTIFICATIONS_PAGE_SIZE, total, data: items.map((i) => i.toJSON()) });
 }
 
+// The tab list measures itself through ResizeObserver, which jsdom does not have.
+class ResizeObserverStub {
+  observe = jest.fn();
+  unobserve = jest.fn();
+  disconnect = jest.fn();
+}
+
 describe('NotificationsComponent', () => {
+  const globals = globalThis as unknown as Record<string, unknown>;
+  const originalResizeObserver = globals['ResizeObserver'];
   let fixture: ComponentFixture<NotificationsComponent>;
   let getPaged: jest.Mock;
   let markRead: jest.Mock;
@@ -40,7 +49,15 @@ describe('NotificationsComponent', () => {
   const text = () => element().textContent ?? '';
   const rows = () => Array.from(element().querySelectorAll('.cleansia-notifications__row')) as HTMLElement[];
   const markAllButton = () =>
-    element().querySelector('.cleansia-page-header__actions cleansia-button button') as HTMLButtonElement;
+    element().querySelector('.cleansia-page-header__actions cleansia-button button') as HTMLButtonElement | null;
+  const tabs = () => Array.from(element().querySelectorAll('.cleansia-notifications__segment p-tab')) as HTMLElement[];
+
+  async function selectTab(index: number): Promise<void> {
+    tabs()[index].click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+  }
 
   async function render(): Promise<void> {
     await TestBed.configureTestingModule({
@@ -74,7 +91,12 @@ describe('NotificationsComponent', () => {
     fixture.detectChanges();
   }
 
+  afterEach(() => {
+    globals['ResizeObserver'] = originalResizeObserver;
+  });
+
   beforeEach(() => {
+    globals['ResizeObserver'] = ResizeObserverStub;
     getPaged = jest.fn().mockReturnValue(of(page([item(), item({ id: 'n-2', readOn: '2026-09-19T09:00:00Z' })])));
     markRead = jest.fn().mockReturnValue(of(MarkNotificationReadResponse.fromJS({ id: 'n-1', readOn: '2026-09-19T09:30:00Z' })));
     markAllRead = jest.fn();
@@ -110,8 +132,9 @@ describe('NotificationsComponent', () => {
     await render();
 
     expect(text()).toContain('pages.notifications.empty');
+    expect(text()).toContain('pages.notifications.empty_hint');
     expect(rows()).toHaveLength(0);
-    expect(markAllButton().disabled).toBe(true);
+    expect(markAllButton()?.disabled).toBe(true);
   });
 
   it('renders a row per notification with its sentence, its stamp, and the unread emphasis', async () => {
@@ -127,8 +150,64 @@ describe('NotificationsComponent', () => {
     expect(rows()[0].querySelector('time')?.getAttribute('datetime')).toBe('2026-09-19T08:30:00.000Z');
     expect(rows()[0].getAttribute('role')).toBe('button');
     expect(rows()[0].getAttribute('tabindex')).toBe('0');
-    expect(markAllButton().disabled).toBe(false);
+    expect(markAllButton()?.disabled).toBe(false);
     expect(element().querySelector('p-paginator')).toBeNull();
+  });
+
+  it('labels a critical unread dispute with its type and Critical, and names it type, Critical, Unread and title', async () => {
+    await render();
+
+    const row = rows()[0];
+    expect(row.getAttribute('data-type')).toBe('dispute');
+    expect(row.classList).toContain('cleansia-notifications__row--critical');
+    expect(row.querySelector('.cleansia-notifications__type')?.textContent?.trim()).toBe('pages.notifications.types.dispute');
+    expect(row.querySelector('.cleansia-notifications__critical')?.textContent?.trim()).toBe('pages.notifications.critical');
+    expect(row.getAttribute('aria-label')).toBe(
+      'pages.notifications.types.dispute, pages.notifications.critical, pages.notifications.unread, pages.notifications.events.admin.dispute.filed.title'
+    );
+  });
+
+  it('shows a new order as an Order row with no Critical label', async () => {
+    getPaged.mockReturnValue(of(page([item({ eventKey: 'admin.order.new', args: { orderNumber: 'ORD-2', orderId: 'o-2' } })])));
+
+    await render();
+
+    const row = rows()[0];
+    expect(row.querySelector('.cleansia-notifications__type')?.textContent?.trim()).toBe('pages.notifications.types.order');
+    expect(row.querySelector('.cleansia-notifications__critical')).toBeNull();
+    expect(row.classList).not.toContain('cleansia-notifications__row--critical');
+    expect(row.getAttribute('aria-label')).toBe(
+      'pages.notifications.types.order, pages.notifications.unread, pages.notifications.events.admin.order.new.title'
+    );
+  });
+
+  it('opens on All, and the Critical and Info tabs ask the server for their rows from page 1', async () => {
+    await render();
+
+    expect(tabs().map((tab) => tab.textContent?.trim())).toEqual([
+      'pages.notifications.tabs.all',
+      'pages.notifications.tabs.critical',
+      'pages.notifications.tabs.info',
+    ]);
+    expect(getPaged).toHaveBeenLastCalledWith(undefined, undefined, 0, NOTIFICATIONS_PAGE_SIZE, undefined);
+
+    await selectTab(1);
+    expect(getPaged).toHaveBeenLastCalledWith(undefined, undefined, 0, NOTIFICATIONS_PAGE_SIZE, true);
+    expect(markAllButton()).not.toBeNull();
+
+    await selectTab(2);
+    expect(getPaged).toHaveBeenLastCalledWith(undefined, undefined, 0, NOTIFICATIONS_PAGE_SIZE, false);
+    expect(markAllButton()).toBeNull();
+  });
+
+  it.each([1, 2])('shows the empty line without its hint on tab %i', async (index) => {
+    await render();
+    getPaged.mockReturnValue(of(page([])));
+
+    await selectTab(index);
+
+    expect(text()).toContain('pages.notifications.empty');
+    expect(text()).not.toContain('pages.notifications.empty_hint');
   });
 
   it('opens a row on click: marks it read and lands on the dispute', async () => {

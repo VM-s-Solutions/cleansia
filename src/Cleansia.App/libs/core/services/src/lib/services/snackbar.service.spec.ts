@@ -32,30 +32,40 @@ describe('SnackbarService.extractApiErrorMessage', () => {
     );
   });
 
-  it('returns the raw error detail when no mapping matches', () => {
+  function translating(table: Record<string, string>): void {
+    jest
+      .spyOn(TestBed.inject(TranslateService), 'instant')
+      .mockImplementation((key: string | string[]) => table[key as string] ?? (key as string));
+  }
+
+  it('never shows an untranslated detail, falling back to the generic message', () => {
     expect(
       service.extractApiErrorMessage({ result: { detail: 'Something broke' } })
-    ).toBe('Something broke');
+    ).toBe('api.common.error_occurred');
   });
 
-  it('reads the detail from result.title when detail is absent', () => {
+  it('reads the code from result.title when detail is absent', () => {
+    translating({ 'api.order.not_found': 'Order not found' });
+
     expect(
-      service.extractApiErrorMessage({ result: { title: 'Boom' } })
-    ).toBe('Boom');
+      service.extractApiErrorMessage({ result: { title: 'order.not_found' } })
+    ).toBe('Order not found');
   });
 
-  it('parses the detail from a JSON response string', () => {
+  it('parses the code from a JSON response string', () => {
+    translating({ 'api.dispute.already_exists': 'A dispute already exists' });
+
     expect(
       service.extractApiErrorMessage({
-        response: JSON.stringify({ detail: 'Parsed detail' }),
+        response: JSON.stringify({ detail: 'dispute.already_exists' }),
       })
-    ).toBe('Parsed detail');
+    ).toBe('A dispute already exists');
   });
 
-  it('surfaces a non-JSON response string as the message', () => {
+  it('never shows a non-JSON response string', () => {
     expect(
       service.extractApiErrorMessage({ response: 'Internal Server Error' })
-    ).toBe('Internal Server Error');
+    ).toBe('api.common.error_occurred');
   });
 
   it('ignores an HTML response string and falls back', () => {
@@ -70,10 +80,41 @@ describe('SnackbarService.extractApiErrorMessage', () => {
     );
   });
 
-  it('falls back to error.message when no detail is found', () => {
+  it('never shows the exception message', () => {
     expect(
-      service.extractApiErrorMessage({ message: 'raw message' })
-    ).toBe('raw message');
+      service.extractApiErrorMessage({ message: 'raw message' }, 'api.order.failed')
+    ).toBe('api.order.failed');
+  });
+
+  it('translates a validation code under api.* when the map does not name it', () => {
+    translating({ 'api.validation.invalid_password': 'Wrong e-mail or password' });
+
+    expect(
+      service.extractApiErrorMessage({ errors: { Password: 'validation.invalid_password' } })
+    ).toBe('Wrong e-mail or password');
+  });
+
+  it('keeps the top-level lookup for a code that is itself a bundle key', () => {
+    translating({ 'auth.login.error': 'Sign-in failed' });
+
+    expect(service.extractApiErrorMessage({ detail: 'auth.login.error' })).toBe('Sign-in failed');
+  });
+
+  it('shows the caller fallback for an untranslated code, never the code', () => {
+    translating({ 'pages.disputes.create_error': 'The dispute could not be filed' });
+
+    expect(
+      service.extractApiErrorMessage(
+        { errors: { OrderId: 'dispute.already_exists' } },
+        'pages.disputes.create_error'
+      )
+    ).toBe('The dispute could not be filed');
+  });
+
+  it('shows the generic message for an untranslated code and no fallback', () => {
+    expect(service.extractApiErrorMessage({ detail: 'dispute.already_exists' })).toBe(
+      'api.common.error_occurred'
+    );
   });
 
   it('maps a known normalized error code to its translation key', () => {

@@ -20,8 +20,7 @@ struct DisputesPage: Equatable {
 struct DisputeListEntry: Equatable, Identifiable {
     let id: String
     let displayOrderNumber: String?
-    let reasonName: String?
-    let statusName: String?
+    let reasonValue: Int?
     let statusValue: Int?
     let createdOn: Date?
 }
@@ -29,9 +28,8 @@ struct DisputeListEntry: Equatable, Identifiable {
 struct DisputeDetail: Equatable {
     let id: String
     let displayOrderNumber: String?
-    let reasonName: String?
+    let reasonValue: Int?
     let description: String?
-    let statusName: String?
     let statusValue: Int?
     let createdOn: Date?
     let messages: [DisputeMessage]
@@ -90,8 +88,7 @@ extension DisputeListItem {
         return DisputeListEntry(
             id: id,
             displayOrderNumber: displayOrderNumber,
-            reasonName: reason?.name,
-            statusName: status?.name,
+            reasonValue: reason?.value,
             statusValue: status?.value,
             createdOn: createdOn
         )
@@ -104,9 +101,8 @@ extension DisputeDetails {
         return try DisputeDetail(
             id: id,
             displayOrderNumber: displayOrderNumber,
-            reasonName: reason?.name,
+            reasonValue: reason?.value,
             description: description,
-            statusName: status?.name,
             statusValue: status?.value,
             createdOn: createdOn,
             messages: (messages ?? []).enumerated().map { try $1.toMessage(fallbackId: $0) },

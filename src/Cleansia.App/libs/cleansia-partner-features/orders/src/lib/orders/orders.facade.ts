@@ -23,7 +23,7 @@ import { Actions, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
-import { catchError, of, takeUntil } from 'rxjs';
+import { catchError, finalize, of, takeUntil } from 'rxjs';
 import {
   CompleteOrderDialogComponent,
   CompleteOrderDialogData,
@@ -70,6 +70,7 @@ export class OrdersFacade extends UnsubscribeControlDirective {
   availableLoading = signal<boolean>(false);
   myLoading = signal<boolean>(false);
   takeInFlightOrderId = signal<string | null>(null);
+  startingOrder = signal<boolean>(false);
 
   // Aggregate signals kept for any consumer that asks "is anything loading"
   // or "what's the combined total" without caring which list. Derived from
@@ -311,9 +312,13 @@ export class OrdersFacade extends UnsubscribeControlDirective {
     const command = new StartOrderCommand();
     command.orderId = orderId;
 
+    this.startingOrder.set(true);
     this.partnerClient.orderClient
       .startOrder(command)
-      .pipe(takeUntil(this.destroyed$))
+      .pipe(
+        takeUntil(this.destroyed$),
+        finalize(() => this.startingOrder.set(false))
+      )
       .subscribe((response) => {
         if (response) {
           this.snackbarService.showSuccessTranslated(

@@ -121,6 +121,7 @@ export class ReportsComponent implements OnInit {
         id: 'paymentTypeName',
         field: 'paymentTypeName',
         header: this.translate.instant('pages.reports.payment_type'),
+        getValue: (row) => this.facade.enumLabel('payment_type', row?.paymentTypeCode ?? row?.paymentTypeName),
       },
       {
         id: 'orderCount',
@@ -230,6 +231,7 @@ export class ReportsComponent implements OnInit {
         id: 'statusName',
         field: 'statusName',
         header: this.translate.instant('pages.reports.status'),
+        getValue: (row) => this.facade.enumLabel('invoice_status', row?.statusCode ?? row?.statusName),
       },
       {
         id: 'invoiceCount',
@@ -251,7 +253,7 @@ export class ReportsComponent implements OnInit {
         id: 'month',
         field: 'monthName',
         header: this.translate.instant('pages.reports.month'),
-        getValue: (row) => `${row?.monthName} ${row?.year}`,
+        getValue: (row) => (row ? this.facade.monthLabel(row.year, row.month) : ''),
       },
       {
         id: 'invoiceCount',

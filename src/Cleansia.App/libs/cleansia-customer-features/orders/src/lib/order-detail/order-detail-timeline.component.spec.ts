@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import {
+  Code,
   CustomerAuthService,
   CustomerClient,
   OrderItem,
@@ -148,5 +149,23 @@ describe('OrderDetailComponent — the cleaning axis after a walk-back', () => {
       current: true,
       meta: fixture.componentInstance.formatDate(at(3)),
     });
+  });
+
+  it('words the payment type and status, never the enum name', async () => {
+    const booked = order(OrderStatus.New, [[OrderStatus.New, 0]]);
+    booked.paymentStatus = Code.fromJS({ value: PaymentStatus.PartiallyRefunded, name: 'PartiallyRefunded' });
+    await setup(booked);
+    const translate = TestBed.inject(TranslateService);
+    translate.setTranslation('en', {
+      enums: {
+        payment_type: { cash: 'Cash in hand' },
+        payment_status: { partially_refunded: 'Partially refunded' },
+      },
+    });
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Cash in hand · Partially refunded');
+    expect(text).not.toContain('PartiallyRefunded');
   });
 });

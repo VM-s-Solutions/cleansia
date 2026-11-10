@@ -49,6 +49,8 @@
           emptyMessage: 'pages.receivables.empty'
         }"
         [loading]="facade.loading()"
+        [clickableRows]="hasOrder"
+        (rowClick)="facade.viewOrder($event)"
         (pageChange)="facade.onPageChange($event)"
         (sortChange)="facade.onSortChange($event)"
       />

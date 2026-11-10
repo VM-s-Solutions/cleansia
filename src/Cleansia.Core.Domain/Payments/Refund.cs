@@ -100,7 +100,8 @@ public class Refund : TenantAuditable
     /// <summary>
     /// Stamp the refund as confirmed by Stripe (confirm-then-record, ADR-0006 D7). Called only after
     /// the Stripe refund call returns, or when a retry finds the refund Stripe made on its key, so a
-    /// recorded <see cref="RefundStatus.Succeeded"/> row always means money actually moved.
+    /// recorded <see cref="RefundStatus.Succeeded"/> row always means money actually left. One that also
+    /// carries <see cref="FailedOn"/> is money that came back: see <see cref="MarkFailedByStripe"/>.
     /// <paramref name="amount"/> is what Stripe says it paid when a retry finds the refund there, which
     /// may be more than a row clamped since.
     /// </summary>
@@ -126,6 +127,43 @@ public class Refund : TenantAuditable
     public Refund MarkFailed()
     {
         Status = RefundStatus.Failed;
+        return this;
+    }
+
+    /// <summary>
+    /// Stamp a card refund Stripe failed after accepting it, with the day it said so and its refund id. A
+    /// pending row closes as <see cref="RefundStatus.Failed"/>; a succeeded row stays succeeded, because the
+    /// money left and came back and still counts as refunded in revenue and the loyalty clawback, and
+    /// reopening it would free room to send the same money to the same dead card. Answers whether this call
+    /// set the date, so the first of the webhook and a retry to learn it is the one that tells anybody.
+    /// </summary>
+    public bool MarkFailedByStripe(string stripeRefundId, DateTimeOffset failedOnUtc)
+    {
+        if (FailedOn is not null)
+        {
+            return false;
+        }
+
+        FailedOn = failedOnUtc;
+        StripeRefundId = stripeRefundId;
+        if (Status == RefundStatus.Pending)
+        {
+            Status = RefundStatus.Failed;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Stamp how support paid back a refund Stripe failed or bounced. It then counts as given back, as a
+    /// confirmed refund does; a bounced one already did.
+    /// </summary>
+    public Refund MarkRepaid(RefundRepaymentMethod method, string? reference, DateTimeOffset repaidOnUtc)
+    {
+        RepaidOn = repaidOnUtc;
+        RepaymentMethod = method;
+        RepaymentReference = reference;
+        Status = RefundStatus.Succeeded;
         return this;
     }
 

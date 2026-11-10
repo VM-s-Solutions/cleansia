@@ -142,6 +142,8 @@ final class CustomerErrorVoiceTests: XCTestCase {
         "device.invalid_platform": "RegisterDevice",
         "device.not_found": "RevokeDevice",
         "dispute.already_exists": "CreateDispute",
+        "dispute.cleaning_not_started": "CreateDispute",
+        "dispute.line_not_on_order": "CreateDispute",
         "dispute.max_length_exceeded": "AddDisputeMessage, CreateDispute",
         "dispute.not_found": "AddDisputeMessage, UploadDisputeEvidence",
         "dispute.not_owned_by_user": "AddDisputeMessage, UploadDisputeEvidence",

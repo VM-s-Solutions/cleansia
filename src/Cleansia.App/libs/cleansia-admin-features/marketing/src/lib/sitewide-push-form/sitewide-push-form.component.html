@@ -9,6 +9,11 @@
       </div>
     </div>
 
+    <div class="cleansia-info-banner" role="note">
+      <i class="pi pi-info-circle" aria-hidden="true"></i>
+      <span>{{ 'pages.sitewide_push.email_not_available' | translate }}</span>
+    </div>
+
     <form [formGroup]="form" (ngSubmit)="submit()" class="cleansia-form">
       <cleansia-section [title]="'pages.sitewide_push.titles_section' | translate">
         <div class="form-grid">
@@ -41,7 +46,7 @@
 
       <div class="form-actions">
         <cleansia-button
-          type="submit"
+          buttonType="submit"
           [label]="'pages.sitewide_push.send' | translate"
           icon="pi pi-send"
           [loading]="submitting()"

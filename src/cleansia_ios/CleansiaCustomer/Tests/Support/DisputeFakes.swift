@@ -103,8 +103,7 @@ enum DisputeFixtures {
         DisputeListEntry(
             id: id,
             displayOrderNumber: "1042",
-            reasonName: "Quality issue",
-            statusName: "Pending",
+            reasonValue: 1,
             statusValue: statusValue,
             createdOn: Date(timeIntervalSince1970: 0)
         )
@@ -114,9 +113,8 @@ enum DisputeFixtures {
         DisputeDetail(
             id: id,
             displayOrderNumber: "1042",
-            reasonName: "Quality issue",
+            reasonValue: 1,
             description: "Cleaner skipped the kitchen entirely",
-            statusName: "Pending",
             statusValue: statusValue,
             createdOn: Date(timeIntervalSince1970: 0),
             messages: [],

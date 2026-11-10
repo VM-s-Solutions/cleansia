@@ -167,7 +167,9 @@
                 <div class="order-detail__step-title">
                   {{ 'pages.order_detail.step_' + step.key | translate }}
                 </div>
-                @if (step.meta) {
+                @if (step.metaKey) {
+                <div class="order-detail__step-meta">{{ step.metaKey | translate }}</div>
+                } @else if (step.meta) {
                 <div class="order-detail__step-meta">{{ step.meta }}</div>
                 }
               </div>
@@ -196,7 +198,9 @@
                 <div class="order-detail__step-title">
                   {{ 'pages.order_detail.step_' + step.key | translate }}
                 </div>
-                @if (step.meta) {
+                @if (step.metaKey) {
+                <div class="order-detail__step-meta">{{ step.metaKey | translate }}</div>
+                } @else if (step.meta) {
                 <div class="order-detail__step-meta">{{ step.meta }}</div>
                 }
               </div>
@@ -332,7 +336,7 @@
               {{ 'pages.order_detail.label_payment' | translate }}
             </span>
             <div class="order-detail__fact-value">
-              {{ order()!.paymentType?.name }} · {{ order()!.paymentStatus?.name }}
+              {{ order()!.paymentType | enumLabel: 'payment_type' }} · {{ order()!.paymentStatus | enumLabel: 'payment_status' }}
             </div>
           </div>
         </div>

@@ -45,7 +45,8 @@ export function formatCleaningWindow(start: Date | undefined, estimatedMinutes: 
 
 export function buildWorkContractFactRows(
   facts: WorkContractFacts | undefined,
-  lang: string
+  lang: string,
+  extraLabel: (slug: string) => string = (slug) => slug
 ): WorkContractFactRow[] {
   if (!facts) return [];
   const rows: WorkContractFactRow[] = [
@@ -66,7 +67,7 @@ export function buildWorkContractFactRows(
   const packages = (facts.packages ?? []).map((line) => line.name).filter(Boolean);
   if (packages.length) rows.push({ labelKey: `${FACTS_KEY}.packages`, value: packages.join(', ') });
   const extras = facts.extraSlugs ?? [];
-  if (extras.length) rows.push({ labelKey: `${FACTS_KEY}.extras`, value: extras.join(', ') });
+  if (extras.length) rows.push({ labelKey: `${FACTS_KEY}.extras`, value: extras.map(extraLabel).join(', ') });
   return rows;
 }
 

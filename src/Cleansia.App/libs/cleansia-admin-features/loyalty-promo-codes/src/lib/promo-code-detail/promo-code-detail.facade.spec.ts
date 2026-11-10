@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { AdminClient, PromoCodeDetailDto } from '@cleansia/admin-services';
 import { DialogService, PermissionService, Policy, PolicyName, SnackbarService } from '@cleansia/services';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 import { PromoCodeDetailFacade } from './promo-code-detail.facade';
 
 describe('PromoCodeDetailFacade', () => {
@@ -106,5 +106,21 @@ describe('PromoCodeDetailFacade', () => {
       expect(deactivateMock).not.toHaveBeenCalled();
       expect(detailsMock).toHaveBeenCalledTimes(1);
     });
+  });
+
+  it('holds deactivating while the deactivate is in flight, and clears it after it lands or fails', () => {
+    const landing = new Subject<never>();
+    deactivateMock.mockReturnValue(landing.asObservable());
+    facade.deactivate();
+    expect(facade.deactivating()).toBe(true);
+    landing.complete();
+    expect(facade.deactivating()).toBe(false);
+
+    const failing = new Subject<never>();
+    deactivateMock.mockReturnValue(failing.asObservable());
+    facade.deactivate();
+    expect(facade.deactivating()).toBe(true);
+    failing.error(new Error('boom'));
+    expect(facade.deactivating()).toBe(false);
   });
 });

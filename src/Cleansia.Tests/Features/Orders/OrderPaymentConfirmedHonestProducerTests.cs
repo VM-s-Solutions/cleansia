@@ -229,6 +229,7 @@ public class OrderPaymentConfirmedHonestProducerTests
             Mock.Of<ITenantRepository>(),
             Mock.Of<ISavedCardRepository>(),
             Mock.Of<IReceivableRepository>(),
+            Mock.Of<IRefundRepository>(),
             NullLogger<HandlePaymentNotification.Handler>.Instance);
     }
 

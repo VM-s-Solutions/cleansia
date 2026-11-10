@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { AdminClient, LanguageListItem } from '@cleansia/admin-services';
 import { DialogService, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { EMPTY, of } from 'rxjs';
+import { EMPTY, of, Subject } from 'rxjs';
 import { LanguageManagementFacade } from './language-management.facade';
 
 describe('LanguageManagementFacade', () => {
@@ -121,5 +121,21 @@ describe('LanguageManagementFacade', () => {
       expect(deleteMock).not.toHaveBeenCalled();
       expect(getOverviewMock).not.toHaveBeenCalled();
     });
+  });
+
+  it('holds the list loading while a language delete is in flight, and clears it after it lands or fails', () => {
+    const landing = new Subject<never>();
+    deleteMock.mockReturnValue(landing.asObservable());
+    facade.deleteLanguage(LanguageListItem.fromJS({ id: 'l-1' }));
+    expect(facade.loading()).toBe(true);
+    landing.complete();
+    expect(facade.loading()).toBe(false);
+
+    const failing = new Subject<never>();
+    deleteMock.mockReturnValue(failing.asObservable());
+    facade.deleteLanguage(LanguageListItem.fromJS({ id: 'l-1' }));
+    expect(facade.loading()).toBe(true);
+    failing.error(new Error('boom'));
+    expect(facade.loading()).toBe(false);
   });
 });

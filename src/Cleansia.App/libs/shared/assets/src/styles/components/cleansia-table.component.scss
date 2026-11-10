@@ -203,11 +203,18 @@
 
         &--clickable {
           cursor: pointer;
-        }
 
-        &:hover {
-          td {
+          &:hover td {
             background: rgba(var(--cleansia-primary-rgb), 0.03);
+          }
+
+          // An outline on a <tr> is painted under its cells, so focus shows as a cell tint.
+          &:focus-visible {
+            outline: none;
+
+            td {
+              background: rgba(var(--cleansia-primary-rgb), 0.08);
+            }
           }
         }
 

@@ -55,7 +55,6 @@ export class ReceivablesComponent implements OnInit {
     this.facade.lang();
     return getReceivablesTableDefinition(
       {
-        onViewOrder: (row) => this.facade.viewOrder(row),
         onWriteOff: (row) => this.facade.startWriteOff(row),
         isBusy: () => this.facade.submitting(),
       },
@@ -63,6 +62,8 @@ export class ReceivablesComponent implements OnInit {
       this.permissions
     );
   });
+
+  protected readonly hasOrder = (row: ReceivableListItem): boolean => !!row.orderId;
 
   ngOnInit(): void {
     this.facade.loadReceivables();

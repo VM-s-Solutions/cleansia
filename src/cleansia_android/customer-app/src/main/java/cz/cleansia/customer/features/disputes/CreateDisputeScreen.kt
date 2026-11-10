@@ -69,6 +69,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.disputes.DisputeSettlement
+import cz.cleansia.customer.ui.format.disputeReasonLabelRes
 import cz.cleansia.core.ui.state.ActionState
 
 /**
@@ -610,17 +611,7 @@ private fun MissingOrderBanner() {
  * across Compose BOMs.
  */
 
-private data class ReasonOption(val value: Int, val labelRes: Int)
-
-private val REASON_OPTIONS = listOf(
-    ReasonOption(1, R.string.dispute_reason_quality_issue),
-    ReasonOption(2, R.string.dispute_reason_service_not_provided),
-    ReasonOption(3, R.string.dispute_reason_service_incomplete),
-    ReasonOption(4, R.string.dispute_reason_damaged_property),
-    ReasonOption(5, R.string.dispute_reason_unauthorized_charge),
-    ReasonOption(6, R.string.dispute_reason_incorrect_amount),
-    ReasonOption(7, R.string.dispute_reason_other),
-)
+private val REASON_OPTIONS = (1..7).toList()
 
 @Composable
 private fun ReasonDropdown(
@@ -630,7 +621,7 @@ private fun ReasonDropdown(
 ) {
     var expanded by remember { mutableStateOf(false) }
     val selectedLabel = selectedValue?.let { v ->
-        REASON_OPTIONS.firstOrNull { it.value == v }?.let { stringResource(it.labelRes) }
+        disputeReasonLabelRes(v)?.let { stringResource(it) }
     } ?: ""
 
     Box {
@@ -665,11 +656,11 @@ private fun ReasonDropdown(
             onDismissRequest = { expanded = false },
             modifier = Modifier.fillMaxWidth(fraction = 0.95f),
         ) {
-            REASON_OPTIONS.forEach { option ->
+            REASON_OPTIONS.forEach { value ->
                 DropdownMenuItem(
-                    text = { Text(stringResource(option.labelRes)) },
+                    text = { Text(disputeReasonLabelRes(value)?.let { stringResource(it) } ?: "—") },
                     onClick = {
-                        onSelect(option.value)
+                        onSelect(value)
                         expanded = false
                     },
                 )

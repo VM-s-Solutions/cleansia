@@ -63,11 +63,13 @@ export class CountryManagementFacade extends UnsubscribeControlDirective {
   }
 
   private setDefaultMarketConfirmed(id: string): void {
+    this.loading.set(true);
     this.adminClient.adminCountryClient
       .defaultMarket(id)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null))
+        catchError(() => of(null)),
+        finalize(() => this.loading.set(false))
       )
       .subscribe((response) => {
         if (response) {
@@ -95,11 +97,13 @@ export class CountryManagementFacade extends UnsubscribeControlDirective {
   }
 
   private deleteCountryConfirmed(id: string): void {
+    this.loading.set(true);
     this.adminClient.adminCountryClient
       .delete(id)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null))
+        catchError(() => of(null)),
+        finalize(() => this.loading.set(false))
       )
       .subscribe((response) => {
         if (response) {

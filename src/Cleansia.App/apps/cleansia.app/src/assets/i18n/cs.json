@@ -2355,7 +2355,12 @@
       "paid": "Zaplaceno",
       "failed": "Neúspěšné",
       "refunded": "Vráceno",
-      "disputed": "Sporné"
+      "disputed": "Sporné",
+      "partially_refunded": "Částečně vráceno"
+    },
+    "payment_type": {
+      "cash": "Hotovost",
+      "card": "Karta"
     }
   },
   "aria": {

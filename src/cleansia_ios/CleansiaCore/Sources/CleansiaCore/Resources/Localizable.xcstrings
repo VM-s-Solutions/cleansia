@@ -9485,6 +9485,76 @@
           }
         }
       }
+    },
+    "error.dispute.cleaning_not_started": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Problém můžete nahlásit až po zahájení úklidu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can only report a problem once the cleaning has started."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сообщить о проблеме можно только после начала уборки."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Problém môžete nahlásiť až po začatí upratovania."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Повідомити про проблему можна лише після початку прибирання."
+          }
+        }
+      }
+    },
+    "error.dispute.line_not_on_order": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jedna z vybraných služeb není v této rezervaci. Otevřete formulář znovu a zkuste to znovu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One of the services you picked is not on that booking. Reopen the form and try again."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Одна из выбранных услуг не входит в этот заказ. Откройте форму заново и повторите попытку."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jedna z vybraných služieb nie je v tejto rezervácii. Otvorte formulár znova a skúste to znova."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Одна з вибраних послуг не входить до цього замовлення. Відкрийте форму знову та спробуйте ще раз."
+          }
+        }
+      }
     }
   },
   "version": "1.1"

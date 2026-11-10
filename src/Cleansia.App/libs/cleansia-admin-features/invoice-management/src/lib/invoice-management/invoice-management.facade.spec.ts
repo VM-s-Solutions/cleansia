@@ -12,7 +12,7 @@ import {
 } from '@cleansia/admin-services';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { EMPTY, of, throwError } from 'rxjs';
+import { EMPTY, of, Subject, throwError } from 'rxjs';
 import { InvoiceManagementFacade } from './invoice-management.facade';
 
 describe('InvoiceManagementFacade', () => {
@@ -291,5 +291,21 @@ describe('InvoiceManagementFacade', () => {
 
       expect(facade.payPeriodOptions()).toEqual([]);
     });
+  });
+
+  it('holds the list loading while a download is in flight, and clears it after it lands or fails', () => {
+    const landing = new Subject<never>();
+    invoiceClient.download.mockReturnValue(landing.asObservable());
+    facade.downloadInvoice(EmployeeInvoiceDto.fromJS({ id: 'inv-1' }));
+    expect(facade.loading()).toBe(true);
+    landing.complete();
+    expect(facade.loading()).toBe(false);
+
+    const failing = new Subject<never>();
+    invoiceClient.download.mockReturnValue(failing.asObservable());
+    facade.downloadInvoice(EmployeeInvoiceDto.fromJS({ id: 'inv-1' }));
+    expect(facade.loading()).toBe(true);
+    failing.error(new Error('boom'));
+    expect(facade.loading()).toBe(false);
   });
 });

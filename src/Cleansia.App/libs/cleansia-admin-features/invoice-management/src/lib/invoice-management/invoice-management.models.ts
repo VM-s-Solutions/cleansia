@@ -114,19 +114,12 @@ export function getInvoiceTableColumns(
 
 export function getInvoiceTableActions(
   defs: {
-    onViewDetails: (row: EmployeeInvoiceDto) => void;
     onDownload: (row: EmployeeInvoiceDto) => void;
     onRetryPdf: (row: EmployeeInvoiceDto) => void;
   },
   translate: TranslateService
 ): TableAction<EmployeeInvoiceDto>[] {
   return [
-    {
-      icon: 'pi pi-eye',
-      onClick: (row: EmployeeInvoiceDto) => defs.onViewDetails(row),
-      color: 'info',
-      tooltip: translate.instant('pages.invoice_management.view_details'),
-    },
     {
       icon: 'pi pi-download',
       onClick: (row: EmployeeInvoiceDto) => defs.onDownload(row),

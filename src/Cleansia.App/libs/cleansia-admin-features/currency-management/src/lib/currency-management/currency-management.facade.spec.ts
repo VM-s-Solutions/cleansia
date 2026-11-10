@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { AdminClient, AdminCurrencyListItem } from '@cleansia/admin-services';
 import { DialogService, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { CurrencyManagementFacade } from './currency-management.facade';
 
 describe('CurrencyManagementFacade', () => {
@@ -249,5 +249,21 @@ describe('CurrencyManagementFacade', () => {
 
     expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
     expect(getOverviewMock).not.toHaveBeenCalled();
+  });
+
+  it('holds the list loading while a currency switch-off is in flight, and clears it after it lands or fails', () => {
+    const landing = new Subject<never>();
+    deactivateMock.mockReturnValue(landing.asObservable());
+    facade.deactivateCurrency(currencies[1]);
+    expect(facade.loading()).toBe(true);
+    landing.complete();
+    expect(facade.loading()).toBe(false);
+
+    const failing = new Subject<never>();
+    deactivateMock.mockReturnValue(failing.asObservable());
+    facade.deactivateCurrency(currencies[1]);
+    expect(facade.loading()).toBe(true);
+    failing.error(new Error('boom'));
+    expect(facade.loading()).toBe(false);
   });
 });

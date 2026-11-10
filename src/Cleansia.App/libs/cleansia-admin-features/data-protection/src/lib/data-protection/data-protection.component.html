@@ -85,6 +85,7 @@
             icon="pi pi-shield"
             severity="secondary"
             [outlined]="true"
+            [loading]="facade.consentsLoading()"
             (onClick)="loadConsents()"
           />
           <cleansia-button

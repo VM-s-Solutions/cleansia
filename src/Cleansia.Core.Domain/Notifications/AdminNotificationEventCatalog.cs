@@ -13,6 +13,7 @@ public static class AdminNotificationEventCatalog
     public const string OrderCrewShort = "admin.order.crew_short";
     public const string OrderCleanerNotStarted = "admin.order.cleaner_not_started";
     public const string OrderNoCleanerYet = "admin.order.no_cleaner_yet";
+    public const string OrderNoCleanerSoon = "admin.order.no_cleaner_soon";
     public const string OrderLockoutReported = "admin.order.lockout_reported";
     public const string OrderCashNotPaid = "admin.order.cash_not_paid";
     public const string DisputeFiled = "admin.dispute.filed";
@@ -22,6 +23,7 @@ public static class AdminNotificationEventCatalog
     public const string RefundStuck = "admin.payment.refund_stuck";
     public const string RefundNeedsRetry = "admin.payment.refund_needs_retry";
     public const string RefundWithoutCancel = "admin.payment.refund_without_cancel";
+    public const string RefundBounced = "admin.payment.refund_bounced";
     public const string ErasureFailed = "admin.erasure.failed";
     public const string CompanyWindDownRequested = "admin.company.wind_down_requested";
     public const string CompanyWindDownRun = "admin.company.wind_down_run";
@@ -35,6 +37,7 @@ public static class AdminNotificationEventCatalog
         OrderCrewShort,
         OrderCleanerNotStarted,
         OrderNoCleanerYet,
+        OrderNoCleanerSoon,
         OrderLockoutReported,
         OrderCashNotPaid,
         DisputeFiled,
@@ -44,10 +47,35 @@ public static class AdminNotificationEventCatalog
         RefundStuck,
         RefundNeedsRetry,
         RefundWithoutCancel,
+        RefundBounced,
         ErasureFailed,
         CompanyWindDownRequested,
         CompanyWindDownRun,
         CompanyArchived,
+        ReferralHeld,
+    ];
+
+    /// <summary>
+    /// The events a person must act on. The console's badge and bell count these alone; every other key
+    /// is info, shown on the Notifications page and e-mailed as before.
+    /// </summary>
+    public static readonly IReadOnlyList<string> Critical =
+    [
+        OrderCrewLost,
+        OrderCrewShort,
+        OrderCleanerNotStarted,
+        OrderNoCleanerYet,
+        OrderNoCleanerSoon,
+        OrderLockoutReported,
+        OrderCashNotPaid,
+        DisputeFiled,
+        DisputeChargeback,
+        DisputeChargebackUnmatched,
+        RefundStuck,
+        RefundNeedsRetry,
+        RefundWithoutCancel,
+        RefundBounced,
+        ErasureFailed,
         ReferralHeld,
     ];
 }

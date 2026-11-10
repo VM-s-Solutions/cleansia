@@ -39,9 +39,13 @@ export class FiscalFailuresListFacade extends UnsubscribeControlDirective {
   }
 
   retryNow(receiptId: string): void {
+    this.loading.set(true);
     this.fiscalFailureClient
       .retry(receiptId)
-      .pipe(takeUntil(this.destroyed$))
+      .pipe(
+        takeUntil(this.destroyed$),
+        finalize(() => this.loading.set(false))
+      )
       .subscribe({
         next: () => {
           this.snackbarService.showSuccessTranslated('fiscal_failures.messages.retry_scheduled');
@@ -57,9 +61,13 @@ export class FiscalFailuresListFacade extends UnsubscribeControlDirective {
   }
 
   acknowledge(receiptId: string): void {
+    this.loading.set(true);
     this.fiscalFailureClient
       .acknowledge(receiptId)
-      .pipe(takeUntil(this.destroyed$))
+      .pipe(
+        takeUntil(this.destroyed$),
+        finalize(() => this.loading.set(false))
+      )
       .subscribe({
         next: () => {
           this.snackbarService.showSuccessTranslated('fiscal_failures.messages.acknowledged');

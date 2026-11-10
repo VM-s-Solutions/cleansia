@@ -48,6 +48,28 @@ function pageKeys(): string[] {
   return [...match[1].matchAll(/'([a-z_.]+)'/g)].map((m) => m[1]);
 }
 
+// `public static readonly IReadOnlyList<string> Critical = [ OrderCrewLost, … ];`
+const BACKEND_CRITICAL_LIST = /IReadOnlyList<string> Critical =\s*\[([^\]]*)\]/;
+
+// `export const ADMIN_CRITICAL_EVENT_KEYS: readonly AdminNotificationEventKey[] = [ 'admin.order.crew_lost', … ];`
+const PAGE_CRITICAL_LIST = /export const ADMIN_CRITICAL_EVENT_KEYS: readonly AdminNotificationEventKey\[\] = \[([^\]]*)\];/;
+
+function pageCriticalKeys(): string[] {
+  const match = PAGE_CRITICAL_LIST.exec(readFileSync(PAGE_MODELS, 'utf8'));
+  if (!match) throw new Error('ADMIN_CRITICAL_EVENT_KEYS is not pinned in the notifications models');
+  return [...match[1].matchAll(/'([a-z_.]+)'/g)].map((m) => m[1]);
+}
+
+function backendCriticalKeys(constants: Map<string, string>): string[] {
+  const match = BACKEND_CRITICAL_LIST.exec(readFileSync(DOMAIN_CATALOGUE, 'utf8'));
+  if (!match) throw new Error('AdminNotificationEventCatalog.Critical is not declared');
+  return [...match[1].matchAll(/(\w+)/g)].map((m) => {
+    const key = constants.get(m[1]);
+    if (!key) throw new Error(`Critical names ${m[1]}, which the domain catalogue does not declare`);
+    return key;
+  });
+}
+
 function backendKeys(): Map<string, string> {
   const source = readFileSync(DOMAIN_CATALOGUE, 'utf8');
   return new Map([...source.matchAll(KEY_CONSTANT)].map((m) => [m[1], m[2]]));
@@ -107,10 +129,16 @@ function copyKeysFor(key: string): string[] {
 }
 
 describe('admin notification copy', () => {
-  it('reads the nineteen-key catalogue off the backend, and the page pins the same nineteen', () => {
-    expect(keys).toHaveLength(19);
+  it('reads the twenty-one-key catalogue off the backend, and the page pins the same twenty-one', () => {
+    expect(keys).toHaveLength(21);
     expect([...argsByKey.keys()].sort()).toEqual([...keys].sort());
     expect(pageKeys()).toEqual(keys);
+  });
+
+  it('the page marks critical exactly the keys the backend catalogue lists as critical, in its order', () => {
+    const critical = backendCriticalKeys(constants);
+    expect(critical.length).toBeGreaterThan(0);
+    expect(pageCriticalKeys()).toEqual(critical);
   });
 
   it.each(LOCALES)('%s carries a title and a body for every catalogue key, and the crew-lost variants', (locale) => {

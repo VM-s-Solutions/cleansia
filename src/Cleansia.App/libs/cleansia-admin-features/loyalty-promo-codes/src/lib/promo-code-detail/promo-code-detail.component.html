@@ -55,6 +55,7 @@
                 icon="pi pi-ban"
                 severity="danger"
                 [outlined]="true"
+                [loading]="facade.deactivating()"
                 (onClick)="confirmDeactivate()"
               />
             }

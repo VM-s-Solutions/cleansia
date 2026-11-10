@@ -36,6 +36,8 @@ public sealed class AdminOrderAndDisputeTraceabilityTests
         { new AdminRefundOrder.Command(OrderId), "order.refund.full", "Order", OrderId },
         { new RevealOrderAccessInstructions.Command(OrderId), "order.access_instructions.reveal", "Order", OrderId },
         { new IssuePartialRefund.Command(OrderId, [], RefundReason.AdminDiscretion, null), "order.refund.partial", "Order", OrderId },
+        { new RetryRefund.Command(OrderId, "refund-under-test"), "order.refund.retry", "Order", OrderId },
+        { new RecordRefundRepayment.Command(OrderId, "refund-under-test", RefundRepaymentMethod.BankTransfer, "VS-1"), "order.refund.repaid", "Order", OrderId },
         { new ResolveDispute.Command(DisputeId, null, "notes"), "dispute.resolve", "Dispute", DisputeId },
         { new UpdateDisputeStatus.Command(DisputeId, DisputeStatus.UnderReview), "dispute.status.update", "Dispute", DisputeId },
         { new AddDisputeMessage.Command(DisputeId, "message", IsStaffMessage: true), "dispute.message.add", "Dispute", DisputeId },

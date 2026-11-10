@@ -69,12 +69,12 @@ private struct DisputeHeaderCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xxs) {
             HStack {
-                Text(verbatim: detail.reasonName ?? "—")
+                Text(verbatim: L10n.Disputes.reason(detail.reasonValue))
                     .font(CleansiaTypography.titleMedium)
                     .foregroundColor(CleansiaColors.onSurface)
                 Spacer()
                 DisputeStatusPill(
-                    label: DisputeStatusPresentation.label(detail.statusName),
+                    label: L10n.Disputes.status(detail.statusValue),
                     color: DisputeStatusPresentation.color(detail.statusValue)
                 )
             }
@@ -300,9 +300,8 @@ struct FullscreenSingleImage: View {
                 detail: DisputeDetail(
                     id: "1",
                     displayOrderNumber: "1042",
-                    reasonName: "Quality issue",
+                    reasonValue: 1,
                     description: "Cleaner skipped the kitchen entirely and left early.",
-                    statusName: "Pending",
                     statusValue: 1,
                     createdOn: Date(),
                     messages: [

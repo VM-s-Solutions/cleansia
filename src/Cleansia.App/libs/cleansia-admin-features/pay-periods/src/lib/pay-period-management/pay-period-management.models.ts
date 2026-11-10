@@ -1,6 +1,6 @@
 import { TemplateRef } from '@angular/core';
 import { PayPeriodDto } from '@cleansia/admin-services';
-import { TableColumn, TableAction } from '@cleansia/components';
+import { TableColumn } from '@cleansia/components';
 import { formatDate, localeFor } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 
@@ -13,6 +13,11 @@ export interface PayPeriodFilterParams {
 export function formatPayPeriodDuration(days: number, translate: TranslateService): string {
   const form = new Intl.PluralRules(localeFor(translate.currentLang)).select(days);
   return translate.instant(`pay_periods.days_${form}`, { count: days });
+}
+
+export function formatPayPeriodClosedBy(closedBy: string | undefined, translate: TranslateService): string {
+  if (!closedBy) return '-';
+  return closedBy === 'System' ? translate.instant('pay_periods.closed_by_system') : closedBy;
 }
 
 export function getPayPeriodTableColumns(
@@ -69,23 +74,7 @@ export function getPayPeriodTableColumns(
       field: 'closedBy',
       header: 'pay_periods.list.columns.closed_by',
       width: '12%',
-      getValue: (row: PayPeriodDto) => row.closedBy || '-',
-    },
-  ];
-}
-
-export function getPayPeriodTableActions(
-  defs: {
-    onViewDetails: (row: PayPeriodDto) => void;
-  },
-  translate: TranslateService
-): TableAction<PayPeriodDto>[] {
-  return [
-    {
-      icon: 'pi pi-eye',
-      onClick: (row: PayPeriodDto) => defs.onViewDetails(row),
-      color: 'info',
-      tooltip: translate.instant('pay_periods.list.view_details'),
+      getValue: (row: PayPeriodDto) => formatPayPeriodClosedBy(row.closedBy, translate),
     },
   ];
 }

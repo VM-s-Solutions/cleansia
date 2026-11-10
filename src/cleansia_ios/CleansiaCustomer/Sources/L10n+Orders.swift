@@ -244,6 +244,7 @@ extension L10n {
             case .failed: localized("orders_payment_failed")
             case .refunded: localized("orders_payment_refunded")
             case .disputed: localized("orders_payment_disputed")
+            case .partiallyRefunded: localized("orders_payment_partially_refunded")
             case let .named(name): name
             }
         }

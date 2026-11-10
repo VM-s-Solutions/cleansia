@@ -2355,7 +2355,12 @@
       "paid": "Оплачено",
       "failed": "Не удалось",
       "refunded": "Возвращено",
-      "disputed": "Спорный"
+      "disputed": "Спорный",
+      "partially_refunded": "Частично возвращено"
+    },
+    "payment_type": {
+      "cash": "Наличные",
+      "card": "Карта"
     }
   },
   "aria": {

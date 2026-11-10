@@ -5,7 +5,7 @@ import {
   LegalDocumentVersionDto,
 } from '@cleansia/admin-services';
 import { TableAction, TableColumn } from '@cleansia/components';
-import { formatDate } from '@cleansia/utils';
+import { formatDate, languageDisplayName } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 
 const FALLBACK_LANGUAGE = 'en';
@@ -50,7 +50,6 @@ export function pickPreviewLanguage(
 }
 
 export function getLegalVersionTableDefinition(
-  defs: { onPreview: (row: LegalDocumentVersionDto) => void },
   translate: TranslateService
 ): { columns: TableColumn<LegalDocumentVersionDto>[]; actions: TableAction<LegalDocumentVersionDto>[] } {
   return {
@@ -103,26 +102,16 @@ export function getLegalVersionTableDefinition(
         id: 'languages',
         field: 'texts',
         header: translate.instant('pages.legal_documents.columns.languages'),
-        getValue: (row: LegalDocumentVersionDto) => (row.texts ?? []).map((text) => text.language).join(', '),
+        getValue: (row: LegalDocumentVersionDto) =>
+          (row.texts ?? []).map((text) => languageDisplayName(text.language ?? '', translate.currentLang)).join(', '),
         width: '14%',
       },
     ],
-    actions: [
-      {
-        icon: 'pi pi-eye',
-        tooltip: translate.instant('pages.legal_documents.preview'),
-        color: 'info',
-        onClick: (row: LegalDocumentVersionDto) => defs.onPreview(row),
-      },
-    ],
+    actions: [],
   };
 }
 
 export function getLegalTextTableDefinition(
-  defs: {
-    onShow: (row: LegalDocumentTextSummaryDto) => void;
-    isShown: (row: LegalDocumentTextSummaryDto) => boolean;
-  },
   translate: TranslateService
 ): { columns: TableColumn<LegalDocumentTextSummaryDto>[]; actions: TableAction<LegalDocumentTextSummaryDto>[] } {
   return {
@@ -131,6 +120,7 @@ export function getLegalTextTableDefinition(
         id: 'language',
         field: 'language',
         header: translate.instant('pages.legal_documents.columns.language'),
+        getValue: (row: LegalDocumentTextSummaryDto) => languageDisplayName(row.language ?? '', translate.currentLang),
         width: '10%',
       },
       {
@@ -146,14 +136,6 @@ export function getLegalTextTableDefinition(
         width: '50%',
       },
     ],
-    actions: [
-      {
-        icon: 'pi pi-eye',
-        tooltip: translate.instant('pages.legal_documents.show_language'),
-        color: 'info',
-        visible: (row: LegalDocumentTextSummaryDto) => !defs.isShown(row),
-        onClick: (row: LegalDocumentTextSummaryDto) => defs.onShow(row),
-      },
-    ],
+    actions: [],
   };
 }

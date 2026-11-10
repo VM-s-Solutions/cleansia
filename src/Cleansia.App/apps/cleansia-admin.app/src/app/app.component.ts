@@ -14,7 +14,6 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { RouterModule } from '@angular/router';
 import { AdminNotificationsLauncherComponent } from '@cleansia/admin-features/notifications/launcher';
 import { AdminAuthService, AdminNotificationBadgeService } from '@cleansia/admin-services';
-import { loadAdminCodes } from '@cleansia/admin-stores';
 import {
   CleansiaButtonComponent,
   CleansiaCookieConsentComponent,
@@ -28,7 +27,6 @@ import { CleansiaPermissionDirective } from '@cleansia/directives';
 import { DialogService, PageTitleService, Policy } from '@cleansia/services';
 import { environment } from '../environments/environment';
 import { ADMIN_MENU_ITEMS, NOTIFICATIONS_ROUTE } from './admin-menu';
-import { Store } from '@ngrx/store';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ToastModule } from 'primeng/toast';
@@ -54,7 +52,6 @@ import { ToastModule } from 'primeng/toast';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppComponent implements OnInit {
-  private readonly store = inject(Store);
   private readonly translate = inject(TranslateService);
   private readonly authService = inject(AdminAuthService);
   private readonly pageTitleService = inject(PageTitleService);
@@ -81,8 +78,6 @@ export class AppComponent implements OnInit {
       baseTitle: 'Cleansia Admin',
       defaultTitleKey: 'page_titles.admin.default',
     });
-
-    this.store.dispatch(loadAdminCodes());
 
     if (this.isBrowser) {
       this.notificationBadge.start();

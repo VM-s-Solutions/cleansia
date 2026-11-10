@@ -195,11 +195,13 @@ export class ServiceManagementFacade extends UnsubscribeControlDirective {
   }
 
   private deactivateServiceConfirmed(id: string): void {
+    this.loading.set(true);
     this.adminClient.adminServiceClient
       .deactivate(id)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null))
+        catchError(() => of(null)),
+        finalize(() => this.loading.set(false))
       )
       .subscribe((response) => {
         if (response) {
@@ -214,11 +216,13 @@ export class ServiceManagementFacade extends UnsubscribeControlDirective {
   activateService(service: ServiceListItem): void {
     if (!service.id) return;
 
+    this.loading.set(true);
     this.adminClient.adminServiceClient
       .activate(service.id)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null))
+        catchError(() => of(null)),
+        finalize(() => this.loading.set(false))
       )
       .subscribe((response) => {
         if (response) {
@@ -246,11 +250,13 @@ export class ServiceManagementFacade extends UnsubscribeControlDirective {
   }
 
   private deleteServiceConfirmed(id: string): void {
+    this.loading.set(true);
     this.adminClient.adminServiceClient
       .delete(id)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null))
+        catchError(() => of(null)),
+        finalize(() => this.loading.set(false))
       )
       .subscribe((response) => {
         if (response) {

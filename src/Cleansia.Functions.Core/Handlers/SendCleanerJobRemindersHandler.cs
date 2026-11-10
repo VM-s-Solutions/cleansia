@@ -24,11 +24,12 @@ public class SendCleanerJobRemindersHandler(
         if (result.IsSuccess && result.Value != null)
         {
             logger.LogInformation(
-                "SendCleanerJobReminders completed; {Soon} two-hour notices and {Nudges} nudges over {Considered} assignments, and {NoCleaner} no-cleaner-yet alerts",
+                "SendCleanerJobReminders completed; {Soon} two-hour notices and {Nudges} nudges over {Considered} assignments, {NoCleaner} no-cleaner-yet alerts and {NoCleanerSoon} no-cleaner-soon alerts",
                 result.Value.SoonSent,
                 result.Value.NudgesSent,
                 result.Value.Considered,
-                result.Value.NoCleanerAlerts);
+                result.Value.NoCleanerAlerts,
+                result.Value.NoCleanerSoonAlerts);
         }
         else
         {

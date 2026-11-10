@@ -109,6 +109,8 @@
           emptyMessage: 'pages.employee_management.no_employees'
         }"
         [loading]="facade.loading()"
+        [clickableRows]="true"
+        (rowClick)="viewEmployeeDetails($event)"
         (pageChange)="facade.onPageChange($event)"
         (sortChange)="facade.onSortChange($event)"
       >

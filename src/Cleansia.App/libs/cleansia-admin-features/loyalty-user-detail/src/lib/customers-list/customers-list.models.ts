@@ -15,9 +15,6 @@ export function mapStatusFilterToIsActive(value: CustomerStatusFilter): boolean 
 }
 
 export function getCustomerTableDefinition(
-  defs: {
-    onView: (row: AdminCustomerListItem) => void;
-  },
   translate: TranslateService,
   statusTemplate?: TemplateRef<AdminCustomerListItem>
 ): { columns: TableColumn<AdminCustomerListItem>[]; actions: TableAction<AdminCustomerListItem>[] } {
@@ -73,13 +70,6 @@ export function getCustomerTableDefinition(
         width: '14%',
       },
     ],
-    actions: [
-      {
-        icon: 'pi pi-eye',
-        tooltip: translate.instant('pages.loyalty_user_detail.view_link'),
-        color: 'info',
-        onClick: (row: AdminCustomerListItem) => defs.onView(row),
-      },
-    ],
+    actions: [],
   };
 }

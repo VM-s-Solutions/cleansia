@@ -94,8 +94,9 @@ describe('admin form pages', () => {
       const footer = html.indexOf('class="form-actions"');
       if (footer < 0) return true;
       const cancel = html.indexOf("'global.actions.cancel' | translate", footer);
-      const submit = html.indexOf('type="submit"', footer);
-      if (submit < 0) return true;
+      const submitAt = html.slice(footer).search(/(type|buttonType)="submit"/);
+      if (submitAt < 0) return true;
+      const submit = footer + submitAt;
       return STANDALONE_FORMS.has(path) ? cancel >= 0 : cancel < 0 || submit < cancel;
     });
 

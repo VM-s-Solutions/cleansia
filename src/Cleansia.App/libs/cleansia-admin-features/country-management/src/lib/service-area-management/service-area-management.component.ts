@@ -182,20 +182,21 @@ export class ServiceAreaManagementComponent implements OnInit {
     const zipPrefix = form.zipPrefix.trim() || null;
     if (!trimmedName) return;
 
+    const close = () => this.cityDialogOpen.set(false);
     if (target?.id) {
       this.facade.updateCity(
         target.id,
         trimmedName,
         zipPrefix,
         form.isActive,
-        this.selectedCountryId() ?? undefined
+        this.selectedCountryId() ?? undefined,
+        close
       );
     } else {
       const countryId = this.selectedCountryId();
       if (!countryId) return;
-      this.facade.createCity(countryId, trimmedName, zipPrefix);
+      this.facade.createCity(countryId, trimmedName, zipPrefix, close);
     }
-    this.cityDialogOpen.set(false);
   }
 
   confirmDeleteCity(city: ServiceCityDto): void {

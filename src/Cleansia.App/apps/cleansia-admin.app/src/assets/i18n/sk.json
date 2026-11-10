@@ -91,7 +91,11 @@
       "audit_log_customers": "Akcie zákazníkov",
       "audit_log_customer_entry": "Akcia zákazníka",
       "receivables": "Pohľadávky",
-      "cash_held": "Hotovosť u upratovačov"
+      "cash_held": "Hotovosť u upratovačov",
+      "pay_configs": "Konfigurácie odmien",
+      "pay_config_create": "Vytvoriť konfiguráciu odmien",
+      "pay_config_edit": "Upraviť konfiguráciu odmien",
+      "refunds": "Refundácie"
     }
   },
   "components": {
@@ -104,9 +108,9 @@
     "brand_mark_alt": "Cleansia",
     "notifications_panel": {
       "open": "Otvoriť upozornenia",
-      "title": "Upozornenia",
+      "title": "Kritické upozornenia",
       "view_all": "Zobraziť všetky upozornenia",
-      "empty": "Zatiaľ žiadne upozornenia"
+      "empty": "Žiadne kritické upozornenia"
     }
   },
   "global": {
@@ -169,13 +173,6 @@
       "success": "Úspech",
       "error": "Chyba"
     },
-    "languages": {
-      "en": "Angličtina",
-      "cs": "Čeština",
-      "de": "Nemčina",
-      "sk": "Slovenčina",
-      "pl": "Poľština"
-    },
     "show_password": "Zobraziť heslo",
     "hide_password": "Skryť heslo"
   },
@@ -188,6 +185,22 @@
       "in_progress": "Prebieha",
       "completed": "Dokončená",
       "cancelled": "Zrušená"
+    },
+    "payment_type": {
+      "cash": "Hotovosť",
+      "card": "Karta"
+    },
+    "email_type": {
+      "confirmation_email": "Potvrdzovací e-mail",
+      "reset_password": "Obnovenie hesla",
+      "order_receipt": "Potvrdenie objednávky",
+      "period_closed": "Uzavretie výplatného obdobia",
+      "period_end_reminder": "Pripomenutie konca výplatného obdobia",
+      "order_status_update": "Zmena stavu objednávky",
+      "promo_code": "Promo kód",
+      "company_wind_down_customer": "Ukončenie spoločnosti (zákazník)",
+      "company_wind_down_cleaner": "Ukončenie spoločnosti (upratovač)",
+      "admin_notification": "Oznámenie pre administrátorov"
     },
     "payment_status": {
       "pending": "Čakajúca",
@@ -224,6 +237,17 @@
       "resolved": "Vyriešené",
       "closed": "Uzavreté",
       "escalated": "Eskalované"
+    },
+    "dispute_reason": {
+      "quality_issue": "Problém s kvalitou",
+      "service_not_provided": "Služba nebola poskytnutá",
+      "service_incomplete": "Neúplná služba",
+      "damaged_property": "Poškodený majetok",
+      "unauthorized_charge": "Neoprávnený poplatok",
+      "incorrect_amount": "Nesprávna suma",
+      "other": "Iné",
+      "chargeback": "Spätná platba (chargeback)",
+      "unknown": "Neznámy dôvod"
     },
     "pay_period_status": {
       "open": "Otvorené",
@@ -283,6 +307,24 @@
       "cancellation_fee_share": "Podiel z poplatku za zrušenie",
       "lockout_fee_share": "Odmena za zákazku — znemožnený vstup",
       "dispute_charge": "Zrážka z reklamácie"
+    },
+    "refund_state": {
+      "not_sent": "Neodoslané",
+      "refunded": "Vrátené",
+      "failed": "Zlyhalo",
+      "bounced": "Vrátené bankou",
+      "repaid": "Splatené",
+      "closed": "Uzavreté"
+    },
+    "refund_origin": {
+      "cancellation": "Zrušenie",
+      "dispute": "Spor",
+      "full_refund": "Plná refundácia",
+      "partial_refund": "Čiastočná refundácia"
+    },
+    "refund_repayment_method": {
+      "bank_transfer": "Bankový prevod",
+      "credit": "Kredit"
     }
   },
   "sidebar": {
@@ -323,6 +365,7 @@
     "notifications": "Upozornenia",
     "profile": "Môj profil",
     "receivables": "Pohľadávky",
+    "refunds": "Refundácie",
     "customers": "Zákazníci",
     "cash_held": "Hotovosť u upratovačov"
   },
@@ -345,7 +388,6 @@
       "actions": "Akcie",
       "approve": "Schváliť",
       "reject": "Zamietnuť",
-      "view_details": "Zobraziť detail",
       "no_employees": "Žiadni partneri na zobrazenie",
       "filters": {
         "search": "Hľadať",
@@ -599,7 +641,6 @@
       "payment_status_label": "Stav platby",
       "assigned_employees": "Priradení",
       "actions": "Akcie",
-      "view_details": "Zobraziť detail",
       "no_orders": "Žiadne objednávky",
       "filters": {
         "search": "Hľadať",
@@ -850,7 +891,8 @@
       "completion": {
         "label": "Označené ako hotové",
         "pending": "Zatiaľ nie"
-      }
+      },
+      "refunds": "Refundácie"
     },
     "invoice_management": {
       "title": "Správa faktúr",
@@ -866,7 +908,6 @@
       "pdf_status": "PDF",
       "generated_at": "Vygenerované",
       "actions": "Akcie",
-      "view_details": "Zobraziť detail",
       "download": "Stiahnuť PDF",
       "no_invoices": "Žiadne faktúry",
       "filters": {
@@ -930,7 +971,6 @@
       "entry": {
         "title": "Záznam auditu",
         "description": "Snímka stavu pred a po tejto akcii. Zmenené polia sú zvýraznené.",
-        "view": "Zobraziť detail",
         "back": "Späť",
         "load_error": "Nepodarilo sa načítať záznam auditu",
         "changes_title": "Zmeny",
@@ -970,7 +1010,6 @@
         "entry": {
           "title": "Akcia zákazníka",
           "description": "Čo zákazník urobil, z akého klienta a aké dôkazy si k tomu platforma uložila.",
-          "view": "Zobraziť detail",
           "back": "Späť",
           "load_error": "Akciu zákazníka sa nepodarilo načítať",
           "when": "Kedy",
@@ -995,7 +1034,6 @@
       "timeline": {
         "load_error": "Časovú os sa nepodarilo načítať",
         "no_entries": "Zatiaľ nič nezaznamenané",
-        "view": "Zobraziť detail",
         "columns": {
           "occurred_on": "Kedy",
           "source": "Pôvod",
@@ -1402,10 +1440,8 @@
       "load_error": "Právne dokumenty sa nepodarilo načítať",
       "text_load_error": "Tento text sa nepodarilo načítať",
       "retry": "Skúsiť znova",
-      "preview": "Náhľad",
       "preview_title": "Náhľad",
       "close_preview": "Zavrieť náhľad",
-      "show_language": "Zobraziť tento jazyk",
       "all_markets": "Všetky trhy",
       "audience": {
         "customer": "Zákazník",
@@ -1727,7 +1763,6 @@
       },
       "no_templates": "Žiadne šablóny",
       "translation_key_tooltip": "Kliknutím skopírujete ako premennú šablóny",
-      "view_translations": "Zobraziť preklady",
       "back_to_email_types": "Späť na typy e-mailov",
       "no_translations_for_language": "Pre tento jazyk nie sú dostupné žiadne preklady",
       "email_type_detail": {
@@ -2367,7 +2402,8 @@
           "preview": "Nepodarilo sa zobraziť náhľad dopadu",
           "apply": "Niektoré limity sa nepodarilo uložiť"
         }
-      }
+      },
+      "no_tiers": "Nie sú nastavené žiadne vernostné úrovne."
     },
     "customers": {
       "title": "Zákazníci",
@@ -2412,7 +2448,8 @@
       },
       "actions": {
         "grant": "Pridať body",
-        "revoke": "Odobrať body"
+        "revoke": "Odobrať body",
+        "refunds": "Refundácie"
       },
       "activity": {
         "title": "História aktivít",
@@ -2432,7 +2469,9 @@
           "OrderCompleted": "Dokončená objednávka",
           "OrderCancelled": "Zrušená objednávka",
           "Referral": "Bonus za odporúčanie",
-          "ManualGrant": "Manuálna úprava"
+          "ManualGrant": "Manuálna úprava",
+          "OrderPartiallyRefunded": "Objednávka čiastočne vrátená",
+          "ManualRevoke": "Manuálne odobratie"
         }
       },
       "grant_dialog": {
@@ -2587,6 +2626,7 @@
     "sitewide_push": {
       "title": "Hromadné oznámenie",
       "subtitle": "Odoslať jednorazové marketingové oznámenie všetkým zákazníkom, ktorí prijímajú marketingové správy. Doručovanie prebieha asynchrónne; doručenie typicky do niekoľkých minút.",
+      "email_not_available": "E-mailové kampane zatiaľ nie sú k dispozícii. Táto stránka odosiela iba push upozornenia.",
       "titles_section": "Titulok oznámenia (podľa jazyka)",
       "bodies_section": "Text oznámenia (podľa jazyka)",
       "locale": {
@@ -2606,7 +2646,7 @@
       "confirm_send": "Týmto sa zaradí oznámenie do fronty pre každého zákazníka, ktorý prijíma marketingové správy. Po zaradení nie je možné odoslanie zastaviť.",
       "validation_error": "Pred odoslaním vyplňte všetky jazykové polia.",
       "send_success": "Hromadné oznámenie zaradené do fronty. Doručovanie beží na pozadí.",
-      "send_error": "Nepodarilo sa zaradiť oznámenie. Skontrolujte vstup a skúste to znova."
+      "already_sent": "Presne táto kampaň už bola odoslaná. Ak ju chcete odoslať znova, zmeňte text."
     },
     "disputes_management": {
       "title": "Reklamácie",
@@ -2621,9 +2661,6 @@
         "status": "Stav",
         "refund_amount": "Požadované vrátenie",
         "created_on": "Vytvorené"
-      },
-      "actions": {
-        "view_details": "Zobraziť detail"
       },
       "status": {
         "pending": "Čaká",
@@ -2642,6 +2679,9 @@
         "credit_returned": "Vrátené ako kredit",
         "description": "Popis",
         "resolution_notes": "Poznámky k riešeniu",
+        "evidence": "Dôkazy ({{count}})",
+        "no_evidence": "Zákazník neposlal žiadne dôkazy.",
+        "evidence_unavailable": "Náhľad nie je k dispozícii, obnovte stránku.",
         "messages": "Správy",
         "no_messages": "Zatiaľ žiadne správy.",
         "staff": "Personál",
@@ -2666,24 +2706,28 @@
         "refund_amount": "Suma vrátenia",
         "refund_amount_placeholder": "Nechajte prázdne na vyriešenie bez vrátenia",
         "refund_disclaimer": "Zadanie sumy si vyžiada vrátenie spracované cez Stripe. Vrátenie nemusí byť vyrovnané okamžite a môže zostať v stave čaká, ak ho Stripe odmietne.",
-        "notes": "Poznámky k riešeniu",
+        "notes": "Poznámky k riešeniu (povinné)",
         "notes_placeholder": "Vysvetlite, ako bola táto reklamácia vyriešená…",
+        "notes_required": "Pred vyriešením reklamácie doplňte poznámky k riešeniu.",
         "submit": "Vyriešiť reklamáciu",
         "submitted": "Riešenie sporu odoslané",
         "settlement_preference": "Spôsob vyrovnania zvolený zákazníkom",
         "settlement": {
           "card_refund": "Vrátenie na kartu",
-          "credit": "Kredit na účet"
+          "credit": "Kredit na účet",
+          "cash_refund": "Vrátenie peňazí (platené v hotovosti)"
         },
         "credit_disclaimer": "Zákazník zvolil kredit: suma sa pripíše na jeho kreditný zostatok, nevracia sa na kartu.",
+        "cash_warning": "Táto zákazka bola zaplatená v hotovosti, takže suma na vrátenie bude odmietnutá. Peniaze vráťte osobne a sumu nechajte prázdnu.",
         "charge": {
           "toggle": "Strhnúť upratovačovi",
           "hint": "Len ak reklamácia zistila chybu upratovača. Suma sa strhne z jeho odmeny za túto zákazku a dôvod pri nej uvidí. Ak je odmena už vyfakturovaná, suma sa strhne z jeho ďalšej faktúry.",
           "cleaner": "Upratovač",
           "amount": "Suma na strhnutie",
-          "reason": "Dôvod",
+          "reason": "Dôvod, ktorý upratovač uvidí",
           "reason_placeholder": "Upratovač tento dôvod uvidí pri svojej odmene…",
-          "unnamed": "Nepomenovaný upratovač"
+          "unnamed": "Nepomenovaný upratovač",
+          "incomplete": "Ak chcete strhnúť upratovačovi, vyberte upratovača a zadajte sumu a dôvod, ktorý upratovač uvidí."
         }
       }
     },
@@ -2790,7 +2834,11 @@
         "retry_confirm_message": "Výmaz účtu používateľa {{userId}} sa spustí znova. Ak uspeje, účet bude natrvalo anonymizovaný a nevyčerpaný zákaznícky kredit na ňom sa odpíše bez výplaty a bez možnosti obnovenia. Akciu nemožno vrátiť.",
         "retry_confirm_yes": "Zopakovať",
         "retry_success": "Výmaz bol zopakovaný. Účet je teraz vymazaný.",
-        "retry_error": "Výmaz sa nepodarilo zopakovať."
+        "retry_error": "Výmaz sa nepodarilo zopakovať.",
+        "actor": {
+          "self": "Zákazník",
+          "system": "Automaticky"
+        }
       },
       "request_status": {
         "Pending": "Čaká",
@@ -2855,6 +2903,23 @@
       "empty": "Nič na prečítanie",
       "empty_hint": "Nové objednávky, stratení upratovači, reklamácie, neúspešné platby a míľniky spoločnosti sa objavia tu.",
       "unread": "Neprečítané",
+      "critical": "Kritické",
+      "tabs": {
+        "all": "Všetky",
+        "critical": "Kritické",
+        "info": "Informačné"
+      },
+      "types": {
+        "order": "Objednávka",
+        "cleaner": "Upratovač",
+        "dispute": "Reklamácia",
+        "payment": "Platba",
+        "refund": "Vrátenie peňazí",
+        "referral": "Odporúčanie",
+        "data_protection": "Ochrana údajov",
+        "company": "Spoločnosť",
+        "other": "Ostatné"
+      },
       "messages": {
         "marked_all_read": "Označené ako prečítané: {{count}}"
       },
@@ -2888,6 +2953,10 @@
             "no_cleaner_yet": {
               "title": "Objednávka stále nemá upratovača",
               "body": "Na objednávke {{orderNumber}} dňa {{cleaningDateTime}} stále nikto nie je. Priraďte upratovača v objednávke; ak ju nikto neprijme, po začiatku sa automaticky zruší. Ak ju chcete zrušiť skôr, zrušte ju v objednávke ako nedostavenie sa: zákazník dostane rovnaké vrátenie platby a ospravedlňujúci kredit."
+            },
+            "no_cleaner_soon": {
+              "title": "Objednávka čoskoro začína a nemá upratovača",
+              "body": "Objednávka {{orderNumber}} dňa {{cleaningDateTime}} začína do dvoch hodín a stále na nej nikto nie je. Priraďte upratovača v objednávke hneď; ak ju nikto neprijme, po začiatku sa automaticky zruší. Ak ju chcete zrušiť, zrušte ju v objednávke ako nedostavenie sa: zákazník dostane rovnaké vrátenie platby a ospravedlňujúci kredit."
             },
             "lockout_reported": {
               "title": "Upratovač sa nemôže dostať dnu",
@@ -2923,11 +2992,15 @@
             },
             "refund_needs_retry": {
               "title": "Vrátenie peňazí treba zopakovať",
-              "body": "Vrátenie {{amount}} pri objednávke {{orderNumber}} neprešlo a automaticky sa neopakuje. Zopakujte ho raz z reklamácie alebo z objednávky: systém ho overí v Stripe, a ak ho Stripe vykonal, zapíše ho, a ak skončilo chybou, uzavrie ho. Vrátenie, ktoré v Stripe skončilo chybou, už znova odoslať nemožno: potom vráťte peniaze inak — plným vrátením, ak chybou neskončilo práve ono, čiastočným vrátením iných položiek alebo kreditom."
+              "body": "Vrátenie {{amount}} pri objednávke {{orderNumber}} neprešlo a automaticky sa neopakuje. Otvorte objednávku a použite tlačidlo Vrátenie peňazí: tam vrátenie raz zopakujte — systém ho overí v Stripe, a ak ho Stripe vykonal, zapíše ho, a ak skončilo chybou, uzavrie ho — alebo zaznamenajte, ako boli zákazníkovi peniaze vrátené. Vrátenie, ktoré v Stripe skončilo chybou, už znova odoslať nemožno: potom vráťte peniaze inak — plným vrátením, ak chybou neskončilo práve ono, čiastočným vrátením iných položiek alebo kreditom — a zaznamenajte to tam."
             },
             "refund_without_cancel": {
               "title": "Vrátenie peňazí bolo vyžiadané pre zrušenie, ktoré neprebehlo",
               "body": "Vrátenie {{amount}} pri objednávke {{orderNumber}} bolo v Stripe vyžiadané pre zrušenie, ktoré neprebehlo, a automaticky sa neopakuje. Ak je rezervácia stále otvorená, zrušte objednávku; ak upratovanie prebehlo, nevracajte pri nej platbu: najprv toto vrátenie doriešte v Stripe."
+            },
+            "refund_bounced": {
+              "title": "Vrátenie peňazí k zákazníkovi nedorazilo",
+              "body": "Stripe hlási, že vrátenie {{amount}} na kartu pri objednávke {{orderNumber}} zlyhalo, takže peniaze k zákazníkovi nedorazili. Vráťte ich zákazníkovi bankovým prevodom alebo ako kredit, ak si ho zvolí, a zaznamenajte to na stránke Vrátenie peňazí."
             }
           },
           "erasure": {
@@ -3021,7 +3094,6 @@
         "write_off_note": "Dôvod odpísania"
       },
       "actions": {
-        "view_order": "Otvoriť objednávku",
         "write_off": "Odpísať"
       },
       "write_off": {
@@ -3033,6 +3105,64 @@
       },
       "messages": {
         "write_off_success": "Pohľadávka bola odpísaná"
+      }
+    },
+    "refunds": {
+      "title": "Refundácie",
+      "description": "Refundácie kartových platieb objednávok spoločnosti. Neodoslané znamená, že Stripe refundáciu ešte nepotvrdil; Zlyhalo a Vrátené bankou sú peniaze, ktoré zákazníkovi stále dlhujeme. Riadok otvorí svoju objednávku.",
+      "guest": "Hosť",
+      "filters": {
+        "state": "Stav",
+        "needs_action": "Vyžaduje akciu",
+        "requested_from": "Vyžiadané od",
+        "requested_to": "Vyžiadané do"
+      },
+      "scope": {
+        "order": "Zobrazené refundácie jednej objednávky.",
+        "customer": "Zobrazené refundácie jedného zákazníka.",
+        "clear": "Zobraziť všetko"
+      },
+      "load_error": "Refundácie sa nepodarilo načítať.",
+      "retry_load": "Skúsiť znova",
+      "empty": "Žiadne refundácie.",
+      "columns": {
+        "order": "Objednávka",
+        "customer": "Zákazník",
+        "origin": "Pôvod",
+        "amount": "Suma",
+        "state": "Stav",
+        "requested_on": "Vyžiadané",
+        "last_changed_on": "Posledná zmena"
+      },
+      "actions": {
+        "retry": "Zopakovať",
+        "open_dispute": "Otvoriť spor",
+        "record_repayment": "Zaznamenať splatenie"
+      },
+      "hints": {
+        "retried_hourly": "Opakuje sa každú hodinu",
+        "waiting_for_admin": "Čaká na administrátora",
+        "repaid_transfer": "Splatené prevodom {{reference}}",
+        "repaid_credit": "Splatené kreditom"
+      },
+      "retry_confirm": {
+        "title": "Zopakovať refundáciu",
+        "body": "Zopakovať refundáciu {{amount}} pri objednávke {{order}}? Najprv sa opýtame Stripe, takže sa peniaze nikdy neodošlú dvakrát.",
+        "yes": "Zopakovať"
+      },
+      "repayment": {
+        "title": "Zaznamenať splatenie",
+        "lede": "Najprv zákazníkovi preveďte presnú sumu, potom ju tu zaznamenajte. Konzola peniaze neodosiela.",
+        "reference": "Referencia prevodu",
+        "reference_hint": "Napríklad variabilný symbol",
+        "credit_chosen": "Zákazník si zvolil kredit",
+        "credit_needs_account": "Kredit je len pre zákazníka s účtom.",
+        "record_transfer": "Zaznamenať prevod",
+        "record_credit": "Zaznamenať ako kredit"
+      },
+      "messages": {
+        "retry_done": "Refundácia zopakovaná",
+        "repayment_recorded": "Splatenie zaznamenané"
       }
     },
     "cash_held": {
@@ -3071,6 +3201,7 @@
   },
   "pay_periods": {
     "title": "Správa výplatných období",
+    "closed_by_system": "Automaticky",
     "description": "Spravujte výplatné obdobia, uzatvárajte obdobia a sledujte platby partnerom",
     "create_new": "Vytvoriť nové výplatné obdobie",
     "filters": {
@@ -3092,7 +3223,6 @@
         "closed_by": "Uzavrel",
         "actions": "Akcie"
       },
-      "view_details": "Zobraziť detail",
       "no_records": "Žiadne výplatné obdobia"
     },
     "days_one": "{{count}} deň",
@@ -3134,6 +3264,13 @@
           "hint_past_end": "Toto obdobie sa skončilo {{ end }} a ešte nebolo uzavreté. Približne do 20 minút dostane každý upratovač, ktorý v ňom má odmenu, faktúru e-mailom. Ďalšie obdobie sa začína {{ next }}, potrvá nastavený počet dní ({{ days }}) a pripadnú doň zákazky dokončené po uzavretí. Uzavreté obdobie nemožno znova otvoriť.",
           "reason": "Dôvod (uloží sa do auditného záznamu)",
           "submit": "Uzavrieť obdobie teraz"
+        },
+        "change_end": {
+          "action": "Zmeniť dátum konca",
+          "hint": "Obdobie sa potom uzavrie v noci po novom dátume konca a ďalšie sa začne nasledujúci deň. Už dokončené zákazky v tomto období zostanú. Ak chcete obdobie ukončiť dnes, použite „Uzavrieť teraz“.",
+          "end_date": "Nový dátum konca",
+          "submit": "Uložiť nový dátum konca",
+          "success": "Dátum konca bol zmenený"
         },
         "mark_paid": {
           "action": "Označiť obdobie ako zaplatené",
@@ -3378,6 +3515,9 @@
       "tier_config_not_found": "Nastavenie vernostnej úrovne sa nenašlo.",
       "tier_perks_json_invalid": "Výhody úrovne musia byť platný JSON."
     },
+    "marketing": {
+      "no_opted_in_customers": "Žiadny zákazník vašej spoločnosti nemá zapnuté propagačné upozornenia, takže by toto upozornenie nikomu neprišlo."
+    },
     "membership": {
       "plan": {
         "action_failed": "Akcia s plánom členstva sa nepodarila. Skúste to znova.",
@@ -3550,7 +3690,11 @@
       "lines_required": "Vyberte aspoň jednu službu alebo balík na vrátenie.",
       "nothing_refundable": "Na tejto objednávke už nie je čo vrátiť.",
       "order_not_refundable": "Túto objednávku nie je možné vrátiť.",
-      "override_reason_required": "Na vrátenie mimo povolenej lehoty sa vyžaduje odôvodnenie."
+      "override_reason_required": "Na vrátenie mimo povolenej lehoty sa vyžaduje odôvodnenie.",
+      "not_found": "Táto refundácia sa pri tejto objednávke nenašla.",
+      "not_retryable": "Túto refundáciu nemožno zopakovať. Zopakovať možno len neodoslanú refundáciu a refundácia zo sporu sa opakuje opätovným vyriešením sporu.",
+      "not_owed": "Ako splatenú možno zaznamenať len neúspešnú alebo vrátenú refundáciu, ktorá ešte nebola splatená.",
+      "credit_unavailable": "Kredit pre tohto zákazníka nie je k dispozícii: nemá účet, jeho účet bol vymazaný alebo sú účtovné knihy jeho spoločnosti uzavreté. Vráťte peniaze bankovým prevodom."
     },
     "service": {
       "category_not_found": "Kategória služby sa nenašla.",

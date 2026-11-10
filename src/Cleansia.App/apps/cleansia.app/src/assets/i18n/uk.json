@@ -2355,7 +2355,12 @@
       "paid": "Оплачено",
       "failed": "Не вдалося",
       "refunded": "Повернено",
-      "disputed": "Спірне"
+      "disputed": "Спірне",
+      "partially_refunded": "Частково повернено"
+    },
+    "payment_type": {
+      "cash": "Готівка",
+      "card": "Картка"
     }
   },
   "aria": {

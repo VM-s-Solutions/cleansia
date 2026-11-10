@@ -9,7 +9,7 @@ import {
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { DialogService, SnackbarService } from '@cleansia/services';
-import { catchError, filter, of, takeUntil } from 'rxjs';
+import { catchError, filter, finalize, of, takeUntil } from 'rxjs';
 
 /**
  * Facade for the admin "Service area" management page. Two concerns
@@ -34,6 +34,7 @@ export class ServiceAreaManagementFacade extends UnsubscribeControlDirective {
   readonly servicedCountryIds = signal<Set<string>>(new Set());
   readonly loading = signal<boolean>(false);
   readonly initialLoading = signal<boolean>(true);
+  readonly citySaving = signal<boolean>(false);
 
   loadCountries(): void {
     this.loading.set(true);
@@ -107,22 +108,25 @@ export class ServiceAreaManagementFacade extends UnsubscribeControlDirective {
       .subscribe((cities) => this.cities.set(cities ?? []));
   }
 
-  createCity(countryId: string, name: string, zipPrefix: string | null): void {
+  createCity(countryId: string, name: string, zipPrefix: string | null, onSuccess?: () => void): void {
     const command = new CreateServiceCityCommand();
     command.countryId = countryId;
     command.name = name;
     command.zipPrefix = zipPrefix ?? undefined;
+    this.citySaving.set(true);
     this.adminClient.apiClient
       .adminServiceCityPost(command)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null))
+        catchError(() => of(null)),
+        finalize(() => this.citySaving.set(false))
       )
       .subscribe((response) => {
         if (!response) return;
         this.snackbarService.showSuccessTranslated(
           'pages.service_area_management.messages.city_created'
         );
+        onSuccess?.();
         this.loadCities(countryId);
       });
   }
@@ -132,24 +136,28 @@ export class ServiceAreaManagementFacade extends UnsubscribeControlDirective {
     name: string,
     zipPrefix: string | null,
     isActive: boolean,
-    refreshCountryId?: string
+    refreshCountryId?: string,
+    onSuccess?: () => void
   ): void {
     const command = new UpdateServiceCityCommand();
     command.id = id;
     command.name = name;
     command.zipPrefix = zipPrefix ?? undefined;
     command.isActive = isActive;
+    this.citySaving.set(true);
     this.adminClient.apiClient
       .adminServiceCityPut(id, command)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null))
+        catchError(() => of(null)),
+        finalize(() => this.citySaving.set(false))
       )
       .subscribe((response) => {
         if (!response) return;
         this.snackbarService.showSuccessTranslated(
           'pages.service_area_management.messages.city_updated'
         );
+        onSuccess?.();
         this.loadCities(refreshCountryId);
       });
   }
@@ -170,11 +178,13 @@ export class ServiceAreaManagementFacade extends UnsubscribeControlDirective {
   }
 
   private deleteCityConfirmed(id: string, refreshCountryId?: string): void {
+    this.citySaving.set(true);
     this.adminClient.apiClient
       .adminServiceCityDelete(id)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null))
+        catchError(() => of(null)),
+        finalize(() => this.citySaving.set(false))
       )
       .subscribe((response) => {
         if (!response) return;

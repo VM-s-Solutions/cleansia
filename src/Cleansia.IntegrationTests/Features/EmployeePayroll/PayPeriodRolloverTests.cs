@@ -82,7 +82,10 @@ public class PayPeriodRolloverTests(PostgresContainerFixture fixture) : BaseInte
             {
                 var periods = await context.PayPeriods.IgnoreQueryFilters().ToListAsync();
 
-                Assert.Equal(PayPeriodStatus.Closed, periods.Single(p => p.Id == expired.Id).Status);
+                var closed = periods.Single(p => p.Id == expired.Id);
+                Assert.Equal(PayPeriodStatus.Closed, closed.Status);
+                Assert.Equal("System", closed.ClosedBy);
+                Assert.Null(closed.Notes);
                 var successor = Assert.Single(periods, p => p.Status == PayPeriodStatus.Open);
                 Assert.Equal(expired.EndDate.AddDays(1), successor.StartDate);
                 Assert.Equal(expired.EndDate.AddDays(days), successor.EndDate);

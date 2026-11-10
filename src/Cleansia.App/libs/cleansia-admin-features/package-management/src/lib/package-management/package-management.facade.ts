@@ -226,11 +226,13 @@ export class PackageManagementFacade extends UnsubscribeControlDirective {
   }
 
   private deactivatePackageConfirmed(id: string): void {
+    this.loading.set(true);
     this.adminClient.adminPackageClient
       .deactivate(id)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null))
+        catchError(() => of(null)),
+        finalize(() => this.loading.set(false))
       )
       .subscribe((response) => {
         if (response) {
@@ -245,11 +247,13 @@ export class PackageManagementFacade extends UnsubscribeControlDirective {
   activatePackage(pkg: PackageListItem): void {
     if (!pkg.id) return;
 
+    this.loading.set(true);
     this.adminClient.adminPackageClient
       .activate(pkg.id)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null))
+        catchError(() => of(null)),
+        finalize(() => this.loading.set(false))
       )
       .subscribe((response) => {
         if (response) {
@@ -277,11 +281,13 @@ export class PackageManagementFacade extends UnsubscribeControlDirective {
   }
 
   private deletePackageConfirmed(id: string): void {
+    this.loading.set(true);
     this.adminClient.adminPackageClient
       .delete(id)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null))
+        catchError(() => of(null)),
+        finalize(() => this.loading.set(false))
       )
       .subscribe((response) => {
         if (response) {

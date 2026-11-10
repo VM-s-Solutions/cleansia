@@ -651,6 +651,13 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'refund.nothing_refundable',
   'refund.order_not_refundable',
   'refund.override_reason_required',
+  // The Refunds page: AdminRefundController.RetryRefund and RecordRefundRepayment.
+  'refund.not_found',
+  'refund.not_retryable',
+  'refund.not_owed',
+  'refund.credit_unavailable',
+  // Marketing: AdminMarketingController.SendSitewidePromo, when no customer would receive the push.
+  'marketing.no_opted_in_customers',
   // Payroll: pay configs, pay periods, invoices
   'pay_config.already_exists',
   'pay_config.base_pay_negative',

@@ -54,7 +54,8 @@ export function formatCleaningWindow(start: Date | undefined, estimatedMinutes: 
 export function buildWorkContractFactRows(
   facts: WorkContractFactsView | undefined,
   lang: string,
-  factsKey: string
+  factsKey: string,
+  extraLabel: (slug: string) => string = (slug) => slug
 ): WorkContractFactRow[] {
   if (!facts) return [];
   const rows: WorkContractFactRow[] = [
@@ -75,7 +76,7 @@ export function buildWorkContractFactRows(
   const packages = (facts.packages ?? []).map((line) => line.name).filter(Boolean);
   if (packages.length) rows.push({ labelKey: `${factsKey}.packages`, value: packages.join(', ') });
   const extras = facts.extraSlugs ?? [];
-  if (extras.length) rows.push({ labelKey: `${factsKey}.extras`, value: extras.join(', ') });
+  if (extras.length) rows.push({ labelKey: `${factsKey}.extras`, value: extras.map(extraLabel).join(', ') });
   return rows;
 }
 

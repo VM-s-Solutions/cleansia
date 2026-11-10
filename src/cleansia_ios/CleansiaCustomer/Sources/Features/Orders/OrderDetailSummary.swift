@@ -31,14 +31,14 @@ enum OrderPaymentMethod: Equatable {
     case named(String)
 }
 
-/// Backend `PaymentStatus`: Pending = 1 … Disputed = 5. PartiallyRefunded (6)
-/// has no label on either platform and falls through to the wire name.
+/// Backend `PaymentStatus`: Pending = 1 … PartiallyRefunded = 6.
 enum OrderPaymentStatus: Equatable {
     case pending
     case paid
     case failed
     case refunded
     case disputed
+    case partiallyRefunded
     case named(String)
 }
 
@@ -112,6 +112,7 @@ struct OrderPriceBreakdown: Equatable {
         case 3: .failed
         case 4: .refunded
         case 5: .disputed
+        case 6: .partiallyRefunded
         default: code?.name.flatMap { $0.isBlank ? nil : .named($0) }
         }
     }

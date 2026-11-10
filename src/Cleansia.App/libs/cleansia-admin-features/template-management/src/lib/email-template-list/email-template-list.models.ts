@@ -2,12 +2,10 @@ import { TemplateRef } from '@angular/core';
 import { EmailTypeListItemDto } from '@cleansia/admin-services';
 import { TableColumn, TableAction } from '@cleansia/components';
 import { formatDate } from '@cleansia/utils';
+import { emailTypeLabel } from '../email-type-label';
 import { TranslateService } from '@ngx-translate/core';
 
 export function getEmailTypeTableDefinition(
-  defs: {
-    onViewDetail: (row: EmailTypeListItemDto) => void;
-  },
   translate: TranslateService,
   languagesTemplate?: TemplateRef<EmailTypeListItemDto>
 ): { columns: TableColumn<EmailTypeListItemDto>[]; actions: TableAction<EmailTypeListItemDto>[] } {
@@ -17,6 +15,7 @@ export function getEmailTypeTableDefinition(
         id: 'displayName',
         field: 'displayName',
         header: translate.instant('pages.template_management.columns.email_type'),
+        getValue: (row: EmailTypeListItemDto) => emailTypeLabel(translate, row.emailType, row.displayName),
         width: '25%',
       },
       {
@@ -45,13 +44,6 @@ export function getEmailTypeTableDefinition(
         width: '15%',
       },
     ],
-    actions: [
-      {
-        icon: 'pi pi-eye',
-        tooltip: translate.instant('pages.template_management.view_translations'),
-        color: 'info',
-        onClick: (row: EmailTypeListItemDto) => defs.onViewDetail(row),
-      },
-    ],
+    actions: [],
   };
 }

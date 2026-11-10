@@ -19,6 +19,8 @@
     hover: true
   }"
   [loading]="facade.loading()"
+  [clickableRows]="hasTimelineEntryDetail"
+  (rowClick)="viewEntry($event)"
   (pageChange)="onPageChange($event)"
 >
 </cleansia-table>

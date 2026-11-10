@@ -12,6 +12,17 @@ import {
 import { PermissionService, Policy } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 
+const GDPR_ACTOR_KEYS: Readonly<Record<string, string>> = {
+  self: 'pages.data_protection.requests.actor.self',
+  system: 'pages.data_protection.requests.actor.system',
+};
+
+export function processedByLabel(processedBy: string | undefined, translate: TranslateService): string {
+  if (!processedBy) return '—';
+  const key = GDPR_ACTOR_KEYS[processedBy];
+  return key ? translate.instant(key) : processedBy;
+}
+
 export const GDPR_REQUEST_STATUS_LABEL_KEYS: Readonly<
   Record<GdprRequestStatus, string>
 > = {
@@ -113,7 +124,7 @@ export function getGdprRequestTableDefinition(
         header: translate.instant(
           'pages.data_protection.requests.columns.processed_by'
         ),
-        getValue: (row) => row.processedBy ?? '—',
+        getValue: (row) => processedByLabel(row.processedBy, translate),
         width: '16%',
       },
       {

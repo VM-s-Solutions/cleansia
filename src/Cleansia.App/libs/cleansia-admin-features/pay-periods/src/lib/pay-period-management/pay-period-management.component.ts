@@ -30,10 +30,7 @@ import { DialogModule } from 'primeng/dialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
 import { PayPeriodManagementFacade } from './pay-period-management.facade';
-import {
-  getPayPeriodTableColumns,
-  getPayPeriodTableActions,
-} from './pay-period-management.models';
+import { getPayPeriodTableColumns } from './pay-period-management.models';
 
 @Component({
   selector: 'cleansia-admin-pay-period-management',
@@ -74,12 +71,7 @@ export class PayPeriodManagementComponent implements OnInit {
     this.facade.lang();
     return {
       columns: getPayPeriodTableColumns(this.translate, this.statusTemplate()),
-      actions: getPayPeriodTableActions(
-        {
-          onViewDetails: (row) => this.viewPayPeriodDetails(row),
-        },
-        this.translate
-      ),
+      actions: [],
     };
   });
 

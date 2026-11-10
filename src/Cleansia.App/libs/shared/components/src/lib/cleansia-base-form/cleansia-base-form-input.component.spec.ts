@@ -210,3 +210,31 @@ describe('CleansiaBaseFormInputComponent — a control disabled in code', () => 
     expect(host.form.controls.name.enabled).toBe(true);
   });
 });
+
+@Component({
+  standalone: true,
+  imports: [ReactiveFormsModule, CleansiaTextareaComponent],
+  template: `
+    <form [formGroup]="form">
+      <cleansia-textarea label="Reason" formControlName="reason" />
+    </form>
+  `,
+})
+class SubmitHostComponent {
+  readonly form = new FormGroup({ reason: new FormControl('', [Validators.required]) });
+}
+
+describe('CleansiaBaseFormInputComponent — a failed submit', () => {
+  it('shows the error of a required textarea that was never focused once the form is marked touched', () => {
+    TestBed.configureTestingModule({ imports: [SubmitHostComponent, TranslateModule.forRoot()] });
+    const fixture = TestBed.createComponent(SubmitHostComponent);
+    fixture.detectChanges();
+    const errors = () => fixture.nativeElement.querySelector('cleansia-textarea .cleansia-error-message-container');
+    expect(errors()).toBeNull();
+
+    fixture.componentInstance.form.markAllAsTouched();
+    fixture.detectChanges();
+
+    expect(errors()).not.toBeNull();
+  });
+});

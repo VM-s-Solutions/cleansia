@@ -1,0 +1,168 @@
+<div class="cleansia-refunds cleansia-page">
+  <div class="cleansia-refunds__container page-wrapper">
+    <div class="cleansia-page-header">
+      <div class="cleansia-page-header__heading">
+        <cleansia-title [title]="'pages.refunds.title' | translate" [level]="1" />
+        <p class="cleansia-page-header__description">
+          {{ 'pages.refunds.description' | translate }}
+        </p>
+      </div>
+    </div>
+
+    <cleansia-section>
+      <div class="cleansia-list-filter">
+        <cleansia-select
+          [label]="'pages.refunds.filters.state' | translate"
+          [options]="stateOptions()"
+          [showClear]="true"
+          [ngModel]="facade.state()"
+          (valueChanges)="facade.selectState($event)"
+        />
+        <cleansia-calendar
+          [label]="'pages.refunds.filters.requested_from' | translate"
+          [showIcon]="true"
+          [showErrors]="false"
+          appendTo="body"
+          [ngModel]="facade.requestedFrom()"
+          (valueChanges)="facade.selectRequestedFrom($event)"
+        />
+        <cleansia-calendar
+          [label]="'pages.refunds.filters.requested_to' | translate"
+          [showIcon]="true"
+          [showErrors]="false"
+          appendTo="body"
+          [ngModel]="facade.requestedTo()"
+          (valueChanges)="facade.selectRequestedTo($event)"
+        />
+      </div>
+
+      @if (facade.orderId() || facade.userId()) {
+      <p class="form-hint">
+        {{ (facade.orderId() ? 'pages.refunds.scope.order' : 'pages.refunds.scope.customer') | translate }}
+        <cleansia-button
+          [label]="'pages.refunds.scope.clear' | translate"
+          icon="pi pi-times"
+          severity="secondary"
+          [text]="true"
+          (onClick)="facade.clearScope()"
+        />
+      </p>
+      }
+
+      @if (facade.initialLoading()) {
+      <cleansia-loader />
+      } @else if (facade.hasError()) {
+      <div class="not-found-state">
+        <div class="not-found-state__icon"><i class="pi pi-exclamation-triangle"></i></div>
+        <p class="not-found-state__message">{{ 'pages.refunds.load_error' | translate }}</p>
+        <div class="not-found-state__actions">
+          <cleansia-button
+            [label]="'pages.refunds.retry_load' | translate"
+            icon="pi pi-refresh"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="facade.loadRefunds()"
+          />
+        </div>
+      </div>
+      } @else {
+      <cleansia-table
+        [data]="facade.refunds()"
+        [columns]="table().columns"
+        [actions]="table().actions"
+        [config]="{
+          paginator: true,
+          rows: 20,
+          lazy: true,
+          totalRecords: facade.totalRecords(),
+          emptyMessage: 'pages.refunds.empty'
+        }"
+        [loading]="facade.loading()"
+        [clickableRows]="hasOrder"
+        (rowClick)="facade.viewOrder($event)"
+        (pageChange)="facade.onPageChange($event)"
+        (sortChange)="facade.onSortChange($event)"
+      />
+      }
+    </cleansia-section>
+
+    @if (facade.repaying(); as refund) {
+    <cleansia-section [title]="'pages.refunds.repayment.title' | translate">
+      <p class="form-hint">{{ 'pages.refunds.repayment.lede' | translate }}</p>
+      <div class="detail-grid">
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.refunds.columns.order' | translate }}</span>
+          <span class="detail-grid__value">{{ refund.displayOrderNumber || '-' }}</span>
+        </div>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.refunds.columns.customer' | translate }}</span>
+          <span class="detail-grid__value">{{ customerOf(refund) }}</span>
+        </div>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.refunds.columns.origin' | translate }}</span>
+          <span class="detail-grid__value">{{ originOf(refund) }}</span>
+        </div>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.refunds.columns.amount' | translate }}</span>
+          <span class="detail-grid__value">{{ amountOf(refund) }}</span>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-field form-field--full">
+          <cleansia-text-input
+            [label]="'pages.refunds.repayment.reference' | translate"
+            [placeholder]="'pages.refunds.repayment.reference_hint' | translate"
+            [ngModel]="facade.reference()"
+            (valueChanges)="facade.setReference($event)"
+          />
+        </div>
+        @if (refund.hasAccount) {
+        <div class="form-field form-field--full">
+          <cleansia-checkbox
+            [label]="'pages.refunds.repayment.credit_chosen' | translate"
+            [ngModel]="facade.creditChosen()"
+            (valueChanges)="facade.setCreditChosen($event)"
+          />
+        </div>
+        } @else {
+        <p class="form-hint">{{ 'pages.refunds.repayment.credit_needs_account' | translate }}</p>
+        }
+      </div>
+      <div class="form-actions">
+        <cleansia-button
+          [label]="'global.actions.cancel' | translate"
+          severity="secondary"
+          [outlined]="true"
+          [disabled]="facade.submitting()"
+          (onClick)="facade.cancelRepayment()"
+        />
+        <cleansia-button
+          *cleansiaPermission="Policy.CanIssueRefund"
+          [label]="'pages.refunds.repayment.record_credit' | translate"
+          icon="pi pi-wallet"
+          severity="secondary"
+          [outlined]="true"
+          [loading]="facade.submitting()"
+          [disabled]="!facade.canRecordCredit()"
+          (onClick)="facade.recordCredit()"
+        />
+        <cleansia-button
+          *cleansiaPermission="Policy.CanIssueRefund"
+          [label]="'pages.refunds.repayment.record_transfer' | translate"
+          icon="pi pi-check"
+          [loading]="facade.submitting()"
+          [disabled]="!facade.canRecordTransfer()"
+          (onClick)="facade.recordTransfer()"
+        />
+      </div>
+    </cleansia-section>
+    }
+  </div>
+</div>
+
+<ng-template #stateTemplate let-item>
+  <cleansia-status-badge kind="refund" [value]="item.state" />
+  @if (hintOf(item); as hint) {
+  <div class="form-hint">{{ hint }}</div>
+  }
+</ng-template>

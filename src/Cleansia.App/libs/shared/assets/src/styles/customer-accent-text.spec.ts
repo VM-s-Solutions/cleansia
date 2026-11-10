@@ -35,7 +35,6 @@ describe('the customer stylesheet — blue text', () => {
     ['the track page total', '.cl-trk__total'],
     ['a legal heading number', '.cl-lgl__content h2 .cl-lgl__num'],
     ['the navbar active link', '.customer-navbar__link--active'],
-    ['the navbar user role', '.customer-navbar__user-role'],
     ['the navbar sign-in link on hover', '.customer-navbar__signin:hover'],
   ])('inks %s with the text-safe blue', (_, selector) => {
     const declared = inks(selector);

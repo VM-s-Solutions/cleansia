@@ -5,9 +5,6 @@ import { TranslateService } from '@ngx-translate/core';
 import { formatDate, formatMoney, localeFor } from '@cleansia/utils';
 
 export function getOrderTableDefinition(
-  defs: {
-    onViewDetails: (row: OrderListItem) => void;
-  },
   translate: TranslateService,
   orderStatusTemplate?: TemplateRef<OrderListItem>,
   paymentStatusTemplate?: TemplateRef<OrderListItem>
@@ -95,13 +92,6 @@ export function getOrderTableDefinition(
         },
       },
     ],
-    actions: [
-      {
-        icon: 'pi pi-eye',
-        tooltip: translate.instant('pages.order_management.view_details'),
-        color: 'info',
-        onClick: (row: OrderListItem) => defs.onViewDetails(row),
-      },
-    ],
+    actions: [],
   };
 }

@@ -497,7 +497,8 @@
         "complete_job": "Dokončiť zákazku",
         "marked_done": "Označené ako hotové. Keď svoju časť označia všetci na tejto zákazke, ktokoľvek z vás ju môže dokončiť.",
         "crew_done": "Označené ako hotové. Svoju časť už označili všetci na tejto zákazke."
-      }
+      },
+      "photo_thumbnail": "Náhľad fotografie"
     },
     "invoices": {
       "title": "Moje faktúry",
@@ -761,12 +762,16 @@
         "photo_read_failed": "Nepodarilo sa prečítať súbor fotografie. Skúste to prosím znova.",
         "photo_deleted": "Fotografia bola úspešne vymazaná.",
         "photo_delete_failed": "Nepodarilo sa vymazať fotografiu. Skúste to prosím znova.",
-        "lockout_reported": "Nahlásené. Administrátor to potvrdí."
+        "lockout_reported": "Nahlásené. Administrátor to potvrdí.",
+        "issue_reported": "Problém bol nahlásený.",
+        "note_added": "Poznámka bola pridaná."
       },
       "invoices": {
         "invoice_generated": "Faktúra bola vygenerovaná z časových záznamov.",
         "invoice_preview": "Náhľad faktúry bol otvorený.",
-        "invoice_downloaded": "Faktúra bola úspešne stiahnutá."
+        "invoice_downloaded": "Faktúra bola úspešne stiahnutá.",
+        "no_invoice_selected": "Nie je vybraná žiadna faktúra.",
+        "print_failed": "Faktúru sa nepodarilo vytlačiť. Skúste to prosím znova."
       },
       "payslips": {
         "load_failed": "Nepodarilo sa načítať výplatné pásky. Skúste to prosím znova.",
@@ -812,7 +817,9 @@
       "load_more": "Načítať viac",
       "retry": "Skúsiť znova",
       "confirm": "Potvrdiť",
-      "delete": "Vymazať"
+      "delete": "Vymazať",
+      "previous": "Predchádzajúca",
+      "next": "Ďalšia"
     },
     "dialog": {
       "confirm": "Potvrdiť",
@@ -1266,6 +1273,13 @@
       "cancellation_fee_share": "Váš podiel z poplatku za neskoré zrušenie",
       "lockout_fee_share": "Vaša odmena za zákazku — zákazník vás nepustil dnu",
       "dispute_charge": "Zrážka zo sporu"
+    },
+    "extra_name": {
+      "inside_oven": "Čistenie vnútra rúry",
+      "inside_fridge": "Čistenie vnútra chladničky",
+      "interior_windows": "Vnútorné okná",
+      "laundry_ironing": "Pranie a žehlenie",
+      "pet_hair_supplement": "Dôkladné odstránenie srsti"
     }
   },
   "help": {

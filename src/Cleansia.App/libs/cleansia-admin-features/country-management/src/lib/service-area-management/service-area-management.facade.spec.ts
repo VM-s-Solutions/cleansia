@@ -270,4 +270,48 @@ describe('ServiceAreaManagementFacade', () => {
       });
     });
   });
+
+  it.each([
+    ['a create', () => cityPostMock, (onSuccess: () => void) => facade.createCity('c-1', 'Prague', '110', onSuccess)],
+    [
+      'an update',
+      () => cityPutMock,
+      (onSuccess: () => void) => facade.updateCity('city-1', 'Brno', '602', true, 'c-1', onSuccess),
+    ],
+  ])('holds citySaving while %s is in flight and runs onSuccess only when it lands', (_label, mock, save) => {
+    const onSuccess = jest.fn();
+    const failing = new Subject<ServiceCityDto>();
+    mock().mockReturnValue(failing.asObservable());
+    save(onSuccess);
+    expect(facade.citySaving()).toBe(true);
+    failing.error(new Error('boom'));
+    expect(facade.citySaving()).toBe(false);
+    expect(onSuccess).not.toHaveBeenCalled();
+
+    const landing = new Subject<ServiceCityDto>();
+    mock().mockReturnValue(landing.asObservable());
+    save(onSuccess);
+    expect(facade.citySaving()).toBe(true);
+    landing.next(ServiceCityDto.fromJS({ id: 'city-1' }));
+    landing.complete();
+    expect(facade.citySaving()).toBe(false);
+    expect(onSuccess).toHaveBeenCalledTimes(1);
+  });
+
+  it('holds citySaving while a delete is in flight, and clears it after it lands or fails', () => {
+    const city = ServiceCityDto.fromJS({ id: 'city-1', name: 'Prague' });
+    const landing = new Subject<never>();
+    cityDeleteMock.mockReturnValue(landing.asObservable());
+    facade.deleteCity(city, 'c-1');
+    expect(facade.citySaving()).toBe(true);
+    landing.complete();
+    expect(facade.citySaving()).toBe(false);
+
+    const failing = new Subject<never>();
+    cityDeleteMock.mockReturnValue(failing.asObservable());
+    facade.deleteCity(city, 'c-1');
+    expect(facade.citySaving()).toBe(true);
+    failing.error(new Error('boom'));
+    expect(facade.citySaving()).toBe(false);
+  });
 });

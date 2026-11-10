@@ -35,6 +35,43 @@
 </ng-container>
 }
 
+@if (changeEndRange(); as range) {
+<ng-container *cleansiaPermission="Policy.CanUpdatePayPeriod">
+<cleansia-button
+  [label]="'pay_periods.detail.ops.change_end.action' | translate"
+  icon="pi pi-calendar"
+  [outlined]="facade.activePanel() !== 'changeEnd'"
+  (onClick)="toggleChangeEnd()"
+/>
+
+@if (facade.activePanel() === 'changeEnd') {
+<div class="detail-actions__panel">
+  <p class="detail-actions__hint">
+    {{ 'pay_periods.detail.ops.change_end.hint' | translate }}
+  </p>
+  <cleansia-calendar
+    [label]="'pay_periods.detail.ops.change_end.end_date' | translate"
+    [minDate]="range.min"
+    [maxDate]="range.max"
+    [ngModel]="facade.changeEndDate()"
+    (ngModelChange)="onChangeEndDate($event)"
+    appendTo="body"
+  />
+  @if (facade.errorKey()) {
+  <p class="detail-actions__error">{{ facade.errorKey()! | translate }}</p>
+  }
+  <cleansia-button
+    [label]="'pay_periods.detail.ops.change_end.submit' | translate"
+    icon="pi pi-calendar"
+    [loading]="facade.submitting()"
+    [disabled]="!facade.canSubmitChangeEnd()"
+    (onClick)="submitChangeEnd()"
+  />
+</div>
+}
+</ng-container>
+}
+
 @if (isClosed()) {
 <ng-container *cleansiaPermission="Policy.CanMarkPayPeriodPaid">
 <cleansia-button

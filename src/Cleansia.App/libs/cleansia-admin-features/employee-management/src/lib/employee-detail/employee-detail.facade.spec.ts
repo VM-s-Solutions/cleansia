@@ -11,7 +11,7 @@ import {
 import { DialogService as ConfirmDialogService, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { EmployeeDetailFacade } from './employee-detail.facade';
 import { EmployeeDocumentsFacade } from './employee-documents.facade';
 
@@ -199,6 +199,22 @@ describe('EmployeeDetailFacade — pay config overrides', () => {
     );
     expect(deleteMock).not.toHaveBeenCalled();
     expect(employeeSummaryMock).not.toHaveBeenCalled();
+  });
+
+  it('names the override being deleted while the delete is in flight, and clears it after it lands or fails', () => {
+    const landing = new Subject<never>();
+    deleteMock.mockReturnValue(landing.asObservable());
+    facade.deleteEmployeePayConfig('pc-1');
+    expect(facade.deletingPayConfigId()).toBe('pc-1');
+    landing.complete();
+    expect(facade.deletingPayConfigId()).toBe(null);
+
+    const failing = new Subject<never>();
+    deleteMock.mockReturnValue(failing.asObservable());
+    facade.deleteEmployeePayConfig('pc-1');
+    expect(facade.deletingPayConfigId()).toBe('pc-1');
+    failing.error(new Error('boom'));
+    expect(facade.deletingPayConfigId()).toBe(null);
   });
 });
 

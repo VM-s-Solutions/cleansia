@@ -41,7 +41,13 @@
       <div class="detail-identity__row">
         <span class="detail-identity__name">
           <span class="detail-identity__label">{{ 'pages.disputes_management.columns.order_number' | translate }}</span>
-          {{ dispute.displayOrderNumber }}
+          <a
+            *cleansiaPermission="Policy.CanViewOrderDetailAdmin; else plainOrderNumber"
+            class="cleansia-dispute-detail__order-link"
+            [routerLink]="['/', orderManagementRoute, dispute.orderId]"
+            >{{ dispute.displayOrderNumber }}</a
+          >
+          <ng-template #plainOrderNumber>{{ dispute.displayOrderNumber }}</ng-template>
         </span>
         <div class="detail-identity__badges">
           <cleansia-status-badge kind="dispute" [value]="dispute.status" />
@@ -94,6 +100,39 @@
         </div>
         }
       </div>
+    </cleansia-section>
+
+    <cleansia-section
+      class="cleansia-dispute-detail__evidence"
+      [title]="'pages.disputes_management.detail.evidence' | translate: { count: dispute.evidence?.length ?? 0 }"
+    >
+      @if (!dispute.evidence?.length) {
+      <div class="empty-state">
+        <i class="pi pi-images"></i>
+        <p>{{ 'pages.disputes_management.detail.no_evidence' | translate }}</p>
+      </div>
+      } @else {
+      <ul class="cleansia-dispute-detail__evidence-list">
+        @for (item of dispute.evidence; track item.id) {
+        <li class="cleansia-dispute-detail__evidence-item">
+          @if (!item.blobUrl) {
+          <i class="pi pi-file"></i>
+          <span class="cleansia-dispute-detail__evidence-name">{{ item.fileName }}</span>
+          <span class="cleansia-dispute-detail__hint">{{ 'pages.disputes_management.detail.evidence_unavailable' | translate }}</span>
+          } @else if (isImageEvidence(item)) {
+          <a class="cleansia-dispute-detail__evidence-thumb" [href]="item.blobUrl" target="_blank" rel="noopener noreferrer">
+            <img [src]="item.blobUrl" [alt]="item.fileName" />
+          </a>
+          } @else {
+          <a class="cleansia-dispute-detail__evidence-file" [href]="item.blobUrl" target="_blank" rel="noopener noreferrer">
+            <i class="pi pi-file"></i>
+            <span class="cleansia-dispute-detail__evidence-name">{{ item.fileName }}</span>
+          </a>
+          }
+        </li>
+        }
+      </ul>
+      }
     </cleansia-section>
 
     <cleansia-section [title]="'pages.disputes_management.detail.messages' | translate">

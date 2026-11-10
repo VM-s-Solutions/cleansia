@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, provideRouter } from '@angular/router';
 import {
   AdminDisputeClient,
   AdminOrderClient,
@@ -8,7 +8,7 @@ import {
   DisputeStatus,
   OrderItem,
 } from '@cleansia/admin-services';
-import { PermissionService, SnackbarService } from '@cleansia/services';
+import { PermissionService, Policy, SnackbarService } from '@cleansia/services';
 import { TranslateModule } from '@ngx-translate/core';
 import { NEVER, of, throwError } from 'rxjs';
 import { DisputeDetailComponent } from './dispute-detail.component';
@@ -24,6 +24,7 @@ describe('DisputeDetailComponent', () => {
     addMessage: jest.Mock;
   };
   let orderClient: { details: jest.Mock };
+  let deniedPolicies: Set<string>;
 
   function setup(): { facade: DisputeDetailFacade; el: HTMLElement } {
     fixture = TestBed.createComponent(DisputeDetailComponent);
@@ -42,6 +43,7 @@ describe('DisputeDetailComponent', () => {
       updateStatus: jest.fn(),
       addMessage: jest.fn(),
     };
+    deniedPolicies = new Set();
     orderClient = {
       details: jest.fn().mockReturnValue(of(OrderItem.fromJS({ assignedEmployees: [] }))),
     };
@@ -49,9 +51,10 @@ describe('DisputeDetailComponent', () => {
     await TestBed.configureTestingModule({
       imports: [DisputeDetailComponent, TranslateModule.forRoot()],
       providers: [
+        provideRouter([]),
         { provide: AdminDisputeClient, useValue: disputeClient },
         { provide: AdminOrderClient, useValue: orderClient },
-        { provide: PermissionService, useValue: { hasPolicy: () => true } },
+        { provide: PermissionService, useValue: { hasPolicy: (p: string) => !deniedPolicies.has(p) } },
         {
           provide: SnackbarService,
           useValue: {
@@ -116,6 +119,65 @@ describe('DisputeDetailComponent', () => {
 
     expect(text).toContain('enums.dispute_reason.service_incomplete');
     expect(text).not.toContain('ServiceIncomplete');
+  });
+
+  describe('evidence and the order', () => {
+    const withEvidence = (evidence: Record<string, unknown>[]) =>
+      disputeClient.details.mockReturnValue(
+        of(DisputeDetails.fromJS({ id: 'dispute-1', orderId: 'order-1', displayOrderNumber: 'ORD-1', evidence, messages: [] }))
+      );
+    const evidenceSection = (el: HTMLElement) => el.querySelector('.cleansia-dispute-detail__evidence') as HTMLElement;
+
+    it('shows an image as a thumbnail that opens in a new tab', () => {
+      withEvidence([{ id: 'e-1', fileName: 'kitchen.jpg', filePath: 'dispute-1/a1.jpg', blobUrl: 'https://blob/a1.jpg?sas' }]);
+      const section = evidenceSection(setup().el);
+
+      const link = section.querySelector('a[target="_blank"]') as HTMLAnchorElement;
+      expect(link.getAttribute('href')).toBe('https://blob/a1.jpg?sas');
+      expect(link.querySelector('img')?.getAttribute('src')).toBe('https://blob/a1.jpg?sas');
+    });
+
+    it('chooses by the stored path, not the name the customer gave the file', () => {
+      withEvidence([{ id: 'e-1', fileName: 'photo.jpg', filePath: 'dispute-1/a1.pdf', blobUrl: 'https://blob/a1.pdf?sas' }]);
+      const section = evidenceSection(setup().el);
+
+      expect(section.querySelector('a[target="_blank"]')?.getAttribute('href')).toBe('https://blob/a1.pdf?sas');
+      expect(section.querySelector('img')).toBeNull();
+      expect(section.textContent).toContain('photo.jpg');
+    });
+
+    it('names an item whose link failed and asks for a reload, never claiming no evidence', () => {
+      withEvidence([{ id: 'e-1', fileName: 'kitchen.jpg', filePath: 'dispute-1/a1.jpg' }]);
+      const section = evidenceSection(setup().el);
+
+      expect(section.textContent).toContain('kitchen.jpg');
+      expect(section.textContent).toContain('pages.disputes_management.detail.evidence_unavailable');
+      expect(section.textContent).not.toContain('pages.disputes_management.detail.no_evidence');
+      expect(section.querySelector('a')).toBeNull();
+    });
+
+    it('says there is no evidence when the customer sent none', () => {
+      withEvidence([]);
+
+      expect(evidenceSection(setup().el).textContent).toContain('pages.disputes_management.detail.no_evidence');
+    });
+
+    it('links the order number to the order page for an admin who may open it', () => {
+      withEvidence([]);
+      const link = setup().el.querySelector('.detail-identity a') as HTMLAnchorElement;
+
+      expect(link.getAttribute('href')).toBe('/order-management/order-1');
+      expect(link.textContent).toContain('ORD-1');
+    });
+
+    it('shows the order number as plain text to an admin who may not open the order', () => {
+      deniedPolicies.add(Policy.CanViewOrderDetailAdmin);
+      withEvidence([]);
+      const identity = setup().el.querySelector('.detail-identity') as HTMLElement;
+
+      expect(identity.querySelector('a')).toBeNull();
+      expect(identity.textContent).toContain('ORD-1');
+    });
   });
 
   it('shows what the resolution moved beside what it asked for', () => {

@@ -8,8 +8,8 @@ import {
   signal,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
-import { DisputeStatus } from '@cleansia/admin-services';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { DisputeEvidenceDto, DisputeStatus } from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
   CleansiaCheckboxComponent,
@@ -39,6 +39,7 @@ import {
 
 const CLEANER_CHARGE_REASON_MAX = 500;
 const RESOLUTION_NOTES_MAX = 2000;
+const IMAGE_PATH = /\.(jpe?g|png|gif|webp)$/i;
 
 @Component({
   selector: 'cleansia-admin-dispute-detail',
@@ -46,6 +47,7 @@ const RESOLUTION_NOTES_MAX = 2000;
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    RouterLink,
     TranslatePipe,
     CleansiaButtonComponent,
     CleansiaCheckboxComponent,
@@ -72,6 +74,7 @@ export class DisputeDetailComponent implements OnInit {
 
   protected readonly Policy = Policy;
   protected readonly resolutionNotesMax = RESOLUTION_NOTES_MAX;
+  protected readonly orderManagementRoute = CleansiaAdminRoute.ORDER_MANAGEMENT;
 
   private disputeId = '';
   statusOptions: DisputeStatusOption[] = [];
@@ -128,6 +131,10 @@ export class DisputeDetailComponent implements OnInit {
 
   hasRefundAmount(): boolean {
     return this.facade.dispute()?.refundAmount != null;
+  }
+
+  isImageEvidence(item: DisputeEvidenceDto): boolean {
+    return IMAGE_PATH.test(item.filePath ?? '');
   }
 
   onStatusSelected(value: DisputeStatus | null): void {

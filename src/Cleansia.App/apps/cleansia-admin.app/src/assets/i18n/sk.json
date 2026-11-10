@@ -2913,6 +2913,10 @@
               "title": "Objednávka stále nemá upratovača",
               "body": "Na objednávke {{orderNumber}} dňa {{cleaningDateTime}} stále nikto nie je. Priraďte upratovača v objednávke; ak ju nikto neprijme, po začiatku sa automaticky zruší. Ak ju chcete zrušiť skôr, zrušte ju v objednávke ako nedostavenie sa: zákazník dostane rovnaké vrátenie platby a ospravedlňujúci kredit."
             },
+            "no_cleaner_soon": {
+              "title": "Objednávka čoskoro začína a nemá upratovača",
+              "body": "Objednávka {{orderNumber}} dňa {{cleaningDateTime}} začína do dvoch hodín a stále na nej nikto nie je. Priraďte upratovača v objednávke hneď; ak ju nikto neprijme, po začiatku sa automaticky zruší. Ak ju chcete zrušiť, zrušte ju v objednávke ako nedostavenie sa: zákazník dostane rovnaké vrátenie platby a ospravedlňujúci kredit."
+            },
             "lockout_reported": {
               "title": "Upratovač sa nemôže dostať dnu",
               "body": "Upratovač pri objednávke {{orderNumber}}, objednanej na {{cleaningDateTime}}, hlási, že sa nemôže dostať dnu. Skontrolujte fotografiu vchodu a jeho pokusy o volanie; ak ho zákazník nepustil dnu, zrušte ju ako nesprístupnenie zákazníkom."

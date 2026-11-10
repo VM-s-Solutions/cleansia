@@ -16,11 +16,12 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Cleansia.IntegrationTests.Features.Orders;
 
 /// <summary>
-/// The reminder sweep's no-cleaner-yet step on real Postgres, through the mediator as the timer sends it.
+/// The reminder sweep's two no-cleaner steps on real Postgres, through the mediator as the timer sends it.
 /// <c>MockQueryable</c> runs any shape, so only Postgres shows that the composed money term, the hold
-/// term, the quiet period's history <c>Any</c> and the confirmation term translate, and pick the one due job
-/// out of a board of unstaffed ones. A second tick writes nothing: its guard finds the feed row the first
-/// tick committed, where a repeat would otherwise collide on the e-mail's outbox key.
+/// term, the quiet period's history <c>Any</c> and the confirmation term translate, and pick the job due a
+/// day ahead and the job due within two hours out of a board of unstaffed ones. A second tick writes
+/// nothing: each key's guard finds the feed row the first tick committed, where a repeat would otherwise
+/// collide on the e-mail's outbox key.
 /// </summary>
 [Collection("PostgresCollection")]
 public class NoCleanerYetAlertPostgresTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
@@ -28,9 +29,10 @@ public class NoCleanerYetAlertPostgresTests(PostgresContainerFixture fixture) : 
     private const string SupportId = "nc-admin-support";
     private const string SupportEmail = SupportId + "@cleansia.test";
     private const string DueOrderId = "nc-order-due";
+    private const string SoonOrderId = "nc-order-soon";
 
     [Fact]
-    public async Task Only_The_Due_Job_Is_Reported_And_A_Second_Tick_Writes_Nothing()
+    public async Task Only_The_Due_Jobs_Are_Reported_Under_Their_Own_Keys_And_A_Second_Tick_Writes_Nothing()
     {
         var now = DateTime.UtcNow;
 
@@ -40,9 +42,15 @@ public class NoCleanerYetAlertPostgresTests(PostgresContainerFixture fixture) : 
             assert: async (CleansiaDbContext context, (SendCleanerJobReminders.Response First, SendCleanerJobReminders.Response Second) ticks) =>
             {
                 Assert.Equal(1, ticks.First.NoCleanerAlerts);
+                Assert.Equal(1, ticks.First.NoCleanerSoonAlerts);
                 Assert.Equal(0, ticks.Second.NoCleanerAlerts);
+                Assert.Equal(0, ticks.Second.NoCleanerSoonAlerts);
 
-                var feed = Assert.Single(await context.Set<UserNotification>().IgnoreQueryFilters().ToListAsync());
+                var rows = await context.Set<UserNotification>().IgnoreQueryFilters().ToListAsync();
+                Assert.Equal(2, rows.Count);
+                var urgent = Assert.Single(rows, r => r.EventKey == AdminNotificationEventCatalog.OrderNoCleanerSoon);
+                Assert.Equal(SoonOrderId, JsonSerializer.Deserialize<Dictionary<string, string>>(urgent.ArgsJson)!["orderId"]);
+                var feed = Assert.Single(rows, r => r.EventKey == AdminNotificationEventCatalog.OrderNoCleanerYet);
                 Assert.Equal(AdminNotificationEventCatalog.OrderNoCleanerYet, feed.EventKey);
                 Assert.Equal(SupportId, feed.UserId);
                 Assert.Equal(TestTenants.Default, feed.TenantId);
@@ -54,12 +62,16 @@ public class NoCleanerYetAlertPostgresTests(PostgresContainerFixture fixture) : 
                     DateTime.SpecifyKind(due.CleaningDateTime, DateTimeKind.Utc).ToString("O", CultureInfo.InvariantCulture),
                     args["cleaningDateTime"]);
 
-                var email = Assert.Single(await context.OutboxMessages.IgnoreQueryFilters().ToListAsync());
-                Assert.Equal(QueueNames.SendEmail, email.QueueName);
-                Assert.Equal(TestTenants.Default, email.TenantId);
+                var emails = await context.OutboxMessages.IgnoreQueryFilters().ToListAsync();
+                Assert.All(emails, email => Assert.Equal(QueueNames.SendEmail, email.QueueName));
+                Assert.All(emails, email => Assert.Equal(TestTenants.Default, email.TenantId));
                 Assert.Equal(
-                    MessageKeys.AdminNotificationEmail(AdminNotificationEventCatalog.OrderNoCleanerYet, DueOrderId, SupportEmail),
-                    email.MessageKey);
+                    new[]
+                    {
+                        MessageKeys.AdminNotificationEmail(AdminNotificationEventCatalog.OrderNoCleanerSoon, SoonOrderId, SupportEmail),
+                        MessageKeys.AdminNotificationEmail(AdminNotificationEventCatalog.OrderNoCleanerYet, DueOrderId, SupportEmail),
+                    }.Order(),
+                    emails.Select(email => email.MessageKey).Order());
             },
             transactional: false);
     }
@@ -131,6 +143,8 @@ public class NoCleanerYetAlertPostgresTests(PostgresContainerFixture fixture) : 
         }
 
         Job(DueOrderId);
+        Job(SoonOrderId, hoursOut: 1.5);
+        Job("nc-order-soon-fresh", hoursOut: 1.5, statusMinutesAgo: 30);
         Job("nc-order-started", hoursOut: -0.5).UpdateEstimatedTime(180);
         Job("nc-order-far", hoursOut: 30);
         Job("nc-order-reserved").GrantPreferredHold("emp-chosen", untilUtc: now.AddHours(1), nowUtc: now, maxRounds: 2);

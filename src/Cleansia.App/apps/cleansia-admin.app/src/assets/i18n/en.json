@@ -2913,6 +2913,10 @@
               "title": "An order still has no cleaner",
               "body": "Order {{orderNumber}} on {{cleaningDateTime}} still has nobody on it. Assign a cleaner from the order; if nobody takes it, it is cancelled automatically after its start. To call it off before then, cancel it as a no-show from the order: the customer gets the same refund and apology credit."
             },
+            "no_cleaner_soon": {
+              "title": "An order starting soon has no cleaner",
+              "body": "Order {{orderNumber}} on {{cleaningDateTime}} starts within two hours and still has nobody on it. Assign a cleaner from the order now; if nobody takes it, it is cancelled automatically after its start. To call it off, cancel it as a no-show from the order: the customer gets the same refund and apology credit."
+            },
             "lockout_reported": {
               "title": "The cleaner cannot get in",
               "body": "The cleaner on order {{orderNumber}}, booked for {{cleaningDateTime}}, reports that they cannot get in. Check the entrance photo and the calls they made; if the customer did not let them in, cancel it as a customer lockout."

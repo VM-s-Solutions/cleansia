@@ -13,6 +13,7 @@ public static class AdminNotificationEventCatalog
     public const string OrderCrewShort = "admin.order.crew_short";
     public const string OrderCleanerNotStarted = "admin.order.cleaner_not_started";
     public const string OrderNoCleanerYet = "admin.order.no_cleaner_yet";
+    public const string OrderNoCleanerSoon = "admin.order.no_cleaner_soon";
     public const string OrderLockoutReported = "admin.order.lockout_reported";
     public const string OrderCashNotPaid = "admin.order.cash_not_paid";
     public const string DisputeFiled = "admin.dispute.filed";
@@ -35,6 +36,7 @@ public static class AdminNotificationEventCatalog
         OrderCrewShort,
         OrderCleanerNotStarted,
         OrderNoCleanerYet,
+        OrderNoCleanerSoon,
         OrderLockoutReported,
         OrderCashNotPaid,
         DisputeFiled,
@@ -61,6 +63,7 @@ public static class AdminNotificationEventCatalog
         OrderCrewShort,
         OrderCleanerNotStarted,
         OrderNoCleanerYet,
+        OrderNoCleanerSoon,
         OrderLockoutReported,
         OrderCashNotPaid,
         DisputeFiled,

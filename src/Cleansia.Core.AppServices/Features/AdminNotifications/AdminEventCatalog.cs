@@ -28,6 +28,8 @@ public static class AdminEventCatalog
             ["orderNumber", "cleaningDateTime", "orderId"]),
         new(AdminNotificationEventCatalog.OrderNoCleanerYet, PhysicalPolicy.SupportOrAbove,
             ["orderNumber", "cleaningDateTime", "orderId"]),
+        new(AdminNotificationEventCatalog.OrderNoCleanerSoon, PhysicalPolicy.SupportOrAbove,
+            ["orderNumber", "cleaningDateTime", "orderId"]),
         new(AdminNotificationEventCatalog.OrderLockoutReported, PhysicalPolicy.SupportOrAbove,
             ["orderNumber", "cleaningDateTime", "orderId"]),
         new(AdminNotificationEventCatalog.OrderCashNotPaid, PhysicalPolicy.SupportOrAbove,

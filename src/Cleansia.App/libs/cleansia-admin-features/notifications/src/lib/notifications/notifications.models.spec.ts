@@ -32,13 +32,14 @@ function dto(overrides: Partial<UserNotificationDto> = {}): UserNotificationDto 
 }
 
 describe('the admin event catalogue mirror', () => {
-  it('pins the nineteen keys the backend catalogue declares, in its order', () => {
+  it('pins the twenty keys the backend catalogue declares, in its order', () => {
     expect(ADMIN_NOTIFICATION_EVENT_KEYS).toEqual([
       'admin.order.new',
       'admin.order.crew_lost',
       'admin.order.crew_short',
       'admin.order.cleaner_not_started',
       'admin.order.no_cleaner_yet',
+      'admin.order.no_cleaner_soon',
       'admin.order.lockout_reported',
       'admin.order.cash_not_paid',
       'admin.dispute.filed',
@@ -74,6 +75,7 @@ describe('the admin event catalogue mirror', () => {
       'admin.order.crew_short': NotificationType.Cleaner,
       'admin.order.cleaner_not_started': NotificationType.Cleaner,
       'admin.order.no_cleaner_yet': NotificationType.Cleaner,
+      'admin.order.no_cleaner_soon': NotificationType.Cleaner,
       'admin.order.lockout_reported': NotificationType.Cleaner,
       'admin.order.cash_not_paid': NotificationType.Payment,
       'admin.dispute.filed': NotificationType.Dispute,
@@ -240,6 +242,7 @@ describe('getNotificationRoute', () => {
     'admin.order.crew_short',
     'admin.order.cleaner_not_started',
     'admin.order.no_cleaner_yet',
+    'admin.order.no_cleaner_soon',
     'admin.order.lockout_reported',
     'admin.order.cash_not_paid',
     'admin.payment.failed',

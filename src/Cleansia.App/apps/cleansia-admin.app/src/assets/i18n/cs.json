@@ -2913,6 +2913,10 @@
               "title": "Objednávka stále nemá uklízeče",
               "body": "Na objednávce {{orderNumber}} dne {{cleaningDateTime}} stále nikdo není. Přiřaďte uklízeče v objednávce; pokud ji nikdo nepřijme, po začátku se automaticky zruší. Chcete-li ji zrušit dříve, zrušte ji v objednávce jako nedostavení: zákazník dostane stejné vrácení platby a omluvný kredit."
             },
+            "no_cleaner_soon": {
+              "title": "Objednávka brzy začíná a nemá uklízeče",
+              "body": "Objednávka {{orderNumber}} dne {{cleaningDateTime}} začíná do dvou hodin a stále na ní nikdo není. Přiřaďte uklízeče v objednávce hned; pokud ji nikdo nepřijme, po začátku se automaticky zruší. Chcete-li ji zrušit, zrušte ji v objednávce jako nedostavení: zákazník dostane stejné vrácení platby a omluvný kredit."
+            },
             "lockout_reported": {
               "title": "Uklízeč se nemůže dostat dovnitř",
               "body": "Uklízeč u objednávky {{orderNumber}}, objednané na {{cleaningDateTime}}, hlásí, že se nemůže dostat dovnitř. Zkontrolujte fotografii vchodu a jeho pokusy o volání; pokud ho zákazník nepustil dovnitř, zrušte ji jako nezpřístupnění zákazníkem."

@@ -77,7 +77,6 @@ refund Stripe accepted and then failed. Every host that runs the handler handles
 | **Chargeback** — found by the order's stored payment intent, else through Stripe's Checkout Session for that intent | | |
 | `charge.dispute.created` | `ChargeDisputeCreated` | Links the order's open dispute, or creates an escalated `Chargeback` one; the administrators are told. A chargeback that matches no order tells the administrators of every company (`admin.dispute.chargeback_unmatched`) — see [Cancellation, refund and dispute](/flows/cancellation-refund-dispute#dispute) |
 | `charge.dispute.updated`, `charge.dispute.closed` | `ChargeDisputeUpdated`, `ChargeDisputeClosed` | Reflects Stripe's status onto the linked dispute |
-
 | **Refund** — found by the `RefundKey` in the Stripe refund's metadata | | |
 | `refund.failed` | `RefundFailed` | A card refund Stripe accepted has **failed**: the refund row is found by its key and stamped with the date and Stripe's refund id. A `Pending` row closes as `Failed`; a `Succeeded` one stays `Succeeded` and carries the date it bounced, because the money left and came back and still counts as refunded. The first of this event and a retry to learn it tells every administrator (`admin.payment.refund_bounced`, every role); a repeat tells nobody. A refund Stripe made for a receivable carries no row, and an unknown key is only logged → [Cancellation, refund and dispute](/flows/cancellation-refund-dispute#refund-states) |
 

@@ -57,3 +57,4 @@ The plan's "Not doing" list. Anything found outside these slices is reported to 
 ## Work record
 
 - 2026-11-09 — Filed from the plan page. Not started.
+- 2026-11-10 — Started on `docs/pay-and-payouts`, run with the lean workflow (one docs lane on Sonnet, one reviewer). The new ADR is ADR-0082.

@@ -439,9 +439,9 @@
 | T-0924 | Cleaner pay, phase 2: corrections and one open period | L | `done` | — | Mike 2026-11-09: the cleaner-pay fix plan (https://claude.ai/artifact/XvfiW1obDsEqk4E1eNL56C); 5 slices |
 | T-0925 | Cleaner pay, phase 3: the screens | L | `done` | — | Mike 2026-11-09: the cleaner-pay fix plan (https://claude.ai/artifact/XvfiW1obDsEqk4E1eNL56C); 10 slices |
 | T-0926 | Cleaner pay, phase 4: the remaining findings | M | `done` | — | Mike 2026-11-09: the cleaner-pay fix plan (https://claude.ai/artifact/XvfiW1obDsEqk4E1eNL56C); 8 slices |
-| T-0927 | Cleaner pay, phase 5: the admin panel remarks and refunds | L | `in_progress` | — | Mike 2026-11-09: the cleaner-pay fix plan (https://claude.ai/artifact/XvfiW1obDsEqk4E1eNL56C); 35 slices |
-| T-0928 | Cleaner pay, phase 6: DEV deploys, reset and proof | M | `todo` | — | Mike 2026-11-09: the cleaner-pay fix plan (https://claude.ai/artifact/XvfiW1obDsEqk4E1eNL56C); 7 slices |
-| T-0929 | Cleaner pay, phase 7: the docs and the decision record | M | `todo` | — | Mike 2026-11-09: the cleaner-pay fix plan (https://claude.ai/artifact/XvfiW1obDsEqk4E1eNL56C); 4 slices |
+| T-0927 | Cleaner pay, phase 5: the admin panel remarks and refunds | L | `done` | — | Mike 2026-11-09: the cleaner-pay fix plan (https://claude.ai/artifact/XvfiW1obDsEqk4E1eNL56C); 35 slices |
+| T-0928 | Cleaner pay, phase 6: DEV deploys, reset and proof | M | `in_progress` | — | Mike 2026-11-09: the cleaner-pay fix plan (https://claude.ai/artifact/XvfiW1obDsEqk4E1eNL56C); 7 slices |
+| T-0929 | Cleaner pay, phase 7: the docs and the decision record | M | `in_progress` | — | Mike 2026-11-09: the cleaner-pay fix plan (https://claude.ai/artifact/XvfiW1obDsEqk4E1eNL56C); 4 slices |
 
 > **T-0785–T-0799 filed 2026-09-20** — the UI-polish and dead-code batch, on the owner's ruling of
 > that day (*"I want to polish alignments in admin app a bit on all of the overview/detail pages.

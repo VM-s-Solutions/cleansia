@@ -52,6 +52,12 @@ export const ADMIN_MENU_ITEMS: readonly SidebarMenuItem[] = [
     permission: Policy.CanViewPagedOrderAdmin,
   },
   {
+    label: 'sidebar.refunds',
+    icon: 'pi pi-replay',
+    route: `/${CleansiaAdminRoute.ORDER_MANAGEMENT}/refunds`,
+    permission: Policy.CanViewPagedOrderAdmin,
+  },
+  {
     label: 'sidebar.customers',
     icon: 'pi pi-user',
     route: `/${CleansiaAdminRoute.CUSTOMERS}`,

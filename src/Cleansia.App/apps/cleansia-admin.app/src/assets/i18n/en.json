@@ -94,7 +94,8 @@
       "cash_held": "Cash held by cleaners",
       "pay_configs": "Pay Configs",
       "pay_config_create": "Create Pay Config",
-      "pay_config_edit": "Edit Pay Config"
+      "pay_config_edit": "Edit Pay Config",
+      "refunds": "Refunds"
     }
   },
   "components": {
@@ -295,6 +296,24 @@
       "cancellation_fee_share": "Share of a cancellation fee",
       "lockout_fee_share": "Job reward — customer lockout",
       "dispute_charge": "Dispute charge"
+    },
+    "refund_state": {
+      "not_sent": "Not sent",
+      "refunded": "Refunded",
+      "failed": "Failed",
+      "bounced": "Bounced",
+      "repaid": "Repaid",
+      "closed": "Closed"
+    },
+    "refund_origin": {
+      "cancellation": "Cancellation",
+      "dispute": "Dispute",
+      "full_refund": "Full refund",
+      "partial_refund": "Partial refund"
+    },
+    "refund_repayment_method": {
+      "bank_transfer": "Bank transfer",
+      "credit": "Credit"
     }
   },
   "sidebar": {
@@ -335,6 +354,7 @@
     "notifications": "Notifications",
     "profile": "My Profile",
     "receivables": "Receivables",
+    "refunds": "Refunds",
     "customers": "Customers",
     "cash_held": "Cash held"
   },
@@ -3064,6 +3084,64 @@
       },
       "messages": {
         "write_off_success": "Receivable written off"
+      }
+    },
+    "refunds": {
+      "title": "Refunds",
+      "description": "Card refunds of the company's orders. Not sent means Stripe has not confirmed the refund yet; Failed and Bounced are money still owed to the customer. A row opens its order.",
+      "guest": "Guest",
+      "filters": {
+        "state": "State",
+        "needs_action": "Needs action",
+        "requested_from": "Requested from",
+        "requested_to": "Requested to"
+      },
+      "scope": {
+        "order": "Showing the refunds of one order.",
+        "customer": "Showing the refunds of one customer.",
+        "clear": "Show all"
+      },
+      "load_error": "Could not load the refunds.",
+      "retry_load": "Try again",
+      "empty": "No refunds.",
+      "columns": {
+        "order": "Order",
+        "customer": "Customer",
+        "origin": "Origin",
+        "amount": "Amount",
+        "state": "State",
+        "requested_on": "Requested",
+        "last_changed_on": "Last change"
+      },
+      "actions": {
+        "retry": "Retry",
+        "open_dispute": "Open dispute",
+        "record_repayment": "Record repayment"
+      },
+      "hints": {
+        "retried_hourly": "Retried every hour",
+        "waiting_for_admin": "Waiting for an admin",
+        "repaid_transfer": "Repaid by transfer {{reference}}",
+        "repaid_credit": "Repaid as credit"
+      },
+      "retry_confirm": {
+        "title": "Retry the refund",
+        "body": "Retry the refund of {{amount}} on order {{order}}? Stripe is asked first, so it is never sent twice.",
+        "yes": "Retry"
+      },
+      "repayment": {
+        "title": "Record a repayment",
+        "lede": "Transfer the exact amount to the customer first, then record it here. The console does not send the money.",
+        "reference": "Transfer reference",
+        "reference_hint": "For example: the variable symbol",
+        "credit_chosen": "The customer chose credit",
+        "credit_needs_account": "Credit is only for a customer with an account.",
+        "record_transfer": "Record transfer",
+        "record_credit": "Record as credit"
+      },
+      "messages": {
+        "retry_done": "Refund retried",
+        "repayment_recorded": "Repayment recorded"
       }
     },
     "cash_held": {

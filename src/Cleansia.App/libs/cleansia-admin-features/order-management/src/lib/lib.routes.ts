@@ -4,6 +4,7 @@ import { Policy } from '@cleansia/services';
 import { OrderManagementComponent } from './order-management/order-management.component';
 import { OrderDetailComponent } from './order-detail/order-detail.component';
 import { ReceivablesComponent } from './receivables/receivables.component';
+import { RefundsComponent } from './refunds/refunds.component';
 
 export const orderManagementRoutes: Route[] = [
   {
@@ -16,6 +17,12 @@ export const orderManagementRoutes: Route[] = [
     component: ReceivablesComponent,
     canActivate: [permissionGuard],
     data: { title: 'page_titles.admin.receivables', permission: Policy.CanViewReceivables },
+  },
+  {
+    path: 'refunds',
+    component: RefundsComponent,
+    canActivate: [permissionGuard],
+    data: { title: 'page_titles.admin.refunds', permission: Policy.CanViewOrderDetailAdmin },
   },
   {
     path: ':orderId',

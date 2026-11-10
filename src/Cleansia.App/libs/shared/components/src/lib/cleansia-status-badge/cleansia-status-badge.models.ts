@@ -13,7 +13,8 @@ export type StatusBadgeKind =
   | 'referral'
   | 'document'
   | 'active'
-  | 'promo';
+  | 'promo'
+  | 'refund';
 
 /** What the wire carries for a status: the enum number, its name, or the `Code` pair of both. */
 export type StatusBadgeValue =
@@ -167,6 +168,17 @@ export const STATUS_BADGE_KINDS: Readonly<Record<StatusBadgeKind, StatusBadgeKin
       Active: member(null, 'success'),
       Inactive: member(null, 'neutral'),
       Expired: member(null, 'warning'),
+    },
+  },
+  refund: {
+    labelRoot: 'enums.refund_state',
+    members: {
+      NotSent: member(1, 'warning'),
+      Refunded: member(2, 'success'),
+      Failed: member(3, 'danger'),
+      Bounced: member(4, 'danger'),
+      Repaid: member(5, 'info'),
+      Closed: member(6, 'neutral'),
     },
   },
 };

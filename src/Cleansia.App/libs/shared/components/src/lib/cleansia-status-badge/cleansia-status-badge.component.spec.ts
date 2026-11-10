@@ -38,6 +38,7 @@ const GENERATED_ENUM: Partial<Record<StatusBadgeKind, string[]>> = {
   company: ['CompanyLifecycleState'],
   referral: ['ReferralStatus'],
   document: ['DocumentStatus', 'DocumentDeletionRequestStatus'],
+  refund: ['RefundState'],
 };
 
 const CLIENTS = ['admin', 'partner'].map((app) =>

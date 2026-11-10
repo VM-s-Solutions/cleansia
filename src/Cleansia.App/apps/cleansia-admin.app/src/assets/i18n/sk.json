@@ -94,7 +94,8 @@
       "cash_held": "Hotovosť u upratovačov",
       "pay_configs": "Konfigurácie odmien",
       "pay_config_create": "Vytvoriť konfiguráciu odmien",
-      "pay_config_edit": "Upraviť konfiguráciu odmien"
+      "pay_config_edit": "Upraviť konfiguráciu odmien",
+      "refunds": "Refundácie"
     }
   },
   "components": {
@@ -295,6 +296,24 @@
       "cancellation_fee_share": "Podiel z poplatku za zrušenie",
       "lockout_fee_share": "Odmena za zákazku — znemožnený vstup",
       "dispute_charge": "Zrážka z reklamácie"
+    },
+    "refund_state": {
+      "not_sent": "Neodoslané",
+      "refunded": "Vrátené",
+      "failed": "Zlyhalo",
+      "bounced": "Vrátené bankou",
+      "repaid": "Splatené",
+      "closed": "Uzavreté"
+    },
+    "refund_origin": {
+      "cancellation": "Zrušenie",
+      "dispute": "Spor",
+      "full_refund": "Plná refundácia",
+      "partial_refund": "Čiastočná refundácia"
+    },
+    "refund_repayment_method": {
+      "bank_transfer": "Bankový prevod",
+      "credit": "Kredit"
     }
   },
   "sidebar": {
@@ -335,6 +354,7 @@
     "notifications": "Upozornenia",
     "profile": "Môj profil",
     "receivables": "Pohľadávky",
+    "refunds": "Refundácie",
     "customers": "Zákazníci",
     "cash_held": "Hotovosť u upratovačov"
   },
@@ -3064,6 +3084,64 @@
       },
       "messages": {
         "write_off_success": "Pohľadávka bola odpísaná"
+      }
+    },
+    "refunds": {
+      "title": "Refundácie",
+      "description": "Refundácie kartových platieb objednávok spoločnosti. Neodoslané znamená, že Stripe refundáciu ešte nepotvrdil; Zlyhalo a Vrátené bankou sú peniaze, ktoré zákazníkovi stále dlhujeme. Riadok otvorí svoju objednávku.",
+      "guest": "Hosť",
+      "filters": {
+        "state": "Stav",
+        "needs_action": "Vyžaduje akciu",
+        "requested_from": "Vyžiadané od",
+        "requested_to": "Vyžiadané do"
+      },
+      "scope": {
+        "order": "Zobrazené refundácie jednej objednávky.",
+        "customer": "Zobrazené refundácie jedného zákazníka.",
+        "clear": "Zobraziť všetko"
+      },
+      "load_error": "Refundácie sa nepodarilo načítať.",
+      "retry_load": "Skúsiť znova",
+      "empty": "Žiadne refundácie.",
+      "columns": {
+        "order": "Objednávka",
+        "customer": "Zákazník",
+        "origin": "Pôvod",
+        "amount": "Suma",
+        "state": "Stav",
+        "requested_on": "Vyžiadané",
+        "last_changed_on": "Posledná zmena"
+      },
+      "actions": {
+        "retry": "Zopakovať",
+        "open_dispute": "Otvoriť spor",
+        "record_repayment": "Zaznamenať splatenie"
+      },
+      "hints": {
+        "retried_hourly": "Opakuje sa každú hodinu",
+        "waiting_for_admin": "Čaká na administrátora",
+        "repaid_transfer": "Splatené prevodom {{reference}}",
+        "repaid_credit": "Splatené kreditom"
+      },
+      "retry_confirm": {
+        "title": "Zopakovať refundáciu",
+        "body": "Zopakovať refundáciu {{amount}} pri objednávke {{order}}? Najprv sa opýtame Stripe, takže sa peniaze nikdy neodošlú dvakrát.",
+        "yes": "Zopakovať"
+      },
+      "repayment": {
+        "title": "Zaznamenať splatenie",
+        "lede": "Najprv zákazníkovi preveďte presnú sumu, potom ju tu zaznamenajte. Konzola peniaze neodosiela.",
+        "reference": "Referencia prevodu",
+        "reference_hint": "Napríklad variabilný symbol",
+        "credit_chosen": "Zákazník si zvolil kredit",
+        "credit_needs_account": "Kredit je len pre zákazníka s účtom.",
+        "record_transfer": "Zaznamenať prevod",
+        "record_credit": "Zaznamenať ako kredit"
+      },
+      "messages": {
+        "retry_done": "Refundácia zopakovaná",
+        "repayment_recorded": "Splatenie zaznamenané"
       }
     },
     "cash_held": {

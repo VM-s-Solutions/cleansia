@@ -119,7 +119,13 @@ public class RecordRefundRepayment
                 recorded = result.Value!;
             }
 
-            // Goodwill, not a returned payment: the refund itself already counts the money as given back.
+            // Goodwill, not a returned payment: the refund itself already counts the money as given back. Re-locked
+            // first, which reloads the account: the seam's credit share went onto its balance in raw SQL.
+            if (account is not null)
+            {
+                await creditAccountRepository.LockForUserAsync(order.UserId!, cancellationToken);
+            }
+
             account?.Issue(
                 amount: refund.Amount,
                 reason: CreditTransactionReason.Goodwill,

@@ -133,13 +133,20 @@ public class RecordRefundRepayment
                 issuedBy: adminId,
                 orderId: order.Id);
 
-            // Last: the clawback flushes the unit of work. A cancellation's points went with the cancel itself.
+            // Last: the clawback flushes the unit of work. A cancellation's points went with the cancel itself. The
+            // repayment is staged, not committed, so the clawback's own read of the order's refunds misses it: it is
+            // handed the order's running total instead, as the callers that commit first have it read.
             var origin = refund.MapToOrigin();
             if (recorded is not null && origin != RefundOrigin.Cancellation)
             {
                 await loyaltyService.RevokeForRefundAsync(
                     order.Id,
-                    origin == RefundOrigin.FullRefund ? order.TotalPrice : recorded.Amount + recorded.CreditReturned,
+                    origin == RefundOrigin.FullRefund
+                        ? order.TotalPrice
+                        : await refundRepository.GetSucceededRefundTotalForOrderAsync(order.Id, refund.RefundKey, cancellationToken)
+                          + recorded.Amount
+                          + await creditAccountRepository.GetReturnedTotalForOrderAsync(order.Id, cancellationToken)
+                          + await creditAccountRepository.GetDisputeSettledTotalForOrderAsync(order.Id, cancellationToken),
                     recorded.RefundKey,
                     adminId,
                     cancellationToken);

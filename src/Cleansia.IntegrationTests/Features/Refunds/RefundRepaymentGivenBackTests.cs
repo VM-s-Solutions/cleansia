@@ -52,6 +52,28 @@ public sealed class RefundRepaymentGivenBackTests(PostgresContainerFixture fixtu
     private CleansiaDbContext NewContext() => new(new DbContextOptionsBuilder<CleansiaDbContext>()
         .UseNpgsql(Fixture.GetConnectionString()).Options, Session(), new FixedTenantProvider(TestTenants.Default));
 
+    // Same order as ConcurrentPartialRefundAuditTests(alreadyPartlyRefunded: true), where IssuePartialRefund's 600 after
+    // an earlier 100 claws back 70 of 100 points: a share of the running total, 700 of 1,000.
+    [Fact]
+    public async Task A_Failed_600_Repaid_By_Transfer_After_An_Earlier_100_Refund_Claws_Back_The_Running_Total_And_Counts_Once_In_Revenue()
+    {
+        var failedId = await ResetAndSeedAsync();
+
+        var result = await RepayAsync(failedId, RefundRepaymentMethod.BankTransfer, "VS-2026-11");
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        await using var read = NewContext();
+        var refund = await read.Refunds.SingleAsync(r => r.Id == failedId);
+        Assert.Equal((RefundStatus.Succeeded, 600m), (refund.Status, refund.Amount));
+        Assert.NotNull(refund.RepaidOn);
+        Assert.Equal(PaymentStatus.PartiallyRefunded, (await read.Orders.SingleAsync(o => o.Id == OrderId)).PaymentStatus);
+        var clawback = Assert.Single(await read.LoyaltyTransactions.Where(t => t.IdempotencyKey == FailedKey).ToListAsync());
+        Assert.Equal(-70, clawback.Points);
+
+        var report = await RevenueReportAsync(read);
+        Assert.Equal((700m, 0m, 300m), (report.TotalRefundedToCard, report.TotalReturnedToCredit, report.NetRevenue));
+    }
+
     // An order of 1,000 that took 250 credit, whose partial refund (300 card, a 400 slice, so a 100 credit share)
     // Stripe failed, repaid as credit: the customer holds the 100 share back plus 300 goodwill.
     [Fact]

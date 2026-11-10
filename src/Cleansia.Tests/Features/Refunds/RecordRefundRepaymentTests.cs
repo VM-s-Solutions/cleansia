@@ -128,6 +128,11 @@ public sealed class RecordRefundRepaymentTests
         _credit.SetupSequence(c => c.GetReturnedAmountAsync($"credit-return:{refund.RefundKey}", It.IsAny<CancellationToken>()))
             .ReturnsAsync(0m)
             .ReturnsAsync(100m);
+        // The order's returned total before the share goes back, then after it.
+        _credit.SetupSequence(c => c.GetReturnedTotalForOrderAsync(OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(0m)
+            .ReturnsAsync(100m)
+            .ReturnsAsync(100m);
 
         var result = await RepayAsync(refund);
 

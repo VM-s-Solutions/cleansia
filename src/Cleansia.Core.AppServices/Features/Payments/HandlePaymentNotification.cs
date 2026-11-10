@@ -753,15 +753,6 @@ public class HandlePaymentNotification
         }
 
         /// <summary>
-        /// Inbound bank chargeback (ADR-0006 D4). Resolves the disputed charge to
-        /// our Order by its stored payment_intent, else through the Checkout Session
-        /// that charged it, then links a Dispute (created if absent) to the Stripe
-        /// dispute id and reflects Stripe's status. A Stripe outage during the
-        /// session lookup throws, so the processed-event stamp rolls back and Stripe
-        /// retries. A charge.dispute.created that still matches no Order alerts the
-        /// administrators of every company.
-        /// </summary>
-        /// <summary>
         /// A card refund Stripe failed after accepting it. charge.refund.updated stays unsubscribed: it
         /// reports the same failure a second time. A receivable's own refund carries no row, so its key, like an
         /// unknown one, is only logged.
@@ -810,6 +801,15 @@ public class HandlePaymentNotification
             return BusinessResult.Success();
         }
 
+        /// <summary>
+        /// Inbound bank chargeback (ADR-0006 D4). Resolves the disputed charge to
+        /// our Order by its stored payment_intent, else through the Checkout Session
+        /// that charged it, then links a Dispute (created if absent) to the Stripe
+        /// dispute id and reflects Stripe's status. A Stripe outage during the
+        /// session lookup throws, so the processed-event stamp rolls back and Stripe
+        /// retries. A charge.dispute.created that still matches no Order alerts the
+        /// administrators of every company.
+        /// </summary>
         private async Task<BusinessResult> HandleChargeback(Event stripeEvent, CancellationToken cancellationToken)
         {
             var stripeDispute = stripeEvent.Data.Object as Stripe.Dispute;

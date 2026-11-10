@@ -216,7 +216,7 @@ Four things that look like bugs, are not, and have each cost a session:
   per-country tables (`CountryConfiguration`, `Service`, …) — **has no `TenantId` column at all**; if
   you see one on such a type, the type is on the wrong base. Two traps this closed, and how: a
   `(TenantId, …)` unique index used to enforce nothing because Postgres treats NULLs as distinct —
-  now the tenant term can never be null, the thirteen sole-arbiter indexes are `NULLS NOT DISTINCT`
+  now the tenant term can never be null, the fourteen sole-arbiter indexes are `NULLS NOT DISTINCT`
   in the emitted DDL anyway, and a model sweep fails any new unique index over a nullable column that
   is not; and a `NULL`-stamped row used to vanish from every tenanted reader — now a writer that
   forgets its market fails `23502` in DEV instead of orphaning rows, and one that invents a company

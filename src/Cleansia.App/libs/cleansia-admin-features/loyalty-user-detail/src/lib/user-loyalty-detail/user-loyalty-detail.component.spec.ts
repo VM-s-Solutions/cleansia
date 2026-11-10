@@ -18,7 +18,8 @@ import {
   PagedDataOfOrderListItem,
 } from '@cleansia/admin-services';
 import { TimelineComponent } from '@cleansia/admin-features/audit-log';
-import { PermissionService, SnackbarService } from '@cleansia/services';
+import { CleansiaButtonComponent } from '@cleansia/components';
+import { CleansiaAdminRoute, PermissionService, SnackbarService } from '@cleansia/services';
 import { formatMoney } from '@cleansia/utils';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
@@ -548,5 +549,27 @@ describe('UserLoyaltyDetailComponent — credit section', () => {
     const cell = component.referralsAsReferrerColumns.find((column) => column.id === 'credit')?.getValue?.(paid);
 
     expect(cell).toBe(`${czk} / ${czk}`);
+  });
+
+  it('offers Refunds beside Issue credit, opening the Refunds page filtered to the customer', () => {
+    grantedPolicies.add('CanViewOrderDetailAdmin');
+    const fixture = renderFixture(
+      GetUserCreditResponse.fromJS({ userId: 'user-1', hasAccount: false, balance: 0, ledger: [], accounts: [] })
+    );
+    const button = fixture.debugElement.query(By.css('.cleansia-user-loyalty-detail__refunds'));
+
+    expect(button).toBeTruthy();
+    (button.componentInstance as CleansiaButtonComponent).onClick.emit(new MouseEvent('click'));
+    expect(TestBed.inject(Router).navigate).toHaveBeenCalledWith([CleansiaAdminRoute.ORDER_MANAGEMENT, 'refunds'], {
+      queryParams: { userId: 'user-1' },
+    });
+  });
+
+  it('hides Refunds without CanViewOrderDetailAdmin', () => {
+    const fixture = renderFixture(
+      GetUserCreditResponse.fromJS({ userId: 'user-1', hasAccount: false, balance: 0, ledger: [], accounts: [] })
+    );
+
+    expect(fixture.debugElement.query(By.css('.cleansia-user-loyalty-detail__refunds'))).toBeNull();
   });
 });

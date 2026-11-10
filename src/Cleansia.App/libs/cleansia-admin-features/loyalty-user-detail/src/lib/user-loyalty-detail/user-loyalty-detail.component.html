@@ -58,6 +58,15 @@
           icon="pi pi-wallet"
           (onClick)="openIssueCredit()"
         />
+        <cleansia-button
+          *cleansiaPermission="Policy.CanViewOrderDetailAdmin"
+          class="cleansia-user-loyalty-detail__refunds"
+          [label]="'pages.loyalty_user_detail.actions.refunds' | translate"
+          icon="pi pi-replay"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="viewRefunds()"
+        />
       </div>
 
       @if (facade.incidentPanelOpen()) {

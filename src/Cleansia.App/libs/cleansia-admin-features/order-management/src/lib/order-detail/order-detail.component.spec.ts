@@ -11,10 +11,11 @@ import {
   DirtinessLevel,
   OrderItem,
   OrderStatus,
+  PaymentType,
   UserItem,
 } from '@cleansia/admin-services';
 import { CleansiaButtonComponent } from '@cleansia/components';
-import { PermissionService, SnackbarService } from '@cleansia/services';
+import { CleansiaAdminRoute, PermissionService, SnackbarService } from '@cleansia/services';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { of, Subject, throwError } from 'rxjs';
 import {
@@ -369,5 +370,20 @@ describe('OrderDetailComponent — incident file', () => {
     expect(text).toContain('Probíhá');
     expect(text).toContain('Karta');
     expect(text).not.toContain('InProgress');
+  });
+
+  it('offers Refunds on a card order, opening the Refunds page filtered to it, and none on a cash order', () => {
+    details.mockReturnValue(of(OrderItem.fromJS({ id: 'order-1', paymentType: { value: PaymentType.Card, name: 'Card' } })));
+    const fixture = render();
+    const button = fixture.debugElement.query(By.css('.cleansia-order-detail__refunds'));
+
+    expect(button).toBeTruthy();
+    (button.componentInstance as CleansiaButtonComponent).onClick.emit(new MouseEvent('click'));
+    expect(TestBed.inject(Router).navigate).toHaveBeenCalledWith([CleansiaAdminRoute.ORDER_MANAGEMENT, 'refunds'], {
+      queryParams: { orderId: 'order-1' },
+    });
+
+    details.mockReturnValue(of(OrderItem.fromJS({ id: 'order-2', paymentType: { value: PaymentType.Cash, name: 'Cash' } })));
+    expect(render().debugElement.query(By.css('.cleansia-order-detail__refunds'))).toBeNull();
   });
 });

@@ -880,7 +880,8 @@
       "completion": {
         "label": "Označeno jako hotové",
         "pending": "Zatím ne"
-      }
+      },
+      "refunds": "Refundace"
     },
     "invoice_management": {
       "title": "Správa faktur",
@@ -2436,7 +2437,8 @@
       },
       "actions": {
         "grant": "Přidat body",
-        "revoke": "Odebrat body"
+        "revoke": "Odebrat body",
+        "refunds": "Refundace"
       },
       "activity": {
         "title": "Historie aktivit",

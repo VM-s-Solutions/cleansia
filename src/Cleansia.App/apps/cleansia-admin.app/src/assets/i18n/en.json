@@ -880,7 +880,8 @@
       "completion": {
         "label": "Marked done",
         "pending": "Not yet"
-      }
+      },
+      "refunds": "Refunds"
     },
     "invoice_management": {
       "title": "Invoice Management",
@@ -2436,7 +2437,8 @@
       },
       "actions": {
         "grant": "Grant points",
-        "revoke": "Revoke points"
+        "revoke": "Revoke points",
+        "refunds": "Refunds"
       },
       "activity": {
         "title": "Activity log",

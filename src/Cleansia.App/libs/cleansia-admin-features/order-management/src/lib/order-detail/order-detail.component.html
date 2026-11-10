@@ -24,6 +24,16 @@
           [disabled]="!facade.order()?.id"
           (onClick)="viewAuditHistory()"
         />
+        @if (isCardOrder()) {
+        <cleansia-button
+          class="cleansia-order-detail__refunds"
+          icon="pi pi-replay"
+          severity="secondary"
+          [outlined]="true"
+          [label]="'pages.order_detail.refunds' | translate"
+          (onClick)="viewRefunds()"
+        />
+        }
         <!-- The subject lookup that precedes the file reads the audit timeline, so both policies gate it. -->
         <ng-container *cleansiaPermission="Policy.CanViewAuditLog">
           <cleansia-button

@@ -5,7 +5,7 @@ import {
   LegalDocumentVersionDto,
 } from '@cleansia/admin-services';
 import { TableAction, TableColumn } from '@cleansia/components';
-import { formatDate } from '@cleansia/utils';
+import { formatDate, languageDisplayName } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 
 const FALLBACK_LANGUAGE = 'en';
@@ -102,7 +102,8 @@ export function getLegalVersionTableDefinition(
         id: 'languages',
         field: 'texts',
         header: translate.instant('pages.legal_documents.columns.languages'),
-        getValue: (row: LegalDocumentVersionDto) => (row.texts ?? []).map((text) => text.language).join(', '),
+        getValue: (row: LegalDocumentVersionDto) =>
+          (row.texts ?? []).map((text) => languageDisplayName(text.language ?? '', translate.currentLang)).join(', '),
         width: '14%',
       },
     ],
@@ -119,6 +120,7 @@ export function getLegalTextTableDefinition(
         id: 'language',
         field: 'language',
         header: translate.instant('pages.legal_documents.columns.language'),
+        getValue: (row: LegalDocumentTextSummaryDto) => languageDisplayName(row.language ?? '', translate.currentLang),
         width: '10%',
       },
       {

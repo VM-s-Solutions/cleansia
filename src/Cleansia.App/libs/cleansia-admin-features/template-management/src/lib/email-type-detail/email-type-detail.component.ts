@@ -33,6 +33,7 @@ import { Policy, SnackbarService } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { DialogModule } from 'primeng/dialog';
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from 'primeng/tabs';
+import { emailTypeLabel } from '../email-type-label';
 import { EmailTypeDetailFacade } from './email-type-detail.facade';
 
 @Component({
@@ -78,10 +79,9 @@ export class EmailTypeDetailComponent implements OnInit, OnDestroy {
 
   readonly pageTitle = computed(() => {
     const detail = this.facade.emailTypeDetail();
-    return (
-      detail?.displayName ??
-      this.translate.instant('pages.template_management.edit_email_template')
-    );
+    return detail
+      ? emailTypeLabel(this.translate, detail.emailType, detail.displayName)
+      : this.translate.instant('pages.template_management.edit_email_template');
   });
 
   readonly languages = computed(() => {

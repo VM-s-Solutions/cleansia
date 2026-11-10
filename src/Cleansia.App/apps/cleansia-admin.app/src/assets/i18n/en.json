@@ -91,7 +91,10 @@
       "audit_log_customers": "Customer actions",
       "audit_log_customer_entry": "Customer action",
       "receivables": "Receivables",
-      "cash_held": "Cash held by cleaners"
+      "cash_held": "Cash held by cleaners",
+      "pay_configs": "Pay Configs",
+      "pay_config_create": "Create Pay Config",
+      "pay_config_edit": "Edit Pay Config"
     }
   },
   "components": {
@@ -169,13 +172,6 @@
       "success": "Success",
       "error": "Error"
     },
-    "languages": {
-      "en": "English",
-      "cs": "Czech",
-      "de": "German",
-      "sk": "Slovak",
-      "pl": "Polish"
-    },
     "show_password": "Show password",
     "hide_password": "Hide password"
   },
@@ -192,6 +188,18 @@
     "payment_type": {
       "cash": "Cash",
       "card": "Card"
+    },
+    "email_type": {
+      "confirmation_email": "Confirmation e-mail",
+      "reset_password": "Password reset",
+      "order_receipt": "Order receipt",
+      "period_closed": "Pay period closed",
+      "period_end_reminder": "Pay period ending reminder",
+      "order_status_update": "Order status update",
+      "promo_code": "Promo code",
+      "company_wind_down_customer": "Company wind-down (customer)",
+      "company_wind_down_cleaner": "Company wind-down (cleaner)",
+      "admin_notification": "Admin notification"
     },
     "payment_status": {
       "pending": "Pending",
@@ -2362,7 +2370,8 @@
           "preview": "Couldn't preview impact",
           "apply": "Some thresholds couldn't be saved"
         }
-      }
+      },
+      "no_tiers": "No loyalty tiers are configured."
     },
     "customers": {
       "title": "Customers",
@@ -2427,7 +2436,9 @@
           "OrderCompleted": "Order completed",
           "OrderCancelled": "Order cancelled",
           "Referral": "Referral bonus",
-          "ManualGrant": "Manual adjustment"
+          "ManualGrant": "Manual adjustment",
+          "OrderPartiallyRefunded": "Order partially refunded",
+          "ManualRevoke": "Manual revocation"
         }
       },
       "grant_dialog": {
@@ -2782,7 +2793,11 @@
         "retry_confirm_message": "This re-runs the erasure of the account of user {{userId}}. If it succeeds, the account is permanently anonymized and any unused customer credit on it is written off, with no payout and no way to restore it. This cannot be undone.",
         "retry_confirm_yes": "Retry",
         "retry_success": "Deletion retried. The account is now erased.",
-        "retry_error": "Couldn't retry the deletion."
+        "retry_error": "Couldn't retry the deletion.",
+        "actor": {
+          "self": "The customer",
+          "system": "Automatically"
+        }
       },
       "request_status": {
         "Pending": "Pending",

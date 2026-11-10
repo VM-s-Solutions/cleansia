@@ -91,7 +91,10 @@
       "audit_log_customers": "Akce zákazníků",
       "audit_log_customer_entry": "Akce zákazníka",
       "receivables": "Pohledávky",
-      "cash_held": "Hotovost u uklízečů"
+      "cash_held": "Hotovost u uklízečů",
+      "pay_configs": "Konfigurace odměn",
+      "pay_config_create": "Vytvořit konfiguraci odměn",
+      "pay_config_edit": "Upravit konfiguraci odměn"
     }
   },
   "components": {
@@ -169,13 +172,6 @@
       "success": "Úspěch",
       "error": "Chyba"
     },
-    "languages": {
-      "en": "Angličtina",
-      "cs": "Čeština",
-      "de": "Němčina",
-      "sk": "Slovenština",
-      "pl": "Polština"
-    },
     "show_password": "Zobrazit heslo",
     "hide_password": "Skrýt heslo"
   },
@@ -192,6 +188,18 @@
     "payment_type": {
       "cash": "Hotovost",
       "card": "Karta"
+    },
+    "email_type": {
+      "confirmation_email": "Potvrzovací e-mail",
+      "reset_password": "Obnovení hesla",
+      "order_receipt": "Potvrzení objednávky",
+      "period_closed": "Uzavření platebního období",
+      "period_end_reminder": "Připomenutí konce platebního období",
+      "order_status_update": "Změna stavu objednávky",
+      "promo_code": "Promo kód",
+      "company_wind_down_customer": "Ukončení společnosti (zákazník)",
+      "company_wind_down_cleaner": "Ukončení společnosti (uklízeč)",
+      "admin_notification": "Oznámení pro administrátory"
     },
     "payment_status": {
       "pending": "Čekající",
@@ -2362,7 +2370,8 @@
           "preview": "Nepodařilo se zobrazit náhled dopadu",
           "apply": "Některé limity se nepodařilo uložit"
         }
-      }
+      },
+      "no_tiers": "Nejsou nastaveny žádné věrnostní úrovně."
     },
     "customers": {
       "title": "Zákazníci",
@@ -2427,7 +2436,9 @@
           "OrderCompleted": "Dokončená objednávka",
           "OrderCancelled": "Zrušená objednávka",
           "Referral": "Bonus za doporučení",
-          "ManualGrant": "Manuální úprava"
+          "ManualGrant": "Manuální úprava",
+          "OrderPartiallyRefunded": "Objednávka částečně vrácena",
+          "ManualRevoke": "Manuální odebrání"
         }
       },
       "grant_dialog": {
@@ -2782,7 +2793,11 @@
         "retry_confirm_message": "Výmaz účtu uživatele {{userId}} bude spuštěn znovu. Pokud uspěje, účet bude trvale anonymizován a nevyčerpaný zákaznický kredit na něm se odepíše bez výplaty a bez možnosti obnovení. Akci nelze vrátit.",
         "retry_confirm_yes": "Opakovat",
         "retry_success": "Výmaz byl zopakován. Účet je nyní vymazán.",
-        "retry_error": "Výmaz se nepodařilo zopakovat."
+        "retry_error": "Výmaz se nepodařilo zopakovat.",
+        "actor": {
+          "self": "Zákazník",
+          "system": "Automaticky"
+        }
       },
       "request_status": {
         "Pending": "Čeká",

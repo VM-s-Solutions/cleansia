@@ -90,7 +90,7 @@ describe('legal-documents models', () => {
       expect(valueOf('market')).toBe('pages.legal_documents.all_markets');
       expect(valueOf('effectiveFrom')).toBe('14. 9. 2026');
       expect(valueOf('isInForce')).toBe('global.yes');
-      expect(valueOf('languages')).toBe('en, cs');
+      expect(valueOf('languages')).toBe('Angličtina, Čeština');
     });
 
     it('shows the market ISO code when the version is market-specific', () => {

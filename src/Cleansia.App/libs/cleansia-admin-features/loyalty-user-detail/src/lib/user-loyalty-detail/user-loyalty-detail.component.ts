@@ -430,6 +430,14 @@ export class UserLoyaltyDetailComponent
         return this.translate.instant(
           'pages.loyalty_user_detail.activity.source.ManualGrant'
         );
+      case LoyaltyEarnSource.OrderPartiallyRefunded:
+        return this.translate.instant(
+          'pages.loyalty_user_detail.activity.source.OrderPartiallyRefunded'
+        );
+      case LoyaltyEarnSource.ManualRevoke:
+        return this.translate.instant(
+          'pages.loyalty_user_detail.activity.source.ManualRevoke'
+        );
       default:
         return '';
     }

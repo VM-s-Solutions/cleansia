@@ -2,6 +2,7 @@ import { TemplateRef } from '@angular/core';
 import { EmailTypeListItemDto } from '@cleansia/admin-services';
 import { TableColumn, TableAction } from '@cleansia/components';
 import { formatDate } from '@cleansia/utils';
+import { emailTypeLabel } from '../email-type-label';
 import { TranslateService } from '@ngx-translate/core';
 
 export function getEmailTypeTableDefinition(
@@ -14,6 +15,7 @@ export function getEmailTypeTableDefinition(
         id: 'displayName',
         field: 'displayName',
         header: translate.instant('pages.template_management.columns.email_type'),
+        getValue: (row: EmailTypeListItemDto) => emailTypeLabel(translate, row.emailType, row.displayName),
         width: '25%',
       },
       {

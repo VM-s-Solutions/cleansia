@@ -4,7 +4,7 @@ title: "Cleaner pay, phase 7: the docs and the decision record"
 size: M
 owner: Michael Chaban
 created: 2026-11-09
-updated: 2026-11-09
+updated: 2026-11-10
 depends_on: [T-0927]
 blocks: []
 stories: []
@@ -41,10 +41,10 @@ separate reviewer re-derives the amounts by hand and checks that each new test f
 
 Branch `docs/pay-and-payouts`. Docs come last, in one pass, once everything is green.
 
-- [ ] **P7.1** A new ADR at the next free number (ADR-0082 at filing; ADR-0081 was taken on 2026-11-08) recording R1 to R4, the supersession of decision 48's route, the 8 August manual mark-paid ruling, and the removal of CanOpenPayPeriod and CanReopenPayPeriod.
-- [ ] **P7.2** Rewrite the pay and payouts pages, the admin pay-periods page, business rules, infrastructure, features and the partner-app pages; banners on ADR-0002 D3.4, ADR-0046 and ADR-0041; replace "employment contract"; refresh Q-UI-04 and MANUAL_STEPS MS-13 step 5.
-- [ ] **P7.3** Docs for Phase 5: notification types and severity, the 2-hour alert, Marketing as push only, the dispute page, row clicks, Close now and Change end date, and mobile labels by value.
-- [ ] **P7.4** Docs for refunds: states and repayments, the refund flow, `refund.failed`, `refund_bounced` and the retry timing, the Refunds page, the ADR-0006 banner and Q-UI-05.
+- [x] **P7.1** A new ADR at the next free number (ADR-0082 at filing; ADR-0081 was taken on 2026-11-08) recording R1 to R4, the supersession of decision 48's route, the 8 August manual mark-paid ruling, and the removal of CanOpenPayPeriod and CanReopenPayPeriod.
+- [x] **P7.2** Rewrite the pay and payouts pages, the admin pay-periods page, business rules, infrastructure, features and the partner-app pages; banners on ADR-0002 D3.4, ADR-0046 and ADR-0041; replace "employment contract"; refresh Q-UI-04 and MANUAL_STEPS MS-13 step 5.
+- [x] **P7.3** Docs for Phase 5: notification types and severity, the 2-hour alert, Marketing as push only, the dispute page, row clicks, Close now and Change end date, and mobile labels by value.
+- [x] **P7.4** Docs for refunds: states and repayments, the refund flow, `refund.failed`, `refund_bounced` and the retry timing, the Refunds page, the ADR-0006 banner and Q-UI-05.
 
 ## Done
 
@@ -58,3 +58,4 @@ The plan's "Not doing" list. Anything found outside these slices is reported to 
 
 - 2026-11-09 — Filed from the plan page. Not started.
 - 2026-11-10 — Started on `docs/pay-and-payouts`, run with the lean workflow (one docs lane on Sonnet, one reviewer). The new ADR is ADR-0082.
+- 2026-11-10 — P7.1 and P7.2 landed in `218d79c6d` and `f3ecf834d`. P7.3 landed in `3f96b43d7` (notification types and severity, the two advance alerts, Marketing as push only with an ADR-0002 amendment, the dispute page, row clicks, wire codes read by value; the pay-period pages already described Close now and Change end date) and P7.4 in `d701f5be6` (the six refund states, `refund.failed`, `refund_bounced`, the 30-minute `refund_needs_retry`, repayments, the Refunds page, the ADR-0006 banner and Q-UI-05). The webhook page now counts fourteen event types, not thirteen as the plan said: the old text said twelve for thirteen. Checkers and the VitePress build pass.

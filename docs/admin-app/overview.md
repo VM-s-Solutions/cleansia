@@ -64,7 +64,7 @@ lifecycle* or *Marketing* (`admin-role-visibility.spec.ts` pins both lists):
 
 | Route                     | Label        | Description                                   |
 | ------------------------- | ------------ | --------------------------------------------- |
-| `/notifications`          | Notifications | The admin feed, the full history — first in the sidebar, with the unread count as its badge (polled every 60 s while the tab is visible; on the mobile toolbar the same count sits on a bell beside the language switcher, which opens the [notifications panel](#notifications-button)): newest first, 20 a page, one localised sentence per event, mark read on click and navigate to the order / dispute / data-protection / company-lifecycle / referrals page it names, mark all read; entry gated by `CanViewAdminNotifications` (ADR-0065) |
+| `/notifications`          | Notifications | The admin feed, the full history — first in the sidebar, with the count of unread **critical** notifications as its badge (polled every 60 s while the tab is visible; on the mobile toolbar the same count sits on a bell beside the language switcher, which opens the [notifications panel](#notifications-button)): *All*, *Critical* and *Info* tabs, newest first, 20 a page, one localised sentence per event under its type label (and a red *Critical* label), mark read on click and navigate to the order / dispute / data-protection / company-lifecycle / referrals page it names, mark all read; entry gated by `CanViewAdminNotifications` (ADR-0065) |
 | `/employee-management`    | Employees    | Partner/employee management                   |
 | `/order-management`       | Orders       | Order oversight and management                |
 | `/customers`              | Customers    | The customer accounts, paged, searched and filtered; a row opens the customer detail → [Customers](./user-management#customers); entry gated by `CanViewOrderCustomer` (Support or above) |
@@ -103,9 +103,9 @@ web's rail is the same component.
 ### The notifications button {#notifications-button}
 
 Every admin page but the feed itself carries a round bell at the bottom right (49 px, 1.5 rem from the
-right and bottom edges) with the unread count on it — the sidebar badge's count, polled every 60 s while
+right and bottom edges) with the unread critical count on it — the sidebar badge's count, polled every 60 s while
 the tab is visible. A click opens a panel over the page (380 px wide, at most 70 % of the viewport high,
-the list scrolling inside) that reads the newest page of the feed each time it opens. A row click marks it
+the list scrolling inside), titled *Critical notifications*, that reads the newest page of the critical feed each time it opens. A row click marks it
 read and lands on the order, dispute or page it names, and the panel closes on that navigation — also when
 the row names the page already shown, a navigation the router skips rather than ends. The panel offers
 *Mark all as read* and *View all notifications*, and says so when the feed is empty.
@@ -114,6 +114,17 @@ the row names the page already shown, a navigation the router skips rather than 
 paged. At 768 px and below the circle is not drawn; the phone toolbar's bell opens the same panel. While
 the cookie notice shows, the circle rises above its band. The button carries the feed's own gate,
 `CanViewAdminNotifications`, and the panel's rows and the page's are one `NotificationFeedComponent`.
+
+## Lists open on a row click {#row-click}
+
+A list in the console opens its detail when the **row** is clicked; there is no eye or *View* action on
+Orders, Receivables, Cleaner invoices, Employees, Disputes, Pay periods, Customers, Promo codes, E-mail
+templates, the audit logs, the timeline and the legal documents. A row is a focus stop: Tab reaches it, Enter or
+Space opens it, and the focus shows as a tint on its cells. A click that starts on a link, a button or an
+input inside the row, or that ends a text selection, opens nothing, so a link in a cell keeps its own
+target and an action beside the row (Write-off, Download, Retry PDF, Approve, Reject) never opens it. A row
+that has nothing to open, such as an Employee entry on the timeline, is not focusable and does not tint
+on hover. A legal-document version row opens its preview and a text row switches the language.
 
 ## Route Structure
 

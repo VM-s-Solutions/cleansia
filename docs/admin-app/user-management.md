@@ -451,7 +451,7 @@ so an Administrator, a Manager and a Support see it and an Accountant does not. 
 `GET api/AdminCustomer/get-paged` server-side; the filter drawer's search matches part of the first name,
 last name, e-mail or phone (after the drawer's shared debounce), and a status filter picks **Active**,
 **Inactive** or **All**, opening on Active. The columns are name, e-mail, phone, status, e-mail
-confirmed and created. A row click, or its view action, opens the customer detail below.
+confirmed and created. A row click opens the customer detail below.
 
 ## Customer detail — credit is held per currency {#customer-credit}
 

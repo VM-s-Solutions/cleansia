@@ -512,7 +512,7 @@ The admin dispute detail shows them as *Refund requested*, *Refunded to card* an
 A leg that moved nothing shows zero; a dispute resolved without a refund, or before the two legs were
 recorded, shows neither. The audit row's before and after carry all three. `DisputeDetails` carries
 the two new figures on every host that serves it — admin, customer web and customer mobile — and only
-the admin console shows them. When the seam refuses — `refund.failed` from
+the admin console shows them. The rest of the page is described under [order management](/admin-app/order-management#dispute-resolution). When the seam refuses — `refund.failed` from
 Stripe, `refund.order_not_refundable` on an order with no card charge, `refund.nothing_refundable` once
 the ceiling is spent — the resolver gets that error and the dispute stays open, save for the one case
 below where the seam closed the dispute's own pending row. The refund key carries

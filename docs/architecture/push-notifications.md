@@ -350,6 +350,19 @@ Source: `src/Cleansia.Core.AppServices/Features/Orders/MarkMyPartDone.cs:90`,
 `src/Cleansia.Infra.Clients/Fcm/FcmMessageFactory.cs:48`.
 → [ADR-0077](/decisions/adr-0077), [Mobile crew completion](/mobile-app/features#crew-completion)
 
+### The site-wide promo reaches active customers, one key per campaign {#sitewide-promo}
+
+`promo.new_sitewide` is sent by `SendSitewidePromoFanoutHandler` to the company's customers who switched
+promotions on: accounts of the customer profile that are active and not anonymised. A cleaner, an
+administrator or an erased account that once switched promotions on receives nothing, and the admin
+Marketing page refuses a send that would reach nobody (`marketing.no_opted_in_customers`), reading the same
+repository method as the fan-out. Each per-user push is a `QueueEnvelope` keyed
+`push:{UserId}:promo.new_sitewide:{CampaignId}`, so a later campaign is a different message from an earlier
+one instead of being swallowed by it, and a redelivered fan-out page still collapses onto its own key. The
+campaign id is derived from the company and the ten texts: sending exactly the same text again is the same
+campaign and answers `Enqueued: false`. The page sends push only; e-mail campaigns are not built.
+→ [ADR-0002 amendment of 2026-11-10](/decisions/adr-0002#amendment-2026-11-10)
+
 ### The admin audience: a feed and an e-mail, never a push {#admin-audience}
 
 The in-app feed has **three** audiences, and the host controller sets which one a request serves —
@@ -357,7 +370,7 @@ The in-app feed has **three** audiences, and the host controller sets which one 
 count or mark-read a row of their partner-app feed. The customer and partner keysets are lists that
 trail their clients' templates (a key belongs in a keyset only once the audience's clients render it,
 or the badge counts a row the app drops unrendered). **The admin keyset is the catalogue by
-construction** — `NotificationFeedEventKeys.Admin = AdminNotificationEventCatalog.All`, the nineteen
+construction** — `NotificationFeedEventKeys.Admin = AdminNotificationEventCatalog.All`, the twenty-one
 `admin.*` keys ([ADR-0065](/decisions/adr-0065); the not-started alert, the two refund alerts and the
 lockout report joined on 2026-09-28, `admin.referral.held` — Support and above, args `[referralId]`,
 routed to *Referrals* in the console — on 2026-10-05, on 2026-10-06 `admin.order.cash_not_paid` —
@@ -366,7 +379,9 @@ Support and above, args `[orderNumber, amount, orderId]`, opening the order in t
 2026-10-24 `admin.order.no_cleaner_yet` — Support and above, args `[orderNumber, cleaningDateTime,
 orderId]`, opening the order — and with the fix plan of 2026-10-25 `admin.order.crew_short` — Support
 and above, `crew_lost`'s args, declared right after it, opening the order and naming the cause in
-`crew_lost`'s words) — because the console is built to render every key of its catalogue, and a spec walks the
+`crew_lost`'s words, and with the owner's answers of 2026-11-08 to the admin panel remarks
+`admin.order.no_cleaner_soon` — Support and above, `no_cleaner_yet`'s args, opening the order — and
+`admin.payment.refund_bounced` — every role, the refund alerts' args, opening the order) — because the console is built to render every key of its catalogue, and a spec walks the
 C# file so a key added on the server fails the admin build without its five-locale sentence and its
 entry in the console's mirror (`ADMIN_NOTIFICATION_EVENT_KEYS`).
 
@@ -377,6 +392,18 @@ Three things separate this audience from the other two:
 | Writer | `NotificationProducer.NotifyAsync` — the feed row **and** an unconditional push | `AdminNotifier.NotifyAsync` — the feed row and an outbox **e-mail**; no push, ever. `IsFeedEvent` does not know the admin keys: the push seam cannot write them |
 | Recipient | one user, resolved from the persisted row | every eligible administrator of the **named** company, one row each, read by argument past the tenant filter |
 | Category / mute | `GetCategoryFor(key)` → a mutable category, or non-mutable | every `admin.*` key maps to **null**: no category, no preference, nothing to mute — an administrator who does not want order e-mails is a company that sets the mailbox |
+
+**Critical and info.** `AdminNotificationEventCatalog.Critical` names the sixteen keys a person must act
+on; the other five (`admin.order.new`, `admin.payment.failed` and the three `admin.company.*` keys) are
+info. `GetUnreadNotificationCount` reads `Critical` for the Admin audience alone, so the console's badge
+and bell count critical unread rows only, and the customer and partner counts do not change. The admin
+`get-paged` action takes an optional `critical` flag (its own query parameter, set on the shared request
+through a method so the mobile contracts do not move): `true` reads the critical keys, `false` the info
+ones, and absent every key. The console mirrors both lists (`ADMIN_NOTIFICATION_EVENT_KEYS`,
+`ADMIN_CRITICAL_EVENT_KEYS`) and a spec pins each against the C# file, and it also maps every key to a
+display type (Order, Cleaner, Dispute, Payment, Refund, Referral, Data protection, Company), which sets
+a row's label, icon and colour but not where it opens.
+→ [Business rules — critical and info](/product/business-rules#admin-notifications)
 
 **Why no push.** `NotificationProducer` enqueues a `SendPushNotificationMessage` on every call, an
 administrator may hold a partner-app device row, and a push would reach an app that cannot render an

@@ -155,6 +155,23 @@ When a customer or partner raises a dispute, admins can:
 Disputes are linked to specific orders and contain a description of the issue. The admin can view the full order history, including status changes, notes, and photos, to make an informed decision.
 :::
 
+**What the dispute page shows.** The order number at the top links to the order's page for an
+administrator allowed to open it, and is plain text for one who is not. The *Summary* gives the reason
+in words (the reason arrives as a name and a number from 1 to 8 and is worded by its number, with a
+neutral fallback for one the console does not know), the customer's **settlement choice** and the
+figures below, then the description and the resolution notes. The settlement choice always shows, on a
+settled dispute and to an administrator who cannot resolve it: *Card refund*, *Credit*, or, when the
+customer chose a card refund on an order paid in cash, *money back (paid in cash)*, in which case the
+resolve form warns that an amount will be refused and the money goes back by hand. An **Evidence (n)**
+section follows: an image is a thumbnail that opens in a new tab, any other file an icon and its name,
+and an item whose link could not be made shows its name with *preview unavailable, reload the page*
+rather than claiming there is no evidence.
+
+**Resolving never fails silently.** The resolution notes are required, up to 2 000 characters, and blank
+notes stop the request with a translated message instead of the server's English one. Ticking *charge
+the cleaner* without a cleaner, an amount and the reason the cleaner sees names what is missing; that field is
+labelled *Reason the cleaner sees*. A refund amount that was typed and then cleared is sent as no amount.
+
 **The customer chose how a justified complaint is settled** (owner ruling 2026-09-28): the dispute
 detail shows *Card refund* — the default — or *Credit*, and the resolve dialog shows the choice. The
 administrator decides the amount only. With *Credit* the amount is issued as credit in the order's

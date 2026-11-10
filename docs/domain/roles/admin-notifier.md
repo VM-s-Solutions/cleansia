@@ -10,9 +10,11 @@
 > sixteenth — a customer who did not pay the cash at the door — with the ruling of 2026-10-06, the
 > seventeenth — a guest's refund claimed for a cancellation that never went through, split from the refund
 > to retry — the same day, the eighteenth — a job nobody has taken inside a day of its start — with
-> the owner defaults of 2026-10-24, and the nineteenth — an order that lost one of its cleaners while
-> somebody is still on it — with the owner's decision of 2026-10-25 on the fix plan. The
-> files that are the role: `Core.Domain/Notifications/AdminNotificationEventCatalog.cs` (the nineteen keys) ·
+> the owner defaults of 2026-10-24, the nineteenth — an order that lost one of its cleaners while
+> somebody is still on it — with the owner's decision of 2026-10-25 on the fix plan, and the twentieth
+> and twenty-first — a job still nobody has taken two hours before its start, and a card refund the bank
+> bounced — with the owner's answers of 2026-11-08 to the admin panel remarks. The
+> files that are the role: `Core.Domain/Notifications/AdminNotificationEventCatalog.cs` (the twenty-one keys and the `Critical` list) ·
 > `Core.AppServices/Features/AdminNotifications/AdminEventCatalog.cs` (per key: the audience and the exact
 > arg set, in e-mail order) · `Core.AppServices/Services/{IAdminNotifier,AdminNotifier}.cs` ·
 > `Core.AppServices/Services/EmailService.AdminNotification.cs` (the copy, five locales) ·
@@ -30,7 +32,10 @@ failing e-mail can never fail the command, and nothing the notifier reads depend
 
 ## Collaborators
 
-- **`AdminNotificationEventCatalog`** (Domain) — the nineteen `admin.*` keys and `All`; `NotificationFeedEventKeys.Admin`
+- **`AdminNotificationEventCatalog`** (Domain) — the twenty-one `admin.*` keys, `All`, and `Critical`, the
+  sixteen a person must act on (the other five are info; the console's badge and bell count critical
+  unread rows only, and `GetPagedUserNotifications` filters on it through its optional `critical` flag →
+  [Business rules](/product/business-rules#admin-notifications)); `NotificationFeedEventKeys.Admin`
   **is** `All`, so the feed audience `NotificationFeedAudience.Admin = 2` serves the catalogue by
   construction. Disjoint from the customer and partner keysets; `IsFeedEvent` does not know them, so the
   push seam cannot write an admin row. Every key maps to `null` in `GetCategoryFor`: no category, nothing
@@ -60,7 +65,7 @@ failing e-mail can never fail the command, and nothing the notifier reads depend
   explicit predicate, a **jsonb containment** (`@>`) on the one `{arg: value}` pair; the guard these
   sites read before calling: the card decline (a repeated decline on one order), the archive (two
   overlapping archive builds of one frozen company), the not-started alert
-  (whichever of its three callers comes first), the no-cleaner-yet alert (a later five-minute tick) and
+  (whichever of its three callers comes first), the no-cleaner-yet and no-cleaner-soon alerts (a later five-minute tick) and
   the three refund alerts (the hourly re-drive and the refund seam), each on `orderId` but the archive,
   which reads the day — the sites invariant 5 lists.
 - **`IAppConfigurationProvider.GetTenantSettingAsync(tenantId, key)`** + `TenantSettingReader.GetAsync(provider,
@@ -105,14 +110,17 @@ failing e-mail can never fail the command, and nothing the notifier reads depend
   · `CleanerNoShow.AlertAsync` (`admin.order.cleaner_not_started`, shared by `SendCleanerJobReminders`' third arm,
   `ReportGuestCleanerNoShow` and `CreateDispute`'s *service not provided* filing on a staffed job nobody
   started; subject the order id, guarded by `AnyForEventIgnoringTenantAsync` on `orderId`, so whichever comes first raises it
-  and the order's e-mail outbox key is written once) · `SendCleanerJobReminders.AlertNoCleanerYetAsync`
-  (`admin.order.no_cleaner_yet`, since 2026-10-24, the sweep's fourth arm, after the not-started alert:
-  one cross-company read without tracking — status in `CancelUnfilledOrders.NeverStarted` (`New`,
-  `Confirmed`), no assignment row, `OrderAvailability.IsOfferableSql`, a start in `(now, now + 24 h]`, no
-  live preferred hold, and no status row or customer confirmation in the last 60 min; subject the order
-  id, args `orderNumber`, `cleaningDateTime` (ISO-8601 UTC) and `orderId`; guarded by
-  `AnyForEventIgnoringTenantAsync` on `orderId`, an order with no `TenantId` skipped; the override set per
-  company and one commit per company, with no catch) · `ReportCashNotPaid` (`admin.order.cash_not_paid`, the
+  and the order's e-mail outbox key is written once) · `SendCleanerJobReminders.AlertNoCleanerAsync`
+  (`admin.order.no_cleaner_yet`, since 2026-10-24, the sweep's fourth arm, after the not-started alert, and
+  `admin.order.no_cleaner_soon`, since 2026-11-08, its fifth: the same query run once per window — one
+  cross-company read without tracking — status in `CancelUnfilledOrders.NeverStarted` (`New`,
+  `Confirmed`), no assignment row, `OrderAvailability.IsOfferableSql`, a start in `(now + 2 h, now + 24 h]`
+  for `no_cleaner_yet` and in `(now, now + 2 h]` for `no_cleaner_soon` (`NoCleanerSoonLeadHours`, above 0
+  and below `NoCleanerLeadHours`), no live preferred hold, and no status row or customer confirmation in
+  the last 60 min for both; subject the order id, args `orderNumber`, `cleaningDateTime` (ISO-8601 UTC)
+  and `orderId`; guarded by `AnyForEventIgnoringTenantAsync` on `orderId` and the event key, so an order
+  can raise each once and the two e-mails never share an outbox key; an order with no `TenantId` skipped;
+  the override set per company and one commit per company, with no catch) · `ReportCashNotPaid` (`admin.order.cash_not_paid`, the
   cleaner's door non-payment report; subject the order id, args `orderNumber`, `amount`, `orderId`; no guard
   is needed, because the report needs the order in progress and leaves it completed) ·
   `RedrivePendingRefunds` (`admin.payment.refund_stuck` /
@@ -135,14 +143,18 @@ failing e-mail can never fail the command, and nothing the notifier reads depend
   (subject `{tenantId}:{freezeInstant}`, guarded by `AnyForEventIgnoringTenantAsync` on the day; the one event written on a
   frozen company — admitted because `UserNotification` and `OutboxMessage` are on
   `ArchivedCompanyWriteGuard.AccountSurface`).
-- **`AdminNotificationController`** — `GET api/AdminNotification/get-paged`, `GET …/unread-count`,
+- **`AdminNotificationController`** — `GET api/AdminNotification/get-paged` (with an optional `critical` flag), `GET …/unread-count`,
   `POST …/mark-read`, `POST …/mark-all-read`, every route `Policy.CanViewAdminNotifications` (`AdminOnly`),
   the audience enriched to `Admin` server-side. `MarkNotificationRead.Command` and
   `MarkAllNotificationsRead.Command` carry `[AuditAction(Audited = false)]`: a bell click is not a ledger
   entry, and the same attribute stopped the admin audit rows an administrator used to write by marking read
   in the partner app's feed.
 - **The admin web** — `AdminNotificationBadgeService` polls `unread-count` every 60 s while the document is
-  visible and stamps the badge on the sidebar's *Notifications* entry (first in the list); the
+  visible and stamps the badge on the sidebar's *Notifications* entry (first in the list); the count is of
+  **critical** unread rows only, and the bell's panel loads the critical ones. The page has *All*, *Critical*
+  and *Info* tabs (the info tab hides *Mark all as read*) and shows each row's type — an explicit table from
+  key to Order, Cleaner, Dispute, Payment, Refund, Referral, Data protection, Company or Other — as a label,
+  an icon and a colour, with a red *Critical* label on critical rows; the
   `/notifications` page renders each row from `pages.notifications.events.<key>.*`, deep-links by event
   family (order/payment — the refund alerts and the door non-payment included → order detail, dispute → dispute detail, erasure → data protection, company →
   company lifecycle), marks read on click, and marks all read up to the newest row's `createdOn` plus one
@@ -180,7 +192,7 @@ failing e-mail can never fail the command, and nothing the notifier reads depend
 5. **Each site calls once, inside the business write's unit of work, and a redelivery adds nothing**: the
    Stripe short-circuit for the webhook arms; the candidate predicate for the daily retry; the counts guard
    for the wind-down run; `AnyForEventIgnoringTenantAsync` for the decline, the archive, the not-started alert, the
-   no-cleaner-yet alert and the three refund alerts; the order's own status for the door non-payment, which a
+   no-cleaner-yet and no-cleaner-soon alerts and the three refund alerts; the order's own status for the door non-payment, which a
    completed order refuses.
 6. **The four admin routes answer 401 anonymous, 403 to an Employee token, 200 to an administrator**; a
    mark-read on another administrator's row is refused; a mark-read writes **no** `AdminActionAudits` row.

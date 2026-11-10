@@ -58,6 +58,18 @@ change brought the terms re-ask after `consent.terms_not_accepted` to life, whic
 but never received. iOS's `ApiError.code` is still the first value, unsplit, so two whole-command
 refusals at once fall back to the raw text there.
 
+## A wire code is read by its value {#wire-code-by-value}
+
+The API sends an enum as a `Code`, a name and a numeric value, and the name a generated client holds is
+the client's own spelling, not the backend's wording and not always the one on the wire. So a label,
+a colour or a pill is chosen by the **value**, and the name is never printed. The customer apps' dispute
+screens do it with one table per enum: the reason (1 to 8) and the status (1 to 6) each map a value to a
+string resource on Android (`disputeReasonLabelRes`, `disputeStatusLabelRes`, beside `disputeStatusColor`)
+and to a string table on iOS (`L10n.Disputes.reason` and `.status`, from the models' `reasonValue`), the
+create form's reason list reads the same table, and a value the build does not know shows an em dash
+rather than a name. A chargeback (reason 8) therefore no longer reads *Other*, and on iOS payment status 6 reads
+*Partially refunded*. A new enum value is a new row in the table in every build that shows it.
+
 ## What counts as a real network failure {#cancellation-noise}
 
 When a screen unmounts mid-fetch — a fast tab switch, a pop on forced sign-out, the app backgrounding —

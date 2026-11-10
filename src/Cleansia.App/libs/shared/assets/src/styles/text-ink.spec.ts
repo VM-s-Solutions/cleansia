@@ -171,8 +171,8 @@ describe('the partner and admin stylesheets — standalone icons', () => {
     expect(inks(partner, '.not-found-state__icon i')).toEqual(['var(--cleansia-primary-600, #0284c7)']);
   });
 
-  it("paints the admin pay-config banner's info icon with Sky600", () => {
-    expect(inks(admin, '.cleansia-pay-config-management__info-banner i')).toEqual(['var(--cleansia-primary-600)']);
+  it("paints the admin info banner's icon with Sky600", () => {
+    expect(inks(admin, '.cleansia-info-banner i')).toEqual(['var(--cleansia-primary-600)']);
   });
 });
 

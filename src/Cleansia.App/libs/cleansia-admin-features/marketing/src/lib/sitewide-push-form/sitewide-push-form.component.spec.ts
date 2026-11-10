@@ -39,6 +39,16 @@ describe('SitewidePushFormComponent', () => {
     fixture.detectChanges();
   });
 
+  it('says above the first section that e-mail campaigns are not available yet', () => {
+    const banner: HTMLElement = fixture.nativeElement.querySelector('.cleansia-info-banner');
+    const firstSection: HTMLElement = fixture.nativeElement.querySelector('cleansia-section');
+
+    expect(banner.getAttribute('role')).toBe('note');
+    expect(banner.querySelector('i.pi-info-circle')).not.toBeNull();
+    expect(banner.textContent?.trim()).toBe('pages.sitewide_push.email_not_available');
+    expect(banner.compareDocumentPosition(firstSection) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('asks to confirm when the filled form is sent with the rendered button', () => {
     fixture.componentInstance.form.setValue({
       titleEn: 'Hi',

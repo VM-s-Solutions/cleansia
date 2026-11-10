@@ -2626,6 +2626,7 @@
     "sitewide_push": {
       "title": "Sitewide Push",
       "subtitle": "Send a one-off promotional push to every customer opted in to marketing notifications. Fan-out runs asynchronously; expect delivery within a few minutes for typical recipient counts.",
+      "email_not_available": "E-mail campaigns are not available yet. This page sends push notifications only.",
       "titles_section": "Notification title (per locale)",
       "bodies_section": "Notification body (per locale)",
       "locale": {

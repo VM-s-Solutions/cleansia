@@ -2626,6 +2626,7 @@
     "sitewide_push": {
       "title": "Hromadné oznámenie",
       "subtitle": "Odoslať jednorazové marketingové oznámenie všetkým zákazníkom, ktorí prijímajú marketingové správy. Doručovanie prebieha asynchrónne; doručenie typicky do niekoľkých minút.",
+      "email_not_available": "E-mailové kampane zatiaľ nie sú k dispozícii. Táto stránka odosiela iba push upozornenia.",
       "titles_section": "Titulok oznámenia (podľa jazyka)",
       "bodies_section": "Text oznámenia (podľa jazyka)",
       "locale": {

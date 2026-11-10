@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'fs';
 import { dirname, join } from 'path';
 
 const LOCALES = ['en', 'cs', 'sk', 'uk', 'ru'] as const;
-const KEYS = ['already_sent'];
+const KEYS = ['already_sent', 'email_not_available'];
 
 function findSolutionDir(): string {
   let dir = process.cwd();

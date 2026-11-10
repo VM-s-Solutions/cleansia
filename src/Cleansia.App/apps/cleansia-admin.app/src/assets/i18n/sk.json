@@ -2678,7 +2678,7 @@
         "credit_disclaimer": "Zákazník zvolil kredit: suma sa pripíše na jeho kreditný zostatok, nevracia sa na kartu.",
         "charge": {
           "toggle": "Strhnúť upratovačovi",
-          "hint": "Len ak reklamácia zistila chybu upratovača. Suma sa strhne z jeho odmeny za túto zákazku a dôvod pri nej uvidí.",
+          "hint": "Len ak reklamácia zistila chybu upratovača. Suma sa strhne z jeho odmeny za túto zákazku a dôvod pri nej uvidí. Ak je odmena už vyfakturovaná, suma sa strhne z jeho ďalšej faktúry.",
           "cleaner": "Upratovač",
           "amount": "Suma na strhnutie",
           "reason": "Dôvod",
@@ -3312,7 +3312,7 @@
       "not_owned_by_user": "Táto reklamácia patrí inému používateľovi.",
       "cleaning_not_started": "Toto upratovanie sa ešte neuskutočnilo, takže nie je čo nahlásiť.",
       "line_not_on_order": "Táto položka na tejto objednávke nie je.",
-      "cleaner_charge_not_chargeable": "Z odmeny tohto upratovača za objednávku nemožno túto sumu strhnúť: žiadna nie je, už je vyfakturovaná alebo stiahnutá za reklamáciu, alebo je nižšia ako suma.",
+      "cleaner_charge_not_chargeable": "Z odmeny tohto upratovača za objednávku nemožno túto sumu strhnúť: žiadna nie je, už je stiahnutá za reklamáciu, je nižšia ako suma, alebo je vyfakturovaná a nie je otvorené výplatné obdobie, do ktorého by sa suma preniesla.",
       "cleaner_charge_not_whole_minor_units": "Suma strhnutá upratovačovi musí byť v celých stotinách menovej jednotky."
     },
     "email": {
@@ -3492,6 +3492,7 @@
         "already_exists": "Faktúra už existuje",
         "already_paid": "Faktúra už bola označená ako zaplatená",
         "cannot_cancel_paid": "Nie je možné zrušiť zaplatenú faktúru",
+        "changed_concurrently": "Túto faktúru v rovnakom čase zmenil iný administrátor. Načítajte ju znova a skúste to znova.",
         "invalid_status": "Neplatný stav faktúry",
         "not_approved": "Faktúru je potrebné najskôr schváliť, až potom ju možno označiť ako zaplatenú",
         "not_found": "Faktúra nebola nájdená",

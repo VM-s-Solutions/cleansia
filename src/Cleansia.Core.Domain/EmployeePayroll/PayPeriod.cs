@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.ComponentModel.DataAnnotations;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Enums;
@@ -158,4 +159,7 @@ public class PayPeriod : TenantAuditable
     {
         return $"{StartDate:MMM dd} - {EndDate:MMM dd, yyyy}";
     }
+
+    public static string BlobFolder(DateOnly startDate, DateOnly endDate) =>
+        $"{startDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}_{endDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
 }

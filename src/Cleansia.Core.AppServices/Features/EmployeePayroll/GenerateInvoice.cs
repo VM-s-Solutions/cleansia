@@ -124,10 +124,28 @@ public class GenerateInvoice
             // one unit, so the honest representation of a mixed period is two documents -- not a
             // refusal, which had no admin action to resolve it (a EUR job cannot be made a CZK job) and
             // stranded the rows with no invoice forever while the sweep re-enqueued the pair every tick.
-            var groups = orderPays
+            var fitted = orderPays
                 .GroupBy(p => p.CurrencyId)
                 .OrderBy(g => g.Key, StringComparer.Ordinal)
+                .Select(g => EmployeeInvoice.FitDisputeCharges(g.ToList()))
                 .ToList();
+
+            // A charge this invoice cannot take whole waits in the open period; the move commits with the
+            // invoice, or alone when nothing is left to invoice, so a closed period ends fully invoiced.
+            var waiting = fitted.SelectMany(f => f.Waiting).ToList();
+            if (waiting.Count > 0 && await payPeriodRepository.GetActivePeriodAsync(cancellationToken) is { } openPeriod)
+            {
+                foreach (var charge in waiting)
+                {
+                    charge.MoveToPeriod(openPeriod.Id);
+                }
+            }
+
+            var groups = fitted.Select(f => f.Invoiced).Where(rows => rows.Count > 0).ToList();
+            if (groups.Count == 0)
+            {
+                return BusinessResult.Success(new Response([]));
+            }
 
             // Every payout reference is claimed BEFORE any invoice is staged, so a refused allocation
             // leaves nothing half-written.
@@ -153,7 +171,7 @@ public class GenerateInvoice
             var setOffs = new List<CashLedgerEntry>(groups.Count);
             for (var i = 0; i < groups.Count; i++)
             {
-                var rows = groups[i].ToList();
+                var rows = groups[i];
                 var invoice = EmployeeInvoice.CreateFromOrderPays(
                     command.EmployeeId,
                     command.PayPeriodId,
@@ -269,7 +287,6 @@ public class GenerateInvoice
                         period!.StartDate,
                         period.EndDate,
                         period.ClosedAt!.Value,
-                        period.GetPeriodLabel(),
                         employee.User.PreferredLanguageCode ?? Constants.Language.English,
                         pdfBytes,
                         fileName,

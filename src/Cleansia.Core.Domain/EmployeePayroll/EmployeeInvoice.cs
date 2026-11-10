@@ -167,6 +167,11 @@ public class EmployeeInvoice : TenantAuditable
     {
         var currencyId = SingleCurrencyOf(orderPays);
         var (subTotal, bonusAmount, deductionAmount) = SumPayAmounts(orderPays);
+        if (subTotal + bonusAmount - deductionAmount < 0m)
+        {
+            throw new InvalidOperationException(
+                $"Order pays net {subTotal + bonusAmount - deductionAmount}; fit the dispute charges before invoicing.");
+        }
 
         return Create(
             employeeId,
@@ -195,6 +200,37 @@ public class EmployeeInvoice : TenantAuditable
             _ => throw new InvalidOperationException(
                 $"Order pays span {currencies.Count} currencies; one invoice cannot cover them.")
         };
+    }
+
+    /// <summary>
+    /// Splits one currency's rows into what an invoice takes and the dispute charges that wait for a later
+    /// one: all the pay, then whole charges oldest first, each one that still fits, so the total never goes
+    /// below zero.
+    /// </summary>
+    public static (List<OrderEmployeePay> Invoiced, List<OrderEmployeePay> Waiting) FitDisputeCharges(
+        IReadOnlyCollection<OrderEmployeePay> orderPays)
+    {
+        var invoiced = orderPays.Where(p => p.LineType != PayLineType.DisputeCharge).ToList();
+        var waiting = new List<OrderEmployeePay>();
+        var room = invoiced.Sum(p => p.TotalPay);
+
+        foreach (var charge in orderPays
+                     .Where(p => p.LineType == PayLineType.DisputeCharge)
+                     .OrderBy(p => p.CreatedOn)
+                     .ThenBy(p => p.Id, StringComparer.Ordinal))
+        {
+            if (room + charge.TotalPay >= 0m)
+            {
+                invoiced.Add(charge);
+                room += charge.TotalPay;
+            }
+            else
+            {
+                waiting.Add(charge);
+            }
+        }
+
+        return (invoiced, waiting);
     }
 
     public EmployeeInvoice AddOrderPays(IEnumerable<OrderEmployeePay> orderPays)

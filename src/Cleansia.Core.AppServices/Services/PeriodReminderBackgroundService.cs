@@ -11,6 +11,7 @@ public class PeriodReminderBackgroundService : IPeriodReminderBackgroundService
 {
     private readonly IPayPeriodRepository _payPeriodRepository;
     private readonly IEmployeeRepository _employeeRepository;
+    private readonly IOrderEmployeePayRepository _orderEmployeePayRepository;
     private readonly IEmailService _emailService;
     private readonly ITenantProvider _tenantProvider;
     private readonly ILogger<PeriodReminderBackgroundService> _logger;
@@ -18,12 +19,14 @@ public class PeriodReminderBackgroundService : IPeriodReminderBackgroundService
     public PeriodReminderBackgroundService(
         IPayPeriodRepository payPeriodRepository,
         IEmployeeRepository employeeRepository,
+        IOrderEmployeePayRepository orderEmployeePayRepository,
         IEmailService emailService,
         ITenantProvider tenantProvider,
         ILogger<PeriodReminderBackgroundService> logger)
     {
         _payPeriodRepository = payPeriodRepository;
         _employeeRepository = employeeRepository;
+        _orderEmployeePayRepository = orderEmployeePayRepository;
         _emailService = emailService;
         _tenantProvider = tenantProvider;
         _logger = logger;
@@ -76,20 +79,24 @@ public class PeriodReminderBackgroundService : IPeriodReminderBackgroundService
         int daysRemaining,
         CancellationToken cancellationToken)
     {
-        // Notify only employees in the same tenant as the period.
         var tenantId = period.TenantId;
+        var employeesWithWork = _orderEmployeePayRepository
+            .GetQueryableIgnoringTenant()
+            .Where(p => p.PayPeriodId == period.Id && p.LineType != PayLineType.DisputeCharge)
+            .Select(p => p.EmployeeId);
         var activeEmployees = await _employeeRepository
             .GetQueryableIgnoringTenant()
             .Include(e => e.User)
                 .ThenInclude(u => u!.PreferredLanguage)
             .Where(e => e.User != null
                 && e.ContractStatus != ContractStatus.Terminated
-                && e.TenantId == tenantId)
+                && e.TenantId == tenantId
+                && employeesWithWork.Contains(e.Id))
             .ToListAsync(cancellationToken);
 
         _logger.LogInformation(
-            "Sending reminders for period {PeriodLabel} ending on {EndDate} to {EmployeeCount} employees",
-            period.GetPeriodLabel(),
+            "Sending reminders for period {PeriodId} ending on {EndDate} to {EmployeeCount} employees",
+            period.Id,
             period.EndDate,
             activeEmployees.Count);
 
@@ -120,7 +127,6 @@ public class PeriodReminderBackgroundService : IPeriodReminderBackgroundService
                     period.StartDate,
                     period.EndDate,
                     daysRemaining,
-                    period.GetPeriodLabel(),
                     languageCode,
                     cancellationToken);
 

@@ -678,6 +678,9 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'payroll.invoice.already_exists',
   'payroll.invoice.already_paid',
   'payroll.invoice.cannot_cancel_paid',
+  // The invoice's xmin token: an admin action whose commit lost to another action on the same invoice
+  // (UnitOfWorkPipelineBehavior). Every invoice write is an AdminInvoiceController / AdminPayrollController route.
+  'payroll.invoice.changed_concurrently',
   'payroll.invoice.invalid_status',
   'payroll.invoice.not_approved',
   'payroll.invoice.not_found',

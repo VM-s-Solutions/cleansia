@@ -153,10 +153,10 @@ public class PayPeriodMixedCurrencyInvoicingTests
         _emailService
             .Setup(e => e.SendPeriodClosedEmailAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateOnly>(), It.IsAny<DateOnly>(),
-                It.IsAny<DateTime>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<DateTime>(), It.IsAny<string>(),
                 It.IsAny<byte[]?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
-            .Callback<string, string, DateOnly, DateOnly, DateTime, string, string, byte[]?, string?, CancellationToken>(
-                (_, _, _, _, _, _, _, pdf, name, _) => _emailsSent.Add((pdf, name)))
+            .Callback<string, string, DateOnly, DateOnly, DateTime, string, byte[]?, string?, CancellationToken>(
+                (_, _, _, _, _, _, pdf, name, _) => _emailsSent.Add((pdf, name)))
             .ReturnsAsync("message-id");
     }
 

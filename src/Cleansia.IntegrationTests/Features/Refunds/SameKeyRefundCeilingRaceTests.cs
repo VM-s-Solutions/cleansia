@@ -187,6 +187,7 @@ public class SameKeyRefundCeilingRaceTests(PostgresContainerFixture fixture) : B
                 new RefundRepository(ctx),
                 new CreditAccountRepository(ctx),
                 new OrderEmployeePayRepository(ctx),
+                new PayPeriodRepository(ctx),
                 Mock.Of<ILoyaltyService>(),
                 Mock.Of<INotificationProducer>(),
                 Mock.Of<IAuditContext>());

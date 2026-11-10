@@ -41,16 +41,16 @@ separate reviewer re-derives the amounts by hand and checks that each new test f
 
 Branch `feat/pay-screens`. The contract first, then the four clients.
 
-- [ ] **P3.1** $ Contract batch: the dashboard period as DateOnly dates, Next payout removed, current-period earnings from the open period only; invoice and period-pay DTOs gain the period dates; PayPeriodDto gains three counts; payroll report totals exclude Cancelled and Rejected; `PayLineType.DisputeCharge = 3` from the approved P4.4 design (T-0926 section 7), labelled in every client's line-type map in the same change; one regeneration of the admin and partner clients and the partner mobile spec.
-- [ ] **P3.2** Admin period page: the heading from the dates, PaidAt and the three counts, a View invoices link, Mark paid enabled from the counts, and permissions on Create and Mark paid. Two additions from Phase 1's review: Create is hidden while a period is open (rev-8; D2 makes Create possible only when none is), and the Close now hint is right for a period already past its end (rev-7).
-- [ ] **P3.3** $ Admin invoices: cash set off and amount to transfer on the detail and the list, Mark paid as an in-page confirm with the transfer details, and Approve and Cancel for Disputed.
-- [ ] **P3.4** Partner web: set-off and transfer on invoices, dates formatted, two sorts removed, the dashboard label, rows kept on a list error, and My Period Pay preselecting the open period.
-- [ ] **P3.5** Android: calendar dates, Next payout removed, the figure's new label and hint, set-off and transfer rows, Total earned from Paid invoices per currency, plurals in five locales, the period card's locale and year, and the cash text.
-- [ ] **P3.6** iOS invoice list: rows survive a failed refresh, the employee-id lookup no longer blanks the list, pull-to-refresh always works, and the invoice-paid push replaces the path.
-- [ ] **P3.7** iOS Pay and Earnings and the dashboard: calendar dates, Next payout removed, and the figure's label and hint.
-- [ ] **P3.8** iOS invoices and plurals: set-off and transfer rows, dates formatted, Total earned from Paid per currency, six plural keys in five locales, and the cash text.
-- [ ] **P3.9** Admin invoice and period lists format the new dates and stop offering three sorts.
-- [ ] **P3.10** Partner web and Android format the new dates on the invoice detail and period pay.
+- [x] **P3.1** $ Contract batch: the dashboard period as DateOnly dates, Next payout removed, current-period earnings from the open period only; invoice and period-pay DTOs gain the period dates; PayPeriodDto gains three counts; payroll report totals exclude Cancelled and Rejected; `PayLineType.DisputeCharge = 3` from the approved P4.4 design (T-0926 section 7), labelled in every client's line-type map in the same change; one regeneration of the admin and partner clients and the partner mobile spec.
+- [x] **P3.2** Admin period page: the heading from the dates, PaidAt and the three counts, a View invoices link, Mark paid enabled from the counts, and permissions on Create and Mark paid. Two additions from Phase 1's review: Create is hidden while a period is open (rev-8; D2 makes Create possible only when none is), and the Close now hint is right for a period already past its end (rev-7).
+- [x] **P3.3** $ Admin invoices: cash set off and amount to transfer on the detail and the list, Mark paid as an in-page confirm with the transfer details, and Approve and Cancel for Disputed.
+- [x] **P3.4** Partner web: set-off and transfer on invoices, dates formatted, two sorts removed, the dashboard label, rows kept on a list error, and My Period Pay preselecting the open period.
+- [x] **P3.5** Android: calendar dates, Next payout removed, the figure's new label and hint, set-off and transfer rows, Total earned from Paid invoices per currency, plurals in five locales, the period card's locale and year, and the cash text.
+- [x] **P3.6** iOS invoice list: rows survive a failed refresh, the employee-id lookup no longer blanks the list, pull-to-refresh always works, and the invoice-paid push replaces the path.
+- [x] **P3.7** iOS Pay and Earnings and the dashboard: calendar dates, Next payout removed, and the figure's label and hint.
+- [x] **P3.8** iOS invoices and plurals: set-off and transfer rows, dates formatted, Total earned from Paid per currency, six plural keys in five locales, and the cash text.
+- [x] **P3.9** Admin invoice and period lists format the new dates and stop offering three sorts.
+- [x] **P3.10** Partner web and Android format the new dates on the invoice detail and period pay.
 
 ## Done
 
@@ -77,3 +77,7 @@ The plan's "Not doing" list. Anything found outside these slices is reported to 
 - 2026-11-09 — The one regeneration: admin and partner web clients and the partner mobile spec, committed in 7c3072e1a; the customer mobile spec was re-dumped and is unchanged.
 - 2026-11-09 — Money review of P3.1 and P3.3: amounts re-derived by hand match (M1-M6 pass), and every new money test fails with its change reverted. Verdict changes requested on one must item, the ruling code in a test comment, fixed in fada8caa8. Of the nice items in scope, the cancelled-invoice figures (fixed in 035b6812f), the stale route comment (6b8917c0d) and the two Android tests that pass on the parent (recorded above) are closed; ConstantSymbol on the invoice detail waits on Mike. Four findings outside the branch are reported, not fixed: partner web's Cash I hold text, Android's invoice list blanking on a failed employee lookup, Close now on a period not yet started, and a legacy Rejected invoice blocking Mark paid.
 - 2026-11-09 — In review as PR 3.
+- 2026-11-10 — PM decisions on the contract (review F8), kept: `EmployeeInvoiceDetailDto.ConstantSymbol` is resolved as the invoice PDF resolves it (the employee's country, then `CountryInvoiceConfig.ConstantSymbol`, 0308 for CZ); the `PayPeriodDto` counts are filled only on the admin-only `GetPayPeriodById`, so no company-wide counts reach cleaners through the shared paged list.
+- 2026-11-10 — Review F2 (a cancelled invoice showed a cash set-off and an amount to transfer) was fixed in the contract mapping only: a cancelled invoice now shows 0 for both. It is display, not money logic, so it was not re-reviewed.
+- 2026-11-10 — Reported out of scope and folded into Phase 4 (T-0926) by Mike on 2026-11-10 ("A"): F4 (partner web's Cash I hold text still says next payout), F5 (Android's invoice list blanks itself when the employee-id lookup fails), F6 (Close now offered on a period that has not started). F7 (a legacy Rejected invoice blocks Mark paid) exists on DEV only and is cleared by the P6.2 reset.
+- 2026-11-10 — Shipped: #374 merged to master as 9f89697f6.

@@ -1,6 +1,9 @@
-﻿using Cleansia.Core.Domain.SeedWork;
+﻿using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.Domain.EmployeePayroll;
+using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Infra.Common.Validations;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Core.AppServices.Behaviors;
 
@@ -9,6 +12,7 @@ public class UnitOfWorkPipelineBehavior<TRequest, TResponse>(IUnitOfWork unitOfW
     where TRequest : notnull
 {
     private const string Command = nameof(Command);
+    private static readonly bool ResponseCarriesFailure = typeof(BusinessResult).IsAssignableFrom(typeof(TResponse));
 
     public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
     {
@@ -31,6 +35,14 @@ public class UnitOfWorkPipelineBehavior<TRequest, TResponse>(IUnitOfWork unitOfW
                 unitOfWork.Rollback();
 
             return response;
+        }
+        catch (DbUpdateConcurrencyException ex) when (ResponseCarriesFailure
+            && ex.Entries.Any(e => e.Entity is EmployeeInvoice))
+        {
+            // Another admin action on the invoice committed after this one read it.
+            unitOfWork.Rollback();
+            return ValidationPipelineBehavior<IRequest<TResponse>, TResponse>.CreateValidationResult<TResponse>(
+                [new Error(nameof(EmployeeInvoice), BusinessErrorMessage.InvoiceChangedConcurrently)]);
         }
         catch
         {

@@ -15,9 +15,9 @@ public interface IEmailService
 
     Task<string> SendEmailConfirmationAsync(string email, string userName, string verificationCode, string languageCode, CancellationToken ct = default);
 
-    Task<string> SendPeriodClosedEmailAsync(string email, string employeeName, DateOnly startDate, DateOnly endDate, DateTime closedAt, string periodLabel, string languageCode = Constants.Language.English, byte[]? invoicePdfBytes = null, string? invoiceFileName = null, CancellationToken ct = default);
+    Task<string> SendPeriodClosedEmailAsync(string email, string employeeName, DateOnly startDate, DateOnly endDate, DateTime closedAt, string languageCode = Constants.Language.English, byte[]? invoicePdfBytes = null, string? invoiceFileName = null, CancellationToken ct = default);
 
-    Task<string> SendPeriodEndReminderEmailAsync(string email, string employeeName, DateOnly startDate, DateOnly endDate, int daysRemaining, string periodLabel, string languageCode = Constants.Language.English, CancellationToken ct = default);
+    Task<string> SendPeriodEndReminderEmailAsync(string email, string employeeName, DateOnly startDate, DateOnly endDate, int daysRemaining, string languageCode = Constants.Language.English, CancellationToken ct = default);
 
     /// <summary>
     /// Sends a first-order promo code. Rendered from <c>email-templates/promo-code.html</c>

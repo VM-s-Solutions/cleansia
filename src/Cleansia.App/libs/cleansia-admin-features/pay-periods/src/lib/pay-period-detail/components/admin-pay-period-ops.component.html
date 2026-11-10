@@ -1,4 +1,4 @@
-@if (isOpen()) {
+@if (canCloseNow()) {
 <ng-container *cleansiaPermission="Policy.CanClosePayPeriod">
 <cleansia-button
   [label]="'pay_periods.detail.ops.close_now.action' | translate"

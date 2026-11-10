@@ -239,11 +239,11 @@ public class OrderEmployeePay : TenantAuditable
     }
 
     public bool CanTakeDisputeCharge(decimal amount) =>
-        EmployeeInvoiceId is null && DeductionDisputeId is null && amount <= TotalPay;
+        DeductionDisputeId is null && amount <= TotalPay;
 
     public OrderEmployeePay ChargeForDispute(string disputeId, decimal amount, string reason)
     {
-        if (!CanTakeDisputeCharge(amount))
+        if (EmployeeInvoiceId is not null || !CanTakeDisputeCharge(amount))
         {
             throw new InvalidOperationException(
                 $"Pay {Id} cannot take a dispute charge: already invoiced, already charged, or smaller than {amount}.");
@@ -252,6 +252,38 @@ public class OrderEmployeePay : TenantAuditable
         DeductionDisputeId = disputeId;
         DeductionReason = reason;
         return AddDeduction(amount);
+    }
+
+    /// <summary>
+    /// A charge on this job once it is invoiced: a line of its own in <paramref name="payPeriodId"/> that the
+    /// cleaner's next invoice deducts, so the issued invoice is never written. The only row whose total is
+    /// below zero.
+    /// </summary>
+    public OrderEmployeePay CarryDisputeCharge(string payPeriodId, string disputeId, decimal amount, string reason)
+    {
+        if (EmployeeInvoiceId is null || !CanTakeDisputeCharge(amount))
+        {
+            throw new InvalidOperationException(
+                $"Pay {Id} cannot carry a dispute charge: not invoiced, already charged, or smaller than {amount}.");
+        }
+
+        var line = Create(OrderId, EmployeeId, payPeriodId, CurrencyId, basePay: 0m, deductionPay: amount,
+            lineType: PayLineType.DisputeCharge);
+        line.TotalPay = -amount;
+        line.DeductionDisputeId = disputeId;
+        line.DeductionReason = reason;
+        return line;
+    }
+
+    public OrderEmployeePay MoveToPeriod(string payPeriodId)
+    {
+        if (LineType != PayLineType.DisputeCharge || EmployeeInvoiceId is not null)
+        {
+            throw new InvalidOperationException($"Pay {Id} is not an un-invoiced dispute charge and cannot move to another period.");
+        }
+
+        PayPeriodId = payPeriodId;
+        return this;
     }
 
     /// <summary>

@@ -2678,7 +2678,7 @@
         "credit_disclaimer": "The customer chose credit: the amount is added to their credit balance instead of being refunded to the card.",
         "charge": {
           "toggle": "Charge the cleaner",
-          "hint": "Only when the dispute finds the cleaner at fault. The amount is deducted from their pay for this order, and they see the reason on it.",
+          "hint": "Only when the dispute finds the cleaner at fault. The amount is deducted from their pay for this order, and they see the reason on it. When that pay is already invoiced, the amount comes off their next invoice.",
           "cleaner": "Cleaner",
           "amount": "Amount to deduct",
           "reason": "Reason",
@@ -3312,7 +3312,7 @@
       "not_owned_by_user": "This dispute belongs to a different user.",
       "cleaning_not_started": "This clean hasn't happened yet, so there is nothing to report on it.",
       "line_not_on_order": "That item isn't on this order.",
-      "cleaner_charge_not_chargeable": "This cleaner's pay on the order cannot take this charge: there is none, it is already invoiced or charged for a dispute, or it is smaller than the charge.",
+      "cleaner_charge_not_chargeable": "This cleaner's pay on the order cannot take this charge: there is none, it is already charged for a dispute, it is smaller than the charge, or it is invoiced and there is no open pay period to carry the charge to.",
       "cleaner_charge_not_whole_minor_units": "A charge to a cleaner must be in whole hundredths of the currency unit."
     },
     "email": {
@@ -3492,6 +3492,7 @@
         "already_exists": "Invoice already exists",
         "already_paid": "Invoice has already been marked paid",
         "cannot_cancel_paid": "Cannot cancel a paid invoice",
+        "changed_concurrently": "Another administrator changed this invoice at the same time. Reload it and try again.",
         "invalid_status": "Invalid invoice status",
         "not_approved": "Invoice must be approved before it can be marked paid",
         "not_found": "Invoice not found",

@@ -287,10 +287,10 @@ public class RegenerateInvoicePdf
             // changed. Less readable when browsing the container, and stable, which is the property a
             // document's address needs.
             var employeeFolder = employee.Id;
-            var payPeriodDescription = invoice.PayPeriod!.GetPeriodLabel();
+            var periodFolder = PayPeriod.BlobFolder(invoice.PayPeriod!.StartDate, invoice.PayPeriod.EndDate);
             var invoiceFileName = invoice.InvoiceNumber;
 
-            var blobName = $"{payPeriodDescription}/{employeeFolder}/{invoiceFileName}.pdf";
+            var blobName = $"{periodFolder}/{employeeFolder}/{invoiceFileName}.pdf";
             var blobClient = clientFactory.GetBlobContainerClient(Constants.BlobContainers.GeneratedInvoices);
 
             using var pdfStream = new MemoryStream(pdfBytes);

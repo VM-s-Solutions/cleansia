@@ -5,6 +5,7 @@ using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Credit;
 using Cleansia.Core.Domain.Disputes;
+using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
@@ -97,6 +98,7 @@ public class ResolveDispute
         IRefundRepository refundRepository,
         ICreditAccountRepository creditAccountRepository,
         IOrderEmployeePayRepository orderEmployeePayRepository,
+        IPayPeriodRepository payPeriodRepository,
         ILoyaltyService loyaltyService,
         INotificationProducer notificationProducer,
         IAuditContext auditContext) : ICommandHandler<Command>
@@ -132,13 +134,23 @@ public class ResolveDispute
             var actorId = userSessionProvider.GetUserId() ?? string.Empty;
 
             var charge = request.ChargeToCleaner;
-            var chargedPay = charge is null
-                ? null
-                : await orderEmployeePayRepository.GetByOrderAndEmployeeAsync(dispute.OrderId, charge.EmployeeId!, cancellationToken);
-            if (charge is not null && chargedPay?.CanTakeDisputeCharge(charge.Amount) != true)
+            OrderEmployeePay? chargedPay = null;
+            PayPeriod? carryTo = null;
+            if (charge is not null)
             {
-                return BusinessResult.Failure(new Error(
-                    nameof(request.ChargeToCleaner), BusinessErrorMessage.DisputeCleanerChargeNotChargeable));
+                chargedPay = await orderEmployeePayRepository.GetByOrderAndEmployeeAsync(dispute.OrderId, charge.EmployeeId!, cancellationToken);
+                if (chargedPay?.EmployeeInvoiceId is not null)
+                {
+                    carryTo = await payPeriodRepository.GetActivePeriodAsync(cancellationToken);
+                }
+
+                if (chargedPay?.CanTakeDisputeCharge(charge.Amount) != true
+                    || (chargedPay.EmployeeInvoiceId is not null && carryTo is null)
+                    || await orderEmployeePayRepository.HasDisputeChargeAsync(dispute.OrderId, charge.EmployeeId!, cancellationToken))
+                {
+                    return BusinessResult.Failure(new Error(
+                        nameof(request.ChargeToCleaner), BusinessErrorMessage.DisputeCleanerChargeNotChargeable));
+                }
             }
 
             // The money moves BEFORE the resolution is written. Resolving first and refunding second
@@ -194,7 +206,11 @@ public class ResolveDispute
                 creditReturnedAmount: creditSettled ?? refundResult?.CreditReturned
             );
 
-            if (charge is not null)
+            if (charge is not null && carryTo is not null)
+            {
+                orderEmployeePayRepository.Add(chargedPay!.CarryDisputeCharge(carryTo.Id, dispute.Id, charge.Amount, charge.Reason!));
+            }
+            else if (charge is not null)
             {
                 chargedPay!.ChargeForDispute(dispute.Id, charge.Amount, charge.Reason!);
             }

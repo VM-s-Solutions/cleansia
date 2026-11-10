@@ -1,6 +1,7 @@
 ﻿using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Company;
 using Cleansia.Core.Domain.EmployeePayroll;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Services.Pdf.Models;
@@ -59,7 +60,7 @@ public static class FileExtensions
             StatementLanguageCode = statementLanguageCode,
             CurrencyCode = currency.Code,
             CurrencySymbol = currency.Symbol,
-            LineItems = orderPays.Select(op => new InvoiceLineItem
+            LineItems = orderPays.Where(op => op.LineType != PayLineType.DisputeCharge).Select(op => new InvoiceLineItem
             {
                 OrderNumber = op.Order?.DisplayOrderNumber ?? "N/A",
                 PerformedOn = op.Order?.CleaningDateTime ?? DateTime.UtcNow,

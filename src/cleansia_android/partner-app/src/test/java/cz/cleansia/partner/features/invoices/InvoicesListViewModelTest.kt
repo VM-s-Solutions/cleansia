@@ -4,6 +4,7 @@ import cz.cleansia.core.freshness.Staleness
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
+import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.EmployeeInvoiceStatus
 import cz.cleansia.partner.core.auth.EmployeeIdResolver
 import cz.cleansia.partner.core.network.ApiErrorTranslator
@@ -11,6 +12,7 @@ import cz.cleansia.partner.data.invoices.Invoice
 import cz.cleansia.partner.data.invoices.InvoicesRepository
 import cz.cleansia.partner.testing.MainDispatcherRule
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -99,7 +101,7 @@ class InvoicesListViewModelTest {
     }
 
     @Test
-    fun `no employee id yields an empty list rather than a stale rollup`() = runTest {
+    fun `a first lookup that fails shows the error and never reads unscoped`() = runTest {
         coEvery { employeeIdResolver.resolve() } returns null
 
         val vm = viewModel()
@@ -107,6 +109,24 @@ class InvoicesListViewModelTest {
 
         assertEquals(emptyList<Invoice>(), vm.uiState.value.invoices)
         assertTrue(vm.uiState.value.hasLoadedOnce)
+        verify { snackbar.showErrorKey(R.string.error_generic) }
+        coVerify(exactly = 0) { invoicesRepository.getMyInvoices(any()) }
+    }
+
+    @Test
+    fun `rows survive a refresh whose employee lookup fails`() = runTest {
+        val good = listOf(invoice("inv-1", 1500.25))
+        coEvery { invoicesRepository.getMyInvoices(EMPLOYEE_ID) } returns ApiResult.Success(good)
+        coEvery { employeeIdResolver.resolve() } returnsMany listOf(EMPLOYEE_ID, null)
+
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.refresh()
+        advanceUntilIdle()
+
+        assertEquals(good, vm.uiState.value.invoices)
+        assertEquals(false, vm.uiState.value.isUserRefreshing)
+        verify { snackbar.showErrorKey(R.string.error_generic) }
     }
 
     private fun invoice(id: String, totalAmount: Double) = Invoice(

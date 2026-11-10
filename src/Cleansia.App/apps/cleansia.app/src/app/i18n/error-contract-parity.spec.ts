@@ -694,6 +694,11 @@ const SHARED_KEYS_NOT_REACHABLE_HERE: ReadonlyArray<{
   reason: string;
 }> = [
   {
+    key: 'payroll.invoice.changed_concurrently',
+    reason:
+      'Emitted by UnitOfWorkPipelineBehavior only when a commit loses on the EmployeeInvoice xmin token. Every command that writes an invoice (generate, approve, mark paid, cancel, dispute, adjust, assign reference, regenerate PDF) is dispatched by Cleansia.Web.Admin; this host has no invoice route.',
+  },
+  {
     key: 'auth.company_deactivated',
     reason:
       'Emitted by CompanySignInGate (ADR-0064 D1) and re-asserted by TokenService as an invariant, for the Employee profile on the Partner and Mobile audiences only. The customer audience admits every profile — a cleaner of a deactivated company signs in here to export or erase — so no request through this host can carry the key.',

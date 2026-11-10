@@ -199,7 +199,7 @@ public sealed class AuditSensitiveSnapshotTests
         var handler = new ResolveDispute.Handler(
             disputeRepository.Object, AdminSession(), refundService.Object, Mock.Of<IRefundRepository>(),
             Mock.Of<ICreditAccountRepository>(),
-            Mock.Of<IOrderEmployeePayRepository>(), Mock.Of<ILoyaltyService>(), Mock.Of<INotificationProducer>(), auditContext);
+            Mock.Of<IOrderEmployeePayRepository>(), Mock.Of<IPayPeriodRepository>(), Mock.Of<ILoyaltyService>(), Mock.Of<INotificationProducer>(), auditContext);
 
         var result = await handler.Handle(
             new ResolveDispute.Command("dispute-1", 250m, "approved by ops"), CancellationToken.None);

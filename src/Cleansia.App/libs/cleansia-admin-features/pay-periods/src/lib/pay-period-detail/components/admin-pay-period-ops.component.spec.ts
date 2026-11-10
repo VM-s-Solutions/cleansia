@@ -186,6 +186,26 @@ describe('AdminPayPeriodOpsComponent', () => {
     expect(buttonLabels()).toEqual(['pay_periods.detail.ops.close_now.action']);
   });
 
+  it('hides Close now on an open period that has not started, as the server refuses it', () => {
+    jest.useFakeTimers({ now: new Date('2026-01-14T23:59:00Z') });
+    setPayPeriod(
+      PayPeriodDto.fromJS({
+        id: 'period-2',
+        status: PayPeriodStatus[PayPeriodStatus.Open],
+        startDate: '2026-01-15',
+        endDate: '2026-01-28',
+        latestEndDate: '2026-01-28',
+      })
+    );
+    expect(buttonLabels()).toEqual([]);
+  });
+
+  it('offers Close now from the first day of the period', () => {
+    jest.useFakeTimers({ now: new Date('2026-01-01T00:00:00Z') });
+    setPayPeriod(makeOpenPayPeriod('2026-01-14'));
+    expect(buttonLabels()).toEqual(['pay_periods.detail.ops.close_now.action']);
+  });
+
   it('hides Close now from a session that may not close a pay period', () => {
     grantedPolicies.clear();
     setPayPeriod(makeOpenPayPeriod('2026-01-14'));

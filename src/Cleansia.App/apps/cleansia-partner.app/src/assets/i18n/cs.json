@@ -589,7 +589,7 @@
       "view_invoice": "Zobrazit fakturu",
       "cash_held": {
         "title": "Hotovost u mě",
-        "description": "Hotovost, kterou jste převzali u dveří a ještě neodevzdali. Započte se proti vaší další výplatě.",
+        "description": "Hotovost, kterou jste převzali u dveří a ještě neodevzdali. Započte se při vystavení vaší další faktury.",
         "none": "Nedržíte žádnou hotovost společnosti.",
         "load_error": "Hotovost, kterou držíte, se nepodařilo načíst.",
         "held": "Držíte",

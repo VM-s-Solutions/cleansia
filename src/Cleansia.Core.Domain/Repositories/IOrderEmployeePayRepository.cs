@@ -4,7 +4,11 @@ namespace Cleansia.Core.Domain.Repositories;
 
 public interface IOrderEmployeePayRepository : IRepository<OrderEmployeePay, string>
 {
+    /// <summary>The job or fee-share row of the cleaner on the order, never a carried dispute charge.</summary>
     Task<OrderEmployeePay?> GetByOrderAndEmployeeAsync(string orderId, string employeeId, CancellationToken cancellationToken);
+
+    /// <summary>Whether a dispute charge is already carried to a later invoice for the cleaner on the order.</summary>
+    Task<bool> HasDisputeChargeAsync(string orderId, string employeeId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Batched "TotalPay per order" lookup for one employee across a

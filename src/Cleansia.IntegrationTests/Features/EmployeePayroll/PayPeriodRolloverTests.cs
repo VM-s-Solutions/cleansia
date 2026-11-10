@@ -173,8 +173,7 @@ public class PayPeriodRolloverTests(PostgresContainerFixture fixture) : BaseInte
                 {
                     var email = new Mock<IEmailService>();
                     email.Setup(e => e.SendPeriodClosedEmailAsync(It.IsAny<string>(), It.IsAny<string>(),
-                            It.IsAny<DateOnly>(), It.IsAny<DateOnly>(), It.IsAny<DateTime>(), It.IsAny<string>(),
-                            It.IsAny<string>(), It.IsAny<byte[]?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                            It.IsAny<DateOnly>(), It.IsAny<DateOnly>(), It.IsAny<DateTime>(), It.IsAny<string>(), It.IsAny<byte[]?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
                         .Returns(async () =>
                         {
                             await using var scope = provider.GetRequiredService<IServiceScopeFactory>().CreateAsyncScope();

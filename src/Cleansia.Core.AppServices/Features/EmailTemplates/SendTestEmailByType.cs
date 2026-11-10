@@ -83,7 +83,6 @@ public class SendTestEmailByType
                         DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-14)),
                         DateOnly.FromDateTime(DateTime.UtcNow),
                         DateTime.UtcNow,
-                        "2025-01",
                         languageCode,
                         ct: cancellationToken);
                     break;
@@ -95,7 +94,6 @@ public class SendTestEmailByType
                         DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-7)),
                         DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)),
                         7,
-                        "2025-01",
                         languageCode,
                         cancellationToken);
                     break;

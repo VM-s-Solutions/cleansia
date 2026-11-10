@@ -1,4 +1,6 @@
 using System.Text.Json;
+using Cleansia.Core.AppServices.Auditing;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.EmployeePayroll;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Tenancy;
@@ -31,10 +33,10 @@ namespace Cleansia.Functions.Core.Handlers;
 /// the rest of the validator chain (assignment, pay config, duplicate
 /// guard) still applies and rejects cleanly when violated.
 ///
-/// Validator rejections are logged at warning and the message is acked —
-/// the request was malformed (e.g. no pay config for that cleaner+service)
-/// and retrying won't fix it. Infra failures throw so the queue retries up
-/// to <c>maxDequeueCount</c> (host.json).
+/// Validator rejections are acked — retrying won't change the verdict. A pay row
+/// that already exists is a redelivery and logs at information; any other rejection
+/// (e.g. no pay config for that cleaner+service) leaves the job unpaid and logs at error.
+/// Infra failures throw so the queue retries up to <c>maxDequeueCount</c> (host.json).
 /// </summary>
 public class CalculateOrderPayHandler(
     IMediator mediator,
@@ -95,16 +97,23 @@ public class CalculateOrderPayHandler(
                 message.EmployeeId,
                 result.Value?.EmployeePayrollId);
         }
+        else if (result is IValidationResult validation
+                 && validation.Errors.Any(e => e.Message == BusinessErrorMessage.PayAlreadyCalculated))
+        {
+            logger.LogInformation(
+                "CalculateOrderPay skipped for order {OrderId} / employee {EmployeeId}: the pay row already exists",
+                message.OrderId,
+                message.EmployeeId);
+        }
         else
         {
-            // Validator rejected (already-calculated, missing config, etc.).
-            // Don't throw — retrying won't change the validator's verdict and
-            // we don't want to poison-queue a permanent business-rule miss.
-            logger.LogWarning(
-                "CalculateOrderPay rejected for order {OrderId} / employee {EmployeeId}: {Error}",
+            // Acked, not thrown: a redelivery cannot change the validator's verdict. Logged at Error so
+            // the alerting fires, because the cleaner now has no pay row for this job.
+            logger.LogError(
+                "CalculateOrderPay rejected for order {OrderId} / employee {EmployeeId}: {Reason}",
                 message.OrderId,
                 message.EmployeeId,
-                result.Error?.Message ?? "unknown");
+                AuditErrorCode.Resolve(result) ?? "unknown");
         }
     }
 

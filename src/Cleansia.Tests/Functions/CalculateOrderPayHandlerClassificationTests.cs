@@ -9,6 +9,7 @@ using Cleansia.Infra.Common.Validations;
 using Cleansia.Functions.Core.Handlers;
 using Cleansia.Core.AppServices.Tenancy;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,13 +28,14 @@ public class CalculateOrderPayHandlerClassificationTests
     private readonly Mock<IMediator> _mediator = new();
     private readonly Mock<IPayPeriodBackgroundService> _payPeriod = new();
     private readonly Mock<ITenantProvider> _tenantProvider = new();
+    private readonly Mock<ILogger<CalculateOrderPayHandler>> _logger = new();
 
     private CalculateOrderPayHandler CreateHandler() => new(
         _mediator.Object,
         _payPeriod.Object,
         _tenantProvider.Object,
         new ArchivedCompanyDeadLetter(Mock.Of<IServiceScopeFactory>(), NullLogger<ArchivedCompanyDeadLetter>.Instance),
-        NullLogger<CalculateOrderPayHandler>.Instance);
+        _logger.Object);
 
     private static string Enveloped(string orderId, string employeeId) =>
         JsonSerializer.Serialize(
@@ -81,5 +83,48 @@ public class CalculateOrderPayHandlerClassificationTests
 
         await Assert.ThrowsAsync<TimeoutException>(
             () => CreateHandler().HandleAsync(Enveloped("ORDER-2", "EMP-2"), CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task A_Rejected_Pay_Calculation_Logs_An_Error_With_Order_Employee_And_Reason()
+    {
+        _mediator
+            .Setup(m => m.Send(It.IsAny<CalculateOrderPay.Command>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ValidationResult<CalculateOrderPay.Response>.WithErrors(
+                [new Error("OrderId", BusinessErrorMessage.NoPayConfiguration)]));
+
+        await CreateHandler().HandleAsync(Enveloped("ORDER-3", "EMP-3"), CancellationToken.None);
+
+        _logger.Verify(
+            l => l.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((state, _) =>
+                    state.ToString()!.Contains("ORDER-3")
+                    && state.ToString()!.Contains("EMP-3")
+                    && state.ToString()!.Contains(BusinessErrorMessage.NoPayConfiguration)),
+                It.IsAny<Exception?>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task A_Pay_Row_That_Already_Exists_Is_A_Redelivery_And_Logs_No_Error()
+    {
+        _mediator
+            .Setup(m => m.Send(It.IsAny<CalculateOrderPay.Command>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ValidationResult<CalculateOrderPay.Response>.WithErrors(
+                [new Error("OrderId", BusinessErrorMessage.PayAlreadyCalculated)]));
+
+        await CreateHandler().HandleAsync(Enveloped("ORDER-4", "EMP-4"), CancellationToken.None);
+
+        _logger.Verify(
+            l => l.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception?>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Never);
     }
 }

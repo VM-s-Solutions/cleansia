@@ -1,3 +1,4 @@
+using System.Globalization;
 using Cleansia.Core.AppServices.Features.Orders;
 using System.Net;
 using System.Text.Json;
@@ -135,11 +136,11 @@ public class MigratedEmailRenderingTests
 
         await service.SendPeriodClosedEmailAsync(
             Recipient, "Petr", new DateOnly(2026, 8, 1), new DateOnly(2026, 8, 31),
-            new DateTime(2026, 9, 1, 6, 0, 0, DateTimeKind.Utc), "2026-08",
+            new DateTime(2026, 9, 1, 6, 0, 0, DateTimeKind.Utc),
             "en", pdf, "invoice-2026-08.pdf", CancellationToken.None);
 
         Assert.Contains("Petr", wire.Html, StringComparison.Ordinal);
-        Assert.Contains("2026-08-01", wire.Html, StringComparison.Ordinal);
+        Assert.Contains("8/1/2026", wire.Html, StringComparison.Ordinal);
         Assert.Equal("invoice-2026-08.pdf", wire.AttachmentName);
         Assert.DoesNotContain("{{", wire.Html, StringComparison.Ordinal);
     }
@@ -154,7 +155,7 @@ public class MigratedEmailRenderingTests
 
         await service.SendPeriodClosedEmailAsync(
             Recipient, "Petr", new DateOnly(2026, 8, 1), new DateOnly(2026, 8, 31),
-            new DateTime(2026, 9, 1, 6, 0, 0, DateTimeKind.Utc), "2026-08",
+            new DateTime(2026, 9, 1, 6, 0, 0, DateTimeKind.Utc),
             "en", null, null, CancellationToken.None);
 
         Assert.Null(wire.AttachmentName);
@@ -172,11 +173,32 @@ public class MigratedEmailRenderingTests
 
         await service.SendPeriodEndReminderEmailAsync(
             Recipient, "Petr", new DateOnly(2026, 8, 1), new DateOnly(2026, 8, 31),
-            3, "2026-08", "en", CancellationToken.None);
+            3, "en", CancellationToken.None);
 
         Assert.Contains("3 days remaining", wire.Html, StringComparison.Ordinal);
         Assert.DoesNotContain("{0}", wire.Html, StringComparison.Ordinal);
         Assert.DoesNotContain("{{", wire.Html, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("cs")]
+    [InlineData("sk")]
+    [InlineData("uk")]
+    [InlineData("ru")]
+    public async Task Period_end_reminder_writes_the_period_the_way_the_recipients_language_does(string language)
+    {
+        var (service, wire) = Build(new Dictionary<string, string> { ["Subject"] = "Pay Period Ending Soon" });
+        var culture = CultureInfo.GetCultureInfo(language);
+
+        await service.SendPeriodEndReminderEmailAsync(
+            Recipient, "Petr", new DateOnly(2026, 8, 1), new DateOnly(2026, 8, 14),
+            3, language, CancellationToken.None);
+
+        var start = new DateOnly(2026, 8, 1).ToString("d", culture);
+        var end = new DateOnly(2026, 8, 14).ToString("d", culture);
+        Assert.Contains($"{start} – {end}", wire.Html, StringComparison.Ordinal);
+        Assert.DoesNotContain("Aug", wire.Html, StringComparison.Ordinal);
+        Assert.DoesNotContain("2026-08-01", wire.Html, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -237,7 +259,7 @@ public class MigratedEmailRenderingTests
 
         await service.SendPeriodClosedEmailAsync(
             Recipient, "Petr", new DateOnly(2026, 8, 1), new DateOnly(2026, 8, 31),
-            new DateTime(2026, 9, 1, 6, 0, 0, DateTimeKind.Utc), "2026-08",
+            new DateTime(2026, 9, 1, 6, 0, 0, DateTimeKind.Utc),
             "en", null, null, CancellationToken.None);
         AssertReplyGoesToSupport(wire);
     }

@@ -4,7 +4,7 @@ title: "Cleaner pay, phase 4: the remaining findings"
 size: M
 owner: Michael Chaban
 created: 2026-11-09
-updated: 2026-11-09
+updated: 2026-11-10
 depends_on: [T-0925]
 blocks: []
 stories: []
@@ -41,11 +41,15 @@ separate reviewer re-derives the amounts by hand and checks that each new test f
 
 Branch `fix/pay-findings`.
 
-- [ ] **P4.1** A rejected pay calculation logs at Error with the order, the employee and the reason; the admin-override question is noted for Mike.
-- [ ] **P4.2** Period-end reminders go only to cleaners with work in the period.
-- [ ] **P4.3** Blob paths use a fixed date format, and e-mails format the period in the recipient's language.
-- [ ] **P4.4** $ A dispute charge on an already-invoiced job becomes a deduction on the cleaner's next invoice. Its design, including what happens when that invoice would go negative, is written in this ticket and approved by Mike before Phase 2 starts (P1.8, D12).
-- [ ] **P4.5** Optional: a QR Platba code in the payment block of CZK invoice PDFs; ask Mike before adding a QR library.
+- [x] **P4.1** A rejected pay calculation logs at Error with the order, the employee and the reason; the admin-override question is noted for Mike.
+- [x] **P4.2** Period-end reminders go only to cleaners with work in the period.
+- [x] **P4.3** Blob paths use a fixed date format, and e-mails format the period in the recipient's language.
+- [x] **P4.4** $ A dispute charge on an already-invoiced job becomes a deduction on the cleaner's next invoice. Its design, including what happens when that invoice would go negative, is written in this ticket and approved by Mike before Phase 2 starts (P1.8, D12).
+- [ ] ~~**P4.5** Optional: a QR Platba code in the payment block of CZK invoice PDFs.~~ Dropped: Mike accepted the leaner Phase 4 on 2026-11-10.
+- [x] **mrc-1** An invoice gets a concurrency token, so two admin actions on one invoice cannot both commit (a Mark paid racing a Cancel would set the cash off twice). Folded in by Mike on 2026-11-10.
+- [x] **F4** Partner web's Cash I hold text says the cash is set off when the next invoice is issued, not against the next payout. Folded in by Mike on 2026-11-10.
+- [x] **F5** Android's partner invoice list keeps its rows when the employee-id lookup or a refresh fails, as iOS does since P3.6. Folded in by Mike on 2026-11-10.
+- [x] **F6** Close now is not offered on a period that has not started yet. Folded in by Mike on 2026-11-10.
 
 ## Design (P1.8)
 
@@ -332,3 +336,32 @@ The plan's "Not doing" list. Anything found outside these slices is reported to 
   invoice. Q3: a charge later pay never covers stays blocked, and Mike decides each case; no code. Section 8 now also
   names `SendEmployeePeriodClosedEmailAsync`, which P1.3's loop reaches: P4.4 skips its e-mail when every row of the
   cleaner moved on (D7).
+- 2026-11-10 — Mike answered "A" to folding mrc-1, F4, F5 and F6 into this phase; P4.5 is dropped. Phase 4 starts on `fix/pay-findings`, run with the lean workflow.
+- 2026-11-10 — mrc-1 built: `EmployeeInvoice` carries the Postgres `xmin` token, and a commit that loses on it comes back from the unit of work as `payroll.invoice.changed_concurrently` (admin app, five locales; partner and customer specs say why they cannot reach it). Race test on real Postgres: a cancel that read the invoice before a mark paid committed is refused, and the paid invoice keeps its jobs and its single cash set-off. `Initial` regenerated once, `20261109143607` to `20261109234823`; MS-2's one owed DEV reset moves to the new id.
+- 2026-11-10 — P4.4 built as the approved design: a charge on an invoiced job becomes a `DisputeCharge` line in the open period (`CarryDisputeCharge`), refused before any money moves when the job row is already charged, a line is already carried, the charge is above the job's pay, or no period is open. Both invoice writers take whole charges oldest first (`EmployeeInvoice.FitDisputeCharges`), move the rest to the open period (`MoveToPeriod`) and commit the move with the invoice or alone; `CreateFromOrderPays` throws below zero; a cleaner whose only rows wait gets no period-closed e-mail; the PDF skips the line; the job-row readers skip it. Admin hint and `api.dispute.cleaner_charge_not_chargeable` reworded in five locales. Postgres cases: the carried charge deducted by the next close and retaken after a cancel, the whole-charge wait, one charge per job under a double resolve, and the e-mail skip. No schema or contract change. Waits for the money review.
+- 2026-11-10 — P4.1 built: a pay calculation the validator rejects logs at Error with the order, the employee and the
+  reason key, so the alerting fires; a pay row that already exists is a redelivery and logs at Information. **Question
+  for Mike, not built:** an admin override to Completed (`AdminOverrideOrderStatus`) does not pass through
+  `CompleteOrder`, so it calculates no pay for the crew. The one exception is an override from In progress on an unpaid
+  cash order, whose door debt queues the crew's pay. Should every override to Completed pay the crew? Today it stays as
+  it is.
+- 2026-11-10 — P4.2 built: the period-end reminder goes only to a cleaner with a job or fee-share pay row in the period;
+  a carried dispute charge alone is not work.
+- 2026-11-10 — P4.3 built: both invoice-PDF writers store under `PayPeriod.BlobFolder` (`yyyy-MM-dd_yyyy-MM-dd`, invariant
+  culture); the period-closed and period-end e-mails write the period, its start and its end in the recipient's
+  language, and `IEmailService` no longer takes a period label. Invoices already stored keep their old address, which
+  the row holds; a regenerate writes the new one. The DTO `PayPeriodLabel` the apps receive is unchanged.
+- 2026-11-10 — F5 built: Android's partner invoice list keeps its rows when the employee-id lookup fails and shows
+  the generic error snackbar; with nothing loaded the empty list stays pullable. The list is never read without the
+  caller's own id. A failed refresh already kept its rows. Unlike iOS there is no full-screen error with retry on a
+  first-load failure; the pull is the retry.
+- 2026-11-10 — F6 built: admin's Close now is offered on an open period only once its start date is today or earlier
+  (UTC), the same check `ClosePayPeriod` makes on the server.
+- 2026-11-10 — F4 built: partner web's Cash I hold text says the cash is set off when the next invoice is issued, in
+  all five locales and in the mobile apps' words.
+- 2026-11-10 — Review fixes. P4.1: the handler read the validation pipeline's generic sentinel instead of the refusal
+  keys, so a redelivery logged at Error and every rejection logged "A validation problem occurred."; it now reads the
+  validation errors (`AuditErrorCode.Resolve` for the reason), and its tests return the pipeline's real shape. mrc-1
+  gains the swapped race (a mark paid losing to a cancel) and P4.4 a mixed-currency case; both passed before, as the
+  code was already right. Not built, by proportionality: an admin action that commits between the night run's invoice
+  commit and its PDF stamp makes the stamp lose on the token, leaving the invoice without its PDF until Regenerate PDF.

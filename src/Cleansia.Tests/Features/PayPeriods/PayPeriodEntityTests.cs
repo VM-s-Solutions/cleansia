@@ -1,3 +1,4 @@
+using System.Globalization;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.TestUtilities.MockDataFactories.EmployeePayroll;
@@ -133,5 +134,23 @@ public class PayPeriodEntityTests
         var period = PayrollMockFactory.PaidPeriod();
 
         Assert.Throws<InvalidOperationException>(() => period.MarkAsPaid());
+    }
+
+    [Fact]
+    public void The_Blob_Folder_Is_The_Same_Under_Any_Server_Culture()
+    {
+        var hostCulture = CultureInfo.CurrentCulture;
+        try
+        {
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("th-TH");
+
+            Assert.Equal(
+                "2026-08-01_2026-08-14",
+                PayPeriod.BlobFolder(new DateOnly(2026, 8, 1), new DateOnly(2026, 8, 14)));
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = hostCulture;
+        }
     }
 }

@@ -45,7 +45,7 @@ public class ResolveDisputeRefundSeamTests
 
     private ResolveDispute.Handler CreateHandler() =>
         new(_disputeRepository.Object, _session.Object, _refundService.Object, Mock.Of<IRefundRepository>(),
-            _creditAccountRepository.Object, _payRepository.Object, _loyalty.Object, _producer.Object, _auditContext);
+            _creditAccountRepository.Object, _payRepository.Object, Mock.Of<IPayPeriodRepository>(), _loyalty.Object, _producer.Object, _auditContext);
 
     private static Dispute NewPendingDispute()
     {

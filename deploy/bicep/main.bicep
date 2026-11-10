@@ -269,25 +269,23 @@ var commonTags = union(tags, {
 // ---------------------------------------------------------------------------------------------------
 // Host topology (ADR-0015 D2). The five API hosts + the SSR — the reusable appService instantiated
 // once per entry. `browserFacing` hosts get the dev SPA/SSR origins in CORS; the two mobile hosts are
-// body-token (no cookies/CSRF) so their CORS stays closed (an empty array). `needsStripe` adds the
-// Stripe Key Vault references (the customer + customer-mobile hosts initiate payments).
+// body-token (no cookies/CSRF) so their CORS stays closed (an empty array). Every host gets the Stripe
+// settings, because every one calls Stripe: the customer hosts take payments, the admin host refunds
+// and closes pay links, and the partner hosts check a card order at Stripe before a cleaner takes cash.
 // ---------------------------------------------------------------------------------------------------
 
 var apiHosts = [
   {
     audience: 'partner'
     browserFacing: true
-    needsStripe: false
   }
   {
     audience: 'admin'
     browserFacing: true
-    needsStripe: false
   }
   {
     audience: 'customer'
     browserFacing: true
-    needsStripe: true
     // Web channel: Stripe Checkout Sessions (OrderPaymentDispatcher mints a session only on Web),
     // plus the membership/subscription and chargeback events. Its own Stripe endpoint => its own
     // signing secret, so rotating one channel cannot silently break the other.
@@ -296,12 +294,10 @@ var apiHosts = [
   {
     audience: 'partner-mobile'
     browserFacing: false
-    needsStripe: false
   }
   {
     audience: 'customer-mobile'
     browserFacing: false
-    needsStripe: true
     // Mobile channel: Stripe PaymentSheet PaymentIntents (payment_intent.*), delivered to a SEPARATE
     // Stripe endpoint so web and mobile traffic are traceable apart — hence a separate signing secret.
     webhookSecretName: 'Stripe--WebhookSecretMobile'
@@ -705,7 +701,7 @@ module apiAppServices 'modules/appService.bicep' = [
       // union() with {} is a no-op, so each host receives exactly the blocks its flags select: Stripe
       // for the payment initiators, the app-level CORS override for browser hosts (empty until
       // customDomains adds frontend origins — see corsOriginsAppSettings).
-      appSettings: union(apiBaseSettings, fiscalSettings, host.needsStripe ? union(stripeSettings, { Stripe__WebhookSecret: kvRef(keyVaultUri, host.webhookSecretName) }) : {}, host.browserFacing ? corsOriginsAppSettings : {}, host.audience == 'customer' ? customerWebAuthSettings : {})
+      appSettings: union(apiBaseSettings, fiscalSettings, stripeSettings, { Stripe__WebhookSecret: kvRef(keyVaultUri, host.?webhookSecretName ?? 'Stripe--WebhookSecret') }, host.browserFacing ? corsOriginsAppSettings : {}, host.audience == 'customer' ? customerWebAuthSettings : {})
       corsAllowedOrigins: host.browserFacing ? browserCorsOrigins : []
       httpsOnly: true
       // Always On in EVERY stage. It costs nothing on a plan that is already paid for by the hour,
@@ -917,13 +913,15 @@ module functionApp 'modules/functionApp.bicep' = {
     appInsightsConnectionString: appInsights.outputs.connectionString
     virtualNetworkSubnetId: privateNetworkingEnabled ? privateNetworking!.outputs.appSubnetId : ''
     storageAppSettings: storageSettings
+    // stripeSettings: the hourly refund re-drive, the receivable charges and a company's wind-down call
+    // Stripe from this worker.
     // Sentry__Dsn IS read (ac2243d2): Program.cs calls ConfigureLogging(AddSentryMonitoring), so an
     // ILogger.LogError in this worker becomes a Sentry event — which is what PoisonHandlerBase step 2
     // and FunctionInvocationErrorMiddleware depend on. It is a SECOND, unsampled path alongside the
     // App Insights export above, not a substitute for it. A blank DSN disables Sentry silently rather
     // than throwing, so an unpopulated secret costs the per-error detail and the first-occurrence mail
     // while leaving only threshold alerts. Populate it.
-    extraAppSettings: union(sendGridSettings, fiscalSettings, fcmSettings, apnsSettings, cronSettings, payPeriodSettings, {
+    extraAppSettings: union(sendGridSettings, fiscalSettings, fcmSettings, apnsSettings, cronSettings, payPeriodSettings, stripeSettings, {
       Sentry__Dsn: kvRef(keyVaultUri, 'Sentry--Dsn')
     })
     tags: commonTags

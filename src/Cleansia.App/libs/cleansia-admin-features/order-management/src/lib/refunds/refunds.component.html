@@ -176,6 +176,7 @@
       severity="secondary"
       [text]="true"
       [tooltip]="'pages.refunds.actions.copy_stripe_refund' | translate"
+      [ariaLabel]="'pages.refunds.actions.copy_stripe_refund' | translate"
       (onClick)="$event.stopPropagation(); facade.copyStripeRefundId(item.stripeRefundId)"
     />
     }

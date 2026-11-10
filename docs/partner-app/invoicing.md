@@ -29,8 +29,8 @@ The invoice list displays all invoices for the current partner with:
 | Bank Transfer to You | What the company transfers: the total less the cash set off (`transferAmount`) |
 | Status | Current invoice status |
 
-Above the list, **Total earned** adds up the `Paid` invoices only, one figure per currency in the order the
-list first names each, and is hidden until one is paid.
+The web list shows no total. The Android and iOS invoice lists carry a **Total earned** figure →
+[Mobile app — partner dashboard](/mobile-app/features#partner-dashboard).
 
 ### Invoice Statuses
 

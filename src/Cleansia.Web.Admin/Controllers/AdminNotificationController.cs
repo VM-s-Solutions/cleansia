@@ -27,10 +27,10 @@ public class AdminNotificationController(IMediator mediator) : ApiController(med
     public async Task<PagedData<UserNotificationDto>> GetPaged(
         [FromQuery] GetPagedUserNotifications.Request request,
         CancellationToken cancellationToken,
-        [FromQuery] bool critical = false)
+        [FromQuery] bool? critical = null)
     {
         request.Audience = NotificationFeedAudience.Admin;
-        request.ShowCriticalOnly(critical);
+        request.FilterCritical(critical);
         return await Mediator.Send(request, cancellationToken);
     }
 

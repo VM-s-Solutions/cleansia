@@ -30,9 +30,9 @@ public class GetPagedUserNotifications
         public NotificationFeedAudience Audience { get; set; }
 
         // A method, not a bindable property, so the partner and customer feeds' contracts never gain it.
-        internal bool CriticalOnly { get; private set; }
+        internal bool? Critical { get; private set; }
 
-        public void ShowCriticalOnly(bool criticalOnly) => CriticalOnly = criticalOnly;
+        public void FilterCritical(bool? critical) => Critical = critical;
     }
 
     internal class Handler(
@@ -59,8 +59,8 @@ public class GetPagedUserNotifications
                 ? request
                 : new Request { Offset = request.Offset, Limit = MaxPageSize, Audience = request.Audience };
 
-            var eventKeys = request is { CriticalOnly: true, Audience: NotificationFeedAudience.Admin }
-                ? AdminNotificationEventCatalog.Critical
+            var eventKeys = request is { Audience: NotificationFeedAudience.Admin, Critical: { } critical }
+                ? AdminNotificationEventCatalog.All.Where(key => AdminNotificationEventCatalog.Critical.Contains(key) == critical).ToList()
                 : NotificationFeedEventKeys.For(request.Audience);
             var filter = UserNotificationSpecification.Create(userId, eventKeys).SatisfiedBy();
 

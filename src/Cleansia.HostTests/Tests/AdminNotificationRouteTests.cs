@@ -114,6 +114,10 @@ public sealed class AdminNotificationRouteTests(HostTestPostgresFixture db) : Au
         var critical = await BodyAsync(await client.GetAsync($"{GetPagedRoute}?critical=true"));
         Assert.Equal(1, critical.GetProperty("total").GetInt32());
         Assert.Equal(_ownDisputeRowId, Assert.Single(critical.GetProperty("data").EnumerateArray()).GetProperty("id").GetString());
+
+        var info = await BodyAsync(await client.GetAsync($"{GetPagedRoute}?critical=false"));
+        Assert.Equal(1, info.GetProperty("total").GetInt32());
+        Assert.Equal(_ownOrderRowId, Assert.Single(info.GetProperty("data").EnumerateArray()).GetProperty("id").GetString());
     }
 
     [Fact]

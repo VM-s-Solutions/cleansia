@@ -111,3 +111,130 @@ describe('CleansiaTableComponent — rendering', () => {
     expect(fixture.nativeElement.querySelector(`.pagination__rows-selector p-select [id="${first}"]`)).not.toBeNull();
   });
 });
+
+describe('CleansiaTableComponent — row click', () => {
+  let fixture: ComponentFixture<CleansiaTableComponent<Row>>;
+  let opened: Row[];
+  let actionClicks: Row[];
+
+  interface Row {
+    id: number;
+    name: string;
+  }
+
+  const data: Row[] = [
+    { id: 1, name: 'One' },
+    { id: 2, name: 'Two' },
+  ];
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [CleansiaTableComponent, TranslateModule.forRoot()],
+      providers: [provideNoopAnimations()],
+    }).compileComponents();
+    fixture = TestBed.createComponent(CleansiaTableComponent<Row>);
+    fixture.componentRef.setInput('columns', [{ id: 'name', field: 'name', header: 'name' }]);
+    fixture.componentRef.setInput('data', data);
+    fixture.componentRef.setInput('actions', [
+      { icon: 'pi pi-pencil', onClick: (row: Row) => actionClicks.push(row) },
+    ]);
+    opened = [];
+    actionClicks = [];
+    fixture.componentInstance.rowClick.subscribe((row) => opened.push(row));
+  });
+
+  const render = (clickable: boolean | ((row: Row) => boolean)) => {
+    fixture.componentRef.setInput('clickableRows', clickable);
+    fixture.detectChanges();
+  };
+  const rowEls = (): HTMLTableRowElement[] =>
+    Array.from(fixture.nativeElement.querySelectorAll('tbody .table__row'));
+  const key = (target: Element, name: 'Enter' | ' ') =>
+    target.dispatchEvent(new KeyboardEvent('keydown', { key: name, bubbles: true, cancelable: true }));
+
+  it('gives no row a tab stop, the class or a role when rows are not clickable, and a click opens nothing', () => {
+    render(false);
+
+    for (const row of rowEls()) {
+      expect(row.getAttribute('tabindex')).toBeNull();
+      expect(row.classList.contains('table__row--clickable')).toBe(false);
+      expect(row.getAttribute('role')).toBeNull();
+    }
+    rowEls()[0].querySelector('td')?.click();
+    expect(opened).toEqual([]);
+  });
+
+  it('gives every clickable row a tab stop and the class, and no role', () => {
+    render(true);
+
+    for (const row of rowEls()) {
+      expect(row.getAttribute('tabindex')).toBe('0');
+      expect(row.classList.contains('table__row--clickable')).toBe(true);
+      expect(row.getAttribute('role')).toBeNull();
+    }
+  });
+
+  it('opens the row once on a click, on Enter and on Space', () => {
+    render(true);
+    const [first] = rowEls();
+
+    first.querySelector('td')?.click();
+    key(first, 'Enter');
+    key(first, ' ');
+
+    expect(opened).toEqual([data[0], data[0], data[0]]);
+  });
+
+  it('leaves a row inert when the per-row function answers false', () => {
+    render((row) => row.id === 2);
+    const [first, second] = rowEls();
+
+    expect(first.getAttribute('tabindex')).toBeNull();
+    expect(first.classList.contains('table__row--clickable')).toBe(false);
+    first.querySelector('td')?.click();
+    key(first, 'Enter');
+    expect(opened).toEqual([]);
+
+    expect(second.getAttribute('tabindex')).toBe('0');
+    second.querySelector('td')?.click();
+    expect(opened).toEqual([data[1]]);
+  });
+
+  it('opens nothing on a click on a link inside the row', () => {
+    render(true);
+    const cell = rowEls()[0].querySelector('td') as HTMLElement;
+    const link = document.createElement('a');
+    link.href = '#';
+    cell.appendChild(link);
+
+    link.click();
+
+    expect(opened).toEqual([]);
+  });
+
+  it('opens nothing on Enter on a row action, and an action click still does not open the row', () => {
+    render(true);
+    const button = rowEls()[0].querySelector('.action-btn') as HTMLButtonElement;
+
+    key(button, 'Enter');
+    button.click();
+
+    expect(opened).toEqual([]);
+    expect(actionClicks).toEqual([data[0]]);
+  });
+
+  it('opens nothing on a click that ends a text selection', () => {
+    render(true);
+    const cell = rowEls()[0].querySelector('td') as HTMLElement;
+    const range = document.createRange();
+    range.selectNodeContents(cell);
+    const selection = document.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+
+    cell.click();
+    selection?.removeAllRanges();
+
+    expect(opened).toEqual([]);
+  });
+});

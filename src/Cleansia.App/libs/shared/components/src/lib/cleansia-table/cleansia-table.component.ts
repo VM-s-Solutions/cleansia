@@ -59,7 +59,7 @@ export class CleansiaTableComponent<T = unknown> implements OnInit {
   config = input<TableConfig>({});
   selectedRow = input<T | null>(null);
   loading = input(false);
-  clickableRows = input(false);
+  clickableRows = input<boolean | ((row: T) => boolean)>(false);
 
   // Outputs
   rowClick = output<T>();
@@ -223,7 +223,26 @@ export class CleansiaTableComponent<T = unknown> implements OnInit {
     );
   }
 
-  onRowClick(row: T): void {
+  isRowClickable(row: T): boolean {
+    const clickable = this.clickableRows();
+    return !!this.mergedConfig().selectable || (typeof clickable === 'function' ? clickable(row) : clickable);
+  }
+
+  onRowClick(row: T, event: MouseEvent): void {
+    const rowEl = event.currentTarget as HTMLElement;
+    const control = (event.target as Element).closest('a, button, input, select, textarea, label');
+    if (!this.isRowClickable(row) || (control && rowEl.contains(control))) return;
+    if (rowEl.ownerDocument.getSelection()?.toString()) return;
+    this.openRow(row);
+  }
+
+  onRowKeydown(row: T, event: Event): void {
+    if (event.target !== event.currentTarget || !this.isRowClickable(row)) return;
+    event.preventDefault();
+    this.openRow(row);
+  }
+
+  private openRow(row: T): void {
     if (this.mergedConfig().selectable) {
       this.rowSelect.emit(row);
     }

@@ -15,6 +15,11 @@ export function formatPayPeriodDuration(days: number, translate: TranslateServic
   return translate.instant(`pay_periods.days_${form}`, { count: days });
 }
 
+export function formatPayPeriodClosedBy(closedBy: string | undefined, translate: TranslateService): string {
+  if (!closedBy) return '-';
+  return closedBy === 'System' ? translate.instant('pay_periods.closed_by_system') : closedBy;
+}
+
 export function getPayPeriodTableColumns(
   translate: TranslateService,
   statusTemplate?: TemplateRef<PayPeriodDto>
@@ -69,7 +74,7 @@ export function getPayPeriodTableColumns(
       field: 'closedBy',
       header: 'pay_periods.list.columns.closed_by',
       width: '12%',
-      getValue: (row: PayPeriodDto) => row.closedBy || '-',
+      getValue: (row: PayPeriodDto) => formatPayPeriodClosedBy(row.closedBy, translate),
     },
   ];
 }

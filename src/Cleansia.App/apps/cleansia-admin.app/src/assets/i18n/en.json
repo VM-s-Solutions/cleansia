@@ -3201,6 +3201,7 @@
   },
   "pay_periods": {
     "title": "Pay Period Management",
+    "closed_by_system": "Automatically",
     "description": "Manage pay periods, close periods, and track partner payments",
     "create_new": "Create New Pay Period",
     "filters": {

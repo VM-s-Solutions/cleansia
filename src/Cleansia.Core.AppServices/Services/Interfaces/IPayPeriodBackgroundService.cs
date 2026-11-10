@@ -12,7 +12,7 @@ public interface IPayPeriodBackgroundService
     /// nightly rollover asks; the company wind-down does not, because a company that has closed its door
     /// has no next period.
     /// </summary>
-    Task ClosePeriodAsync(PayPeriod period, string closeNote, bool openNext, CancellationToken cancellationToken);
+    Task ClosePeriodAsync(PayPeriod period, bool openNext, CancellationToken cancellationToken);
 
     /// <summary>
     /// Guarantee there's an Open PayPeriod covering today. No-op if one

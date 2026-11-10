@@ -3201,6 +3201,7 @@
   },
   "pay_periods": {
     "title": "Správa výplatných období",
+    "closed_by_system": "Automaticky",
     "description": "Spravujte výplatné obdobia, uzatvárajte obdobia a sledujte platby partnerom",
     "create_new": "Vytvoriť nové výplatné obdobie",
     "filters": {

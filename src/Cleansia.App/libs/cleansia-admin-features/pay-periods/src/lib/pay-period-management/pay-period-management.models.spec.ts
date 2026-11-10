@@ -43,6 +43,22 @@ describe('pay period list columns', () => {
   });
 });
 
+describe('pay period closed by', () => {
+  const closedBy = (value?: string) =>
+    getPayPeriodTableColumns(translateIn('cs'))
+      .find((c) => c.id === 'closedBy')
+      ?.getValue?.(PayPeriodDto.fromJS({ closedBy: value }));
+
+  it("reads an automatic close as 'Automatically' in the session's language", () => {
+    expect(closedBy('System')).toBe('pay_periods.closed_by_system:undefined');
+  });
+
+  it("shows the admin's e-mail unchanged, and a dash when nobody closed it", () => {
+    expect(closedBy('admin@cleansia.cz')).toBe('admin@cleansia.cz');
+    expect(closedBy(undefined)).toBe('-');
+  });
+});
+
 describe('pay period duration', () => {
   it('names the day count in the plural form its language needs', () => {
     const cs = translateIn('cs');

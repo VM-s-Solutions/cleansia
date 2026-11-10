@@ -184,7 +184,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
                 foreach (var period in tenantGroup)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    await ClosePeriodAsync(period, "Automatically closed by background job", openNext, cancellationToken);
+                    await ClosePeriodAsync(period, openNext, cancellationToken);
                 }
             }
 
@@ -197,9 +197,9 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         }
     }
 
-    public async Task ClosePeriodAsync(PayPeriod period, string closeNote, bool openNext, CancellationToken cancellationToken)
+    public async Task ClosePeriodAsync(PayPeriod period, bool openNext, CancellationToken cancellationToken)
     {
-        period.Close("System", closeNote);
+        period.Close("System");
         _logger.LogInformation(
             "Closed pay period {PeriodId} ({StartDate} - {EndDate})",
             period.Id,

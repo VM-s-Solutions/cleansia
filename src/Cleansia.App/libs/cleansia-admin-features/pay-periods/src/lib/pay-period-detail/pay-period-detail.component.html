@@ -44,7 +44,7 @@
         </div>
         <div class="detail-grid__item">
           <span class="detail-grid__label">{{ 'pay_periods.detail.closed_by' | translate }}</span>
-          <span class="detail-grid__value">{{ payPeriod.closedBy || '-' }}</span>
+          <span class="detail-grid__value">{{ formatClosedBy(payPeriod.closedBy) }}</span>
         </div>
         @if (payPeriod.paidAt) {
         <div class="detail-grid__item">

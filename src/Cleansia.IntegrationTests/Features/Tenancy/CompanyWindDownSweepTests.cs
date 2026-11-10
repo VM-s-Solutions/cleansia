@@ -563,7 +563,7 @@ public sealed class CompanyWindDownSweepTests(PostgresContainerFixture fixture) 
                 var periods = await ctx.PayPeriods.IgnoreQueryFilters().ToListAsync();
                 var open = periods.Single(p => p.Id == openPeriodId);
                 Assert.Equal(PayPeriodStatus.Closed, open.Status);
-                Assert.Equal("Company wind-down", open.Notes);
+                Assert.Null(open.Notes);
 
                 var invoices = await ctx.EmployeeInvoices.IgnoreQueryFilters().Where(i => i.TenantId == B).ToListAsync();
                 var invoice = Assert.Single(invoices, i => i.PayPeriodId == openPeriodId);

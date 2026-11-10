@@ -155,6 +155,19 @@ public class Refund : TenantAuditable
     }
 
     /// <summary>
+    /// Stamp how support paid back a refund Stripe failed or bounced. It then counts as given back, as a
+    /// confirmed refund does; a bounced one already did.
+    /// </summary>
+    public Refund MarkRepaid(RefundRepaymentMethod method, string? reference, DateTimeOffset repaidOnUtc)
+    {
+        RepaidOn = repaidOnUtc;
+        RepaymentMethod = method;
+        RepaymentReference = reference;
+        Status = RefundStatus.Succeeded;
+        return this;
+    }
+
+    /// <summary>
     /// Lower this refund's amount to at most <paramref name="maxAmount"/> before a re-drive, so a stale
     /// frozen amount can never exceed the live refundable ceiling (the cross-key over-refund guard,
     /// T-0354). Only ever decreases the amount, and only meaningful while the refund has not yet

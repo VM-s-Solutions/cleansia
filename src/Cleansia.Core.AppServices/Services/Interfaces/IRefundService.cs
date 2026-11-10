@@ -1,4 +1,5 @@
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Payments;
 using Cleansia.Infra.Common.Validations;
 
 namespace Cleansia.Core.AppServices.Services.Interfaces;
@@ -35,6 +36,16 @@ public interface IRefundService
     /// <c>admin.payment.refund_needs_retry</c>, once per order, in its own commit, and fails as <c>refund.failed</c>.
     /// </summary>
     Task<BusinessResult<RefundResult>> RedriveAsync(string refundId, string actorId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Record that support paid back a refund Stripe failed, by transfer or as credit, with no Stripe call: the
+    /// re-drive's twin. Refused as <c>refund.nothing_refundable</c> when the order no longer has room for the
+    /// refund's whole amount, which is never lowered because the money already left. Otherwise the refund is
+    /// stamped repaid and counts as given back: its credit share returns and the payment status is re-derived,
+    /// as after Stripe confirms. Everything is staged for the caller's commit.
+    /// </summary>
+    Task<BusinessResult<RefundResult>> RecordRepaymentAsync(
+        Refund refund, RefundRepaymentMethod method, string? reference, string actorId, CancellationToken cancellationToken);
 }
 
 /// <summary>

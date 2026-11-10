@@ -676,6 +676,8 @@ public static class BusinessErrorMessage
     public const string RefundOverrideReasonRequired = "refund.override_reason_required";
     public const string RefundNotFound = "refund.not_found";
     public const string RefundNotRetryable = "refund.not_retryable";
+    public const string RefundNotOwed = "refund.not_owed";
+    public const string RefundCreditUnavailable = "refund.credit_unavailable";
 
     // GDPR
     public const string GdprDeletionAlreadyPending = "gdpr.deletion_already_pending";

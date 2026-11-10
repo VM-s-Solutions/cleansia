@@ -3582,7 +3582,9 @@
       "order_not_refundable": "This order is not eligible for a refund.",
       "override_reason_required": "A justification is required to refund outside the allowed window.",
       "not_found": "This refund was not found on this order.",
-      "not_retryable": "This refund cannot be retried. Only a refund that was not sent can be retried, and a dispute's refund is retried by resolving the dispute again."
+      "not_retryable": "This refund cannot be retried. Only a refund that was not sent can be retried, and a dispute's refund is retried by resolving the dispute again.",
+      "not_owed": "Only a failed or bounced refund that has not been repaid can be recorded as repaid.",
+      "credit_unavailable": "Credit is not available for this customer: they have no account, their account was erased, or their company's books are closed. Repay by bank transfer."
     },
     "service": {
       "category_not_found": "Service category not found.",

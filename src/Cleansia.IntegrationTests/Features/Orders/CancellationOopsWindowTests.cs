@@ -9,6 +9,7 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Configuration.Interfaces;
@@ -324,6 +325,10 @@ public class CancellationOopsWindowTests(PostgresContainerFixture fixture) : Bas
     private sealed class SucceedingRefunds : IRefundService
     {
         public Task<BusinessResult<RefundResult>> RedriveAsync(string refundId, string actorId, CancellationToken cancellationToken)
+            => throw new NotSupportedException();
+
+        public Task<BusinessResult<RefundResult>> RecordRepaymentAsync(
+            Refund refund, RefundRepaymentMethod method, string? reference, string actorId, CancellationToken cancellationToken)
             => throw new NotSupportedException();
 
         public Task<BusinessResult<RefundResult>> IssueRefundAsync(RefundRequest request, CancellationToken cancellationToken)

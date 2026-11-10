@@ -3582,7 +3582,9 @@
       "order_not_refundable": "Tuto objednávku nelze vrátit.",
       "override_reason_required": "Pro vrácení mimo povolenou lhůtu je vyžadováno odůvodnění.",
       "not_found": "Tato refundace u této objednávky nebyla nalezena.",
-      "not_retryable": "Tuto refundaci nelze zopakovat. Zopakovat lze jen neodeslanou refundaci a refundace ze sporu se opakuje opětovným vyřešením sporu."
+      "not_retryable": "Tuto refundaci nelze zopakovat. Zopakovat lze jen neodeslanou refundaci a refundace ze sporu se opakuje opětovným vyřešením sporu.",
+      "not_owed": "Jako splacenou lze zaznamenat jen neúspěšnou nebo vrácenou refundaci, která ještě nebyla splacena.",
+      "credit_unavailable": "Kredit pro tohoto zákazníka není k dispozici: nemá účet, jeho účet byl smazán nebo jsou účetní knihy jeho společnosti uzavřeny. Vraťte peníze bankovním převodem."
     },
     "service": {
       "category_not_found": "Kategorie služby nebyla nalezena.",

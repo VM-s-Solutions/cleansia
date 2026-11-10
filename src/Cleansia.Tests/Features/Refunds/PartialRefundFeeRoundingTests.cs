@@ -7,6 +7,7 @@ using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Services;
 using Cleansia.Core.Domain.Users;
@@ -236,6 +237,10 @@ public class PartialRefundFeeRoundingTests
     private sealed class RecordingRefundService : IRefundService
     {
         public Task<BusinessResult<RefundResult>> RedriveAsync(string refundId, string actorId, CancellationToken cancellationToken)
+            => throw new NotSupportedException();
+
+        public Task<BusinessResult<RefundResult>> RecordRepaymentAsync(
+            Refund refund, RefundRepaymentMethod method, string? reference, string actorId, CancellationToken cancellationToken)
             => throw new NotSupportedException();
 
         public RefundRequest? LastRequest { get; private set; }

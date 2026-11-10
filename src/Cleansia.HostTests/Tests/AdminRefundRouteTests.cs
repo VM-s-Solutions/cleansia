@@ -4,6 +4,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Payments;
 using Cleansia.HostTests.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.HostTests.Tests;
 
@@ -15,10 +16,11 @@ public sealed class AdminRefundRouteTests(HostTestPostgresFixture db) : AuthzHos
 {
     private const string GetPagedRoute = "/api/AdminRefund/get-paged";
     private const string RetryRoute = "/api/AdminRefund/retry";
+    private const string RepaymentRoute = "/api/AdminRefund/record-repayment";
     private const string SupportId = "refund-support";
     private const string AccountantId = "refund-accountant";
 
-    private sealed record Seeded(string NotSentId, string RefundedId);
+    private sealed record Seeded(string NotSentId, string RefundedId, string FailedId, string OrderId);
 
     private async Task<Seeded> ArrangeAsync()
     {
@@ -38,8 +40,10 @@ public sealed class AdminRefundRouteTests(HostTestPostgresFixture db) : AuthzHos
             var notSent = Refund.Create(order.Id, $"refund:{order.Id}:admin:a", 300m, "CZK", RefundReason.AdminDiscretion, RefundSource.AppRefund);
             var refunded = Refund.Create(order.Id, $"refund:{order.Id}:admin:b", 200m, "CZK", RefundReason.AdminDiscretion, RefundSource.AppRefund)
                 .MarkSucceeded("re_b", DateTimeOffset.UtcNow);
-            ctx.Refunds.AddRange(notSent, refunded);
-            seeded = new Seeded(notSent.Id, refunded.Id);
+            var failed = Refund.Create(order.Id, $"refund:{order.Id}:admin:c", 300m, "CZK", RefundReason.AdminDiscretion, RefundSource.AppRefund);
+            failed.MarkFailedByStripe("re_c", DateTimeOffset.UtcNow);
+            ctx.Refunds.AddRange(notSent, refunded, failed);
+            seeded = new Seeded(notSent.Id, refunded.Id, failed.Id, order.Id);
         });
         return seeded;
     }
@@ -65,7 +69,7 @@ public sealed class AdminRefundRouteTests(HostTestPostgresFixture db) : AuthzHos
         var s = await ArrangeAsync();
 
         var response = await Admin(SupportId, AdminRole.Support).GetAsync(
-            $"{GetPagedRoute}?Filter.States={(int)RefundState.NotSent}&Filter.States={(int)RefundState.Failed}");
+            $"{GetPagedRoute}?Filter.States={(int)RefundState.NotSent}&Filter.States={(int)RefundState.Closed}");
 
         HttpAssert.IsOk(response);
         var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync()).RootElement;
@@ -85,5 +89,26 @@ public sealed class AdminRefundRouteTests(HostTestPostgresFixture db) : AuthzHos
         await HttpAssert.AssertBusinessErrorAsync(
             await Admin(SupportId, AdminRole.Support).PostAsJsonAsync(RetryRoute, new { orderId = "another-order", refundId = s.NotSentId }),
             BusinessErrorMessage.RefundNotFound);
+    }
+
+    [Fact]
+    public async Task Support_Records_A_Bank_Transfer_On_A_Failed_Refund_Which_Then_Counts_As_Given_Back()
+    {
+        var s = await ArrangeAsync();
+
+        HttpAssert.IsForbidden(await Admin(AccountantId, AdminRole.Accountant)
+            .PostAsJsonAsync(RepaymentRoute, new { orderId = s.OrderId, refundId = s.FailedId, method = 1, reference = "VS-1" }));
+        var response = await Admin(SupportId, AdminRole.Support)
+            .PostAsJsonAsync(RepaymentRoute, new { orderId = s.OrderId, refundId = s.FailedId, method = 1, reference = "VS-2026-11" });
+
+        HttpAssert.IsOk(response);
+        var refund = await QueryAsync(ctx => ctx.Refunds.IgnoreQueryFilters().SingleAsync(r => r.Id == s.FailedId));
+        Assert.Equal((RefundStatus.Succeeded, "VS-2026-11", RefundRepaymentMethod.BankTransfer), (refund.Status, refund.RepaymentReference, refund.RepaymentMethod!.Value));
+        Assert.NotNull(refund.RepaidOn);
+        Assert.Equal(PaymentStatus.PartiallyRefunded,
+            (await QueryAsync(ctx => ctx.Orders.IgnoreQueryFilters().SingleAsync(o => o.Id == s.OrderId))).PaymentStatus);
+        await HttpAssert.AssertBusinessErrorAsync(
+            await Admin(SupportId, AdminRole.Support).PostAsJsonAsync(RepaymentRoute, new { orderId = s.OrderId, refundId = s.FailedId, method = 1, reference = "VS-again" }),
+            BusinessErrorMessage.RefundNotOwed);
     }
 }

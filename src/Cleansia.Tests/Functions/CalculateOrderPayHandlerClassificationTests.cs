@@ -90,8 +90,8 @@ public class CalculateOrderPayHandlerClassificationTests
     {
         _mediator
             .Setup(m => m.Send(It.IsAny<CalculateOrderPay.Command>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(BusinessResult.Failure<CalculateOrderPay.Response>(
-                new Error("OrderId", BusinessErrorMessage.NoPayConfiguration)));
+            .ReturnsAsync(ValidationResult<CalculateOrderPay.Response>.WithErrors(
+                [new Error("OrderId", BusinessErrorMessage.NoPayConfiguration)]));
 
         await CreateHandler().HandleAsync(Enveloped("ORDER-3", "EMP-3"), CancellationToken.None);
 
@@ -113,8 +113,8 @@ public class CalculateOrderPayHandlerClassificationTests
     {
         _mediator
             .Setup(m => m.Send(It.IsAny<CalculateOrderPay.Command>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(BusinessResult.Failure<CalculateOrderPay.Response>(
-                new Error("OrderId", BusinessErrorMessage.PayAlreadyCalculated)));
+            .ReturnsAsync(ValidationResult<CalculateOrderPay.Response>.WithErrors(
+                [new Error("OrderId", BusinessErrorMessage.PayAlreadyCalculated)]));
 
         await CreateHandler().HandleAsync(Enveloped("ORDER-4", "EMP-4"), CancellationToken.None);
 

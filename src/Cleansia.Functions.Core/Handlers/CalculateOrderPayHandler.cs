@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.EmployeePayroll;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -96,7 +97,8 @@ public class CalculateOrderPayHandler(
                 message.EmployeeId,
                 result.Value?.EmployeePayrollId);
         }
-        else if (result.Error?.Message == BusinessErrorMessage.PayAlreadyCalculated)
+        else if (result is IValidationResult validation
+                 && validation.Errors.Any(e => e.Message == BusinessErrorMessage.PayAlreadyCalculated))
         {
             logger.LogInformation(
                 "CalculateOrderPay skipped for order {OrderId} / employee {EmployeeId}: the pay row already exists",
@@ -111,7 +113,7 @@ public class CalculateOrderPayHandler(
                 "CalculateOrderPay rejected for order {OrderId} / employee {EmployeeId}: {Reason}",
                 message.OrderId,
                 message.EmployeeId,
-                result.Error?.Message ?? "unknown");
+                AuditErrorCode.Resolve(result) ?? "unknown");
         }
     }
 

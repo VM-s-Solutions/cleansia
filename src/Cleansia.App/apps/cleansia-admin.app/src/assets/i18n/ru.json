@@ -345,7 +345,6 @@
       "actions": "Действия",
       "approve": "Одобрить",
       "reject": "Отклонить",
-      "view_details": "Просмотреть детали",
       "no_employees": "Нет партнёров для отображения",
       "filters": {
         "search": "Поиск",
@@ -599,7 +598,6 @@
       "payment_status_label": "Статус оплаты",
       "assigned_employees": "Назначены",
       "actions": "Действия",
-      "view_details": "Просмотреть детали",
       "no_orders": "Заказы не найдены",
       "filters": {
         "search": "Поиск",
@@ -866,7 +864,6 @@
       "pdf_status": "PDF",
       "generated_at": "Создан",
       "actions": "Действия",
-      "view_details": "Просмотреть детали",
       "download": "Скачать PDF",
       "no_invoices": "Счета не найдены",
       "filters": {
@@ -2622,9 +2619,6 @@
         "refund_amount": "Запрошенный возврат",
         "created_on": "Создано"
       },
-      "actions": {
-        "view_details": "Просмотреть детали"
-      },
       "status": {
         "pending": "Ожидает",
         "under_review": "На рассмотрении",
@@ -3021,7 +3015,6 @@
         "write_off_note": "Причина списания"
       },
       "actions": {
-        "view_order": "Открыть заказ",
         "write_off": "Списать"
       },
       "write_off": {
@@ -3092,7 +3085,6 @@
         "closed_by": "Закрыл",
         "actions": "Действия"
       },
-      "view_details": "Просмотреть детали",
       "no_records": "Расчётные периоды не найдены"
     },
     "days_one": "{{count}} день",

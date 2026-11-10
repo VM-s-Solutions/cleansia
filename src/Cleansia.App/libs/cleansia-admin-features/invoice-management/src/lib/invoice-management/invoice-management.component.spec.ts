@@ -109,7 +109,7 @@ describe('InvoiceManagementComponent', () => {
       .mockImplementation(() => undefined);
     const invoice = EmployeeInvoiceDto.fromJS({ id: 'invoice-1' });
 
-    component['table']().actions[2].onClick(invoice);
+    component['table']().actions[1].onClick(invoice);
 
     expect(retrySpy).toHaveBeenCalledWith(invoice);
   });
@@ -117,13 +117,12 @@ describe('InvoiceManagementComponent', () => {
   it('only offers the retry-pdf action for non-cancelled invoices without a PDF', () => {
     const actions = getInvoiceTableActions(
       {
-        onViewDetails: jest.fn(),
         onDownload: jest.fn(),
         onRetryPdf: jest.fn(),
       },
       TestBed.inject(TranslateService)
     );
-    const retryAction = actions[2];
+    const retryAction = actions[1];
 
     expect(
       retryAction.visible?.(

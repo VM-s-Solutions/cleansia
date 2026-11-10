@@ -64,7 +64,6 @@ export function buildWriteOffReceivableCommand(receivableId: string, note: strin
 
 export function getReceivablesTableDefinition(
   defs: {
-    onViewOrder: (row: ReceivableListItem) => void;
     onWriteOff: (row: ReceivableListItem) => void;
     isBusy: () => boolean;
   },
@@ -138,13 +137,6 @@ export function getReceivablesTableDefinition(
       },
     ],
     actions: [
-      {
-        icon: 'pi pi-eye',
-        tooltip: translate.instant('pages.receivables.actions.view_order'),
-        color: 'info',
-        visible: (row: ReceivableListItem) => !!row.orderId,
-        onClick: (row: ReceivableListItem) => defs.onViewOrder(row),
-      },
       {
         icon: 'pi pi-times-circle',
         tooltip: translate.instant('pages.receivables.actions.write_off'),

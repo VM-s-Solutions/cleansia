@@ -345,7 +345,6 @@
       "actions": "Akcie",
       "approve": "Schváliť",
       "reject": "Zamietnuť",
-      "view_details": "Zobraziť detail",
       "no_employees": "Žiadni partneri na zobrazenie",
       "filters": {
         "search": "Hľadať",
@@ -599,7 +598,6 @@
       "payment_status_label": "Stav platby",
       "assigned_employees": "Priradení",
       "actions": "Akcie",
-      "view_details": "Zobraziť detail",
       "no_orders": "Žiadne objednávky",
       "filters": {
         "search": "Hľadať",
@@ -866,7 +864,6 @@
       "pdf_status": "PDF",
       "generated_at": "Vygenerované",
       "actions": "Akcie",
-      "view_details": "Zobraziť detail",
       "download": "Stiahnuť PDF",
       "no_invoices": "Žiadne faktúry",
       "filters": {
@@ -2622,9 +2619,6 @@
         "refund_amount": "Požadované vrátenie",
         "created_on": "Vytvorené"
       },
-      "actions": {
-        "view_details": "Zobraziť detail"
-      },
       "status": {
         "pending": "Čaká",
         "under_review": "V preskúmaní",
@@ -3021,7 +3015,6 @@
         "write_off_note": "Dôvod odpísania"
       },
       "actions": {
-        "view_order": "Otvoriť objednávku",
         "write_off": "Odpísať"
       },
       "write_off": {
@@ -3092,7 +3085,6 @@
         "closed_by": "Uzavrel",
         "actions": "Akcie"
       },
-      "view_details": "Zobraziť detail",
       "no_records": "Žiadne výplatné obdobia"
     },
     "days_one": "{{count}} deň",

@@ -12,7 +12,6 @@ export function getEmployeeTableDefinition(
   defs: {
     onApprove: (row: AdminEmployeeListItem) => void;
     onReject: (row: AdminEmployeeListItem) => void;
-    onViewDetails: (row: AdminEmployeeListItem) => void;
   },
   translate: TranslateService,
   permissions: PermissionService,
@@ -88,12 +87,6 @@ export function getEmployeeTableDefinition(
       },
     ],
     actions: [
-      {
-        icon: 'pi pi-eye',
-        tooltip: translate.instant('pages.employee_management.view_details'),
-        color: 'info',
-        onClick: (row: AdminEmployeeListItem) => defs.onViewDetails(row),
-      },
       {
         icon: 'pi pi-check',
         tooltip: translate.instant('pages.employee_management.approve'),

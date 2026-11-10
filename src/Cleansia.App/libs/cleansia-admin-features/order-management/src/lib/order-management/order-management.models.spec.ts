@@ -5,7 +5,7 @@ import { getOrderTableDefinition } from './order-management.models';
 describe('order-management table definition', () => {
   const translate = { instant: (k: string) => k, currentLang: 'cs' } as unknown as TranslateService;
   const priceValue = (row: OrderListItem) =>
-    getOrderTableDefinition({ onViewDetails: jest.fn() }, translate).columns
+    getOrderTableDefinition(translate).columns
       .find((c) => c.id === 'totalPrice')
       ?.getValue?.(row);
 

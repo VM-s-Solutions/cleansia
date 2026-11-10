@@ -345,7 +345,6 @@
       "actions": "Actions",
       "approve": "Approve",
       "reject": "Reject",
-      "view_details": "View Details",
       "no_employees": "No partners to display",
       "filters": {
         "search": "Search",
@@ -599,7 +598,6 @@
       "payment_status_label": "Payment Status",
       "assigned_employees": "Assigned",
       "actions": "Actions",
-      "view_details": "View Details",
       "no_orders": "No orders found",
       "filters": {
         "search": "Search",
@@ -866,7 +864,6 @@
       "pdf_status": "PDF",
       "generated_at": "Generated",
       "actions": "Actions",
-      "view_details": "View Details",
       "download": "Download PDF",
       "no_invoices": "No invoices found",
       "filters": {
@@ -2622,9 +2619,6 @@
         "refund_amount": "Refund requested",
         "created_on": "Created"
       },
-      "actions": {
-        "view_details": "View details"
-      },
       "status": {
         "pending": "Pending",
         "under_review": "Under review",
@@ -3021,7 +3015,6 @@
         "write_off_note": "Write-off note"
       },
       "actions": {
-        "view_order": "Open the order",
         "write_off": "Write off"
       },
       "write_off": {
@@ -3092,7 +3085,6 @@
         "closed_by": "Closed By",
         "actions": "Actions"
       },
-      "view_details": "View Details",
       "no_records": "No pay periods found"
     },
     "days_one": "{{count}} day",

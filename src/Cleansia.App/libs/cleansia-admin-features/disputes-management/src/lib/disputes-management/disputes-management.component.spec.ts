@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AdminDisputeClient, DisputeListItem } from '@cleansia/admin-services';
+import { Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 import { DisputesManagementComponent } from './disputes-management.component';
@@ -52,6 +53,18 @@ describe('DisputesManagementComponent', () => {
     expect(facade.initialLoading()).toBe(false);
     expect(facade.hasError()).toBe(false);
     expect(el.querySelector('cleansia-table')).toBeTruthy();
+  });
+
+  it('opens the dispute when its row is clicked', () => {
+    disputeClient.getPaged.mockReturnValue(
+      of({ data: [DisputeListItem.fromJS({ id: 'd-1' })], total: 1 })
+    );
+    const navigate = jest.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    const { el } = setup();
+
+    (el.querySelector('tbody .table__row td') as HTMLElement).click();
+
+    expect(navigate).toHaveBeenCalledWith(['dispute-management', 'd-1']);
   });
 
   it('renders the empty state with no rows', () => {

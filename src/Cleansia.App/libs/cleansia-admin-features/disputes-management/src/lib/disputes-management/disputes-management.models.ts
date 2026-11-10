@@ -5,9 +5,6 @@ import { formatDate, formatMoney, localeFor } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 
 export function getDisputeTableDefinition(
-  defs: {
-    onViewDetails: (row: DisputeListItem) => void;
-  },
   translate: TranslateService,
   statusTemplate?: TemplateRef<DisputeListItem>,
   reasonTemplate?: TemplateRef<DisputeListItem>
@@ -74,14 +71,7 @@ export function getDisputeTableDefinition(
         getValue: (row: DisputeListItem) => formatDate(row?.createdOn, translate.currentLang),
       },
     ],
-    actions: [
-      {
-        icon: 'pi pi-eye',
-        tooltip: translate.instant('pages.disputes_management.actions.view_details'),
-        color: 'info',
-        onClick: (row: DisputeListItem) => defs.onViewDetails(row),
-      },
-    ],
+    actions: [],
   };
 }
 

@@ -1,6 +1,6 @@
 import { TemplateRef } from '@angular/core';
 import { PayPeriodDto } from '@cleansia/admin-services';
-import { TableColumn, TableAction } from '@cleansia/components';
+import { TableColumn } from '@cleansia/components';
 import { formatDate, localeFor } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 
@@ -70,22 +70,6 @@ export function getPayPeriodTableColumns(
       header: 'pay_periods.list.columns.closed_by',
       width: '12%',
       getValue: (row: PayPeriodDto) => row.closedBy || '-',
-    },
-  ];
-}
-
-export function getPayPeriodTableActions(
-  defs: {
-    onViewDetails: (row: PayPeriodDto) => void;
-  },
-  translate: TranslateService
-): TableAction<PayPeriodDto>[] {
-  return [
-    {
-      icon: 'pi pi-eye',
-      onClick: (row: PayPeriodDto) => defs.onViewDetails(row),
-      color: 'info',
-      tooltip: translate.instant('pay_periods.list.view_details'),
     },
   ];
 }

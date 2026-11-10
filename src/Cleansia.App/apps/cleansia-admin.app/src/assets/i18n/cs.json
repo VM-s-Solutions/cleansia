@@ -345,7 +345,6 @@
       "actions": "Akce",
       "approve": "Schválit",
       "reject": "Zamítnout",
-      "view_details": "Zobrazit detail",
       "no_employees": "Žádní partneři k zobrazení",
       "filters": {
         "search": "Vyhledávání",
@@ -599,7 +598,6 @@
       "payment_status_label": "Stav platby",
       "assigned_employees": "Přiřazeno",
       "actions": "Akce",
-      "view_details": "Zobrazit detail",
       "no_orders": "Žádné objednávky nenalezeny",
       "filters": {
         "search": "Vyhledávání",
@@ -866,7 +864,6 @@
       "pdf_status": "PDF",
       "generated_at": "Vygenerováno",
       "actions": "Akce",
-      "view_details": "Zobrazit detail",
       "download": "Stáhnout PDF",
       "no_invoices": "Nebyly nalezeny žádné faktury",
       "filters": {
@@ -2622,9 +2619,6 @@
         "refund_amount": "Požadovaná vratka",
         "created_on": "Vytvořeno"
       },
-      "actions": {
-        "view_details": "Zobrazit detail"
-      },
       "status": {
         "pending": "Čeká",
         "under_review": "V přezkoumání",
@@ -3021,7 +3015,6 @@
         "write_off_note": "Důvod odepsání"
       },
       "actions": {
-        "view_order": "Otevřít objednávku",
         "write_off": "Odepsat"
       },
       "write_off": {
@@ -3092,7 +3085,6 @@
         "closed_by": "Uzavřel",
         "actions": "Akce"
       },
-      "view_details": "Zobrazit detail",
       "no_records": "Nebyla nalezena žádná platební období"
     },
     "days_one": "{{count}} den",

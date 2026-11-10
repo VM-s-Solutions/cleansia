@@ -31,6 +31,8 @@
           hover: true
         }"
         [loading]="facade.loading()"
+        [clickableRows]="true"
+        (rowClick)="viewDisputeDetails($event)"
         (pageChange)="onPageChange($event)"
         (sortChange)="onSortChange($event)"
       >

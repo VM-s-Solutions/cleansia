@@ -84,7 +84,6 @@ export class DisputesManagementComponent implements AfterViewInit, OnDestroy {
 
   private rebuildTableDefinitions(): void {
     const tableDef = getDisputeTableDefinition(
-      { onViewDetails: this.viewDisputeDetails.bind(this) },
       this.translate,
       this.statusTemplate(),
       this.reasonTemplate()

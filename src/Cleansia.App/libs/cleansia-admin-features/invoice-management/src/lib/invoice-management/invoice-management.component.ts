@@ -74,7 +74,6 @@ export class InvoiceManagementComponent implements OnInit {
       columns: getInvoiceTableColumns(this.translate, this.statusTemplate(), this.pdfStatusTemplate()),
       actions: getInvoiceTableActions(
         {
-          onViewDetails: (row) => this.viewInvoiceDetails(row),
           onDownload: (row) => this.facade.downloadInvoice(row),
           onRetryPdf: (row) => this.facade.retryPdf(row),
         },

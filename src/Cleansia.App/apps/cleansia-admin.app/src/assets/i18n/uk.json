@@ -345,7 +345,6 @@
       "actions": "Дії",
       "approve": "Схвалити",
       "reject": "Відхилити",
-      "view_details": "Переглянути деталі",
       "no_employees": "Немає партнерів для відображення",
       "filters": {
         "search": "Пошук",
@@ -599,7 +598,6 @@
       "payment_status_label": "Статус оплати",
       "assigned_employees": "Призначені",
       "actions": "Дії",
-      "view_details": "Переглянути деталі",
       "no_orders": "Замовлення не знайдено",
       "filters": {
         "search": "Пошук",
@@ -866,7 +864,6 @@
       "pdf_status": "PDF",
       "generated_at": "Створено",
       "actions": "Дії",
-      "view_details": "Переглянути деталі",
       "download": "Завантажити PDF",
       "no_invoices": "Рахунки не знайдено",
       "filters": {
@@ -2622,9 +2619,6 @@
         "refund_amount": "Запитане повернення",
         "created_on": "Створено"
       },
-      "actions": {
-        "view_details": "Переглянути деталі"
-      },
       "status": {
         "pending": "Очікує",
         "under_review": "На розгляді",
@@ -3021,7 +3015,6 @@
         "write_off_note": "Причина списання"
       },
       "actions": {
-        "view_order": "Відкрити замовлення",
         "write_off": "Списати"
       },
       "write_off": {
@@ -3092,7 +3085,6 @@
         "closed_by": "Закрив",
         "actions": "Дії"
       },
-      "view_details": "Переглянути деталі",
       "no_records": "Розрахункові періоди не знайдено"
     },
     "days_one": "{{count}} день",

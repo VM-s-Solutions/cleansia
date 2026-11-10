@@ -86,6 +86,8 @@
           emptyMessage: 'pages.invoice_management.no_invoices'
         }"
         [loading]="facade.loading()"
+        [clickableRows]="true"
+        (rowClick)="viewInvoiceDetails($event)"
         (pageChange)="facade.onPageChange($event)"
         (sortChange)="facade.onSortChange($event)"
       />

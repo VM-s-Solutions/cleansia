@@ -70,7 +70,6 @@ export class OrderManagementComponent implements OnInit {
   protected readonly table = computed(() => {
     this.facade.lang();
     return getOrderTableDefinition(
-      { onViewDetails: (row) => this.viewOrderDetails(row) },
       this.translate,
       this.orderStatusTemplate(),
       this.paymentStatusTemplate()

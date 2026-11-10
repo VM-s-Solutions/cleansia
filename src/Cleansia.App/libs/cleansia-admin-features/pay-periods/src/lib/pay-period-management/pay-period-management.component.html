@@ -126,6 +126,8 @@
           emptyMessage: 'pay_periods.list.no_records'
         }"
         [loading]="facade.loading()"
+        [clickableRows]="true"
+        (rowClick)="viewPayPeriodDetails($event)"
         (pageChange)="facade.onPageChange($event)"
         (sortChange)="facade.onSortChange($event)"
       />

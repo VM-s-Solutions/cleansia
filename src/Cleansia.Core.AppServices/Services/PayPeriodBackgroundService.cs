@@ -248,7 +248,6 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         var startDate = period.StartDate;
         var endDate = period.EndDate;
         var closedAt = period.ClosedAt!.Value;
-        var label = period.GetPeriodLabel();
         var tenantId = period.TenantId;
 
         foreach (var employeeId in employeeIds)
@@ -261,7 +260,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
                 if (tenantId is not null)
                     scope.ServiceProvider.GetRequiredService<ITenantProvider>().SetTenantOverride(tenantId);
                 await scope.ServiceProvider.GetRequiredService<PayPeriodBackgroundService>()
-                    .SendEmployeePeriodClosedEmailAsync(employeeId, periodId, startDate, endDate, closedAt, label, true, cancellationToken);
+                    .SendEmployeePeriodClosedEmailAsync(employeeId, periodId, startDate, endDate, closedAt, true, cancellationToken);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -281,7 +280,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
                 if (tenantId is not null)
                     scope.ServiceProvider.GetRequiredService<ITenantProvider>().SetTenantOverride(tenantId);
                 await scope.ServiceProvider.GetRequiredService<PayPeriodBackgroundService>()
-                    .SendEmployeePeriodClosedEmailAsync(employeeId, periodId, startDate, endDate, closedAt, label, false, cancellationToken);
+                    .SendEmployeePeriodClosedEmailAsync(employeeId, periodId, startDate, endDate, closedAt, false, cancellationToken);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -295,7 +294,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
     }
 
     private async Task SendEmployeePeriodClosedEmailAsync(string employeeId, string periodId,
-        DateOnly startDate, DateOnly endDate, DateTime closedAt, string periodLabel, bool generateInvoices,
+        DateOnly startDate, DateOnly endDate, DateTime closedAt, bool generateInvoices,
         CancellationToken cancellationToken)
     {
         var employee = await _employeeRepository.GetQueryable()
@@ -311,7 +310,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         var languageCode = employee.User.PreferredLanguageCode ?? Constants.Language.English;
         var employeeName = $"{employee.User.FirstName} {employee.User.LastName}";
         var attachments = generateInvoices
-            ? await GenerateInvoicesForEmployeeAsync(employee, periodId, startDate, endDate, periodLabel, languageCode, cancellationToken)
+            ? await GenerateInvoicesForEmployeeAsync(employee, periodId, startDate, endDate, languageCode, cancellationToken)
             : [];
         if (attachments is null)
         {
@@ -329,7 +328,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 await _emailService.SendPeriodClosedEmailAsync(employee.User.Email, employeeName,
-                    startDate, endDate, closedAt, periodLabel, languageCode, bytes, fileName, cancellationToken);
+                    startDate, endDate, closedAt, languageCode, bytes, fileName, cancellationToken);
                 _logger.LogInformation("Sent period closed email to employee {EmployeeId} for period {PeriodId}", employeeId, periodId);
             }
         }
@@ -354,7 +353,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
     private async Task<IReadOnlyList<(byte[] PdfBytes, string FileName)>?> GenerateInvoicesForEmployeeAsync(
         Employee employee,
         string periodId,
-        DateOnly startDate, DateOnly endDate, string periodLabel,
+        DateOnly startDate, DateOnly endDate,
         string languageCode,
         CancellationToken cancellationToken)
     {
@@ -411,7 +410,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
 
             onlyWaitingCharges = false;
             var attachment = await GenerateOneInvoiceAsync(
-                employee, periodId, startDate, endDate, periodLabel, group.Key, invoiced, languageCode, cancellationToken);
+                employee, periodId, startDate, endDate, group.Key, invoiced, languageCode, cancellationToken);
             if (attachment is not null)
             {
                 attachments.Add(attachment.Value);
@@ -425,7 +424,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
     private async Task<(byte[] PdfBytes, string FileName)?> GenerateOneInvoiceAsync(
         Employee employee,
         string periodId,
-        DateOnly startDate, DateOnly endDate, string periodLabel,
+        DateOnly startDate, DateOnly endDate,
         string currencyId,
         IReadOnlyList<OrderEmployeePay> orderPays,
         string languageCode,
@@ -509,7 +508,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
             pdfBytes = await GenerateInvoicePdfAsync(invoice, employee, currency, orderPays, startDate, endDate, language.Code, cancellationToken);
             if (pdfBytes is null || pdfBytes.Length == 0)
                 throw new InvalidOperationException(EmptyRenderMessage);
-            pdfBlobUrl = await UploadInvoicePdfAsync(invoice, employee, periodLabel, pdfBytes, cancellationToken);
+            pdfBlobUrl = await UploadInvoicePdfAsync(invoice, employee, startDate, endDate, pdfBytes, cancellationToken);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -595,18 +594,19 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
     private async Task<string> UploadInvoicePdfAsync(
         EmployeeInvoice invoice,
         Employee employee,
-        string periodLabel,
+        DateOnly startDate,
+        DateOnly endDate,
         byte[] pdfBytes,
         CancellationToken cancellationToken)
     {
         // THE EMPLOYEE'S ID, NOT THEIR NAME, and the same segment the regenerate path keys on so both
         // writers address one file. The name is mutable, and it is also the only segment that told two
         // companies' documents apart: each company numbers its own invoices, so two first invoices of a
-        // year are both INV-YYYY-000001 under the same auto-seeded period label.
+        // year are both INV-YYYY-000001 under the same period folder.
         var employeeFolder = employee.Id;
         var invoiceFileName = invoice.InvoiceNumber;
 
-        var blobName = $"{periodLabel}/{employeeFolder}/{invoiceFileName}.pdf";
+        var blobName = $"{PayPeriod.BlobFolder(startDate, endDate)}/{employeeFolder}/{invoiceFileName}.pdf";
         var blobClient = _blobContainerClientFactory.GetBlobContainerClient(Common.Constants.BlobContainers.GeneratedInvoices);
 
         using var pdfStream = new MemoryStream(pdfBytes);

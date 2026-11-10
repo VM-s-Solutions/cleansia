@@ -43,7 +43,7 @@ Branch `fix/pay-findings`.
 
 - [x] **P4.1** A rejected pay calculation logs at Error with the order, the employee and the reason; the admin-override question is noted for Mike.
 - [x] **P4.2** Period-end reminders go only to cleaners with work in the period.
-- [ ] **P4.3** Blob paths use a fixed date format, and e-mails format the period in the recipient's language.
+- [x] **P4.3** Blob paths use a fixed date format, and e-mails format the period in the recipient's language.
 - [x] **P4.4** $ A dispute charge on an already-invoiced job becomes a deduction on the cleaner's next invoice. Its design, including what happens when that invoice would go negative, is written in this ticket and approved by Mike before Phase 2 starts (P1.8, D12).
 - [ ] ~~**P4.5** Optional: a QR Platba code in the payment block of CZK invoice PDFs.~~ Dropped: Mike accepted the leaner Phase 4 on 2026-11-10.
 - [x] **mrc-1** An invoice gets a concurrency token, so two admin actions on one invoice cannot both commit (a Mark paid racing a Cancel would set the cash off twice). Folded in by Mike on 2026-11-10.
@@ -347,3 +347,7 @@ The plan's "Not doing" list. Anything found outside these slices is reported to 
   it is.
 - 2026-11-10 — P4.2 built: the period-end reminder goes only to a cleaner with a job or fee-share pay row in the period;
   a carried dispute charge alone is not work.
+- 2026-11-10 — P4.3 built: both invoice-PDF writers store under `PayPeriod.BlobFolder` (`yyyy-MM-dd_yyyy-MM-dd`, invariant
+  culture); the period-closed and period-end e-mails write the period, its start and its end in the recipient's
+  language, and `IEmailService` no longer takes a period label. Invoices already stored keep their old address, which
+  the row holds; a regenerate writes the new one. The DTO `PayPeriodLabel` the apps receive is unchanged.

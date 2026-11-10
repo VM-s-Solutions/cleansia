@@ -34,7 +34,7 @@ namespace Cleansia.Tests.Features.EmployeePayroll;
 /// The row stores the absolute address the writers get back from the container, and the download
 /// reads by name within it — two different strings for one blob. What is pinned here is the round
 /// trip through the real writer and the real reader: the name the download hands the client is the
-/// name the upload wrote, with the period label's spaces and comma surviving the address's escaping.
+/// name the upload wrote.
 /// </summary>
 public class InvoicePdfBlobNameRoundTripTests
 {
@@ -80,8 +80,6 @@ public class InvoicePdfBlobNameRoundTripTests
         var regenerated = await RegenerateAsync();
         Assert.True(regenerated.IsSuccess);
         var uploaded = Assert.Single(_uploadedNames);
-        Assert.Contains(' ', uploaded);
-        Assert.Contains(',', uploaded);
         Assert.StartsWith($"{ContainerAddress}/", _invoice.PdfBlobUrl, StringComparison.Ordinal);
 
         var downloaded = await DownloadAsync();

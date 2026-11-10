@@ -77,10 +77,9 @@ public sealed class PayPeriodEmployeeIsolationPostgresTests(PostgresContainerFix
                     var context = sp.GetRequiredService<CleansiaDbContext>();
                     var email = new Mock<IEmailService>();
                     email.Setup(e => e.SendPeriodClosedEmailAsync(It.IsAny<string>(), It.IsAny<string>(),
-                            It.IsAny<DateOnly>(), It.IsAny<DateOnly>(), It.IsAny<DateTime>(), It.IsAny<string>(),
-                            It.IsAny<string>(), It.IsAny<byte[]?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
-                        .Returns<string, string, DateOnly, DateOnly, DateTime, string, string, byte[]?, string?, CancellationToken>(
-                            async (address, _, _, _, _, _, _, bytes, _, ct) =>
+                            It.IsAny<DateOnly>(), It.IsAny<DateOnly>(), It.IsAny<DateTime>(), It.IsAny<string>(), It.IsAny<byte[]?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                        .Returns<string, string, DateOnly, DateOnly, DateTime, string, byte[]?, string?, CancellationToken>(
+                            async (address, _, _, _, _, _, bytes, _, ct) =>
                             {
                                 await observations.ObserveAsync(context, "email", ct);
                                 emails.Add((address, bytes is not null, context.ChangeTracker.Entries<EmployeeInvoice>()

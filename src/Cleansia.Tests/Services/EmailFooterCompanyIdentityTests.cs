@@ -173,9 +173,9 @@ public sealed class EmailFooterCompanyIdentityTests
             "test-receipt" => service.SendTestOrderReceiptEmailAsync(
                 Recipient, "Jana Novakova", "ORD-1", "1. 10. 2026", "1 234,50 Kč", language, ct),
             "period-closed" => service.SendPeriodClosedEmailAsync(
-                Recipient, "Petr Svoboda", new DateOnly(2026, 9, 1), new DateOnly(2026, 9, 30), DateTime.UtcNow, "September", language, ct: ct),
+                Recipient, "Petr Svoboda", new DateOnly(2026, 9, 1), new DateOnly(2026, 9, 30), DateTime.UtcNow, language, ct: ct),
             "period-reminder" => service.SendPeriodEndReminderEmailAsync(
-                Recipient, "Petr Svoboda", new DateOnly(2026, 9, 1), new DateOnly(2026, 9, 30), 3, "September", language, ct),
+                Recipient, "Petr Svoboda", new DateOnly(2026, 9, 1), new DateOnly(2026, 9, 30), 3, language, ct),
             "promo" => service.SendPromoCodeEmailAsync(Recipient, "WELCOME10", "-10 %", null, language, ct),
             "cash-remittance" => service.SendCashRemittanceRequestEmailAsync(
                 Recipient, "Petr Svoboda", 1500m, "Kč", DateTime.UtcNow.AddDays(-40), language, ct),

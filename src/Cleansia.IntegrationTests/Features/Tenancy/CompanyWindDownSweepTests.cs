@@ -570,11 +570,12 @@ public sealed class CompanyWindDownSweepTests(PostgresContainerFixture fixture) 
                 Assert.Equal(seeded.ApprovedCleanerEmployeeId, invoice.EmployeeId);
                 Assert.Equal(EurId, invoice.CurrencyId);
                 Assert.False(string.IsNullOrEmpty(invoice.PdfBlobUrl));
-                Assert.Single(_email.PeriodClosedSends, s => s.PeriodLabel == open.GetPeriodLabel() && s.InvoiceFileName == $"{invoice.InvoiceNumber}.pdf");
+                Assert.Single(_email.PeriodClosedSends, s => s.StartDate == open.StartDate && s.EndDate == open.EndDate && s.InvoiceFileName == $"{invoice.InvoiceNumber}.pdf");
 
                 // A Closed period holding an uninvoiced pay row is the page's fact, not the sweep's.
                 Assert.DoesNotContain(invoices, i => i.PayPeriodId == closedPeriodId);
-                Assert.DoesNotContain(_email.PeriodClosedSends, s => s.PeriodLabel == periods.Single(p => p.Id == closedPeriodId).GetPeriodLabel());
+                var closedPeriod = periods.Single(p => p.Id == closedPeriodId);
+                Assert.DoesNotContain(_email.PeriodClosedSends, s => s.StartDate == closedPeriod.StartDate && s.EndDate == closedPeriod.EndDate);
 
                 // The rollover closed and invoiced both companies' expired periods, opened A's successor
                 // and none for B.
@@ -993,13 +994,13 @@ public sealed class CompanyWindDownSweepTests(PostgresContainerFixture fixture) 
 
     private sealed class RecordingEmailService : IEmailService
     {
-        public List<(string Email, string PeriodLabel, string? InvoiceFileName)> PeriodClosedSends { get; } = [];
+        public List<(string Email, DateOnly StartDate, DateOnly EndDate, string? InvoiceFileName)> PeriodClosedSends { get; } = [];
 
         private static Task<string> Sent() => Task.FromResult("test-message-id");
 
-        public Task<string> SendPeriodClosedEmailAsync(string email, string employeeName, DateOnly startDate, DateOnly endDate, DateTime closedAt, string periodLabel, string languageCode = "en", byte[]? invoicePdfBytes = null, string? invoiceFileName = null, CancellationToken ct = default)
+        public Task<string> SendPeriodClosedEmailAsync(string email, string employeeName, DateOnly startDate, DateOnly endDate, DateTime closedAt, string languageCode = "en", byte[]? invoicePdfBytes = null, string? invoiceFileName = null, CancellationToken ct = default)
         {
-            PeriodClosedSends.Add((email, periodLabel, invoiceFileName));
+            PeriodClosedSends.Add((email, startDate, endDate, invoiceFileName));
             return Sent();
         }
 
@@ -1007,7 +1008,7 @@ public sealed class CompanyWindDownSweepTests(PostgresContainerFixture fixture) 
         public Task<string> SendOrderReceiptEmailAsync(string email, Order order, byte[]? pdfBytes = null, string fileName = "receipt.pdf", string languageCode = "en", CancellationToken ct = default, string? guestAccessToken = null) => Sent();
         public Task<string> SendTestOrderReceiptEmailAsync(string email, string customerName, string orderNumber, string orderDate, string totalAmount, string languageCode = "en", CancellationToken ct = default) => Sent();
         public Task<string> SendEmailConfirmationAsync(string email, string userName, string verificationCode, string languageCode, CancellationToken ct = default) => Sent();
-        public Task<string> SendPeriodEndReminderEmailAsync(string email, string employeeName, DateOnly startDate, DateOnly endDate, int daysRemaining, string periodLabel, string languageCode = "en", CancellationToken ct = default) => Sent();
+        public Task<string> SendPeriodEndReminderEmailAsync(string email, string employeeName, DateOnly startDate, DateOnly endDate, int daysRemaining, string languageCode = "en", CancellationToken ct = default) => Sent();
         public Task<string> SendPromoCodeEmailAsync(string email, string promoCode, string discountLabel, DateTime? expiresOn, string languageCode = "en", CancellationToken ct = default) => Sent();
         public Task<string> SendOrderStatusUpdateEmailAsync(string email, Order order, string newStatus, string languageCode = "en", CancellationToken ct = default, decimal? refundedAmount = null, string? guestAccessToken = null, decimal? apologyCreditAmount = null, bool noCleanerAvailable = false) => Sent();
         public Task<string> SendOrderBookedEmailAsync(string email, Order order, int freeCancellationHours, string languageCode = "en", CancellationToken ct = default, string? guestAccessToken = null, byte[]? confirmationPdf = null, string? confirmationFileName = null) => Sent();

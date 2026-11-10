@@ -154,10 +154,10 @@ public class MixedCurrencyPeriodInvoicingTests(PostgresContainerFixture fixture)
                 email
                     .Setup(e => e.SendPeriodClosedEmailAsync(
                         It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateOnly>(), It.IsAny<DateOnly>(),
-                        It.IsAny<DateTime>(), It.IsAny<string>(), It.IsAny<string>(),
+                        It.IsAny<DateTime>(), It.IsAny<string>(),
                         It.IsAny<byte[]?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
-                    .Callback<string, string, DateOnly, DateOnly, DateTime, string, string, byte[]?, string?, CancellationToken>(
-                        (address, _, _, _, _, _, _, pdf, _, _) => sent.Add((address, pdf)))
+                    .Callback<string, string, DateOnly, DateOnly, DateTime, string, byte[]?, string?, CancellationToken>(
+                        (address, _, _, _, _, _, pdf, _, _) => sent.Add((address, pdf)))
                     .ReturnsAsync("message-id");
                 services.Replace(ServiceDescriptor.Scoped(_ => email.Object));
                 return Task.CompletedTask;

@@ -136,6 +136,9 @@ public sealed partial class EmailService : IEmailService
     private static CultureInfo CultureFor(string languageCode) =>
         CultureInfo.GetCultureInfo(EmailLocale.Resolve(languageCode));
 
+    private static string PeriodLabel(DateOnly startDate, DateOnly endDate, string languageCode) =>
+        $"{startDate.ToString("d", CultureFor(languageCode))} – {endDate.ToString("d", CultureFor(languageCode))}";
+
     /// <summary>
     /// An amount the way the e-mail's language writes it, never the host's: "1 234,50 €" in Czech,
     /// "€1,234.50" in English — the receipt's convention. No unit when the currency was not loaded.
@@ -317,7 +320,6 @@ public sealed partial class EmailService : IEmailService
         DateOnly startDate,
         DateOnly endDate,
         DateTime closedAt,
-        string periodLabel,
         string languageCode = Constants.Language.English,
         byte[]? invoicePdfBytes = null,
         string? invoiceFileName = null,
@@ -329,9 +331,9 @@ public sealed partial class EmailService : IEmailService
         var values = BuildTemplateValues(translations, new
         {
             EmployeeName = employeeName,
-            PeriodLabel = periodLabel,
-            StartDate = startDate.ToString("yyyy-MM-dd"),
-            EndDate = endDate.ToString("yyyy-MM-dd"),
+            PeriodLabel = PeriodLabel(startDate, endDate, languageCode),
+            StartDate = startDate.ToString("d", CultureFor(languageCode)),
+            EndDate = endDate.ToString("d", CultureFor(languageCode)),
             ClosedAt = closedAt.ToString("yyyy-MM-dd HH:mm:ss UTC"),
             FooterText = await FooterTextAsync(languageCode, countryId: null, ct)
         }, languageCode);
@@ -357,7 +359,6 @@ public sealed partial class EmailService : IEmailService
         DateOnly startDate,
         DateOnly endDate,
         int daysRemaining,
-        string periodLabel,
         string languageCode = Constants.Language.English,
         CancellationToken ct = default)
     {
@@ -370,9 +371,9 @@ public sealed partial class EmailService : IEmailService
         var values = BuildTemplateValues(translations, new
         {
             EmployeeName = employeeName,
-            PeriodLabel = periodLabel,
-            StartDate = startDate.ToString("yyyy-MM-dd"),
-            EndDate = endDate.ToString("yyyy-MM-dd"),
+            PeriodLabel = PeriodLabel(startDate, endDate, languageCode),
+            StartDate = startDate.ToString("d", CultureFor(languageCode)),
+            EndDate = endDate.ToString("d", CultureFor(languageCode)),
             DaysRemaining = formattedDaysRemaining,
             FooterText = await FooterTextAsync(languageCode, countryId: null, ct)
         }, languageCode);

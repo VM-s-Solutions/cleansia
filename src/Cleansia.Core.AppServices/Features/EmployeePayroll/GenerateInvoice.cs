@@ -287,7 +287,6 @@ public class GenerateInvoice
                         period!.StartDate,
                         period.EndDate,
                         period.ClosedAt!.Value,
-                        period.GetPeriodLabel(),
                         employee.User.PreferredLanguageCode ?? Constants.Language.English,
                         pdfBytes,
                         fileName,

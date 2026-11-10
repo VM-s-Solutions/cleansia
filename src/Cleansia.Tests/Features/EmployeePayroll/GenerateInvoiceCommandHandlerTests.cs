@@ -59,10 +59,10 @@ public class GenerateInvoiceCommandHandlerTests
         _emailService
             .Setup(e => e.SendPeriodClosedEmailAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateOnly>(), It.IsAny<DateOnly>(),
-                It.IsAny<DateTime>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<DateTime>(), It.IsAny<string>(),
                 It.IsAny<byte[]?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
-            .Callback<string, string, DateOnly, DateOnly, DateTime, string, string, byte[]?, string?, CancellationToken>(
-                (email, _, start, end, _, _, language, pdf, fileName, _) => _emails.Add((email, language, start, end, pdf, fileName)))
+            .Callback<string, string, DateOnly, DateOnly, DateTime, string, byte[]?, string?, CancellationToken>(
+                (email, _, start, end, _, language, pdf, fileName, _) => _emails.Add((email, language, start, end, pdf, fileName)))
             .ReturnsAsync("message-id");
         _payoutReferenceAllocator
             .Setup(a => a.AllocateAsync(It.IsAny<CancellationToken>()))
@@ -428,7 +428,7 @@ public class GenerateInvoiceCommandHandlerTests
         _emailService
             .Setup(e => e.SendPeriodClosedEmailAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateOnly>(), It.IsAny<DateOnly>(),
-                It.IsAny<DateTime>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<DateTime>(), It.IsAny<string>(),
                 It.IsAny<byte[]?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new HttpRequestException("SendGrid is unavailable"));
 
@@ -438,7 +438,7 @@ public class GenerateInvoiceCommandHandlerTests
         _invoiceRepository.Verify(r => r.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         _emailService.Verify(e => e.SendPeriodClosedEmailAsync(
             CleanerEmail, It.IsAny<string>(), It.IsAny<DateOnly>(), It.IsAny<DateOnly>(),
-            It.IsAny<DateTime>(), It.IsAny<string>(), It.IsAny<string>(),
+            It.IsAny<DateTime>(), It.IsAny<string>(),
             It.IsAny<byte[]?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 

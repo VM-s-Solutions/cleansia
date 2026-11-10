@@ -95,8 +95,8 @@ public class PeriodReminderBackgroundService : IPeriodReminderBackgroundService
             .ToListAsync(cancellationToken);
 
         _logger.LogInformation(
-            "Sending reminders for period {PeriodLabel} ending on {EndDate} to {EmployeeCount} employees",
-            period.GetPeriodLabel(),
+            "Sending reminders for period {PeriodId} ending on {EndDate} to {EmployeeCount} employees",
+            period.Id,
             period.EndDate,
             activeEmployees.Count);
 
@@ -127,7 +127,6 @@ public class PeriodReminderBackgroundService : IPeriodReminderBackgroundService
                     period.StartDate,
                     period.EndDate,
                     daysRemaining,
-                    period.GetPeriodLabel(),
                     languageCode,
                     cancellationToken);
 

@@ -54,8 +54,8 @@ public class PeriodReminderRecipientsTests
         emailService
             .Setup(s => s.SendPeriodEndReminderEmailAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateOnly>(), It.IsAny<DateOnly>(),
-                It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Callback((string email, string _, DateOnly _, DateOnly _, int _, string _, string _, CancellationToken _) =>
+                It.IsAny<int>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Callback((string email, string _, DateOnly _, DateOnly _, int _, string _, CancellationToken _) =>
                 recipients.Add(email))
             .ReturnsAsync("message-id");
 

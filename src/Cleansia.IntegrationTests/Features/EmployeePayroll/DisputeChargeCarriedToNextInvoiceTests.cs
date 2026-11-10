@@ -266,8 +266,7 @@ public class DisputeChargeCarriedToNextInvoiceTests(PostgresContainerFixture fix
                 Assert.Equal((successor.Id, (string?)null), (charge.PayPeriodId, charge.EmployeeInvoiceId));
                 Assert.False(await context.EmployeeInvoices.IgnoreQueryFilters().AnyAsync(i => i.PayPeriodId == expiredId));
                 _email.Verify(e => e.SendPeriodClosedEmailAsync(It.IsAny<string>(), It.IsAny<string>(),
-                    It.IsAny<DateOnly>(), It.IsAny<DateOnly>(), It.IsAny<DateTime>(), It.IsAny<string>(),
-                    It.IsAny<string>(), It.IsAny<byte[]?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
+                    It.IsAny<DateOnly>(), It.IsAny<DateOnly>(), It.IsAny<DateTime>(), It.IsAny<string>(), It.IsAny<byte[]?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
             },
             transactional: false);
     }

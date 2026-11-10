@@ -73,9 +73,9 @@ public class PayPeriodEmailLanguageTests
         _emailService
             .Setup(s => s.SendPeriodClosedEmailAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateOnly>(), It.IsAny<DateOnly>(),
-                It.IsAny<DateTime>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<byte[]?>(),
+                It.IsAny<DateTime>(), It.IsAny<string>(), It.IsAny<byte[]?>(),
                 It.IsAny<string?>(), It.IsAny<CancellationToken>()))
-            .Callback((string _, string _, DateOnly _, DateOnly _, DateTime _, string _,
+            .Callback((string _, string _, DateOnly _, DateOnly _, DateTime _,
                 string languageCode, byte[]? _, string? _, CancellationToken _) =>
                 _closedEmailLanguages.Add(languageCode))
             .ReturnsAsync("message-id");
@@ -83,8 +83,8 @@ public class PayPeriodEmailLanguageTests
         _emailService
             .Setup(s => s.SendPeriodEndReminderEmailAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateOnly>(), It.IsAny<DateOnly>(),
-                It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Callback((string _, string _, DateOnly _, DateOnly _, int _, string _,
+                It.IsAny<int>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Callback((string _, string _, DateOnly _, DateOnly _, int _,
                 string languageCode, CancellationToken _) =>
                 _reminderEmailLanguages.Add(languageCode))
             .ReturnsAsync("message-id");

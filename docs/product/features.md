@@ -476,7 +476,7 @@ customer's balance in the currency the admin names, and they are separate acts. 
 **Money** — pay periods (create, close now, change end date, mark paid; a closed period is never reopened), employee invoices (one per cleaner per period
 per currency they were paid in, numbered `INV-YYYY-NNNNNN` from the operating company's own series
 with a ten-digit variable symbol from its own counter — each company numbers its own), payout details
-behind an audited reveal, refunds, disputes, chargebacks, fiscal failures, customer credit issued in a
+behind an audited reveal, refunds (a *Refunds* page lists every refund by state, retries one that was not sent and records how a refund Stripe failed or bounced was repaid, by bank transfer or as credit when the customer chooses it → [Refunds](/admin-app/order-management#refunds-page)), disputes, chargebacks, fiscal failures, customer credit issued in a
 named currency.
 
 **Catalogue** — services, packages, extras, per-employee pay rates in bulk, countries, currencies,

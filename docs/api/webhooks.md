@@ -54,9 +54,10 @@ The `WebhookSecret` (`whsec_...`) must match the secret configured in the Stripe
 
 ## Handled Event Types
 
-Twelve event types (`Constants.StripeEventType`): eleven in three groups (`IsOrderEvent`,
-`IsSubscriptionEvent`, `IsChargebackEvent`), and `setup_intent.succeeded`, which is in none of them
-and only ever lands a saved card. Every host that runs the handler handles all twelve.
+Fourteen event types (`Constants.StripeEventType`): twelve in three groups (`IsOrderEvent`,
+`IsSubscriptionEvent`, `IsChargebackEvent`), `setup_intent.succeeded`, which is in none of them
+and only ever lands a saved card, and `refund.failed`, which is in none of them either and marks a card
+refund Stripe accepted and then failed. Every host that runs the handler handles all fourteen.
 
 | Event Type | Constant | Action |
 |------------|----------|--------|
@@ -76,6 +77,9 @@ and only ever lands a saved card. Every host that runs the handler handles all t
 | **Chargeback** — found by the order's stored payment intent, else through Stripe's Checkout Session for that intent | | |
 | `charge.dispute.created` | `ChargeDisputeCreated` | Links the order's open dispute, or creates an escalated `Chargeback` one; the administrators are told. A chargeback that matches no order tells the administrators of every company (`admin.dispute.chargeback_unmatched`) — see [Cancellation, refund and dispute](/flows/cancellation-refund-dispute#dispute) |
 | `charge.dispute.updated`, `charge.dispute.closed` | `ChargeDisputeUpdated`, `ChargeDisputeClosed` | Reflects Stripe's status onto the linked dispute |
+
+| **Refund** — found by the `RefundKey` in the Stripe refund's metadata | | |
+| `refund.failed` | `RefundFailed` | A card refund Stripe accepted has **failed**: the refund row is found by its key and stamped with the date and Stripe's refund id. A `Pending` row closes as `Failed`; a `Succeeded` one stays `Succeeded` and carries the date it bounced, because the money left and came back and still counts as refunded. The first of this event and a retry to learn it tells every administrator (`admin.payment.refund_bounced`, every role); a repeat tells nobody. A refund Stripe made for a receivable carries no row, and an unknown key is only logged → [Cancellation, refund and dispute](/flows/cancellation-refund-dispute#refund-states) |
 
 All other event types are **ignored** and return `200 OK` with an empty response. So is a
 subscription event, or a chargeback update or close, that resolves to no local row: it is logged and
@@ -177,7 +181,7 @@ its **own** `whsec_`, and a payload signed by one will never verify against the 
 
 | Channel | Endpoint URL | Events | GitHub Environment secret | Key Vault secret |
 |---|---|---|---|---|
-| Web | `https://api-cleansia-customer-<region>-<env>.azurewebsites.net/api/Payment/webhook` | `checkout.session.completed`, `checkout.session.expired`, and the seven account-wide events below | `STRIPE_WEBHOOK_SECRET_WEB` | `Stripe--WebhookSecret` |
+| Web | `https://api-cleansia-customer-<region>-<env>.azurewebsites.net/api/Payment/webhook` | `checkout.session.completed`, `checkout.session.expired`, and the eight account-wide events below | `STRIPE_WEBHOOK_SECRET_WEB` | `Stripe--WebhookSecret` |
 | Mobile | `https://api-cleansia-customer-mobile-<region>-<env>.azurewebsites.net/api/Payment/webhook` | `payment_intent.succeeded`, `payment_intent.payment_failed`, `payment_intent.canceled`, `setup_intent.succeeded` | `STRIPE_WEBHOOK_SECRET_MOBILE` | `Stripe--WebhookSecretMobile` |
 
 **`setup_intent.succeeded` belongs on the mobile endpoint.** The customer apps' *Save a card* under Profile →
@@ -194,11 +198,12 @@ otherwise changes nothing.
 
 **The account-wide events belong to no channel:** `customer.subscription.created`,
 `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`,
-`charge.dispute.created`, `charge.dispute.updated`, `charge.dispute.closed`. Either host handles them,
-so they need one endpoint; the table puts them on web. If both endpoints carry one, the second delivery
+`charge.dispute.created`, `charge.dispute.updated`, `charge.dispute.closed`, `refund.failed`. Either host
+handles them, so they need one endpoint; the table puts them on web. If both endpoints carry one, the second delivery
 of the same event id is a no-op. **Left off both, nothing records them.** A web Plus checkout never
 gets its `UserMembership` row, renewals and lapses are never mirrored, and no chargeback reaches a
-dispute or an administrator.
+dispute or an administrator, and a card refund Stripe fails after accepting it stays `Succeeded` with
+nobody told. **`charge.refund.updated` stays unsubscribed**: it reports the same failure a second time.
 
 Steps, per environment (`dev-weu`, then `prod-weu`):
 

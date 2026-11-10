@@ -88,12 +88,13 @@ it is the recovery route for a period the sweep cannot invoice.
 **Raised by:** the dead-code scout (DC §2.4), 2026-09-20. **Who answers:** the owner (with the
 architect — both are ADR terms).
 **Why it needs you:** `PayoutDetailsStatus.NeedsReconfirmation` (ADR-0034 D5; every writer sets
-`Provided`) and `RefundStatus.Failed` (no `refund.failed` webhook handler; `Refund.cs:88-100` only
-moves `Pending → Succeeded`). Build the producer, or strike the state from the ADR and the enum (a
-wire enum → NSwag + both mobile specs)?
-**Default in force since 2026-09-20, unruled: leave both.** Both members are still in
-`src/Cleansia.Core.Domain/Enums/` (`PayoutDetailsStatus.cs`, `RefundStatus.cs`); the dated *what
-shipped* lines on ADR-0034 and ADR-0006 are the docs lane's (T-0799).
+`Provided`) and `RefundStatus.Failed` (the producer has been built since the admin panel remarks of 2026-11-08, since `refund.failed` is a handled
+webhook event and a retry that finds Stripe failed a refund closes it, so the refund half of this
+question is closed). What remains is `PayoutDetailsStatus.NeedsReconfirmation`: build the producer, or
+strike the state from the ADR and the enum (a wire enum → NSwag + both mobile specs)?
+**Default in force since 2026-09-20, unruled: leave it.** The member is still in
+`src/Cleansia.Core.Domain/Enums/PayoutDetailsStatus.cs`; the dated *what shipped* line on ADR-0034 is the
+docs lane's (T-0799), and ADR-0006's now says the refund state has producers.
 **Blocks:** nothing.
 
 ## Q-UI-06 — Headings: load Poppins in admin / partner, or amend the design language?

@@ -47,8 +47,8 @@ failing e-mail can never fail the command, and nothing the notifier reads depend
   policy, because the notifier filters rows, not principals: order events, disputes, payment failures,
   crew lost or short, a cleaner not started, a job nobody has taken, a lockout reported, a door non-payment and a referral held → `SupportOrAbove`; erasure failures → `ManagerOrAbove`; the three
   company milestones → `AdministratorOnly`; **`admin.dispute.chargeback`, `admin.dispute.chargeback_unmatched`,
-  `admin.payment.refund_stuck`, `admin.payment.refund_needs_retry` and `admin.payment.refund_without_cancel`
-  → `AdminOnly`, every role** — Support
+  `admin.payment.refund_stuck`, `admin.payment.refund_needs_retry`, `admin.payment.refund_without_cancel`
+  and `admin.payment.refund_bounced` → `AdminOnly`, every role** — Support
   answers the customer or the bank, the Accountant reconciles the money, so the Accountant's bell is not
   empty by construction.
 - **`AdminEvent(Key, TenantId, Subject, Args)`** — the call. `TenantId` is an **argument**; `Subject` is the
@@ -66,7 +66,7 @@ failing e-mail can never fail the command, and nothing the notifier reads depend
   sites read before calling: the card decline (a repeated decline on one order), the archive (two
   overlapping archive builds of one frozen company), the not-started alert
   (whichever of its three callers comes first), the no-cleaner-yet and no-cleaner-soon alerts (a later five-minute tick) and
-  the three refund alerts (the hourly re-drive and the refund seam), each on `orderId` but the archive,
+  the three re-drive and seam refund alerts (the hourly re-drive and the refund seam), each on `orderId` but the archive,
   which reads the day — the sites invariant 5 lists.
 - **`IAppConfigurationProvider.GetTenantSettingAsync(tenantId, key)`** + `TenantSettingReader.GetAsync(provider,
   tenantId, definition)` — the mailbox read **by argument** (`IgnoreQueryFilters().Where(TenantId == tenantId
@@ -124,10 +124,12 @@ failing e-mail can never fail the command, and nothing the notifier reads depend
   cleaner's door non-payment report; subject the order id, args `orderNumber`, `amount`, `orderId`; no guard
   is needed, because the report needs the order in progress and leaves it completed) ·
   `RedrivePendingRefunds` (`admin.payment.refund_stuck` /
-  `refund_needs_retry` / `refund_without_cancel` once a refund is 24 h old — `refund_stuck` for a
-  cancelled order's own refund the job re-drives, `refund_without_cancel` (since 2026-10-06) for a
-  cancellation's own refund on an order that was never cancelled — a guest's claim whose cancel failed,
-  never re-driven — and `refund_needs_retry` for any other; args `orderNumber`, `amount`, `orderId`;
+  `refund_needs_retry` / `refund_without_cancel` — `refund_stuck` once a cancelled order's own
+  refund the job re-drives is 24 h old, `refund_without_cancel` (since 2026-10-06) once a cancellation's own
+  refund on an order that was never cancelled — a guest's claim whose cancel failed, never re-driven — is
+  24 h old, and `refund_needs_retry` for any other refund (a dispute's, an administrator's, a partial one)
+  at the first hourly run once it is 30 minutes old, so within 30 to 90 minutes, because nothing re-drives it
+  and a day of waiting would only leave the customer unpaid (since 2026-11-08); args `orderNumber`, `amount`, `orderId`;
   subject the refund id, guarded by `AnyForEventIgnoringTenantAsync` on `orderId`, inside the per-company loop and its
   per-row commit; nothing for a row it closes because the refunds Stripe confirmed took the whole card
   charge, nor for one the refund seam closed and raised itself) · `RefundService`
@@ -135,7 +137,12 @@ failing e-mail can never fail the command, and nothing the notifier reads depend
   canceled the refund made on its key — from the hourly re-drive, a cancellation replaying a guest's claim,
   the guest's own retry, a full or partial refund or a dispute resolved again; args `orderNumber`,
   `amount`, `orderId`; subject the refund id, guarded by `AnyForEventIgnoringTenantAsync` on `orderId`, saved in the
-  seam's own commit with the row's close, so it stands when the caller rolls back)
+  seam's own commit with the row's close, so it stands when the caller rolls back) ·
+  `HandlePaymentNotification.MarkRefundFailed` (`admin.payment.refund_bounced`, since 2026-11-08, on Stripe's
+  `refund.failed`: the refund found by its `RefundKey` metadata, and only when `Refund.MarkFailedByStripe`
+  answers that this call set the failed date, so a repeated webhook and a retry that learned it first
+  raise nothing; subject the refund id, args `orderNumber`, `amount`, `orderId`; a refund no order carries
+  is logged, not raised)
   · `RetryFailedUserDeletions` (subject `{requestId}:{day}`, in a fresh scope with the override set and its own
   commit — the failing walk's scope is discarded by design) · `WindDownCompany` (only when a date is set;
   subject `{tenantId}:{requestInstant}`) · `CompanyWindDownService` (only when `cancelled + refunded +
@@ -192,7 +199,7 @@ failing e-mail can never fail the command, and nothing the notifier reads depend
 5. **Each site calls once, inside the business write's unit of work, and a redelivery adds nothing**: the
    Stripe short-circuit for the webhook arms; the candidate predicate for the daily retry; the counts guard
    for the wind-down run; `AnyForEventIgnoringTenantAsync` for the decline, the archive, the not-started alert, the
-   no-cleaner-yet and no-cleaner-soon alerts and the three refund alerts; the order's own status for the door non-payment, which a
+   no-cleaner-yet and no-cleaner-soon alerts and the refund alerts (the failed date for a bounce); the order's own status for the door non-payment, which a
    completed order refuses.
 6. **The four admin routes answer 401 anonymous, 403 to an Employee token, 200 to an administrator**; a
    mark-read on another administrator's row is refused; a mark-read writes **no** `AdminActionAudits` row.

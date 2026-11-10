@@ -278,14 +278,41 @@ Admins can initiate refunds for orders with card payments:
    `PartiallyRefunded` otherwise
 
 ::: warning
-A refund Stripe refuses or does not answer stays pending; the administrators are told after 24 hours
-(`admin.payment.refund_needs_retry`) and retry it from the same action. A retry that finds Stripe failed
-the refund made on its key closes it, sends nothing, and tells them at once (since 2026-10-06); retrying
-that same action fails the same way, so the money goes back only by a refund on another key: the full
-refund, or a partial refund of another selection of lines. Cash payment refunds must be handled outside
-the system.
+A refund Stripe refuses or does not answer stays pending; the administrators are told at the first
+hourly run once it is 30 minutes old (`admin.payment.refund_needs_retry`, so within 30 to 90 minutes) and
+retry it from the order's *Refunds* button. A retry that finds Stripe failed the refund made on its key
+closes it, sends nothing, and tells them at once (since 2026-10-06); the money then goes back by being
+repaid, which is recorded on the Refunds page below. Cash payment refunds must be handled outside the
+system.
 → [Business rules — a pending card refund counts as given back](/product/business-rules#after-the-start)
 :::
+
+### The Refunds page {#refunds-page}
+
+Route: `/order-management/refunds`, the *Refunds* sidebar entry after *Receivables* (the same permission as the
+order list); every refund of the company in one list, opened on **Needs action**, which is the *Not sent*,
+*Failed* and *Bounced* states together. The state filter also picks one of the six states alone (*Not sent*,
+*Refunded*, *Failed*, *Bounced*, *Repaid*, *Closed*), and two date pickers filter by when the refund was
+requested. The columns are order, customer (a guest is marked), origin (cancellation, dispute, full refund
+or partial refund), amount, state with one line saying who acts next or how it was settled, requested and
+last changed; the amount and the requested date sort. A row opens its order. `?orderId=` and `?userId=`
+open the list for one order or one customer, with a note and a button that clears the scope.
+
+Three actions sit on a row, each only where it applies:
+
+- **Retry** — for a *Not sent* refund (a cancellation's only on a cancelled order, never a dispute's);
+  needs `CanIssueRefund` and a confirm. It asks Stripe first, so it is never paid twice. A refund that is not that order's answers `refund.not_found`.
+- **Open dispute** — for a dispute's refund that was not sent, because it is retried by resolving the
+  dispute again.
+- **Record repayment** — for a *Failed* or *Bounced* refund; needs `CanIssueRefund`. A panel under the list
+  names the order, customer, origin and amount, takes a bank transfer reference of up to 100 characters, and
+  has two buttons: record the transfer, or record it as credit, offered only when the customer has an
+  account and chose credit.
+
+The order page carries a **Refunds** button on card orders and the customer page one for the customer
+(`CanViewOrderDetailAdmin`); each opens this page scoped to the order or the customer.
+→ [Cancellation, refund and dispute](/flows/cancellation-refund-dispute#refund-states),
+[Business rules](/product/business-rules#refund-states)
 
 ## Photo Management
 

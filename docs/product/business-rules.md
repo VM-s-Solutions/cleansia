@@ -299,8 +299,9 @@ credit, and the customer held 1 600. Now 400 is the most such a settlement can g
   A first attempt asks Stripe nothing first: its row was claimed a moment before, so nothing can exist
   on its key. A refund made by hand in the Stripe dashboard carries no key and is never taken for one of
   ours. A retry held back at the card ceiling never reaches the lookup (below). A refund Stripe accepted
-  and fails later is not seen: no `refund.failed` or `charge.refund.updated` webhook is handled, so it
-  stays `Succeeded`. Until then a retry relied on Stripe's replay alone, so a refund Stripe paid, whose
+  and fails later is the `refund.failed` webhook, which marks the row and tells the administrators
+  ([below](#refund-states)); `charge.refund.updated` is not subscribed, as it reports the same failure a
+  second time. Before the lookup a retry relied on Stripe's replay alone, so a refund Stripe paid, whose
   answer was lost, was paid a second time when it was retried after a day.
 - **The order-ended-unpaid credit return ignores a pending card refund on an order that never took
   payment** (`Order.TookNoPayment`). A card that was never charged had no refund paid, whatever row is left
@@ -364,6 +365,49 @@ credit, and the customer held 1 600. Now 400 is the most such a settlement can g
   confirmed took the whole card charge — by the hourly job for a row it does not re-drive, or by
   resolving a dispute again (above) — and as *failed* only when a retry finds Stripe failed the refund on
   its key. Every other row waits for a retry, which now reconciles it with Stripe first.
+
+### A card refund that fails after Stripe accepted it {#refund-states}
+
+**Owner decisions 2026-11-08 (admin panel remarks).** A refund is in one of **six states**, read from
+the row and never stored: *Not sent* is `Pending`; *Refunded* is `Succeeded` with no failed date;
+*Bounced* is `Succeeded` with a failed date, money that left and came back; *Failed* is `Failed` with a
+failed date, money Stripe never paid; *Repaid* is any refund with a repaid date; and *Closed* is `Failed`
+with no failed date, a refund the re-drive closed because the refunds Stripe confirmed had left it
+nothing. Its **origin** is read from the dispute id and the key: a dispute's, a cancellation's (the key its
+reason builds with no distinguishing id, so a *service not rendered* cancellation reads as a
+cancellation), an administrator's full refund, or a partial one.
+
+- **Stripe's `refund.failed` stamps the row.** The refund is found by the `RefundKey` Stripe carries as
+  metadata. A *Not sent* row becomes *Failed*; a *Refunded* row stays `Succeeded` and becomes *Bounced*,
+  because the money left and came back and still counts as refunded in revenue, in the payment status and
+  in the loyalty clawback, and reopening it would free room to send the same money to the same dead
+  card. A retry that finds Stripe failed the refund on its key stamps the same date and Stripe's refund
+  id. Whichever learns it first tells the administrators once (`admin.payment.refund_bounced`, or
+  `refund_needs_retry` for the retry), and the other adds nothing.
+- **The money is still owed, and it is repaid, not retried.** A failed refund cannot be sent again on
+  its key. An administrator **records the repayment** on the Refunds page: **by bank transfer**, with a
+  reference of up to 100 characters, or **as credit, only when the customer chooses it**. Credit needs a
+  customer with an account on books that are not frozen (`refund.credit_unavailable` for a guest, an
+  erased account or a frozen company); it is a Goodwill credit in the order's currency keyed
+  `{refundKey}:credit`, and credit expires and is never paid out, so the administrator may not choose it
+  for the customer ([above](#dispute-settlement)). Only a *Failed* or *Bounced* refund can be repaid
+  (`refund.not_owed` otherwise).
+- **Recording a repayment makes a *Failed* refund count as given back.** The payment status, the credit
+  share returned under the customer's credit lock and the loyalty clawback follow, once; the record is
+  refused whole with `refund.nothing_refundable` when the order has no room left for the whole amount, and
+  the amount is never lowered. A *Bounced* refund already counted, so it is only stamped.
+- **Retry is for *Not sent* only.** An administrator's retry (`refund.not_retryable` otherwise) asks
+  Stripe first, as the hourly re-drive does. It is never offered for a dispute's refund, which is retried
+  by resolving the dispute again, and for a cancellation's only once the order is cancelled. For a dispute
+  whose refund failed, record the repayment first, then resolve the dispute with the same amount.
+- **Who is told, and when.** `refund.failed` raises `admin.payment.refund_bounced`; a refund Stripe
+  refuses at once, or fails on a retry, raises `refund_needs_retry` in the same commit; any other refund
+  left *Not sent* raises `refund_needs_retry` at the first hourly run once it is 30 minutes old; a
+  cancellation's own refund keeps its hourly retries and the 24-hour `refund_stuck`
+  ([Administrators are told](#admin-notifications)).
+
+→ [Cancellation, refund and dispute](/flows/cancellation-refund-dispute#refund-states),
+[Webhooks](/api/webhooks), [the Refunds page](/admin-app/order-management#refunds-page)
 
 ### A guest cancels under the same policy
 

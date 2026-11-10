@@ -241,7 +241,8 @@ would then pay a late retry as a second refund, so every refund sent to Stripe c
 it, the loser of two claims on one key — first lists the refunds on the charge and looks for that key
 (`IStripeClient.FindRefundAsync`, in `RefundService`'s settle step). A refund Stripe made, or still has
 pending, is recorded with its Stripe id (`Refund.StripeRefundId`) and Stripe's amount, and nothing is
-sent. One Stripe failed or canceled closes the row `Failed`, sends nothing, answers `refund.failed`, and
+sent. A refund sent fresh, on a first attempt or after a retry found nothing, records the id Stripe
+returned for it (since 2026-11-10), and keeps the row's own amount. One Stripe failed or canceled closes the row `Failed`, sends nothing, answers `refund.failed`, and
 raises `admin.payment.refund_needs_retry` at once, in a commit the seam makes itself, so the close and
 the alert stand even when the caller rolls back; every later retry on that key closes it again, so the
 money goes back only on another key. With none, the retry is sent on the same key. A lookup Stripe cannot
@@ -660,7 +661,7 @@ dispute or the order shows the three interleaved, newest first.
 | Stripe unreachable during a no-show confirmation or the unfilled sweep | The order is cancelled, the refund stays `Pending`, and the credit share of the same held slice returns now on the refund's key; the re-drive asks Stripe for the same card amount on that key, and the total is never more than the price. |
 | A refund still `Pending` after 24 h | The administrators are told once — `admin.payment.refund_stuck`, `admin.payment.refund_needs_retry` or `admin.payment.refund_without_cancel` — unless the job does not re-drive it and the refunds Stripe confirmed took the whole card charge: then it is closed `Failed` with no notice. |
 | A retry finds Stripe failed or canceled the refund on its key | Nothing is sent; the row is closed `Failed` and `admin.payment.refund_needs_retry` raised at once, however young, in the seam's own commit, from whichever action retried it; the hourly job adds no alert of its own. The money goes back only on another key. |
-| A retry finds the refund Stripe made on its key, its answer lost | Recorded with Stripe's refund id and amount; nothing is sent again, however long ago the key was used. |
+| A retry finds the refund Stripe made on its key, its answer lost | Recorded with Stripe's refund id and amount; nothing is sent again, however long ago the key was used. A refund sent fresh records the id Stripe returned for it. |
 | A re-drive whose ceiling only pending refunds have used up | The row stays `Pending` and the re-drive answers `refund.failed`; it is retried hourly and raised as `refund_stuck` after 24 h, and closed `Failed` only once refunds Stripe confirmed have used it up. |
 | Two refunds claimed at the same moment, both refused by Stripe | The older one's retry does not count the younger, which counted it: Stripe is asked on the older key and pays it, and the younger then finds nothing left. If Stripe had paid the younger and the charge has too little left, both stay `Pending` and are raised after 24 h. |
 | Stripe refuses or cannot be reached for an administrator's or the wind-down's cancellation refund | The order is cancelled, the refund stays `Pending`, and the credit share returns now on the refund's key; the re-drive sends the card amount on that key, and the total is exactly what the sale had left. |

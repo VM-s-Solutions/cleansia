@@ -282,7 +282,8 @@ credit, and the customer held 1 600. Now 400 is the most such a settlement can g
   that asked for it, or the loser of two claims on one key — first asks Stripe for the refund made on the
   charge under that key (`IStripeClient.FindRefundAsync`):
   - **Stripe lists one** (succeeded, or still pending at Stripe): it is recorded with Stripe's refund id
-    and the amount Stripe paid, and nothing is sent. Stripe's amount can be more than the row, when the
+    and the amount Stripe paid, and nothing is sent. A refund sent fresh records the id Stripe returned
+    for it (since 2026-11-10), with the row's own amount. Stripe's amount can be more than the row, when the
     row was clamped after Stripe paid it.
   - **Stripe failed or canceled it**: the row is closed `Failed`, nothing is sent, and the retry answers
     `refund.failed`. The refund seam saves the close in a commit of its own, together with

@@ -17,7 +17,7 @@ The Pay Periods feature allows admins to manage payroll cycles. Each pay period 
 
 | Status | Description |
 |---|---|
-| `Open` | Active period accepting new pay calculations. **Exactly one period is open at a time.** |
+| `Open` | Active period accepting new pay calculations. **At most one period is open at a time.** |
 | `Closed` | Locked. No new calculations. Every cleaner with pay in it is invoiced within about 20 minutes. **A closed period is never reopened.** |
 | `Paid` | Every pay row is invoiced and every invoice is `Paid` or `Cancelled`. Final state. |
 

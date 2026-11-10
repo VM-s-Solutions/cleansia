@@ -27,7 +27,7 @@ describe('OrderDetailFacade', () => {
         OrderDetailFacade,
         { provide: Router, useValue: { navigate: jest.fn() } },
         { provide: PermissionService, useValue: { hasPolicy: () => true } },
-        { provide: AdminClient, useValue: { adminOrderClient: {} } },
+        { provide: AdminClient, useValue: { adminOrderClient: {}, adminExtraClient: { getPaged: jest.fn().mockReturnValue(of({ data: [] })) } } },
         { provide: SnackbarService, useValue: { showSuccess: jest.fn(), showError: jest.fn() } },
         { provide: TranslateService, useValue: { instant: (k: string) => k, currentLang: 'cs' } },
         { provide: AdminGdprClient, useValue: { incidentFile: jest.fn() } },
@@ -154,7 +154,7 @@ describe('OrderDetailFacade — incident file', () => {
         OrderDetailFacade,
         { provide: Router, useValue: { navigate: jest.fn() } },
         { provide: PermissionService, useValue: { hasPolicy: () => true } },
-        { provide: AdminClient, useValue: { adminOrderClient: {} } },
+        { provide: AdminClient, useValue: { adminOrderClient: {}, adminExtraClient: { getPaged: jest.fn().mockReturnValue(of({ data: [] })) } } },
         { provide: SnackbarService, useValue: snackbar },
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
         { provide: AdminGdprClient, useValue: gdprClient },
@@ -317,7 +317,7 @@ describe('OrderDetailFacade — customer account', () => {
     hasPolicy = jest.fn().mockReturnValue(true);
     TestBed.configureTestingModule({ providers: [
       OrderDetailFacade,
-      { provide: AdminClient, useValue: { adminOrderClient: { details, customer } } },
+      { provide: AdminClient, useValue: { adminOrderClient: { details, customer }, adminExtraClient: { getPaged: jest.fn().mockReturnValue(of({ data: [] })) } } },
       { provide: AdminGdprClient, useValue: {} },
       { provide: CustomerAuditClient, useValue: { timeline: jest.fn() } },
       { provide: SnackbarService, useValue: { showApiError: jest.fn() } },
@@ -327,6 +327,16 @@ describe('OrderDetailFacade — customer account', () => {
       { provide: DialogService, useValue: { open: jest.fn() } },
     ] });
     facade = TestBed.inject(OrderDetailFacade);
+  });
+
+  it('shows an extra by its catalogue name and an unknown slug as the slug', () => {
+    TestBed.inject(AdminClient).adminExtraClient.getPaged = jest
+      .fn()
+      .mockReturnValue(of({ data: [{ slug: 'inside-oven', name: 'Inside oven' }] }));
+    facade.loadOrderDetail('order-1');
+    facade.order.set(OrderItem.fromJS({ extras: { 'inside-oven': true, 'new-extra': true, off: false } }));
+
+    expect(facade.getActiveExtras()).toEqual(['Inside oven', 'new-extra']);
   });
 
   it('reads only the order-keyed endpoint and permits navigation only for a same-company customer', () => {
@@ -437,7 +447,7 @@ describe('OrderDetailFacade — contract for work', () => {
     open = jest.fn().mockReturnValue({ onClose: of(undefined) });
     TestBed.configureTestingModule({ providers: [
       OrderDetailFacade,
-      { provide: AdminClient, useValue: { adminOrderClient: {} } },
+      { provide: AdminClient, useValue: { adminOrderClient: {}, adminExtraClient: { getPaged: jest.fn().mockReturnValue(of({ data: [] })) } } },
       { provide: AdminGdprClient, useValue: {} },
       { provide: CustomerAuditClient, useValue: { timeline: jest.fn() } },
       { provide: SnackbarService, useValue: { showApiError: jest.fn() } },

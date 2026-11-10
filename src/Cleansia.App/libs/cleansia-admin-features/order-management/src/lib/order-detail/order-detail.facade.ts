@@ -21,7 +21,7 @@ import {
   Policy,
   SnackbarService,
 } from '@cleansia/services';
-import { formatDate, formatMoney, localeFor } from '@cleansia/utils';
+import { formatDate, formatMoney, localeFor, toSnakeCase } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
 import {
@@ -34,6 +34,7 @@ import {
   switchMap,
   takeUntil,
 } from 'rxjs';
+import { ExtraNames, extraLabel, loadExtraNames } from './extra-names';
 import { AdminWorkContractDialogComponent, AdminWorkContractDialogData } from './components';
 import {
   INCIDENT_SUBJECT_LOOKUP_LIMIT,
@@ -67,6 +68,11 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
   });
   readonly loading = signal<boolean>(false);
   readonly incidentFileExporting = signal<boolean>(false);
+  private readonly extraNames = signal<ExtraNames>({});
+  readonly paymentTypeKey = computed(() => {
+    const name = this.order()?.paymentType?.name;
+    return name ? `enums.payment_type.${toSnakeCase(name)}` : null;
+  });
   readonly crew = computed(() => buildCrewEntries(this.order()));
   readonly dirtinessLevelKey = computed(() => dirtinessLevelLabelKey(this.order()?.dirtinessLevel));
 
@@ -86,6 +92,7 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
   readonly revealingAccessInstructions = signal<boolean>(false);
 
   loadOrderDetail(orderId: string): void {
+    loadExtraNames(this.adminClient).pipe(takeUntil(this.destroyed$)).subscribe((names) => this.extraNames.set(names));
     this.detailRequest?.unsubscribe();
     this.order.set(null);
     this.customer.set(null);
@@ -312,6 +319,6 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
     if (!extras) return [];
     return Object.entries(extras)
       .filter(([, value]) => value)
-      .map(([key]) => key);
+      .map(([key]) => extraLabel(key, this.extraNames()));
   }
 }

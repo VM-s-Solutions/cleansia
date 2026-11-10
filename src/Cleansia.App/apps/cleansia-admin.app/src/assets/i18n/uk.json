@@ -189,6 +189,10 @@
       "completed": "Завершено",
       "cancelled": "Скасовано"
     },
+    "payment_type": {
+      "cash": "Готівка",
+      "card": "Картка"
+    },
     "payment_status": {
       "pending": "Очікує",
       "paid": "Оплачено",

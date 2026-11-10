@@ -16,6 +16,7 @@ import {
   CleansiaAdminRoute,
   Policy,
 } from '@cleansia/services';
+import { OrderStatusLabelPipe } from '@cleansia/pipes';
 import { TranslatePipe } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
 import {
@@ -36,6 +37,7 @@ import { OrderDetailFacade } from './order-detail.facade';
     CleansiaSectionComponent,
     CleansiaStatusBadgeComponent,
     TranslatePipe,
+    OrderStatusLabelPipe,
     AdminOrderOpsComponent,
     AdminOrderPhotosComponent,
     AdminOrderRefundComponent,

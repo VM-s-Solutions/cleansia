@@ -189,6 +189,10 @@
       "completed": "Завершён",
       "cancelled": "Отменён"
     },
+    "payment_type": {
+      "cash": "Наличные",
+      "card": "Карта"
+    },
     "payment_status": {
       "pending": "Ожидает",
       "paid": "Оплачен",

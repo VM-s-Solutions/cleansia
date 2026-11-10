@@ -189,6 +189,10 @@
       "completed": "Completed",
       "cancelled": "Cancelled"
     },
+    "payment_type": {
+      "cash": "Cash",
+      "card": "Card"
+    },
     "payment_status": {
       "pending": "Pending",
       "paid": "Paid",

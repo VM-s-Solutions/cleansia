@@ -189,6 +189,10 @@
       "completed": "Dokončeno",
       "cancelled": "Zrušeno"
     },
+    "payment_type": {
+      "cash": "Hotovost",
+      "card": "Karta"
+    },
     "payment_status": {
       "pending": "Čekající",
       "paid": "Zaplaceno",

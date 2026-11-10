@@ -8,7 +8,7 @@ import {
 import { FilterChip, FilterDrawerState } from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { SnackbarService } from '@cleansia/services';
-import { currentLanguage, formatDate } from '@cleansia/utils';
+import { currentLanguage, formatDate, toSnakeCase } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
 
@@ -216,6 +216,20 @@ export class ReportsFacade extends UnsubscribeControlDirective {
       style: 'currency',
       currency: currencyCode,
     }).format(value);
+  }
+
+  enumLabel(group: 'payment_type' | 'invoice_status', code: string | undefined): string {
+    if (!code) return '';
+    const key = `enums.${group}.${toSnakeCase(code)}`;
+    const translated = this.translate.instant(key);
+    return translated === key ? code : translated;
+  }
+
+  monthLabel(year: number, month: number): string {
+    const name = new Intl.DateTimeFormat(this.lang() || 'en-GB', { month: 'long', timeZone: 'UTC' }).format(
+      new Date(Date.UTC(year, month - 1, 1))
+    );
+    return `${name} ${year}`;
   }
 
   formatPercentage(value: number | undefined): string {

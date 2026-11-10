@@ -18,6 +18,7 @@ import { AppComponent } from './app.component';
 describe('admin app shell notifications', () => {
   let badgeLabel: ReturnType<typeof signal<string | null>>;
   let start: jest.Mock;
+  let dispatch: jest.Mock;
 
   function create(): AppComponent {
     const component = TestBed.createComponent(AppComponent).componentInstance;
@@ -28,11 +29,12 @@ describe('admin app shell notifications', () => {
   beforeEach(() => {
     badgeLabel = signal<string | null>(null);
     start = jest.fn();
+    dispatch = jest.fn();
 
     TestBed.configureTestingModule({
       imports: [AppComponent],
       providers: [
-        { provide: Store, useValue: { dispatch: jest.fn() } },
+        { provide: Store, useValue: { dispatch } },
         {
           provide: AdminAuthService,
           useValue: { isLoggedIn$: new BehaviorSubject(true), logout: () => EMPTY },
@@ -43,6 +45,12 @@ describe('admin app shell notifications', () => {
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
       ],
     }).overrideComponent(AppComponent, { set: { template: '', imports: [] } });
+  });
+
+  it('dispatches nothing on start, so the signed-out login page calls no sign-in-only endpoint', () => {
+    create();
+
+    expect(dispatch).not.toHaveBeenCalled();
   });
 
   it('starts the badge poll when the shell comes up in a browser', () => {

@@ -67,7 +67,7 @@ Key Vault
 |--------|---------|---------|
 | `Jwt--Key` | All APIs | JWT signing key (issuer/audience are code-side constants, not KV secrets) |
 | `ConnectionStrings--cleansia-db` | All APIs, Functions; the CI migrate job on DEV | PostgreSQL connection string. On production it is the least-privilege `cleansia_app` login's, `Ssl Mode=VerifyFull`, and the migration signs in as the administrator without it — [Azure setup — production posture](/deployment/azure-setup#production-posture) |
-| `Stripe--SecretKey` | Customer API | Stripe payment processing |
+| `Stripe--SecretKey` | The five APIs and the Functions worker | Stripe calls: card payments, refunds (from the admin host and the hourly re-drive), closing pay links, and the card check before a cleaner takes cash |
 | `Stripe--WebhookSecret` | Customer API | Stripe webhook signature verification |
 | `SendGrid--ApiKey` | Functions, APIs | Email delivery |
 | `Sentry--Dsn` | The five APIs and the Functions worker | Error tracking — **set on DEV, so Sentry is on**: the CI secret push writes it from `SENTRY_DSN`, as the log of `Deploy to DEV` run 36763660261 records. See [Sentry](#sentry) |

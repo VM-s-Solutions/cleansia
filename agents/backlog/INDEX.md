@@ -441,7 +441,8 @@
 | T-0926 | Cleaner pay, phase 4: the remaining findings | M | `done` | — | Mike 2026-11-09: the cleaner-pay fix plan (https://claude.ai/artifact/XvfiW1obDsEqk4E1eNL56C); 8 slices |
 | T-0927 | Cleaner pay, phase 5: the admin panel remarks and refunds | L | `done` | — | Mike 2026-11-09: the cleaner-pay fix plan (https://claude.ai/artifact/XvfiW1obDsEqk4E1eNL56C); 35 slices |
 | T-0928 | Cleaner pay, phase 6: DEV deploys, reset and proof | M | `in_progress` | — | Mike 2026-11-09: the cleaner-pay fix plan (https://claude.ai/artifact/XvfiW1obDsEqk4E1eNL56C); 7 slices |
-| T-0929 | Cleaner pay, phase 7: the docs and the decision record | M | `in_progress` | — | Mike 2026-11-09: the cleaner-pay fix plan (https://claude.ai/artifact/XvfiW1obDsEqk4E1eNL56C); 4 slices |
+| T-0929 | Cleaner pay, phase 7: the docs and the decision record | M | `done` | — | Mike 2026-11-09: the cleaner-pay fix plan (https://claude.ai/artifact/XvfiW1obDsEqk4E1eNL56C); 4 slices |
+| T-0930 | Every host that calls Stripe gets the Stripe key | S | `in_progress` | — | Mike 2026-11-10: P6.7 found that an administrator's refunds never reach Stripe; fix now, the partner hosts included |
 
 > **T-0785–T-0799 filed 2026-09-20** — the UI-polish and dead-code batch, on the owner's ruling of
 > that day (*"I want to polish alignments in admin app a bit on all of the overview/detail pages.
@@ -486,7 +487,7 @@
 > reported not absorbed. Owed: the DEV drop at the next DEV deploy (MS-2 / A1, `20260920204705`);
 > the merge order is #255 then #260. Open rows: none.
 
-*Next id: **T-0930**.*
+*Next id: **T-0931**.*
 
 
 Current startup checkpoint — 2026-10-16 UTC: PR #344 merged C12 `70d9c8b1ea82` as M5 `a8d308126dc4`; C12 local8, PR5 workflows/7 checks and M5 4/5 passed, all attempt 1/no reruns, with guarded manual skips and prior application limits retained. First read-only observation `38947741183/a1` failed before its baseline with a generic validation error; one POST, GET-only discovery, final artifact saved once, no resize/restart/B3 trial. T-0636 remains `in_progress`; safe diagnostic correction and the temporary comparison remain pending. The ticket's dated PR #344 closure and `pr344-closure-preparation001/CLAIMS-AND-PINS001.json` carry the bounds.

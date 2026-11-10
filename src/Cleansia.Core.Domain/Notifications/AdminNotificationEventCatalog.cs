@@ -23,6 +23,7 @@ public static class AdminNotificationEventCatalog
     public const string RefundStuck = "admin.payment.refund_stuck";
     public const string RefundNeedsRetry = "admin.payment.refund_needs_retry";
     public const string RefundWithoutCancel = "admin.payment.refund_without_cancel";
+    public const string RefundBounced = "admin.payment.refund_bounced";
     public const string ErasureFailed = "admin.erasure.failed";
     public const string CompanyWindDownRequested = "admin.company.wind_down_requested";
     public const string CompanyWindDownRun = "admin.company.wind_down_run";
@@ -46,6 +47,7 @@ public static class AdminNotificationEventCatalog
         RefundStuck,
         RefundNeedsRetry,
         RefundWithoutCancel,
+        RefundBounced,
         ErasureFailed,
         CompanyWindDownRequested,
         CompanyWindDownRun,
@@ -72,6 +74,7 @@ public static class AdminNotificationEventCatalog
         RefundStuck,
         RefundNeedsRetry,
         RefundWithoutCancel,
+        RefundBounced,
         ErasureFailed,
         ReferralHeld,
     ];

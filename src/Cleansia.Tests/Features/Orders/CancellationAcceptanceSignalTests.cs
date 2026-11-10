@@ -142,6 +142,7 @@ public class CancellationAcceptanceSignalTests
             Mock.Of<ITenantRepository>(),
             Mock.Of<ISavedCardRepository>(),
             Mock.Of<IReceivableRepository>(),
+            Mock.Of<IRefundRepository>(),
             NullLogger<HandlePaymentNotification.Handler>.Instance);
 
     private ConfirmRecurringOrder.Handler CreateRecurringConfirmHandler() =>

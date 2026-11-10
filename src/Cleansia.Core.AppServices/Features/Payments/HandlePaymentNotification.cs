@@ -15,6 +15,7 @@ using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Stripe;
 using Stripe.Checkout;
@@ -136,6 +137,7 @@ public class HandlePaymentNotification
         ITenantRepository tenantRepository,
         ISavedCardRepository savedCardRepository,
         IReceivableRepository receivableRepository,
+        IRefundRepository refundRepository,
         ILogger<Handler> logger) : ICommandHandler<Command>
     {
         public async Task<BusinessResult> Handle(Command command, CancellationToken cancellationToken)
@@ -240,6 +242,11 @@ public class HandlePaymentNotification
             if (Constants.StripeEventType.IsChargebackEvent(stripeEvent.Type))
             {
                 return await HandleChargeback(stripeEvent, cancellationToken);
+            }
+
+            if (stripeEvent.Type == Constants.StripeEventType.RefundFailed)
+            {
+                return await MarkRefundFailed(stripeEvent.Data.Object as Stripe.Refund, cancellationToken);
             }
 
             var orderId = ExtractOrderId(stripeEvent);
@@ -580,6 +587,7 @@ public class HandlePaymentNotification
         }
 
         private const string ReceivableMetadataKey = "ReceivableId";
+        private const string RefundKeyMetadataKey = "RefundKey";
 
         /// <summary>
         /// The receivable is paid, and its fee receipt and, on a late-cancellation fee, the crew's share of it
@@ -753,6 +761,55 @@ public class HandlePaymentNotification
         /// retries. A charge.dispute.created that still matches no Order alerts the
         /// administrators of every company.
         /// </summary>
+        /// <summary>
+        /// A card refund Stripe failed after accepting it (D23). charge.refund.updated stays unsubscribed: it
+        /// reports the same failure a second time. A receivable's own refund carries no row, so its key, like an
+        /// unknown one, is only logged.
+        /// </summary>
+        private async Task<BusinessResult> MarkRefundFailed(Stripe.Refund? stripeRefund, CancellationToken cancellationToken)
+        {
+            var refundKey = stripeRefund?.Metadata?.GetValueOrDefault(RefundKeyMetadataKey);
+            var refund = string.IsNullOrEmpty(refundKey)
+                ? null
+                : await refundRepository.GetQueryableIgnoringTenant()
+                    .Include(r => r.Order)
+                    .FirstOrDefaultAsync(r => r.RefundKey == refundKey, cancellationToken);
+            if (refund?.Order is null)
+            {
+                logger.LogError(
+                    "Stripe failed refund {StripeRefundId} on key {RefundKey}, which no order refund carries; nothing is marked",
+                    stripeRefund?.Id, refundKey);
+                return BusinessResult.Success();
+            }
+
+            if (!string.IsNullOrEmpty(refund.TenantId))
+            {
+                tenantProvider.SetTenantOverride(refund.TenantId);
+            }
+
+            if (!refund.MarkFailedByStripe(stripeRefund!.Id, DateTimeOffset.UtcNow) || string.IsNullOrEmpty(refund.TenantId))
+            {
+                return BusinessResult.Success();
+            }
+
+            await adminNotifier.NotifyAsync(
+                new AdminEvent(
+                    AdminNotificationEventCatalog.RefundBounced,
+                    refund.TenantId,
+                    Subject: refund.Id,
+                    Args: new Dictionary<string, string>
+                    {
+                        ["orderNumber"] = refund.Order.DisplayOrderNumber,
+                        ["amount"] = MoneyText.Format(refund.Amount, refund.Currency),
+                        ["orderId"] = refund.OrderId,
+                    }),
+                cancellationToken);
+            logger.LogError(
+                "Stripe failed refund {StripeRefundId} of {Amount} {Currency} on order {OrderId} (refund {RefundId}, now {Status}); the administrators are told to repay it",
+                stripeRefund.Id, refund.Amount, refund.Currency, refund.OrderId, refund.Id, refund.Status);
+            return BusinessResult.Success();
+        }
+
         private async Task<BusinessResult> HandleChargeback(Event stripeEvent, CancellationToken cancellationToken)
         {
             var stripeDispute = stripeEvent.Data.Object as Stripe.Dispute;

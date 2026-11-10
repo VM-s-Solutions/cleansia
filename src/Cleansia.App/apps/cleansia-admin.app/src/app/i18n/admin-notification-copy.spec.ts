@@ -129,8 +129,8 @@ function copyKeysFor(key: string): string[] {
 }
 
 describe('admin notification copy', () => {
-  it('reads the twenty-key catalogue off the backend, and the page pins the same twenty', () => {
-    expect(keys).toHaveLength(20);
+  it('reads the twenty-one-key catalogue off the backend, and the page pins the same twenty-one', () => {
+    expect(keys).toHaveLength(21);
     expect([...argsByKey.keys()].sort()).toEqual([...keys].sort());
     expect(pageKeys()).toEqual(keys);
   });

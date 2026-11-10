@@ -2956,6 +2956,10 @@
             "refund_without_cancel": {
               "title": "A refund was asked for a cancellation that did not go through",
               "body": "The refund of {{amount}} on order {{orderNumber}} was asked of Stripe for a cancellation that did not go through, and it is not retried automatically. If the booking is still open, cancel the order; if the clean went ahead, do not issue a refund on it: reconcile this claim in Stripe first."
+            },
+            "refund_bounced": {
+              "title": "A refund did not reach the customer",
+              "body": "Stripe reports that the card refund of {{amount}} on order {{orderNumber}} failed, so the money did not reach the customer. Repay the customer by bank transfer, or as credit if they choose it, and record that on the Refunds page."
             }
           },
           "erasure": {

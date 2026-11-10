@@ -2956,6 +2956,10 @@
             "refund_without_cancel": {
               "title": "Vrátenie peňazí bolo vyžiadané pre zrušenie, ktoré neprebehlo",
               "body": "Vrátenie {{amount}} pri objednávke {{orderNumber}} bolo v Stripe vyžiadané pre zrušenie, ktoré neprebehlo, a automaticky sa neopakuje. Ak je rezervácia stále otvorená, zrušte objednávku; ak upratovanie prebehlo, nevracajte pri nej platbu: najprv toto vrátenie doriešte v Stripe."
+            },
+            "refund_bounced": {
+              "title": "Vrátenie peňazí k zákazníkovi nedorazilo",
+              "body": "Stripe hlási, že vrátenie {{amount}} na kartu pri objednávke {{orderNumber}} zlyhalo, takže peniaze k zákazníkovi nedorazili. Vráťte ich zákazníkovi bankovým prevodom alebo ako kredit, ak si ho zvolí, a zaznamenajte to na stránke Vrátenie peňazí."
             }
           },
           "erasure": {

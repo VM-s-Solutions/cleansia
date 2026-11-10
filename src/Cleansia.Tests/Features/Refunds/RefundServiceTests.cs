@@ -1842,6 +1842,8 @@ public class RefundServiceTests
         Assert.Equal(BusinessErrorMessage.RefundFailed, result.Error?.Message);
         Assert.Equal(0, _stripe.RefundCallCount);
         Assert.Equal(RefundStatus.Failed, refund.Status);
+        Assert.NotNull(refund.FailedOn);
+        Assert.Equal("re_failed", refund.StripeRefundId);
         Assert.Equal([(RefundStatus.Failed, 1)], committed);
         Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
         var alert = Assert.Single(_raised);

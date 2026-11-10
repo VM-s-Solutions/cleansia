@@ -28,6 +28,7 @@ export const ADMIN_NOTIFICATION_EVENT_KEYS = [
   'admin.payment.refund_stuck',
   'admin.payment.refund_needs_retry',
   'admin.payment.refund_without_cancel',
+  'admin.payment.refund_bounced',
   'admin.erasure.failed',
   'admin.company.wind_down_requested',
   'admin.company.wind_down_run',
@@ -52,6 +53,7 @@ export const ADMIN_CRITICAL_EVENT_KEYS: readonly AdminNotificationEventKey[] = [
   'admin.payment.refund_stuck',
   'admin.payment.refund_needs_retry',
   'admin.payment.refund_without_cancel',
+  'admin.payment.refund_bounced',
   'admin.erasure.failed',
   'admin.referral.held',
 ];
@@ -109,6 +111,7 @@ const NOTIFICATION_TYPES: Record<AdminNotificationEventKey, NotificationType> = 
   'admin.payment.refund_stuck': NotificationType.Refund,
   'admin.payment.refund_needs_retry': NotificationType.Refund,
   'admin.payment.refund_without_cancel': NotificationType.Refund,
+  'admin.payment.refund_bounced': NotificationType.Refund,
   'admin.erasure.failed': NotificationType.DataProtection,
   'admin.company.wind_down_requested': NotificationType.Company,
   'admin.company.wind_down_run': NotificationType.Company,

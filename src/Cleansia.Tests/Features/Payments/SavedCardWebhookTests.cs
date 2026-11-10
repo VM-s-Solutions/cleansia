@@ -76,6 +76,7 @@ public class SavedCardWebhookTests
         Mock.Of<ITenantRepository>(),
         _savedCards.Object,
         Mock.Of<IReceivableRepository>(),
+        Mock.Of<IRefundRepository>(),
         NullLogger<HandlePaymentNotification.Handler>.Instance);
 
     private SavedCard PendingCard()

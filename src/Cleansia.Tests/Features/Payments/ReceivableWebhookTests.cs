@@ -78,6 +78,7 @@ public class ReceivableWebhookTests
         Mock.Of<ITenantRepository>(),
         Mock.Of<ISavedCardRepository>(),
         _receivables.Object,
+        Mock.Of<IRefundRepository>(),
         NullLogger<HandlePaymentNotification.Handler>.Instance);
 
     private static Receivable OpenReceivable()

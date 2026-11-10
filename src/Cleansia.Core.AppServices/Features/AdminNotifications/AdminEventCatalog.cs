@@ -48,6 +48,8 @@ public static class AdminEventCatalog
             ["orderNumber", "amount", "orderId"]),
         new(AdminNotificationEventCatalog.RefundWithoutCancel, PhysicalPolicy.AdminOnly,
             ["orderNumber", "amount", "orderId"]),
+        new(AdminNotificationEventCatalog.RefundBounced, PhysicalPolicy.AdminOnly,
+            ["orderNumber", "amount", "orderId"]),
         new(AdminNotificationEventCatalog.ErasureFailed, PhysicalPolicy.ManagerOrAbove,
             ["day", "requestId"]),
         new(AdminNotificationEventCatalog.CompanyWindDownRequested, PhysicalPolicy.AdministratorOnly,

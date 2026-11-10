@@ -2,7 +2,7 @@
 
 Every architecture and business decision on record, with the argument that settled it.
 
-**81 records.** A decision keeps a stable id — `ADR-0037` — and roughly six hundred source
+**82 records.** A decision keeps a stable id — `ADR-0037` — and roughly six hundred source
 files cite ids in that form. The id is the reference, not the file name or the title, so a record can
 be retitled without breaking a single citation.
 
@@ -42,8 +42,10 @@ flowchart LR
   A0067[ADR-0067] --> A0057[ADR-0057]
   A0074[ADR-0074] --> A0039[ADR-0039]
   A0076[ADR-0076] --> A0037[ADR-0037]
+  A0082[ADR-0082] --> A0001[ADR-0001]
+  A0082[ADR-0082] --> A0066[ADR-0066]
   classDef old fill:#e5e7eb,stroke:#6b7280,color:#374151
-  class A0001,A0002,A0006,A0010,A0013,A0017,A0024,A0026,A0036,A0037,A0039,A0045,A0046,A0050,A0057,A0062 old
+  class A0001,A0002,A0006,A0010,A0013,A0017,A0024,A0026,A0036,A0037,A0039,A0045,A0046,A0050,A0057,A0062,A0066 old
 ```
 
 Grey nodes are superseded in whole or in part. Not every later record replaces an earlier one:
@@ -169,6 +171,15 @@ says when an Apple account's stored name is the placeholder, and a mobile mapper
 `false` when an older server omits it. That is a one-member exception to [ADR-0048](./adr-0048) D1 rule 2,
 and the rest of ADR-0048 stands, so there is no arrow.
 
+**[ADR-0082](./adr-0082)** (`accepted` 2026-11-10, T-0923 to T-0929) supersedes rows of
+[ADR-0001](./adr-0001) D2's permission table and [ADR-0066](./adr-0066) D3's: `CanOpenPayPeriod` and
+`CanReopenPayPeriod` left the map, because a closed pay period is never reopened, and `CanRejectInvoice` left
+ADR-0066 D3's with the invoice Reject action. It also supersedes the
+Stripe Connect Express route of decision 48 of the 2026-09-27 meeting, which is not an ADR, so that half has
+no arrow; and it gives Mike's 2026-08-08 ruling that an administrator marks an invoice paid by hand a record
+of its own. [ADR-0002](./adr-0002) D3.4, [ADR-0041](./adr-0041) and [ADR-0046](./adr-0046) carry dated
+banners in place, which say what the code does now; no record supersedes them.
+
 ## All records
 
 | | Decision | Status |
@@ -238,7 +249,7 @@ and the rest of ADR-0048 stands, so there is no arrow.
 | **[ADR-0063](./adr-0063)** | Legal documents are versioned by effective date, stored per market, and a consent stamps the version | `accepted` |
 | **[ADR-0064](./adr-0064)** | A company's lifecycle: deactivation, wind-down, archive (amends ADR-0061 O-3/D1 and ADR-0058 D1 by reference) | `accepted` |
 | **[ADR-0065](./adr-0065)** | Administrators are told: an in-app feed and an e-mail per event (owner ruling D5, 2026-09-19; shipped as T-0768 / T-0769 / T-0774 / T-0775) | `accepted` |
-| **[ADR-0066](./adr-0066)** | Four administrator roles: Administrator, Manager, Support, Accountant (owner ruling D8, 2026-09-19; supersedes ADR-0001 D2's admin rows; T-0748 / T-0773) | `accepted` |
+| **[ADR-0066](./adr-0066)** | Four administrator roles: Administrator, Manager, Support, Accountant (owner ruling D8, 2026-09-19; supersedes ADR-0001 D2's admin rows; T-0748 / T-0773) ⟲ | `accepted` |
 | **[ADR-0067](./adr-0067)** | Confirmed → New when the last cleaner leaves; the administrators are told (owner ruling D2, 2026-09-19; supersedes ADR-0057's open consequence; shipped as T-0770; amended 2026-10-25: a drop only before the job is under way, and the customer is told; amended again by the fix plan of 2026-10-25: every release tells the customer and the administrators, the re-take e-mail says a new cleaner, a drop locks the order's row) | `accepted` |
 | **[ADR-0068](./adr-0068)** | A contract for work per job: the text the order is booked under, the cleaner's acceptance of it, what both parties can see (owner ruling 2026-09-20; amends ADR-0063 D9 by one sentence; shipped as T-0777–T-0784; amended 2026-09-27: the company sells in its own name; amended 2026-09-29: the operating company and the cleaner are the parties, under our draft texts; amended 2026-10-03: the seat is paid the reward its contract states; amended 2026-10-25: a job is released only until it is under way, in the `2026-10-27` texts) | `accepted` |
 | **[ADR-0069](./adr-0069)** | The dirtiness level prices, times, crews and pays the job, and a job's pay is split across its seats (owner rulings 2026-09-28, meeting-plan decisions 28–40; changes a premise of ADR-0037 D9, whose no-spare-seat ruling stands) | `accepted` |
@@ -254,6 +265,7 @@ and the rest of ADR-0048 stands, so there is no arrow.
 | **[ADR-0079](./adr-0079)** | Pre-take location: a Prague job names its district from the postcode, and the Available tab shows a distance band from the cleaner's stored home, measured to a snapped cell — so the snapped cell, narrowed by the label's area, becomes the effective pre-take ceiling (Mike's rulings 2026-10-31; owner acknowledged the ceiling 2026-11-06) | `accepted` |
 | **[ADR-0080](./adr-0080)** | The order-status tint and tone table lives in Core, keyed by the backend's wire integer, so both apps read one table per platform; a status mapping crosses into Core as that integer only when both apps map it the same way (Mike's approval of mock v2, 2026-11-02; T-0910; changes the `OrderStatusTone` doc-comment rule, supersedes no record) | `proposed` |
 | **[ADR-0081](./adr-0081)** | The current-user profile says when an Apple account's stored name is the placeholder, computed from the stored name on every read; an app treats that name as no name, gates nothing on it, and a mobile mapper reads an absent member as `false` (Mike's ruling 2026-11-08; T-0920; one named exception to ADR-0048 D1 rule 2, supersedes no record) | `accepted` |
+| **[ADR-0082](./adr-0082)** | A pay period closes by itself and is invoiced once; early close is an exception (Close now, Change end date), a closed period is never reopened; late pay goes to the next period; cleaners are paid by bank transfer, never through Stripe; "next payout" leaves the cleaner apps (Mike's rulings 2026-11-08 and 2026-11-09; T-0923 to T-0929; supersedes decision 48's Stripe route and two rows of ADR-0001 and ADR-0066's permission map) | `accepted` |
 
 ⟲ = superseded in whole or in part by a later record.
 

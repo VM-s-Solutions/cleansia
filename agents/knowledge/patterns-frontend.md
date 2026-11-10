@@ -23,7 +23,7 @@ parallel ones.** Authoritative prose:
 | Policy names | `Policy.CanXxx` (mirrors backend) | `@cleansia/services` |
 | Generated API client | `AdminClient` / `PartnerClient` / `CustomerClient` (wrapper of sub-clients) | `@cleansia/admin-services` / `…/partner-services` / `…/customer-services` |
 | Generated DTOs | `*ListItem`, `*DetailDto`, `Create*Command`, `Update*Command`, `*Response`, `PagedData<T>`, `SortDefinition`, `SortDirection` | same generated lib |
-| Table | `cleansia-table` + `TableColumn<T>`, `TableAction<T>`, `TableConfig`, `PaginationState`, `SortEvent` | `@cleansia/components` |
+| Table | `cleansia-table` + `TableColumn<T>`, `TableAction<T>`, `TableConfig`, `PaginationState`, `SortEvent`. A list opens its detail on a **row click**: `clickableRows` takes `true`, `false` or a per-row function, a clickable row is focusable and opens on Enter or Space, and a click that starts on a link, button or input in the row, or ends a text selection, opens nothing. No `cleansia-table` in the tree carries an eye (View) action; its actions are what the row does besides opening | `@cleansia/components` |
 | Form/UI primitives | `cleansia-button`, `cleansia-text-input`, `cleansia-select`, `cleansia-section`, `cleansia-title`, `cleansia-loader`, `cleansia-calendar`, `cleansia-multiselect`, `cleansia-checkbox`, `cleansia-telephone`, `cleansia-file`, … (31 total) | `@cleansia/components` |
 | Error pipe | `ErrorPipe` | `@cleansia/pipes` |
 | Translate | `TranslatePipe` (template), `TranslateService` (`.instant(...)`) | `@ngx-translate/core` |

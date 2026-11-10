@@ -106,3 +106,6 @@ The plan's "Not doing" list. Anything found outside these slices is reported to 
   `refund.not_owed` (the keyed ledger rows keep money from moving twice); a `refund.failed` for a company under archive
   freeze makes the webhook commit throw, so Stripe keeps redelivering it; thirteen admin forms carry a dead
   `type="submit"` on `cleansia-button`. PR open against master.
+- 2026-11-10 — The money review failed P5.34 on R1 (a credit repayment left the balance short by the returned credit share) and R2 (the clawback ignored the order's earlier refunds). Both were fixed test-first (5f0ce9564, 14936010b) and passed a separate money re-review: the worked case (700 card and 300 credit, an earlier 200 refund, a failed 500 dispute refund repaid as credit or by transfer) gives a balance of 560 and a 50-point clawback, with nothing counted twice. R2's changed unit test only adjusts mocks; the Postgres transfer test pins R2.
+- 2026-11-10 — Reported, not fixed: Refund has no concurrency token (a retry racing the webhook raises both alerts; two admins recording one repayment at once make the second a 500, or can overwrite the method and reference); a refund.failed for a company under archive freeze makes the webhook redeliver.
+- 2026-11-10 — Shipped: #376 merged to master as de1e4e21c.

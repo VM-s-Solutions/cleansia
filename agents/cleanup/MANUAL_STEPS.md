@@ -21,7 +21,7 @@ Outlook, which are the two that rewrite CSS:
 3. an order → receipt (check the PDF is attached)
 4. an order status change → status update (check the status badge has its colour — it is driven by
    `{{StatusClass}}` written into a class attribute)
-5. close a pay period → period-closed (check the invoice PDF)
+5. end the open pay period with Close now → within about 20 minutes the period-closed e-mail arrives for a cleaner with pay in it (check the invoice PDF). A cleaner with no pay gets none, and the night run sends the same e-mail the night after a period's end date
 6. a period near its end → reminder (check the countdown reads "N days remaining")
 7. request a promo code → promo-code e-mail
 8. wind down the company from a date → the customer notice **and** the cleaner notice (one each)

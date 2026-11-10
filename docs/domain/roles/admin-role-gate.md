@@ -42,7 +42,9 @@ a lattice, Administrator ⊇ Manager ⊇ (Support ∪ Accountant), so four sets 
 | `AdminOnly` | any administrator (the constant keeps its name and its pre-ADR meaning) | **no** — a token minted before the deploy stays usable on any-administrator routes until its refresh |
 
 **Who has what** (`PolicyBuilder.Map`; the full row-by-row table is ADR-0066 D3, pinned by
-`FrozenPermissionMapTests` and evaluated by `AdminRolePolicyMatrixTests`):
+`FrozenPermissionMapTests` and evaluated by `AdminRolePolicyMatrixTests`; the table lost `CanOpenPayPeriod`,
+`CanReopenPayPeriod` and `CanRejectInvoice` in November 2026 — a closed period is never reopened and an
+invoice is no longer rejected, [ADR-0082](/decisions/adr-0082) D5):
 
 | Area | Administrator | Manager | Support | Accountant |
 |---|---|---|---|---|

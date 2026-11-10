@@ -489,7 +489,7 @@ Supported document types:
 | `Passport` | Passport |
 | `DriversLicense` | Driver's license |
 | `WorkPermit` | Work authorization document |
-| `Contract` | Signed employment contract |
+| `Contract` | A signed contractor agreement (cleaners are self-employed contractors, not employees) |
 | `Certificate` | Professional certifications |
 | `BankStatement` | Bank account verification |
 | `TaxDocument` | Tax registration document |

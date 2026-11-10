@@ -49,7 +49,7 @@ pins the page to one currency, and while it is set a sort on Total Price is a pl
 arrive grouped by currency and ordered by price inside each group, rather than filing 150 EUR below
 3 000 CZK as if the numbers were comparable. The column stays sortable either way — a click that
 silently does nothing is the failure the admin cannot see. The invoice list does the same on Total
-Amount with `EmployeeInvoiceFilter.CurrencyId`. → [Reporting](./reporting#currency)
+Amount with `EmployeeInvoiceFilter.CurrencyId`. It offers no sort on Partner, Pay period or Orders, because the server sorts by none of them and falls back to the generation date, and its Cash Set Off and To Transfer columns are not sortable either. Its filter drawer has a **Pay period** picker (the periods newest first, named by their dates, up to 1000) with a chip; `?payPeriodId=` opens the list filtered to that period, and the drawer's apply is the first load. → [Reporting](./reporting#currency)
 
 ::: warning The status dropdown does not cover the whole enum
 `OrderManagementFacade.orderStatusOptions` offers **Pending, Confirmed, InProgress, Completed,
@@ -155,6 +155,23 @@ When a customer or partner raises a dispute, admins can:
 Disputes are linked to specific orders and contain a description of the issue. The admin can view the full order history, including status changes, notes, and photos, to make an informed decision.
 :::
 
+**What the dispute page shows.** The order number at the top links to the order's page for an
+administrator allowed to open it, and is plain text for one who is not. The *Summary* gives the reason
+in words (the reason arrives as a name and a number from 1 to 8 and is worded by its number, with a
+neutral fallback for one the console does not know), the customer's **settlement choice** and the
+figures below, then the description and the resolution notes. The settlement choice always shows, on a
+settled dispute and to an administrator who cannot resolve it: *Card refund*, *Credit*, or, when the
+customer chose a card refund on an order paid in cash, *money back (paid in cash)*, in which case the
+resolve form warns that an amount will be refused and the money goes back by hand. An **Evidence (n)**
+section follows: an image is a thumbnail that opens in a new tab, any other file an icon and its name,
+and an item whose link could not be made shows its name with *preview unavailable, reload the page*
+rather than claiming there is no evidence.
+
+**Resolving never fails silently.** The resolution notes are required, up to 2 000 characters, and blank
+notes stop the request with a translated message instead of the server's English one. Ticking *charge
+the cleaner* without a cleaner, an amount and the reason the cleaner sees names what is missing; that field is
+labelled *Reason the cleaner sees*. A refund amount that was typed and then cleared is sent as no amount.
+
 **The customer chose how a justified complaint is settled** (owner ruling 2026-09-28): the dispute
 detail shows *Card refund* — the default — or *Credit*, and the resolve dialog shows the choice. The
 administrator decides the amount only. With *Credit* the amount is issued as credit in the order's
@@ -166,8 +183,8 @@ the card, unless the dispute's own card refund is still pending, which the amoun
 **Charging the cleaner is a finding of fault, not a side effect.** The resolve dialog can charge a named
 crew member an amount with a written reason (`chargeToCleaner`), deducted from their pay on this order,
 linked to the dispute and shown to them with the reason. It is refused when that pay row is missing,
-already invoiced, already charged for a dispute or smaller than the charge
-(`dispute.cleaner_charge_not_chargeable`); an invoiced row takes the ordinary invoice deduction instead.
+already charged for a dispute or smaller than the charge
+(`dispute.cleaner_charge_not_chargeable`); an invoiced row's charge is carried to the cleaner's next invoice as a dispute-charge line instead, and is refused only when no pay period is open to carry it.
 → [Business rules — dispute settlement](/product/business-rules#dispute-settlement)
 
 **A resolution with a refund moves the money before it is recorded.** Resolving with an amount above
@@ -261,14 +278,41 @@ Admins can initiate refunds for orders with card payments:
    `PartiallyRefunded` otherwise
 
 ::: warning
-A refund Stripe refuses or does not answer stays pending; the administrators are told after 24 hours
-(`admin.payment.refund_needs_retry`) and retry it from the same action. A retry that finds Stripe failed
-the refund made on its key closes it, sends nothing, and tells them at once (since 2026-10-06); retrying
-that same action fails the same way, so the money goes back only by a refund on another key: the full
-refund, or a partial refund of another selection of lines. Cash payment refunds must be handled outside
-the system.
+A refund Stripe refuses or does not answer stays pending; the administrators are told at the first
+hourly run once it is 30 minutes old (`admin.payment.refund_needs_retry`, so within 30 to 90 minutes) and
+retry it from the order's *Refunds* button. A retry that finds Stripe failed the refund made on its key
+closes it, sends nothing, and tells them at once (since 2026-10-06); the money then goes back by being
+repaid, which is recorded on the Refunds page below. Cash payment refunds must be handled outside the
+system.
 → [Business rules — a pending card refund counts as given back](/product/business-rules#after-the-start)
 :::
+
+### The Refunds page {#refunds-page}
+
+Route: `/order-management/refunds`, the *Refunds* sidebar entry after *Receivables* (the same permission as the
+order list); every refund of the company in one list, opened on **Needs action**, which is the *Not sent*,
+*Failed* and *Bounced* states together. The state filter also picks one of the six states alone (*Not sent*,
+*Refunded*, *Failed*, *Bounced*, *Repaid*, *Closed*), and two date pickers filter by when the refund was
+requested. The columns are order, customer (a guest is marked), origin (cancellation, dispute, full refund
+or partial refund), amount, state with one line saying who acts next or how it was settled, requested and
+last changed; the amount and the requested date sort. A row opens its order. `?orderId=` and `?userId=`
+open the list for one order or one customer, with a note and a button that clears the scope.
+
+Three actions sit on a row, each only where it applies:
+
+- **Retry** — for a *Not sent* refund (a cancellation's only on a cancelled order, never a dispute's);
+  needs `CanIssueRefund` and a confirm. It asks Stripe first, so it is never paid twice. A refund that is not that order's answers `refund.not_found`.
+- **Open dispute** — for a dispute's refund that was not sent, because it is retried by resolving the
+  dispute again.
+- **Record repayment** — for a *Failed* or *Bounced* refund; needs `CanIssueRefund`. A panel under the list
+  names the order, customer, origin and amount, takes a bank transfer reference of up to 100 characters, and
+  has two buttons: record the transfer, or record it as credit, offered only when the customer has an
+  account and chose credit.
+
+The order page carries a **Refunds** button on card orders and the customer page one for the customer
+(`CanViewOrderDetailAdmin`); each opens this page scoped to the order or the customer.
+→ [Cancellation, refund and dispute](/flows/cancellation-refund-dispute#refund-states),
+[Business rules](/product/business-rules#refund-states)
 
 ## Photo Management
 

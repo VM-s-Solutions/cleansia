@@ -71,16 +71,16 @@ nothing of theirs; the stale `environment-config.md` line is the docs lane's (T-
 ## Q-UI-04 — Admin endpoints with no UI: wire, remove, or leave?
 
 **Raised by:** the dead-code scout (DC §2.9), 2026-09-20. **Who answers:** the owner.
-**Why it needs you:** `AdminPayPeriodController` `create/update/delete/open` exist and
-`adminPayPeriodClient.create` is generated (`admin-client.ts:13206`), yet the admin *Create pay
-period* dialog ends in `console.warn` (`pay-period-management.component.ts:318-319`) — a dead
-button in the live UI, the visible half-feature you will notice first. `AdminEmployeeDocumentController`
-`{documentId}/versions` and `AdminPayrollController` `generate-invoice` have no screen at all.
-Options per endpoint: (a) wire the UI (a story each); (b) remove the endpoint and, for pay periods,
-the button; (c) leave.
-**Default in force since 2026-09-20, unruled: (c) — leave all three.** T-0790 (`038bc8d6a`) put the
-*Create pay period* dialog on the shared dialog shape and left its `console.warn`
-(`pay-period-management.component.ts`); the two screenless endpoints are untouched.
+**Status 2026-11-10: the pay-period half is closed.** The cleaner-pay work (T-0923 to T-0925) wired the pay-period
+screens: *Create pay period* sends its start date and the dialog no longer ends in `console.warn`; *Close now*
+and *Change end date* sit on the detail page; `open` and `reopen` were deleted with their policies
+(ADR-0082). The detail page's *Mark Period as Paid* and the pay-period list
+read the same endpoints. **Delete** (`DELETE api/AdminPayPeriod/delete/{id}`) still has no button, on purpose.
+**What is still open:** `AdminEmployeeDocumentController` `{documentId}/versions` and `AdminPayrollController`
+`generate-invoice` have no screen at all. Options per endpoint: (a) wire the UI (a story each); (b) remove the
+endpoint; (c) leave. `generate-invoice` is the manual path of the same command the reconciliation sweep runs, so
+it is the recovery route for a period the sweep cannot invoice.
+**Default in force since 2026-09-20, unruled: (c) — leave both.**
 **Blocks:** nothing.
 
 ## Q-UI-05 — ADR-designed states with no producer: build the producer or strike the state?
@@ -88,12 +88,13 @@ the button; (c) leave.
 **Raised by:** the dead-code scout (DC §2.4), 2026-09-20. **Who answers:** the owner (with the
 architect — both are ADR terms).
 **Why it needs you:** `PayoutDetailsStatus.NeedsReconfirmation` (ADR-0034 D5; every writer sets
-`Provided`) and `RefundStatus.Failed` (no `refund.failed` webhook handler; `Refund.cs:88-100` only
-moves `Pending → Succeeded`). Build the producer, or strike the state from the ADR and the enum (a
-wire enum → NSwag + both mobile specs)?
-**Default in force since 2026-09-20, unruled: leave both.** Both members are still in
-`src/Cleansia.Core.Domain/Enums/` (`PayoutDetailsStatus.cs`, `RefundStatus.cs`); the dated *what
-shipped* lines on ADR-0034 and ADR-0006 are the docs lane's (T-0799).
+`Provided`) and `RefundStatus.Failed` (the producer has been built since the admin panel remarks of 2026-11-08, since `refund.failed` is a handled
+webhook event and a retry that finds Stripe failed a refund closes it, so the refund half of this
+question is closed). What remains is `PayoutDetailsStatus.NeedsReconfirmation`: build the producer, or
+strike the state from the ADR and the enum (a wire enum → NSwag + both mobile specs)?
+**Default in force since 2026-09-20, unruled: leave it.** The member is still in
+`src/Cleansia.Core.Domain/Enums/PayoutDetailsStatus.cs`; the dated *what shipped* line on ADR-0034 is the
+docs lane's (T-0799), and ADR-0006's now says the refund state has producers.
 **Blocks:** nothing.
 
 ## Q-UI-06 — Headings: load Poppins in admin / partner, or amend the design language?

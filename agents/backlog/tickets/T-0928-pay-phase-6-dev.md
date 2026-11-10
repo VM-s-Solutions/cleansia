@@ -61,3 +61,4 @@ The plan's "Not doing" list. Anything found outside these slices is reported to 
 
 - 2026-11-09 — Filed from the plan page. Not started.
 - 2026-11-10 — P6.1 skipped, Mike's answer "A": master already holds Phases 1 to 3 and the Phase 2 Initial, so DEV gets one reset and deploy after Phase 4 (P6.2), with his OK.
+- 2026-11-10 — P6.2 done with Mike's OK: execute-sql.yml (environment DEV) ran reset-database.sql (run 42779493328); deploy-dev.yml mode=deploy forceProvision=true (run 42779626756) hit the known scm-auth-preflight 503 on all six app legs and was recovered by diagnose-dev.yml and two `gh run rerun --failed`, with only Warm dev sites left failed; then prod-bootstrap.sql (42787166737), insert_seed_data.sql (42787272419) and insert_local_dev_admin.sql (42787419822). All five APIs answer /health 200 and the customer web 200. DEV runs master with Phases 1 to 4 and 3-day pay periods.

@@ -299,8 +299,9 @@ credit, and the customer held 1 600. Now 400 is the most such a settlement can g
   A first attempt asks Stripe nothing first: its row was claimed a moment before, so nothing can exist
   on its key. A refund made by hand in the Stripe dashboard carries no key and is never taken for one of
   ours. A retry held back at the card ceiling never reaches the lookup (below). A refund Stripe accepted
-  and fails later is not seen: no `refund.failed` or `charge.refund.updated` webhook is handled, so it
-  stays `Succeeded`. Until then a retry relied on Stripe's replay alone, so a refund Stripe paid, whose
+  and fails later is the `refund.failed` webhook, which marks the row and tells the administrators
+  ([below](#refund-states)); `charge.refund.updated` is not subscribed, as it reports the same failure a
+  second time. Before the lookup a retry relied on Stripe's replay alone, so a refund Stripe paid, whose
   answer was lost, was paid a second time when it was retried after a day.
 - **The order-ended-unpaid credit return ignores a pending card refund on an order that never took
   payment** (`Order.TookNoPayment`). A card that was never charged had no refund paid, whatever row is left
@@ -364,6 +365,50 @@ credit, and the customer held 1 600. Now 400 is the most such a settlement can g
   confirmed took the whole card charge — by the hourly job for a row it does not re-drive, or by
   resolving a dispute again (above) — and as *failed* only when a retry finds Stripe failed the refund on
   its key. Every other row waits for a retry, which now reconciles it with Stripe first.
+
+### A card refund that fails after Stripe accepted it {#refund-states}
+
+**Owner decisions 2026-11-08 (admin panel remarks).** A refund is in one of **six states**, read from
+the row and never stored: *Not sent* is `Pending`; *Refunded* is `Succeeded` with no failed date;
+*Bounced* is `Succeeded` with a failed date, money that left and came back; *Failed* is `Failed` with a
+failed date, money Stripe never paid; *Repaid* is any refund with a repaid date; and *Closed* is `Failed`
+with no failed date, a refund the re-drive closed because the refunds Stripe confirmed had left it
+nothing. Its **origin** is read from the dispute id and the key: a dispute's, a cancellation's (the key its
+reason builds with no distinguishing id, so a *service not rendered* cancellation reads as a
+cancellation), an administrator's full refund, or a partial one.
+
+- **Stripe's `refund.failed` stamps the row.** The refund is found by the `RefundKey` Stripe carries as
+  metadata. A *Not sent* row becomes *Failed*; a *Refunded* row stays `Succeeded` and becomes *Bounced*,
+  because the money left and came back and still counts as refunded in revenue, in the payment status and
+  in the loyalty clawback, and reopening it would free room to send the same money to the same dead
+  card. A retry that finds Stripe failed the refund on its key stamps the same date and Stripe's refund
+  id. Whichever learns it first tells the administrators once (`admin.payment.refund_bounced`, or
+  `refund_needs_retry` for the retry), and the other adds nothing.
+- **The money is still owed, and it is repaid, not retried.** A failed refund cannot be sent again on
+  its key. An administrator **records the repayment** on the Refunds page: **by bank transfer**, with a
+  reference of up to 100 characters, or **as credit, only when the customer chooses it**. Credit needs a
+  customer with an account on books that are not frozen (`refund.credit_unavailable` for a guest, an
+  erased account or a frozen company); it is a Goodwill credit in the order's currency keyed
+  `{refundKey}:credit`, and credit expires and is never paid out, so the administrator may not choose it
+  for the customer ([above](#dispute-settlement)). Only a *Failed* or *Bounced* refund can be repaid
+  (`refund.not_owed` otherwise).
+- **Recording a repayment makes a *Failed* refund count as given back.** The payment status, the credit
+  share returned under the customer's credit lock and the loyalty clawback follow, once; the record is
+  refused whole with `refund.nothing_refundable` when the order has no room left for the whole amount, and
+  the amount is never lowered. A *Bounced* refund already counted, so it is only stamped.
+- **Retry is for *Not sent* only.** An administrator's retry (`refund.not_retryable` otherwise) asks
+  Stripe first, as the hourly re-drive does. It is never offered for a dispute's refund, which is retried
+  by resolving the dispute again, and for a cancellation's only once the order is cancelled. For a dispute
+  whose refund failed, record the repayment first, then resolve the dispute with the same amount.
+- **Who is told, and when.** `refund.failed` raises `admin.payment.refund_bounced`; a retry that finds
+  Stripe failed the refund raises `refund_needs_retry` at once, in the retry's own commit; any other refund
+  left *Not sent*, including one Stripe refused or did not answer, raises `refund_needs_retry` at the first
+  hourly run once it is 30 minutes old; a
+  cancellation's own refund keeps its hourly retries and the 24-hour `refund_stuck`
+  ([Administrators are told](#admin-notifications)).
+
+→ [Cancellation, refund and dispute](/flows/cancellation-refund-dispute#refund-states),
+[Webhooks](/api/webhooks), [the Refunds page](/admin-app/order-management#refunds-page)
 
 ### A guest cancels under the same policy
 
@@ -884,7 +929,9 @@ it for the customer. The customer chooses when filing: `CreateDispute` carries a
 `settlementPreference` — `CardRefund` (1), the default, or `Credit` (2) — stored on the dispute
 (`Dispute.SettlementPreference`) and shown to the administrator who resolves it. The customer web,
 Android and iOS dispute forms ask the question with the card refund preselected; on a cash order the
-web offers the money back rather than a card refund.
+web offers the money back rather than a card refund. The administrator's dispute page always shows the choice, and for a card-refund choice on
+a cash order it reads *money back (paid in cash)* and warns that an amount will be refused, because a
+cash booking has no card charge: the money goes back by hand ([the dispute page](/admin-app/order-management#dispute-resolution)).
 
 - **The administrator decides the amount, never the tender.** `ResolveDispute`'s `RefundAmount` is the
   settlement. With `CardRefund` it is the refund through the one refund seam, as before. With `Credit`
@@ -995,6 +1042,17 @@ or it is already on an invoice, already charged for a dispute, or smaller than t
 self-billing document is never silently changed; the administrator then uses the existing invoice
 deduction. The audit row records the cleaner and the amount, not the reason; the cleaner's erasure
 anonymises the reason on the pay row.
+
+**A job already on an invoice is charged on the next invoice** (following the late-pay
+rule of [ADR-0082](/decisions/adr-0082)). The issued invoice and its job row are never written. The charge
+becomes a line of its own, `PayLineType.DisputeCharge`, in the company's open pay period, linked to the dispute
+with the reason the cleaner reads, and the cleaner's next invoice deducts it. It is still refused before any
+money moves (`dispute.cleaner_charge_not_chargeable`) when the job row is missing, a charge is already carried
+for that job and cleaner, the charge is above the job's pay, or no period is open to carry it. A job not yet
+invoiced is charged directly, as above. Both invoice writers take whole charges oldest first, each one that
+still fits, so no invoice goes below zero; a charge that does not fit waits in the open period for a later
+invoice, and a cleaner whose only rows in a closing period are waiting charges gets no period-closed e-mail.
+The PDF shows the charge in the deduction, not among the job lines.
 
 ### Cleansia Plus
 
@@ -2625,14 +2683,15 @@ up is somebody else's morning. → [Push notifications](/architecture/push-notif
 
 ## Administrators are told {#admin-notifications}
 
-**Nineteen things the platform can prove happened reach the company's administrators through an in-app
+**Twenty-one things the platform can prove happened reach the company's administrators through an in-app
 feed and an e-mail, both** (owner ruling 2026-09-19, [ADR-0065](/decisions/adr-0065): *"both in-app and
 email"*; the not-started alert, the two refund alerts and the lockout report were added by the rulings
 of 2026-09-28, the held referral by the ruling of 2026-10-05, the door non-payment by the ruling of
 2026-10-06, and the same day a guest's refund claimed for a cancellation that never went through got an
 alert of its own; the advance alert for a job nobody has taken came with the owner defaults of
 2026-10-24, and the alert that an order lost one of its cleaners with the owner's decision of
-2026-10-25 on the fix plan, *"Confirm"*). Until then nothing told an administrator anything: a failed erasure was an Error log
+2026-10-25 on the fix plan, *"Confirm"*; the urgent alert for a job two hours out and the alert that a
+card refund bounced with the owner's answers of 2026-11-08 to the admin panel remarks). Until then nothing told an administrator anything: a failed erasure was an Error log
 line, a chargeback was a dispute row nobody opened, an order that lost its crew was re-advertised to cleaners
 only. One writer, `IAdminNotifier`, turns an event into one feed row per administrator of the **named**
 company and one e-mail per recipient address, inside the same unit of work as the event — so the rows
@@ -2640,45 +2699,66 @@ exist iff the event committed, and a failing e-mail can never fail the command, 
 never sends one; it writes an outbox row. No push: the admin console is a browser, and the partner app
 an administrator may also hold cannot render these keys.
 
-| Event | When | What the notice carries (never a person) |
-|---|---|---|
-| `admin.order.new` | an order the company now has to serve becomes **offerable** — a cash one-off at creation, a card order on its payment, a recurring occurrence on the customer's confirm. Never an unpaid card checkout, which the stale sweep cancels within the hour, at most 500 a run; a backlog larger than 500 spreads over the following 15-minute runs | order number, amount with its currency, tender, market |
-| `admin.order.crew_lost` | a drop or an admin rejection leaves nobody on the order — since 2026-10-25 only ever a `New` or `Confirmed` one, as a drop is refused once the job is under way → [above](#crew-lost) | order number, the cause, the status at the loss, the slot |
-| `admin.order.crew_short` | a drop or an admin rejection takes one cleaner off an order that still has somebody on it (since the fix plan of 2026-10-25). Every such release raises it, as each release is its own event: the order is short, its free place is back on the board, and if nobody takes it the clean goes ahead short-staffed, so the notice says to assign a cleaner from the order. Its cause reads as `crew_lost`'s → [above](#crew-lost) | order number, the cause, the status at the loss, the slot |
-| `admin.order.cleaner_not_started` | a job with a cleaner on it is still not started 30 minutes after its start, or the customer reports that the cleaner did not arrive — **once per order**, whichever comes first → [the no-show](#when-the-cleaner-cancels-or-no-shows) | order number, the slot |
-| `admin.order.no_cleaner_yet` | a job nobody is on is inside **24 h** of its start — **once per order**, found by the five-minute reminder sweep. Nobody is on it means `New` or `Confirmed` with no assignment row: a cleaner who asked for cover still counts as on it, and a partly filled crew is not reported. It must be offerable, so never an unpaid card checkout or a recurring occurrence the customer has not confirmed; past any live preferred-cleaner hold; and quiet for **60 min**, with no status row and no customer confirmation in the last hour, so a drop's own status row starts that hour. Nothing is sent once the slot has started: from then the unfilled-order cancel at slot + 30 min owns it. Since the fix plan of 2026-10-25 the notice and its feed row also say how to call the booking off before then: cancel it as a no-show from the order, and the customer gets the same refund and apology credit as the automatic cancellation → [when a cleaner leaves](#crew-lost), [the no-show](#when-the-cleaner-cancels-or-no-shows) | order number, the slot |
-| `admin.order.lockout_reported` | the assigned cleaner reports that they cannot get in, 15 minutes or more past the start, with an entrance photo; nothing moves until an administrator confirms it → [the lockout](#lockout) | order number, the slot |
-| `admin.order.cash_not_paid` | the assigned cleaner reports that the customer did not pay the cash at the door; the order is already completed, the price owed and the customer barred from booking. The console's row opens the order; a wrong report is written off, a late payment to the cleaner is recorded as cash received → [When the customer does not pay at the door](#cash-not-paid) | order number, the amount owed |
-| `admin.dispute.filed` | a customer files a dispute | order number, the reason (an enum), the dispute |
-| `admin.dispute.chargeback` | the bank reverses a charge — the dispute named is the customer's open one when there is one, else the chargeback's own | order number, the reversed amount, the dispute |
-| `admin.dispute.chargeback_unmatched` | the bank reverses a charge that **no order carries**, so no dispute can be written. The Stripe account is shared by every operating company, so **every company** is told, each on its own row. The e-mail and the console's feed row carry the figures | the reversed amount with its currency, the Stripe dispute id to answer it by in the Stripe dashboard |
-| `admin.payment.failed` | a card payment is declined — **once per order**, the first decline only (default O-6): Stripe fires per attempt and the platform resolves the state itself, by a retry or the stale sweep's cancel | order number |
-| `admin.payment.refund_stuck` | a cancelled order's card refund is still not through **24 h** after it was asked for, although the hourly re-drive keeps trying — once per order | order number, the amount |
-| `admin.payment.refund_needs_retry` | any other refund — a dispute's, an administrator's, a partial one — still `Pending` after 24 h; the re-drive does not touch it, so the administrator checks it in Stripe and retries it from the action that asked for it. Unless the refunds Stripe confirmed on the order already took the whole card charge: the hourly job then closes the row (`Failed`) and raises nothing (since 2026-10-06). And, at once and however young, any refund whose retry finds that Stripe failed or canceled the refund made on its key: the hourly re-drive, an administrator's or the wind-down's cancellation replaying a guest's claim, the guest's own retry, an administrator's full or partial refund, or a dispute resolved again. The row is closed `Failed` and the notice saved in the same commit by the refund seam, even when the action that retried it fails; the hourly job raises no copy of its own, and the money goes back only on another key (since 2026-10-06) → [A retry asks Stripe first](#after-the-start) — once per order | order number, the amount |
-| `admin.payment.refund_without_cancel` | a refund a guest claimed on the cancellation's key, for a cancel that never committed, is still `Pending` after 24 h on an order that is not cancelled (since 2026-10-06). The re-drive does not touch it. The notice says to check it in Stripe, then to cancel the order if the booking is still open, which finishes the refund, and if the clean went ahead to issue no refund on the order until the claim is reconciled in Stripe. A claim the refunds Stripe confirmed have left nothing for is closed instead (`Failed`), with no notice (since 2026-10-06) — once per order → [A pending card refund counts as given back](#after-the-start) | order number, the amount |
-| `admin.erasure.failed` | the daily retry of a failed account erasure fails again — **once per request per day**, and a request that fails again tomorrow is meant to be heard again | the request, the day |
-| `admin.company.wind_down_requested` | an administrator sets the company's last day of service (a re-run announces nothing) | the date |
-| `admin.company.wind_down_run` | a wind-down run **that did something** — cancelled, refunded, failed a refund or closed a period; a run that moved nothing is not news | the four counts |
-| `admin.company.archived` | the company's books are sealed — the one event written on a frozen company, which the account surface admits | the day |
-| `admin.referral.held` | a referral's first qualifying order completed, but the two accounts look like one person or household, so nothing was paid and the referral waits for an administrator to release or reject it — once per referral, and only for a referral that can pay at least one side: when neither side's currency carries a referral figure, the accounts are not compared and nobody is told → [the hold](#referral-hold) | the referral |
+| Event | Type | Severity | When | What the notice carries (never a person) |
+|---|---|---|---|---|
+| `admin.order.new` | Order | Info | an order the company now has to serve becomes **offerable** — a cash one-off at creation, a card order on its payment, a recurring occurrence on the customer's confirm. Never an unpaid card checkout, which the stale sweep cancels within the hour, at most 500 a run; a backlog larger than 500 spreads over the following 15-minute runs | order number, amount with its currency, tender, market |
+| `admin.order.crew_lost` | Cleaner | Critical | a drop or an admin rejection leaves nobody on the order — since 2026-10-25 only ever a `New` or `Confirmed` one, as a drop is refused once the job is under way → [above](#crew-lost) | order number, the cause, the status at the loss, the slot |
+| `admin.order.crew_short` | Cleaner | Critical | a drop or an admin rejection takes one cleaner off an order that still has somebody on it (since the fix plan of 2026-10-25). Every such release raises it, as each release is its own event: the order is short, its free place is back on the board, and if nobody takes it the clean goes ahead short-staffed, so the notice says to assign a cleaner from the order. Its cause reads as `crew_lost`'s → [above](#crew-lost) | order number, the cause, the status at the loss, the slot |
+| `admin.order.cleaner_not_started` | Cleaner | Critical | a job with a cleaner on it is still not started 30 minutes after its start, or the customer reports that the cleaner did not arrive — **once per order**, whichever comes first → [the no-show](#when-the-cleaner-cancels-or-no-shows) | order number, the slot |
+| `admin.order.no_cleaner_yet` | Cleaner | Critical | a job nobody is on starts **2 to 24 h** from now — **once per order**, found by the five-minute reminder sweep. Nobody is on it means `New` or `Confirmed` with no assignment row: a cleaner who asked for cover still counts as on it, and a partly filled crew is not reported. It must be offerable, so never an unpaid card checkout or a recurring occurrence the customer has not confirmed; past any live preferred-cleaner hold; and quiet for **60 min**, with no status row and no customer confirmation in the last hour, so a drop's own status row starts that hour. Nothing is sent once the slot has started: from then the unfilled-order cancel at slot + 30 min owns it. Since the fix plan of 2026-10-25 the notice and its feed row also say how to call the booking off before then: cancel it as a no-show from the order, and the customer gets the same refund and apology credit as the automatic cancellation → [when a cleaner leaves](#crew-lost), [the no-show](#when-the-cleaner-cancels-or-no-shows) | order number, the slot |
+| `admin.order.no_cleaner_soon` | Cleaner | Critical | the same job, still with nobody on it, starts **within 2 h** (owner decision 2026-11-08, D15: both alerts) — **once per order**, found by the same five-minute sweep under the same conditions: nobody on it, offerable, past any live preferred-cleaner hold, and quiet for **60 min**. So a job reported at 24 h is reported again when it comes inside two hours, and one booked inside the window gets only this one; nothing is sent once the slot has started. The notice tells the administrator to assign a cleaner now and, failing that, to cancel the booking as a no-show from the order → [the no-show](#when-the-cleaner-cancels-or-no-shows) | order number, the slot |
+| `admin.order.lockout_reported` | Cleaner | Critical | the assigned cleaner reports that they cannot get in, 15 minutes or more past the start, with an entrance photo; nothing moves until an administrator confirms it → [the lockout](#lockout) | order number, the slot |
+| `admin.order.cash_not_paid` | Payment | Critical | the assigned cleaner reports that the customer did not pay the cash at the door; the order is already completed, the price owed and the customer barred from booking. The console's row opens the order; a wrong report is written off, a late payment to the cleaner is recorded as cash received → [When the customer does not pay at the door](#cash-not-paid) | order number, the amount owed |
+| `admin.dispute.filed` | Dispute | Critical | a customer files a dispute | order number, the reason (an enum), the dispute |
+| `admin.dispute.chargeback` | Dispute | Critical | the bank reverses a charge — the dispute named is the customer's open one when there is one, else the chargeback's own | order number, the reversed amount, the dispute |
+| `admin.dispute.chargeback_unmatched` | Dispute | Critical | the bank reverses a charge that **no order carries**, so no dispute can be written. The Stripe account is shared by every operating company, so **every company** is told, each on its own row. The e-mail and the console's feed row carry the figures | the reversed amount with its currency, the Stripe dispute id to answer it by in the Stripe dashboard |
+| `admin.payment.failed` | Payment | Info | a card payment is declined — **once per order**, the first decline only (default O-6): Stripe fires per attempt and the platform resolves the state itself, by a retry or the stale sweep's cancel | order number |
+| `admin.payment.refund_stuck` | Refund | Critical | a cancelled order's card refund is still not through **24 h** after it was asked for, although the hourly re-drive keeps trying — once per order | order number, the amount |
+| `admin.payment.refund_needs_retry` | Refund | Critical | any other refund — a dispute's, an administrator's, a partial one — still `Pending` at the first hourly run once it is **30 minutes** old, so within 30 to 90 minutes of being asked for (a cancellation's own refund keeps the 24 hours of `refund_stuck`, since the hourly re-drive is still trying it); the re-drive does not touch it, so the administrator opens the order's *Refunds* button, which retries the refund once, checks it with Stripe and records or closes it, or records how the customer was repaid. Unless the refunds Stripe confirmed on the order already took the whole card charge: the hourly job then closes the row (`Failed`) and raises nothing (since 2026-10-06). And, at once and however young, any refund whose retry finds that Stripe failed or canceled the refund made on its key: the hourly re-drive, an administrator's or the wind-down's cancellation replaying a guest's claim, the guest's own retry, an administrator's full or partial refund, or a dispute resolved again. The row is closed `Failed` and the notice saved in the same commit by the refund seam, even when the action that retried it fails; the hourly job raises no copy of its own, and the money goes back only on another key (since 2026-10-06) → [A retry asks Stripe first](#after-the-start) — once per order | order number, the amount |
+| `admin.payment.refund_without_cancel` | Refund | Critical | a refund a guest claimed on the cancellation's key, for a cancel that never committed, is still `Pending` after 24 h on an order that is not cancelled (since 2026-10-06). The re-drive does not touch it. The notice says to check it in Stripe, then to cancel the order if the booking is still open, which finishes the refund, and if the clean went ahead to issue no refund on the order until the claim is reconciled in Stripe. A claim the refunds Stripe confirmed have left nothing for is closed instead (`Failed`), with no notice (since 2026-10-06) — once per order → [A pending card refund counts as given back](#after-the-start) | order number, the amount |
+| `admin.payment.refund_bounced` | Refund | Critical | Stripe reports that a card refund it had accepted **failed** (the `refund.failed` webhook), and this was the first to learn it: a refund still `Pending` closes as `Failed`, one already `Succeeded` stays `Succeeded` and carries the date it bounced. The money is still owed to the customer, and the notice says to repay it by bank transfer, or as credit if the customer chooses, and to record that on the Refunds page. A refund whose retry finds Stripe failed it raises `refund_needs_retry` instead; whichever of the two learns it first is the only one raised, and a refund no order carries is only logged → [A card refund that fails after Stripe accepted it](#refund-states) | order number, the amount |
+| `admin.erasure.failed` | Data protection | Critical | the daily retry of a failed account erasure fails again — **once per request per day**, and a request that fails again tomorrow is meant to be heard again | the request, the day |
+| `admin.company.wind_down_requested` | Company | Info | an administrator sets the company's last day of service (a re-run announces nothing) | the date |
+| `admin.company.wind_down_run` | Company | Info | a wind-down run **that did something** — cancelled, refunded, failed a refund or closed a period; a run that moved nothing is not news | the four counts |
+| `admin.company.archived` | Company | Info | the company's books are sealed — the one event written on a frozen company, which the account surface admits | the day |
+| `admin.referral.held` | Referral | Critical | a referral's first qualifying order completed, but the two accounts look like one person or household, so nothing was paid and the referral waits for an administrator to release or reject it — once per referral, and only for a referral that can pay at least one side: when neither side's currency carries a referral figure, the accounts are not compared and nobody is told → [the hold](#referral-hold) | the referral |
 
 **Who.** Every active, e-mail-confirmed, non-anonymised administrator of the event's company **whose
 role is in the event's audience** — read by the company **argument**, never by whatever tenant happens to
 be ambient at a webhook or a job — gets their own feed row with their own read state, so the first
 administrator who glances at the bell does not silence it for everyone. The audience is one of the
 administrator sets ([ADR-0066](/decisions/adr-0066) D8): the order, dispute and payment events, a
-lost or a short crew, a cleaner not started, a job nobody has taken, a lockout report, a door non-payment and a held referral reach **Support and above**; a failed erasure retry reaches **Manager and above**; the three
-company milestones reach **Administrators only**; a **chargeback and the three refund alerts reach every role**, a
+lost or a short crew, a cleaner not started, a job nobody has taken (at 24 h or at 2 h), a lockout report, a door non-payment and a held referral reach **Support and above**; a failed erasure retry reaches **Manager and above**; the three
+company milestones reach **Administrators only**; a **chargeback and the four refund alerts reach every role**, a
 chargeback matched to an order or not — Support answers the customer or the bank, the Accountant
 reconciles the money. The e-mail fan-out below is over the same
 narrowed set. A company with no eligible administrator in the audience is a logged warning, not an error.
 
-**The advance alert's numbers, and the gaps it accepts** (owner defaults 2026-10-24).
-`admin.order.no_cleaner_yet` looks **24 h** ahead and waits out a **60 min** quiet period: the reminder
-command's defaults, `NoCleanerLeadHours` (validated to 1–168) and `NoCleanerQuietMinutes` (0–240), which
-no setting changes. It is one alert per order — no second, closer one, nothing for a partly filled crew,
-no lead time per company — and its once-per-order record is its feed row, read before it is raised, as
-for the not-started alert. Three gaps are accepted rather than built for (CLAUDE.md §4):
+**Critical and info.** Sixteen of the twenty-one keys are **critical**, the ones a person must act on;
+the other five — a new order, a first card decline and the three company milestones — are **info**
+(owner decision 2026-11-08, D13). `AdminNotificationEventCatalog.Critical` is the one list. The
+**badge and the bell count critical unread rows only** (customer and partner counts do not change), and
+the Notifications page opens on *All* with *Critical* and *Info* tabs beside it; the feed's paged read
+takes an optional `critical` flag (true gives the critical keys, false the info ones, absent all). The bell's
+panel always shows the critical ones, under *Critical notifications*. The *Info* tab hides *Mark all
+as read*, which would clear critical rows nobody opened. Each row also shows its **type** in words,
+colour and icon — Order, Cleaner, Dispute, Payment, Refund, Referral, Data protection or Company, from
+the *Type* column above, with every refund alert a Refund and a key the console does not know *Other* —
+and a critical row adds a red *Critical* label. Red is kept for critical alone: Cleaner rows are amber,
+Dispute purple, Refund cyan and Payment blue, the rest grey. A row opens what it names — the order for
+Order, Cleaner, Payment and Refund rows, the dispute, the data-protection page, the company's lifecycle or
+the referrals page — and the arrow on the right says so.
+
+**The advance alerts' numbers, and the gaps they accept** (owner defaults 2026-10-24; the second alert
+by the owner's decision of 2026-11-08, D15: *both alerts*). `admin.order.no_cleaner_yet` covers a start
+**2 to 24 h** away, `admin.order.no_cleaner_soon` the last **2 h**, and both wait out a **60 min** quiet
+period: the reminder command's defaults, `NoCleanerLeadHours` (validated to 1–168),
+`NoCleanerSoonLeadHours` (above 0 and below the 24 h) and `NoCleanerQuietMinutes` (0–240), which no
+setting changes. Each is one alert per order — nothing for a partly filled crew, no lead time per
+company — so an order can be reported twice, once at each distance, and its once-per-order record is each
+key's own feed row, read before it is raised, as for the not-started alert. The two share one query, run
+once per window, and their e-mails cannot collide on the outbox because the key carries the event.
+Three gaps are accepted rather than built for (CLAUDE.md §4):
 
 - A company with nobody eligible in the audience gets no row, so each five-minute tick logs a warning
   per such order and writes nothing.
@@ -2881,7 +2961,7 @@ seat      = share(collected × 0.50)    # over RequiredEmployees, the residue on
   that collected nothing writes no row
   (`payroll.no_collected_fee`, which only the queue consumer sees and logs).
 - **A pay line of its own.** The row's `LineType` is `CancellationFeeShare` (`PayLineType`, beside
-  `Job` and `LockoutFeeShare`; wire integers 0–2, append-only). Its base is the seat's share with no
+  `Job`, `LockoutFeeShare` and `DisputeCharge`; wire integers 0–3, append-only). Its base is the seat's share with no
   rates read and no clamp. The self-billed invoice line says it is a share of the late-cancellation fee
   — in Czech for a Czech cleaner, in English elsewhere — and My Pay on the partner web, Android and iOS,
   like the admin invoice, names each line's type.
@@ -2934,28 +3014,56 @@ locked out, as it would on completion. The framework agreement and the contract 
 
 ### Pay periods are 14 days {#pay-periods}
 
-**Owner decision 2026-10-04.** A pay period runs **14 days**, start and end inclusive
-(`PayPeriod.CreateBiWeekly`: the end is the start + 13). Until then it ran a calendar month.
+**Owner decision 2026-10-04.** A pay period runs **at most 14 days**, start and end inclusive
+(`PayPeriod.CreateBiWeekly`: the end is the start plus the length minus one). Until then it ran a calendar
+month. **The length is a setting**, `PayPeriodClosing:LengthInDays`: its C# default is 14
+(`PayPeriod.LengthInDays`), and **only the DEV template sets 3** (owner ruling 2026-11-09), so testers see a
+whole pay cycle within days. Production keeps 14 because both cleaner agreements promise it, and a local run
+keeps 14 unless a developer sets the variable. → [Infrastructure — pay period length](/architecture/infrastructure#pay-period-length)
 
-- **The nightly close rolls it.** `CloseExpiredPayPeriods` (02:00, company by company) closes every open
-  period that has ended, invoices it, and opens the next one from **the day after the closed one
-  ended**, so periods follow each other with no gap and no calendar alignment.
-- **The first period starts today.** When pay is calculated and the company has no open period, one is
-  opened from the current day, 14 days long.
-- **By hand, 14 days too.** An administrator who creates or edits a period
-  ([Pay periods](/admin-app/pay-periods)) is held to the same length: the end must be 13 days after the
-  start (`PayPeriod.LengthInDays`), and any other span is refused (`pay_period.invalid_duration`, whose
-  text says so). Until 2026-10-05 the admin endpoints took an end 7 to 31 days after the start. The
-  admin web's create dialog asks for the start only and fills the end in, 13 days later; until
-  2026-10-05 its *Create* button sent nothing.
+- **The nightly close rolls it.** `CloseExpiredPayPeriods` (02:00 UTC, company by company) closes every open
+  period that has ended (the night after its end date), commits the close and the successor, and opens the
+  next one from **the day after the closed one ended**, so periods follow each other with no gap and no
+  calendar alignment. It then invoices each cleaner **who has pay in the period**, and e-mails only them: a
+  cleaner without pay gets no "period closed" e-mail. A cleaner the run skips (no active user or no e-mail
+  address) is invoiced by the reconciliation sweep about 15 minutes later.
+- **The first period starts today, or later.** When pay is calculated and the company has no open period,
+  one is opened from the current day, or from the day after the latest period's end if that is later, so it
+  never overlaps a period that already ran (the last period of a wound-down company, closed early with its
+  original end, for example).
+- **There is one open period, never a future one** (owner ruling 2026-11-08). Create works only when no
+  period is open (`company.has_open_pay_period`) and refuses a start after today (`validation.invalid_date`);
+  it takes a start only, and the end is the start plus the length minus one. Pay joins the open period
+  whatever its dates, so a second open period, or one starting later, would capture pay earned before it
+  starts. The one open period that can start in the future is the one Close now opens for tomorrow.
+- **Close now is the exception.** An administrator ends the open period today (UTC) with a required reason
+  of up to 500 characters, kept in the audit log with the old and new end, and the next period opens from the
+  day after in the same commit (none for a deactivated company). A period that has not started is refused
+  (`pay_period.not_started`). The invoices follow from the sweep about 15 to 20 minutes later, and jobs
+  finished afterwards go into the next period.
+- **Change end date moves only the end**, from tomorrow to the start plus the length minus one. The start
+  stays fixed. An end today or earlier is refused (`pay_period.end_too_soon`, which points to Close now), a
+  later one is refused (`pay_period.invalid_duration`, "The end date is later than the last day this pay
+  period may run to"), and a different start is refused (`validation.invalid_date`). The old and new end go in
+  the audit log.
+- **A closed period is never reopened**, and no administrator can open one: `CanOpenPayPeriod` and
+  `CanReopenPayPeriod` left the permission map. Pay that arrives after its period was invoiced goes into the
+  next open period and is invoiced with it. → [ADR-0082](/decisions/adr-0082)
+- **Mark period as paid** needs the period closed, every pay row in it invoiced
+  (`pay_period.has_uninvoiced_pay`) and every invoice in it `Paid` or `Cancelled`
+  (`pay_period.has_unpaid_invoices`).
 - **What did not change.** An invoice is due 14 days after it is issued
-  (`Constants.PayoutInvoice.PaymentTermsDays`). The request to hand over cash still counts
+  (`Constants.PayoutInvoice.PaymentTermsDays`), on every stage. The request to hand over cash still counts
   `cash.remittance_request_days` from the first close after a balance began ([below](#cash-held)). The
-  period-end reminder still goes 3 days and 1 day before the end.
+  period-end reminder still goes 3 days and 1 day before the end, and goes only to a cleaner with a job or a
+  fee-share pay row in the period: a carried dispute charge alone does not count.
 
-A period open when this shipped keeps its month and the next one is 14 days. The framework agreement and
-the self-billing agreement say 14 days since `2026-10-05`, and the contract for work no longer says
-monthly; their `2026-09-29` versions said monthly ([The legal texts](#legal-texts)).
+A job finished between midnight and the 02:00 UTC run still lands in the period that has just ended; paying
+by the job's date for that window is not built (owner ruling 2026-11-08). A period open when the 14-day rule
+shipped kept its month and the next one was 14 days. The framework agreement and the self-billing agreement
+say 14 days since `2026-10-05`, and the contract for work no longer says monthly; their `2026-09-29` versions
+said monthly ([The legal texts](#legal-texts)). Whether the texts need *up to 14 days*, now that a period may
+end early or run 3 days on DEV, is a question for the lawyers.
 
 ### Rates are per currency {#rates-per-currency}
 
@@ -3078,8 +3186,9 @@ currency, on My Pay on the partner web and Pay & Earnings on Android and iOS
 the invoice's total**, under the same lock: `EmployeeInvoice.CashSetOffAmount`, and a *Set-off* ledger
 entry dated at issue. The invoice's own amounts do not change; **`TransferAmount = TotalAmount −
 CashSetOffAmount`** is what the bank transfer carries. What the invoice could not cover stays in the
-ledger: that is the balance carried forward. Cancelling an invoice gives its set-off back to the ledger,
-and lowering an invoice's total below its set-off gives back the difference.
+ledger: that is the balance carried forward. Cancelling an invoice gives its set-off back to the ledger
+and frees its pay rows, so the corrected invoice that follows within minutes holds the same jobs and sets
+the cash off again; lowering an invoice's total below its set-off gives back the difference.
 → [Pay and payouts — cash set off](/flows/pay-and-payouts#cash-set-off)
 
 **A request to hand the cash over, after 30 days.** A balance is the run of a cleaner's cash in one
@@ -3740,10 +3849,16 @@ throws, because the seed configures every serviced country and a gap is a deploy
 ### Sales VAT and cleaner-invoice VAT {#vat-sources}
 
 Customer sales read `CountryConfiguration.StandardVatRate`; cleaner invoices read
-`CountryInvoiceConfig.VatRate`. They remain separate live values. Whether both must use one market
-standard rate, or whether cleaner invoices may differ, awaits an owner decision. The unused
-`ReducedVatRate` has been removed from the domain, database model and seed; that removal does not
-choose between the two live rates or change an order's stored VAT snapshot.
+`CountryInvoiceConfig.VatRate`. They remain separate live values, and the customer rate **cannot make a
+cleaner a VAT payer**. A cleaner's pay is gross: the stored total is what the cleaner receives in full, and the
+platform pays no tax on their behalf. So a payout invoice adds nothing to it. When the cleaner is a registered
+VAT payer and the country requires VAT (`CountryInvoiceConfig.VatRequired`), the invoice **decomposes** the
+total instead (`CountryInvoiceContext.VatWithinGross`): base = total ÷ (1 + `VatRate`), VAT = total − base,
+rounded once on the base, so base plus VAT is exactly the total on every amount; for anyone else the VAT is
+zero and the invoice prints the statutory non-payer notice. The printed total is the stored total in both
+cases. Whether both rates must use one market standard rate, or whether cleaner invoices may differ, awaits an
+owner decision. The unused `ReducedVatRate` has been removed from the domain, database model and seed; that
+removal does not choose between the two live rates or change an order's stored VAT snapshot.
 
 ## The market a customer browses in {#market}
 

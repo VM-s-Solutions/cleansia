@@ -255,7 +255,7 @@ The tables that denominate money carry the currency they are in:
 | `ServicePrices` / `PackagePrices` / `ExtraPrices` | required | Restrict | Half of the unique key — one price per entry per currency |
 | `EmployeePayConfigs` | required | Restrict | In the unique index — a rate is an amount in one currency, and the pay writer reads only rows in the order's currency |
 | `OrderEmployeePays` | required | Restrict | The currency the pay row was computed in |
-| `EmployeeInvoices` | required | Restrict | In the unique index `IX_EmployeeInvoices_EmployeeId_PayPeriodId_CurrencyId` — one invoice per currency a cleaner's pay spans in a period; derived from the pay rows, never supplied |
+| `EmployeeInvoices` | required | Restrict | In the unique index `IX_EmployeeInvoices_EmployeeId_PayPeriodId_CurrencyId` (`WHERE "Status" <> 6`, so a cancelled invoice frees its cleaner, period and currency for the corrected invoice) — one live invoice per currency a cleaner's pay spans in a period; derived from the pay rows, never supplied |
 | `EmployeePayoutDetails` | nullable | Restrict | The currency the cleaner declares their bank account holds; null = undeclared, which `ApproveInvoice` reads as the work country's currency |
 | `CreditAccounts` | required | no FK | Unique `(UserId, CurrencyId)` — one balance per customer per currency, never converted at spend time |
 
@@ -272,9 +272,9 @@ Because the FKs restrict, `DeleteCurrency` asks `ICurrencyRepository.IsInUseAsyn
 | `Address` | Customer addresses with GPS coordinates |
 | `Package` | Bundled services at a discount; priced per currency in `PackagePrices` |
 | `Extra` | An add-on line keyed by `Slug` (which `OrderExtras.Slug` snapshots, so it is fixed at creation); priced per currency in `ExtraPrices` |
-| `PayPeriod` | Employee payment tracking periods |
-| `OrderEmployeePay` | One pay row per `(OrderId, EmployeeId)`, unique; carries the `CurrencyId` it was computed in |
-| `EmployeeInvoice` | A period's payout invoice for one cleaner **in one currency** — unique on `(EmployeeId, PayPeriodId, CurrencyId)`, so a cleaner whose pay spans two currencies in a period holds two invoices |
+| `PayPeriod` | Employee payment tracking periods; at most one `Open` per company, held by `IX_PayPeriods_TenantId_Open` on `(TenantId) WHERE "Status" = 1`, `NULLS NOT DISTINCT` |
+| `OrderEmployeePay` | One job or fee-share row per `(OrderId, EmployeeId)` — unique with `WHERE "LineType" <> 3` — and at most one dispute-charge line (`PayLineType.DisputeCharge`) per order and cleaner, in `IX_OrderEmployeePays_OrderId_EmployeeId_DisputeCharge` with `WHERE "LineType" = 3`; carries the `CurrencyId` it was computed in |
+| `EmployeeInvoice` | A period's payout invoice for one cleaner **in one currency** — unique on `(EmployeeId, PayPeriodId, CurrencyId)` over the uncancelled invoices (`WHERE "Status" <> 6`), so a cleaner whose pay spans two currencies in a period holds two invoices; the Postgres `xmin` is its concurrency token, so two admin actions on one invoice cannot both commit |
 | `EmployeeDocument` | Uploaded employee documents (contracts, IDs) |
 | `EmployeePayoutDetails` | ADR-0034 — the cleaner's bank destination. **Its own table**, one row per cleaner, `(TenantId, EmployeeId)` unique with `NULLS NOT DISTINCT`. Never `Include`d on a list query. Carries a nullable `CurrencyId` (FK Restrict): the currency the cleaner declares the account holds |
 | `EmployeePayConfig` | Pay rates per service/package **in one currency**; nullable `EmployeeId` = per-employee override, `null` = the platform-wide default **of one operating company** (the rows are stamped — pay rates are the operator's money). Unique `IX_EmployeePayConfigs_Tenant_Scope` on `(TenantId, EmployeeId, ServiceId, PackageId, CurrencyId)` with `NULLS NOT DISTINCT` and **no filter** — every row carries a null by construction (one config per service *or* per package, never both), so a filtered nulls-distinct index rejected nothing while excluding the platform-wide rows `CalculateOrderPay` reads with no `ORDER BY`; the leading tenant term is what lets two operators each hold a default for the same service and currency |
@@ -288,15 +288,15 @@ Because the FKs restrict, `DeleteCurrency` asks `ICurrencyRepository.IsInUseAsyn
 ::: danger A unique index over a nullable column enforces nothing unless it says so
 Postgres treats NULLs as DISTINCT, so a unique index containing a nullable column admits unlimited
 duplicates while that column is null. `.AreNullsDistinct(false)` is what makes such an index an
-arbiter, and **17 indexes carry it in the emitted DDL** (`grep -n NullsDistinct …Initial.cs`) —
-thirteen with a tenant term, four without (`DisputeLines`, `LegalDocuments`, `LiveActivityTokens`,
+arbiter, and **18 indexes carry it in the emitted DDL** (`grep -n NullsDistinct …Initial.cs`) —
+fourteen with a tenant term (the newest is `IX_PayPeriods_TenantId_Open`), four without (`DisputeLines`, `LegalDocuments`, `LiveActivityTokens`,
 `OrderReviewLines`).
 
 **`TenantId` is no longer the nullable column that matters.** Since ADR-0061 D8 (2026-09-13) the
 column is NOT NULL on every stamped table — only `OutboxMessages` and `DeadLetters` keep it nullable —
 and since 2026-09-15 it is a foreign key into `Tenants` on every one of them and absent from every
 tenantless table (`TenantAuditable` carries it; plain `Auditable` does not), so the tenant term of a
-`(TenantId, …)` index can never be the null that disarms it. The option is kept on those thirteen
+`(TenantId, …)` index can never be the null that disarms it. The option is kept on those fourteen
 indexes anyway, because the model guard reads the option, not the column, and the other nullable
 terms (`EmployeeId`, `ServiceId`, `PackageId`) still need it. Two indexes *gained* a tenant term on
 activation so that two operators can coexist — `OrderReceipts (TenantId, ReceiptNumber)` (the number
@@ -490,8 +490,13 @@ is ordinary work for whoever changes the model, proven by the integration suite 
 2026-10-13 approval covered that earlier wave's one reset with its final fresh deployment, after every PR
 merged green; it did not authorize a new reset during later branch work.
 
-Today that file is **`20261028213040_Initial`**, regenerated on 2026-10-28 with only the nullable
-`LiveActivityTokens.UseSandbox` recipient-routing column added to `20261027013728_Initial`
+Today that file is **`20261109234823_Initial`**, regenerated twice on 2026-11-09 for the cleaner-pay work. The
+first regeneration added the one-open-period index, made the invoice triple index ignore cancelled invoices,
+split the pay-row index in two for the dispute-charge line, and gave `Refunds` four nullable columns:
+`FailedOn` and `RepaidOn` (timestamptz), `RepaymentMethod` (integer, `RefundRepaymentMethod`: BankTransfer 1,
+Credit 2) and `RepaymentReference` (varchar 100). The second added `xmin` as `EmployeeInvoices`' concurrency
+token. The table count did not change. Before them the file was **`20261028213040_Initial`**, which added only the
+nullable `LiveActivityTokens.UseSandbox` recipient-routing column to `20261027013728_Initial`
 ([ADR-0078](/decisions/adr-0078)). The previous file added `Orders.CustomerCancellationReason`
 (nullable, 500 characters) and `OrderEmployees.CompletionConfirmedAt` (nullable timestamptz).
 It retains the shared-install

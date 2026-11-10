@@ -406,7 +406,7 @@ time, a notice about two hours before each one, and a nudge close to the start f
 has not set off. The nudge stops the moment they mark themselves on the way. None of the three can be
 silenced: they are about work the cleaner already accepted.
 
-**Getting paid** — see pay per job, per 14-day pay period, and download invoices. A job pays its
+**Getting paid** — see pay per job, per pay period of up to 14 days, and download invoices. The dashboard card reads *This period, not invoiced yet*, and on Android and iOS it also names the day the period closes; no cleaner app shows a payout date, because the company pays each invoice by bank transfer and an administrator marks it paid ([ADR-0082](/decisions/adr-0082)). Each invoice shows the cash set off against it and the bank transfer to the cleaner. A job pays its
 service and package rates plus rooms and bathrooms and a company share of the extras booked (half by
 default), within the rates' floor and cap; nothing is paid for travel distance
 → [Business rules — cleaner pay](/product/business-rules#cleaner-pay). A job the customer did not let
@@ -455,10 +455,14 @@ text row's SHA-256, the hash a dispute cites. → [Business rules — the contra
 panel over it (on a phone, the toolbar's bell opens the same panel), and the *Notifications* page in the
 sidebar for the full history: one row per event the company has
 to act on — an order to serve, an order that lost its last cleaner, an order nobody has taken a day
-before its start, a dispute filed, a chargeback, a
-first card decline, a failed erasure retry, and the company's own wind-down request, each run that did
+before its start and again two hours before it, a dispute filed, a chargeback, a refund the bank bounced,
+a first card decline, a failed erasure retry, and the company's own wind-down request, each run that did
 something, and the archive — with the order, dispute or page it names a click away, unread emphasis,
-mark read and mark all read, and a badge that refreshes every minute while the tab is visible. Every
+mark read and mark all read. Each row names its **type** (Order, Cleaner, Dispute, Payment, Refund,
+Referral, Data protection, Company) in words, colour and icon, and sixteen of the twenty-one events are
+**critical**: they carry a red *Critical* label, they are the only ones the badge and the bell count
+(a badge that refreshes every minute while the tab is visible), the bell's panel shows only them, and the
+page's *All*, *Critical* and *Info* tabs split the feed the same way. Every
 event is also e-mailed: to each administrator in their own language, or to the one shared mailbox
 the company sets on Company settings. → [Business rules — administrators are told](/product/business-rules#admin-notifications)
 
@@ -469,10 +473,10 @@ name, e-mail or phone, filters active and inactive, and opens a customer's page,
 **Revoke points** and **Issue credit** sit side by side: points are loyalty, credit is money on the
 customer's balance in the currency the admin names, and they are separate acts. → [Customers](/admin-app/user-management#customers)
 
-**Money** — pay periods (open, close, reopen, mark paid), employee invoices (one per cleaner per period
+**Money** — pay periods (create, close now, change end date, mark paid; a closed period is never reopened), employee invoices (one per cleaner per period
 per currency they were paid in, numbered `INV-YYYY-NNNNNN` from the operating company's own series
 with a ten-digit variable symbol from its own counter — each company numbers its own), payout details
-behind an audited reveal, refunds, disputes, chargebacks, fiscal failures, customer credit issued in a
+behind an audited reveal, refunds (a *Refunds* page lists every refund by state, retries one that was not sent and records how a refund Stripe failed or bounced was repaid, by bank transfer or as credit when the customer chooses it → [Refunds](/admin-app/order-management#refunds-page)), disputes, chargebacks, fiscal failures, customer credit issued in a
 named currency.
 
 **Catalogue** — services, packages, extras, per-employee pay rates in bulk, countries, currencies,
@@ -497,7 +501,11 @@ each refused, and the list reloaded, when the hold changed since the list was lo
 loyalty tiers, membership plans (a price and a Stripe
 Price id per currency, any currency optional — a plan unpriced in a market is simply not on sale
 there — and the free-trial length in days, 14 on a new plan and 0 for none, shown in the plan list),
-site-wide push campaigns, email templates.
+site-wide push campaigns, email templates. The *Marketing* page sends **push notifications only**: a banner
+says e-mail campaigns are not available yet. A campaign reaches the company's active customer accounts
+that have switched promotions on (never a cleaner, an administrator or an erased account), and the page
+refuses a send that would reach nobody (`marketing.no_opted_in_customers`) and one whose text is exactly
+that of a campaign already sent, saying to change the text to send it again. → [ADR-0002](/decisions/adr-0002#amendment-2026-11-10)
 
 **Oversight** — an append-only audit log of privileged actions, including the ones that failed, plus
 revenue and payroll reporting — one currency per report, never a sum across two; the revenue report's

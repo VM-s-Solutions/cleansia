@@ -11,7 +11,7 @@ flowchart LR
   Y[Lockout confirmed] --> B
   X[Fee collected on a late cancellation] --> B
   B --> C[Pay period]
-  C -->|close| D[EmployeeInvoice, one per currency]
+  C -->|night run, or Close now| D[EmployeeInvoice, one per currency]
   L[Cash the cleaner holds] -->|set off| D
   D -->|approve| E[Approved]
   E -->|mark paid| F[Transfer recorded]
@@ -24,7 +24,9 @@ flowchart LR
 the invoice's `TransferAmount`, its total less the cash set off against it ([below](#cash-set-off)) — in
 a bank by hand, and `MarkInvoicePaid` records that it happened, with a transfer note. Nothing here talks
 to a bank, a PSP payout account or a SEPA file — which is why approval, not payment, is where the
-platform does its last checking (below).
+platform does its last checking (below). That is a ruling, not a gap: payouts are manual first, then the
+bank, and **never Stripe**, which takes customers' card payments and nothing else (Mike, 2026-11-08).
+→ [ADR-0082](/decisions/adr-0082)
 
 **One pay row per assigned employee, and each is one seat's share of the job** (owner rulings
 2026-09-28). A rate describes the job, so `CalculateOrderPay` divides the job's base, extras and clamp
@@ -84,8 +86,10 @@ is why the per-currency invoicing below still exists. → [Business rules](/prod
 A pay row is in the currency of its order, and a tax document is in one unit. A cleaner who worked a
 CZK job and a EUR job in the same period therefore holds pay in two units, and the close produces **one
 payout invoice per currency** — each with its own allocated variable symbol — and sends **one
-period-closed e-mail per document**, because the template carries a single attachment. The unique
-index is `(EmployeeId, PayPeriodId, CurrencyId)`.
+period-closed e-mail per document**, because the template carries a single attachment. A cleaner with no
+pay in the period gets no invoice and no e-mail. The unique index is
+`(EmployeeId, PayPeriodId, CurrencyId)` **and ignores cancelled invoices**, so a cancelled invoice frees
+its cleaner, period and currency for the corrected invoice that follows it.
 
 The invoice's currency is **derived from the pay rows it invoices** (`EmployeeInvoice.CreateFromOrderPays`),
 never supplied — not from the employee, not from their work country, not from a preference field. That
@@ -93,20 +97,44 @@ is also why a mixed-currency period is no longer refused. The old refusal had no
 resolve it — a EUR job cannot be made a CZK job — so the rows sat un-invoiced forever while the
 reconciliation sweep re-enqueued the pair every tick.
 
-The manual admin path (`GenerateInvoice`) does what the auto-close batch does: it groups the employee's
-unassigned pay by currency, claims every payout reference **before** staging any invoice, writes one
-invoice per group and flushes them together, so a period is invoiced whole or not at all. Its
-already-exists guard is per currency too — a late pay row in a currency the period has already invoiced
-is refused; one in a currency still open is not.
+**Invoices are issued once the period has closed, never before.** `GenerateInvoice` is the one command that
+issues them, for the reconciliation sweep's queue consumer and for `POST /api/AdminPayroll/generate-invoice`
+alike, and it refuses an open period (`pay_period.not_closed`) before any reference is claimed. A closed
+period is invoiced, and so is a paid one: a period marked paid before the sweep reached it would otherwise
+keep its pay un-invoiced for good.
+
+`GenerateInvoice` groups the employee's unassigned pay by currency, claims every payout reference
+**before** staging any invoice, writes one invoice per group and flushes them together, so a period is
+invoiced whole or not at all. Its already-exists guard is per currency too — a late pay row in a currency
+the period has already invoiced is refused; one in a currency still open is not — and it ignores a
+cancelled invoice. A dispute charge that would take the total below zero does not go on the invoice; it
+waits for a later one ([below](#dispute-charge)).
 
 After that financial commit, the shared command invokes the existing PDF generation command for each
 created invoice in a fresh scope, bound to that committed invoice's tenant. A failed document commit
 discards its scope before another currency is attempted; it cannot contaminate the next render or undo
 financial creation. Cancellation still stops the remaining document work. This covers the manual and
 queue callers. PDF generation explicitly reads the invoice's
-pay period before formatting the document and its blob path. A failed render records document failure;
+pay period before formatting the document, and stores the file under
+`{start yyyy-MM-dd}_{end yyyy-MM-dd}/{employeeId}/{invoiceNumber}.pdf`, a path that does not depend on a
+language. A failed render records document failure;
 it does not undo an invoice that was already created. The existing administrator regeneration action is
-the recovery path if rendering fails or a process stops between the financial commit and rendering.
+the recovery path if rendering fails or a process stops between the financial commit and rendering. It is
+offered on `Pending`, `Approved` and `Disputed` invoices only, matching the server, which refuses a paid
+or cancelled one.
+
+**After the render, the command e-mails the invoice.** Each rendered PDF goes in a period-closed e-mail
+under the night run's rules: an active cleaner whose account is active and has an address, in the cleaner's
+language, one e-mail per rendered invoice, and one without an attachment when none rendered. The e-mail
+writes the period and its first and last day in the recipient's language. A failed send is logged and never
+fails the command. So an invoice issued after Close now, and a corrected invoice after a cancel, reaches
+the cleaner.
+
+**An action on an invoice between the night run's commit and its PDF stamp makes the stamp lose.** The
+invoice carries Postgres's `xmin` as its concurrency token. An admin action committed in that gap leaves the
+invoice with no PDF address and no PDF error flag until Regenerate PDF, and that cleaner falls back to the
+plain period-closed e-mail. An admin action that loses the reverse race is refused with
+`payroll.invoice.changed_concurrently`.
 
 Document readiness is separate from invoice existence. An owned invoice with no PDF path reports that
 the document is not ready, or the recorded generation failure. A stored path whose object is missing
@@ -114,10 +142,23 @@ reports an unavailable document. Foreign or nonexistent invoices retain the same
 A failed regeneration may leave the previous readable PDF in place, so its failure warning does not
 remove access to that document.
 
-The reconciliation sweep (ADR-0002 D3.4) matches pay rows against invoices on
-`(PayPeriodId, EmployeeId, CurrencyId)`, so a pair whose CZK pay is invoiced and whose EUR pay is not is
-still a candidate. The message key stays per pair — `invoice:{payPeriodId}:{employeeId}` — and one
+**The reconciliation sweep is the one producer of `generate-invoice` messages** (ADR-0002 D3.4, the
+safety net). It invoices a period Close now ended; the night run invoices the periods it closes itself, and
+the sweep picks up any cleaner the run leaves. The
+`FiscalReconciliation` timer runs every five minutes and re-enqueues `generate-invoice` for every **closed**
+period whose close is older than 15 minutes (`FiscalReconciliation:ThresholdMinutes`) and that still holds
+un-invoiced pay, so the invoices of a period appear about 15 to 20 minutes after it closes, whether the night
+run or an administrator's Close now closed it. An open period is never a candidate. The sweep matches pay
+rows against **uncancelled** invoices on `(PayPeriodId, EmployeeId, CurrencyId)`, so a pair whose CZK pay is
+invoiced and whose EUR pay is not is still a candidate, and so is a pair whose invoice was cancelled: its
+pay rows go free at the cancel, the next run picks the pair up, and the corrected invoice gets a new number
+and a new variable symbol. The message key stays per pair — `invoice:{payPeriodId}:{employeeId}` — and one
 generation invoices every currency the pair still has open.
+
+**The night-run switch does not stop it.** `PayPeriodClosing:Enabled` stops only the 02:00 run that closes
+periods. The five-minute sweep keeps invoicing a period that is already closed, and a period an
+administrator ends with Close now is invoiced whatever the switch says.
+→ [Infrastructure — scheduled jobs](/architecture/infrastructure)
 
 ## Cash a cleaner holds is set off against the invoice {#cash-set-off}
 
@@ -143,7 +184,8 @@ ledger — collections up; remittances, write-offs and set-offs down — is desc
   `cash.remittance_request_days` (30 by default) past the first close that carried it, the cleaner is
   e-mailed a request to hand it over.
 - **Given back when the invoice shrinks.** Cancelling an invoice enters its whole set-off back, since a
-  cancelled invoice transfers nothing; lowering an invoice's total below its set-off
+  cancelled invoice transfers nothing, and unassigns its pay rows (`OrderEmployeePay.UnassignFromInvoice`),
+  so the corrected invoice holds the same jobs and sets the cash off again; lowering an invoice's total below its set-off
   (`UpdateInvoiceAmounts`) releases the difference and enters it back, so `TransferAmount` never goes
   negative and the cleaner's balance, the remittance request, the float cap and the archive all read
   the cash the cleaner really holds.
@@ -151,48 +193,73 @@ ledger — collections up; remittances, write-offs and set-offs down — is desc
   notes, which are free text) and the invoice row's `cashSetOffAmount`.
 
 The partner web, Android and iOS show *cash I hold* per currency beside the pay (with the company's
-float cap, and whether cash jobs are hidden above it). **No invoice screen shows the set-off or the
-transfer yet** — not the partner web, Android or iOS, and not the admin invoice the transfer is keyed
-from; the two figures are on the wire and on the PDF the cleaner is e-mailed.
+float cap, and whether cash jobs are hidden above it), and the subtitle says the cash is set off when the
+next invoice is issued. **Every invoice screen shows the set-off and the transfer.** The admin invoice list
+has Cash Set Off and To Transfer columns, and the admin detail's statement ends with the total, the cash set
+off (as a minus) and the amount to transfer. The partner web's list has Cash Set Off and Bank Transfer to You
+columns, and its detail, like the Android and iOS details, adds *Cash set off* as a minus and *Bank transfer
+to you* in bold under the total when cash was set off; with none, it ends at the total. A cancelled
+invoice's detail no longer lists the jobs it held, since they move to the corrected invoice.
 
-## Periods are a state machine, and every transition is gated
+## Periods are a state machine, and every transition is gated {#periods}
 
 | Transition | Requires |
 |---|---|
-| Close | period is `Open` |
-| Reopen | period is **not** `Paid` |
-| Mark paid | period is `Closed` |
+| Close now | period is `Open`, and its start is on or before today |
+| Change end date | period is `Open`; the start is unchanged; the end is from tomorrow to the period's last allowed day |
+| Mark paid | period is `Closed`, every pay row in it is invoiced (`pay_period.has_uninvoiced_pay`) and every invoice in it is `Paid` or `Cancelled` (`pay_period.has_unpaid_invoices`) |
 | Delete | period is `Open` |
-| Update | period is `Open` |
+| Create | no period is open (`company.has_open_pay_period`) and the start is not after today (`validation.invalid_date`) |
 
-A paid period cannot be reopened. That is the point of the state: it is the boundary after which the
-numbers stop moving.
+**A closed period is never reopened.** There is no Reopen and no Open: invoices are issued once a period
+closes, so reopening one could only strand pay again, and a mistaken close loses nothing, because its jobs
+are invoiced sooner. A paid period is the boundary after which the numbers stop moving. There is only ever
+one open period per company, held by a unique index, and pay joins it whatever its dates. The one open period
+that can start in the future is the one Close now opens for tomorrow.
+→ [ADR-0082](/decisions/adr-0082)
 
-**A period is 14 days** (owner decision 2026-10-04; a calendar month until then). The nightly close
-(`CloseExpiredPayPeriods`, 02:00, company by company) closes every open period that has ended, invoices
-it, and opens the next from the day after it ended (`PayPeriod.CreateBiWeekly`: the end is the start
-plus 13 days). When pay is calculated and no period is open, one is opened from the current day. The
-invoice is still due 14 days after issue, and the cash remittance request and the period-end reminders
-keep their own clocks. A period an administrator creates or edits by hand is held to 14 days too.
-→ [Business rules — pay periods are 14 days](/product/business-rules#pay-periods)
+**A period lasts at most its configured length**, 14 days in production (owner decision 2026-10-04; a
+calendar month until then) and 3 on DEV (owner ruling 2026-11-09), from the setting
+`PayPeriodClosing:LengthInDays` (`PayPeriod.CreateBiWeekly`: the end is the start plus the length minus one).
+Every path that creates a period reads it: the bootstrap, the night run's successor, Close now's successor and
+Create, which takes a start only. Change end date's last day is the start plus the length minus one. The
+invoice is still due 14 days after issue on every stage, and the cash remittance request and the period-end
+reminders keep their own clocks. → [Business rules — pay periods](/product/business-rules#pay-periods)
+
+**The night run closes a period the night after its end date.** `CloseExpiredPayPeriods` (02:00 UTC, company
+by company) closes every open period that has ended and opens the next from the day after it ended. **The
+close and the successor commit first.** Only then does the run invoice each cleaner who has pay in the period
+and e-mail the PDF, so every invoice and e-mail sees the period `Closed`, a crash in the middle leaves it
+`Closed` with an un-invoiced tail that the sweep invoices about 15 minutes later, and no e-mail is repeated.
+A cleaner the run skips (no active user or no e-mail address) is invoiced by the sweep the same way. When pay
+is calculated and no period is open, one is opened from today, or from the day after the latest period's end
+if that is later, so it never overlaps a period that already ran.
+
+**Close now is the exception** (owner ruling 2026-11-08). An administrator ends the open period today with a
+required reason, and the next period opens tomorrow. Jobs finished after it go into that next period. **Change
+end date** moves the open period's end earlier or later, never past its last allowed day, and records the old
+and new end in the audit log. → [Admin — pay periods](/admin-app/pay-periods)
 
 Each employee's invoice work uses fresh dependencies under the period's operator, receiving only its
-ID, dates, close instant and display label. Invoice, reference, cash-setoff and document commits do not
-save the parent's staged close: another connection still sees Open until the post-email company commit.
-A failed employee scope is disposed before a plain-email fallback starts in a clean scope. A failed
-successor/read step instead ends the tick before that company commit. Earlier invoice records can
-already be durable, and a crash before the period close can repeat email on a fresh tick. These writes
+ID, its start and end dates and the close instant. Invoice, reference, cash-setoff and document commits
+see the period already `Closed`. A failed employee scope is disposed before a plain-email fallback starts in a
+clean scope. A failed successor step ends the tick before the commit, so nothing is saved and the period
+stays open for the next night. A failed read of the cleaners to invoice comes after the commit, so it ends
+the tick with the period already closed, and the sweep invoices it. These writes
 record what is due; they do not transfer a payout.
+
+**The period-end reminder** goes 3 days and 1 day before the end, and only to a cleaner who has a job or a
+fee-share pay row in the period; a carried dispute charge alone does not count.
 
 ## Approval is the last point the platform can refuse {#approval-is-the-last-refusal}
 
 An invoice is generated `Pending`, approved by an admin, and marked paid once the transfer has been
-keyed (it can also be rejected, disputed or cancelled along the way). The two transitions on the money
-path are gated:
+keyed (it can also be disputed or cancelled along the way; nothing writes `Rejected` any more, and the value
+stays in the enum for rows written before). The two transitions on the money path are gated:
 
 | Transition | Requires |
 |---|---|
-| Approve | invoice is `Pending`, **the cleaner has a usable payout record**, **and that account holds the invoice's currency** — in that order |
+| Approve | invoice is `Pending` **or `Disputed`**, **the cleaner has a usable payout record**, **and that account holds the invoice's currency** — in that order |
 | Mark paid | invoice is `Approved`. `Paid` is terminal — a second mark is refused rather than overwriting the first actor's record of a transfer that already left the bank |
 
 **The presence rule** reads the `EmployeePayoutDetails` record itself: it must exist, `Scheme` must be
@@ -218,6 +285,21 @@ a named country: a work country the seed left without a real currency makes the 
 than compare against the platform default — a configuration defect surfaces here as loudly as it does
 on the cleaner's own screens. → [Business rules](/product/business-rules#cleaner-currency)
 
+**What the admin invoice page offers.** Approve on `Pending` and `Disputed` invoices (an approval keeps the
+note written through Adjust or Dispute when it carries none), Cancel on `Pending`, `Approved` and `Disputed`
+invoices, and Regenerate PDF on `Pending`, `Approved` and `Disputed` invoices. **Adjust Amounts**
+(`UpdateInvoiceAmounts`) works only on `Pending` and `Disputed` invoices (`payroll.invoice.invalid_status`
+otherwise, `payroll.invoice.already_paid` for a paid one) and renders the PDF again once the new amounts are
+saved. A disputed invoice is therefore approved after it is adjusted, which a dispute used to make a dead
+end. **Cancel** says that a corrected invoice with a new number follows within minutes, rebuilt from the
+order payments, so a bonus or deduction set with Adjust must be set again on it, and that an invoice whose
+transfer has already been sent is marked paid instead of cancelled.
+
+**Mark paid** opens an in-page confirm on the admin web. It shows the amount to transfer, the variable symbol,
+the constant symbol (`CountryInvoiceConfig.ConstantSymbol` of the cleaner's address country; `0308` for CZ)
+and the partner's masked account, with a field for the bank transfer note, and sends nothing until its button
+is pressed. The invoice detail carries the same constant symbol the PDF prints.
+
 Why here and not earlier or later: generation is too early — it would withhold a numbered tax document
 that already carries an allocated payout reference — and Mark paid is too late, because the money has
 left. Approval is the admin's commitment to transfer, the transfer is keyed by hand, and so this is the
@@ -225,6 +307,12 @@ last moment the platform is still in the loop. The record itself is described in
 [Role — EmployeePayoutDetails](/domain/roles/employee-payout-details).
 
 ## My Pay shows one currency
+
+My Pay opens on the open period, and on the newest period only when none is open. Its period picker and its
+summary name each period by its first and last day in the partner's language, and name them again on a
+language switch. Within the view currency, `GetPeriodPays` links the **uncancelled** invoice, so after a
+cancel and a reissue it opens the corrected invoice; a cancelled invoice is linked only while its currency
+holds no other invoice, the minutes between the cancel and the reissue.
 
 The cleaner's period view (`GetPeriodPays`) is denominated in a single currency, and everything on it —
 totals and rows — is filtered to that currency. The query takes an optional `currencyId`, the **view**:
@@ -280,6 +368,17 @@ company's `pay.extras_share_percent` of the extras booked, so the board, the job
 and the preview quote what the contract read before the take states. Until then it passed none, and a
 job with extras was quoted low until it was taken.
 
+## A dispute charge on an invoiced job goes on the next invoice {#dispute-charge}
+
+A charge an administrator sets on a job whose pay is already on an invoice never rewrites that invoice. It
+adds a line of its own, `PayLineType.DisputeCharge`, in the company's open period, linked to the dispute with
+the reason the cleaner reads, and the cleaner's next invoice deducts it. At most one such line exists for an
+order and a cleaner (a second unique index). Both invoice writers, the night run with the wind-down, and
+`GenerateInvoice`, take whole charges oldest first, each one that still fits, so an invoice never goes below
+zero; a charge that does not fit moves to the open period and waits for a later invoice. A cleaner whose only
+rows in a closing period are waiting charges gets no period-closed e-mail. The invoice PDF leaves the charge
+line out of its job lines and shows it in the deduction.
+
 ## Numbering is allocated, never derived
 
 Both the invoice number and the payout variable symbol come from an atomic `ON CONFLICT` counter, and
@@ -287,9 +386,10 @@ both carry a unique index. A number is **claimed**, not computed from a row coun
 unique under concurrency, and a duplicate variable symbol is a payment that reconciles against the
 wrong invoice.
 
-> The counter is deliberately **global**, not per-tenant, because the unique index behind it is global.
-> A tenant-keyed counter under a globally-unique index means two tenants both allocate ordinal 1 and
-> the second insert becomes a 500 on the payroll path.
+> The counter is **per company and per year**: its key is `(TenantId, Year, Scope)`, since each operating
+> company numbers its own payout invoices (owner ruling 2026-09-15, [ADR-0061](/decisions/adr-0061)). A
+> company's first invoice of the year is `INV-2026-000001` whatever another company has issued.
+> → [Business rules — each operating company numbers its own payout invoices](/product/business-rules#payout-numbering)
 
 ## Payout details never ride an employee DTO
 
@@ -301,6 +401,12 @@ allowed to carry a payout identifier:
 | the cleaner's own | full identifiers |
 | admin list/detail | a masked account only — **there is no unmasked field on the record at all** |
 | admin reveal | full identifiers |
+
+**The invoice PDF is a fourth route, and it is accepted.** The payout invoice's supplier block is the cleaner,
+so the PDF prints their full account, and an administrator who may download it (Accountant and above) reads
+that account without the audited reveal. [ADR-0034](/decisions/adr-0034) D6 accepted this on purpose: the
+account is the payment instruction the transfer is keyed from. Restricting or auditing those downloads is a
+decision nobody has taken.
 
 The reveal is a **command rather than a query**, precisely so the existing audit engine records it. The
 audit trail is the compensating control for storing this in plaintext.
@@ -314,7 +420,12 @@ already does.
 | Case | What happens |
 |---|---|
 | Close a period twice | Refused — it is no longer `Open`. |
-| Reopen a paid period | Refused. |
+| Reopen a closed period | Not possible: there is no Reopen. A mistaken close loses nothing, because its jobs are invoiced sooner. |
+| Request an invoice for an open period | Refused — `pay_period.not_closed`, before any reference is claimed. |
+| Create a period while one is open, or one that starts after today | Refused — `company.has_open_pay_period`, `validation.invalid_date`. |
+| Change end date to today or earlier, or past the last allowed day | Refused — `pay_period.end_too_soon` (which points to Close now), `pay_period.invalid_duration`. |
+| Mark a period paid with un-invoiced pay, or with an invoice still unpaid | Refused — `pay_period.has_uninvoiced_pay`, `pay_period.has_unpaid_invoices`. |
+| A pay calculation the validator rejects | Logged at Error with the order, the employee and the reason key, and the message is acked; a pay row that already exists is a redelivery, logged at Information. |
 | A EUR order on a CZ cleaner's board | It is not on their board: not listed, not counted, not browsable, and a take answers `order.not_found`. Only an admin reassignment can put them on it. |
 | Pay in two currencies in one period (after an admin reassignment) | Two invoices, two references, two e-mails; the reconciliation sweep re-enqueues a pair while any of its currencies is still un-invoiced. |
 | Approve an invoice in a currency the payout account does not hold | Refused — `payroll.invoice.payout_currency_mismatch`. The cleaner updates the declaration, the admin approves again. |
@@ -331,11 +442,13 @@ already does.
 | A two-seat job | Each cleaner's row is half the job's base, extras and bounds, clamped, plus half the job's dirtiness term; the first seat also takes the residue cents, so the two rows add up to the job. |
 | A two-seat job worked by one cleaner | That cleaner is paid one seat — the divisor is the seats the job needs — plus the residue, since they hold the lowest seat on the crew. |
 | A *Heavy* job whose rates hit their maximum | The seat is capped, then the dirtiness term (30 % of the job's capped pay, split per seat) is added on top; the cap never swallows it. |
-| A dispute finds the cleaner at fault | The administrator's resolution may charge that cleaner's pay row on the order (`chargeToCleaner`): the deduction is linked to the dispute (`DeductionDisputeId`) and carries a reason (`DeductionReason`) that My Pay on the partner web, Android and iOS shows beside the deduction. Refused when the row is missing, already invoiced, already charged or smaller than the charge. A refund alone never touches pay. → [Business rules](/product/business-rules#dispute-cleaner-charge) |
+| A dispute finds the cleaner at fault | The administrator's resolution may charge that cleaner's pay row on the order (`chargeToCleaner`): the deduction is linked to the dispute (`DeductionDisputeId`) and carries a reason (`DeductionReason`) that My Pay on the partner web, Android and iOS shows beside the deduction. On a job not yet invoiced it is a deduction on the row. On a job already invoiced it becomes a dispute-charge line on the cleaner's next invoice ([below](#dispute-charge)). Refused when the row is missing, already charged, smaller than the charge, or, for an invoiced job, when no period is open to carry the charge. A refund alone never touches pay. → [Business rules](/product/business-rules#dispute-cleaner-charge) |
 | A cleaner holds 1 200 in cash and their invoice totals 900 | 900 is set off, the transfer is 0, the invoice total stays 900, and 300 is carried forward in the ledger. |
 | A cleaner holds 300 in cash and their invoice totals 900 | 300 is set off and the transfer is 600. |
 | A remittance and an invoice's set-off take the same cash at once | The per-cleaner, per-currency lock serialises them; the second reads the balance the first left and is refused, or sets off only what is left. |
-| An invoice that set cash off is cancelled | The whole set-off goes back into the ledger. |
+| An invoice that set cash off is cancelled | The whole set-off goes back into the ledger, the invoice's pay rows go free, and a corrected invoice with a new number sets the cash off again within minutes. |
+| Pay arrives after its period was invoiced | It goes into the next open period and is invoiced with it. |
+| The night run's switch is off | Periods are not closed at 02:00, but a closed period is still invoiced by the five-minute sweep, and Close now still closes and invoices. |
 | A late cancellation of a paid card order | Each crew member gets a `CancellationFeeShare` row: a seat's share of half the fee the company still holds. |
 | A lockout confirmed on a cash booking whose receivable is still open | Each seat is paid its full reward at the confirmation; whether the receivable is later paid or written off changes nothing for the crew. |
 | A lockout confirmed on a card order already refunded | Each seat is still paid its full reward; no collected fee is read. |

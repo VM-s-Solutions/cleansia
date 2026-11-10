@@ -400,9 +400,10 @@ cancellation), an administrator's full refund, or a partial one.
   Stripe first, as the hourly re-drive does. It is never offered for a dispute's refund, which is retried
   by resolving the dispute again, and for a cancellation's only once the order is cancelled. For a dispute
   whose refund failed, record the repayment first, then resolve the dispute with the same amount.
-- **Who is told, and when.** `refund.failed` raises `admin.payment.refund_bounced`; a refund Stripe
-  refuses at once, or fails on a retry, raises `refund_needs_retry` in the same commit; any other refund
-  left *Not sent* raises `refund_needs_retry` at the first hourly run once it is 30 minutes old; a
+- **Who is told, and when.** `refund.failed` raises `admin.payment.refund_bounced`; a retry that finds
+  Stripe failed the refund raises `refund_needs_retry` at once, in the retry's own commit; any other refund
+  left *Not sent*, including one Stripe refused or did not answer, raises `refund_needs_retry` at the first
+  hourly run once it is 30 minutes old; a
   cancellation's own refund keeps its hourly retries and the 24-hour `refund_stuck`
   ([Administrators are told](#admin-notifications)).
 

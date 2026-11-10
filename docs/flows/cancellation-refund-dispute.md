@@ -493,8 +493,9 @@ rendered* cancellation reads as a cancellation.
   once, and it is refused with `refund.nothing_refundable` when the order has no room for the whole amount.
   A *Bounced* one already counted, so it is only stamped. For a dispute whose refund failed, record the
   repayment first, then resolve the dispute with the same amount.
-- **Alert timings.** `refund_needs_retry` at once for a refund Stripe refuses or fails on a retry, and at
-  the first hourly run once a dispute's, a full or a partial refund is 30 minutes old (30 to 90 minutes);
+- **Alert timings.** `refund_needs_retry` at once for a refund a retry finds Stripe failed, and at the
+  first hourly run once a dispute's, a full or a partial refund left *Not sent*, including one Stripe
+  refused, is 30 minutes old (30 to 90 minutes);
   `refund_stuck` for a cancellation's after 24 hours; `refund_bounced` when the webhook arrives. Their
   copy points to the order's *Refunds* button.
 

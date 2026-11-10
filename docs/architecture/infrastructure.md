@@ -140,7 +140,7 @@ Queues decouple the APIs from long-running operations (PDF generation). Each que
 | Queue | Poison Queue | Producer | Consumer |
 |-------|-------------|----------|----------|
 | `generate-receipt` | `generate-receipt-poison` | Every issue of an order's receipt, keyed `receipt:{orderId}`, only ever for a `Paid` order: the Stripe webhook on each host that runs it (a card payment settles), the partner hosts' `CompleteOrder` (an order with no receipt yet — a cash sale's first), the admin host's `AdminOverrideOrderStatus` to `Completed` and `AdminRecordCashReceived` on a completed order (a cash sale), and the `FiscalReconciliation` timer (one that never landed). A cash booking and a recurring cash confirm queue no receipt — they queue the `order-booked` e-mail on `send-email` — and nothing restates a receipt (since 2026-09-28) → [what the receipt says](/flows/payment-and-fiscal#what-the-receipt-says) | `GenerateReceipt` function |
-| `generate-invoice` | `generate-invoice-poison` | The `FiscalReconciliation` timer, for a **closed** pay period whose close is older than 15 minutes and that still holds un-invoiced pay, keyed `invoice:{payPeriodId}:{employeeId}` — the one producer, so it also covers a period an administrator ended with Close now and an invoice that was cancelled; and the admin `generate-invoice` action, which calls the same command | `GenerateInvoice` function |
+| `generate-invoice` | `generate-invoice-poison` | The `FiscalReconciliation` timer, for a **closed** pay period whose close is older than 15 minutes and that still holds un-invoiced pay, keyed `invoice:{payPeriodId}:{employeeId}` — the one producer, so it also covers a period an administrator ended with Close now and an invoice that was cancelled. The admin `generate-invoice` action runs the same command directly, without the queue | `GenerateInvoice` function |
 | `company-wind-down` | `company-wind-down-poison` | Admin API (`WindDownCompany`, and `DeactivateCompany` when a date is set) — one message per act, keyed `wind-down:{tenantId}:{request instant}` | `CompanyWindDown` function — the idempotent sweep ([ADR-0064](/decisions/adr-0064) D2) |
 | `company-archive` | `company-archive-poison` | Admin API (`ArchiveCompany`) — keyed `archive:{tenantId}:{request instant}` | `CompanyArchive` function — builds the bundle into `company-archives` and stamps the manifest hash (ADR-0064 D3) |
 
@@ -194,7 +194,7 @@ had never fired at all — see [the schedule tokens](#timer-schedules) below.
 | Function | Schedule | Purpose |
 |---|---|---|
 | `OutboxDrainer` | every 10 s | Drains the transactional outbox onto the queues |
-| `FiscalReconciliation` | every 5 min | Reconciles fiscal registrations against the EET API, and re-enqueues `generate-invoice` for a closed pay period with un-invoiced pay (the safety net, [ADR-0002](/decisions/adr-0002) D3.4); `PayPeriodClosing__Enabled` does not stop this half |
+| `FiscalReconciliation` | every 5 min | Re-enqueues `generate-receipt` for a paid order whose receipt has no fiscal code yet, and `generate-invoice` for a closed pay period with un-invoiced pay (the safety net, [ADR-0002](/decisions/adr-0002) D3.4); `PayPeriodClosing__Enabled` does not stop this half |
 | `RetryFailedFiscalRegistrations` | every 5 min | Retries registrations that failed transiently |
 | `NotifyLapsedPreferredOffers` | every 5 min | Closes a preferred-cleaner hold that expired and reopens the order |
 | `SendPreCleaningReminders` | `%Cron%` — every 5 min | Reminds a **customer** their cleaning is coming up |

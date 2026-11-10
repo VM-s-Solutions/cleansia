@@ -107,9 +107,9 @@
     "brand_mark_alt": "Cleansia",
     "notifications_panel": {
       "open": "Open notifications",
-      "title": "Notifications",
+      "title": "Critical notifications",
       "view_all": "View all notifications",
-      "empty": "No notifications yet"
+      "empty": "No critical notifications"
     }
   },
   "global": {
@@ -2862,6 +2862,23 @@
       "empty": "Nothing to read",
       "empty_hint": "New orders, lost cleaners, disputes, failed payments and company milestones will show up here.",
       "unread": "Unread",
+      "critical": "Critical",
+      "tabs": {
+        "all": "All",
+        "critical": "Critical",
+        "info": "Info"
+      },
+      "types": {
+        "order": "Order",
+        "cleaner": "Cleaner",
+        "dispute": "Dispute",
+        "payment": "Payment",
+        "refund": "Refund",
+        "referral": "Referral",
+        "data_protection": "Data protection",
+        "company": "Company",
+        "other": "Other"
+      },
       "messages": {
         "marked_all_read": "{{count}} marked as read"
       },

@@ -8,6 +8,7 @@ import {
 } from '@cleansia/components';
 import { TranslatePipe } from '@ngx-translate/core';
 import { PaginatorModule, PaginatorState } from 'primeng/paginator';
+import { TabsModule } from 'primeng/tabs';
 import { NotificationFeedComponent } from '../notification-feed/notification-feed.component';
 import { NotificationsFacade } from './notifications.facade';
 
@@ -18,6 +19,7 @@ import { NotificationsFacade } from './notifications.facade';
     CommonModule,
     TranslatePipe,
     PaginatorModule,
+    TabsModule,
     CleansiaButtonComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
@@ -33,6 +35,10 @@ export class NotificationsComponent implements OnInit {
 
   ngOnInit(): void {
     this.facade.load();
+  }
+
+  onSeverityChange(value: string | number | undefined): void {
+    if (value === 'all' || value === 'critical' || value === 'info') this.facade.selectSeverity(value);
   }
 
   onPageChange(event: PaginatorState): void {

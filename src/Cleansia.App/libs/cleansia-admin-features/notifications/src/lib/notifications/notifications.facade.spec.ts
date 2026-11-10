@@ -100,7 +100,7 @@ describe('NotificationsFacade', () => {
     it('reads the first page of twenty, newest first, with the audience left to the server', () => {
       facade.load();
 
-      expect(getPaged).toHaveBeenCalledWith(undefined, undefined, 0, NOTIFICATIONS_PAGE_SIZE);
+      expect(getPaged).toHaveBeenCalledWith(undefined, undefined, 0, NOTIFICATIONS_PAGE_SIZE, undefined);
       expect(facade.rows().map((r) => r.id)).toEqual(['n-1', 'n-2']);
       expect(facade.rows()[0].isUnread).toBe(true);
       expect(facade.rows()[1].isUnread).toBe(false);
@@ -142,7 +142,21 @@ describe('NotificationsFacade', () => {
       facade.onPageChange(NOTIFICATIONS_PAGE_SIZE * 2);
 
       expect(facade.first()).toBe(NOTIFICATIONS_PAGE_SIZE * 2);
-      expect(getPaged).toHaveBeenLastCalledWith(undefined, undefined, NOTIFICATIONS_PAGE_SIZE * 2, NOTIFICATIONS_PAGE_SIZE);
+      expect(getPaged).toHaveBeenLastCalledWith(undefined, undefined, NOTIFICATIONS_PAGE_SIZE * 2, NOTIFICATIONS_PAGE_SIZE, undefined);
+    });
+
+    it.each([
+      ['critical', true],
+      ['info', false],
+      ['all', undefined],
+    ] as const)('asks the server for the %s tab from page 1', (severity, critical) => {
+      facade.onPageChange(NOTIFICATIONS_PAGE_SIZE * 2);
+
+      facade.selectSeverity(severity);
+
+      expect(facade.severity()).toBe(severity);
+      expect(facade.first()).toBe(0);
+      expect(getPaged).toHaveBeenLastCalledWith(undefined, undefined, 0, NOTIFICATIONS_PAGE_SIZE, critical);
     });
 
     it('re-renders the rows in the new language without another read', () => {

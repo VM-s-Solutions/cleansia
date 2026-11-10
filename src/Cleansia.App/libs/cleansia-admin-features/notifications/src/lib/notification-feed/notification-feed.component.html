@@ -5,10 +5,17 @@
     [class.cleansia-notifications__row--unread]="row.isUnread"
     [class.cleansia-notifications__row--inert]="!row.interactive"
     [class.cleansia-notifications__row--busy]="openingId() === row.id"
-    [attr.data-family]="row.family"
+    [class.cleansia-notifications__row--critical]="row.critical"
+    [attr.data-type]="row.type"
     [attr.role]="row.interactive ? 'button' : null"
     [attr.tabindex]="row.interactive ? 0 : null"
-    [attr.aria-label]="row.titleKey | translate: row.params"
+    [attr.aria-label]="
+      (row.typeLabelKey | translate) +
+      (row.critical ? ', ' + ('pages.notifications.critical' | translate) : '') +
+      (row.isUnread ? ', ' + ('pages.notifications.unread' | translate) : '') +
+      ', ' +
+      (row.titleKey | translate: row.params)
+    "
     (click)="rowOpen.emit(row)"
     (keydown.enter)="onRowKeydown(row, $event)"
     (keydown.space)="onRowKeydown(row, $event)"
@@ -17,6 +24,12 @@
       <i [class]="row.icon"></i>
     </span>
     <span class="cleansia-notifications__text">
+      <span class="cleansia-notifications__labels">
+        <span class="cleansia-notifications__type">{{ row.typeLabelKey | translate }}</span>
+        @if (row.critical) {
+        <span class="cleansia-notifications__critical">{{ 'pages.notifications.critical' | translate }}</span>
+        }
+      </span>
       <span class="cleansia-notifications__title">{{ row.titleKey | translate: row.params }}</span>
       @if (row.bodyKey) {
       <span class="cleansia-notifications__body">{{ row.bodyKey | translate: row.params }}</span>

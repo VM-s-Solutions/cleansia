@@ -64,7 +64,7 @@ export class AdminNotificationsLauncherComponent extends UnsubscribeControlDirec
 
   protected onPanelShow(): void {
     this.panelOpen.set(true);
-    this.facade.load();
+    this.facade.selectSeverity('critical');
     this.followPanelSize();
   }
 

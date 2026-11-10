@@ -7,6 +7,7 @@
           {{ 'pages.notifications.description' | translate }}
         </p>
       </div>
+      @if (facade.severity() !== 'info') {
       <div class="cleansia-page-header__actions">
         <cleansia-button
           [label]="'pages.notifications.mark_all_read' | translate"
@@ -18,6 +19,17 @@
           (onClick)="facade.markAllRead()"
         />
       </div>
+      }
+    </div>
+
+    <div class="cleansia-notifications__segment">
+      <p-tabs [value]="facade.severity()" (valueChange)="onSeverityChange($event)">
+        <p-tablist>
+          <p-tab value="all">{{ 'pages.notifications.tabs.all' | translate }}</p-tab>
+          <p-tab value="critical">{{ 'pages.notifications.tabs.critical' | translate }}</p-tab>
+          <p-tab value="info">{{ 'pages.notifications.tabs.info' | translate }}</p-tab>
+        </p-tablist>
+      </p-tabs>
     </div>
 
     @if (facade.initialLoading()) {
@@ -45,7 +57,9 @@
       <div class="empty-state">
         <i class="pi pi-bell-slash"></i>
         <p>{{ 'pages.notifications.empty' | translate }}</p>
+        @if (facade.severity() === 'all') {
         <p>{{ 'pages.notifications.empty_hint' | translate }}</p>
+        }
       </div>
     </cleansia-section>
     } @else {

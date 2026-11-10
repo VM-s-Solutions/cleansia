@@ -107,9 +107,9 @@
     "brand_mark_alt": "Cleansia",
     "notifications_panel": {
       "open": "Otevřít upozornění",
-      "title": "Upozornění",
+      "title": "Kritická upozornění",
       "view_all": "Zobrazit všechna upozornění",
-      "empty": "Zatím žádná upozornění"
+      "empty": "Žádná kritická upozornění"
     }
   },
   "global": {
@@ -2862,6 +2862,23 @@
       "empty": "Nic k přečtení",
       "empty_hint": "Nové objednávky, ztracení úklidoví pracovníci, reklamace, neúspěšné platby a milníky společnosti se objeví zde.",
       "unread": "Nepřečteno",
+      "critical": "Kritické",
+      "tabs": {
+        "all": "Vše",
+        "critical": "Kritické",
+        "info": "Informační"
+      },
+      "types": {
+        "order": "Objednávka",
+        "cleaner": "Uklízeč",
+        "dispute": "Spor",
+        "payment": "Platba",
+        "refund": "Vrácení peněz",
+        "referral": "Doporučení",
+        "data_protection": "Ochrana údajů",
+        "company": "Společnost",
+        "other": "Ostatní"
+      },
       "messages": {
         "marked_all_read": "Označeno jako přečtené: {{count}}"
       },

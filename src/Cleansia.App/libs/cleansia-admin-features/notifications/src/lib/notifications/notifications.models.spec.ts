@@ -1,18 +1,20 @@
 import { MarkAllNotificationsReadCommand, MarkNotificationReadCommand, UserNotificationDto } from '@cleansia/admin-services';
 import {
+  ADMIN_CRITICAL_EVENT_KEYS,
   ADMIN_NOTIFICATION_EVENT_KEYS,
   buildMarkAllReadCommand,
   buildMarkReadCommand,
   buildNotificationParams,
   buildNotificationRows,
   getNotificationBodyKey,
-  getNotificationFamily,
   getNotificationRoute,
   getNotificationTitleKey,
+  getNotificationType,
   isAdminNotificationEventKey,
+  isCriticalNotification,
   newestCreatedOn,
-  NOTIFICATION_FAMILY_ICONS,
-  NotificationFamily,
+  NOTIFICATION_TYPE_ICONS,
+  NotificationType,
   UNKNOWN_EVENT_TITLE_KEY,
 } from './notifications.models';
 
@@ -65,34 +67,55 @@ describe('the admin event catalogue mirror', () => {
     expect(getNotificationRoute('admin.dispute.chargeback_unmatched', { amount: '100 CZK', stripeDisputeId: 'dp_1' })).toBeNull();
   });
 
-  it('sorts every key into a family the page has an icon for', () => {
-    const families = ADMIN_NOTIFICATION_EVENT_KEYS.map(getNotificationFamily);
-    expect(families).toEqual([
-      NotificationFamily.Order,
-      NotificationFamily.Order,
-      NotificationFamily.Order,
-      NotificationFamily.Order,
-      NotificationFamily.Order,
-      NotificationFamily.Order,
-      NotificationFamily.Order,
-      NotificationFamily.Dispute,
-      NotificationFamily.Dispute,
-      NotificationFamily.Dispute,
-      NotificationFamily.Payment,
-      NotificationFamily.Payment,
-      NotificationFamily.Payment,
-      NotificationFamily.Payment,
-      NotificationFamily.Erasure,
-      NotificationFamily.Company,
-      NotificationFamily.Company,
-      NotificationFamily.Company,
-      NotificationFamily.Referral,
+  it('gives every key its type, each type its own icon, and an unknown key reads Other', () => {
+    expect(Object.fromEntries(ADMIN_NOTIFICATION_EVENT_KEYS.map((key) => [key, getNotificationType(key)]))).toEqual({
+      'admin.order.new': NotificationType.Order,
+      'admin.order.crew_lost': NotificationType.Cleaner,
+      'admin.order.crew_short': NotificationType.Cleaner,
+      'admin.order.cleaner_not_started': NotificationType.Cleaner,
+      'admin.order.no_cleaner_yet': NotificationType.Cleaner,
+      'admin.order.lockout_reported': NotificationType.Cleaner,
+      'admin.order.cash_not_paid': NotificationType.Payment,
+      'admin.dispute.filed': NotificationType.Dispute,
+      'admin.dispute.chargeback': NotificationType.Dispute,
+      'admin.dispute.chargeback_unmatched': NotificationType.Dispute,
+      'admin.payment.failed': NotificationType.Payment,
+      'admin.payment.refund_stuck': NotificationType.Refund,
+      'admin.payment.refund_needs_retry': NotificationType.Refund,
+      'admin.payment.refund_without_cancel': NotificationType.Refund,
+      'admin.erasure.failed': NotificationType.DataProtection,
+      'admin.company.wind_down_requested': NotificationType.Company,
+      'admin.company.wind_down_run': NotificationType.Company,
+      'admin.company.archived': NotificationType.Company,
+      'admin.referral.held': NotificationType.Referral,
+    });
+    expect(NOTIFICATION_TYPE_ICONS).toEqual({
+      [NotificationType.Order]: 'pi pi-shopping-cart',
+      [NotificationType.Cleaner]: 'pi pi-user',
+      [NotificationType.Dispute]: 'pi pi-flag',
+      [NotificationType.Payment]: 'pi pi-credit-card',
+      [NotificationType.Refund]: 'pi pi-replay',
+      [NotificationType.Referral]: 'pi pi-users',
+      [NotificationType.DataProtection]: 'pi pi-shield',
+      [NotificationType.Company]: 'pi pi-building',
+      [NotificationType.Other]: 'pi pi-bell',
+    });
+    expect(new Set(Object.values(NOTIFICATION_TYPE_ICONS)).size).toBe(Object.values(NotificationType).length);
+    expect(getNotificationType('something.else')).toBe(NotificationType.Other);
+    expect(getNotificationType(undefined)).toBe(NotificationType.Other);
+  });
+
+  it('marks only the catalogue critical keys critical, and an unknown key is info', () => {
+    expect(ADMIN_NOTIFICATION_EVENT_KEYS.filter(isCriticalNotification)).toEqual([...ADMIN_CRITICAL_EVENT_KEYS]);
+    expect(ADMIN_NOTIFICATION_EVENT_KEYS.filter((key) => !isCriticalNotification(key))).toEqual([
+      'admin.order.new',
+      'admin.payment.failed',
+      'admin.company.wind_down_requested',
+      'admin.company.wind_down_run',
+      'admin.company.archived',
     ]);
-    for (const family of families) {
-      expect(NOTIFICATION_FAMILY_ICONS[family]).toMatch(/^pi pi-/);
-    }
-    expect(getNotificationFamily('something.else')).toBe(NotificationFamily.Unknown);
-    expect(NOTIFICATION_FAMILY_ICONS[NotificationFamily.Unknown]).toMatch(/^pi pi-/);
+    expect(isCriticalNotification('admin.future.event')).toBe(false);
+    expect(isCriticalNotification(undefined)).toBe(false);
   });
 });
 
@@ -140,7 +163,7 @@ describe('the copy keys', () => {
       translate
     );
 
-    expect(row.family).toBe(NotificationFamily.Order);
+    expect(row.type).toBe(NotificationType.Cleaner);
     expect(row.titleKey).toBe('pages.notifications.events.admin.order.crew_short.title');
     expect(row.bodyKey).toBe('pages.notifications.events.admin.order.crew_short.body');
     expect(row.params['cause']).toBe('t(pages.notifications.events.admin.order.crew_lost.causes.dropped)');
@@ -159,7 +182,7 @@ describe('the copy keys', () => {
       translate
     );
 
-    expect(row.family).toBe(NotificationFamily.Order);
+    expect(row.type).toBe(NotificationType.Cleaner);
     expect(row.titleKey).toBe('pages.notifications.events.admin.order.no_cleaner_yet.title');
     expect(row.bodyKey).toBe('pages.notifications.events.admin.order.no_cleaner_yet.body');
     expect(row.params).toEqual({
@@ -254,7 +277,7 @@ describe('getNotificationRoute', () => {
 });
 
 describe('buildNotificationRows', () => {
-  it('renders a row per item with its copy keys, params, route, read state and family icon', () => {
+  it('renders a row per item with its copy keys, params, route, read state, type, severity and type icon', () => {
     const rows = buildNotificationRows([dto(), dto({ id: 'n-2', readOn: new Date('2026-09-19T09:00:00Z') })], 'en', translate);
 
     expect(rows).toHaveLength(2);
@@ -269,8 +292,10 @@ describe('buildNotificationRows', () => {
       isUnread: true,
       route: ['dispute-management', 'd-1'],
       interactive: true,
-      family: NotificationFamily.Dispute,
-      icon: NOTIFICATION_FAMILY_ICONS[NotificationFamily.Dispute],
+      type: NotificationType.Dispute,
+      typeLabelKey: 'pages.notifications.types.dispute',
+      critical: true,
+      icon: NOTIFICATION_TYPE_ICONS[NotificationType.Dispute],
     });
     expect(rows[1].isUnread).toBe(false);
     expect(rows[1].interactive).toBe(true);
@@ -282,7 +307,8 @@ describe('buildNotificationRows', () => {
     expect(row.titleKey).toBe(UNKNOWN_EVENT_TITLE_KEY);
     expect(row.bodyKey).toBeNull();
     expect(row.route).toBeNull();
-    expect(row.family).toBe(NotificationFamily.Unknown);
+    expect(row.type).toBe(NotificationType.Other);
+    expect(row.critical).toBe(false);
     expect(row.interactive).toBe(true);
   });
 

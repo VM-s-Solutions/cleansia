@@ -36,10 +36,37 @@ export const ADMIN_NOTIFICATION_EVENT_KEYS = [
 
 export type AdminNotificationEventKey = (typeof ADMIN_NOTIFICATION_EVENT_KEYS)[number];
 
+/** Mirror of `AdminNotificationEventCatalog.Critical`, pinned against the C# list by the copy spec. */
+export const ADMIN_CRITICAL_EVENT_KEYS: readonly AdminNotificationEventKey[] = [
+  'admin.order.crew_lost',
+  'admin.order.crew_short',
+  'admin.order.cleaner_not_started',
+  'admin.order.no_cleaner_yet',
+  'admin.order.lockout_reported',
+  'admin.order.cash_not_paid',
+  'admin.dispute.filed',
+  'admin.dispute.chargeback',
+  'admin.dispute.chargeback_unmatched',
+  'admin.payment.refund_stuck',
+  'admin.payment.refund_needs_retry',
+  'admin.payment.refund_without_cancel',
+  'admin.erasure.failed',
+  'admin.referral.held',
+];
+
+export type NotificationSeverity = 'all' | 'critical' | 'info';
+
+export const NOTIFICATION_CRITICAL_FLAG: Record<NotificationSeverity, boolean | undefined> = {
+  all: undefined,
+  critical: true,
+  info: false,
+};
+
 export const NOTIFICATIONS_PAGE_SIZE = 20;
 
 const EVENTS_ROOT = 'pages.notifications.events';
 export const UNKNOWN_EVENT_TITLE_KEY = `${EVENTS_ROOT}.unknown.title`;
+const TYPES_ROOT = 'pages.notifications.types';
 
 const CREW_LOST_KEY: AdminNotificationEventKey = 'admin.order.crew_lost';
 const CREW_LOST_UNDER_WAY_STATUSES: ReadonlySet<string> = new Set([
@@ -52,24 +79,50 @@ const INSTANT_ARGS: ReadonlySet<string> = new Set(['cleaningDateTime']);
 
 export type NotificationArgs = Record<string, string>;
 
-export enum NotificationFamily {
+export enum NotificationType {
   Order = 'order',
+  Cleaner = 'cleaner',
   Dispute = 'dispute',
   Payment = 'payment',
-  Erasure = 'erasure',
-  Company = 'company',
+  Refund = 'refund',
   Referral = 'referral',
-  Unknown = 'unknown',
+  DataProtection = 'data_protection',
+  Company = 'company',
+  Other = 'other',
 }
 
-export const NOTIFICATION_FAMILY_ICONS: Record<NotificationFamily, string> = {
-  [NotificationFamily.Order]: 'pi pi-shopping-cart',
-  [NotificationFamily.Dispute]: 'pi pi-flag',
-  [NotificationFamily.Payment]: 'pi pi-credit-card',
-  [NotificationFamily.Erasure]: 'pi pi-shield',
-  [NotificationFamily.Company]: 'pi pi-building',
-  [NotificationFamily.Referral]: 'pi pi-users',
-  [NotificationFamily.Unknown]: 'pi pi-bell',
+const NOTIFICATION_TYPES: Record<AdminNotificationEventKey, NotificationType> = {
+  'admin.order.new': NotificationType.Order,
+  'admin.order.crew_lost': NotificationType.Cleaner,
+  'admin.order.crew_short': NotificationType.Cleaner,
+  'admin.order.cleaner_not_started': NotificationType.Cleaner,
+  'admin.order.no_cleaner_yet': NotificationType.Cleaner,
+  'admin.order.lockout_reported': NotificationType.Cleaner,
+  'admin.order.cash_not_paid': NotificationType.Payment,
+  'admin.dispute.filed': NotificationType.Dispute,
+  'admin.dispute.chargeback': NotificationType.Dispute,
+  'admin.dispute.chargeback_unmatched': NotificationType.Dispute,
+  'admin.payment.failed': NotificationType.Payment,
+  'admin.payment.refund_stuck': NotificationType.Refund,
+  'admin.payment.refund_needs_retry': NotificationType.Refund,
+  'admin.payment.refund_without_cancel': NotificationType.Refund,
+  'admin.erasure.failed': NotificationType.DataProtection,
+  'admin.company.wind_down_requested': NotificationType.Company,
+  'admin.company.wind_down_run': NotificationType.Company,
+  'admin.company.archived': NotificationType.Company,
+  'admin.referral.held': NotificationType.Referral,
+};
+
+export const NOTIFICATION_TYPE_ICONS: Record<NotificationType, string> = {
+  [NotificationType.Order]: 'pi pi-shopping-cart',
+  [NotificationType.Cleaner]: 'pi pi-user',
+  [NotificationType.Dispute]: 'pi pi-flag',
+  [NotificationType.Payment]: 'pi pi-credit-card',
+  [NotificationType.Refund]: 'pi pi-replay',
+  [NotificationType.Referral]: 'pi pi-users',
+  [NotificationType.DataProtection]: 'pi pi-shield',
+  [NotificationType.Company]: 'pi pi-building',
+  [NotificationType.Other]: 'pi pi-bell',
 };
 
 export interface NotificationRow {
@@ -83,7 +136,9 @@ export interface NotificationRow {
   isUnread: boolean;
   route: string[] | null;
   interactive: boolean;
-  family: NotificationFamily;
+  type: NotificationType;
+  typeLabelKey: string;
+  critical: boolean;
   icon: string;
 }
 
@@ -91,11 +146,12 @@ export function isAdminNotificationEventKey(key: string | undefined): key is Adm
   return key !== undefined && (ADMIN_NOTIFICATION_EVENT_KEYS as readonly string[]).includes(key);
 }
 
-export function getNotificationFamily(eventKey: string | undefined): NotificationFamily {
-  if (!isAdminNotificationEventKey(eventKey)) return NotificationFamily.Unknown;
-  const segment = eventKey.split('.')[1];
-  const families = Object.values(NotificationFamily) as string[];
-  return families.includes(segment) ? (segment as NotificationFamily) : NotificationFamily.Unknown;
+export function getNotificationType(eventKey: string | undefined): NotificationType {
+  return isAdminNotificationEventKey(eventKey) ? NOTIFICATION_TYPES[eventKey] : NotificationType.Other;
+}
+
+export function isCriticalNotification(eventKey: string | undefined): boolean {
+  return isAdminNotificationEventKey(eventKey) && ADMIN_CRITICAL_EVENT_KEYS.includes(eventKey);
 }
 
 export function getNotificationTitleKey(eventKey: string | undefined): string {
@@ -145,17 +201,19 @@ function formatStamp(instant: Date, lang: string): string {
 }
 
 export function getNotificationRoute(eventKey: string | undefined, args: NotificationArgs): string[] | null {
-  switch (getNotificationFamily(eventKey)) {
-    case NotificationFamily.Order:
-    case NotificationFamily.Payment:
+  switch (getNotificationType(eventKey)) {
+    case NotificationType.Order:
+    case NotificationType.Cleaner:
+    case NotificationType.Payment:
+    case NotificationType.Refund:
       return args['orderId'] ? [CleansiaAdminRoute.ORDER_MANAGEMENT, args['orderId']] : null;
-    case NotificationFamily.Dispute:
+    case NotificationType.Dispute:
       return args['disputeId'] ? [CleansiaAdminRoute.DISPUTE_MANAGEMENT, args['disputeId']] : null;
-    case NotificationFamily.Erasure:
+    case NotificationType.DataProtection:
       return [CleansiaAdminRoute.DATA_PROTECTION];
-    case NotificationFamily.Company:
+    case NotificationType.Company:
       return [CleansiaAdminRoute.COMPANY_LIFECYCLE];
-    case NotificationFamily.Referral:
+    case NotificationType.Referral:
       return [CleansiaAdminRoute.LOYALTY_REFERRALS];
     default:
       return null;
@@ -171,7 +229,7 @@ export function buildNotificationRows(
   for (const item of items) {
     if (!item.id) continue;
     const args = item.args ?? {};
-    const family = getNotificationFamily(item.eventKey);
+    const type = getNotificationType(item.eventKey);
     const isUnread = !item.readOn;
     const route = getNotificationRoute(item.eventKey, args);
     rows.push({
@@ -185,8 +243,10 @@ export function buildNotificationRows(
       isUnread,
       route,
       interactive: isUnread || route !== null,
-      family,
-      icon: NOTIFICATION_FAMILY_ICONS[family],
+      type,
+      typeLabelKey: `${TYPES_ROOT}.${type}`,
+      critical: isCriticalNotification(item.eventKey),
+      icon: NOTIFICATION_TYPE_ICONS[type],
     });
   }
   return rows;

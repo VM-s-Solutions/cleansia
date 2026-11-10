@@ -39,7 +39,10 @@ cleansia-admin-notification-feed {
     }
   }
 
+  // A row's type is its colour; red is kept for critical alone.
   &__row {
+    --notification-ink: var(--cleansia-neutral-700);
+    --notification-tint: var(--cleansia-neutral-100);
     position: relative;
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
@@ -60,16 +63,40 @@ cleansia-admin-notification-feed {
       transform: translateX(2px);
     }
 
+    &[data-type='cleaner'] {
+      --notification-ink: var(--cleansia-warning-800);
+      --notification-tint: var(--cleansia-warning-100);
+    }
+
+    &[data-type='dispute'] {
+      --notification-ink: var(--cleansia-purple-700);
+      --notification-tint: var(--cleansia-purple-100);
+    }
+
+    &[data-type='refund'] {
+      --notification-ink: var(--cleansia-cyan-700);
+      --notification-tint: var(--cleansia-cyan-100);
+    }
+
+    &[data-type='payment'] {
+      --notification-ink: var(--cleansia-primary-700);
+      --notification-tint: var(--cleansia-primary-100);
+    }
+
     &--unread {
       background: var(--cleansia-primary-50);
       border-left-color: var(--cleansia-primary-600);
+
+      &.cleansia-notifications__row--critical {
+        border-left-color: var(--cleansia-error-600);
+      }
 
       .cleansia-notifications__title {
         color: var(--cleansia-primary-700);
       }
 
       .cleansia-notifications__glyph {
-        background: var(--cleansia-primary-600);
+        background: var(--notification-ink);
 
         i {
           color: var(--cleansia-white);
@@ -106,13 +133,40 @@ cleansia-admin-notification-feed {
     width: 2.5rem;
     height: 2.5rem;
     border-radius: 12px;
-    background: var(--cleansia-primary-100);
+    background: var(--notification-tint);
     transition: background-color 0.15s ease;
 
     i {
       font-size: 1.125rem;
-      color: var(--cleansia-primary-600);
+      color: var(--notification-ink);
     }
+  }
+
+  &__labels {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  &__type,
+  &__critical {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  &__type {
+    color: var(--notification-ink);
+  }
+
+  &__critical {
+    color: var(--cleansia-error-700);
+  }
+
+  &__segment {
+    margin-bottom: 1rem;
   }
 
   &__text {

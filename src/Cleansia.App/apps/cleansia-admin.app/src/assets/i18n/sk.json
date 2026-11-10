@@ -107,9 +107,9 @@
     "brand_mark_alt": "Cleansia",
     "notifications_panel": {
       "open": "Otvoriť upozornenia",
-      "title": "Upozornenia",
+      "title": "Kritické upozornenia",
       "view_all": "Zobraziť všetky upozornenia",
-      "empty": "Zatiaľ žiadne upozornenia"
+      "empty": "Žiadne kritické upozornenia"
     }
   },
   "global": {
@@ -2862,6 +2862,23 @@
       "empty": "Nič na prečítanie",
       "empty_hint": "Nové objednávky, stratení upratovači, reklamácie, neúspešné platby a míľniky spoločnosti sa objavia tu.",
       "unread": "Neprečítané",
+      "critical": "Kritické",
+      "tabs": {
+        "all": "Všetky",
+        "critical": "Kritické",
+        "info": "Informačné"
+      },
+      "types": {
+        "order": "Objednávka",
+        "cleaner": "Upratovač",
+        "dispute": "Reklamácia",
+        "payment": "Platba",
+        "refund": "Vrátenie peňazí",
+        "referral": "Odporúčanie",
+        "data_protection": "Ochrana údajov",
+        "company": "Spoločnosť",
+        "other": "Ostatné"
+      },
       "messages": {
         "marked_all_read": "Označené ako prečítané: {{count}}"
       },

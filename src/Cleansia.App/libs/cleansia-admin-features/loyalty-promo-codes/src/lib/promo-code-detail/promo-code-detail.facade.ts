@@ -21,6 +21,7 @@ export class PromoCodeDetailFacade extends UnsubscribeControlDirective {
 
   readonly promoCode = signal<PromoCodeDetailDto | null>(null);
   readonly loading = signal<boolean>(false);
+  readonly deactivating = signal<boolean>(false);
 
   readonly canDeactivate = computed(() => {
     const pc = this.promoCode();
@@ -100,11 +101,13 @@ export class PromoCodeDetailFacade extends UnsubscribeControlDirective {
   }
 
   private deactivateConfirmed(id: string): void {
+    this.deactivating.set(true);
     this.adminClient.adminPromoCodeClient
       .deactivate(id)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null))
+        catchError(() => of(null)),
+        finalize(() => this.deactivating.set(false))
       )
       .subscribe((response) => {
         if (response) {

@@ -10,7 +10,7 @@ import {
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { EmployeeDocumentsFacade } from './employee-documents.facade';
 
 describe('EmployeeDocumentsFacade', () => {
@@ -18,6 +18,7 @@ describe('EmployeeDocumentsFacade', () => {
   let getPagedMock: jest.Mock;
   let approveMock: jest.Mock;
   let rejectMock: jest.Mock;
+  let downloadMock: jest.Mock;
   let snackbar: {
     showSuccess: jest.Mock;
     showSuccessTranslated: jest.Mock;
@@ -30,6 +31,7 @@ describe('EmployeeDocumentsFacade', () => {
     getPagedMock = jest.fn().mockReturnValue(of({ data: [], total: 0 }));
     approveMock = jest.fn().mockReturnValue(of({ documentId: 'doc-1' }));
     rejectMock = jest.fn().mockReturnValue(of({ documentId: 'doc-1' }));
+    downloadMock = jest.fn();
     snackbar = {
       showSuccess: jest.fn(),
       showSuccessTranslated: jest.fn(),
@@ -47,6 +49,7 @@ describe('EmployeeDocumentsFacade', () => {
               getPaged: getPagedMock,
               approve: approveMock,
               reject: rejectMock,
+              download: downloadMock,
             },
           },
         },
@@ -154,5 +157,69 @@ describe('EmployeeDocumentsFacade', () => {
         notes: 'illegible scan',
       });
     });
+  });
+
+  it('names the document being approved while the approve is in flight, and clears it after it lands or fails', () => {
+    const landing = new Subject<never>();
+    approveMock.mockReturnValue(landing.asObservable());
+    facade.approveDocument('doc-1', 'emp-1');
+    expect(facade.decidingDocumentId()).toBe('doc-1');
+    landing.complete();
+    expect(facade.decidingDocumentId()).toBe(null);
+
+    const failing = new Subject<never>();
+    approveMock.mockReturnValue(failing.asObservable());
+    facade.approveDocument('doc-1', 'emp-1');
+    expect(facade.decidingDocumentId()).toBe('doc-1');
+    failing.error(new Error('boom'));
+    expect(facade.decidingDocumentId()).toBe(null);
+  });
+
+  it('names the document being rejected while the reject is in flight, and clears it after it lands or fails', () => {
+    const landing = new Subject<never>();
+    rejectMock.mockReturnValue(landing.asObservable());
+    facade.rejectDocument('doc-1', 'illegible scan', 'emp-1');
+    expect(facade.decidingDocumentId()).toBe('doc-1');
+    landing.complete();
+    expect(facade.decidingDocumentId()).toBe(null);
+
+    const failing = new Subject<never>();
+    rejectMock.mockReturnValue(failing.asObservable());
+    facade.rejectDocument('doc-1', 'illegible scan', 'emp-1');
+    expect(facade.decidingDocumentId()).toBe('doc-1');
+    failing.error(new Error('boom'));
+    expect(facade.decidingDocumentId()).toBe(null);
+  });
+
+  it('names the document being fetched while a download is in flight, and clears it after it lands or fails', () => {
+    const landing = new Subject<never>();
+    downloadMock.mockReturnValue(landing.asObservable());
+    facade.downloadDocument(EmployeeDocumentItem.fromJS({ id: 'doc-1' }));
+    expect(facade.fetchingDocumentId()).toBe('doc-1');
+    landing.complete();
+    expect(facade.fetchingDocumentId()).toBe(null);
+
+    const failing = new Subject<never>();
+    downloadMock.mockReturnValue(failing.asObservable());
+    facade.downloadDocument(EmployeeDocumentItem.fromJS({ id: 'doc-1' }));
+    expect(facade.fetchingDocumentId()).toBe('doc-1');
+    failing.error(new Error('boom'));
+    expect(facade.fetchingDocumentId()).toBe(null);
+  });
+
+  it('names the document being fetched while a preview is in flight, and clears it after it lands or fails', () => {
+    const landing = new Subject<never>();
+    downloadMock.mockReturnValue(landing.asObservable());
+    facade.previewDocument(EmployeeDocumentItem.fromJS({ id: 'doc-1' }));
+    expect(facade.fetchingDocumentId()).toBe('doc-1');
+    landing.complete();
+    expect(facade.fetchingDocumentId()).toBe(null);
+
+    const failing = new Subject<never>();
+    downloadMock.mockReturnValue(failing.asObservable());
+    facade.previewDocument(EmployeeDocumentItem.fromJS({ id: 'doc-1' }));
+    expect(facade.fetchingDocumentId()).toBe('doc-1');
+    failing.error(new Error('boom'));
+    expect(facade.fetchingDocumentId()).toBe(null);
   });
 });

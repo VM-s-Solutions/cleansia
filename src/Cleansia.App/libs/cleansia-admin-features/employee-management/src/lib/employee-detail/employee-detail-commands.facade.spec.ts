@@ -9,7 +9,7 @@ import {
 import { DialogService as ConfirmDialogService, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { EmployeeDetailFacade } from './employee-detail.facade';
 import { EmployeeDocumentsFacade } from './employee-documents.facade';
 
@@ -153,5 +153,37 @@ describe('EmployeeDetailFacade — approval and grade commands', () => {
         overwriteExisting: true,
       });
     });
+  });
+
+  it('holds decisionPending while an approve is in flight, and clears it after it lands or fails', () => {
+    const landing = new Subject<never>();
+    approveMock.mockReturnValue(landing.asObservable());
+    facade.approveEmployee('country-1');
+    expect(facade.decisionPending()).toBe(true);
+    landing.complete();
+    expect(facade.decisionPending()).toBe(false);
+
+    const failing = new Subject<never>();
+    approveMock.mockReturnValue(failing.asObservable());
+    facade.approveEmployee('country-1');
+    expect(facade.decisionPending()).toBe(true);
+    failing.error(new Error('boom'));
+    expect(facade.decisionPending()).toBe(false);
+  });
+
+  it('holds decisionPending while a reject is in flight, and clears it after it lands or fails', () => {
+    const landing = new Subject<never>();
+    rejectMock.mockReturnValue(landing.asObservable());
+    facade.rejectEmployee('incomplete profile');
+    expect(facade.decisionPending()).toBe(true);
+    landing.complete();
+    expect(facade.decisionPending()).toBe(false);
+
+    const failing = new Subject<never>();
+    rejectMock.mockReturnValue(failing.asObservable());
+    facade.rejectEmployee('incomplete profile');
+    expect(facade.decisionPending()).toBe(true);
+    failing.error(new Error('boom'));
+    expect(facade.decisionPending()).toBe(false);
   });
 });

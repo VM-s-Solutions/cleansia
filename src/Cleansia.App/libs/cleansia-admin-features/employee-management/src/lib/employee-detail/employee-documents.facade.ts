@@ -31,6 +31,8 @@ export class EmployeeDocumentsFacade extends UnsubscribeControlDirective {
 
   readonly documents = signal<EmployeeDocumentItem[]>([]);
   readonly documentsLoading = signal<boolean>(false);
+  readonly decidingDocumentId = signal<string | null>(null);
+  readonly fetchingDocumentId = signal<string | null>(null);
 
   loadEmployeeDocuments(employeeId: string): void {
     this.documentsLoading.set(true);
@@ -64,11 +66,13 @@ export class EmployeeDocumentsFacade extends UnsubscribeControlDirective {
   }
 
   approveDocument(documentId: string, employeeId: string | undefined): void {
+    this.decidingDocumentId.set(documentId);
     this.adminClient.adminEmployeeDocumentClient
       .approve(documentId)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null))
+        catchError(() => of(null)),
+        finalize(() => this.decidingDocumentId.set(null))
       )
       .subscribe((response) => {
         if (response) {
@@ -87,11 +91,13 @@ export class EmployeeDocumentsFacade extends UnsubscribeControlDirective {
     command.documentId = documentId;
     command.notes = reason;
 
+    this.decidingDocumentId.set(documentId);
     this.adminClient.adminEmployeeDocumentClient
       .reject(documentId, command)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null))
+        catchError(() => of(null)),
+        finalize(() => this.decidingDocumentId.set(null))
       )
       .subscribe((response) => {
         if (response) {
@@ -170,11 +176,13 @@ export class EmployeeDocumentsFacade extends UnsubscribeControlDirective {
   }
 
   private downloadDocumentBlob(documentId: string) {
+    this.fetchingDocumentId.set(documentId);
     return this.adminClient.adminEmployeeDocumentClient
       .download(documentId)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null))
+        catchError(() => of(null)),
+        finalize(() => this.fetchingDocumentId.set(null))
       );
   }
 

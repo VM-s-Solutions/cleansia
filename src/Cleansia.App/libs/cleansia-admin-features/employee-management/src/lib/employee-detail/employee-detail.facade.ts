@@ -55,6 +55,8 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
   readonly loading = signal<boolean>(false);
   readonly editingSection = signal<string | null>(null);
   readonly savingEmployee = signal<boolean>(false);
+  readonly decisionPending = signal<boolean>(false);
+  readonly deletingPayConfigId = signal<string | null>(null);
 
   // The weekly order cap. Unset is the default and is expected to stay that way — a cap is a
   // deliberate act against one person, not a rule the platform applies to everyone.
@@ -131,11 +133,13 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
     const request = new ApproveEmployeeRequest();
     request.workCountryId = workCountryId;
     request.notes = notes;
+    this.decisionPending.set(true);
     this.adminClient.adminEmployeeClient
       .approve(employeeId, request)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null))
+        catchError(() => of(null)),
+        finalize(() => this.decisionPending.set(false))
       )
       .subscribe((response) => {
         if (response) {
@@ -190,11 +194,13 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
 
     const request = new RejectEmployeeRequest();
     request.reason = reason;
+    this.decisionPending.set(true);
     this.adminClient.adminEmployeeClient
       .reject(employeeId, request)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null))
+        catchError(() => of(null)),
+        finalize(() => this.decisionPending.set(false))
       )
       .subscribe((response) => {
         if (response) {
@@ -571,7 +577,7 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
   }
 
   private deleteEmployeePayConfigConfirmed(employeeId: string, payConfigId: string): void {
-
+    this.deletingPayConfigId.set(payConfigId);
     this.adminClient.adminPayConfigClient
       .delete(payConfigId)
       .pipe(
@@ -581,7 +587,8 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
             'pages.employee_detail.messages.pay_config_delete_error'
           );
           return of(null);
-        })
+        }),
+        finalize(() => this.deletingPayConfigId.set(null))
       )
       .subscribe((response) => {
         if (response) {

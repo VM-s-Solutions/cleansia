@@ -14,7 +14,7 @@ import {
 import { DialogService as ConfirmDialogService, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { InvoiceDetailFacade } from './invoice-detail.facade';
 
 describe('InvoiceDetailFacade', () => {
@@ -24,6 +24,7 @@ describe('InvoiceDetailFacade', () => {
   let markPaidMock: jest.Mock;
   let cancelMock: jest.Mock;
   let regenerateMock: jest.Mock;
+  let downloadMock: jest.Mock;
   let assignVariableSymbolMock: jest.Mock;
   let confirmMock: jest.Mock;
   let getForEmployeeMock: jest.Mock;
@@ -43,6 +44,7 @@ describe('InvoiceDetailFacade', () => {
     markPaidMock = jest.fn().mockReturnValue(of({ invoiceId: 'invoice-1' }));
     cancelMock = jest.fn().mockReturnValue(of({ invoiceId: 'invoice-1' }));
     regenerateMock = jest.fn().mockReturnValue(of({ invoiceId: 'invoice-1' }));
+    downloadMock = jest.fn();
     assignVariableSymbolMock = jest.fn().mockReturnValue(
       of({
         invoiceId: 'invoice-1',
@@ -73,6 +75,7 @@ describe('InvoiceDetailFacade', () => {
               markPaid: markPaidMock,
               cancel: cancelMock,
               regeneratePdf: regenerateMock,
+              download: downloadMock,
             },
             adminPayrollClient: {
               assignInvoiceVariableSymbol: assignVariableSymbolMock,
@@ -585,5 +588,22 @@ describe('InvoiceDetailFacade', () => {
       expect(detailsMock).toHaveBeenCalledTimes(1);
       expect(facade.actionLoading()).toBe(false);
     });
+  });
+
+  it('holds downloading while the download is in flight, and clears it after it lands or fails', () => {
+    facade.loadInvoiceDetail('invoice-1');
+    const landing = new Subject<never>();
+    downloadMock.mockReturnValue(landing.asObservable());
+    facade.downloadInvoice();
+    expect(facade.downloading()).toBe(true);
+    landing.complete();
+    expect(facade.downloading()).toBe(false);
+
+    const failing = new Subject<never>();
+    downloadMock.mockReturnValue(failing.asObservable());
+    facade.downloadInvoice();
+    expect(facade.downloading()).toBe(true);
+    failing.error(new Error('boom'));
+    expect(facade.downloading()).toBe(false);
   });
 });

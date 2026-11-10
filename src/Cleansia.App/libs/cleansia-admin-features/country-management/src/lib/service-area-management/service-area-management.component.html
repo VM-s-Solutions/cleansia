@@ -74,6 +74,7 @@
             [columns]="cityTable().columns"
             [actions]="cityTable().actions"
             [config]="{ paginator: false, emptyMessage: 'pages.service_area_management.cities.empty' }"
+            [loading]="facade.citySaving()"
           />
         }
       </cleansia-section>
@@ -156,6 +157,7 @@
       [label]="'global.actions.save' | translate"
       icon="pi pi-check"
       [disabled]="!cityForm().name.trim()"
+      [loading]="facade.citySaving()"
       (onClick)="saveCity()"
     />
   </ng-template>

@@ -134,6 +134,8 @@ class FacadeStub {
   readonly loading = signal<boolean>(false);
   readonly editingSection = signal<string | null>(null);
   readonly savingEmployee = signal<boolean>(false);
+  readonly decisionPending = signal<boolean>(false);
+  readonly deletingPayConfigId = signal<string | null>(null);
   readonly editingWeeklyLimit = signal<boolean>(false);
   readonly savingWeeklyLimit = signal<boolean>(false);
   readonly countries = signal<ICleansiaSelectOption[]>([]);

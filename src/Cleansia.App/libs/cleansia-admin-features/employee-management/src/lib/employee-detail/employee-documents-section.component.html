@@ -104,6 +104,7 @@
         icon="pi pi-eye"
         severity="secondary"
         [outlined]="true"
+        [loading]="facade.fetchingDocumentId() === doc.id"
         (onClick)="facade.previewDocument(doc)"
       />
       <cleansia-button
@@ -111,6 +112,7 @@
         icon="pi pi-download"
         severity="secondary"
         [outlined]="true"
+        [loading]="facade.fetchingDocumentId() === doc.id"
         (onClick)="facade.downloadDocument(doc)"
       />
       @if (showApproveReject) {
@@ -119,6 +121,7 @@
           [label]="'pages.employee_detail.actions.approve_document' | translate"
           icon="pi pi-check"
           [outlined]="true"
+          [loading]="facade.decidingDocumentId() === doc.id"
           (onClick)="facade.approveDocument(doc.id!, employeeId)"
         />
         @if (!showApproveOnly) {
@@ -128,6 +131,7 @@
             icon="pi pi-times"
             severity="danger"
             [outlined]="true"
+            [loading]="facade.decidingDocumentId() === doc.id"
             (onClick)="rejectDocument.emit(doc)"
           />
         }

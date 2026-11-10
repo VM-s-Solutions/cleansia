@@ -92,6 +92,7 @@
           icon="pi pi-download"
           severity="secondary"
           [outlined]="true"
+          [loading]="facade.downloading()"
           (onClick)="onDownload()"
         />
         } @if (facade.canRegeneratePdf()) {

@@ -406,7 +406,7 @@ time, a notice about two hours before each one, and a nudge close to the start f
 has not set off. The nudge stops the moment they mark themselves on the way. None of the three can be
 silenced: they are about work the cleaner already accepted.
 
-**Getting paid** — see pay per job, per pay period of up to 14 days, and download invoices. The dashboard card reads *This period, not invoiced yet* and names the day the period closes; no cleaner app shows a payout date, because the company pays each invoice by bank transfer and an administrator marks it paid ([ADR-0082](/decisions/adr-0082)). Each invoice shows the cash set off against it and the bank transfer to the cleaner. A job pays its
+**Getting paid** — see pay per job, per pay period of up to 14 days, and download invoices. The dashboard card reads *This period, not invoiced yet*, and on Android and iOS it also names the day the period closes; no cleaner app shows a payout date, because the company pays each invoice by bank transfer and an administrator marks it paid ([ADR-0082](/decisions/adr-0082)). Each invoice shows the cash set off against it and the bank transfer to the cleaner. A job pays its
 service and package rates plus rooms and bathrooms and a company share of the extras booked (half by
 default), within the rates' floor and cap; nothing is paid for travel distance
 → [Business rules — cleaner pay](/product/business-rules#cleaner-pay). A job the customer did not let

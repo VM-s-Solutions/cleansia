@@ -45,7 +45,7 @@ flowchart LR
   A0082[ADR-0082] --> A0001[ADR-0001]
   A0082[ADR-0082] --> A0066[ADR-0066]
   classDef old fill:#e5e7eb,stroke:#6b7280,color:#374151
-  class A0001,A0002,A0006,A0010,A0013,A0017,A0024,A0026,A0036,A0037,A0039,A0045,A0046,A0050,A0057,A0062 old
+  class A0001,A0002,A0006,A0010,A0013,A0017,A0024,A0026,A0036,A0037,A0039,A0045,A0046,A0050,A0057,A0062,A0066 old
 ```
 
 Grey nodes are superseded in whole or in part. Not every later record replaces an earlier one:
@@ -171,13 +171,14 @@ says when an Apple account's stored name is the placeholder, and a mobile mapper
 `false` when an older server omits it. That is a one-member exception to [ADR-0048](./adr-0048) D1 rule 2,
 and the rest of ADR-0048 stands, so there is no arrow.
 
-**[ADR-0082](./adr-0082)** (`accepted` 2026-11-10, T-0923 to T-0929) supersedes two rows of
+**[ADR-0082](./adr-0082)** (`accepted` 2026-11-10, T-0923 to T-0929) supersedes rows of
 [ADR-0001](./adr-0001) D2's permission table and [ADR-0066](./adr-0066) D3's: `CanOpenPayPeriod` and
-`CanReopenPayPeriod` left the map, because a closed pay period is never reopened. It also supersedes the
+`CanReopenPayPeriod` left the map, because a closed pay period is never reopened, and `CanRejectInvoice` left
+ADR-0066 D3's with the invoice Reject action. It also supersedes the
 Stripe Connect Express route of decision 48 of the 2026-09-27 meeting, which is not an ADR, so that half has
 no arrow; and it gives Mike's 2026-08-08 ruling that an administrator marks an invoice paid by hand a record
 of its own. [ADR-0002](./adr-0002) D3.4, [ADR-0041](./adr-0041) and [ADR-0046](./adr-0046) carry dated
-banners in place and are not superseded.
+banners in place, which say what the code does now; no record supersedes them.
 
 ## All records
 

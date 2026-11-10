@@ -18,7 +18,7 @@ import { currentLanguage, FileTransformationUtils, formatDate } from '@cleansia/
 import { formatFileSize } from './profile-documents.helpers';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
-import { catchError, of, takeUntil } from 'rxjs';
+import { catchError, finalize, of, takeUntil } from 'rxjs';
 
 export interface StagedDocument {
   file: BlobFileDto;
@@ -82,6 +82,8 @@ export class ProfileDocumentsFacade extends UnsubscribeControlDirective {
   readonly deletionRequestInFlight = computed(
     () => this.documentsState().requestingDeletion
   );
+
+  readonly downloadingId = signal<string | null>(null);
 
   readonly replacingDocumentId = computed(
     () => this.documentsState().replacingDocumentId
@@ -312,11 +314,13 @@ export class ProfileDocumentsFacade extends UnsubscribeControlDirective {
   }
 
   downloadEmployeeDocument(documentId: string, fileName: string): void {
+    this.downloadingId.set(documentId);
     this.partnerClient.employeeClient
       .downloadMyDocument(documentId)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null))
+        catchError(() => of(null)),
+        finalize(() => this.downloadingId.set(null))
       )
       .subscribe((response) => {
         if (response && response.data) {

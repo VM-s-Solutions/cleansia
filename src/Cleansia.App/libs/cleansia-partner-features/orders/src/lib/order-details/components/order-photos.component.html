@@ -59,6 +59,7 @@
         <cleansia-button
           [label]="'pages.order_details.save_photos' | translate"
           [icon]="'pi pi-save'"
+          [loading]="saving()"
           [disabled]="saving()"
           (onClick)="savePhotos()"
         />

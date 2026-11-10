@@ -177,11 +177,13 @@ export class InvoicesFacade extends UnsubscribeControlDirective {
       return;
     }
 
+    this.loading.set(true);
     this.partnerClient.employeePayrollClient
       .downloadInvoice(invoice.id)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null))
+        catchError(() => of(null)),
+        finalize(() => this.loading.set(false))
       )
       .subscribe((fileResponse) => {
         if (fileResponse) {

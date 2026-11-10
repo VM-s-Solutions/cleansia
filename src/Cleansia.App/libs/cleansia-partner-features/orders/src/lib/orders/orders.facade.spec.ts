@@ -202,6 +202,23 @@ describe('OrdersFacade — take order', () => {
     });
   });
 
+  it('holds startingOrder while a start is in flight, and clears it after it lands or fails', () => {
+    const facade = createFacade();
+    const landing = new Subject<never>();
+    orderClient.startOrder.mockReturnValue(landing.asObservable());
+    facade.startOrder(ORDER_ID);
+    expect(facade.startingOrder()).toBe(true);
+    landing.complete();
+    expect(facade.startingOrder()).toBe(false);
+
+    const failing = new Subject<never>();
+    orderClient.startOrder.mockReturnValue(failing.asObservable());
+    facade.startOrder(ORDER_ID);
+    expect(facade.startingOrder()).toBe(true);
+    failing.error(new Error('boom'));
+    expect(facade.startingOrder()).toBe(false);
+  });
+
   // Every member of a generated command is optional, so a dropped assignment type-checks.
   // These pin the serialized body instead (ADR-0031).
   describe('command bodies on the wire', () => {

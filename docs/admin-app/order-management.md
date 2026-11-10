@@ -295,7 +295,8 @@ order list); every refund of the company in one list, opened on **Needs action**
 *Refunded*, *Failed*, *Bounced*, *Repaid*, *Closed*), and two date pickers filter by when the refund was
 requested. The columns are order, customer (a guest is marked), origin (cancellation, dispute, full refund
 or partial refund), amount, state with one line saying who acts next or how it was settled, the Stripe refund (its id with a
-copy button, an em dash where the refund has none, as a refund stored before 2026-11-10 may not), requested
+copy button, an em dash where it has none: a refund not yet sent, one closed without being sent, or one
+paid on its first send before this change was deployed), requested
 and last changed; the amount and the requested date sort. A row opens its order. `?orderId=` and `?userId=`
 open the list for one order or one customer, with a note and a button that clears the scope.
 

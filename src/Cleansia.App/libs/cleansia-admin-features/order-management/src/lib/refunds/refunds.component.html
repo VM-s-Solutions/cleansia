@@ -166,3 +166,18 @@
   <div class="form-hint">{{ hint }}</div>
   }
 </ng-template>
+
+<ng-template #stripeRefundTemplate let-item>
+  <span class="cleansia-refunds__stripe-id">
+    {{ stripeIdOf(item) }}
+    @if (item.stripeRefundId) {
+    <cleansia-button
+      icon="pi pi-copy"
+      severity="secondary"
+      [text]="true"
+      [tooltip]="'pages.refunds.actions.copy_stripe_refund' | translate"
+      (onClick)="$event.stopPropagation(); facade.copyStripeRefundId(item.stripeRefundId)"
+    />
+    }
+  </span>
+</ng-template>

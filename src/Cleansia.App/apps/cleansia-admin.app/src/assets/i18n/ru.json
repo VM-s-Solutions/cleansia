@@ -3124,6 +3124,7 @@
       },
       "load_error": "Не удалось загрузить возвраты средств.",
       "retry_load": "Попробовать снова",
+      "stripe_refund_copied": "ID возврата Stripe скопирован",
       "empty": "Возвратов нет.",
       "columns": {
         "order": "Заказ",
@@ -3131,10 +3132,12 @@
         "origin": "Происхождение",
         "amount": "Сумма",
         "state": "Состояние",
+        "stripe_refund": "Возврат Stripe",
         "requested_on": "Запрошен",
         "last_changed_on": "Последнее изменение"
       },
       "actions": {
+        "copy_stripe_refund": "Копировать ID возврата Stripe",
         "retry": "Повторить",
         "open_dispute": "Открыть спор",
         "record_repayment": "Записать выплату"

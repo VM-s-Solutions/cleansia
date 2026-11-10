@@ -39,6 +39,7 @@ describe('RefundsFacade', () => {
   let recordRepayment: jest.Mock;
   let navigate: jest.Mock;
   let confirmTranslated: jest.Mock;
+  let showSuccessTranslated: jest.Mock;
 
   function create(query: Record<string, string> = {}): RefundsFacade {
     TestBed.configureTestingModule({
@@ -46,7 +47,7 @@ describe('RefundsFacade', () => {
         RefundsFacade,
         { provide: AdminRefundClient, useValue: { getPaged, retry, recordRepayment } },
         { provide: DialogService, useValue: { confirmTranslated } },
-        { provide: SnackbarService, useValue: { showSuccessTranslated: jest.fn() } },
+        { provide: SnackbarService, useValue: { showSuccessTranslated } },
         { provide: Router, useValue: { navigate } },
         { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(query) } } },
         {
@@ -63,6 +64,7 @@ describe('RefundsFacade', () => {
     retry = jest.fn().mockReturnValue(of(RetryRefundResponse.fromJS({ refundId: 'refund-1' })));
     recordRepayment = jest.fn().mockReturnValue(of(RecordRefundRepaymentResponse.fromJS({ refundId: 'refund-1' })));
     navigate = jest.fn();
+    showSuccessTranslated = jest.fn();
     confirmTranslated = jest.fn().mockReturnValue(of(true));
   });
 
@@ -184,5 +186,16 @@ describe('RefundsFacade', () => {
 
     expect(navigate).toHaveBeenCalledWith([CleansiaAdminRoute.ORDER_MANAGEMENT, 'order-1']);
     expect(navigate).toHaveBeenCalledWith([CleansiaAdminRoute.DISPUTE_MANAGEMENT, 'dispute-1']);
+  });
+
+  it('copies a Stripe refund id to the clipboard and says so', () => {
+    const writeText = jest.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    const facade = create();
+
+    facade.copyStripeRefundId('re_123');
+
+    expect(writeText).toHaveBeenCalledWith('re_123');
+    expect(showSuccessTranslated).toHaveBeenCalledWith('pages.refunds.stripe_refund_copied');
   });
 });

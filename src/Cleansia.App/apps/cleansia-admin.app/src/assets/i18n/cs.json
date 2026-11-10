@@ -3124,6 +3124,7 @@
       },
       "load_error": "Refundace se nepodařilo načíst.",
       "retry_load": "Zkusit znovu",
+      "stripe_refund_copied": "ID refundace Stripe zkopírováno",
       "empty": "Žádné refundace.",
       "columns": {
         "order": "Objednávka",
@@ -3131,10 +3132,12 @@
         "origin": "Původ",
         "amount": "Částka",
         "state": "Stav",
+        "stripe_refund": "Refundace Stripe",
         "requested_on": "Vyžádáno",
         "last_changed_on": "Poslední změna"
       },
       "actions": {
+        "copy_stripe_refund": "Zkopírovat ID refundace Stripe",
         "retry": "Zopakovat",
         "open_dispute": "Otevřít spor",
         "record_repayment": "Zaznamenat splacení"

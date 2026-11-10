@@ -163,6 +163,11 @@ export class RefundsFacade extends UnsubscribeControlDirective {
       );
   }
 
+  copyStripeRefundId(id: string): void {
+    void navigator.clipboard.writeText(id);
+    this.snackbar.showSuccessTranslated('pages.refunds.stripe_refund_copied');
+  }
+
   startRepayment(row: RefundListItem): void {
     if (!isOwedRefund(row) || this.submitting()) return;
     this.reference.set('');

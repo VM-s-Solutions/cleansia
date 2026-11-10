@@ -402,8 +402,11 @@ public sealed class RefundService(
                 // Committed here with the administrators' alert, as the claim is: a caller that fails on refund.failed
                 // rolls back, a row left pending would keep counting in every ceiling money Stripe never paid, and
                 // once closed no job selects it again, so the alert is the only thing that gets the money paid.
-                refund.MarkFailedByStripe(made.Id, DateTimeOffset.UtcNow);
-                await RaiseForRetryAsync(order, refund, cancellationToken);
+                if (refund.MarkFailedByStripe(made.Id, DateTimeOffset.UtcNow))
+                {
+                    await RaiseForRetryAsync(order, refund, cancellationToken);
+                }
+
                 await refundRepository.CommitAsync(cancellationToken);
                 logger.LogError(
                     "Stripe failed refund {StripeRefundId} it made for order {OrderId} on refund {RefundId}; the refund is closed and nothing is sent again.",

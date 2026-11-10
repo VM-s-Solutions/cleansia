@@ -42,7 +42,7 @@ public class SendSitewidePromoFanoutHandlerSmokeTests
         await handler.HandleAsync(messageText, CancellationToken.None);
 
         _queueClient.Verify(
-            q => q.SendAsync(It.IsAny<string>(), It.IsAny<SendPushNotificationMessage>(), It.IsAny<CancellationToken>()),
+            q => q.SendAsync(It.IsAny<string>(), It.IsAny<QueueEnvelope<SendPushNotificationMessage>>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 }

@@ -1,6 +1,8 @@
 using System.Text.Json;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Users;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
 using Microsoft.EntityFrameworkCore;
@@ -102,7 +104,10 @@ public class SendSitewidePromoFanoutHandler(
             var campaignTenantId = campaign.TenantId;
             var query = preferencesRepository.GetQueryableIgnoringTenant()
                 .Where(p => p.Promo)
-                .Join(userRepository.GetQueryableIgnoringTenant(),
+                .Join(userRepository.GetQueryableIgnoringTenant()
+                        .Where(u => u.IsActive
+                            && u.Profile == UserProfile.Customer
+                            && !u.Email.EndsWith(User.AnonymisedEmailSuffix)),
                     p => p.UserId,
                     u => u.Id,
                     (p, u) => new { p.UserId, u.PreferredLanguageCode, p.TenantId })
@@ -155,15 +160,18 @@ public class SendSitewidePromoFanoutHandler(
                     {
                         await queueClient.SendAsync(
                             QueueNames.NotificationsDispatch,
-                            new SendPushNotificationMessage(
-                                UserId: recipient.UserId,
-                                EventKey: NotificationEventCatalog.PromoNewSitewide,
-                                Args: new Dictionary<string, string>
-                                {
-                                    ["title"] = title,
-                                    ["body"] = body,
-                                },
-                                TenantId: recipient.TenantId),
+                            new QueueEnvelope<SendPushNotificationMessage>(
+                                MessageKeys.Push(recipient.UserId, NotificationEventCatalog.PromoNewSitewide, campaign.CampaignId),
+                                recipient.TenantId,
+                                new SendPushNotificationMessage(
+                                    UserId: recipient.UserId,
+                                    EventKey: NotificationEventCatalog.PromoNewSitewide,
+                                    Args: new Dictionary<string, string>
+                                    {
+                                        ["title"] = title,
+                                        ["body"] = body,
+                                    },
+                                    TenantId: recipient.TenantId)),
                             ct);
                         totalEnqueued++;
                     }

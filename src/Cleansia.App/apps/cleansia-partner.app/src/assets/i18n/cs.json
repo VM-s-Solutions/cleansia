@@ -497,7 +497,8 @@
         "complete_job": "Dokončit zakázku",
         "marked_done": "Označeno jako hotové. Až svou část označí všichni na této zakázce, kdokoli z vás ji může dokončit.",
         "crew_done": "Označeno jako hotové. Svou část už označili všichni na této zakázce."
-      }
+      },
+      "photo_thumbnail": "Náhled fotografie"
     },
     "invoices": {
       "title": "Moje faktury",
@@ -761,12 +762,16 @@
         "photo_read_failed": "Nepodařilo se přečíst soubor fotografie. Zkuste to prosím znovu.",
         "photo_deleted": "Fotografie byla úspěšně smazána.",
         "photo_delete_failed": "Nepodařilo se smazat fotografii. Zkuste to prosím znovu.",
-        "lockout_reported": "Nahlášeno. Administrátor to potvrdí."
+        "lockout_reported": "Nahlášeno. Administrátor to potvrdí.",
+        "issue_reported": "Problém byl nahlášen.",
+        "note_added": "Poznámka byla přidána."
       },
       "invoices": {
         "invoice_generated": "Faktura byla vygenerována z časových záznamů.",
         "invoice_preview": "Náhled faktury byl otevřen.",
-        "invoice_downloaded": "Faktura byla úspěšně stažena."
+        "invoice_downloaded": "Faktura byla úspěšně stažena.",
+        "no_invoice_selected": "Není vybrána žádná faktura.",
+        "print_failed": "Fakturu se nepodařilo vytisknout. Zkuste to prosím znovu."
       },
       "payslips": {
         "load_failed": "Nepodařilo se načíst výplatní pásky. Zkuste to prosím znovu.",
@@ -812,7 +817,9 @@
       "load_more": "Načíst další",
       "retry": "Zkusit znovu",
       "confirm": "Potvrdit",
-      "delete": "Smazat"
+      "delete": "Smazat",
+      "previous": "Předchozí",
+      "next": "Další"
     },
     "dialog": {
       "confirm": "Potvrdit",
@@ -1266,6 +1273,13 @@
       "cancellation_fee_share": "Váš podíl z poplatku za pozdní zrušení",
       "lockout_fee_share": "Vaše odměna za zakázku — zákazník vás nepustil dovnitř",
       "dispute_charge": "Srážka ze sporu"
+    },
+    "extra_name": {
+      "inside_oven": "Čištění vnitřku trouby",
+      "inside_fridge": "Čištění vnitřku ledničky",
+      "interior_windows": "Vnitřní okna",
+      "laundry_ironing": "Praní a žehlení",
+      "pet_hair_supplement": "Důkladné odstranění zvířecích chlupů"
     }
   },
   "help": {

@@ -16,6 +16,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ChartConfiguration, ChartType } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
 import { Skeleton } from 'primeng/skeleton';
+import { orderStatusLegendLabel } from '../dashboard-labels';
 
 @Component({
   selector: 'cleansia-order-distribution-chart',
@@ -100,6 +101,7 @@ export class CleansiaOrderDistributionChartComponent {
 
   constructor() {
     effect(() => {
+      this.lang();
       const currentData = this.data();
       if (currentData) {
         this.updateChartData(currentData);
@@ -123,9 +125,10 @@ export class CleansiaOrderDistributionChartComponent {
         Cancelled: '#ef4444',
       };
 
-      const labels = Object.keys(currentData.statusDistribution);
+      const statuses = Object.keys(currentData.statusDistribution);
+      const labels = statuses.map((status) => orderStatusLegendLabel(this.translate, status));
       const values = Object.values(currentData.statusDistribution);
-      const colors = labels.map((label) => statusColors[label] || '#6b7280');
+      const colors = statuses.map((status) => statusColors[status] || '#6b7280');
 
       this.pieChartData = {
         labels,

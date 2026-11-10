@@ -120,7 +120,7 @@
         (click)="navigateToIndex($index); $event.stopPropagation()"
         (keydown.enter)="navigateToIndex($index)"
       >
-        <img [src]="photo.url" [alt]="photo.fileName || 'Thumbnail'" />
+        <img [src]="photo.url" [alt]="photo.fileName || ('pages.order_details.photo_thumbnail' | translate)" />
         @if (photo.isStaged) {
         <div class="photo-gallery__thumbnail-badge">
           {{ 'pages.order_details.staged' | translate }}

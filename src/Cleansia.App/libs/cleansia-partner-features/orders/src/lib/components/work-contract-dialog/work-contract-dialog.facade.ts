@@ -16,6 +16,7 @@ import {
   WorkContractDialogOutcome,
   WorkContractDialogResult,
 } from './work-contract-dialog.models';
+import { extraLabel } from '../../order-details/order-details.helpers';
 
 const TEXT_MISMATCH = 'contract.text_mismatch';
 const DOCUMENT_NOT_FOUND = 'legal.document_not_found';
@@ -36,7 +37,9 @@ export class WorkContractDialogFacade extends UnsubscribeControlDirective {
   readonly mode = signal<WorkContractDialogMode>(WorkContractDialogMode.Take);
 
   readonly factRows = computed(() =>
-    buildWorkContractFactRows(this.contract()?.facts, this.language())
+    buildWorkContractFactRows(this.contract()?.facts, this.language(), (slug) =>
+      extraLabel(slug, this.translate)
+    )
   );
 
   readonly acceptedLanguageName = computed(() => {

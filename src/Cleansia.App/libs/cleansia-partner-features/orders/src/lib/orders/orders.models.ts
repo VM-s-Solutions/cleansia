@@ -266,7 +266,7 @@ export function getMyOrdersTableDefinition(
     actions: [
       {
         icon: 'pi pi-play',
-        tooltip: 'pages.orders.start_order',
+        tooltip: 'pages.order_details.start_order',
         color: 'primary',
         onClick: (row: OrderListItem) => defs.onStartOrder(row),
         visible: (row: OrderListItem) => {

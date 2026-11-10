@@ -118,7 +118,7 @@ describe('OrderPhotosFacade', () => {
     facade.savePhotos(ORDER_ID, [stagedPhoto()], onSuccess);
 
     expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
-      'global.messages.orders.photos_saved'
+      'pages.order_details.photos_saved'
     );
     expect(onSuccess).toHaveBeenCalledTimes(1);
     expect(orderClient.getPhotos).toHaveBeenCalledWith(ORDER_ID);

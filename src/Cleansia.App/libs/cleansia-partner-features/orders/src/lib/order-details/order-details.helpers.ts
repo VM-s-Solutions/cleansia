@@ -395,6 +395,14 @@ export function hasExtras(extras: Record<string, boolean> | undefined): boolean 
   return !!extras && Object.values(extras).some((value) => value);
 }
 
+export function extraLabel(slug: string, translate: Pick<TranslateService, 'instant'>): string {
+  const key = `enums.extra_name.${slug.replace(/-/g, '_')}`;
+  const translated = translate.instant(key);
+  if (translated !== key) return translated;
+  const words = slug.replace(/[-_]+/g, ' ').trim();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
 export function getExtrasEntries(
   extras: Record<string, boolean> | undefined
 ): [string, boolean][] {

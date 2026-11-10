@@ -50,7 +50,7 @@ export class OrderPhotosFacade extends UnsubscribeControlDirective {
         takeUntil(this.destroyed$),
         tap(() => {
           this.snackbarService.showSuccessTranslated(
-            'global.messages.orders.photos_saved'
+            'pages.order_details.photos_saved'
           );
           onSuccess();
           this.loadPhotos(orderId);

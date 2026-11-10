@@ -1,3 +1,4 @@
+import { TranslateService } from '@ngx-translate/core';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import {
@@ -10,6 +11,7 @@ import {
   WorkContractAcceptanceDto,
 } from '@cleansia/partner-services';
 import {
+  extraLabel,
   canAcceptWorkContract,
   canCompleteOrder,
   canDropOrder,
@@ -691,5 +693,16 @@ describe('cannot get in', () => {
         'global.messages.orders.lockout_reported',
       ])
     ).toEqual([]);
+  });
+});
+
+describe('extraLabel', () => {
+  const translate = {
+    instant: (key: string) => ({ 'enums.extra_name.inside_oven': 'Inside oven cleaning' })[key] ?? key,
+  } as unknown as TranslateService;
+
+  it('names a known slug and tidies an unknown one', () => {
+    expect(extraLabel('inside-oven', translate)).toBe('Inside oven cleaning');
+    expect(extraLabel('new-extra', translate)).toBe('New extra');
   });
 });

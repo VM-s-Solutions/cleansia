@@ -1,5 +1,7 @@
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Refunds;
+using Cleansia.Core.AppServices.Features.Refunds.DTOs;
+using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Web.Admin.Abstractions;
 using Cleansia.Web.Admin.Attributes;
 using MediatR;
@@ -12,6 +14,18 @@ namespace Cleansia.Web.Admin.Controllers;
 [ApiController]
 public class AdminRefundController(IMediator mediator) : ApiController(mediator)
 {
+    [HttpGet("get-paged")]
+    [Permission(Policy.CanViewOrderDetailAdmin)]
+    [ProducesResponseType(typeof(PagedData<RefundListItem>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetPagedRefunds([FromQuery] GetPagedRefunds.Request request, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
+
     [HttpPost("partial")]
     [Permission(Policy.CanIssueRefund)]
     // S5 / ADR-0003: narrow brute-force window on this money-out mutation. Reuses the REGISTERED "auth"

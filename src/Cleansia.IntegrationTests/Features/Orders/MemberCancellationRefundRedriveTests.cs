@@ -223,7 +223,7 @@ public class MemberCancellationRefundRedriveTests(PostgresContainerFixture fixtu
         _stripe.SetupSequence(s => s.RefundPaymentIntentAsync(
                 PaymentIntentId, It.IsAny<decimal>(), RefundKey, It.IsAny<CancellationToken>()))
             .ThrowsAsync(failure)
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync("re_test");
 
         var response = await CancelAsync(userId);
 
@@ -278,7 +278,7 @@ public class MemberCancellationRefundRedriveTests(PostgresContainerFixture fixtu
         _stripe.Setup(s => s.RefundPaymentIntentAsync(
                 PaymentIntentId, It.IsAny<decimal>(), RefundKey, It.IsAny<CancellationToken>()))
             .Callback<string, decimal, string, CancellationToken>((_, amount, _, _) => stripeCalls.Add(amount))
-            .Returns(() => stripeCalls.Count == 1 ? Task.FromException(failure) : Task.CompletedTask);
+            .Returns(() => stripeCalls.Count == 1 ? Task.FromException<string>(failure) : Task.FromResult("re_test"));
 
         var response = await CancelAsync(userId);
 

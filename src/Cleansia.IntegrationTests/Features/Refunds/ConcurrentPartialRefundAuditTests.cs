@@ -94,6 +94,7 @@ public sealed class ConcurrentPartialRefundAuditTests(PostgresContainerFixture f
                 if (Interlocked.Increment(ref _stripeCalls) == 1) _firstAtStripe.SetResult();
                 else _bothAtStripe.SetResult();
                 await _bothAtStripe.Task.WaitAsync(TimeSpan.FromSeconds(10), ct);
+                return "re_test";
             });
     }
 
@@ -159,7 +160,7 @@ public sealed class ConcurrentPartialRefundAuditTests(PostgresContainerFixture f
         await ResetAndSeedAsync(partlyRefunded: false);
         _stripe.Setup(s => s.RefundPaymentIntentAsync("pi_partial_audit", It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Callback<string, decimal, string, CancellationToken>((_, amount, key, _) => _payouts.TryAdd(key, amount))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync("re_test");
         await Assert.ThrowsAsync<InvalidOperationException>(() => RunHandlerAsync(new RefuseAuditSave()));
         await using (var read = NewContext()) Assert.Empty(await read.AdminActionAudits.ToListAsync());
         var replay = await RunHandlerAsync().WaitAsync(TimeSpan.FromSeconds(10));

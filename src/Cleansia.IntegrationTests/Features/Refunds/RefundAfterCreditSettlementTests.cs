@@ -386,7 +386,7 @@ public class RefundAfterCreditSettlementTests(PostgresContainerFixture fixture) 
         _stripe.Setup(s => s.RefundPaymentIntentAsync(
                 PaymentIntentId, It.IsAny<decimal>(), FullKey, It.IsAny<CancellationToken>()))
             .Callback<string, decimal, string, CancellationToken>((_, amount, _, _) => stripeCalls.Add(amount))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync("re_test");
 
         await Assert.ThrowsAsync<DbUpdateException>(() => RefundAsync(2000m, "full", new LoseTheSucceededRecord()));
 
@@ -457,8 +457,8 @@ public class RefundAfterCreditSettlementTests(PostgresContainerFixture fixture) 
         _stripe.Setup(s => s.RefundPaymentIntentAsync(
                 PaymentIntentId, It.IsAny<decimal>(), PartialKey, It.IsAny<CancellationToken>()))
             .Returns(() => ++partialCalls == 1
-                ? Task.FromException(new HttpRequestException("timed out"))
-                : Task.CompletedTask);
+                ? Task.FromException<string>(new HttpRequestException("timed out"))
+                : Task.FromResult("re_test"));
 
         await Assert.ThrowsAsync<HttpRequestException>(() => RefundAsync(400m, "partial"));
         var cancelled = await CancelAsync(userId);

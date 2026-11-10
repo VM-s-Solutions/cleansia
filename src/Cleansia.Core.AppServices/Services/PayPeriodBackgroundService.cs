@@ -310,9 +310,16 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
 
         var languageCode = employee.User.PreferredLanguageCode ?? Constants.Language.English;
         var employeeName = $"{employee.User.FirstName} {employee.User.LastName}";
-        IReadOnlyList<(byte[] PdfBytes, string FileName)> attachments = generateInvoices
+        var attachments = generateInvoices
             ? await GenerateInvoicesForEmployeeAsync(employee, periodId, startDate, endDate, periodLabel, languageCode, cancellationToken)
             : [];
+        if (attachments is null)
+        {
+            _logger.LogInformation(
+                "Employee {EmployeeId} has only dispute charges waiting in period {PeriodId}; no period closed email", employeeId, periodId);
+            return;
+        }
+
         List<(byte[]? PdfBytes, string? FileName)> sends = attachments.Count == 0
             ? [(null, null)]
             : attachments.Select(a => ((byte[]?)a.PdfBytes, (string?)a.FileName)).ToList();
@@ -341,9 +348,10 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
     /// an order in each, and a tax document is in one unit, so a mixed period yields one document per
     /// currency rather than a refusal -- which had no admin action to resolve it and stranded the rows
     /// forever. Returns one rendered attachment per invoice that rendered; an invoice whose render
-    /// failed is still written (its error stamped for the admin) and simply has no attachment.
+    /// failed is still written (its error stamped for the admin) and simply has no attachment. Null when
+    /// the only rows are dispute charges that wait for a later invoice, so there is no pay to announce.
     /// </summary>
-    private async Task<IReadOnlyList<(byte[] PdfBytes, string FileName)>> GenerateInvoicesForEmployeeAsync(
+    private async Task<IReadOnlyList<(byte[] PdfBytes, string FileName)>?> GenerateInvoicesForEmployeeAsync(
         Employee employee,
         string periodId,
         DateOnly startDate, DateOnly endDate, string periodLabel,
@@ -368,11 +376,14 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
             .ToListAsync(cancellationToken);
 
         var attachments = new List<(byte[] PdfBytes, string FileName)>();
+        var onlyWaitingCharges = true;
+        var openPeriod = await _payPeriodRepository.GetActivePeriodAsync(cancellationToken);
 
         foreach (var group in orderPays.GroupBy(p => p.CurrencyId).OrderBy(g => g.Key, StringComparer.Ordinal))
         {
             if (alreadyInvoiced.Contains(group.Key))
             {
+                onlyWaitingCharges = false;
                 _logger.LogWarning(
                     "Invoice already exists for employee {EmployeeId} / period {PeriodId} in currency {CurrencyId}, skipping that currency",
                     employee.Id,
@@ -381,15 +392,33 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
                 continue;
             }
 
+            // A charge this invoice cannot take whole waits in the open period, committed with the invoice, or
+            // alone when nothing is left to invoice, so a closed period ends fully invoiced.
+            var (invoiced, waiting) = EmployeeInvoice.FitDisputeCharges(group.ToList());
+            if (openPeriod is not null)
+            {
+                foreach (var charge in waiting)
+                {
+                    charge.MoveToPeriod(openPeriod.Id);
+                }
+            }
+
+            if (invoiced.Count == 0)
+            {
+                await _unitOfWork.CommitAsync(cancellationToken);
+                continue;
+            }
+
+            onlyWaitingCharges = false;
             var attachment = await GenerateOneInvoiceAsync(
-                employee, periodId, startDate, endDate, periodLabel, group.Key, group.ToList(), languageCode, cancellationToken);
+                employee, periodId, startDate, endDate, periodLabel, group.Key, invoiced, languageCode, cancellationToken);
             if (attachment is not null)
             {
                 attachments.Add(attachment.Value);
             }
         }
 
-        return attachments;
+        return onlyWaitingCharges ? null : attachments;
     }
 
     /// <summary>One currency's rows into one invoice: reference, row, PDF, upload -- each step durable before the next.</summary>

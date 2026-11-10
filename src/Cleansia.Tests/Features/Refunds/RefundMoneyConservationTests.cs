@@ -402,7 +402,7 @@ public sealed class RefundMoneyConservationTests
             var result = await new ResolveDispute.Handler(
                     disputes.Object, Mock.Of<IUserSessionProvider>(s => s.GetUserId() == "admin"),
                     Mock.Of<IRefundService>(), uow.Refunds.Object, _creditRepository.Object,
-                    Mock.Of<IOrderEmployeePayRepository>(), Mock.Of<ILoyaltyService>(), Mock.Of<INotificationProducer>(),
+                    Mock.Of<IOrderEmployeePayRepository>(), Mock.Of<IPayPeriodRepository>(), Mock.Of<ILoyaltyService>(), Mock.Of<INotificationProducer>(),
                     new AuditContext())
                 .Handle(new ResolveDispute.Command(dispute.Id, amount, "Settled in credit."), CancellationToken.None);
 

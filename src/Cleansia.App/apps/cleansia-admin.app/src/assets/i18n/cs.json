@@ -2678,7 +2678,7 @@
         "credit_disclaimer": "Zákazník zvolil kredit: částka se připíše na jeho kreditní zůstatek, nevrací se na kartu.",
         "charge": {
           "toggle": "Strhnout uklízeči",
-          "hint": "Jen pokud reklamace zjistila chybu uklízeče. Částka se strhne z jeho odměny za tuto zakázku a důvod u ní uvidí.",
+          "hint": "Jen pokud reklamace zjistila chybu uklízeče. Částka se strhne z jeho odměny za tuto zakázku a důvod u ní uvidí. Pokud je odměna už vyfakturovaná, částka se strhne z jeho příští faktury.",
           "cleaner": "Uklízeč",
           "amount": "Částka ke stržení",
           "reason": "Důvod",
@@ -3312,7 +3312,7 @@
       "not_owned_by_user": "Tento spor patří jinému uživateli.",
       "cleaning_not_started": "Tento úklid se ještě neuskutečnil, takže není co nahlásit.",
       "line_not_on_order": "Tato položka na této objednávce není.",
-      "cleaner_charge_not_chargeable": "Z odměny tohoto uklízeče za objednávku nelze tuto částku strhnout: žádná není, už je vyfakturovaná nebo stržená za reklamaci, nebo je nižší než částka.",
+      "cleaner_charge_not_chargeable": "Z odměny tohoto uklízeče za objednávku nelze tuto částku strhnout: žádná není, už je stržená za reklamaci, je nižší než částka, nebo je vyfakturovaná a není otevřené výplatní období, do kterého by se částka přenesla.",
       "cleaner_charge_not_whole_minor_units": "Částka stržená uklízeči musí být v celých setinách měnové jednotky."
     },
     "email": {

@@ -287,6 +287,68 @@ public class GenerateInvoiceCommandHandlerTests
         _mediator.Verify(m => m.Send(It.IsAny<RegenerateInvoicePdf.Command>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    [Fact]
+    public async Task A_Charge_The_Pay_Cannot_Cover_Waits_In_The_Open_Period_And_The_Pay_Is_Invoiced_In_Full()
+    {
+        var charge = DisputeCharge(150m);
+        ArrangeOrderPays(PayrollMockFactory.OrderPay(basePay: 100m), charge);
+        ArrangeOpenPeriod();
+        var added = new List<EmployeeInvoice>();
+        _invoiceRepository.Setup(r => r.Add(It.IsAny<EmployeeInvoice>())).Callback<EmployeeInvoice>(added.Add);
+
+        var result = await CreateHandler().Handle(new GenerateInvoice.Command(EmployeeId, PayPeriodId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        var invoice = Assert.Single(added);
+        Assert.Equal((100m, 0m, 100m), (invoice.SubTotal, invoice.DeductionAmount, invoice.TotalAmount));
+        _payoutReferenceAllocator.Verify(a => a.AllocateAsync(It.IsAny<CancellationToken>()), Times.Once);
+        Assert.Equal((OpenPeriodId, (string?)null), (charge.PayPeriodId, charge.EmployeeInvoiceId));
+    }
+
+    [Fact]
+    public async Task A_Charge_Alone_Issues_No_Invoice_Claims_No_Reference_And_Waits_In_The_Open_Period()
+    {
+        var charge = DisputeCharge(150m);
+        ArrangeOrderPays(charge);
+        ArrangeOpenPeriod();
+
+        var result = await CreateHandler().Handle(new GenerateInvoice.Command(EmployeeId, PayPeriodId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Empty(result.Value!.InvoiceIds);
+        _invoiceRepository.Verify(r => r.Add(It.IsAny<EmployeeInvoice>()), Times.Never);
+        _payoutReferenceAllocator.Verify(a => a.AllocateAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _payoutReferenceAllocator.Verify(a => a.AllocateInvoiceNumberAsync(It.IsAny<CancellationToken>()), Times.Never);
+        Assert.Equal((OpenPeriodId, (string?)null), (charge.PayPeriodId, charge.EmployeeInvoiceId));
+        Assert.Empty(_emails);
+    }
+
+    /// <summary>
+    /// The charge comes off first and the cash second: 800 of pay less a 150 charge is 650, all of it set off
+    /// against the 1 000 held, nothing to transfer, and the cleaner still holds 350.
+    /// </summary>
+    [Fact]
+    public async Task A_Carried_Charge_Comes_Off_Before_The_Cash_Is_Set_Off()
+    {
+        var charge = DisputeCharge(150m);
+        ArrangeOrderPays(PayrollMockFactory.OrderPay(basePay: 800m), charge);
+        _cashLedger
+            .Setup(r => r.GetHeldUnderLockAsync(EmployeeId, PayrollMockFactory.CurrencyId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1000m);
+        EmployeeInvoice? added = null;
+        _invoiceRepository.Setup(r => r.Add(It.IsAny<EmployeeInvoice>())).Callback<EmployeeInvoice>(i => added = i);
+        CashLedgerEntry? setOff = null;
+        _cashLedger.Setup(r => r.Add(It.IsAny<CashLedgerEntry>())).Callback<CashLedgerEntry>(e => setOff = e);
+
+        var result = await CreateHandler().Handle(new GenerateInvoice.Command(EmployeeId, PayPeriodId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal((800m, 150m, 650m), (added!.SubTotal, added.DeductionAmount, added.TotalAmount));
+        Assert.Equal((650m, 0m), (added.CashSetOffAmount, added.TransferAmount));
+        Assert.Equal(-650m, setOff!.Amount);
+        Assert.Equal(added.Id, charge.EmployeeInvoiceId);
+    }
+
     // ── The invoice e-mail, under the night run's rules ──────────────
 
     [Fact]
@@ -378,6 +440,22 @@ public class GenerateInvoiceCommandHandlerTests
             CleanerEmail, It.IsAny<string>(), It.IsAny<DateOnly>(), It.IsAny<DateOnly>(),
             It.IsAny<DateTime>(), It.IsAny<string>(), It.IsAny<string>(),
             It.IsAny<byte[]?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    private const string OpenPeriodId = "period-open";
+
+    private void ArrangeOpenPeriod()
+    {
+        var open = PayrollMockFactory.OpenPeriod(new DateOnly(2026, 1, 15));
+        open.Id = OpenPeriodId;
+        _payPeriodRepository.Setup(r => r.GetActivePeriodAsync(It.IsAny<CancellationToken>())).ReturnsAsync(open);
+    }
+
+    private static OrderEmployeePay DisputeCharge(decimal amount)
+    {
+        var job = PayrollMockFactory.OrderPay(basePay: 600m, payPeriodId: "period-earlier");
+        job.AssignToInvoice("invoice-earlier");
+        return job.CarryDisputeCharge(PayPeriodId, "dispute-1", amount, "Bathroom left uncleaned");
     }
 
     private static Employee Cleaner()

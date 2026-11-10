@@ -212,6 +212,30 @@ public class PayoutInvoicePdfDataTests
         Assert.Equal(invoice.SubTotal, data.LineItems.Sum(l => l.LineTotal));
     }
 
+    /// <summary>
+    /// A charge carried from an invoiced job prints in the deduction, never as a 0.00 cleaning line.
+    /// </summary>
+    [Fact]
+    public void A_Carried_Dispute_Charge_Is_In_The_Deduction_And_Not_A_Line()
+    {
+        var job = PayrollMockFactory.OrderPay(basePay: 600m);
+        job.AssignToInvoice("invoice-earlier");
+        var pays = new[]
+        {
+            PayrollMockFactory.OrderPay(basePay: 800m),
+            job.CarryDisputeCharge(PayrollMockFactory.PayPeriodId, "dispute-1", 150m, "Bathroom left uncleaned")
+        };
+        var invoice = EmployeeInvoice.CreateFromOrderPays(
+            "emp-1", "period-1", pays, PayrollMockFactory.TestVariableSymbol, PayrollMockFactory.TestInvoiceNumber);
+
+        var data = Map(invoice: WithPeriod(invoice), orderPays: pays);
+
+        var line = Assert.Single(data.LineItems);
+        Assert.Equal(PayLineType.Job, line.LineType);
+        Assert.Equal(invoice.SubTotal, data.LineItems.Sum(l => l.LineTotal));
+        Assert.Equal((800m, 150m, 650m), (data.SubTotal, data.DeductionAmount, data.TotalAmount));
+    }
+
     [Fact]
     public void Amount_Due_Reconciles_To_The_Line_Items_And_To_The_Stored_Total()
     {

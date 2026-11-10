@@ -77,6 +77,22 @@ public class GetPeriodPaysCurrencyScopeTests
     }
 
     [Fact]
+    public async Task A_Carried_Dispute_Charge_Nets_Out_Of_The_Grand_Total()
+    {
+        var job = PayrollMockFactory.OrderPay(basePay: 600m, payPeriodId: "period-earlier");
+        job.AssignToInvoice("invoice-earlier");
+        ArrangeInvoices([]);
+        ArrangePays(
+            PayrollMockFactory.OrderPay(basePay: 800m),
+            job.CarryDisputeCharge(PayPeriodId, "dispute-1", 150m, "Bathroom left uncleaned"));
+
+        var result = await CreateHandler().Handle(new GetPeriodPays.Query(EmployeeId, PayPeriodId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal((650m, 150m), (result.Value!.GrandTotal, result.Value.TotalDeductionPay));
+    }
+
+    [Fact]
     public async Task The_Summary_Carries_Its_Periods_Calendar_Dates_Beside_The_Label()
     {
         ArrangeInvoices([]);

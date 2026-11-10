@@ -167,6 +167,7 @@ public class DisputeRefundPendingAtNoShowTests(PostgresContainerFixture fixture)
             new RefundRepository(ctx),
             new CreditAccountRepository(ctx),
             new OrderEmployeePayRepository(ctx),
+            new PayPeriodRepository(ctx),
             Mock.Of<ILoyaltyService>(),
             Mock.Of<INotificationProducer>(),
             new AuditContext());

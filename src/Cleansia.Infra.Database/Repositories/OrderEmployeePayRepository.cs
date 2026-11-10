@@ -1,4 +1,5 @@
 using Cleansia.Core.Domain.EmployeePayroll;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,7 +14,8 @@ public class OrderEmployeePayRepository(CleansiaDbContext context) : BaseReposit
             .Include(p => p.Employee)
             .Include(p => p.PayPeriod)
             .Include(p => p.EmployeeInvoice)
-            .FirstOrDefaultAsync(p => p.OrderId == orderId && p.EmployeeId == employeeId, cancellationToken);
+            .FirstOrDefaultAsync(p => p.OrderId == orderId && p.EmployeeId == employeeId
+                && p.LineType != PayLineType.DisputeCharge, cancellationToken);
     }
 
     public async Task<IReadOnlyDictionary<string, decimal>> GetTotalPayByOrderIdsAsync(
@@ -26,10 +28,17 @@ public class OrderEmployeePayRepository(CleansiaDbContext context) : BaseReposit
         // Single SELECT, two columns, no Includes — replaces the
         // per-row loop in GetPagedOrders.
         var rows = await GetDbSet()
-            .Where(p => p.EmployeeId == employeeId && orderIds.Contains(p.OrderId))
+            .Where(p => p.EmployeeId == employeeId && orderIds.Contains(p.OrderId)
+                && p.LineType != PayLineType.DisputeCharge)
             .Select(p => new { p.OrderId, p.TotalPay })
             .ToListAsync(cancellationToken);
         return rows.ToDictionary(r => r.OrderId, r => r.TotalPay);
+    }
+
+    public Task<bool> HasDisputeChargeAsync(string orderId, string employeeId, CancellationToken cancellationToken)
+    {
+        return GetDbSet().AnyAsync(p => p.OrderId == orderId && p.EmployeeId == employeeId
+            && p.LineType == PayLineType.DisputeCharge, cancellationToken);
     }
 
     public Task<bool> ExistsWithOrderIdAndEmployeeIdAsync(string orderId, string employeeId, CancellationToken cancellationToken)

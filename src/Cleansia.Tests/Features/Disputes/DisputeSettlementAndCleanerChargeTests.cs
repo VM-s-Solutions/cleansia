@@ -42,6 +42,8 @@ public sealed class DisputeSettlementAndCleanerChargeTests
     private readonly Mock<ICreditAccountRepository> _creditAccounts = new();
     private readonly Mock<IOrderEmployeePayRepository> _pays = new();
     private readonly Mock<ILoyaltyService> _loyalty = new();
+    private readonly Mock<IPayPeriodRepository> _periods = new();
+    private const string OpenPeriodId = "period-open";
 
     public DisputeSettlementAndCleanerChargeTests()
     {
@@ -404,23 +406,73 @@ public sealed class DisputeSettlementAndCleanerChargeTests
         Assert.Equal("Bathroom left uncleaned", pay.MapToDto().DeductionReason);
     }
 
+    /// <summary>
+    /// The job was invoiced at 600 before the dispute was resolved. The issued invoice is never written: the
+    /// 150 becomes a line of its own in the open period, which the cleaner's next invoice deducts.
+    /// </summary>
     [Fact]
-    public async Task A_Pay_Already_On_An_Invoice_Is_Not_Charged_And_No_Money_Moves()
+    public async Task A_Charge_On_An_Invoiced_Job_Is_Carried_To_The_Open_Period()
     {
         var dispute = ArrangeDispute(DisputeSettlementPreference.CardRefund);
         var pay = ArrangePay(totalPay: 600m);
         pay.AssignToInvoice("invoice-1");
+        ArrangeOpenPeriod();
+        OrderEmployeePay? carried = null;
+        _pays.Setup(r => r.Add(It.IsAny<OrderEmployeePay>())).Callback<OrderEmployeePay>(p => carried = p);
 
         var result = await Handler().Handle(
             new ResolveDispute.Command(DisputeId, 300m, "justified",
                 new ResolveDispute.CleanerCharge(CleanerId, 150m, "Bathroom left uncleaned")),
             CancellationToken.None);
 
-        Assert.True(result.IsFailure);
-        Assert.Equal(BusinessErrorMessage.DisputeCleanerChargeNotChargeable, result.Error!.Message);
-        _refunds.VerifyNoOtherCalls();
-        Assert.Equal(0m, pay.DeductionPay);
-        Assert.Equal(DisputeStatus.Pending, dispute.Status);
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.NotNull(carried);
+        Assert.Equal(PayLineType.DisputeCharge, carried!.LineType);
+        Assert.Equal((150m, -150m), (carried.DeductionPay, carried.TotalPay));
+        Assert.Equal((OpenPeriodId, "currency-czk", OrderId, CleanerId),
+            (carried.PayPeriodId, carried.CurrencyId, carried.OrderId, carried.EmployeeId));
+        Assert.Equal((DisputeId, "Bathroom left uncleaned"), (carried.DeductionDisputeId, carried.DeductionReason));
+        Assert.Null(carried.EmployeeInvoiceId);
+        Assert.Equal((600m, 0m, "invoice-1"), (pay.TotalPay, pay.DeductionPay, pay.EmployeeInvoiceId));
+        _refunds.Verify(s => s.IssueRefundAsync(
+            It.Is<RefundRequest>(r => r.Amount == 300m), It.IsAny<CancellationToken>()), Times.Once);
+        Assert.Equal(DisputeStatus.Resolved, dispute.Status);
+    }
+
+    [Fact]
+    public async Task A_Charge_On_An_Invoiced_Job_With_No_Open_Period_Is_Refused_And_No_Money_Moves()
+    {
+        var dispute = ArrangeDispute(DisputeSettlementPreference.CardRefund);
+        ArrangePay(totalPay: 600m).AssignToInvoice("invoice-1");
+
+        var result = await ResolveWithChargeAsync(150m);
+
+        AssertRefusedWithNothingMoved(result, dispute);
+    }
+
+    [Fact]
+    public async Task A_Second_Charge_On_An_Order_Already_Carrying_One_Is_Refused_And_No_Money_Moves()
+    {
+        var dispute = ArrangeDispute(DisputeSettlementPreference.CardRefund);
+        ArrangePay(totalPay: 600m).AssignToInvoice("invoice-1");
+        ArrangeOpenPeriod();
+        _pays.Setup(r => r.HasDisputeChargeAsync(OrderId, CleanerId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
+        var result = await ResolveWithChargeAsync(150m);
+
+        AssertRefusedWithNothingMoved(result, dispute);
+    }
+
+    [Fact]
+    public async Task A_Charge_Above_An_Invoiced_Jobs_Pay_Is_Refused_And_No_Money_Moves()
+    {
+        var dispute = ArrangeDispute(DisputeSettlementPreference.CardRefund);
+        ArrangePay(totalPay: 600m).AssignToInvoice("invoice-1");
+        ArrangeOpenPeriod();
+
+        var result = await ResolveWithChargeAsync(650m);
+
+        AssertRefusedWithNothingMoved(result, dispute);
     }
 
     [Fact]
@@ -475,6 +527,28 @@ public sealed class DisputeSettlementAndCleanerChargeTests
         Assert.Equal(BusinessErrorMessage.DisputeCleanerChargeNotWholeMinorUnits, error.ErrorMessage);
     }
 
+    private Task<BusinessResult> ResolveWithChargeAsync(decimal amount) =>
+        Handler().Handle(
+            new ResolveDispute.Command(DisputeId, 300m, "justified",
+                new ResolveDispute.CleanerCharge(CleanerId, amount, "Bathroom left uncleaned")),
+            CancellationToken.None);
+
+    private void AssertRefusedWithNothingMoved(BusinessResult result, Dispute dispute)
+    {
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.DisputeCleanerChargeNotChargeable, result.Error!.Message);
+        _refunds.VerifyNoOtherCalls();
+        _pays.Verify(r => r.Add(It.IsAny<OrderEmployeePay>()), Times.Never);
+        Assert.Equal(DisputeStatus.Pending, dispute.Status);
+    }
+
+    private void ArrangeOpenPeriod()
+    {
+        var period = PayPeriod.CreateBiWeekly(DateOnly.FromDateTime(DateTime.UtcNow));
+        period.Id = OpenPeriodId;
+        _periods.Setup(r => r.GetActivePeriodAsync(It.IsAny<CancellationToken>())).ReturnsAsync(period);
+    }
+
     private void ArrangeSettledInCredit(decimal amount) =>
         _creditAccounts
             .Setup(r => r.GetDisputeSettledTotalForOrderAsync(OrderId, It.IsAny<CancellationToken>()))
@@ -497,7 +571,7 @@ public sealed class DisputeSettlementAndCleanerChargeTests
 
     private ResolveDispute.Handler Handler() =>
         new(_disputes.Object, _session.Object, _refunds.Object, _refundRows.Object, _creditAccounts.Object, _pays.Object,
-            _loyalty.Object, Mock.Of<INotificationProducer>(), new AuditContext());
+            _periods.Object, _loyalty.Object, Mock.Of<INotificationProducer>(), new AuditContext());
 
     private Dispute ArrangeDispute(DisputeSettlementPreference preference)
     {

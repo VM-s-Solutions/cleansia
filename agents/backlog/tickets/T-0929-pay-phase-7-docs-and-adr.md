@@ -57,5 +57,5 @@ The plan's "Not doing" list. Anything found outside these slices is reported to 
 ## Work record
 
 - 2026-11-09 — Filed from the plan page. Not started.
-- 2026-11-10 — Started on `docs/pay-and-payouts`, run with the lean workflow (one docs lane on Sonnet, one reviewer). The new ADR is ADR-0082.
+- 2026-11-10 — Started on `docs/pay-and-payouts`. The new ADR is ADR-0082.
 - 2026-11-10 — P7.1 and P7.2 landed in `218d79c6d` and `f3ecf834d`. P7.3 landed in `3f96b43d7` (notification types and severity, the two advance alerts, Marketing as push only with an ADR-0002 amendment, the dispute page, row clicks, wire codes read by value; the pay-period pages already described Close now and Change end date) and P7.4 in `d701f5be6` (the six refund states, `refund.failed`, `refund_bounced`, the 30-minute `refund_needs_retry`, repayments, the Refunds page, the ADR-0006 banner and Q-UI-05). The webhook page now counts fourteen event types, not thirteen as the plan said: the old text said twelve for thirteen. Checkers and the VitePress build pass.

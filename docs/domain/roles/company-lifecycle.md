@@ -75,7 +75,7 @@ never naming another company.
   **(5) credit** — only when deactivated — every positive balance discharged through
   `TryDebitAsync(…, Expired, "wind-down-credit:{account}:{run}", note: "company wind-down")`;
   **(6) the last period** — only when deactivated, no open order and no completed order awaiting pay —
-  `PayPeriodBackgroundService.ClosePeriodAsync(period, "Company wind-down", openNext: false)`, which commits the close itself before it invoices and e-mails only cleaners with pay in the period; then
+  `PayPeriodBackgroundService.ClosePeriodAsync(period, openNext: false)`, which commits the close itself before it invoices and e-mails only cleaners with pay in the period; then
   `RecordWindDownRun`, **the administrators told of a run that did something** — `admin.company.wind_down_run`
   with the four counts (cancelled, refunded, refund failures, periods closed), raised only when their sum
   is positive because the sweep is re-run on purpose and a run that moved nothing is not news; the subject

@@ -10,6 +10,7 @@ import { Subject } from 'rxjs';
 import { PayPeriodDto, PayPeriodStatus } from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
+  CleansiaCalendarComponent,
   CleansiaSectionComponent,
   CleansiaTextareaComponent,
 } from '@cleansia/components';
@@ -61,6 +62,19 @@ class TextareaStub extends ControlStub {
   valueChanges = output<string>();
 }
 
+@Component({
+  selector: 'cleansia-calendar',
+  standalone: true,
+  template: '',
+  providers: [valueAccessor(() => CalendarStub)],
+})
+class CalendarStub extends ControlStub {
+  label = input<string>('');
+  minDate = input<Date | null>(null);
+  maxDate = input<Date | null>(null);
+  appendTo = input<'body' | null>(null);
+}
+
 @Component({ selector: 'cleansia-button', standalone: true, template: '' })
 class ButtonStub {
   label = input<string>('');
@@ -83,6 +97,10 @@ class FacadeStub {
   readonly errorKey = signal<string | null>(null);
   readonly closeNowReason = signal<string>('');
   readonly canSubmitCloseNow = signal<boolean>(false);
+  readonly changeEndDate = signal<Date | null>(null);
+  readonly canSubmitChangeEnd = signal<boolean>(false);
+  setChangeEndDate = jest.fn((value: Date | null) => this.changeEndDate.set(value));
+  changeEnd = jest.fn();
   openPanel = jest.fn((panel: AdminPayPeriodOpsPanel) =>
     this.activePanel.set(this.activePanel() === panel ? null : panel)
   );
@@ -134,11 +152,12 @@ describe('AdminPayPeriodOpsComponent', () => {
           imports: [
             CleansiaSectionComponent,
             CleansiaTextareaComponent,
+            CleansiaCalendarComponent,
             CleansiaButtonComponent,
           ],
         },
         add: {
-          imports: [SectionStub, TextareaStub, ButtonStub],
+          imports: [SectionStub, TextareaStub, CalendarStub, ButtonStub],
           providers: [{ provide: AdminPayPeriodOpsFacade, useValue: facade }],
         },
       })
@@ -306,6 +325,92 @@ describe('AdminPayPeriodOpsComponent', () => {
       expect.any(Function)
     );
     expect(emitted).toHaveBeenCalledTimes(1);
+  });
+
+  describe('change end date', () => {
+    beforeEach(() => grantedPolicies.add(Policy.CanUpdatePayPeriod));
+
+    function openPeriod(startDate: string, latestEndDate: string, endDate = latestEndDate): PayPeriodDto {
+      return PayPeriodDto.fromJS({
+        id: 'period-1',
+        status: PayPeriodStatus[PayPeriodStatus.Open],
+        startDate,
+        endDate,
+        latestEndDate,
+      });
+    }
+
+    it('runs the picker from tomorrow to the last day the period may run to', () => {
+      jest.useFakeTimers({ now: new Date('2026-01-05T12:00:00Z') });
+      setPayPeriod(openPeriod('2026-01-01', '2026-01-14'));
+
+      expect(component.changeEndRange()).toEqual({
+        min: new Date(2026, 0, 6),
+        max: new Date(2026, 0, 14),
+      });
+      expect(buttonLabels()).toEqual([
+        'pay_periods.detail.ops.close_now.action',
+        'pay_periods.detail.ops.change_end.action',
+      ]);
+    });
+
+    it('reads the latest end across the clock change as the 14th day', () => {
+      jest.useFakeTimers({ now: new Date('2026-10-21T12:00:00Z') });
+      setPayPeriod(openPeriod('2026-10-20', '2026-11-02'));
+
+      expect(component.changeEndRange()?.max).toEqual(new Date(2026, 10, 2));
+    });
+
+    it('begins at the day after the start for a period that starts tomorrow', () => {
+      jest.useFakeTimers({ now: new Date('2026-01-14T12:00:00Z') });
+      setPayPeriod(openPeriod('2026-01-15', '2026-01-28'));
+
+      expect(component.changeEndRange()?.min).toEqual(new Date(2026, 0, 16));
+    });
+
+    it('is hidden on the last day, when no later end exists', () => {
+      jest.useFakeTimers({ now: new Date('2026-01-14T12:00:00Z') });
+      setPayPeriod(openPeriod('2026-01-01', '2026-01-14'));
+
+      expect(component.changeEndRange()).toBeNull();
+      expect(buttonLabels()).not.toContain('pay_periods.detail.ops.change_end.action');
+    });
+
+    it('is hidden for a closed period', () => {
+      setPayPeriod(makePayPeriod({ startDate: new Date(), latestEndDate: new Date() }));
+
+      expect(component.changeEndRange()).toBeNull();
+    });
+
+    it('is hidden from a session that may not update a pay period', () => {
+      grantedPolicies.delete(Policy.CanUpdatePayPeriod);
+      jest.useFakeTimers({ now: new Date('2026-01-05T12:00:00Z') });
+      setPayPeriod(openPeriod('2026-01-01', '2026-01-14'));
+
+      expect(buttonLabels()).not.toContain('pay_periods.detail.ops.change_end.action');
+    });
+
+    it('opens the picker preset to the current end and delegates the change', () => {
+      jest.useFakeTimers({ now: new Date('2026-01-05T12:00:00Z') });
+      setPayPeriod(openPeriod('2026-01-01', '2026-01-14', '2026-01-10'));
+      const emitted = jest.fn();
+      component.changed.subscribe(emitted);
+      facade.changeEnd.mockImplementation((_p: PayPeriodDto, onSuccess: () => void) => onSuccess());
+
+      component.toggleChangeEnd();
+      fixture.detectChanges();
+
+      expect(facade.setChangeEndDate).toHaveBeenLastCalledWith(new Date(2026, 0, 10));
+      const calendar = fixture.debugElement.query(By.directive(CalendarStub))
+        .componentInstance as CalendarStub;
+      expect(calendar.minDate()).toEqual(new Date(2026, 0, 6));
+      expect(calendar.maxDate()).toEqual(new Date(2026, 0, 14));
+      expect(text()).toContain('pay_periods.detail.ops.change_end.hint');
+
+      component.submitChangeEnd();
+      expect(facade.changeEnd).toHaveBeenCalledWith(component.payPeriod(), expect.any(Function));
+      expect(emitted).toHaveBeenCalledTimes(1);
+    });
   });
 
   it('delegates the submit with the pay period id', () => {

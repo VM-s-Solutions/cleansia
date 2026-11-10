@@ -5,6 +5,9 @@ import {
   ClosePayPeriodResponse,
   MarkPayPeriodPaidCommand,
   MarkPayPeriodPaidResponse,
+  PayPeriodDto,
+  UpdatePayPeriodCommand,
+  UpdatePayPeriodResponse,
 } from '@cleansia/admin-services';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
@@ -13,6 +16,7 @@ import { AdminPayPeriodOpsFacade } from './admin-pay-period-ops.facade';
 
 // The keys a refusal resolves to; anything else falls back, as an untranslated code does in the app.
 const TRANSLATED = new Set([
+  'api.pay_period.end_too_soon',
   'api.pay_period.not_closed',
   'api.pay_period.not_started',
   'api.payroll.pay_period.not_found',
@@ -20,7 +24,7 @@ const TRANSLATED = new Set([
 
 describe('AdminPayPeriodOpsFacade', () => {
   let facade: AdminPayPeriodOpsFacade;
-  let payPeriodClient: { markPaid: jest.Mock; close: jest.Mock };
+  let payPeriodClient: { markPaid: jest.Mock; close: jest.Mock; update: jest.Mock };
   let snackbar: {
     showSuccess: jest.Mock;
     showSuccessTranslated: jest.Mock;
@@ -36,7 +40,7 @@ describe('AdminPayPeriodOpsFacade', () => {
   });
 
   beforeEach(() => {
-    payPeriodClient = { markPaid: jest.fn(), close: jest.fn() };
+    payPeriodClient = { markPaid: jest.fn(), close: jest.fn(), update: jest.fn() };
     snackbar = {
       showSuccess: jest.fn(),
       showSuccessTranslated: jest.fn(),
@@ -154,6 +158,72 @@ describe('AdminPayPeriodOpsFacade', () => {
       response$.next(closeResponse);
       response$.complete();
       expect(facade.submitting()).toBe(false);
+    });
+  });
+
+  describe('change end date', () => {
+    const openPeriod = PayPeriodDto.fromJS({
+      id: 'period-1',
+      startDate: '2026-10-20',
+      endDate: '2026-11-02',
+      latestEndDate: '2026-11-02',
+      notes: 'Sent to the cleaners',
+    });
+    const updateResponse = UpdatePayPeriodResponse.fromJS({ payPeriodId: 'period-1' });
+
+    it('sends the stored start and the picked end, and no notes', () => {
+      payPeriodClient.update.mockReturnValue(of(updateResponse));
+      facade.setChangeEndDate(new Date(2026, 9, 30));
+
+      facade.changeEnd(openPeriod, jest.fn());
+
+      const command: UpdatePayPeriodCommand = payPeriodClient.update.mock.calls[0][0];
+      expect(command).toBeInstanceOf(UpdatePayPeriodCommand);
+      expect(command.toJSON()).toEqual({
+        payPeriodId: 'period-1',
+        startDate: '2026-10-20',
+        endDate: '2026-10-30',
+      });
+      expect(command.notes).toBeUndefined();
+    });
+
+    it('sends nothing until an end is picked', () => {
+      facade.changeEnd(openPeriod, jest.fn());
+
+      expect(payPeriodClient.update).not.toHaveBeenCalled();
+      expect(facade.canSubmitChangeEnd()).toBe(false);
+    });
+
+    it('lands a refusal in errorKey, keeps the panel and does not re-load', () => {
+      payPeriodClient.update.mockReturnValue(
+        throwError(() => ({ result: { detail: 'pay_period.end_too_soon' } }))
+      );
+      facade.openPanel('changeEnd');
+      facade.setChangeEndDate(new Date(2026, 9, 30));
+      const onSuccess = jest.fn();
+
+      facade.changeEnd(openPeriod, onSuccess);
+
+      expect(facade.errorKey()).toBe('api.pay_period.end_too_soon');
+      expect(facade.activePanel()).toBe('changeEnd');
+      expect(onSuccess).not.toHaveBeenCalled();
+      expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
+    });
+
+    it('toasts, closes the panel and re-loads once on success', () => {
+      payPeriodClient.update.mockReturnValue(of(updateResponse));
+      facade.openPanel('changeEnd');
+      facade.setChangeEndDate(new Date(2026, 9, 30));
+      const onSuccess = jest.fn();
+
+      facade.changeEnd(openPeriod, onSuccess);
+
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
+        'pay_periods.detail.ops.change_end.success'
+      );
+      expect(facade.activePanel()).toBeNull();
+      expect(facade.changeEndDate()).toBeNull();
+      expect(onSuccess).toHaveBeenCalledTimes(1);
     });
   });
 

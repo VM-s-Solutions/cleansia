@@ -3265,6 +3265,13 @@
           "reason": "Reason (kept in the audit log)",
           "submit": "Close the period now"
         },
+        "change_end": {
+          "action": "Change end date",
+          "hint": "The period then closes the night after the new end date, and the next one starts the day after it. Jobs already finished stay in this period. To end it today, use “Close now”.",
+          "end_date": "New end date",
+          "submit": "Save the new end date",
+          "success": "End date changed"
+        },
         "mark_paid": {
           "action": "Mark Period as Paid",
           "hint": "Mark this closed pay period as paid. This finalizes the settlement.",

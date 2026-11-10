@@ -3265,6 +3265,13 @@
           "reason": "Důvod (uloží se do auditního záznamu)",
           "submit": "Uzavřít období nyní"
         },
+        "change_end": {
+          "action": "Změnit datum konce",
+          "hint": "Období se pak uzavře v noci po novém datu konce a další začne následující den. Již dokončené zakázky v tomto období zůstanou. Chcete-li období ukončit dnes, použijte „Uzavřít nyní“.",
+          "end_date": "Nové datum konce",
+          "submit": "Uložit nové datum konce",
+          "success": "Datum konce bylo změněno"
+        },
         "mark_paid": {
           "action": "Označit období jako zaplacené",
           "hint": "Označte toto uzavřené platební období jako zaplacené. Tím se vyúčtování dokončí.",

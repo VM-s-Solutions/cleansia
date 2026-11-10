@@ -589,7 +589,7 @@
       "view_invoice": "Zobraziť faktúru",
       "cash_held": {
         "title": "Hotovosť u mňa",
-        "description": "Hotovosť, ktorú ste prevzali pri dverách a ešte ste ju neodovzdali. Započíta sa proti vašej ďalšej výplate.",
+        "description": "Hotovosť, ktorú ste prevzali pri dverách a ešte ste ju neodovzdali. Započíta sa pri vystavení vašej ďalšej faktúry.",
         "none": "Nedržíte žiadnu hotovosť spoločnosti.",
         "load_error": "Hotovosť, ktorú držíte, sa nepodarilo načítať.",
         "held": "Držíte",

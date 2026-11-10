@@ -589,7 +589,7 @@
       "view_invoice": "View Invoice",
       "cash_held": {
         "title": "Cash I hold",
-        "description": "Cash you took at the door and have not handed over yet. It is set off against your next payout.",
+        "description": "Cash you took at the door and have not handed over yet. It is set off when your next invoice is issued.",
         "none": "You hold no company cash.",
         "load_error": "We couldn't load the cash you hold.",
         "held": "You hold",

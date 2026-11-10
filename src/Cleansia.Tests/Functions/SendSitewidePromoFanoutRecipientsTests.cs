@@ -77,7 +77,6 @@ public sealed class SendSitewidePromoFanoutRecipientsTests : IDisposable
         var ctx = NewContext();
         var handler = new SendSitewidePromoFanoutHandler(
             new UserNotificationPreferencesRepository(ctx),
-            new UserRepository(ctx),
             _queue.Object,
             new NoOpCampaignProgressStore(),
             new FixedTenantProvider(TestTenants.Default),

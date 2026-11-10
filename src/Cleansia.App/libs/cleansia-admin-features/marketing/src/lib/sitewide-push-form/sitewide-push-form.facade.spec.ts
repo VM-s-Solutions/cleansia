@@ -89,15 +89,28 @@ describe('SitewidePushFormFacade', () => {
     expect(facade.submitting()).toBe(false);
   });
 
-  it('shows the error snackbar and resets submitting on send failure', () => {
+  it('leaves the toast of a refused send to the error interceptor and resets submitting', () => {
     confirmMock.mockReturnValue(of(true));
     sendMock.mockReturnValue(throwError(() => new Error('boom')));
     const onSuccess = jest.fn();
 
     facade.submit(command, onSuccess);
 
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
+    expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
+    expect(onSuccess).not.toHaveBeenCalled();
+    expect(facade.submitting()).toBe(false);
+  });
+
+  it('says the campaign was already sent and keeps the form when nothing was enqueued', () => {
+    confirmMock.mockReturnValue(of(true));
+    sendMock.mockReturnValue(of(new SendSitewidePromoResponse({ enqueued: false })));
+    const onSuccess = jest.fn();
+
+    facade.submit(command, onSuccess);
+
     expect(snackbar.showErrorTranslated).toHaveBeenCalledWith(
-      'pages.sitewide_push.send_error'
+      'pages.sitewide_push.already_sent'
     );
     expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
     expect(onSuccess).not.toHaveBeenCalled();

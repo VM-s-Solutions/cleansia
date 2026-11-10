@@ -81,7 +81,6 @@ public sealed class SendSitewidePromoFanoutTenantScopeTests : IDisposable
         await using var ctx = NewContext();
         var handler = new SendSitewidePromoFanoutHandler(
             new UserNotificationPreferencesRepository(ctx),
-            new UserRepository(ctx),
             queueClient.Object,
             new NoOpCampaignProgressStore(),
             new FixedTenantProvider(tenantId: null),

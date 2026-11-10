@@ -780,6 +780,9 @@ public static class BusinessErrorMessage
     /// <summary>A cleaner accepted a text that is not of the document in force for their market today.</summary>
     public const string LegalDocumentNotInForce = "legal.document_not_in_force";
 
+    // Marketing
+    public const string MarketingNoOptedInCustomers = "marketing.no_opted_in_customers";
+
     // Admin action audit log
     public const string AuditNotFound = "audit.not_found";
     /// <summary>The timeline is keyed by exactly one of a user or a (resource type, resource id) pair.</summary>

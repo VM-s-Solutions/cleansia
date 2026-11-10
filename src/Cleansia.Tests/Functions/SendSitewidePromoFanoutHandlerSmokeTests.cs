@@ -11,14 +11,12 @@ namespace Cleansia.Tests.Functions;
 public class SendSitewidePromoFanoutHandlerSmokeTests
 {
     private readonly Mock<IUserNotificationPreferencesRepository> _preferencesRepository = new();
-    private readonly Mock<IUserRepository> _userRepository = new();
     private readonly Mock<IQueueClient> _queueClient = new();
     private readonly Mock<ICampaignProgressStore> _campaignProgressStore = new();
     private readonly Mock<ITenantProvider> _tenantProvider = new();
 
     private SendSitewidePromoFanoutHandler CreateHandler() => new(
         _preferencesRepository.Object,
-        _userRepository.Object,
         _queueClient.Object,
         _campaignProgressStore.Object,
         _tenantProvider.Object,

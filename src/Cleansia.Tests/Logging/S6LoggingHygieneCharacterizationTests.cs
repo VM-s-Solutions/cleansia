@@ -118,7 +118,7 @@ public class S6LoggingHygieneCharacterizationTests
     {
         var logger = new CapturingLogger<SendSitewidePromoFanoutHandler>();
         var handler = new SendSitewidePromoFanoutHandler(
-            Mock.Of<IUserNotificationPreferencesRepository>(), Mock.Of<IUserRepository>(),
+            Mock.Of<IUserNotificationPreferencesRepository>(),
             Mock.Of<IQueueClient>(), Mock.Of<ICampaignProgressStore>(), Mock.Of<ITenantProvider>(),
             logger);
 
@@ -146,15 +146,15 @@ public class S6LoggingHygieneCharacterizationTests
         var preferences = new Mock<IUserNotificationPreferencesRepository>();
         // Throw when paging starts → drives the outer Error catch.
         preferences
-            .Setup(r => r.GetQueryableIgnoringTenant())
-            .Throws(new InvalidOperationException("transient store fault"));
+            .Setup(r => r.GetPromoRecipientsAsync(It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("transient store fault"));
         var progress = new Mock<ICampaignProgressStore>();
         progress
             .Setup(s => s.GetAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new CampaignProgress(LastProcessedUserId: null, IsComplete: false));
 
         var handler = new SendSitewidePromoFanoutHandler(
-            preferences.Object, Mock.Of<IUserRepository>(), Mock.Of<IQueueClient>(),
+            preferences.Object, Mock.Of<IQueueClient>(),
             progress.Object, Mock.Of<ITenantProvider>(), logger);
 
         var body = JsonSerializer.Serialize(
@@ -178,7 +178,7 @@ public class S6LoggingHygieneCharacterizationTests
     {
         var logger = new CapturingLogger<SendSitewidePromoFanoutHandler>();
         var handler = new SendSitewidePromoFanoutHandler(
-            Mock.Of<IUserNotificationPreferencesRepository>(), Mock.Of<IUserRepository>(),
+            Mock.Of<IUserNotificationPreferencesRepository>(),
             Mock.Of<IQueueClient>(), Mock.Of<ICampaignProgressStore>(), Mock.Of<ITenantProvider>(),
             logger);
 

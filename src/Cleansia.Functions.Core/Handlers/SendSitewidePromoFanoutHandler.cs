@@ -1,11 +1,8 @@
 using System.Text.Json;
-using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Repositories;
-using Cleansia.Core.Domain.Users;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Functions.Core.Handlers;
@@ -21,7 +18,6 @@ namespace Cleansia.Functions.Core.Handlers;
 /// </summary>
 public class SendSitewidePromoFanoutHandler(
     IUserNotificationPreferencesRepository preferencesRepository,
-    IUserRepository userRepository,
     IQueueClient queueClient,
     ICampaignProgressStore campaignProgressStore,
     ITenantProvider tenantProvider,
@@ -40,13 +36,12 @@ public class SendSitewidePromoFanoutHandler(
 
     public SendSitewidePromoFanoutHandler(
         IUserNotificationPreferencesRepository preferencesRepository,
-        IUserRepository userRepository,
         IQueueClient queueClient,
         ICampaignProgressStore campaignProgressStore,
         ITenantProvider tenantProvider,
         ILogger<SendSitewidePromoFanoutHandler> logger,
         int pageSize)
-        : this(preferencesRepository, userRepository, queueClient, campaignProgressStore, tenantProvider, logger)
+        : this(preferencesRepository, queueClient, campaignProgressStore, tenantProvider, logger)
     {
         _pageSize = pageSize;
     }
@@ -91,30 +86,6 @@ public class SendSitewidePromoFanoutHandler(
                 return;
             }
 
-            // Page through opted-in users. We join on PreferredLanguageCode so
-            // the per-user enqueue carries the localized strings inline — the
-            // downstream consumer doesn't need to look up locale again.
-            //
-            // S8: SCOPE THE QUERY TO THE CAMPAIGN'S TENANT. The previous code used
-            // GetQueryableIgnoringTenant() on both sides with NO tenant predicate, so SetTenantOverride
-            // had zero effect once filters were ignored — one tenant's campaign fanned out to opted-in
-            // users of EVERY tenant. We keep IgnoreQueryFilters (the override is not load-bearing) and
-            // add an EXPLICIT TenantId predicate. Preferences are stamped NOT NULL, so a message that
-            // somehow carries no tenant matches nobody rather than everybody.
-            var campaignTenantId = campaign.TenantId;
-            var query = preferencesRepository.GetQueryableIgnoringTenant()
-                .Where(p => p.Promo)
-                .Join(userRepository.GetQueryableIgnoringTenant()
-                        .Where(u => u.IsActive
-                            && u.Profile == UserProfile.Customer
-                            && !u.Email.EndsWith(User.AnonymisedEmailSuffix)),
-                    p => p.UserId,
-                    u => u.Id,
-                    (p, u) => new { p.UserId, u.PreferredLanguageCode, p.TenantId })
-                .Where(x => x.TenantId == campaignTenantId)
-                // Stable order so paged reads don't skip rows.
-                .OrderBy(x => x.UserId);
-
             // ADR-0002 D2.3 — per-campaign RESUME cursor (the named nice-to-have, a cost/spam layer on
             // top of the downstream push:{UserId}:{EventKey} effect dedup, which this never replaces).
             // On redelivery, resume from the last persisted cursor (the last fully-processed page’s
@@ -137,15 +108,8 @@ public class SendSitewidePromoFanoutHandler(
             var lastUserId = progress.LastProcessedUserId;
             while (true)
             {
-                var pageQuery = query.AsQueryable();
-                if (lastUserId is not null)
-                {
-                    pageQuery = pageQuery.Where(x => string.Compare(x.UserId, lastUserId) > 0);
-                }
-
-                var page = await pageQuery
-                    .Take(_pageSize)
-                    .ToListAsync(ct);
+                var page = await preferencesRepository.GetPromoRecipientsAsync(
+                    campaign.TenantId, lastUserId, _pageSize, ct);
 
                 if (page.Count == 0) break;
                 lastUserId = page[^1].UserId;
@@ -162,7 +126,7 @@ public class SendSitewidePromoFanoutHandler(
                             QueueNames.NotificationsDispatch,
                             new QueueEnvelope<SendPushNotificationMessage>(
                                 MessageKeys.Push(recipient.UserId, NotificationEventCatalog.PromoNewSitewide, campaign.CampaignId),
-                                recipient.TenantId,
+                                campaign.TenantId,
                                 new SendPushNotificationMessage(
                                     UserId: recipient.UserId,
                                     EventKey: NotificationEventCatalog.PromoNewSitewide,
@@ -171,7 +135,7 @@ public class SendSitewidePromoFanoutHandler(
                                         ["title"] = title,
                                         ["body"] = body,
                                     },
-                                    TenantId: recipient.TenantId)),
+                                    TenantId: campaign.TenantId)),
                             ct);
                         totalEnqueued++;
                     }

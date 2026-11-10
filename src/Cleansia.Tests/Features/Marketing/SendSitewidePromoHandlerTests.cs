@@ -22,13 +22,18 @@ public class SendSitewidePromoHandlerTests
     private readonly Mock<IPendingDispatch> _pendingDispatch = new();
     private readonly Mock<IOutboxMessageRepository> _outboxRepository = new();
     private readonly Mock<ITenantProvider> _tenantProvider = new();
+    private readonly Mock<ICampaignProgressStore> _campaignProgress = new();
 
     private SendSitewidePromo.Handler CreateHandler()
     {
         _tenantProvider.Setup(t => t.GetCurrentTenantId()).Returns("TENANT-A");
+        _campaignProgress
+            .Setup(p => p.GetAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new CampaignProgress(null, false));
         return new SendSitewidePromo.Handler(
             _pendingDispatch.Object,
             _outboxRepository.Object,
+            _campaignProgress.Object,
             _tenantProvider.Object);
     }
 
@@ -66,6 +71,29 @@ public class SendSitewidePromoHandlerTests
         var result = await CreateHandler().Handle(ValidCommand(), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
+        _pendingDispatch.Verify(
+            p => p.Enqueue(
+                It.IsAny<string>(),
+                It.IsAny<QueueEnvelope<SendSitewidePromoMessage>>(),
+                It.IsAny<string>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task A_Campaign_Whose_FanOut_Already_Finished_Returns_Not_Enqueued_And_Enqueues_Nothing()
+    {
+        _outboxRepository
+            .Setup(r => r.GetByQueueAndKeyAsync(QueueNames.SitewidePromoFanout, It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((OutboxMessage?)null);
+        var handler = CreateHandler();
+        _campaignProgress
+            .Setup(p => p.GetAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new CampaignProgress("USER-9", true));
+
+        var result = await handler.Handle(ValidCommand(), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.False(result.Value.Enqueued);
         _pendingDispatch.Verify(
             p => p.Enqueue(
                 It.IsAny<string>(),

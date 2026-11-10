@@ -23,16 +23,17 @@ export class SitewidePushFormFacade extends UnsubscribeControlDirective {
         tap(() => this.submitting.set(true)),
         switchMap(() =>
           this.adminClient.adminMarketingClient.sendSitewidePromo(command).pipe(
-            catchError(() => {
-              this.snackbar.showErrorTranslated('pages.sitewide_push.send_error');
-              return EMPTY;
-            }),
+            catchError(() => EMPTY),
             finalize(() => this.submitting.set(false))
           )
         ),
         takeUntil(this.destroyed$)
       )
-      .subscribe(() => {
+      .subscribe((response) => {
+        if (!response.enqueued) {
+          this.snackbar.showErrorTranslated('pages.sitewide_push.already_sent');
+          return;
+        }
         this.snackbar.showSuccessTranslated('pages.sitewide_push.send_success');
         onSuccess();
       });

@@ -2645,7 +2645,7 @@
       "confirm_send": "Tímto se zařadí oznámení do fronty pro každého zákazníka, který odebírá marketingová sdělení. Po zařazení nelze odeslání zastavit.",
       "validation_error": "Vyplňte prosím všechna jazyková pole před odesláním.",
       "send_success": "Hromadné oznámení zařazeno do fronty. Doručování běží na pozadí.",
-      "send_error": "Nepodařilo se zařadit oznámení. Zkontrolujte vstup a zkuste to znovu."
+      "already_sent": "Přesně tato kampaň už byla odeslána. Chcete-li ji odeslat znovu, změňte text."
     },
     "disputes_management": {
       "title": "Spory",
@@ -3505,6 +3505,9 @@
       "reason_required": "Pro ruční úpravu bodů je vyžadován důvod.",
       "tier_config_not_found": "Nastavení věrnostní úrovně nebylo nalezeno.",
       "tier_perks_json_invalid": "Výhody úrovně musí být platný JSON."
+    },
+    "marketing": {
+      "no_opted_in_customers": "Žádný zákazník vaší společnosti nemá zapnutá propagační oznámení, takže by toto oznámení nikomu nepřišlo."
     },
     "membership": {
       "plan": {

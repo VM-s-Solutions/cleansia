@@ -75,12 +75,9 @@ public sealed class SendSitewidePromoFanoutResumeTests : IDisposable
 
     private SendSitewidePromoFanoutHandler CreateHandler(IQueueClient queueClient, int pageSize = 200)
     {
-        // ONE shared context for both repos: the handler joins the two queryables, and EF rejects a
-        // join spanning two context instances.
         var ctx = NewContext();
         return new SendSitewidePromoFanoutHandler(
             new UserNotificationPreferencesRepository(ctx),
-            new UserRepository(ctx),
             queueClient,
             _progress,
             new FixedTenantProvider(TestTenants.Default),

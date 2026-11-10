@@ -17,13 +17,18 @@ public class SendSitewidePromoResponseShapeTests
     private readonly Mock<IPendingDispatch> _pendingDispatch = new();
     private readonly Mock<IOutboxMessageRepository> _outboxRepository = new();
     private readonly Mock<ITenantProvider> _tenantProvider = new();
+    private readonly Mock<ICampaignProgressStore> _campaignProgress = new();
 
     private SendSitewidePromo.Handler CreateHandler()
     {
         _tenantProvider.Setup(t => t.GetCurrentTenantId()).Returns("TENANT-A");
+        _campaignProgress
+            .Setup(p => p.GetAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new CampaignProgress(null, false));
         return new SendSitewidePromo.Handler(
             _pendingDispatch.Object,
             _outboxRepository.Object,
+            _campaignProgress.Object,
             _tenantProvider.Object);
     }
 

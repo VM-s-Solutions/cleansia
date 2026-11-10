@@ -2645,7 +2645,7 @@
       "confirm_send": "Týmto sa zaradí oznámenie do fronty pre každého zákazníka, ktorý prijíma marketingové správy. Po zaradení nie je možné odoslanie zastaviť.",
       "validation_error": "Pred odoslaním vyplňte všetky jazykové polia.",
       "send_success": "Hromadné oznámenie zaradené do fronty. Doručovanie beží na pozadí.",
-      "send_error": "Nepodarilo sa zaradiť oznámenie. Skontrolujte vstup a skúste to znova."
+      "already_sent": "Presne táto kampaň už bola odoslaná. Ak ju chcete odoslať znova, zmeňte text."
     },
     "disputes_management": {
       "title": "Reklamácie",
@@ -3505,6 +3505,9 @@
       "reason_required": "Pre ručnú úpravu bodov sa vyžaduje dôvod.",
       "tier_config_not_found": "Nastavenie vernostnej úrovne sa nenašlo.",
       "tier_perks_json_invalid": "Výhody úrovne musia byť platný JSON."
+    },
+    "marketing": {
+      "no_opted_in_customers": "Žiadny zákazník vašej spoločnosti nemá zapnuté propagačné upozornenia, takže by toto upozornenie nikomu neprišlo."
     },
     "membership": {
       "plan": {

@@ -2645,7 +2645,7 @@
       "confirm_send": "This will queue a push notification to every customer who has opted in to marketing. Once enqueued the fan-out runs unstoppable — there is no recall.",
       "validation_error": "Please fill in all locale fields before sending.",
       "send_success": "Sitewide promo enqueued. Fan-out is now running in the background.",
-      "send_error": "Failed to enqueue the promo. Check your inputs and try again."
+      "already_sent": "This exact campaign was already sent. Change the text to send it again."
     },
     "disputes_management": {
       "title": "Disputes",
@@ -3505,6 +3505,9 @@
       "reason_required": "A reason is required for a manual points adjustment.",
       "tier_config_not_found": "Loyalty tier configuration not found.",
       "tier_perks_json_invalid": "The tier perks must be valid JSON."
+    },
+    "marketing": {
+      "no_opted_in_customers": "No customer in your company has promotional notifications switched on, so this push would reach nobody."
     },
     "membership": {
       "plan": {

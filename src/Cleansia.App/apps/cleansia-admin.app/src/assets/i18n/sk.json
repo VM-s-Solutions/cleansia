@@ -2702,8 +2702,9 @@
         "refund_amount": "Suma vrátenia",
         "refund_amount_placeholder": "Nechajte prázdne na vyriešenie bez vrátenia",
         "refund_disclaimer": "Zadanie sumy si vyžiada vrátenie spracované cez Stripe. Vrátenie nemusí byť vyrovnané okamžite a môže zostať v stave čaká, ak ho Stripe odmietne.",
-        "notes": "Poznámky k riešeniu",
+        "notes": "Poznámky k riešeniu (povinné)",
         "notes_placeholder": "Vysvetlite, ako bola táto reklamácia vyriešená…",
+        "notes_required": "Pred vyriešením reklamácie doplňte poznámky k riešeniu.",
         "submit": "Vyriešiť reklamáciu",
         "submitted": "Riešenie sporu odoslané",
         "settlement_preference": "Spôsob vyrovnania zvolený zákazníkom",
@@ -2717,9 +2718,10 @@
           "hint": "Len ak reklamácia zistila chybu upratovača. Suma sa strhne z jeho odmeny za túto zákazku a dôvod pri nej uvidí. Ak je odmena už vyfakturovaná, suma sa strhne z jeho ďalšej faktúry.",
           "cleaner": "Upratovač",
           "amount": "Suma na strhnutie",
-          "reason": "Dôvod",
+          "reason": "Dôvod, ktorý upratovač uvidí",
           "reason_placeholder": "Upratovač tento dôvod uvidí pri svojej odmene…",
-          "unnamed": "Nepomenovaný upratovač"
+          "unnamed": "Nepomenovaný upratovač",
+          "incomplete": "Ak chcete strhnúť upratovačovi, vyberte upratovača a zadajte sumu a dôvod, ktorý upratovač uvidí."
         }
       }
     },

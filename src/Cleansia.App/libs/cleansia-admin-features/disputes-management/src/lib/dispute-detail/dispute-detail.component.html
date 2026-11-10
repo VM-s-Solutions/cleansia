@@ -209,6 +209,7 @@
           [label]="'pages.disputes_management.resolve.notes' | translate"
           [placeholder]="'pages.disputes_management.resolve.notes_placeholder' | translate"
           [rows]="3"
+          [maxLength]="resolutionNotesMax"
         />
         @if (canChargeCleaner()) {
         <cleansia-checkbox

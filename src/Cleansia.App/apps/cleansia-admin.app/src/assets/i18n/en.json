@@ -2702,8 +2702,9 @@
         "refund_amount": "Refund amount",
         "refund_amount_placeholder": "Leave empty to resolve without a refund",
         "refund_disclaimer": "Entering an amount requests a refund processed via Stripe. The refund is not guaranteed to settle immediately and may remain pending if Stripe declines it.",
-        "notes": "Resolution notes",
+        "notes": "Resolution notes (required)",
         "notes_placeholder": "Explain how this dispute was resolved…",
+        "notes_required": "Add resolution notes before you resolve the dispute.",
         "submit": "Resolve dispute",
         "submitted": "Dispute resolution submitted",
         "settlement_preference": "Customer's choice of settlement",
@@ -2717,9 +2718,10 @@
           "hint": "Only when the dispute finds the cleaner at fault. The amount is deducted from their pay for this order, and they see the reason on it. When that pay is already invoiced, the amount comes off their next invoice.",
           "cleaner": "Cleaner",
           "amount": "Amount to deduct",
-          "reason": "Reason",
+          "reason": "Reason the cleaner sees",
           "reason_placeholder": "The cleaner sees this reason on their pay record…",
-          "unnamed": "Unnamed cleaner"
+          "unnamed": "Unnamed cleaner",
+          "incomplete": "To charge the cleaner, choose the cleaner and enter the amount and the reason the cleaner sees."
         }
       }
     },

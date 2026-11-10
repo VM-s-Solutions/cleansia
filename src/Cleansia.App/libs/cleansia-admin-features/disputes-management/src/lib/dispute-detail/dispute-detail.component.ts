@@ -28,6 +28,7 @@ import {
   buildAuditResourceHistoryRoute,
   CleansiaAdminRoute,
   Policy,
+  SnackbarService,
 } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { DisputeDetailFacade } from './dispute-detail.facade';
@@ -37,6 +38,7 @@ import {
 } from '../disputes-management/disputes-management.models';
 
 const CLEANER_CHARGE_REASON_MAX = 500;
+const RESOLUTION_NOTES_MAX = 2000;
 
 @Component({
   selector: 'cleansia-admin-dispute-detail',
@@ -65,9 +67,11 @@ export class DisputeDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
+  private readonly snackbar = inject(SnackbarService);
   protected readonly facade = inject(DisputeDetailFacade);
 
   protected readonly Policy = Policy;
+  protected readonly resolutionNotesMax = RESOLUTION_NOTES_MAX;
 
   private disputeId = '';
   statusOptions: DisputeStatusOption[] = [];
@@ -91,7 +95,7 @@ export class DisputeDetailComponent implements OnInit {
 
   readonly resolveForm = this.fb.nonNullable.group({
     refundAmount: [null as number | null],
-    resolutionNotes: [''],
+    resolutionNotes: ['', [Validators.required, Validators.maxLength(RESOLUTION_NOTES_MAX)]],
     charge: this.fb.nonNullable.group({
       employeeId: [null as string | null, Validators.required],
       amount: [null as number | null, [Validators.required, Validators.min(0.01)]],
@@ -142,6 +146,11 @@ export class DisputeDetailComponent implements OnInit {
 
   submitResolve(): void {
     const { refundAmount, resolutionNotes, charge } = this.resolveForm.getRawValue();
+    if (!resolutionNotes.trim()) {
+      this.resolveForm.controls.resolutionNotes.markAsTouched();
+      this.snackbar.showErrorTranslated('pages.disputes_management.resolve.notes_required');
+      return;
+    }
     if (!this.chargingCleaner() || !this.canChargeCleaner()) {
       this.facade.resolve(this.disputeId, refundAmount, resolutionNotes);
       return;
@@ -150,6 +159,7 @@ export class DisputeDetailComponent implements OnInit {
     const chargeGroup = this.resolveForm.controls.charge;
     if (chargeGroup.invalid || !charge.employeeId || charge.amount == null) {
       chargeGroup.markAllAsTouched();
+      this.snackbar.showErrorTranslated('pages.disputes_management.resolve.charge.incomplete');
       return;
     }
     this.facade.resolve(this.disputeId, refundAmount, resolutionNotes, {

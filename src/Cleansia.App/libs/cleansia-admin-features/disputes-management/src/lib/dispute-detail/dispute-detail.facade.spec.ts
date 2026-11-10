@@ -125,6 +125,24 @@ describe('DisputeDetailFacade', () => {
     });
   });
 
+  it('sends a refund amount typed and then cleared as no amount', () => {
+    disputeClient.resolve.mockReturnValue(of(undefined));
+    disputeClient.details.mockReturnValue(of(details));
+
+    facade.resolve('dispute-1', '', 'notes');
+
+    expect(disputeClient.resolve.mock.calls[0][0].refundAmount).toBeUndefined();
+  });
+
+  it('sends a typed refund amount as a number', () => {
+    disputeClient.resolve.mockReturnValue(of(undefined));
+    disputeClient.details.mockReturnValue(of(details));
+
+    facade.resolve('dispute-1', '250.5', 'notes');
+
+    expect(disputeClient.resolve.mock.calls[0][0].refundAmount).toBe(250.5);
+  });
+
   it('clears the resolving flag after a successful resolve', () => {
     disputeClient.resolve.mockReturnValue(of(undefined));
     disputeClient.details.mockReturnValue(of(details));

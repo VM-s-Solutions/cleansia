@@ -85,7 +85,7 @@ export class DisputeDetailFacade extends UnsubscribeControlDirective {
 
   resolve(
     disputeId: string,
-    refundAmount: number | null,
+    refundAmount: number | string | null,
     resolutionNotes: string | null,
     chargeToCleaner: DisputeCleanerChargeInput | null = null
   ): void {
@@ -94,7 +94,7 @@ export class DisputeDetailFacade extends UnsubscribeControlDirective {
     this.resolving.set(true);
     const command = new ResolveDisputeCommand();
     command.disputeId = disputeId;
-    command.refundAmount = refundAmount ?? undefined;
+    command.refundAmount = refundAmount == null || refundAmount === '' ? undefined : Number(refundAmount);
     command.resolutionNotes = resolutionNotes?.trim() || undefined;
     if (chargeToCleaner) {
       const charge = new ResolveDisputeCleanerCharge();

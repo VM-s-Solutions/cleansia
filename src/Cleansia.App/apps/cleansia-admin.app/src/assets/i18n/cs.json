@@ -2702,8 +2702,9 @@
         "refund_amount": "Částka vratky",
         "refund_amount_placeholder": "Ponechte prázdné pro vyřešení bez vratky",
         "refund_disclaimer": "Zadání částky vyžádá vratku zpracovanou přes Stripe. Vratka nemusí být vypořádána okamžitě a může zůstat ve stavu čeká, pokud ji Stripe odmítne.",
-        "notes": "Poznámky k řešení",
+        "notes": "Poznámky k řešení (povinné)",
         "notes_placeholder": "Vysvětlete, jak byl tento spor vyřešen…",
+        "notes_required": "Před vyřešením sporu doplňte poznámky k řešení.",
         "submit": "Vyřešit spor",
         "submitted": "Řešení sporu odesláno",
         "settlement_preference": "Způsob vypořádání zvolený zákazníkem",
@@ -2717,9 +2718,10 @@
           "hint": "Jen pokud reklamace zjistila chybu uklízeče. Částka se strhne z jeho odměny za tuto zakázku a důvod u ní uvidí. Pokud je odměna už vyfakturovaná, částka se strhne z jeho příští faktury.",
           "cleaner": "Uklízeč",
           "amount": "Částka ke stržení",
-          "reason": "Důvod",
+          "reason": "Důvod, který uklízeč uvidí",
           "reason_placeholder": "Uklízeč tento důvod uvidí u své odměny…",
-          "unnamed": "Nepojmenovaný uklízeč"
+          "unnamed": "Nepojmenovaný uklízeč",
+          "incomplete": "Chcete-li strhnout uklízeči, vyberte uklízeče a zadejte částku a důvod, který uklízeč uvidí."
         }
       }
     },

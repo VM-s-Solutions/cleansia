@@ -224,6 +224,32 @@ describe('DisputeDetailComponent', () => {
       component.submitResolve();
 
       expect(disputeClient.resolve).not.toHaveBeenCalled();
+      expect(TestBed.inject(SnackbarService).showErrorTranslated).toHaveBeenCalledWith(
+        'pages.disputes_management.resolve.charge.incomplete'
+      );
+    });
+
+    it.each([
+      ['blank', '', false],
+      ['whitespace', '   ', false],
+      ['blank with a charge', '', true],
+      ['whitespace with a charge', '  ', true],
+    ])('does not resolve with %s notes, and says notes are required', (_case, notes, charging) => {
+      disputeClient.details.mockReturnValue(of(openDispute(DisputeSettlementPreference.CardRefund)));
+      withCrew();
+      setup();
+
+      component.onChargeCleanerToggled(charging);
+      component.resolveForm.patchValue({
+        resolutionNotes: notes,
+        charge: { employeeId: 'emp-1', amount: 150, reason: 'skipped the bathroom' },
+      });
+      component.submitResolve();
+
+      expect(disputeClient.resolve).not.toHaveBeenCalled();
+      expect(TestBed.inject(SnackbarService).showErrorTranslated).toHaveBeenCalledWith(
+        'pages.disputes_management.resolve.notes_required'
+      );
     });
 
     it('resolves with the charge to the cleaner once it is complete', () => {

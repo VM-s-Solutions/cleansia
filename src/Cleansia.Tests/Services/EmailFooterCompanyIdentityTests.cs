@@ -104,11 +104,17 @@ public sealed class EmailFooterCompanyIdentityTests
         employees
             .Setup(r => r.GetQueryableIgnoringTenant())
             .Returns(new[] { cleaner }.AsQueryable().BuildMock());
+        var orderPays = new Mock<IOrderEmployeePayRepository>();
+        orderPays
+            .Setup(r => r.GetQueryableIgnoringTenant())
+            .Returns(new[] { OrderEmployeePay.Create("order-1", cleaner.Id, period.Id, "CZK", 100m, totalPay: 100m) }
+                .AsQueryable().BuildMock());
 
         var (emailService, values) = BuildService();
         var job = new PeriodReminderBackgroundService(
             periods.Object,
             employees.Object,
+            orderPays.Object,
             emailService,
             tenantProvider.Object,
             NullLogger<PeriodReminderBackgroundService>.Instance);

@@ -208,9 +208,14 @@ public class PayPeriodEmailLanguageTests
             .Setup(r => r.GetQueryableIgnoringTenant())
             .Returns(new[] { endsInThreeDays }.AsQueryable().BuildMock());
 
+        _orderPayRepository
+            .Setup(r => r.GetQueryableIgnoringTenant())
+            .Returns(new[] { PayrollMockFactory.OrderPay(payPeriodId: endsInThreeDays.Id) }.AsQueryable().BuildMock());
+
         return new PeriodReminderBackgroundService(
             _payPeriodRepository.Object,
             _employeeRepository.Object,
+            _orderPayRepository.Object,
             _emailService.Object,
             _tenantProvider.Object,
             NullLogger<PeriodReminderBackgroundService>.Instance);

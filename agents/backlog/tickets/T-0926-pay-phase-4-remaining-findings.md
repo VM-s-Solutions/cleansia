@@ -42,7 +42,7 @@ separate reviewer re-derives the amounts by hand and checks that each new test f
 Branch `fix/pay-findings`.
 
 - [x] **P4.1** A rejected pay calculation logs at Error with the order, the employee and the reason; the admin-override question is noted for Mike.
-- [ ] **P4.2** Period-end reminders go only to cleaners with work in the period.
+- [x] **P4.2** Period-end reminders go only to cleaners with work in the period.
 - [ ] **P4.3** Blob paths use a fixed date format, and e-mails format the period in the recipient's language.
 - [x] **P4.4** $ A dispute charge on an already-invoiced job becomes a deduction on the cleaner's next invoice. Its design, including what happens when that invoice would go negative, is written in this ticket and approved by Mike before Phase 2 starts (P1.8, D12).
 - [ ] ~~**P4.5** Optional: a QR Platba code in the payment block of CZK invoice PDFs.~~ Dropped: Mike accepted the leaner Phase 4 on 2026-11-10.
@@ -345,3 +345,5 @@ The plan's "Not doing" list. Anything found outside these slices is reported to 
   `CompleteOrder`, so it calculates no pay for the crew. The one exception is an override from In progress on an unpaid
   cash order, whose door debt queues the crew's pay. Should every override to Completed pay the crew? Today it stays as
   it is.
+- 2026-11-10 — P4.2 built: the period-end reminder goes only to a cleaner with a job or fee-share pay row in the period;
+  a carried dispute charge alone is not work.

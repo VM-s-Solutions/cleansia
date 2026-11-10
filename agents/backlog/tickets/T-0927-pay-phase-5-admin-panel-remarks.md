@@ -88,3 +88,4 @@ The plan's "Not doing" list. Anything found outside these slices is reported to 
 ## Work record
 
 - 2026-11-09 — Filed from the plan page. Not started.
+- 2026-11-10 — Started on `fix/admin-remarks`, run with the lean workflow (one reviewer, effort by step, Sonnet for label sweeps). P5.19 stays dropped (D16).

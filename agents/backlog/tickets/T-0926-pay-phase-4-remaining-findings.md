@@ -365,3 +365,5 @@ The plan's "Not doing" list. Anything found outside these slices is reported to 
   gains the swapped race (a mark paid losing to a cancel) and P4.4 a mixed-currency case; both passed before, as the
   code was already right. Not built, by proportionality: an admin action that commits between the night run's invoice
   commit and its PDF stamp makes the stamp lose on the token, leaving the invoice without its PDF until Regenerate PDF.
+- 2026-11-10 — Defaults kept as PM, reported to Mike: admin overrides to Completed still do not log a rejected pay calculation (P4.1's open question), and R3 is declined (an admin action in the seconds between the night run's invoice insert and its PDF stamp leaves no PDF link; Regenerate PDF recovers it).
+- 2026-11-10 — Shipped: #375 merged to master as 5625fa386. Migration 20261109234823_Initial; DEV gets it with the P6.2 reset (Mike's OK, 2026-11-10).

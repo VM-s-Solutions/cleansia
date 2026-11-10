@@ -131,9 +131,10 @@ fails the command. So an invoice issued after Close now, and a corrected invoice
 the cleaner.
 
 **An action on an invoice between the night run's commit and its PDF stamp makes the stamp lose.** The
-invoice carries Postgres's `xmin` as its concurrency token. An admin action committed in that gap
-(`payroll.invoice.changed_concurrently` for the action that lost) leaves the invoice with no PDF address and
-no PDF error flag until Regenerate PDF, and that cleaner falls back to the plain period-closed e-mail.
+invoice carries Postgres's `xmin` as its concurrency token. An admin action committed in that gap leaves the
+invoice with no PDF address and no PDF error flag until Regenerate PDF, and that cleaner falls back to the
+plain period-closed e-mail. An admin action that loses the reverse race is refused with
+`payroll.invoice.changed_concurrently`.
 
 Document readiness is separate from invoice existence. An owned invoice with no PDF path reports that
 the document is not ready, or the recorded generation failure. A stored path whose object is missing

@@ -45,9 +45,13 @@ export class AdminPayPeriodOpsComponent {
   readonly payPeriod = input.required<PayPeriodDto>();
   readonly changed = output<void>();
 
-  readonly isOpen = computed(
-    () => this.payPeriod().status === PayPeriodStatus[PayPeriodStatus.Open]
-  );
+  readonly canCloseNow = computed(() => {
+    const payPeriod = this.payPeriod();
+    return (
+      payPeriod.status === PayPeriodStatus[PayPeriodStatus.Open] &&
+      payPeriod.startDate.getTime() <= Date.now()
+    );
+  });
 
   readonly isClosed = computed(
     () => this.payPeriod().status === PayPeriodStatus[PayPeriodStatus.Closed]

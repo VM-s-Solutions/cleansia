@@ -406,7 +406,7 @@ time, a notice about two hours before each one, and a nudge close to the start f
 has not set off. The nudge stops the moment they mark themselves on the way. None of the three can be
 silenced: they are about work the cleaner already accepted.
 
-**Getting paid** — see pay per job, per 14-day pay period, and download invoices. A job pays its
+**Getting paid** — see pay per job, per pay period of up to 14 days, and download invoices. The dashboard card reads *This period, not invoiced yet* and names the day the period closes; no cleaner app shows a payout date, because the company pays each invoice by bank transfer and an administrator marks it paid ([ADR-0082](/decisions/adr-0082)). Each invoice shows the cash set off against it and the bank transfer to the cleaner. A job pays its
 service and package rates plus rooms and bathrooms and a company share of the extras booked (half by
 default), within the rates' floor and cap; nothing is paid for travel distance
 → [Business rules — cleaner pay](/product/business-rules#cleaner-pay). A job the customer did not let
@@ -469,7 +469,7 @@ name, e-mail or phone, filters active and inactive, and opens a customer's page,
 **Revoke points** and **Issue credit** sit side by side: points are loyalty, credit is money on the
 customer's balance in the currency the admin names, and they are separate acts. → [Customers](/admin-app/user-management#customers)
 
-**Money** — pay periods (open, close, reopen, mark paid), employee invoices (one per cleaner per period
+**Money** — pay periods (create, close now, change end date, mark paid; a closed period is never reopened), employee invoices (one per cleaner per period
 per currency they were paid in, numbered `INV-YYYY-NNNNNN` from the operating company's own series
 with a ten-digit variable symbol from its own counter — each company numbers its own), payout details
 behind an audited reveal, refunds, disputes, chargebacks, fiscal failures, customer credit issued in a

@@ -549,7 +549,7 @@ where it is seen.
   option, not the column, and a roster that lies is worse than a redundant annotation:
   - **Sole arbiter of a concurrent claim ⇒ `.AreNullsDistinct(false)` is mandatory.** No read can
     arbitrate a race, so the index is the only thing between two simultaneous claims and it has to
-    actually fire. Live instances in the emitted DDL (13): `FiscalCounters`, `MembershipBenefitUsages`,
+    actually fire. Live instances in the emitted DDL (14): `PayPeriods` (`IX_PayPeriods_TenantId_Open`, one open period per company), `FiscalCounters`, `MembershipBenefitUsages`,
     `PromoCodeRedemptions`, `EmployeePayoutDetails`, `LiveActivityTokens`, `LoyaltyTransactions`,
     `PromoCodes`, `ReferralCodes`, `TenantConfigurations`, `OrderReceipts` (gained its tenant term on
     activation — the number comes from a per-tenant counter), `EmployeePayConfigs`
@@ -607,7 +607,7 @@ where it is seen.
 
   **Enforced by:** `src/Cleansia.Tests/Infrastructure/NullsNotDistinctIndexModelTests.cs`, run by
   `.github/workflows/backend-ci.yml` with no `continue-on-error` — **`T1-CI`**, **baseline 0**, in two
-  layers: a **thirteen-row `[InlineData]` roster** over the tenant-keyed sole arbiters (`FiscalCounter`,
+  layers: a **fourteen-row `[InlineData]` roster** over the tenant-keyed sole arbiters (`PayPeriod`, `FiscalCounter`,
   `EmployeePayoutDetails`, `PromoCodeRedemption`, `MembershipBenefitUsage`, `LoyaltyTransaction`,
   `PromoCode`, `ReferralCode`, `TenantConfiguration`, `OrderReceipt`, `EmployeePayConfig`, and since
   2026-09-15 `PayoutReferenceCounter (TenantId, Year, Scope)` and the two `EmployeeInvoice` references

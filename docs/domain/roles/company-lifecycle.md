@@ -75,7 +75,7 @@ never naming another company.
   **(5) credit** — only when deactivated — every positive balance discharged through
   `TryDebitAsync(…, Expired, "wind-down-credit:{account}:{run}", note: "company wind-down")`;
   **(6) the last period** — only when deactivated, no open order and no completed order awaiting pay —
-  `PayPeriodBackgroundService.ClosePeriodAsync(period, "Company wind-down", openNext: false)`; then
+  `PayPeriodBackgroundService.ClosePeriodAsync(period, "Company wind-down", openNext: false)`, which commits the close itself before it invoices and e-mails only cleaners with pay in the period; then
   `RecordWindDownRun`, **the administrators told of a run that did something** — `admin.company.wind_down_run`
   with the four counts (cancelled, refunded, refund failures, periods closed), raised only when their sum
   is positive because the sweep is re-run on purpose and a run that moved nothing is not news; the subject
@@ -88,7 +88,7 @@ never naming another company.
   `CompanyInfo.LegalName`.
 - **`MaterializeRecurringBookings`** and **`PayPeriodBackgroundService`'s rollover** — each reads the
   `Tenant` row once per group: no order for a deactivated company's templates; no successor period for a
-  deactivated company.
+  deactivated company, whether the night run or an administrator's Close now closes the last one.
 - **`GetCompanyLifecycle.Query`** → `CompanyLifecycleDto`: name, state, `OperatesDefaultMarket`, every
   stamp with the actor's **e-mail**, the manifest hash, and the settlement facts →
   [Company settlement reader](./company-settlement-reader).

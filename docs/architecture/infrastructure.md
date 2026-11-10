@@ -140,7 +140,7 @@ Queues decouple the APIs from long-running operations (PDF generation). Each que
 | Queue | Poison Queue | Producer | Consumer |
 |-------|-------------|----------|----------|
 | `generate-receipt` | `generate-receipt-poison` | Every issue of an order's receipt, keyed `receipt:{orderId}`, only ever for a `Paid` order: the Stripe webhook on each host that runs it (a card payment settles), the partner hosts' `CompleteOrder` (an order with no receipt yet — a cash sale's first), the admin host's `AdminOverrideOrderStatus` to `Completed` and `AdminRecordCashReceived` on a completed order (a cash sale), and the `FiscalReconciliation` timer (one that never landed). A cash booking and a recurring cash confirm queue no receipt — they queue the `order-booked` e-mail on `send-email` — and nothing restates a receipt (since 2026-09-28) → [what the receipt says](/flows/payment-and-fiscal#what-the-receipt-says) | `GenerateReceipt` function |
-| `generate-invoice` | `generate-invoice-poison` | Admin API (period close) | `GenerateInvoice` function |
+| `generate-invoice` | `generate-invoice-poison` | The `FiscalReconciliation` timer, for a **closed** pay period whose close is older than 15 minutes and that still holds un-invoiced pay, keyed `invoice:{payPeriodId}:{employeeId}` — the one producer, so it also covers a period an administrator ended with Close now and an invoice that was cancelled; and the admin `generate-invoice` action, which calls the same command | `GenerateInvoice` function |
 | `company-wind-down` | `company-wind-down-poison` | Admin API (`WindDownCompany`, and `DeactivateCompany` when a date is set) — one message per act, keyed `wind-down:{tenantId}:{request instant}` | `CompanyWindDown` function — the idempotent sweep ([ADR-0064](/decisions/adr-0064) D2) |
 | `company-archive` | `company-archive-poison` | Admin API (`ArchiveCompany`) — keyed `archive:{tenantId}:{request instant}` | `CompanyArchive` function — builds the bundle into `company-archives` and stamps the manifest hash (ADR-0064 D3) |
 
@@ -194,7 +194,7 @@ had never fired at all — see [the schedule tokens](#timer-schedules) below.
 | Function | Schedule | Purpose |
 |---|---|---|
 | `OutboxDrainer` | every 10 s | Drains the transactional outbox onto the queues |
-| `FiscalReconciliation` | every 5 min | Reconciles fiscal registrations against the EET API |
+| `FiscalReconciliation` | every 5 min | Reconciles fiscal registrations against the EET API, and re-enqueues `generate-invoice` for a closed pay period with un-invoiced pay (the safety net, [ADR-0002](/decisions/adr-0002) D3.4); `PayPeriodClosing__Enabled` does not stop this half |
 | `RetryFailedFiscalRegistrations` | every 5 min | Retries registrations that failed transiently |
 | `NotifyLapsedPreferredOffers` | every 5 min | Closes a preferred-cleaner hold that expired and reopens the order |
 | `SendPreCleaningReminders` | `%Cron%` — every 5 min | Reminds a **customer** their cleaning is coming up |
@@ -221,7 +221,7 @@ had never fired at all — see [the schedule tokens](#timer-schedules) below.
 | Function | Queue | Purpose |
 |---|---|---|
 | `GenerateReceipt` | `generate-receipt` | Issues the receipt for a `Paid` order: number, fiscal registration, PDF via QuestPDF → blob storage → SendGrid |
-| `GenerateInvoice` | `generate-invoice` | Employee invoice PDF → blob storage |
+| `GenerateInvoice` | `generate-invoice` | Issues a closed period's employee invoices, renders each PDF → blob storage (`{start}_{end}/{employeeId}/{invoiceNumber}.pdf`), and e-mails it |
 | `CalculateOrderPay` | `calculate-order-pay` | Computes a cleaner's pay for a finished order |
 | `SendEmail` | `send-email` | SendGrid delivery |
 | `SendPushNotification` | `notifications-dispatch` | FCM delivery |
@@ -263,7 +263,7 @@ deployed database while reporting success (T-0685).
 | Setting | Turns off | Keeps working |
 |---|---|---|
 | `DataRetention__Enabled` | All fourteen weekly GDPR retention tasks (Sun 03:00), including order photos, all three audit tables, contract-acceptance metadata and dead guest access tokens — **and** the daily failed-erasure retry (05:00) | Everything else |
-| `PayPeriodClosing__Enabled` | The nightly pay-period job (02:00) — closing expired periods, opening the next, **and generating + emailing an invoice per employee** | `EnsureOpenPeriodAsync`, called inline by pay calculation, so pay-calc never fails with `NoActivePeriod` |
+| `PayPeriodClosing__Enabled` | The nightly pay-period job (02:00) — closing expired periods, opening the next, and invoicing and e-mailing each cleaner with pay in them | `EnsureOpenPeriodAsync`, called inline by pay calculation, so pay-calc never fails with `NoActivePeriod`; **Close now, and the five-minute `FiscalReconciliation` sweep, which still invoices a period that is already closed** |
 | `Stripe__Enabled` | **All seven card-charge surfaces** — web checkout, resume checkout, mobile PaymentSheet, recurring-occurrence confirm, membership subscribe, membership checkout, membership plan swap | **Cash orders** — which only a signed-in customer's one-cleaner booking may use ([the cash rule](/product/business-rules#cash)), so with card off a guest or a larger booking has no way to pay — and everything that returns or releases money: refunds, cash-collection intent cancellation, closing a door debt's pay link when an administrator records the cash (since 2026-10-06), closing a receivable's pay link when a Manager or above writes the debt off (since 2026-10-06), membership cancellation, and GDPR erasure of the Stripe customer |
 
 ::: danger Set these as app settings, never in `Cleansia.Functions/appsettings.json`
@@ -283,6 +283,22 @@ customer sees when Stripe is genuinely down, which is what it means to them.
 `CardPaymentsChargeSurfaceCoverageTests` fails the build if a new Stripe call is added without the gate,
 because the first draft of that switch closed three of the seven surfaces and left memberships and
 recurring orders charging.
+
+### Pay period length {#pay-period-length}
+
+Not a switch: a number. A pay period lasts at most `PayPeriodClosing__LengthInDays` days, start and end
+inclusive. It is absent everywhere except DEV, so the C# default of **14** applies, because both cleaner
+agreements promise 14 days; the DEV template sets **3**, so testers see a whole pay cycle within days (owner
+ruling 2026-11-09).
+
+| Setting | Value | Read by |
+|---|---|---|
+| `PayPeriodClosing__LengthInDays` | `3` on DEV only; absent elsewhere, so 14 | Every path that creates or edits a period: the bootstrap, the night run's successor, Close now's successor, Create, and Change end date's last allowed day |
+
+`deploy/bicep/main.bicep` sets it through `payPeriodSettings` on the five API hosts and on the Functions app.
+It is never in `Cleansia.Functions/appsettings.json`: the worker loads that file after the environment, so a
+value there would beat the app setting. A local run keeps 14 unless a developer sets the variable. The invoice
+is due 14 days after issue on every stage. → [Business rules — pay periods](/product/business-rules#pay-periods)
 
 ### Docker Deployment
 
@@ -381,7 +397,7 @@ is missing (`ValidateEmailTemplates` in the project file):
 | `password-reset.html` | A password reset is requested |
 | `order-receipt.html` | When the receipt is issued (with PDF attachment): on settlement for card, at completion for cash; one sent after the clean has a post-service subject |
 | `order-status-update.html` | The booking stands, its confirmation PDF attached (`order-booked` on `send-email`): a cash booking when it is made or a recurring cash occurrence confirmed, a card booking once its payment completes. It gives the slot, the address and the free-cancellation window, and for cash the amount to pay. Then a cleaner takes the booking (*Cleaner found*, or *We've found you a new cleaner* on a take after a walk-back), starts it and completes it, each in the booking's language. When a cleaner leaves a booking that has not started — the last cleaner since 2026-10-25, one of two since the fix plan of the same day — the customer, with an account or a guest, is told that a cleaner can no longer come and the booking is offered to cleaners again (`order-cleaner-released` on `send-email`, sent while the booking is still short of cleaners). A guest is told when the booking is cancelled, whoever cancelled it; since the fix plan a signed-in customer too when the no-cleaner cancellation or an administrator cancels it, and, as before, when an administrator cancels it because the cleaner could not get in |
-| `close-period-notification.html` | A cleaner's pay period closes, the payout invoice attached |
+| `close-period-notification.html` | A cleaner's pay period closes, the payout invoice attached; the period and its first and last day are written in the recipient's language |
 | `closure-period-reminder.html` | A cleaner's pay period ends in 3 days, and again in 1 |
 | `promo-code.html` | The public site's promo form is sent for an address that has not had a code ([Public promo-code requests](/flows/loyalty-and-memberships#public-promo-code-requests)) |
 | `company-wind-down-customer.html`, `company-wind-down-cleaner.html` | A company winds down: one to its customers, one to its approved cleaners ([A company's lifecycle](/product/business-rules#company-lifecycle)) |

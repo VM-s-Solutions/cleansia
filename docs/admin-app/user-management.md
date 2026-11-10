@@ -167,7 +167,7 @@ Uploaded → Pending → Approved / Rejected
 | `Passport` | Passport document |
 | `DriversLicense` | Driver's license |
 | `WorkPermit` | Work authorization |
-| `Contract` | Employment contract |
+| `Contract` | A signed contractor agreement (cleaners are self-employed contractors, not employees) |
 | `Certificate` | Professional certifications |
 | `BankStatement` | Bank account verification |
 | `TaxDocument` | Tax documents |

@@ -574,7 +574,7 @@ ruling 2026-10-06).
 | Cleaner | You have N jobs tomorrow | `order.reminder_tomorrow` | The day-ahead plan. A cleaner who silenced it would be planning tomorrow off memory |
 | Cleaner | Your job starts in about two hours | `order.reminder_soon` | The last point at which a cleaner can still travel, or tell us they cannot |
 | Cleaner | Your job starts soon and you have not set off | `order.reminder_not_started` | The platform's last chance to prevent a no-show. Suppressed for a cleaner already out on **another** job |
-| Cleaner | Your invoice was paid | `payroll.invoice_paid` | A payment confirmation must not be silenceable |
+| Cleaner | Your invoice was paid | `payroll.invoice_paid` | A payment confirmation must not be silenceable. On iOS the tap replaces the Earnings navigation path with the invoice list and that invoice, rather than stacking them on whatever was open |
 | Cleaner | Your weekly order cap was set or lowered | `employee.weekly_limit_set` | A cut to how much someone may earn is news they are owed. Before it, the cleaner met the cap only as a refusal when taking work, and that refusal cannot say what the cap is |
 | Cleaner | Your registration was approved | `employee.registration_approved` | The one answer a cleaner on the registration lock is waiting for; a mute would leave them on a stale *under review* screen ([why it is a push](#registration-decided)) |
 | Cleaner | Your registration was rejected | `employee.registration_rejected` | As for the approval |

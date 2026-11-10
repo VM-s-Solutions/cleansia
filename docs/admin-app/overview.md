@@ -69,7 +69,7 @@ lifecycle* or *Marketing* (`admin-role-visibility.spec.ts` pins both lists):
 | `/order-management`       | Orders       | Order oversight and management                |
 | `/customers`              | Customers    | The customer accounts, paged, searched and filtered; a row opens the customer detail → [Customers](./user-management#customers); entry gated by `CanViewOrderCustomer` (Support or above) |
 | `/invoice-management`     | Invoices     | Invoice management                            |
-| `/pay-periods`            | Pay Periods  | Pay period management (open, close, paid)    |
+| `/pay-periods`            | Pay Periods  | Pay period management (create, close now, change end date, paid) |
 | `/reports`                | Reports      | Revenue and payroll reports                   |
 | `/service-management`     | Services     | Service configuration                         |
 | `/package-management`     | Packages     | Package configuration                         |
@@ -126,7 +126,7 @@ the cookie notice shows, the circle rises above its band. The button carries the
 /order-management/:id     # Order detail (admin guard)
 /customers                # Customer list (admin guard)
 /customers/:id            # Customer detail — credit, points, trail (admin guard)
-/invoice-management       # Invoice list (admin guard)
+/invoice-management       # Invoice list (admin guard); ?payPeriodId= opens it filtered to one pay period
 /invoice-management/:id   # Invoice detail (admin guard)
 /pay-periods              # Pay period management (admin guard)
 /reports                  # Revenue & payroll reports (admin guard)

@@ -81,7 +81,7 @@ There is no *Completed orders* card any more — it would always equal the total
 
 ## Payroll Report
 
-The payroll report (`PayrollReportDto`) provides employee compensation data:
+The payroll report (`PayrollReportDto`) provides employee compensation data. **The headline money — total, average, bonuses, deductions, the employee rows and the months — leaves out cancelled and rejected invoices**, because a cancelled invoice's jobs move to the corrected invoice that replaces it. The invoice count, the cancelled count and the by-status rows still show every invoice:
 
 ### Key Metrics
 
@@ -150,7 +150,7 @@ once from the currency overview and label every price with its code, printing a 
 than a currency they cannot name — never a hard-coded "CZK". The per-currency rows themselves are
 authored on the entry's form.
 
-The partner side answers the same question the other way round. The partner dashboard earnings,
+The partner side answers the same question the other way round. Its earnings chart, totals and breakdown, and the highest-earning month leave cancelled invoices out too. The partner dashboard earnings,
 earnings chart, personal bests, order-distribution money columns, available-jobs headline and My Pay
 are all scoped to the currency `ICurrencyResolutionService.ResolveCurrencyForEmployeeAsync` returns
 for the cleaner — their work country's configured currency; the platform default only for a cleaner

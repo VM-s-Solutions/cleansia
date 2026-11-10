@@ -18,7 +18,7 @@ The dashboard displays four key metric cards:
 | Available Orders | Count of unassigned orders | `pi pi-inbox` | Blue (`#0284c7`) |
 | My Active Orders | Count of partner's in-progress orders | `pi pi-clock` | Amber (`#f59e0b`) |
 | Completed This Month | Orders completed in current month | `pi pi-check-circle` | Green (`#10b981`) |
-| Pending Earnings | Current pay period earnings in CZK | `pi pi-wallet` | Purple (`#8b5cf6`) |
+| This period, not invoiced yet | The open period's pay that no invoice holds yet, in the dashboard's currency (`currencyCode`); 0 with no open period; it can be below zero while a dispute charge waits for the next invoice | `pi pi-wallet` | Purple (`#8b5cf6`) |
 
 The "Completed This Month" card includes a **trend indicator** showing the percentage change compared to last month:
 
@@ -154,10 +154,12 @@ symbol here: it would disagree with that cleaner's payout invoice, a document th
 return, the day a second country configuration exists.
 
 ```typescript
-value: `${stats.currentPeriodEarnings.toLocaleString(
-  this.translate.currentLang || 'en-GB'
-)} ${stats.currencyCode ?? ''}`.trim(),
+value: formatMoney(stats.currentPeriodEarnings, stats.currencyCode, localeFor(lang), {
+  fractionDigits: 2,
+}),
 ```
+
+The card's label is *This period, not invoiced yet* (cs *Toto období, zatím nevyfakturováno*, sk *Toto obdobie, zatiaľ nevyfakturované*, uk *Цей період, ще не в рахунку*, ru *Этот период, ещё не в счёте*). `DashboardStatsDto` carries `currentPayPeriodStart` and `currentPayPeriodEnd` as calendar dates (`yyyy-MM-dd`, not instants), and no payout date: `nextPayoutDate` and its five-day offset are gone, because the company pays by bank transfer and the platform does not know the day ([ADR-0082](/decisions/adr-0082)).
 
 An absent code renders the number with **no** symbol rather than a guessed one — visibly incomplete
 beats silently wrong. The chart widgets take the same value as a `currencyCode` input, and the

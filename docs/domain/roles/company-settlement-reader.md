@@ -32,6 +32,11 @@ beside them — so that the archive validator and the page refuse and explain fr
   `LatestCardPaidCleaningDateTime` (the latest `CleaningDateTime` among card orders whose money moved —
   Paid, PartiallyRefunded, Refunded; null when the company never took a card), and, since 2026-10-06,
   `OpenReceivables` (`Receivables.Status == Open`, every kind — the company's own customers' debts).
+- **`ReadPayPeriodAsync(payPeriodId)`** — the same two pay facts for **one** period, `(UnpaidInvoices,
+  UninvoicedPayRows)`, under the same predicates (an invoice neither `Paid` nor `Cancelled`; a pay row with no
+  invoice). *Mark period as paid* refuses on them (`pay_period.has_unpaid_invoices`,
+  `pay_period.has_uninvoiced_pay`), so a period marked paid is settled and the archive gate's `Closed`-only
+  scope does not miss one.
 - **`WindDownCutoff.Utc(date, timeZoneId)`** — midnight of the date in the market's zone, UTC when the
   zone is null or unknown; the one function the reader counts by and the sweep cancels by, so the page's
   count and the sweep's selection agree.

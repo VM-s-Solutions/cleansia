@@ -996,6 +996,17 @@ self-billing document is never silently changed; the administrator then uses the
 deduction. The audit row records the cleaner and the amount, not the reason; the cleaner's erasure
 anonymises the reason on the pay row.
 
+**A job already on an invoice is charged on the next invoice** (following the late-pay
+rule of [ADR-0082](/decisions/adr-0082)). The issued invoice and its job row are never written. The charge
+becomes a line of its own, `PayLineType.DisputeCharge`, in the company's open pay period, linked to the dispute
+with the reason the cleaner reads, and the cleaner's next invoice deducts it. It is still refused before any
+money moves (`dispute.cleaner_charge_not_chargeable`) when the job row is missing, a charge is already carried
+for that job and cleaner, the charge is above the job's pay, or no period is open to carry it. A job not yet
+invoiced is charged directly, as above. Both invoice writers take whole charges oldest first, each one that
+still fits, so no invoice goes below zero; a charge that does not fit waits in the open period for a later
+invoice, and a cleaner whose only rows in a closing period are waiting charges gets no period-closed e-mail.
+The PDF shows the charge in the deduction, not among the job lines.
+
 ### Cleansia Plus
 
 **Every Plus benefit requires a current subscription, paid or inside its free trial** (owner ruling
@@ -2881,7 +2892,7 @@ seat      = share(collected × 0.50)    # over RequiredEmployees, the residue on
   that collected nothing writes no row
   (`payroll.no_collected_fee`, which only the queue consumer sees and logs).
 - **A pay line of its own.** The row's `LineType` is `CancellationFeeShare` (`PayLineType`, beside
-  `Job` and `LockoutFeeShare`; wire integers 0–2, append-only). Its base is the seat's share with no
+  `Job`, `LockoutFeeShare` and `DisputeCharge`; wire integers 0–3, append-only). Its base is the seat's share with no
   rates read and no clamp. The self-billed invoice line says it is a share of the late-cancellation fee
   — in Czech for a Czech cleaner, in English elsewhere — and My Pay on the partner web, Android and iOS,
   like the admin invoice, names each line's type.
@@ -2934,28 +2945,56 @@ locked out, as it would on completion. The framework agreement and the contract 
 
 ### Pay periods are 14 days {#pay-periods}
 
-**Owner decision 2026-10-04.** A pay period runs **14 days**, start and end inclusive
-(`PayPeriod.CreateBiWeekly`: the end is the start + 13). Until then it ran a calendar month.
+**Owner decision 2026-10-04.** A pay period runs **at most 14 days**, start and end inclusive
+(`PayPeriod.CreateBiWeekly`: the end is the start plus the length minus one). Until then it ran a calendar
+month. **The length is a setting**, `PayPeriodClosing:LengthInDays`: its C# default is 14
+(`PayPeriod.LengthInDays`), and **only the DEV template sets 3** (owner ruling 2026-11-09), so testers see a
+whole pay cycle within days. Production keeps 14 because both cleaner agreements promise it, and a local run
+keeps 14 unless a developer sets the variable. → [Infrastructure — pay period length](/architecture/infrastructure#pay-period-length)
 
-- **The nightly close rolls it.** `CloseExpiredPayPeriods` (02:00, company by company) closes every open
-  period that has ended, invoices it, and opens the next one from **the day after the closed one
-  ended**, so periods follow each other with no gap and no calendar alignment.
-- **The first period starts today.** When pay is calculated and the company has no open period, one is
-  opened from the current day, 14 days long.
-- **By hand, 14 days too.** An administrator who creates or edits a period
-  ([Pay periods](/admin-app/pay-periods)) is held to the same length: the end must be 13 days after the
-  start (`PayPeriod.LengthInDays`), and any other span is refused (`pay_period.invalid_duration`, whose
-  text says so). Until 2026-10-05 the admin endpoints took an end 7 to 31 days after the start. The
-  admin web's create dialog asks for the start only and fills the end in, 13 days later; until
-  2026-10-05 its *Create* button sent nothing.
+- **The nightly close rolls it.** `CloseExpiredPayPeriods` (02:00 UTC, company by company) closes every open
+  period that has ended (the night after its end date), commits the close and the successor, and opens the
+  next one from **the day after the closed one ended**, so periods follow each other with no gap and no
+  calendar alignment. It then invoices each cleaner **who has pay in the period**, and e-mails only them: a
+  cleaner without pay gets no "period closed" e-mail. A cleaner the run skips (no active user or no e-mail
+  address) is invoiced by the reconciliation sweep about 15 minutes later.
+- **The first period starts today, or later.** When pay is calculated and the company has no open period,
+  one is opened from the current day, or from the day after the latest period's end if that is later, so it
+  never overlaps a period that already ran (the last period of a wound-down company, closed early with its
+  original end, for example).
+- **There is one open period, never a future one** (owner ruling 2026-11-08). Create works only when no
+  period is open (`company.has_open_pay_period`) and refuses a start after today (`validation.invalid_date`);
+  it takes a start only, and the end is the start plus the length minus one. Pay joins the open period
+  whatever its dates, so a second open period, or one starting later, would capture pay earned before it
+  starts. The one open period that can start in the future is the one Close now opens for tomorrow.
+- **Close now is the exception.** An administrator ends the open period today (UTC) with a required reason
+  of up to 500 characters, kept in the audit log with the old and new end, and the next period opens from the
+  day after in the same commit (none for a deactivated company). A period that has not started is refused
+  (`pay_period.not_started`). The invoices follow from the sweep about 15 to 20 minutes later, and jobs
+  finished afterwards go into the next period.
+- **Change end date moves only the end**, from tomorrow to the start plus the length minus one. The start
+  stays fixed. An end today or earlier is refused (`pay_period.end_too_soon`, which points to Close now), a
+  later one is refused (`pay_period.invalid_duration`, "The end date is later than the last day this pay
+  period may run to"), and a different start is refused (`validation.invalid_date`). The old and new end go in
+  the audit log.
+- **A closed period is never reopened**, and no administrator can open one: `CanOpenPayPeriod` and
+  `CanReopenPayPeriod` left the permission map. Pay that arrives after its period was invoiced goes into the
+  next open period and is invoiced with it. → [ADR-0082](/decisions/adr-0082)
+- **Mark period as paid** needs the period closed, every pay row in it invoiced
+  (`pay_period.has_uninvoiced_pay`) and every invoice in it `Paid` or `Cancelled`
+  (`pay_period.has_unpaid_invoices`).
 - **What did not change.** An invoice is due 14 days after it is issued
-  (`Constants.PayoutInvoice.PaymentTermsDays`). The request to hand over cash still counts
+  (`Constants.PayoutInvoice.PaymentTermsDays`), on every stage. The request to hand over cash still counts
   `cash.remittance_request_days` from the first close after a balance began ([below](#cash-held)). The
-  period-end reminder still goes 3 days and 1 day before the end.
+  period-end reminder still goes 3 days and 1 day before the end, and goes only to a cleaner with a job or a
+  fee-share pay row in the period: a carried dispute charge alone does not count.
 
-A period open when this shipped keeps its month and the next one is 14 days. The framework agreement and
-the self-billing agreement say 14 days since `2026-10-05`, and the contract for work no longer says
-monthly; their `2026-09-29` versions said monthly ([The legal texts](#legal-texts)).
+A job finished between midnight and the 02:00 UTC run still lands in the period that has just ended; paying
+by the job's date for that window is not built (owner ruling 2026-11-08). A period open when the 14-day rule
+shipped kept its month and the next one was 14 days. The framework agreement and the self-billing agreement
+say 14 days since `2026-10-05`, and the contract for work no longer says monthly; their `2026-09-29` versions
+said monthly ([The legal texts](#legal-texts)). Whether the texts need *up to 14 days*, now that a period may
+end early or run 3 days on DEV, is a question for the lawyers.
 
 ### Rates are per currency {#rates-per-currency}
 
@@ -3078,8 +3117,9 @@ currency, on My Pay on the partner web and Pay & Earnings on Android and iOS
 the invoice's total**, under the same lock: `EmployeeInvoice.CashSetOffAmount`, and a *Set-off* ledger
 entry dated at issue. The invoice's own amounts do not change; **`TransferAmount = TotalAmount −
 CashSetOffAmount`** is what the bank transfer carries. What the invoice could not cover stays in the
-ledger: that is the balance carried forward. Cancelling an invoice gives its set-off back to the ledger,
-and lowering an invoice's total below its set-off gives back the difference.
+ledger: that is the balance carried forward. Cancelling an invoice gives its set-off back to the ledger
+and frees its pay rows, so the corrected invoice that follows within minutes holds the same jobs and sets
+the cash off again; lowering an invoice's total below its set-off gives back the difference.
 → [Pay and payouts — cash set off](/flows/pay-and-payouts#cash-set-off)
 
 **A request to hand the cash over, after 30 days.** A balance is the run of a cleaner's cash in one
@@ -3740,10 +3780,16 @@ throws, because the seed configures every serviced country and a gap is a deploy
 ### Sales VAT and cleaner-invoice VAT {#vat-sources}
 
 Customer sales read `CountryConfiguration.StandardVatRate`; cleaner invoices read
-`CountryInvoiceConfig.VatRate`. They remain separate live values. Whether both must use one market
-standard rate, or whether cleaner invoices may differ, awaits an owner decision. The unused
-`ReducedVatRate` has been removed from the domain, database model and seed; that removal does not
-choose between the two live rates or change an order's stored VAT snapshot.
+`CountryInvoiceConfig.VatRate`. They remain separate live values, and the customer rate **cannot make a
+cleaner a VAT payer**. A cleaner's pay is gross: the stored total is what the cleaner receives in full, and the
+platform pays no tax on their behalf. So a payout invoice adds nothing to it. When the cleaner is a registered
+VAT payer and the country requires VAT (`CountryInvoiceConfig.VatRequired`), the invoice **decomposes** the
+total instead (`CountryInvoiceContext.VatWithinGross`): base = total ÷ (1 + `VatRate`), VAT = total − base,
+rounded once on the base, so base plus VAT is exactly the total on every amount; for anyone else the VAT is
+zero and the invoice prints the statutory non-payer notice. The printed total is the stored total in both
+cases. Whether both rates must use one market standard rate, or whether cleaner invoices may differ, awaits an
+owner decision. The unused `ReducedVatRate` has been removed from the domain, database model and seed; that
+removal does not choose between the two live rates or change an order's stored VAT snapshot.
 
 ## The market a customer browses in {#market}
 

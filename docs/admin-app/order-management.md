@@ -49,7 +49,7 @@ pins the page to one currency, and while it is set a sort on Total Price is a pl
 arrive grouped by currency and ordered by price inside each group, rather than filing 150 EUR below
 3 000 CZK as if the numbers were comparable. The column stays sortable either way — a click that
 silently does nothing is the failure the admin cannot see. The invoice list does the same on Total
-Amount with `EmployeeInvoiceFilter.CurrencyId`. → [Reporting](./reporting#currency)
+Amount with `EmployeeInvoiceFilter.CurrencyId`. It offers no sort on Partner, Pay period or Orders, because the server sorts by none of them and falls back to the generation date, and its Cash Set Off and To Transfer columns are not sortable either. Its filter drawer has a **Pay period** picker (the periods newest first, named by their dates, up to 1000) with a chip; `?payPeriodId=` opens the list filtered to that period, and the drawer's apply is the first load. → [Reporting](./reporting#currency)
 
 ::: warning The status dropdown does not cover the whole enum
 `OrderManagementFacade.orderStatusOptions` offers **Pending, Confirmed, InProgress, Completed,
@@ -166,8 +166,8 @@ the card, unless the dispute's own card refund is still pending, which the amoun
 **Charging the cleaner is a finding of fault, not a side effect.** The resolve dialog can charge a named
 crew member an amount with a written reason (`chargeToCleaner`), deducted from their pay on this order,
 linked to the dispute and shown to them with the reason. It is refused when that pay row is missing,
-already invoiced, already charged for a dispute or smaller than the charge
-(`dispute.cleaner_charge_not_chargeable`); an invoiced row takes the ordinary invoice deduction instead.
+already charged for a dispute or smaller than the charge
+(`dispute.cleaner_charge_not_chargeable`); an invoiced row's charge is carried to the cleaner's next invoice as a dispute-charge line instead, and is refused only when no pay period is open to carry it.
 → [Business rules — dispute settlement](/product/business-rules#dispute-settlement)
 
 **A resolution with a refund moves the money before it is recorded.** Resolving with an amount above

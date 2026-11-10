@@ -316,7 +316,7 @@ overrides it the moment there is one. → /product/business-rules#market
   whatever its currency.
 - Every partner-facing money aggregate is scoped to that currency and labelled with its code: dashboard
   stats, the earnings chart, personal bests, order-distribution money columns, the available-jobs
-  headline, pending earnings and My Pay. Counts stay over all orders. My Pay (`GetPeriodPays`) also
+  headline, pending earnings (the open period's pay that no invoice holds yet) and My Pay. Counts stay over all orders. My Pay (`GetPeriodPays`) also
   takes an explicit `currencyId` view, so a client that opened it from an invoice shows that invoice's
   currency exactly; each pay row on it carries `currencyCode`.
 - **The preferred-cleaner request is gated on the same currency.** A customer may name a cleaner
@@ -348,7 +348,7 @@ per-record `CurrencyId`, and it is populated from the address country (orders), 
 
 ### Payroll: one invoice per (employee, period, currency) {#payroll-per-currency}
 
-- The unique index is `IX_EmployeeInvoices_EmployeeId_PayPeriodId_CurrencyId`. `GenerateInvoice` groups
+- The unique index is `IX_EmployeeInvoices_EmployeeId_PayPeriodId_CurrencyId`, over the uncancelled invoices (`WHERE "Status" <> 6`), so a cancelled invoice frees its slot for the corrected one. `GenerateInvoice` groups
   the cleaner's unassigned pay by currency, allocates every payout reference first, writes one invoice
   per group and flushes them together (`Response.InvoiceIds`); its already-exists guard is per currency.
   The auto-close batch (`PayPeriodBackgroundService`) does the same per cleaner and sends one

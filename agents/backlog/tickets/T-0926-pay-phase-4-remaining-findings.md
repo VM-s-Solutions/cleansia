@@ -48,7 +48,7 @@ Branch `fix/pay-findings`.
 - [ ] ~~**P4.5** Optional: a QR Platba code in the payment block of CZK invoice PDFs.~~ Dropped: Mike accepted the leaner Phase 4 on 2026-11-10.
 - [x] **mrc-1** An invoice gets a concurrency token, so two admin actions on one invoice cannot both commit (a Mark paid racing a Cancel would set the cash off twice). Folded in by Mike on 2026-11-10.
 - [ ] **F4** Partner web's Cash I hold text says the cash is set off when the next invoice is issued, not against the next payout. Folded in by Mike on 2026-11-10.
-- [ ] **F5** Android's partner invoice list keeps its rows when the employee-id lookup or a refresh fails, as iOS does since P3.6. Folded in by Mike on 2026-11-10.
+- [x] **F5** Android's partner invoice list keeps its rows when the employee-id lookup or a refresh fails, as iOS does since P3.6. Folded in by Mike on 2026-11-10.
 - [ ] **F6** Close now is not offered on a period that has not started yet. Folded in by Mike on 2026-11-10.
 
 ## Design (P1.8)
@@ -351,3 +351,7 @@ The plan's "Not doing" list. Anything found outside these slices is reported to 
   culture); the period-closed and period-end e-mails write the period, its start and its end in the recipient's
   language, and `IEmailService` no longer takes a period label. Invoices already stored keep their old address, which
   the row holds; a regenerate writes the new one. The DTO `PayPeriodLabel` the apps receive is unchanged.
+- 2026-11-10 — F5 built: Android's partner invoice list keeps its rows when the employee-id lookup fails and shows
+  the generic error snackbar; with nothing loaded the empty list stays pullable. The list is never read without the
+  caller's own id. A failed refresh already kept its rows. Unlike iOS there is no full-screen error with retry on a
+  first-load failure; the pull is the retry.

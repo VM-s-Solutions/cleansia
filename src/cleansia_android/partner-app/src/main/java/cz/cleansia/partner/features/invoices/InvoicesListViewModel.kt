@@ -3,6 +3,7 @@ package cz.cleansia.partner.features.invoices
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cz.cleansia.core.snackbar.SnackbarController
+import cz.cleansia.partner.R
 import cz.cleansia.partner.core.auth.EmployeeIdResolver
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.core.network.ApiResult
@@ -118,14 +119,12 @@ class InvoicesListViewModel @Inject constructor(
     private suspend fun fetchAndUpdate(
         clearFlags: (InvoicesListUiState) -> InvoicesListUiState,
     ) {
-        // Resolved, not merely read: a session minted by confirm-email on a
-        // pre-fix build has no stored employee id, and the no-id branch below
-        // renders a permanently empty invoice list with no error to explain it.
+        // Never read unscoped: the server keeps an administrator's filter as sent, so a read without the
+        // caller's own id would list the company's invoices.
         val employeeId = employeeIdResolver.resolve()
         if (employeeId.isNullOrBlank()) {
-            _uiState.update {
-                clearFlags(it).copy(invoices = emptyList(), hasLoadedOnce = true)
-            }
+            snackbar.showErrorKey(R.string.error_generic)
+            _uiState.update { clearFlags(it).copy(hasLoadedOnce = true) }
             return
         }
         when (val result = invoicesRepository.getMyInvoices(employeeId)) {

@@ -141,7 +141,9 @@ reports an unavailable document. Foreign or nonexistent invoices retain the same
 A failed regeneration may leave the previous readable PDF in place, so its failure warning does not
 remove access to that document.
 
-**The reconciliation sweep is the one producer of invoices** (ADR-0002 D3.4, the safety net). The
+**The reconciliation sweep is the one producer of `generate-invoice` messages** (ADR-0002 D3.4, the
+safety net). It invoices a period Close now ended; the night run invoices the periods it closes itself, and
+the sweep picks up any cleaner the run leaves. The
 `FiscalReconciliation` timer runs every five minutes and re-enqueues `generate-invoice` for every **closed**
 period whose close is older than 15 minutes (`FiscalReconciliation:ThresholdMinutes`) and that still holds
 un-invoiced pay, so the invoices of a period appear about 15 to 20 minutes after it closes, whether the night

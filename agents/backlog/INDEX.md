@@ -443,7 +443,7 @@
 | T-0928 | Cleaner pay, phase 6: DEV deploys, reset and proof | M | `in_progress` | — | Mike 2026-11-09: the cleaner-pay fix plan (https://claude.ai/artifact/XvfiW1obDsEqk4E1eNL56C); 7 slices |
 | T-0929 | Cleaner pay, phase 7: the docs and the decision record | M | `done` | — | Mike 2026-11-09: the cleaner-pay fix plan (https://claude.ai/artifact/XvfiW1obDsEqk4E1eNL56C); 4 slices |
 | T-0930 | Every host that calls Stripe gets the Stripe key | S | `done` | — | Mike 2026-11-10: P6.7 found that an administrator's refunds never reach Stripe; fix now, the partner hosts included |
-| T-0931 | A refund records Stripe's refund id when first sent, and the admin Refunds page shows it | S | `in_progress` | — | Mike 2026-11-10: fix the finding T-0930's DEV proof reported, the page included |
+| T-0931 | A refund records Stripe's refund id when first sent, and the admin Refunds page shows it | S | `done` | — | Mike 2026-11-10: fix the finding T-0930's DEV proof reported, the page included |
 
 > **T-0785–T-0799 filed 2026-09-20** — the UI-polish and dead-code batch, on the owner's ruling of
 > that day (*"I want to polish alignments in admin app a bit on all of the overview/detail pages.

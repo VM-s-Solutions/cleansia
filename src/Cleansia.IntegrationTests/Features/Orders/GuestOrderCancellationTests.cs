@@ -70,6 +70,7 @@ public class GuestOrderCancellationTests(PostgresContainerFixture fixture) : Bas
                     if (StripeRefunds.TryGetValue(key, out var original)) Assert.Equal(original, amount);
                     else StripeRefunds.Add(key, amount);
                     if (DuringStripe is not null) await DuringStripe();
+                    return "re_test";
                 });
             EmailService.Setup(x => x.SendOrderStatusUpdateEmailAsync(It.IsAny<string>(), It.IsAny<Order>(),
                     "Cancelled", It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<decimal?>(), It.IsAny<string?>(),
@@ -428,7 +429,7 @@ public class GuestOrderCancellationTests(PostgresContainerFixture fixture) : Bas
             run.Setup(services);
             run.Stripe.SetupSequence(x => x.RefundPaymentIntentAsync("pi_guest", It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new HttpRequestException("connection reset"))
-                .Returns(Task.CompletedTask);
+                .ReturnsAsync("re_test");
             return Task.CompletedTask;
         }, arrange: (CleansiaDbContext db) => Seed(db), act: async (IServiceProvider provider) =>
         {

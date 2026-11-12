@@ -53,7 +53,8 @@ public interface IStripeClient
         Order order, DateTime expiresAtUtc, string stripeCustomerId, string savedCardId, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Refund a previously-paid checkout session. Amount is in the session's currency.
+    /// Refund a previously-paid checkout session. Amount is in the session's currency. Returns the id of
+    /// the refund Stripe created (or replayed on the same key).
     /// <para>
     /// <paramref name="idempotencyKey"/> <b>MUST be the caller's deterministic refund key (ADR-0006 D3),
     /// never a per-call Guid or timestamp</b> — the same key replays the same refund instead of issuing a
@@ -61,18 +62,19 @@ public interface IStripeClient
     /// → /flows/cancellation-refund-dispute#refund
     /// </para>
     /// </summary>
-    Task RefundCheckoutSessionAsync(
+    Task<string> RefundCheckoutSessionAsync(
         string stripeSessionId, decimal amount, string idempotencyKey, CancellationToken cancellationToken);
 
     /// <summary>
     /// Refund a charge captured on a PaymentIntent directly (the mobile PaymentSheet path, where there
-    /// is no Checkout Session — T-0347 suppresses it). Amount is in the intent's currency.
+    /// is no Checkout Session — T-0347 suppresses it). Amount is in the intent's currency. Returns the id
+    /// of the refund Stripe created (or replayed on the same key).
     /// <para>
     /// <paramref name="idempotencyKey"/> — same contract as <see cref="RefundCheckoutSessionAsync"/>:
     /// <b>deterministic, never per-call</b>. → /flows/cancellation-refund-dispute#refund
     /// </para>
     /// </summary>
-    Task RefundPaymentIntentAsync(
+    Task<string> RefundPaymentIntentAsync(
         string paymentIntentId, decimal amount, string idempotencyKey, CancellationToken cancellationToken);
 
     /// <summary>

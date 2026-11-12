@@ -241,7 +241,8 @@ would then pay a late retry as a second refund, so every refund sent to Stripe c
 it, the loser of two claims on one key — first lists the refunds on the charge and looks for that key
 (`IStripeClient.FindRefundAsync`, in `RefundService`'s settle step). A refund Stripe made, or still has
 pending, is recorded with its Stripe id (`Refund.StripeRefundId`) and Stripe's amount, and nothing is
-sent. One Stripe failed or canceled closes the row `Failed`, sends nothing, answers `refund.failed`, and
+sent. A refund sent fresh, on a first attempt or after a retry found nothing, records the id Stripe
+returned for it (since 2026-11-10), and keeps the row's own amount. One Stripe failed or canceled closes the row `Failed`, sends nothing, answers `refund.failed`, and
 raises `admin.payment.refund_needs_retry` at once, in a commit the seam makes itself, so the close and
 the alert stand even when the caller rolls back; every later retry on that key closes it again, so the
 money goes back only on another key. With none, the retry is sent on the same key. A lookup Stripe cannot

@@ -3124,6 +3124,7 @@
       },
       "load_error": "Could not load the refunds.",
       "retry_load": "Try again",
+      "stripe_refund_copied": "Stripe refund id copied",
       "empty": "No refunds.",
       "columns": {
         "order": "Order",
@@ -3131,10 +3132,12 @@
         "origin": "Origin",
         "amount": "Amount",
         "state": "State",
+        "stripe_refund": "Stripe refund",
         "requested_on": "Requested",
         "last_changed_on": "Last change"
       },
       "actions": {
+        "copy_stripe_refund": "Copy Stripe refund id",
         "retry": "Retry",
         "open_dispute": "Open dispute",
         "record_repayment": "Record repayment"

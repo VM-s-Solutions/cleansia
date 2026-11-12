@@ -76,7 +76,7 @@ public class ConcurrentRefundSettleTests(PostgresContainerFixture fixture) : Bas
         _stripe.Setup(s => s.RefundPaymentIntentAsync(
                 PaymentIntentId, It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Callback<string, decimal, string, CancellationToken>((_, amount, key, _) => _stripeRefunds.Add((amount, key)))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync("re_test");
     }
 
     /// <summary>
@@ -183,6 +183,8 @@ public class ConcurrentRefundSettleTests(PostgresContainerFixture fixture) : Bas
                     ran = true;
                     await settleAnother();
                 }
+
+                return "re_test";
             });
     }
 

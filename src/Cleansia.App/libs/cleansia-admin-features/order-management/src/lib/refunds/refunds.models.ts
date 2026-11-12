@@ -53,6 +53,8 @@ export function formatRefundAmount(row: RefundListItem, lang: string | undefined
   return formatMoney(row.amount, row.currencyCode, localeFor(lang), { fractionDigits: 2 });
 }
 
+export const refundStripeId = (row: RefundListItem): string => row.stripeRefundId || '—';
+
 export function refundCustomerLabel(row: RefundListItem, translate: TranslateService): string {
   const name = row.customerName || '-';
   return row.hasAccount ? name : `${name} (${translate.instant('pages.refunds.guest')})`;
@@ -125,7 +127,8 @@ export function getRefundsTableDefinition(
   },
   translate: TranslateService,
   permissions: PermissionService,
-  stateTemplate: TableColumn<RefundListItem>['customTemplate']
+  stateTemplate: TableColumn<RefundListItem>['customTemplate'],
+  stripeRefundTemplate: TableColumn<RefundListItem>['customTemplate']
 ): { columns: TableColumn<RefundListItem>[]; actions: TableAction<RefundListItem>[] } {
   return {
     columns: [
@@ -133,21 +136,21 @@ export function getRefundsTableDefinition(
         id: 'displayOrderNumber',
         field: 'displayOrderNumber',
         header: translate.instant('pages.refunds.columns.order'),
-        width: '11%',
+        width: '9%',
       },
       {
         id: 'customer',
         field: 'customerName',
         header: translate.instant('pages.refunds.columns.customer'),
         getValue: (row: RefundListItem) => refundCustomerLabel(row, translate),
-        width: '17%',
+        width: '14%',
       },
       {
         id: 'origin',
         field: 'origin',
         header: translate.instant('pages.refunds.columns.origin'),
         getValue: (row: RefundListItem) => refundOriginLabel(row, translate),
-        width: '13%',
+        width: '11%',
       },
       {
         id: 'amount',
@@ -156,14 +159,21 @@ export function getRefundsTableDefinition(
         header: translate.instant('pages.refunds.columns.amount'),
         sortable: true,
         getValue: (row: RefundListItem) => formatRefundAmount(row, translate.currentLang),
-        width: '11%',
+        width: '10%',
       },
       {
         id: 'state',
         field: 'state',
         header: translate.instant('pages.refunds.columns.state'),
         customTemplate: stateTemplate,
-        width: '20%',
+        width: '18%',
+      },
+      {
+        id: 'stripeRefund',
+        field: 'stripeRefundId',
+        header: translate.instant('pages.refunds.columns.stripe_refund'),
+        customTemplate: stripeRefundTemplate,
+        width: '16%',
       },
       {
         id: 'requestedOn',
@@ -172,7 +182,7 @@ export function getRefundsTableDefinition(
         header: translate.instant('pages.refunds.columns.requested_on'),
         sortable: true,
         getValue: (row: RefundListItem) => formatDate(row.requestedOn, translate.currentLang, 'dateTime'),
-        width: '13%',
+        width: '11%',
       },
       {
         id: 'lastChangedOn',
@@ -180,7 +190,7 @@ export function getRefundsTableDefinition(
         field: 'lastChangedOn',
         header: translate.instant('pages.refunds.columns.last_changed_on'),
         getValue: (row: RefundListItem) => formatDate(row.lastChangedOn, translate.currentLang, 'dateTime'),
-        width: '13%',
+        width: '11%',
       },
     ],
     actions: [

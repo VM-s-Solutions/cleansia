@@ -24,6 +24,7 @@ import {
   refundCustomerLabel,
   refundOriginLabel,
   refundStateHint,
+  refundStripeId,
 } from './refunds.models';
 
 @Component({
@@ -54,6 +55,7 @@ export class RefundsComponent implements OnInit {
   private readonly translate = inject(TranslateService);
   private readonly permissions = inject(PermissionService);
   private readonly stateTemplate = viewChild<TemplateRef<RefundListItem>>('stateTemplate');
+  private readonly stripeRefundTemplate = viewChild<TemplateRef<RefundListItem>>('stripeRefundTemplate');
 
   protected readonly stateOptions = computed(() => {
     this.facade.lang();
@@ -71,7 +73,8 @@ export class RefundsComponent implements OnInit {
       },
       this.translate,
       this.permissions,
-      this.stateTemplate()
+      this.stateTemplate(),
+      this.stripeRefundTemplate()
     );
   });
 
@@ -85,6 +88,8 @@ export class RefundsComponent implements OnInit {
     this.facade.lang();
     return refundStateHint(row, this.translate);
   }
+
+  protected readonly stripeIdOf = refundStripeId;
 
   protected originOf(row: RefundListItem): string {
     return refundOriginLabel(row, this.translate);

@@ -44,7 +44,7 @@ public class AdminNoShowBeforeStartTests(PostgresContainerFixture fixture) : Bas
         await SeedAsync();
         _stripe.Setup(s => s.RefundPaymentIntentAsync(
                 PaymentIntentId, It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync("re_test");
 
         await using (var ctx = NewContext())
         {

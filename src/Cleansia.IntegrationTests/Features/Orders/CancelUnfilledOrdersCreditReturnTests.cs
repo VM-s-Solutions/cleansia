@@ -236,7 +236,7 @@ public class CancelUnfilledOrdersCreditReturnTests(PostgresContainerFixture fixt
         _stripe.SetupSequence(s => s.RefundPaymentIntentAsync(
                 PaymentIntentId, It.IsAny<decimal>(), RefundKey, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new StripeException("card network unavailable"))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync("re_test");
 
         var response = await SweepAsync();
 
@@ -343,7 +343,7 @@ public class CancelUnfilledOrdersCreditReturnTests(PostgresContainerFixture fixt
         _stripe.SetupSequence(s => s.RefundPaymentIntentAsync(
                 PaymentIntentId, It.IsAny<decimal>(), RefundKey, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new StripeException("card network unavailable"))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync("re_test");
         await SweepAsync();
         await using (var ctx = NewContext())
         {
@@ -478,8 +478,8 @@ public class CancelUnfilledOrdersCreditReturnTests(PostgresContainerFixture fixt
             {
                 stripeCalls.Add(amount);
                 return stripeCalls.Count == 1
-                    ? Task.FromException(new HttpRequestException("the refund was made, the answer timed out"))
-                    : Task.CompletedTask;
+                    ? Task.FromException<string>(new HttpRequestException("the refund was made, the answer timed out"))
+                    : Task.FromResult("re_test");
             });
 
         await SweepAsync();

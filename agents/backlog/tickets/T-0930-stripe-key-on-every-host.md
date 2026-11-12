@@ -48,3 +48,7 @@ PRO deploys from the same file, so it has the same gap. Mike, 10 November 2026: 
 ## Work record
 
 - 2026-11-10 — Filed and started on `fix/stripe-key-all-hosts`.
+- 2026-11-10 — Shipped: #378 merged to master as f007703f6.
+- 2026-11-10 — Deployed to DEV with Mike's OK: deploy-dev.yml mode=deploy (run 42858877513) ran the Bicep (Provision done 17:04Z, Functions deployed 17:09Z). The app legs hit the scm-auth-preflight 503 and passed after diagnose-dev.yml (runs 42862120585 and 42866460306) and two `gh run rerun --failed`. All five APIs answer /health 200 and the customer web 200.
+- 2026-11-10 — Proven on DEV. The hourly re-drive on the Functions worker sent refund `01M7305D5FCS95CBE3PVJ0Q517` (ORD-B77780DB, 300 CZK) to Stripe at 18:03:54Z; it was paid with the 5126 test card, so Stripe failed it and it read Bounced with `re_3UaGfo3KjMqxM0RB0RqaEMzv` at 18:06:08Z. An administrator's cancellation of a new order paid with the 4242 test card, ORD-0C9FAC6B, answered `refundInitiated: true`, and its refund `01M73A7CZ3W9WTCZZSKAH3WD6Q` read Refunded 3 seconds after it was asked for. The partner host's `/api/v1/Health` reports Stripe configured. No cleaner's cash collection on a card order was run.
+- 2026-11-10 — Reported, not fixed: a refund sent fresh records no Stripe refund id (`RefundService.cs:443` keeps one only when a retry finds the refund at Stripe), so the Refunds page shows none for a refund that succeeded.

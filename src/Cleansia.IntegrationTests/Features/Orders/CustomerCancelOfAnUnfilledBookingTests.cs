@@ -52,7 +52,7 @@ public class CustomerCancelOfAnUnfilledBookingTests(PostgresContainerFixture fix
                 services.Replace(ServiceDescriptor.Singleton(factory.Object));
                 _stripe.Setup(s => s.RefundPaymentIntentAsync(
                         PaymentIntentId, It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
+                    .ReturnsAsync("re_test");
                 return Task.CompletedTask;
             },
             arrange: SeedAsync,

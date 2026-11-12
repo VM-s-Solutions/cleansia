@@ -1034,13 +1034,13 @@ public sealed class CompanyWindDownSweepTests(PostgresContainerFixture fixture) 
         public List<string> CancelledNowSubscriptions { get; } = [];
         public bool AllRefundKeysIdentical => _refundKeys.Distinct().Count() <= 1;
 
-        public Task RefundCheckoutSessionAsync(string stripeSessionId, decimal amount, string idempotencyKey, CancellationToken cancellationToken)
+        public Task<string> RefundCheckoutSessionAsync(string stripeSessionId, decimal amount, string idempotencyKey, CancellationToken cancellationToken)
             => RecordRefund(idempotencyKey, amount);
 
-        public Task RefundPaymentIntentAsync(string paymentIntentId, decimal amount, string idempotencyKey, CancellationToken cancellationToken)
+        public Task<string> RefundPaymentIntentAsync(string paymentIntentId, decimal amount, string idempotencyKey, CancellationToken cancellationToken)
             => RecordRefund(idempotencyKey, amount);
 
-        private Task RecordRefund(string idempotencyKey, decimal amount)
+        private Task<string> RecordRefund(string idempotencyKey, decimal amount)
         {
             RefundCalls++;
             RefundAttempts.Add((idempotencyKey, amount));
@@ -1051,7 +1051,7 @@ public sealed class CompanyWindDownSweepTests(PostgresContainerFixture fixture) 
 
             _refundKeys.Add(idempotencyKey);
             LastRefundKey = idempotencyKey;
-            return Task.CompletedTask;
+            return Task.FromResult("re_test");
         }
 
         public Task CancelSubscriptionAtPeriodEndAsync(string stripeSubscriptionId, CancellationToken cancellationToken)

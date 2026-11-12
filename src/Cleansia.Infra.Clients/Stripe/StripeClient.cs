@@ -206,7 +206,7 @@ public class StripeClient : IStripeClient
         return new CheckoutSessionResult(session.Id, session.Url);
     }
 
-    public async Task RefundCheckoutSessionAsync(
+    public async Task<string> RefundCheckoutSessionAsync(
         string stripeSessionId, decimal amount, string idempotencyKey, CancellationToken cancellationToken)
     {
         var sessionService = new SessionService(stripe);
@@ -231,12 +231,13 @@ public class StripeClient : IStripeClient
         // The caller's deterministic refund key is the idempotency key (ADR-0006 D3), so Stripe replays its
         // original refund to a retry for about a day; the RefundKey metadata is what a later retry finds it by.
         var requestOptions = new RequestOptions { IdempotencyKey = idempotencyKey };
-        await ClassifyAsync(
+        var refund = await ClassifyAsync(
             nameof(RefundCheckoutSessionAsync),
             () => refundService.CreateAsync(refundOptions, requestOptions, cancellationToken));
+        return refund.Id;
     }
 
-    public async Task RefundPaymentIntentAsync(
+    public async Task<string> RefundPaymentIntentAsync(
         string paymentIntentId, decimal amount, string idempotencyKey, CancellationToken cancellationToken)
     {
         var refundService = new global::Stripe.RefundService(stripe);
@@ -250,9 +251,10 @@ public class StripeClient : IStripeClient
         // The caller's deterministic refund key is the idempotency key (ADR-0006 D3), so Stripe replays its
         // original refund to a retry for about a day; the RefundKey metadata is what a later retry finds it by.
         var requestOptions = new RequestOptions { IdempotencyKey = idempotencyKey };
-        await ClassifyAsync(
+        var refund = await ClassifyAsync(
             nameof(RefundPaymentIntentAsync),
             () => refundService.CreateAsync(refundOptions, requestOptions, cancellationToken));
+        return refund.Id;
     }
 
     public async Task<StripeRefundSnapshot?> FindRefundAsync(

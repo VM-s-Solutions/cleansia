@@ -153,11 +153,11 @@ public class PendingRefundCeilingTests(PostgresContainerFixture fixture) : BaseI
             {
                 if (key != timesOutOn || timedOut)
                 {
-                    return Task.CompletedTask;
+                    return Task.FromResult("re_test");
                 }
 
                 timedOut = true;
-                return Task.FromException(new HttpRequestException("timed out"));
+                return Task.FromException<string>(new HttpRequestException("timed out"));
             });
     }
 

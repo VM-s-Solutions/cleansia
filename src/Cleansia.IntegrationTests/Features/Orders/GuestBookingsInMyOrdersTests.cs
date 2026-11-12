@@ -66,7 +66,7 @@ public class GuestBookingsInMyOrdersTests(PostgresContainerFixture fixture) : Ba
         services.Replace(ServiceDescriptor.Singleton(factory.Object));
         _stripe.Setup(s => s.RefundPaymentIntentAsync(
                 It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync("re_test");
         return Task.CompletedTask;
     }
 

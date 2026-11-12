@@ -3124,6 +3124,7 @@
       },
       "load_error": "Refundácie sa nepodarilo načítať.",
       "retry_load": "Skúsiť znova",
+      "stripe_refund_copied": "ID refundácie Stripe skopírované",
       "empty": "Žiadne refundácie.",
       "columns": {
         "order": "Objednávka",
@@ -3131,10 +3132,12 @@
         "origin": "Pôvod",
         "amount": "Suma",
         "state": "Stav",
+        "stripe_refund": "Refundácia Stripe",
         "requested_on": "Vyžiadané",
         "last_changed_on": "Posledná zmena"
       },
       "actions": {
+        "copy_stripe_refund": "Skopírovať ID refundácie Stripe",
         "retry": "Zopakovať",
         "open_dispute": "Otvoriť spor",
         "record_repayment": "Zaznamenať splatenie"

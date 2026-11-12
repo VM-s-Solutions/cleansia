@@ -3124,6 +3124,7 @@
       },
       "load_error": "Не вдалося завантажити повернення коштів.",
       "retry_load": "Спробувати знову",
+      "stripe_refund_copied": "ID повернення Stripe скопійовано",
       "empty": "Повернень немає.",
       "columns": {
         "order": "Замовлення",
@@ -3131,10 +3132,12 @@
         "origin": "Походження",
         "amount": "Сума",
         "state": "Стан",
+        "stripe_refund": "Повернення Stripe",
         "requested_on": "Запитано",
         "last_changed_on": "Остання зміна"
       },
       "actions": {
+        "copy_stripe_refund": "Копіювати ID повернення Stripe",
         "retry": "Повторити",
         "open_dispute": "Відкрити спір",
         "record_repayment": "Записати виплату"

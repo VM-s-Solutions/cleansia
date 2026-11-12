@@ -293,11 +293,13 @@ credit, and the customer held 1 600. Now 400 is the most such a settlement can g
     later retry on that key finds the same failed refund and closes the row again, so it goes back only
     through a refund on another key: an administrator's full refund, a partial refund of another
     selection of lines, or a complaint settled in credit ([below](#dispute-settlement)).
-  - **Stripe lists none**: the retry is sent on the same key, as before.
+  - **Stripe lists none**: the retry is sent on the same key, as before, and records the id Stripe
+    returns for it (since 2026-11-10), with the row's own amount.
   - **Stripe cannot be reached**: nothing is sent and the row stays `Pending` for the next retry.
 
   A first attempt asks Stripe nothing first: its row was claimed a moment before, so nothing can exist
-  on its key. A refund made by hand in the Stripe dashboard carries no key and is never taken for one of
+  on its key. It records the id Stripe returns for the refund it sends (since 2026-11-10), with the row's
+  own amount. A refund made by hand in the Stripe dashboard carries no key and is never taken for one of
   ours. A retry held back at the card ceiling never reaches the lookup (below). A refund Stripe accepted
   and fails later is the `refund.failed` webhook, which marks the row and tells the administrators
   ([below](#refund-states)); `charge.refund.updated` is not subscribed, as it reports the same failure a

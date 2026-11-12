@@ -124,11 +124,11 @@ public class DisputeRefundPendingAtNoShowTests(PostgresContainerFixture fixture)
             {
                 if (refused)
                 {
-                    return Task.CompletedTask;
+                    return Task.FromResult("re_test");
                 }
 
                 refused = true;
-                return Task.FromException(new StripeException("card network unavailable"));
+                return Task.FromException<string>(new StripeException("card network unavailable"));
             });
     }
 
@@ -296,7 +296,7 @@ public class DisputeRefundPendingAtNoShowTests(PostgresContainerFixture fixture)
         _stripe.Setup(s => s.RefundPaymentIntentAsync(
                 PaymentIntentId, It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Callback<string, decimal, string, CancellationToken>((_, amount, key, _) => _stripeCalls.Add((amount, key)))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync("re_test");
 
         var noShowConfirmed = await ConfirmNoShowAsync();
         var closing = await CloseAsync(disputeId);

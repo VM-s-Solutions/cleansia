@@ -250,7 +250,7 @@ public sealed class PlatformCancellationCreditReturnTests
         _stripe.SetupSequence(s => s.RefundPaymentIntentAsync(
                 PaymentIntentId, It.IsAny<decimal>(), RefundKey, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new StripeException("card network unavailable"))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync("re_test");
 
         var result = await CancelAsync(order);
         var claimed = Assert.Single(rows);
@@ -280,7 +280,7 @@ public sealed class PlatformCancellationCreditReturnTests
         _stripe.SetupSequence(s => s.RefundPaymentIntentAsync(
                 PaymentIntentId, It.IsAny<decimal>(), RefundKey, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new HttpRequestException("timed out"))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync("re_test");
 
         var result = await CancelAsync(order);
         var claimed = Assert.Single(rows);

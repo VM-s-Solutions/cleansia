@@ -414,29 +414,29 @@ public sealed class RefundMoneyConservationTests
             _steps.Add(result.IsSuccess ? $"settled {amount} in credit" : $"settling {amount} in credit refused");
         }
 
-        private Task Stripe(decimal amount, string key)
+        private Task<string> Stripe(decimal amount, string key)
         {
             var answer = _nextAnswer;
             _nextAnswer = StripeAnswer.Pays;
             if (_stripeKeys.TryGetValue(key, out var took))
             {
                 return took == amount
-                    ? Task.CompletedTask
-                    : Task.FromException(new StripeException($"Key {key} was first used for {took}, not {amount}."));
+                    ? Task.FromResult("re_test")
+                    : Task.FromException<string>(new StripeException($"Key {key} was first used for {took}, not {amount}."));
             }
 
             switch (answer)
             {
                 case StripeAnswer.Unreachable:
-                    return Task.FromException(new HttpRequestException("connection reset"));
+                    return Task.FromException<string>(new HttpRequestException("connection reset"));
                 case StripeAnswer.Refuses:
-                    return Task.FromException(new StripeException("card network unavailable"));
+                    return Task.FromException<string>(new StripeException("card network unavailable"));
                 case StripeAnswer.PaysThenTimesOut:
                     Pay(amount, key);
-                    return Task.FromException(new HttpRequestException("timed out"));
+                    return Task.FromException<string>(new HttpRequestException("timed out"));
                 default:
                     Pay(amount, key);
-                    return Task.CompletedTask;
+                    return Task.FromResult("re_test");
             }
         }
 

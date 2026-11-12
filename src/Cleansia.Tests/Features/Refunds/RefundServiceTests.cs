@@ -284,6 +284,29 @@ public class RefundServiceTests
         Assert.Equal(PaymentStatus.Refunded, order.PaymentStatus);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_First_Send_Records_The_Stripe_Refund_Id_Stripe_Returned(bool mobile)
+    {
+        var order = mobile ? CreateMobileCardPaidOrder(1000m) : CreateCardPaidOrder(1000m);
+        ArrangeOrder(order);
+        ArrangeNoExistingRefund();
+        ArrangeConsumed(0m);
+        CaptureAddedRefund(out var added);
+
+        var result = await CreateService().IssueRefundAsync(
+            new RefundRequest(OrderId, 1000m, RefundReason.CustomerCancellation, ActorId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(mobile ? 1 : 0, _stripe.PaymentIntentRefundCallCount);
+        Assert.Equal(mobile ? 0 : 1, _stripe.SessionRefundCallCount);
+        var row = Assert.Single(added);
+        Assert.Equal(RefundStatus.Succeeded, row.Status);
+        Assert.Equal(_stripe.CreatedRefundId, row.StripeRefundId);
+        Assert.Equal(1000m, row.Amount);
+    }
+
     // T-0348: a mobile-paid card order supports a partial refund on the PaymentIntent surface.
     [Fact]
     public async Task IssueRefund_MobilePaymentIntentOrder_PartialRefund_LeavesPartiallyRefunded()
@@ -1898,7 +1921,7 @@ public class RefundServiceTests
         Assert.Equal(AdminKey, _stripe.LastIdempotencyKey);
         Assert.Equal(1000m, _stripe.LastAmount);
         Assert.Equal(RefundStatus.Succeeded, refund.Status);
-        Assert.Null(refund.StripeRefundId);
+        Assert.Equal(_stripe.CreatedRefundId, refund.StripeRefundId);
     }
 
     [Fact]
@@ -1953,6 +1976,7 @@ public class RefundServiceTests
         public bool ThrowOnRefund { get; set; }
         public bool AllRefundKeysIdentical => _refundKeys.Distinct().Count() <= 1;
         public StripeRefundSnapshot? Listed { get; set; }
+        public string CreatedRefundId { get; } = "re_created";
         public Exception? LookupFailure { get; set; }
         public List<(string? SessionId, string? PaymentIntentId, string RefundKey)> Lookups { get; } = [];
 
@@ -1978,7 +2002,7 @@ public class RefundServiceTests
             ThrowOnRefund = false;
         }
 
-        public Task RefundCheckoutSessionAsync(
+        public Task<string> RefundCheckoutSessionAsync(
             string stripeSessionId, decimal amount, string idempotencyKey, CancellationToken cancellationToken)
         {
             LastSessionId = stripeSessionId;
@@ -1986,7 +2010,7 @@ public class RefundServiceTests
             return RecordRefund(amount, idempotencyKey);
         }
 
-        public Task RefundPaymentIntentAsync(
+        public Task<string> RefundPaymentIntentAsync(
             string paymentIntentId, decimal amount, string idempotencyKey, CancellationToken cancellationToken)
         {
             LastPaymentIntentId = paymentIntentId;
@@ -1994,7 +2018,7 @@ public class RefundServiceTests
             return RecordRefund(amount, idempotencyKey);
         }
 
-        private Task RecordRefund(decimal amount, string idempotencyKey)
+        private Task<string> RecordRefund(decimal amount, string idempotencyKey)
         {
             if (ThrowOnRefund)
             {
@@ -2013,7 +2037,7 @@ public class RefundServiceTests
             RefundCallCount++;
             LastIdempotencyKey = idempotencyKey;
             LastAmount = amount;
-            return Task.CompletedTask;
+            return Task.FromResult(CreatedRefundId);
         }
 
         public Task<CheckoutSessionResult> CreateCheckoutSessionAsync(Order order, CancellationToken cancellationToken)

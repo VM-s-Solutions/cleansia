@@ -10,6 +10,7 @@ import {
   REFUND_REPAYMENT_METHOD_LABEL_KEYS,
   REFUND_STATE_LABEL_KEYS,
   refundStateHint,
+  refundStripeId,
   statesFor,
 } from './refunds.models';
 
@@ -60,12 +61,16 @@ describe('refunds models', () => {
       { onRetry: jest.fn(), onOpenDispute: jest.fn(), onRecordRepayment: jest.fn(), isBusy: () => false },
       translate,
       permissions,
+      undefined,
       undefined
     ).actions.find((a) => a.tooltip === tooltip)!;
   }
 
   it('has a label for every state, origin and repayment method in all five locales', () => {
     const keys = [
+      'pages.refunds.columns.stripe_refund',
+      'pages.refunds.actions.copy_stripe_refund',
+      'pages.refunds.stripe_refund_copied',
       ...Object.values(REFUND_STATE_LABEL_KEYS),
       ...Object.values(REFUND_ORIGIN_LABEL_KEYS),
       ...Object.values(REFUND_REPAYMENT_METHOD_LABEL_KEYS),
@@ -75,8 +80,13 @@ describe('refunds models', () => {
       return keys.filter((key) => typeof lookup(tree, key) !== 'string').map((key) => `${locale}: ${key}`);
     });
 
-    expect(keys).toHaveLength(12);
+    expect(keys).toHaveLength(15);
     expect(missing).toEqual([]);
+  });
+
+  it('shows the Stripe refund id when the row has one and an em dash when it has none', () => {
+    expect(refundStripeId(refund(RefundState.Refunded, { stripeRefundId: 're_123' }))).toBe('re_123');
+    expect(refundStripeId(refund(RefundState.NotSent))).toBe('—');
   });
 
   it('shows Retry only on a row the server marks retryable and only to a role that may issue refunds', () => {

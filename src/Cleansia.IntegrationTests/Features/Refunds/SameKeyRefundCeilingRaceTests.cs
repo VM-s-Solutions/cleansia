@@ -69,7 +69,7 @@ public class SameKeyRefundCeilingRaceTests(PostgresContainerFixture fixture) : B
         _stripe.Setup(s => s.RefundPaymentIntentAsync(
                 PaymentIntentId, It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Callback<string, decimal, string, CancellationToken>((_, amount, key, _) => _stripeRefunds.Add((amount, key)))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync("re_test");
     }
 
     /// <summary>A paid card order of 1000 and one claim on <paramref name="key"/> of 1000 whose Stripe answer is still out.</summary>

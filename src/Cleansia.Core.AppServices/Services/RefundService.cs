@@ -388,6 +388,7 @@ public sealed class RefundService(
         var refundKey = refund.RefundKey;
         var stripe = stripeClientFactory.CreateClient();
         StripeRefundSnapshot? made = null;
+        string? sentId = null;
         try
         {
             // Stripe forgets an idempotency key after about a day and would then pay this key as a new refund.
@@ -420,11 +421,11 @@ public sealed class RefundService(
             // present so the established web refund path is byte-unchanged.
             if (made is null && !string.IsNullOrEmpty(order.StripeSessionId))
             {
-                await stripe.RefundCheckoutSessionAsync(order.StripeSessionId, refund.Amount, refundKey, cancellationToken);
+                sentId = await stripe.RefundCheckoutSessionAsync(order.StripeSessionId, refund.Amount, refundKey, cancellationToken);
             }
             else if (made is null)
             {
-                await stripe.RefundPaymentIntentAsync(order.StripePaymentIntentId!, refund.Amount, refundKey, cancellationToken);
+                sentId = await stripe.RefundPaymentIntentAsync(order.StripePaymentIntentId!, refund.Amount, refundKey, cancellationToken);
             }
         }
         catch (StripeException ex)
@@ -440,7 +441,7 @@ public sealed class RefundService(
                 nameof(refund.Amount), BusinessErrorMessage.RefundFailed));
         }
 
-        refund.MarkSucceeded(stripeRefundId: made?.Id, confirmedOnUtc: DateTimeOffset.UtcNow, amount: made?.Amount);
+        refund.MarkSucceeded(stripeRefundId: made?.Id ?? sentId, confirmedOnUtc: DateTimeOffset.UtcNow, amount: made?.Amount);
 
         // A save refused only because another refund moved the order's payment status is not a lost decision: that
         // status is derived from what the order has given back, so it is read and saved again rather than failing

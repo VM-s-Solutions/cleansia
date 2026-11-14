@@ -1,0 +1,11 @@
+{
+  "name": "cleansia-platform-e2e",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/cleansia-platform-e2e/src",
+  "// targets": "e2e and lint are inferred. Never cached: a stage's result lives on DEV and in the run folder, which no Nx input sees.",
+  "targets": {
+    "e2e": { "cache": false },
+    "e2e-ci": { "cache": false }
+  }
+}

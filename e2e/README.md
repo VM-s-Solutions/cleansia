@@ -114,3 +114,71 @@ web and works the jobs there. The stages then read as follows.
 
 Not driven in a browser: the guest booking and its tracking page, a cash job's cancellation, and the early-start
 refusal; the API half covers them.
+
+### P1 cases the suite does not cover yet
+
+A stage's report lists only the case ids its tests carry, so it never reads as full P1 coverage. These P1 cases
+have no test and no runbook step yet ("runbook step" counts a row of the P1 table in `runbooks/`):
+
+| Case | Title | Why not yet |
+|---|---|---|
+| E2E-AUTH-045 | An admin rejects a document with a reason | a refusal path off the core journey, not written yet |
+| E2E-AUTH-047 | Approval is refused until the paperwork is complete | a refusal path off the core journey, not written yet |
+| E2E-AUTH-049 | An admin rejects a cleaner and the cleaner reads the reason | a refusal path off the core journey, not written yet |
+| E2E-AUTH-055 | An Administrator creates a Manager, a Support and an Accountant | needs the Manager, Support and Accountant accounts, which no stage creates yet |
+| E2E-BOOK-014 | A start under 2 h away is refused, not priced higher | a refusal path off the core journey, not written yet |
+| E2E-BOOK-018 | The start must sit on the 15-minute grid | a refusal path off the core journey, not written yet |
+| E2E-BOOK-029 | An Increased booking by card keeps the level on the order | a refusal path off the core journey, not written yet |
+| E2E-BOOK-035 | A job that needs two cleaners cannot be paid in cash | needs a two-cleaner job, which DEV's 2-minute services reach only through an admin edit of a throwaway service |
+| E2E-BOOK-038 | A customer who owes books nothing | needs a receivable (a late cash cancellation or a cash job reported unpaid), which no stage builds yet |
+| E2E-BOOK-046 | The terms tick is required for a guest, and a refusal is recorded | a refusal path off the core journey, not written yet |
+| E2E-CANCEL-003 | A cancellation with 24 hours or more of notice is free | needs a taken job cancelled inside a fee tier or past its slot, which takes DEV time no stage spends yet |
+| E2E-CANCEL-006 | A cancellation with 4 to 24 hours of notice costs 25 % | needs a taken job cancelled inside a fee tier or past its slot, which takes DEV time no stage spends yet |
+| E2E-CANCEL-007 | A cancellation with under 4 hours of notice costs 50 % | needs a taken job cancelled inside a fee tier or past its slot, which takes DEV time no stage spends yet |
+| E2E-CANCEL-016 | A late cancellation of a cash booking opens a receivable and blocks booking | needs a receivable (a late cash cancellation or a cash job reported unpaid), which no stage builds yet |
+| E2E-CANCEL-018 | After the booked start, with a cleaner on the job and not started, the customer cannot cancel | needs a taken job cancelled inside a fee tier or past its slot, which takes DEV time no stage spends yet |
+| E2E-CANCEL-049 | An administrator refunds a paid card order in full and the customer sees it | an administrator refund of a completed card order, which no stage makes yet |
+| E2E-CANCEL-051 | A partial line refund refunds the share of the lines chosen | an administrator refund of a completed card order, which no stage makes yet |
+| E2E-CANCEL-053 | A refund is bounded by what is left | an administrator refund of a completed card order, which no stage makes yet |
+| E2E-EXEC-005 | Only the assigned cleaner may move the job | a refusal path off the core journey, not written yet |
+| E2E-EXEC-006 | The transition guard refuses a move out of order | a refusal path off the core journey, not written yet |
+| E2E-EXEC-027 | Cash collection refusals | a refusal path off the core journey, not written yet |
+| E2E-EXEC-030 | Customer did not pay: refusals in order | a refusal path off the core journey, not written yet |
+| E2E-EXEC-042 | A crew marks done, then any cleaner completes | needs a two-cleaner job, which DEV's 2-minute services reach only through an admin edit of a throwaway service |
+| E2E-EXEC-043 | A premature Complete is refused | needs a two-cleaner job, which DEV's 2-minute services reach only through an admin edit of a throwaway service |
+| E2E-PAY-017 | A webhook call without a signature header is refused | a refusal path off the core journey, not written yet |
+| E2E-PAY-018 | A webhook call with a forged signature is refused | a refusal path off the core journey, not written yet |
+| E2E-PAY-041 | A customer lists what they owe and pays it through the pay link | needs a receivable (a late cash cancellation or a cash job reported unpaid), which no stage builds yet |
+| E2E-PAY-042 | A paid fee earns a fee receipt of its own | needs a receivable (a late cash cancellation or a cash job reported unpaid), which no stage builds yet |
+| E2E-PAYOUT-013 | Only one period is open, and it has the configured length | partly: the settle web test reads one Open period on the pay periods page; the period length and the details heading are not checked |
+| E2E-PAYOUT-014 | The night run closes the period the night after its end date | needs the 02:00 UTC night run or the invoice lifecycle after the close (approve, mark paid, cancel), which no stage drives yet |
+| E2E-PAYOUT-015 | The night close invoices each cleaner who has pay, and only them | needs the 02:00 UTC night run or the invoice lifecycle after the close (approve, mark paid, cancel), which no stage drives yet |
+| E2E-PAYOUT-029 | Mark period as paid is refused until every row is invoiced and every invoice is settled | needs the 02:00 UTC night run or the invoice lifecycle after the close (approve, mark paid, cancel), which no stage drives yet |
+| E2E-PAYOUT-030 | Mark period as paid closes the cycle | needs the 02:00 UTC night run or the invoice lifecycle after the close (approve, mark paid, cancel), which no stage drives yet |
+| E2E-PAYOUT-033 | Invoice number and variable symbol follow the company's series | needs the 02:00 UTC night run or the invoice lifecycle after the close (approve, mark paid, cancel), which no stage drives yet |
+| E2E-PAYOUT-037 | A cleaner cannot read another cleaner's invoice | a refusal path off the core journey, not written yet |
+| E2E-PAYOUT-039 | Approve moves a pending invoice to approved | needs the 02:00 UTC night run or the invoice lifecycle after the close (approve, mark paid, cancel), which no stage drives yet |
+| E2E-PAYOUT-043 | Mark paid records the transfer and is final | needs the 02:00 UTC night run or the invoice lifecycle after the close (approve, mark paid, cancel), which no stage drives yet |
+| E2E-PAYOUT-045 | The Mark paid confirmation shows what to transfer before it sends anything | needs the 02:00 UTC night run or the invoice lifecycle after the close (approve, mark paid, cancel), which no stage drives yet |
+| E2E-PAYOUT-046 | Cancel an invoice and a corrected one follows | needs the 02:00 UTC night run or the invoice lifecycle after the close (approve, mark paid, cancel), which no stage drives yet |
+| E2E-PAYOUT-052 | The payroll actions are refused to Support and open to Accountant | needs the Manager, Support and Accountant accounts, which no stage creates yet |
+| E2E-PAYOUT-057 | The PDF prints the set-off statement in the cleaner's language | needs the 02:00 UTC night run or the invoice lifecycle after the close (approve, mark paid, cancel), which no stage drives yet |
+| E2E-TAKE-020 | Two cleaners, one seat, the same instant | a refusal path off the core journey, not written yet |
+| E2E-TAKE-023 | A cancelled or completed order says the job is gone | a refusal path off the core journey, not written yet |
+| E2E-TAKE-025 | A cleaner who has not accepted the cleaner documents cannot take | a refusal path off the core journey, not written yet |
+| E2E-TAKE-029 | A time conflict blocks a take | a refusal path off the core journey, not written yet |
+| E2E-TAKE-031 | A two-cleaner job fills seat by seat, with no spare seat | needs a two-cleaner job, which DEV's 2-minute services reach only through an admin edit of a throwaway service |
+| E2E-TAKE-040 | The last cleaner drops a confirmed job | a drop of a taken job, which no stage makes yet |
+| E2E-TAKE-041 | The customer is told a cleaner can no longer come | a drop of a taken job, which no stage makes yet |
+| E2E-TAKE-042 | The administrators are told, and the audit has the drop | a drop of a taken job, which no stage makes yet |
+| E2E-TAKE-043 | One of two cleaners drops: the job stays confirmed and short | needs a two-cleaner job, which DEV's 2-minute services reach only through an admin edit of a throwaway service |
+| E2E-TAKE-044 | A drop of a job on the way or in progress is refused | a drop of a taken job, which no stage makes yet |
+| E2E-TAKE-049 | Admin places a cleaner on an open order | a refusal path off the core journey, not written yet |
+| E2E-XCUT-007 | A new offerable order raises an admin notice for Support and above, not for Accountant | needs the Manager, Support and Accountant accounts, which no stage creates yet |
+| E2E-XCUT-019 | A backend refusal is shown translated in each locale | a refusal path off the core journey, not written yet |
+
+Partly covered, so no test carries their tag: E2E-BOOK-011 (the runbooks show the three dirtiness levels and the
+price moving, but nothing quotes Increased or Heavy and checks the surcharge and the duration), E2E-CANCEL-005 (the
+customer web shows `CZK 0 (0%)` and the Android sheet the grace text, but no check reads `oopsWindowMinutes`) and
+E2E-PAYOUT-013 (above). One runbook row is partial too: E2E-EXEC-020 shows the crew reading the customer's name and
+phone, not that a cleaner off the crew sees none of it.

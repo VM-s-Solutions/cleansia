@@ -44,11 +44,17 @@ async function completeAndReadBack(s: Session, o: RunOrder) {
   const customer = await signIn('customer-mobile', emailOf(run, 'customer'), run.password);
   const pdf = await poll(() => receipt(customer, o.id), (r) => r.status === 200, 90_000);
   expect(pdf.headers['content-type']).toContain('application/pdf');
-  // The pay row lands in the open period.
+  // The pay row is calculated off the completion's path (a queue), seconds later, in the period open then.
+  expect(await poll(() => openPeriodPays(s), (ids) => ids.includes(o.id))).toContain(o.id);
+}
+
+/** The order ids of the cleaner's pay rows in the period open now. */
+async function openPeriodPays(s: Session): Promise<string[]> {
+  const admin = await signIn('admin', DEV_ADMIN.email, DEV_ADMIN.password);
   const periods = list((await call(admin, 'GET', '/api/AdminPayPeriod/get-paged?Offset=0&Limit=20')).body, 'data');
   const open = periods.find((p) => str(p, 'status') === 'Open' || str(p, 'status.name') === 'Open');
   const pays = (await call(s, 'GET', `/api/EmployeePayroll/GetPeriodPays?EmployeeId=${run.employeeId}&PayPeriodId=${str(open, 'id')}`)).body;
-  expect(list(pays, 'orderPays').map((r) => str(r, 'orderId'))).toContain(o.id);
+  return list(pays, 'orderPays').map((r) => str(r, 'orderId'));
 }
 
 test.describe('execute', () => {

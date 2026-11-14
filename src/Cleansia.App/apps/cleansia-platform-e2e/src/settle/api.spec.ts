@@ -80,6 +80,15 @@ test.describe('settle', () => {
     const current = periods.find((p) => str(p, 'status') === 'Open' || str(p, 'status.name') === 'Open');
     const id = str(current, 'id');
     expect(id).not.toBe('');
+    test.skip(str(current, 'startDate') > day(new Date()), `the open period starts ${str(current, 'startDate')}; Close now ends a period that has started`);
+    // Pay is written off the completion's path; a row written after the close lands in the next period.
+    const cleaner = await signIn('partner', emailOf(run, 'cleaner'), run.password);
+    const jobs = [run.orders['cash'].id, run.orders['card'].id];
+    const paid = await poll(
+      async () => list((await call(cleaner, 'GET', `/api/EmployeePayroll/GetPeriodPays?EmployeeId=${run.employeeId}&PayPeriodId=${id}`)).body, 'orderPays').map((r) => str(r, 'orderId')),
+      (ids) => jobs.every((j) => ids.includes(j)),
+    );
+    expect(paid, 'both jobs have their pay row in the period before it is closed').toEqual(expect.arrayContaining(jobs));
     const r = await call(a, 'POST', '/api/AdminPayPeriod/close', { payPeriodId: id, reason });
     expect(r.status, JSON.stringify(r.body)).toBe(200);
     run.closedPeriodId = id;
@@ -98,7 +107,6 @@ test.describe('settle', () => {
     test.setTimeout(35 * 60_000);
     // The five-minute sweep invoices a period 15 minutes after its close; not a defect before 25 (E2E-PAYOUT-017).
     const deadline = new Date(run.closedAt ?? '').getTime() + 25 * 60_000;
-    const a = await admin();
     const invoice = await poll(
       async () => rows((await call(await admin(), 'GET', `/api/AdminInvoice/get-paged?Offset=0&Limit=10&Filter.EmployeeId=${run.employeeId}&Filter.PayPeriodId=${run.closedPeriodId}`)).body)[0],
       Boolean,
@@ -106,6 +114,7 @@ test.describe('settle', () => {
       60_000,
     );
     expect(invoice, `no invoice 25 minutes after the close at ${run.closedAt}`).toBeTruthy();
+    const a = await admin(); // signed in after the wait: an admin session lapses in about 15 minutes
     const detail = (await call(a, 'GET', `/api/AdminInvoice/details/${str(invoice, 'id')}`)).body;
     expect(str(detail, 'status.name') || str(detail, 'status')).toMatch(/^(Pending|1)$/);
     expect(str(detail, 'currencyCode')).toBe('CZK');

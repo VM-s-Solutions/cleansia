@@ -2,11 +2,12 @@ import { expect, test } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import {
-  anonymous, call, DEV_ADMIN, errorKeys, list, named, num, ORDER_STATUS, PAYMENT_STATUS, payStripeCheckout, png, poll, Session,
+  anonymous, call, errorKeys, list, named, num, ORDER_STATUS, PAYMENT_STATUS, payStripeCheckout, png, poll, Session,
   signIn, str,
 } from '../support/dev';
 import { emailOf, newRun, RunOrder, RunState, saveRun } from '../support/run';
 import { nextSlots } from '../support/slots';
+import { cachedAdmin } from '../support/web';
 
 // Stage 'book': the run's accounts, the cleaner's onboarding and approval, the bookings at the next open slots
 // (cash, card and guest), and the takes. Serial: each step leaves the state the next one starts from.
@@ -22,7 +23,7 @@ const SERVICE = 'Bathroom Cleaning';
 const sessionCookies = (headers: Record<string, string>) => (headers['set-cookie'] ?? '').split('\n').filter((c) => c && !c.startsWith('ARRAffinity'));
 const rand = (digits: number) => String(Math.floor(Math.random() * 10 ** digits)).padStart(digits, '0');
 
-const admin = () => signIn('admin', DEV_ADMIN.email, DEV_ADMIN.password);
+const admin = cachedAdmin;
 const order = (key: string) => run.orders[key] as RunOrder;
 const customerOrder = async (id: string) => (await call(customer, 'GET', `/api/Order/GetById?OrderId=${id}`)).body;
 const onBoard = async (id: string) =>

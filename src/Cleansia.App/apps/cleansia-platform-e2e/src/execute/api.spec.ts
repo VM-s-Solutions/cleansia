@@ -1,7 +1,8 @@
 import { expect, test } from '@playwright/test';
-import { call, DEV_ADMIN, errorKeys, list, num, png, poll, Session, signIn, str } from '../support/dev';
+import { call, errorKeys, list, num, png, poll, Session, signIn, str } from '../support/dev';
 import { emailOf, loadRun, RunOrder, saveRun } from '../support/run';
 import { startOpensAt } from '../support/slots';
+import { cachedAdmin } from '../support/web';
 
 // Stage 'execute': the cleaner works the two jobs taken in 'book', on the partner mobile host, each only once its
 // start window (the slot less 60 minutes) is open. Before that a job's test skips and says when it opens.
@@ -37,7 +38,7 @@ async function completeAndReadBack(s: Session, o: RunOrder) {
   expect(num(done.body, 'newStatus')).toBe(5);
   o.completed = true;
   saveRun(run);
-  const admin = await signIn('admin', DEV_ADMIN.email, DEV_ADMIN.password);
+  const admin = await cachedAdmin();
   const detail = (await call(admin, 'GET', `/api/AdminOrder/details/${o.id}`)).body;
   expect(str(detail, 'orderStatus.name') || str(detail, 'status.name')).toBe('Completed');
   expect(str(detail, 'paymentStatus.name')).toBe('Paid');
@@ -50,7 +51,7 @@ async function completeAndReadBack(s: Session, o: RunOrder) {
 
 /** The order ids of the cleaner's pay rows in the period open now. */
 async function openPeriodPays(s: Session): Promise<string[]> {
-  const admin = await signIn('admin', DEV_ADMIN.email, DEV_ADMIN.password);
+  const admin = await cachedAdmin();
   const periods = list((await call(admin, 'GET', '/api/AdminPayPeriod/get-paged?Offset=0&Limit=20')).body, 'data');
   const open = periods.find((p) => str(p, 'status') === 'Open' || str(p, 'status.name') === 'Open');
   const pays = (await call(s, 'GET', `/api/EmployeePayroll/GetPeriodPays?EmployeeId=${run.employeeId}&PayPeriodId=${str(open, 'id')}`)).body;
@@ -74,7 +75,7 @@ test.describe('execute', () => {
     expect(num(held, 'amount')).toBeGreaterThanOrEqual(o.total);
     run.cashHeldAfterExecute = num(held, 'amount');
     saveRun(run);
-    const admin = await signIn('admin', DEV_ADMIN.email, DEV_ADMIN.password);
+    const admin = await cachedAdmin();
     expect(JSON.stringify((await call(admin, 'GET', '/api/AdminCashHeld/get-all')).body)).toContain(run.employeeId ?? '-');
   });
 

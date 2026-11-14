@@ -1,12 +1,13 @@
 import { expect, test } from '@playwright/test';
-import { anonymous, call, DEV_ADMIN, list, num, poll, signIn, str } from '../support/dev';
+import { anonymous, call, list, num, poll, signIn, str } from '../support/dev';
 import { emailOf, loadRun, RunOrder, saveRun } from '../support/run';
+import { cachedAdmin } from '../support/web';
 
 // Stage 'settle': the cancellations and refunds of the jobs nobody took, then Close now on the open pay period and
 // the cleaner's invoice with its cash set-off. Each test skips with the reason when the run has nothing for it, so
 // the stage can be run again until everything is settled.
 const run = loadRun();
-const admin = () => signIn('admin', DEV_ADMIN.email, DEV_ADMIN.password);
+const admin = cachedAdmin;
 const rows = (body: unknown) => (list(body, 'data').length ? list(body, 'data') : list(body, 'items'));
 const reason = `E2E run ${run.runId}`;
 
@@ -114,7 +115,7 @@ test.describe('settle', () => {
       60_000,
     );
     expect(invoice, `no invoice 25 minutes after the close at ${run.closedAt}`).toBeTruthy();
-    const a = await admin(); // signed in after the wait: an admin session lapses in about 15 minutes
+    const a = await admin(); // read after the wait: cachedAdmin signs in again once its session is 8 minutes old
     const detail = (await call(a, 'GET', `/api/AdminInvoice/details/${str(invoice, 'id')}`)).body;
     expect(str(detail, 'status.name') || str(detail, 'status')).toMatch(/^(Pending|1)$/);
     expect(str(detail, 'currencyCode')).toBe('CZK');

@@ -371,7 +371,7 @@ How each role registers, signs in, keeps a session and loses it, and how a clean
 - **Role:** Admin · Cleaner
 - **Surfaces:** API · Web
 - **Rule:** → /admin-app/user-management#document-actions — a rejected document carries the admin's reason
-- **Given** a second `Pending` document of the cleaner (a spare certificate). **When** the admin rejects it with a note (`POST api/AdminEmployeeDocument/{documentId}/reject`). **Then** the document is `Rejected` with the note; the cleaner sees it rejected with the reason and may upload a corrected file; the approved identity card is unaffected; an unknown document id is refused `common.not_found` or `employee_document.not_found` (read the key in 1b).
+- **Given** a second `Pending` document of the cleaner (a spare certificate). **When** the admin rejects it with a note (`POST api/AdminEmployeeDocument/{documentId}/reject`). **Then** the document is `Rejected` with the note; the cleaner sees it rejected with the reason and may upload a corrected file; the approved identity card is unaffected; an unknown document id is refused `general.not_found`.
 - **DEV:** the spare document is created for this case only.
 
 ### E2E-AUTH-046 — An admin approves the cleaner and the lock lifts

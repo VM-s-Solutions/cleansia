@@ -24,7 +24,8 @@ export default defineConfig({
         command: 'npx nx serve cleansia-admin.app --configuration=devremote',
         cwd: join(__dirname, '..', '..'),
         url: 'http://localhost:4201',
-        reuseExistingServer: true,
+        // Never reuse: a developer's own 'nx serve cleansia-admin.app' also listens on 4201 and proxies to localhost.
+        reuseExistingServer: false,
         timeout: 5 * 60_000,
       }
     : undefined,

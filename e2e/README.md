@@ -61,8 +61,10 @@ and heading, and its body is one line: `- **See** E2E-<FLOW>-NNN`.
 
 ## Running
 
-The suite is `src/Cleansia.App/apps/cleansia-platform-e2e` (Nx project `cleansia-platform-e2e`, targets `e2e` and
-`lint` only, never cached). It drives DEV through the five API hosts, whose addresses are fixed in
+The suite is `src/Cleansia.App/apps/cleansia-platform-e2e` (Nx project `cleansia-platform-e2e`). Run it only with
+`nx e2e`, which is never cached: Nx also infers `e2e-ci` and one `e2e-ci--src/<stage>/<file>` target per spec file,
+and those are cached and blind to `E2E_STAGE` and the run folder, so a second run of one replays the first from the
+cache without touching DEV. No CI job calls any of them. It drives DEV through the five API hosts, whose addresses are fixed in
 `src/support/dev.ts` so that no variable can point it anywhere else. Journeys are staged because DEV time is real.
 Run each stage from `src/Cleansia.App` with Node 22:
 

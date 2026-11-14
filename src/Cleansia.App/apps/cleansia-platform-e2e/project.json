@@ -3,7 +3,7 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "sourceRoot": "apps/cleansia-platform-e2e/src",
-  "// targets": "e2e and lint are inferred. Never cached: a stage's result lives on DEV and in the run folder, which no Nx input sees.",
+  "// targets": "Run only e2e (never cached: a stage's result lives on DEV and in the run folder, which no Nx input sees). The inferred e2e-ci--<spec> targets are cached and blind to E2E_STAGE, so a second run of one replays the first without touching DEV.",
   "targets": {
     "e2e": { "cache": false },
     "e2e-ci": { "cache": false }

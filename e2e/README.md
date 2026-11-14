@@ -51,3 +51,6 @@ and heading, and its body is one line: `- **See** E2E-<FLOW>-NNN`.
   `sql-scripts/dev-e2e-confirm-accounts.sql`, and no case can read an e-mail. That script is not written yet: sub-phase 1b
   writes it, and running it on DEV waits for the owner's OK. Until then every customer and cleaner P1 case after
   registration is blocked.
+- The deployed admin web sits behind an Azure Static Web Apps gate: a browser run needs a Microsoft identity the
+  owner has invited with the `admin_console` role (docs/admin-app/overview.md), which a role agent cannot get alone.
+  Until the owner provides one, an admin case runs on the admin API and records its Web half as not run.

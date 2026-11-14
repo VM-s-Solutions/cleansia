@@ -35,7 +35,7 @@ Webhooks have no user surface: a case that says "the webhook lands" is observed 
 - **Role:** Admin
 - **Surfaces:** API · Web
 - **Rule:** → /flows/payment-and-fiscal#edge-cases — a paid card order writes `admin.order.new`; a redelivery never reaches the site
-- **Given** a card order just settled (E2E-PAY-001 or -002). **When** an administrator opens the notifications feed and the order in the order list. **Then** exactly one `admin.order.new` row names the order, the order list shows payment `Paid` and status `New`, and no second row appears after a reload.
+- **Given** a card order just settled (E2E-PAY-001 or E2E-PAY-002). **When** an administrator opens the notifications feed and the order in the order list. **Then** exactly one `admin.order.new` row names the order, the order list shows payment `Paid` and status `New`, and no second row appears after a reload.
 - **DEV:** The e-mail copy of the notice cannot be read.
 
 ### E2E-PAY-005 — One web payment raises two events and settles once

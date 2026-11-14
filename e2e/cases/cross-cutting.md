@@ -69,7 +69,7 @@ Ids are `E2E-XCUT-NNN`. DEV has one operating company (`cleansia-cz`) and one de
 - **Role:** Admin
 - **Surfaces:** API · Web
 - **Rule:** → /product/business-rules#admin-notifications — the badge counts critical unread rows; the page has All, Critical and Info; the paged read takes a `critical` flag
-- **Given** a feed with at least one Info row (XCUT-007) and one Critical row (XCUT-010). **When** the admin opens the Notifications page and reads `get-paged` with `critical=true`, `critical=false` and no flag. **Then** the flag returns the critical keys, the info keys and all in turn; the bell count equals the critical unread only; the Info tab hides *Mark all as read*; each row shows its type in words and a critical row carries a red *Critical* label.
+- **Given** a feed with at least one Info row (E2E-XCUT-007) and one Critical row (E2E-XCUT-010). **When** the admin opens the Notifications page and reads `get-paged` with `critical=true`, `critical=false` and no flag. **Then** the flag returns the critical keys, the info keys and all in turn; the bell count equals the critical unread only; the Info tab hides *Mark all as read*; each row shows its type in words and a critical row carries a red *Critical* label.
 - **DEV:** none.
 
 ### E2E-XCUT-009 — Each administrator has their own read state
@@ -236,7 +236,7 @@ Ids are `E2E-XCUT-NNN`. DEV has one operating company (`cleansia-cz`) and one de
 - **Role:** Admin
 - **Surfaces:** API · Web
 - **Rule:** → /architecture/security-rules#s2-—-authorization-on-every-endpoint — every admin mutation leaves an append-only `AdminActionAudit` row carrying the role it ran under
-- **Given** an Accountant who has just closed a period (PAYOUT-016) and approved an invoice (PAYOUT-039). **When** a Support admin opens the audit log (`GET api/AdminAuditLog/get-paged`, `get-by-id`). **Then** both acts are listed with the actor's e-mail, the role `Accountant`, an action label and a time; the Close now row holds the old and new end and the reason, and no row holds a customer's name, address, card data or a token; an Accountant gets 403 from the log (it is Support and above).
+- **Given** an Accountant who has just closed a period (E2E-PAYOUT-016) and approved an invoice (E2E-PAYOUT-039). **When** a Support admin opens the audit log (`GET api/AdminAuditLog/get-paged`, `get-by-id`). **Then** both acts are listed with the actor's e-mail, the role `Accountant`, an action label and a time; the Close now row holds the old and new end and the reason, and no row holds a customer's name, address, card data or a token; an Accountant gets 403 from the log (it is Support and above).
 - **DEV:** the action labels are read from the log at run time.
 
 ### E2E-XCUT-030 — Payout details are masked for the admin and the full account is a separate audited act

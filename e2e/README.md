@@ -25,11 +25,11 @@ fault. Findings are reported, never fixed in the same pass.
 ## A case
 
 ```
-### E2E-BOOK-007 — A cash booking needs a saved card
+### E2E-BOOK-NNN — A cash booking needs a saved card
 - **Priority:** P1 (a core journey) or P2
 - **Role:** Customer
 - **Surfaces:** API · Web · iOS · Android (only those the case truly runs on)
-- **Rule:** → /flows/booking-and-pricing#cash — one line saying what the rule requires
+- **Rule:** → /product/business-rules#cash — one line saying what the rule requires
 - **Given** the state before. **When** the one action. **Then** what must be observed, exactly.
 - **DEV:** what the case creates, how long it waits (a slot, a start window, the 02:00 UTC run), or why it cannot run on DEV
 ```
@@ -38,6 +38,10 @@ Ids are `E2E-<FLOW>-NNN`, numbered from 001 in each file and never reused: AUTH 
 and pricing), TAKE (offerability and take), EXEC (execution and completion), PAY (payment and fiscal), CANCEL
 (cancellation, refund and dispute), PAYOUT (pay and payouts), LOYAL (loyalty and memberships), GDPR (GDPR and
 audit), XCUT (cross-cutting).
+
+A file opens with a one-line intro, optionally followed by short reading notes that every case in it shares. The
+Role line names the roles joined by ` · `, the acting role first; `(two accounts)` marks a role played by two
+accounts. A cross-reference always writes the full id, `E2E-<FLOW>-NNN`.
 
 An assertion is catalogued once, in the file whose flow page owns its rule. A case another file owns keeps its id
 and heading, and its body is one line: `- **See** E2E-<FLOW>-NNN`.

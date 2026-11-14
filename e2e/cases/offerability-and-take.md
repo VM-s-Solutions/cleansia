@@ -6,7 +6,7 @@ How a job reaches a cleaner's board and what happens when cleaners take, drop, c
 
 ### E2E-TAKE-001 — A paid card order rests at New and is on the open board
 - **Priority:** P1
-- **Role:** Cleaner (Customer books)
+- **Role:** Cleaner · Customer
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /domain/offerability#why-a-status-list-cannot-express-it — a one-off card order with payment `Paid` is offerable before slot end, and its status stays `New` until a cleaner takes it
 - **Given** a Customer paid a one-off card order (4242 card) for a slot at least 2 h ahead in Cleaner A's market and currency. **When** Cleaner A opens the available orders. **Then** the order is listed with status `New`, payment axis not shown to the cleaner, and Cleaner A can open its preview; the same list through the partner API and the partner mobile API holds the same order.
@@ -14,7 +14,7 @@ How a job reaches a cleaner's board and what happens when cleaners take, drop, c
 
 ### E2E-TAKE-002 — A one-off cash order is on the board from creation
 - **Priority:** P1
-- **Role:** Cleaner (Customer books)
+- **Role:** Cleaner · Customer
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /domain/offerability#why-a-status-list-cannot-express-it — a one-off cash order is offerable from creation until slot end, because nothing scheduled can retract it
 - **Given** a signed-in Customer with a saved test card books a one-cleaner cash order. **When** Cleaner A refreshes the board right after the booking is created. **Then** the order is listed with its payment still pending on the customer's side, and a take of it succeeds (see E2E-TAKE-013).
@@ -70,7 +70,7 @@ How a job reaches a cleaner's board and what happens when cleaners take, drop, c
 
 ### E2E-TAKE-009 — A cleaner over the float cap sees no cash jobs
 - **Priority:** P2
-- **Role:** Cleaner (Admin sets the cap)
+- **Role:** Cleaner · Admin
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /domain/offerability#cash-float-cap — a cleaner holding strictly more company cash than `cash.float_cap` is not offered cash jobs; the take answers `order.cash_float_cap_exceeded`
 - **Given** the company's float cap is set below the cash Cleaner A holds (one collected cash job), and one open cash order and one open card order exist. **When** Cleaner A reads the board, the dashboard count and `GetCashHeld`, then takes the cash order by id. **Then** the cash order is off the board and the count, the card order stays, `GetCashHeld` reports `cashJobsHidden` for the currency and *cash I hold* states the cap and that cash jobs are hidden, and the take answers `order.cash_float_cap_exceeded`; after Admin records a remittance bringing the cash to the cap or below, the cash order is on the board again on the next read.
@@ -218,7 +218,7 @@ How a job reaches a cleaner's board and what happens when cleaners take, drop, c
 
 ### E2E-TAKE-027 — A weekly cap blocks the next take and carries its reason
 - **Priority:** P2
-- **Role:** Cleaner (Admin sets the cap)
+- **Role:** Cleaner · Admin
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /product/business-rules#placement-is-an-offer — a weekly job limit carries a reason the cleaner sees on their profile
 - **Given** Admin sets Cleaner A's weekly limit to 1 with a reason (`PUT /api/AdminEmployee/{employeeId}/weekly-order-limit`) and Cleaner A holds one job this week. **When** Cleaner A takes a second open order. **Then** the call answers `order.weekly_limit_reached`; Cleaner A's profile shows the cap and the reason; after Admin sends a null limit the take succeeds and the profile shows no cap.
@@ -246,13 +246,13 @@ How a job reaches a cleaner's board and what happens when cleaners take, drop, c
 - **Surfaces:** API
 - **Rule:** → /domain/offerability#the-take-is-gated-not-just-the-list — the chain is one ordered `Cascade.Stop`: a refusal ahead of another wins
 - **Given** Cleaner A is over their weekly cap, over the float cap and in a time conflict with the target order. **When** Cleaner A takes it; Admin lifts the weekly cap; Cleaner A takes it again; the cash is remitted; Cleaner A takes it again. **Then** the three answers are `order.weekly_limit_reached`, `order.cash_float_cap_exceeded` and `order.time_conflict` in that order.
-- **DEV:** combines E2E-TAKE-009, -027 and -029; skip if those could not run.
+- **DEV:** combines E2E-TAKE-009, E2E-TAKE-027 and E2E-TAKE-029; skip if those could not run.
 
 ## Seats on multi-cleaner orders
 
 ### E2E-TAKE-031 — A two-cleaner job fills seat by seat, with no spare seat
 - **Priority:** P1
-- **Role:** Cleaner (two accounts), Admin
+- **Role:** Cleaner (two accounts) · Admin
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /domain/order-lifecycle#seats — `RequiredEmployees = ceil(EstimatedTime / 120)` and there is no spare seat
 - **Given** an open order booked for more than 120 and at most 240 minutes. **When** Cleaner A takes it, Cleaner B takes it, then Cleaner E (a third approved cleaner) tries. **Then** after A's take the order is `Confirmed` with one seat free and still on Cleaner B's board; after B's take the order is full and off every board; Cleaner E's take answers `order.no_available_spots`; Admin's order detail shows two crew rows and no third.
@@ -286,7 +286,7 @@ How a job reaches a cleaner's board and what happens when cleaners take, drop, c
 
 ### E2E-TAKE-035 — A held order is invisible to every cleaner but its beneficiary
 - **Priority:** P2
-- **Role:** Cleaner (two accounts), Customer
+- **Role:** Cleaner (two accounts) · Customer
 - **Surfaces:** API · iOS · Android
 - **Rule:** → /domain/offerability#the-preferred-cleaner-hold — until `PreferredHoldUntilUtc` the first seat is offered to the preferred cleaner alone, and a held order is indistinguishable from a missing one
 - **Given** a Plus Customer books a one-off order naming Cleaner A as the preferred cleaner (a cleaner who served the customer before). **When** Cleaner B lists the board, previews the order and takes it, and a random id is taken too. **Then** the order is not on Cleaner B's board; the preview and the take answer `order.not_found`, identical to the random id's answer; Cleaner A sees the order in pending offers (`MyPendingOffers`) and on the board, and it is not exposed on any partner DTO as a preferred id.
@@ -384,7 +384,7 @@ How a job reaches a cleaner's board and what happens when cleaners take, drop, c
 
 ### E2E-TAKE-047 — Taking again after a walk-back tells the customer it is a new cleaner
 - **Priority:** P2
-- **Role:** Cleaner, Customer
+- **Role:** Cleaner · Customer
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /product/business-rules#crew-lost — a take after a walk-back says that a new cleaner took the booking; two seats and two acceptance rows result when the same cleaner retakes
 - **Given** the order after E2E-TAKE-040. **When** Cleaner A takes it again (or Cleaner B does). **Then** the order is `Confirmed`; the Customer gets a second `order.cleaner_assigned` entry; for the same cleaner the order detail lists only the current seat's acceptance while Admin's timeline holds two `employee.order.contract_accepted` rows.
@@ -418,7 +418,7 @@ How a job reaches a cleaner's board and what happens when cleaners take, drop, c
 
 ### E2E-TAKE-051 — Admin replaces a cleaner and must give a reason
 - **Priority:** P2
-- **Role:** Admin, Cleaner (two accounts)
+- **Role:** Admin · Cleaner (two accounts)
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /product/business-rules#placement-is-an-offer — a reassignment that removes a cleaner is refused without `removalReason` (`order.reassign.removal_reason_required`, at most 500 characters), and the removed cleaner reads it
 - **Given** A is on a `Confirmed` order. **When** Admin replaces A with B without a reason, with a 501-character reason, then with "A cannot come". **Then** the answers are `order.reassign.removal_reason_required`, `common.max_length` and success; the order stays `Confirmed`; A gets `order.assignment_revoked` and reads "A cannot come" through `GetMyAssignmentRemoval` (a page "You were taken off this job" on Android and iOS, a block above the job on the web); B's seat is "contract pending".
@@ -445,7 +445,7 @@ How a job reaches a cleaner's board and what happens when cleaners take, drop, c
 
 ### E2E-TAKE-055 — Staff roles and non-staff callers
 - **Priority:** P2
-- **Role:** Admin, Cleaner, Customer
+- **Role:** Admin · Cleaner · Customer
 - **Surfaces:** API
 - **Rule:** → /admin-app/order-management#order-reassignment — reassignment is an administrator act
 - **Given** a Cleaner token, a Customer token and an Accountant-role admin token (`SupportOrAbove` excludes Accountant). **When** each calls `POST api/AdminOrder/reassign` on the admin host. **Then** every call is refused (403 or 401); no seat changes.
@@ -483,7 +483,7 @@ How a job reaches a cleaner's board and what happens when cleaners take, drop, c
 - **E-mail delivery.** `@example.com` never receives mail, so no case reads "Cleaner found", "A cleaner can no longer come" or any administrator e-mail.
 - **A second tenant or market.** E2E-TAKE-008 and the other-market half of E2E-TAKE-052 need a market with another currency, and the DEV registry holds one company (`cleansia-cz`); the cases run only if a second market exists.
 - **An order with no contract text.** E2E-TAKE-019 needs a fixture; the booking path always stamps a text.
-- **Exact race timing.** The seat race, the multi-seat refusal and the take-versus-drop outcomes (E2E-TAKE-020, -032, -034) depend on request timing; the suite can only run them repeatedly and assert the state that is never allowed.
+- **Exact race timing.** The seat race, the multi-seat refusal and the take-versus-drop outcomes (E2E-TAKE-020, E2E-TAKE-032, E2E-TAKE-034) depend on request timing; the suite can only run them repeatedly and assert the state that is never allowed.
 - **The take-first case against the unfilled sweep and the admin placement racing a drop.** The docs list both as unguarded residuals; they cannot be forced from outside.
 - **Load.** Thousands of cleaners tapping one seat after a broadcast is not tested.
 - **Apple and Google sign-in.** Not used here.

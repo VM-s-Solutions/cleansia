@@ -6,7 +6,7 @@ From an assigned cleaner to a finished job, a receipt and a pay row, and the ord
 
 ### E2E-EXEC-001 — The assigned cleaner sets off and the customer is told
 - **Priority:** P1
-- **Role:** Cleaner (Customer observes)
+- **Role:** Cleaner · Customer
 - **Surfaces:** API · iOS · Android
 - **Rule:** → /flows/execution-and-completion#the-path — "on my way" moves the order to `OnTheWay` and the customer gets a push
 - **Given** Cleaner A is on a `Confirmed` job whose start is within 60 minutes. **When** Cleaner A taps On my way (`NotifyOnTheWay`). **Then** the order is `OnTheWay`; the Customer's order page and the customer apps show "on the way"; the customer gets `order.on_the_way` (iOS adds a Live Activity). On a job that is neither `Confirmed` nor `OnTheWay` (a `New` or `Completed` one) the call answers `order.not_confirmed`.
@@ -14,7 +14,7 @@ From an assigned cleaner to a finished job, a receipt and a pay row, and the ord
 
 ### E2E-EXEC-002 — Start moves the order to InProgress
 - **Priority:** P1
-- **Role:** Cleaner (Customer, Admin observe)
+- **Role:** Cleaner · Customer · Admin
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /flows/execution-and-completion#the-path — start moves the order to `InProgress` and the customer gets a push
 - **Given** Cleaner A is on a job within the start window, once `Confirmed` and once `OnTheWay`. **When** Cleaner A starts it. **Then** both orders become `InProgress`; the start time is recorded and the elapsed timer runs on the app; the Customer sees "in progress" (iOS Live Activity); Admin's order detail shows `InProgress` and the start stamp.
@@ -54,15 +54,15 @@ From an assigned cleaner to a finished job, a receipt and a pay row, and the ord
 
 ### E2E-EXEC-007 — Start and Complete are refused without the contract for work, travel is not
 - **Priority:** P1
-- **Role:** Admin places, Cleaner acts
+- **Role:** Admin · Cleaner
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /flows/execution-and-completion#the-contract-gate — Start and Complete refuse a seat with no acceptance with `contract.acceptance_required`; On my way is not gated
 - **Given** Admin placed Cleaner A on a job (E2E-TAKE-049) and A has not accepted the contract. **When** A sends On my way inside the window, then Start, then (once `InProgress` through Admin's override) Complete. **Then** On my way succeeds; Start answers `contract.acceptance_required` and so does Complete; the app opens the contract sheet in accept mode, A accepts, and the same Start then succeeds. With the job also more than 60 minutes ahead, Start answers `contract.acceptance_required` before `order.too_early_to_start`.
-- **DEV:** shares the placement fixture of E2E-TAKE-049 and -050.
+- **DEV:** shares the placement fixture of E2E-TAKE-049 and E2E-TAKE-050.
 
 ### E2E-EXEC-008 — A customer or an administrator token cannot start a cleaner's job
 - **Priority:** P2
-- **Role:** Customer, Admin
+- **Role:** Customer · Admin
 - **Surfaces:** API
 - **Rule:** → /flows/execution-and-completion#only-the-assigned-cleaner-may-move-the-job — a non-participant cannot advance somebody else's job
 - **Given** a `Confirmed` job in the start window. **When** a Customer token and an Admin token call `StartOrder` on the partner host. **Then** the Customer is refused at the host and the Admin gets a business refusal (the key is unsure; the case records it); the job stays `Confirmed`.
@@ -70,7 +70,7 @@ From an assigned cleaner to a finished job, a receipt and a pay row, and the ord
 
 ### E2E-EXEC-009 — A re-added seat needs the contract again
 - **Priority:** P2
-- **Role:** Admin, Cleaner
+- **Role:** Admin · Cleaner
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /flows/execution-and-completion#the-contract-gate — a cleaner who dropped and was re-added has a new seat and no acceptance
 - **Given** Cleaner A accepted a placement (E2E-TAKE-050), dropped the job, and Admin placed A again. **When** A starts the job. **Then** the seat shows "contract pending" again and Start answers `contract.acceptance_required`; after A accepts, Start succeeds. A second crew member who neither starts nor completes is never prompted.
@@ -170,7 +170,7 @@ From an assigned cleaner to a finished job, a receipt and a pay row, and the ord
 
 ### E2E-EXEC-021 — The first read of the entry instructions is recorded once
 - **Priority:** P2
-- **Role:** Cleaner, Admin
+- **Role:** Cleaner · Admin
 - **Surfaces:** API · Web
 - **Rule:** → /flows/execution-and-completion#entry-instructions — the first detail response serving non-empty instructions records `employee.order.access_instructions_read`, naming the cleaner and order, never the text
 - **Given** a job with non-empty instructions and Cleaner A who never read it. **When** A reads the detail twice, then the crew-mate reads it (needs a two-cleaner job). **Then** Admin's audit holds one `employee.order.access_instructions_read` for A and one for the crew-mate, none duplicated, and no row holds the instruction text.
@@ -202,7 +202,7 @@ From an assigned cleaner to a finished job, a receipt and a pay row, and the ord
 
 ### E2E-EXEC-025 — A cancelled job hides the customer at once
 - **Priority:** P2
-- **Role:** Cleaner, Customer
+- **Role:** Cleaner · Customer
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /flows/execution-and-completion#crew-access — the details are not readable at all once the order is cancelled
 - **Given** A is on a `Confirmed` job and the Customer cancels it. **When** A reloads the detail. **Then** the customer's details are gone, the apps say they were removed, and the instructions are no longer served.
@@ -212,7 +212,7 @@ From an assigned cleaner to a finished job, a receipt and a pay row, and the ord
 
 ### E2E-EXEC-026 — The cleaner records the cash
 - **Priority:** P1
-- **Role:** Cleaner (Admin, Customer observe)
+- **Role:** Cleaner · Admin · Customer
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /flows/execution-and-completion#edge-cases — `MarkCashCollected` only while `InProgress`, by an approved cleaner on the crew: the order becomes `Paid` and the server stamps the amount due
 - **Given** a cash job `InProgress` with Cleaner A. **When** A taps Mark cash collected. **Then** the order stays `InProgress` with payment `Paid`; `CashCollectedAmount` equals the total less any applied credit; the collector and the time are stamped; Admin's order detail shows who collected how much; the Customer has no receipt yet; Cleaner A's cash held rises (`GetCashHeld`).
@@ -236,7 +236,7 @@ From an assigned cleaner to a finished job, a receipt and a pay row, and the ord
 
 ### E2E-EXEC-029 — The customer paid nothing: the cleaner reports it
 - **Priority:** P1
-- **Role:** Cleaner (Customer, Admin observe)
+- **Role:** Cleaner · Customer · Admin
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /flows/execution-and-completion#cash-not-paid — the order completes with the payment pending, an `UnpaidCash` receivable opens for the price less credit, the crew is paid in full
 - **Given** a cash job `InProgress` for a signed-in customer, an after photo taken, payment `Pending`, and the contract accepted. **When** A taps Customer did not pay and confirms. **Then** the response holds the order id, the status `Completed` and the amount owed; payment stays `Pending`; Admin sees an open `UnpaidCash` receivable of `TotalPrice` less credit; the Customer gets `order.cash_not_paid` (push and e-mail with the pay link); Admin's feed holds `admin.order.cash_not_paid`; no receipt, no loyalty points, no cash-ledger entry; A's pay row is requested in full.
@@ -289,7 +289,7 @@ From an assigned cleaner to a finished job, a receipt and a pay row, and the ord
 
 ### E2E-EXEC-036 — Complete a cash job
 - **Priority:** P1
-- **Role:** Cleaner (Customer, Admin observe)
+- **Role:** Cleaner · Customer · Admin
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /flows/execution-and-completion#the-path — complete moves the order to `Completed`, with a push and, for cash, the first receipt
 - **Given** a cash job `InProgress` with an after photo and the cash recorded (E2E-EXEC-026). **When** A completes it (optional notes). **Then** the order is `Completed` with payment `Paid`; the Customer gets `order.completed` and the receipt (downloadable from My orders); Admin sees the receipt and a pay row requested for A; the elapsed time is recorded; the Live Activity ends on iOS.
@@ -297,7 +297,7 @@ From an assigned cleaner to a finished job, a receipt and a pay row, and the ord
 
 ### E2E-EXEC-037 — Complete a card job
 - **Priority:** P1
-- **Role:** Cleaner (Customer, Admin observe)
+- **Role:** Cleaner · Customer · Admin
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /flows/execution-and-completion#the-path — a card job completes after the after photo with no cash step
 - **Given** a paid card job `InProgress` with an after photo (E2E-TAKE-016). **When** A completes it. **Then** the order is `Completed`, payment stays `Paid`, the Customer gets the push and the receipt, A's pay is requested.
@@ -329,7 +329,7 @@ From an assigned cleaner to a finished job, a receipt and a pay row, and the ord
 
 ### E2E-EXEC-041 — A card order refunded before the end can still be completed
 - **Priority:** P2
-- **Role:** Cleaner, Admin
+- **Role:** Cleaner · Admin
 - **Surfaces:** API · Web
 - **Rule:** → /flows/execution-and-completion#edge-cases — a card payment `Paid`, `PartiallyRefunded` or `Refunded` completes; `Pending` and `Failed` do not
 - **Given** an `InProgress` card job Admin refunded in part, with an after photo. **When** A completes it. **Then** the order is `Completed`; the crew's pay is requested; the loyalty points take the share of what was returned.
@@ -369,7 +369,7 @@ From an assigned cleaner to a finished job, a receipt and a pay row, and the ord
 
 ### E2E-EXEC-046 — A fully marked job completes itself two hours later
 - **Priority:** P2
-- **Role:** Cleaner (Customer observes)
+- **Role:** Cleaner · Customer
 - **Surfaces:** API
 - **Rule:** → /domain/order-lifecycle#crew-completion — a fully marked job is completed automatically two hours after the last mark on a fifteen-minute sweep, keeping the after-photo and payment checks
 - **Given** a two-cleaner job with an after photo and settled payment where both marked and nobody completed. **When** 2 hours and one sweep pass. **Then** the order is `Completed` with the receipt and the pay rows once; with no after photo or unsettled payment it stays `InProgress`.
@@ -377,7 +377,7 @@ From an assigned cleaner to a finished job, a receipt and a pay row, and the ord
 
 ### E2E-EXEC-047 — Seat times show to the crew and admin, not the customer
 - **Priority:** P2
-- **Role:** Cleaner, Admin, Customer
+- **Role:** Cleaner · Admin · Customer
 - **Surfaces:** Web · iOS · Android
 - **Rule:** → /product/business-rules#crew-completion — partner web and admin show the per-seat times; customers see no new completion timestamps
 - **Given** the job of E2E-EXEC-042. **When** A, Admin and the Customer open the order. **Then** A sees Done with the time or Not yet per seat (web) or by given name (Android, iOS); Admin sees the seat times; the Customer sees none.
@@ -395,15 +395,15 @@ From an assigned cleaner to a finished job, a receipt and a pay row, and the ord
 
 ### E2E-EXEC-049 — A cash job walks both axes
 - **Priority:** P1
-- **Role:** Admin (reads), Cleaner, Customer
+- **Role:** Admin · Cleaner · Customer
 - **Surfaces:** API · Web
 - **Rule:** → /domain/order-lifecycle#why-one-axis-is-not-enough — paying does not move the fulfilment axis and accepting does not move the money axis
 - **Given** a one-cleaner cash order. **When** the order is created, taken, set off for, started, cash-recorded and completed, and after each step Admin reads the order. **Then** the (status, payment) pairs are `New/Pending`, `Confirmed/Pending`, `OnTheWay/Pending`, `InProgress/Pending`, `InProgress/Paid` (with the collector and amount) and `Completed/Paid`; the type stays `Cash` throughout.
-- **DEV:** one pass of the whole journey; combine with E2E-EXEC-001, -002, -026 and -036.
+- **DEV:** one pass of the whole journey; combine with E2E-EXEC-001, E2E-EXEC-002, E2E-EXEC-026 and E2E-EXEC-036.
 
 ### E2E-EXEC-050 — A card job walks both axes
 - **Priority:** P1
-- **Role:** Admin (reads), Cleaner, Customer
+- **Role:** Admin · Cleaner · Customer
 - **Surfaces:** API · Web
 - **Rule:** → /domain/order-lifecycle#why-one-axis-is-not-enough — a card order reaches `Paid` with nobody assigned and rests at `New`
 - **Given** a one-cleaner card order. **When** the checkout is opened, paid, taken, set off for, started and completed. **Then** the pairs are `New/Pending`, `New/Paid` (nobody assigned, on the board), `Confirmed/Paid`, `OnTheWay/Paid`, `InProgress/Paid` and `Completed/Paid`; the type stays `Card`; the status never reaches `Confirmed` from the payment.
@@ -451,7 +451,7 @@ From an assigned cleaner to a finished job, a receipt and a pay row, and the ord
 
 ### E2E-EXEC-056 — The only backward edge is a release
 - **Priority:** P2
-- **Role:** Admin, Cleaner
+- **Role:** Admin · Cleaner
 - **Surfaces:** API · Web
 - **Rule:** → /domain/order-lifecycle#confirmed-means-one-thing-a-cleaner-took-the-job — the last cleaner leaving a `Confirmed` order is the only writer that walks it back to `New`, and the override cannot fake the forward one
 - **Given** a `Confirmed` order with one cleaner. **When** Admin tries to override to `New`, then the cleaner drops (E2E-TAKE-040). **Then** the override answers `order.invalid_status_transition`; the drop walks the order to `New`; the history shows `New`, `Confirmed`, `New` in sequence.
@@ -467,11 +467,11 @@ From an assigned cleaner to a finished job, a receipt and a pay row, and the ord
 
 ## Not testable on DEV
 
-- **A start window below the clock.** The 60-minute window and the late start need real time: nothing here moves the DEV clock, so EXEC-003, -004 and -011 wait for it.
+- **A start window below the clock.** The 60-minute window and the late start need real time: nothing here moves the DEV clock, so E2E-EXEC-003, E2E-EXEC-004 and E2E-EXEC-011 wait for it.
 - **Live Activity and push on a simulator or emulator.** DEV pushes and the iOS Live Activity reach a physical device only; the cases check the order status and the inbox instead.
 - **E-mail and receipts by mail.** `@example.com` never receives mail; receipts are read from the app download.
-- **The 24-hour rule on the same day.** EXEC-024 needs a day of waiting after the completion; it is a next-day check.
-- **A legacy guest cash order.** EXEC-031's second half needs a pre-existing row; the booking path no longer creates one.
+- **The 24-hour rule on the same day.** E2E-EXEC-024 needs a day of waiting after the completion; it is a next-day check.
+- **A legacy guest cash order.** E2E-EXEC-031's second half needs a pre-existing row; the booking path no longer creates one.
 - **The partial payment case.** The docs say an administrator records what was received; there is no flow to run.
 - **Failed refunds after a cash job.** The 4000 0000 0000 5126 card pays and then fails any refund; it belongs to the CANCEL cases.
 - **Load, Apple and Google sign-in.** Not covered.

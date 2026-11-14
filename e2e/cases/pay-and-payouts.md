@@ -19,7 +19,7 @@ Ids are `E2E-PAYOUT-NNN`. A DEV pay period lasts 3 days (end = start + 2) and th
 - **Role:** Cleaner
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /partner-app/dashboard#stat-cards — the card reads "This period, not invoiced yet" and sums the open period's pay that no invoice holds
-- **Given** PAYOUT-001 done. **When** the cleaner opens the dashboard (`GET api/Dashboard/GetStats`). **Then** `currentPeriodEarnings` equals the sum of the open period's uninvoiced rows in `currencyCode`; `currentPayPeriodStart` and `currentPayPeriodEnd` are the open period's days; the card is titled "This period, not invoiced yet" and says when the period closes.
+- **Given** E2E-PAYOUT-001 done. **When** the cleaner opens the dashboard (`GET api/Dashboard/GetStats`). **Then** `currentPeriodEarnings` equals the sum of the open period's uninvoiced rows in `currencyCode`; `currentPayPeriodStart` and `currentPayPeriodEnd` are the open period's days; the card is titled "This period, not invoiced yet" and says when the period closes.
 - **DEV:** none.
 
 ### E2E-PAYOUT-003 — No app or endpoint shows a payout date
@@ -113,14 +113,14 @@ Ids are `E2E-PAYOUT-NNN`. A DEV pay period lasts 3 days (end = start + 2) and th
 - **Surfaces:** API · Web
 - **Rule:** → /decisions/adr-0082#d1-—-r1-a-period-closes-by-itself-early-close-is-an-exception-no-period-is-reopened — the 02:00 UTC run closes every open period whose end is before today and opens the successor in the same commit
 - **Given** an open period whose end date is today (UTC). **When** the 02:00 UTC run has passed. **Then** the period is `Closed`, `Closed By` reads *Automatically*, and a new `Open` period starts the day after the old end and lasts 3 days.
-- **DEV:** waits for the next 02:00 UTC run; the period must be left to reach its end date naturally or be shortened with PAYOUT-021 so that the end falls on the day of the test.
+- **DEV:** waits for the next 02:00 UTC run; the period must be left to reach its end date naturally or be shortened with E2E-PAYOUT-021 so that the end falls on the day of the test.
 
 ### E2E-PAYOUT-015 — The night close invoices each cleaner who has pay, and only them
 - **Priority:** P1
 - **Role:** Admin
 - **Surfaces:** API · Web
 - **Rule:** → /flows/pay-and-payouts#one-invoice-per-currency — a cleaner with no pay in the period gets no invoice and no e-mail
-- **Given** PAYOUT-014 with two cleaners, one with a completed job in the period and one with none. **When** the invoice list is filtered to that period (`/invoice-management?payPeriodId=…`) up to 20 minutes after the close. **Then** the first cleaner has one invoice per currency (one on DEV), the second has none, and the period details count the pay items as invoiced.
+- **Given** E2E-PAYOUT-014 with two cleaners, one with a completed job in the period and one with none. **When** the invoice list is filtered to that period (`/invoice-management?payPeriodId=…`) up to 20 minutes after the close. **Then** the first cleaner has one invoice per currency (one on DEV), the second has none, and the period details count the pay items as invoiced.
 - **DEV:** the safety net picks up any cleaner the night run skipped, 15 to 20 minutes after the close.
 
 ### E2E-PAYOUT-016 — Close now ends the period today and opens the next from tomorrow
@@ -129,14 +129,14 @@ Ids are `E2E-PAYOUT-NNN`. A DEV pay period lasts 3 days (end = start + 2) and th
 - **Surfaces:** API · Web
 - **Rule:** → /admin-app/pay-periods#close-now — an Accountant ends the open period today with a required reason; the next period starts tomorrow
 - **Given** an open period whose start is today or earlier and an Accountant. **When** the admin presses Close now on the period's details page with a reason (`POST api/AdminPayPeriod/close`). **Then** the toast "Pay period closed successfully" shows, the period is `Closed` with its end date set to today (UTC) unless it had ended earlier, `Closed By` is the admin's e-mail, a new `Open` period starts tomorrow and runs 3 days, and the audit log holds a row with the old end, the new end and the reason (never on the period's notes).
-- **DEV:** this is the fast way to a closed period; the invoices follow in 15 to 20 minutes (PAYOUT-017).
+- **DEV:** this is the fast way to a closed period; the invoices follow in 15 to 20 minutes (E2E-PAYOUT-017).
 
 ### E2E-PAYOUT-017 — Invoices follow Close now within about 20 minutes
 - **Priority:** P1
 - **Role:** Admin
 - **Surfaces:** API · Web
 - **Rule:** → /flows/pay-and-payouts#one-invoice-per-currency — the five-minute sweep invoices every closed period whose close is older than 15 minutes, whoever closed it
-- **Given** PAYOUT-016 and a cleaner with pay in the closed period. **When** the invoice list is read at 25 minutes after the close. **Then** that cleaner has a `Pending` invoice in the period, and the cleaner received the period-closed notification in their e-mail (not readable on DEV).
+- **Given** E2E-PAYOUT-016 and a cleaner with pay in the closed period. **When** the invoice list is read at 25 minutes after the close. **Then** that cleaner has a `Pending` invoice in the period, and the cleaner received the period-closed notification in their e-mail (not readable on DEV).
 - **DEV:** wait 15 to 20 minutes; do not call it a defect before 25.
 
 ### E2E-PAYOUT-018 — Close now needs a reason of at most 500 characters
@@ -153,7 +153,7 @@ Ids are `E2E-PAYOUT-NNN`. A DEV pay period lasts 3 days (end = start + 2) and th
 - **Surfaces:** API
 - **Rule:** → /admin-app/pay-periods#close-now — only an `Open` period whose start is today or earlier can be closed
 - **Given** a closed period, a made-up id, and the successor period that Close now opened for tomorrow. **When** the admin sends Close now for each. **Then** the answers are `payroll.pay_period.not_open`, `payroll.pay_period.not_found` and `pay_period.not_started` in that order, and nothing changes.
-- **DEV:** the third needs PAYOUT-016 first; the web hides the button for a period that has not started.
+- **DEV:** the third needs E2E-PAYOUT-016 first; the web hides the button for a period that has not started.
 
 ### E2E-PAYOUT-020 — Close now is refused to Support
 - **Priority:** P2
@@ -208,8 +208,8 @@ Ids are `E2E-PAYOUT-NNN`. A DEV pay period lasts 3 days (end = start + 2) and th
 - **Role:** Admin
 - **Surfaces:** API · Web
 - **Rule:** → /admin-app/pay-periods#create-new-pay-period — the dialog takes a start only; the backend sets the end at the configured length
-- **Given** no open period (after PAYOUT-028 deleted an empty open period). **When** the admin creates one with the day after the latest period's end. **Then** the new period is `Open`, ends 2 days after its start, and a start that overlaps an earlier period is refused `pay_period.overlapping_period`.
-- **DEV:** state-changing; run it right after PAYOUT-028 so that pay in flight does not open a period by itself first.
+- **Given** no open period (after E2E-PAYOUT-028 deleted an empty open period). **When** the admin creates one with the day after the latest period's end. **Then** the new period is `Open`, ends 2 days after its start, and a start that overlaps an earlier period is refused `pay_period.overlapping_period`.
+- **DEV:** state-changing; run it right after E2E-PAYOUT-028 so that pay in flight does not open a period by itself first.
 
 ### E2E-PAYOUT-027 — A closed period is never reopened
 - **Priority:** P2
@@ -225,7 +225,7 @@ Ids are `E2E-PAYOUT-NNN`. A DEV pay period lasts 3 days (end = start + 2) and th
 - **Surfaces:** API
 - **Rule:** → /flows/pay-and-payouts#periods — Delete requires an `Open` period
 - **Given** a closed period, and an open period that holds pay rows. **When** the admin calls `DELETE api/AdminPayPeriod/delete/{id}` for each. **Then** the first is refused `payroll.pay_period.not_open`, the second `pay_period.has_order_pays`; an open period with no pay is deleted. The admin web has no Delete button (the endpoint is API only).
-- **DEV:** deleting an empty open period leaves none open, so PAYOUT-026 must follow at once.
+- **DEV:** deleting an empty open period leaves none open, so E2E-PAYOUT-026 must follow at once.
 
 ### E2E-PAYOUT-029 — Mark period as paid is refused until every row is invoiced and every invoice is settled
 - **Priority:** P1
@@ -240,7 +240,7 @@ Ids are `E2E-PAYOUT-NNN`. A DEV pay period lasts 3 days (end = start + 2) and th
 - **Role:** Admin
 - **Surfaces:** API · Web
 - **Rule:** → /admin-app/pay-periods#mark-period-as-paid — the period becomes `Paid` once every invoice is `Paid` or `Cancelled`
-- **Given** a closed period whose invoices are all `Paid` (PAYOUT-043) or `Cancelled`. **When** the admin presses Mark Period as Paid. **Then** the status is `Paid`, `Paid At` is set, and a later pay for the same dates lands in the open period, not here.
+- **Given** a closed period whose invoices are all `Paid` (E2E-PAYOUT-043) or `Cancelled`. **When** the admin presses Mark Period as Paid. **Then** the status is `Paid`, `Paid At` is set, and a later pay for the same dates lands in the open period, not here.
 - **DEV:** the last step of the money journey.
 
 ### E2E-PAYOUT-031 — The cleaner sees the periods and My Pay opens on the open one
@@ -258,7 +258,7 @@ Ids are `E2E-PAYOUT-NNN`. A DEV pay period lasts 3 days (end = start + 2) and th
 - **Role:** Admin
 - **Surfaces:** API · Web
 - **Rule:** → /flows/pay-and-payouts#one-invoice-per-currency — the invoice's currency is derived from its pay rows; one invoice per employee, period and currency
-- **Given** PAYOUT-015 or PAYOUT-017. **When** the admin opens the cleaner's invoice (`GET api/AdminInvoice/details/{id}`, page `/invoice-management/:id`). **Then** status is `Pending`; `currencyCode` is the order currency; `subTotal` equals the sum of the period's row totals for that cleaner; there is exactly one non-cancelled invoice per cleaner, period and currency.
+- **Given** E2E-PAYOUT-015 or E2E-PAYOUT-017. **When** the admin opens the cleaner's invoice (`GET api/AdminInvoice/details/{id}`, page `/invoice-management/:id`). **Then** status is `Pending`; `currencyCode` is the order currency; `subTotal` equals the sum of the period's row totals for that cleaner; there is exactly one non-cancelled invoice per cleaner, period and currency.
 - **DEV:** none.
 
 ### E2E-PAYOUT-033 — Invoice number and variable symbol follow the company's series
@@ -282,7 +282,7 @@ Ids are `E2E-PAYOUT-NNN`. A DEV pay period lasts 3 days (end = start + 2) and th
 - **Role:** Cleaner
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /partner-app/invoicing#invoice-list — the list shows number, period, total, cash set off, bank transfer and status; the detail lists the earnings breakdown
-- **Given** PAYOUT-032. **When** the cleaner opens Invoices on the partner web, or Pay and Earnings on iOS and Android. **Then** the invoice is listed with the number the admin sees, `Pending`, the same total, and its lines match the pay rows; the web list has the Cash Set Off and Bank Transfer to You columns.
+- **Given** E2E-PAYOUT-032. **When** the cleaner opens Invoices on the partner web, or Pay and Earnings on iOS and Android. **Then** the invoice is listed with the number the admin sees, `Pending`, the same total, and its lines match the pay rows; the web list has the Cash Set Off and Bank Transfer to You columns.
 - **DEV:** none.
 
 ### E2E-PAYOUT-036 — The invoice PDF downloads for the admin and for the cleaner
@@ -290,7 +290,7 @@ Ids are `E2E-PAYOUT-NNN`. A DEV pay period lasts 3 days (end = start + 2) and th
 - **Role:** Cleaner
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /partner-app/invoicing#pdf-download — the PDF is stored per period and invoice and the owner can download it
-- **Given** PAYOUT-032. **When** the cleaner (`GET api/EmployeePayroll/DownloadInvoice/{id}`) and the Accountant (`GET api/AdminInvoice/download/{id}`) download the PDF. **Then** both answer `application/pdf`; the text contains the invoice number, the variable symbol, the cleaner as supplier and the total; the cleaner's copy and the admin's copy are the same document.
+- **Given** E2E-PAYOUT-032. **When** the cleaner (`GET api/EmployeePayroll/DownloadInvoice/{id}`) and the Accountant (`GET api/AdminInvoice/download/{id}`) download the PDF. **Then** both answer `application/pdf`; the text contains the invoice number, the variable symbol, the cleaner as supplier and the total; the cleaner's copy and the admin's copy are the same document.
 - **DEV:** the Android and iOS apps open it from the invoice detail.
 
 ### E2E-PAYOUT-037 — A cleaner cannot read another cleaner's invoice
@@ -394,7 +394,7 @@ Ids are `E2E-PAYOUT-NNN`. A DEV pay period lasts 3 days (end = start + 2) and th
 - **Role:** Admin
 - **Surfaces:** API · Web
 - **Rule:** → /flows/pay-and-payouts#approval-is-the-last-refusal — the corrected invoice is rebuilt from the order payments
-- **Given** an invoice with a bonus set through Adjust, then cancelled (PAYOUT-046). **When** the corrected invoice is issued. **Then** its bonus is 0 and its total is the sum of the rows; setting the bonus again works.
+- **Given** an invoice with a bonus set through Adjust, then cancelled (E2E-PAYOUT-046). **When** the corrected invoice is issued. **Then** its bonus is 0 and its total is the sum of the rows; setting the bonus again works.
 - **DEV:** none.
 
 ### E2E-PAYOUT-050 — A disputed invoice can be adjusted and then approved
@@ -452,7 +452,7 @@ Ids are `E2E-PAYOUT-NNN`. A DEV pay period lasts 3 days (end = start + 2) and th
 - **Role:** Cleaner
 - **Surfaces:** Web · iOS · Android
 - **Rule:** → /flows/pay-and-payouts#cash-set-off — the lists and details show the set-off as a minus and the bank transfer in bold when cash was set off
-- **Given** PAYOUT-055. **When** the admin web list and detail, the partner web list and detail, and the Android and iOS details are opened. **Then** each shows the cash set off (as a minus) and the amount to transfer under the total; an invoice with no set-off ends at the total.
+- **Given** E2E-PAYOUT-055. **When** the admin web list and detail, the partner web list and detail, and the Android and iOS details are opened. **Then** each shows the cash set off (as a minus) and the amount to transfer under the total; an invoice with no set-off ends at the total.
 - **DEV:** none.
 
 ### E2E-PAYOUT-057 — The PDF prints the set-off statement in the cleaner's language

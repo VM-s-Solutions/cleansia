@@ -90,8 +90,11 @@ until its e-mail is confirmed, and `@example.com` never receives the code, so ru
 through `execute-sql.yml` (the project's confirm script does it). A cleaner also needs the profile, an identity document
 and the admin approval before the board shows work.
 
-Proven here with `e2e.ios1.customer@example.com` (registered through the customer API, confirmed by that script) and the
-already approved cleaner `payproof.cleaner.20261110@example.com`.
+For a step that needs an approved cleaner or a customer with a saved card, use the accounts of a book-stage run: its
+`e2e.<run>.cleaner` is approved and its `e2e.<run>.customer` has a saved card, and `.run/<run id>/state.json` holds
+their password and the ids of their orders. Never use an account outside `e2e.%@example.com`. The steps below were
+proven with `e2e.ios1.customer@example.com` (registered through the customer API, confirmed by that script) and, for
+the cleaner, with an older approved account that was not an e2e one.
 
 ## 4. The P1 steps
 
@@ -129,7 +132,7 @@ Partner app (cleaner).
 
 - **Start, photos, cash, complete (EXEC-*)**: the only job taken was for Monday 16 Nov 10:00 UTC, so the start window
   (from 09:00 UTC that day) was closed on 14 Nov. The recipes above come from the code and the strings, not from a run.
-  Run them in the window: ORD-EA8E7B19 (cash, cleaner `payproof.cleaner.20261110@example.com`) is waiting for it.
+  Run them in the window of a job a book-stage run's cleaner took (`orders.cash` or `orders.card` in its `state.json`).
 - **Photos on the simulator**: the partner app takes order photos from the camera only
   (`PhotosSection.openCamera`); the simulator has none, so `Add Photo` shows the "camera unavailable" alert. An agent
   uploads the photo through the partner mobile API instead (`POST /api/Order/UploadPhoto`, body `orderId`, `photoType`

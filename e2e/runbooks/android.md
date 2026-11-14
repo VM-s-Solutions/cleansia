@@ -120,10 +120,12 @@ account opens no session until its e-mail is confirmed, and `@example.com` never
 `sql-scripts/dev-e2e-confirm-accounts.sql` through `execute-sql.yml` (the project's confirm script does it). A cleaner
 also needs the profile, an identity document and the admin approval before the board shows work.
 
-Proven here with `e2e.a11140858.customer@example.com` and `e2e.a11140858.cleaner@example.com` (both registered in the
-apps; the confirm script ran for them afterwards) and, for the steps that need history, a saved card or an approved
-cleaner, `payproof.customer.20261110@example.com` and `payproof.cleaner.20261110@example.com`, the pair the iOS
-runbook used. A fresh customer has no address and no saved card: add the address through the API
+For the steps that need history, a saved card or an approved cleaner, use the accounts of a book-stage run: its
+`e2e.<run>.cleaner` is approved and its `e2e.<run>.customer` has a saved card, and `.run/<run id>/state.json` holds
+their password and the ids of their orders. Never use an account outside `e2e.%@example.com`. The steps below were
+proven with `e2e.a11140858.customer@example.com` and `e2e.a11140858.cleaner@example.com` (both registered in the
+apps; the confirm script ran for them afterwards) and, for the steps that need history, with an older customer and
+cleaner pair that was not an e2e one. A fresh customer has no address and no saved card: add the address through the API
 (`POST /api/SavedAddress/Add`, bearer token from `/api/Auth/Login` on the customer mobile host), because the map in the
 app cannot place a pin without the real Mapbox token (section 5).
 

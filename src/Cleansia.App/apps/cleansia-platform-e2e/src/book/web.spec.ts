@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import { anonymous, call, DEV_ADMIN, named, ORDER_STATUS, PAYMENT_STATUS, payStripeCheckout, png, poll, Session, signIn, str } from '../support/dev';
 import { emailOf, loadRun, RunState, saveRun } from '../support/run';
-import { adminSignIn, customerSignIn, partnerSignIn, placeOrderInWizard, SITES } from '../support/web';
+import { adminSignIn, cachedAdmin, customerSignIn, partnerSignIn, placeOrderInWizard, SITES } from '../support/web';
 import { nextSlots } from '../support/slots';
 
 // Stage 'book', web half: browsers on the deployed customer and partner webs and on the admin SPA served locally.
@@ -116,7 +116,7 @@ test.describe('people', () => {
     await expect(dialog).toBeHidden();
     await page.reload();
     await expect(page.locator('main')).toContainText('Approved');
-    const detail = await call(await signIn('admin', DEV_ADMIN.email, DEV_ADMIN.password), 'GET', `/api/AdminEmployee/details/${run.employee2Id}`);
+    const detail = await call(await cachedAdmin(), 'GET', `/api/AdminEmployee/details/${run.employee2Id}`);
     expect(str(detail.body, 'contractStatus')).toBe('Approved');
   });
 });

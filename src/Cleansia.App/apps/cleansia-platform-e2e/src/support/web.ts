@@ -1,4 +1,5 @@
 import { Page } from '@playwright/test';
+import { DEV_ADMIN, Session, signIn } from './dev';
 import { RunState } from './run';
 import { wizardLabels } from './slots';
 
@@ -78,4 +79,20 @@ export async function placeOrderInWizard(page: Page, run: RunState, slot: Date, 
   if (payment === 'cash') return new URL(page.url()).searchParams.get('orderId') ?? '';
   const heading = await page.getByRole('heading', { name: /Cleaning Order #/ }).innerText({ timeout: 60_000 });
   return heading.replace(/.*#/, '').trim();
+}
+
+let adminSession: { session: Session; at: number } | undefined;
+
+/** One administrator API session per spec file: the admin host throttles sign-ins (HTTP 429), and a session lapses in about 15 minutes. */
+export async function cachedAdmin(): Promise<Session> {
+  if (adminSession && Date.now() - adminSession.at < 8 * 60_000) return adminSession.session;
+  for (let attempt = 1; ; attempt++) {
+    try {
+      adminSession = { session: await signIn('admin', DEV_ADMIN.email, DEV_ADMIN.password), at: Date.now() };
+      return adminSession.session;
+    } catch (e) {
+      if (attempt >= 5 || !String(e).includes('HTTP 429')) throw e;
+      await new Promise((r) => setTimeout(r, 30_000));
+    }
+  }
 }

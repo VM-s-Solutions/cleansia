@@ -1,15 +1,15 @@
 import { expect, Locator, Page, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
-import { call, DEV_ADMIN, list, named, num, ORDER_STATUS, poll, signIn, str } from '../support/dev';
+import { call, DEV_ADMIN, list, named, num, ORDER_STATUS, poll, str } from '../support/dev';
 import { emailOf, loadRun, RunOrder, saveRun } from '../support/run';
-import { adminSignIn, customerSignIn, partnerSignIn, SITES } from '../support/web';
+import { adminSignIn, cachedAdmin, customerSignIn, partnerSignIn, SITES } from '../support/web';
 
 // Stage 'settle', web half: the web customer's and the administrator's cancellations of the two web jobs nobody
 // took, the Refunds page, and the pay periods and invoices as the administrator and the web cleaner read them.
 test.describe.configure({ mode: 'serial' });
 const run = loadRun();
 const rows = (body: unknown) => (list(body, 'data').length ? list(body, 'data') : list(body, 'items'));
-const admin = () => signIn('admin', DEV_ADMIN.email, DEV_ADMIN.password);
+const admin = cachedAdmin;
 const orderDetail = async (id: string) => (await call(await admin(), 'GET', `/api/AdminOrder/details/${id}`)).body;
 
 function open(key: string): RunOrder {

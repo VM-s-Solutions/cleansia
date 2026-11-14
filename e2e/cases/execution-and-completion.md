@@ -344,7 +344,7 @@ From an assigned cleaner to a finished job, a receipt and a pay row, and the ord
 - **Priority:** P1
 - **Role:** Cleaner (two accounts)
 - **Surfaces:** API · Web · iOS · Android
-- **Rule:** → /flows/execution-and-completion#each-cleaner-marks-done-before-the-crew-completes — each seat is marked, the others are pushed `order.crew_mate_done`, and when all are marked any cleaner completes
+- **Rule:** → /flows/execution-and-completion#crew-completion — each seat is marked, the others are pushed `order.crew_mate_done`, and when all are marked any cleaner completes
 - **Given** a two-cleaner card job `InProgress` with A and B and an after photo. **When** A marks I'm done (`MarkMyPartDone`), twice; B marks; then either completes. **Then** A's stamp is the first one on the second call; B gets `order.crew_mate_done` once; the mobile slide says "I'm done" then "Slide to complete"; after B's mark the job completes by A or B; the receipt is issued once and both seats get a pay row.
 - **DEV:** needs a two-cleaner job (see the intro).
 
@@ -352,7 +352,7 @@ From an assigned cleaner to a finished job, a receipt and a pay row, and the ord
 - **Priority:** P1
 - **Role:** Cleaner (two accounts)
 - **Surfaces:** API · Web · iOS · Android
-- **Rule:** → /flows/execution-and-completion#each-cleaner-marks-done-before-the-crew-completes — a Complete before every seat is marked answers `order.crew_not_done`, even if nobody marked
+- **Rule:** → /flows/execution-and-completion#crew-completion — a Complete before every seat is marked answers `order.crew_not_done`, even if nobody marked
 - **Given** the job of E2E-EXEC-042 with only A marked, then with nobody marked. **When** A completes. **Then** both calls answer `order.crew_not_done` and the job stays `InProgress`.
 - **DEV:** the crew list-row Complete on the web opens the detail instead.
 
@@ -368,7 +368,7 @@ From an assigned cleaner to a finished job, a receipt and a pay row, and the ord
 - **Priority:** P2
 - **Role:** Cleaner
 - **Surfaces:** API
-- **Rule:** → /flows/execution-and-completion#each-cleaner-marks-done-before-the-crew-completes — `MarkMyPartDone` stamps the caller's seat while the job is `InProgress`
+- **Rule:** → /flows/execution-and-completion#crew-completion — `MarkMyPartDone` stamps the caller's seat while the job is `InProgress`
 - **Given** a job `Confirmed` and one `InProgress`, Cleaner B off the crew. **When** A marks the `Confirmed` job, B marks the `InProgress` job, and anyone marks an unknown id. **Then** the answers are `order.not_in_progress`, `order.employee_not_assigned` and `order.not_found`.
 - **DEV:** whether a lone assignee may mark is unsure from the docs; the case does not test it.
 
@@ -392,7 +392,7 @@ From an assigned cleaner to a finished job, a receipt and a pay row, and the ord
 - **Priority:** P2
 - **Role:** Cleaner
 - **Surfaces:** Web · iOS · Android
-- **Rule:** → /flows/execution-and-completion#each-cleaner-marks-done-before-the-crew-completes — a foreground push alone does not refresh an already-open detail
+- **Rule:** → /flows/execution-and-completion#crew-completion — a foreground push alone does not refresh an already-open detail
 - **Given** A has the detail open and B marks done. **When** A waits, then reloads (web reload, Android pull-to-refresh, iOS reopen). **Then** the mark and the shared Complete show only after the reload; a Complete tapped before it is refused `order.crew_not_done` and is not a defect.
 - **DEV:** by design; the triager closes a finding about this as "by design".
 

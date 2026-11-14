@@ -64,7 +64,7 @@ How a job reaches a cleaner's board and what happens when cleaners take, drop, c
 - **Priority:** P2
 - **Role:** Cleaner
 - **Surfaces:** API
-- **Rule:** → /domain/offerability#the-cleaners-currency — an order in another currency is not on the board, and the take answers `order.not_found` exactly as for a held order
+- **Rule:** → /domain/offerability#cleaner-currency — an order in another currency is not on the board, and the take answers `order.not_found` exactly as for a held order
 - **Given** an open order in a currency other than Cleaner A's work-country currency. **When** Cleaner A lists the board and sends a take for that order id. **Then** the order is not on the list and the take answers `order.not_found`.
 - **DEV:** needs a second serviced market and a cleaner in the first; if DEV has only one market, this case cannot run (unsure) and is reported as blocked.
 
@@ -72,7 +72,7 @@ How a job reaches a cleaner's board and what happens when cleaners take, drop, c
 - **Priority:** P2
 - **Role:** Cleaner (Admin sets the cap)
 - **Surfaces:** API · Web · iOS · Android
-- **Rule:** → /domain/offerability#the-cash-a-cleaner-holds — a cleaner holding strictly more company cash than `cash.float_cap` is not offered cash jobs; the take answers `order.cash_float_cap_exceeded`
+- **Rule:** → /domain/offerability#cash-float-cap — a cleaner holding strictly more company cash than `cash.float_cap` is not offered cash jobs; the take answers `order.cash_float_cap_exceeded`
 - **Given** the company's float cap is set below the cash Cleaner A holds (one collected cash job), and one open cash order and one open card order exist. **When** Cleaner A reads the board, the dashboard count and `GetCashHeld`, then takes the cash order by id. **Then** the cash order is off the board and the count, the card order stays, `GetCashHeld` reports `cashJobsHidden` for the currency, and the take answers `order.cash_float_cap_exceeded`; after Admin records a remittance bringing the cash to the cap or below, the cash order is on the board again on the next read.
 - **DEV:** changes a company setting and writes a remittance; restore the setting after. Needs cash held by Cleaner A from an earlier collection (EXEC flow).
 
@@ -98,7 +98,7 @@ How a job reaches a cleaner's board and what happens when cleaners take, drop, c
 - **Priority:** P2
 - **Role:** Cleaner
 - **Surfaces:** API
-- **Rule:** → /domain/offerability#the-cash-a-cleaner-holds — the order detail and the contract preview do not read the cap, so a cash job reached another way still opens and its take is refused
+- **Rule:** → /domain/offerability#cash-float-cap — the order detail and the contract preview do not read the cap, so a cash job reached another way still opens and its take is refused
 - **Given** E2E-TAKE-009's state (Cleaner A over the cap). **When** Cleaner A calls `GetWorkContractPreview` for the cash order. **Then** it answers the contract and facts, and the take then answers `order.cash_float_cap_exceeded`.
 - **DEV:** runs inside the E2E-TAKE-009 state.
 

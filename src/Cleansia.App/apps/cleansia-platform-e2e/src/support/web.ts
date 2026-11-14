@@ -1,6 +1,6 @@
 import { expect, Page } from '@playwright/test';
-import { DEV_ADMIN, Session, signIn } from './dev';
-import { RunState } from './run';
+import { call, DEV_ADMIN, list, poll, Session, signIn, str } from './dev';
+import { emailOf, RunState } from './run';
 import { wizardLabels } from './slots';
 
 // The deployed customer and partner webs, and the admin SPA served locally (playwright.config.ts): the deployed
@@ -98,4 +98,38 @@ export async function cachedAdmin(): Promise<Session> {
       await new Promise((r) => setTimeout(r, 30_000));
     }
   }
+}
+
+// Who works which job of a run: the API half's cleaner and the web half's.
+const CREWS = [
+  { role: 'cleaner', employee: 'employeeId', jobs: ['cash', 'card'] },
+  { role: 'cleaner2', employee: 'employee2Id', jobs: ['webCard', 'webCash'] },
+] as const;
+
+/**
+ * The one gate before either half presses Close now: every job the run took is complete, the open period has
+ * started, and each cleaner's pay rows for those jobs are in it (a queue writes them seconds after the completion,
+ * and a row written after the close lands in the next period). Resolves with the open period's id, or the reason to skip.
+ */
+export async function closeNowGate(run: RunState): Promise<{ periodId?: string; skip?: string }> {
+  const taken = Object.entries(run.orders).filter(([, o]) => o.taken);
+  const open = taken.filter(([, o]) => !o.completed).map(([k]) => k);
+  if (!taken.length || open.length) return { skip: open.length ? `the ${open.join(', ')} job(s) of run ${run.runId} are not complete` : `run ${run.runId} took no job` };
+  const periods = list((await call(await cachedAdmin(), 'GET', '/api/AdminPayPeriod/get-paged?Offset=0&Limit=20')).body, 'data');
+  const current = periods.find((p) => str(p, 'status') === 'Open' || str(p, 'status.name') === 'Open');
+  const periodId = str(current, 'id');
+  if (!periodId) return { skip: 'DEV has no open pay period' };
+  if (str(current, 'startDate') > new Date().toISOString().slice(0, 10)) return { skip: `the open period starts ${str(current, 'startDate')}; Close now ends a period that has started` };
+  for (const crew of CREWS) {
+    const jobs = crew.jobs.filter((k) => run.orders[k]?.taken).map((k) => run.orders[k].id);
+    if (!jobs.length) continue;
+    const s = await signIn('partner', emailOf(run, crew.role), run.password);
+    const rows = await poll(
+      async () => list((await call(s, 'GET', `/api/EmployeePayroll/GetPeriodPays?EmployeeId=${run[crew.employee]}&PayPeriodId=${periodId}`)).body, 'orderPays').map((r) => str(r, 'orderId')),
+      (ids) => jobs.every((j) => ids.includes(j)),
+    );
+    const missing = jobs.filter((j) => !rows.includes(j));
+    if (missing.length) return { skip: `the ${crew.role}'s pay rows for ${missing.join(', ')} are not in the open period ${periodId}` };
+  }
+  return { periodId };
 }

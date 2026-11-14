@@ -2,7 +2,7 @@ import { expect, Locator, Page, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { call, DEV_ADMIN, list, named, num, ORDER_STATUS, poll, str } from '../support/dev';
 import { emailOf, loadRun, RunOrder, saveRun } from '../support/run';
-import { adminSignIn, cachedAdmin, customerSignIn, partnerSignIn, SITES } from '../support/web';
+import { adminSignIn, cachedAdmin, closeNowGate, customerSignIn, partnerSignIn, SITES } from '../support/web';
 
 // Stage 'settle', web half: the web customer's and the administrator's cancellations of the two web jobs nobody
 // took, the Refunds page, and the pay periods and invoices as the administrator and the web cleaner read them.
@@ -108,19 +108,15 @@ test.describe('pay periods and invoices', () => {
 
   test('the administrator closes the open period with Close now when nothing closed it yet', { tag: ['@E2E-PAYOUT-016'] }, async ({ page }) => {
     test.skip(!!run.closedPeriodId, `run ${run.runId} already closed period ${run.closedPeriodId}`);
+    const gate = await closeNowGate(run);
+    test.skip(!gate.periodId, gate.skip);
     await adminSignIn(page, DEV_ADMIN.email, DEV_ADMIN.password);
-    const done = ['webCard', 'webCash'].every((k) => run.orders[k]?.completed);
-    test.skip(!done, 'the web jobs are not complete, so there is nothing to close');
-    const a = await admin();
-    const periods = rows((await call(a, 'GET', '/api/AdminPayPeriod/get-paged?Offset=0&Limit=20')).body);
-    const current = periods.find((p) => str(p, 'status') === 'Open' || str(p, 'status.name') === 'Open');
-    test.skip(str(current, 'startDate') > new Date().toISOString().slice(0, 10), `the open period starts ${str(current, 'startDate')}; Close now ends a period that has started`);
-    await page.goto(`${SITES.admin}/pay-periods/${str(current, 'id')}`);
+    await page.goto(`${SITES.admin}/pay-periods/${gate.periodId}`);
     await page.getByRole('button', { name: 'Close now' }).click();
     await page.getByRole('textbox', { name: /^Reason/ }).fill(`E2E run ${run.runId} web`);
     await page.getByRole('button', { name: 'Close the period now' }).click();
     await expect(page.locator('main')).toContainText('Closed', { timeout: 60_000 });
-    run.closedPeriodId = str(current, 'id');
+    run.closedPeriodId = gate.periodId;
     run.closedAt = new Date().toISOString();
     saveRun(run);
   });

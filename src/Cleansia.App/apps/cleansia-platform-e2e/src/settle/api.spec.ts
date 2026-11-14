@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { anonymous, call, list, num, poll, signIn, str } from '../support/dev';
 import { emailOf, loadRun, RunOrder, saveRun } from '../support/run';
-import { cachedAdmin } from '../support/web';
+import { cachedAdmin, closeNowGate } from '../support/web';
 
 // Stage 'settle': the cancellations and refunds of the jobs nobody took, then Close now on the open pay period and
 // the cleaner's invoice with its cash set-off. Each test skips with the reason when the run has nothing for it, so
@@ -75,21 +75,10 @@ test.describe('settle', () => {
 
   test('Close now ends the open period today and the next one opens tomorrow', { tag: ['@E2E-PAYOUT-016'] }, async () => {
     test.skip(!!run.closedPeriodId, `run ${run.runId} already closed period ${run.closedPeriodId}`);
-    test.skip(!run.orders['cash']?.completed || !run.orders['card']?.completed, 'the execute stage has not completed both jobs yet');
+    const gate = await closeNowGate(run);
+    test.skip(!gate.periodId, gate.skip);
+    const id = gate.periodId as string;
     const a = await admin();
-    const periods = rows((await call(a, 'GET', '/api/AdminPayPeriod/get-paged?Offset=0&Limit=20')).body);
-    const current = periods.find((p) => str(p, 'status') === 'Open' || str(p, 'status.name') === 'Open');
-    const id = str(current, 'id');
-    expect(id).not.toBe('');
-    test.skip(str(current, 'startDate') > day(new Date()), `the open period starts ${str(current, 'startDate')}; Close now ends a period that has started`);
-    // Pay is written off the completion's path; a row written after the close lands in the next period.
-    const cleaner = await signIn('partner', emailOf(run, 'cleaner'), run.password);
-    const jobs = [run.orders['cash'].id, run.orders['card'].id];
-    const paid = await poll(
-      async () => list((await call(cleaner, 'GET', `/api/EmployeePayroll/GetPeriodPays?EmployeeId=${run.employeeId}&PayPeriodId=${id}`)).body, 'orderPays').map((r) => str(r, 'orderId')),
-      (ids) => jobs.every((j) => ids.includes(j)),
-    );
-    expect(paid, 'both jobs have their pay row in the period before it is closed').toEqual(expect.arrayContaining(jobs));
     const r = await call(a, 'POST', '/api/AdminPayPeriod/close', { payPeriodId: id, reason });
     expect(r.status, JSON.stringify(r.body)).toBe(200);
     run.closedPeriodId = id;

@@ -181,7 +181,7 @@ Reading notes for every case below:
 - **Role:** Customer
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /product/business-rules#credit — credit is spent automatically on the next card booking in the same currency, at most 70 % of the total, floored to cents.
-- **Given** a customer with 500 CZK credit and a card booking whose total is 400 CZK. **When** the customer books it by card. **Then** `creditAppliedAmount` is 280.00, `amountDueOnCard` 120.00 and `totalPrice` stays 400.00; the Stripe session or intent is for 12 000 minor units; the balance falls to 220. With a total of 399.99 the credit is 279.99 (floored to the cent) and the card is asked for 120.00. A balance smaller than 70 % is spent in full. The web payment step shows "To pay by card" before Stripe does.
+- **Given** a customer with 500 CZK credit and a card booking whose total is 400 CZK. **When** the customer books it by card. **Then** `creditAppliedAmount` is 280.00, `amountDueOnCard` 120.00 and `totalPrice` stays 400.00; the Stripe session or intent is for 12 000 minor units; the balance falls to 220. With a total of 399.98 the credit is 279.98 (floored to the cent) and the card is asked for 120.00; rounding would give 279.99 and 119.99. A balance smaller than 70 % is spent in full. The web payment step shows "To pay by card" before Stripe does.
 - **DEV:** creates a card order and a Stripe test session for the reduced amount; use the 4242 card to pay if the case continues into the payment flow.
 
 ### E2E-LOYAL-022 — A cash booking spends no credit

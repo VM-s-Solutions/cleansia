@@ -307,7 +307,7 @@ From an assigned cleaner to a finished job, a receipt and a pay row, and the ord
 - **Priority:** P1
 - **Role:** Cleaner (two accounts)
 - **Surfaces:** API · Web · iOS · Android
-- **Rule:** → /flows/execution-and-completion#only-the-assigned-cleaner-may-move-the-job — `CompleteOrder` gates on the assignment first, then the state, then the photo
+- **Rule:** → /flows/execution-and-completion#the-contract-gate — `CompleteOrder` refuses a caller off the crew first, then a seat without the contract; the order of the state and photo refusals after that is read from `CompleteOrder`'s validator, not from the docs
 - **Given** jobs in each state. **When** callers send `CompleteOrder`. **Then** a cleaner off the crew gets `order.employee_not_assigned` (an unknown order id gets `order.not_found`); a seat without the contract gets `contract.acceptance_required`; a `Confirmed` job `order.not_in_progress`; an `InProgress` job without an after photo `order.after_photos.required` (the web warns before the call); a second Complete on a finished job `order.not_in_progress`.
 - **DEV:** the gate order follows the validator chain in the code (assignment, contract, profile, approval, state, photo); the docs list the contract rule right after the assignment rule.
 

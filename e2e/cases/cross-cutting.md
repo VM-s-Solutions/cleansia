@@ -105,7 +105,7 @@ Ids are `E2E-XCUT-NNN`. DEV has one operating company (`cleansia-cz`) and one de
 - **DEV:** the exact answer for a foreign id is not in the docs; record it.
 
 ### E2E-XCUT-013 — A customer's feed never holds another customer's order
-- **Priority:** P1
+- **Priority:** P2
 - **Role:** Customer
 - **Surfaces:** API · iOS · Android
 - **Rule:** → /flows/cross-cutting#notifications — the notice is written for the recipient's own persisted account, never inherited from the ambient context
@@ -181,7 +181,7 @@ Ids are `E2E-XCUT-NNN`. DEV has one operating company (`cleansia-cz`) and one de
 ## Authorization: who may do what
 
 ### E2E-XCUT-022 — A protected endpoint answers 401 to an anonymous caller
-- **Priority:** P1
+- **Priority:** P2
 - **Role:** Guest
 - **Surfaces:** API
 - **Rule:** → /flows/cross-cutting#authorization-posture — the default policy requires an authenticated user; `[AllowAnonymous]` is the explicit opt-out
@@ -189,7 +189,7 @@ Ids are `E2E-XCUT-NNN`. DEV has one operating company (`cleansia-cz`) and one de
 - **DEV:** none.
 
 ### E2E-XCUT-023 — A token for one audience does not work on another host
-- **Priority:** P1
+- **Priority:** P2
 - **Role:** Customer
 - **Surfaces:** API
 - **Rule:** → /architecture/security-rules#s2-—-authorization-on-every-endpoint — every action carries `[Permission]` or an explicit anonymous or authenticated attribute, and the server is the gate
@@ -197,7 +197,7 @@ Ids are `E2E-XCUT-NNN`. DEV has one operating company (`cleansia-cz`) and one de
 - **DEV:** whether the wrong audience answers 401 or 403 is not fixed in the docs; record which, and report a 200.
 
 ### E2E-XCUT-024 — Admin sign-in refuses a customer and a cleaner
-- **Priority:** P1
+- **Priority:** P2
 - **Role:** Customer
 - **Surfaces:** API · Web
 - **Rule:** → /architecture/security-rules#s2-—-authorization-on-every-endpoint — the admin host serves administrators only
@@ -208,7 +208,7 @@ Ids are `E2E-XCUT-NNN`. DEV has one operating company (`cleansia-cz`) and one de
 - **See** E2E-AUTH-018: the same assertion, kept once in the file whose flow page owns the rule.
 
 ### E2E-XCUT-026 — The admin roles gate the server, and the web only hints
-- **Priority:** P1
+- **Priority:** P2
 - **Role:** Admin
 - **Surfaces:** API · Web
 - **Rule:** → /architecture/security-rules#administrator-roles-adr-0066-accepted-2026-09-19 — the server resolves each `[Permission]` to a set of roles and answers 403 outside it; the admin web mirrors the map
@@ -232,7 +232,7 @@ Ids are `E2E-XCUT-NNN`. DEV has one operating company (`cleansia-cz`) and one de
 - **DEV:** DEV may hold more than one Administrator; if so, create the single-Administrator state on a throwaway run or skip. Never demote the published admin.
 
 ### E2E-XCUT-029 — Every admin change leaves an audit row with the actor's role and no personal data
-- **Priority:** P1
+- **Priority:** P2
 - **Role:** Admin
 - **Surfaces:** API · Web
 - **Rule:** → /architecture/security-rules#s2-—-authorization-on-every-endpoint — every admin mutation leaves an append-only `AdminActionAudit` row carrying the role it ran under
@@ -240,7 +240,7 @@ Ids are `E2E-XCUT-NNN`. DEV has one operating company (`cleansia-cz`) and one de
 - **DEV:** the action labels are read from the log at run time.
 
 ### E2E-XCUT-030 — Payout details are masked for the admin and the full account is a separate audited act
-- **Priority:** P1
+- **Priority:** P2
 - **Role:** Admin
 - **Surfaces:** API · Web
 - **Rule:** → /flows/pay-and-payouts#payout-details-never-ride-an-employee-dto — the admin list and detail carry a masked account only; the reveal is an audited command
@@ -250,7 +250,7 @@ Ids are `E2E-XCUT-NNN`. DEV has one operating company (`cleansia-cz`) and one de
 ## Ownership: one user cannot reach another's data
 
 ### E2E-XCUT-031 — A customer cannot read another customer's order
-- **Priority:** P1
+- **Priority:** P2
 - **Role:** Customer
 - **Surfaces:** API
 - **Rule:** → /architecture/security-rules#s3-—-resource-by-id-endpoints-must-check-ownership — a cross-user access answers not-found so that the existence of the resource is not confirmed
@@ -258,7 +258,7 @@ Ids are `E2E-XCUT-NNN`. DEV has one operating company (`cleansia-cz`) and one de
 - **DEV:** the apps give no way to type an id, so only the API is run.
 
 ### E2E-XCUT-032 — A customer cannot cancel, review or dispute another customer's order
-- **Priority:** P1
+- **Priority:** P2
 - **Role:** Customer
 - **Surfaces:** API
 - **Rule:** → /architecture/security-rules#s3-—-resource-by-id-endpoints-must-check-ownership — ownership is checked in the handler, so it holds on every host
@@ -274,7 +274,7 @@ Ids are `E2E-XCUT-NNN`. DEV has one operating company (`cleansia-cz`) and one de
 - **DEV:** the guest token flow itself is the BOOK journey.
 
 ### E2E-XCUT-034 — A guest token opens only its own booking, and an unknown one answers not-found
-- **Priority:** P1
+- **Priority:** P2
 - **Role:** Guest
 - **Surfaces:** API · Web
 - **Rule:** → /flows/booking-and-pricing#guest-order-lookup — an unknown, expired or revoked token and a booking that belongs to an account all answer `order.not_found`
@@ -282,7 +282,7 @@ Ids are `E2E-XCUT-NNN`. DEV has one operating company (`cleansia-cz`) and one de
 - **DEV:** the real token comes from the checkout response, since e-mail is not readable.
 
 ### E2E-XCUT-035 — A cleaner cannot start, complete or collect on a job that is not theirs
-- **Priority:** P1
+- **Priority:** P2
 - **Role:** Cleaner
 - **Surfaces:** API
 - **Rule:** → /flows/execution-and-completion#only-the-assigned-cleaner-may-move-the-job — `StartOrder`, `CompleteOrder` and `NotifyOnTheWay` each require the caller to be assigned to this order
@@ -290,7 +290,7 @@ Ids are `E2E-XCUT-NNN`. DEV has one operating company (`cleansia-cz`) and one de
 - **DEV:** the second cleaner is a run account.
 
 ### E2E-XCUT-036 — A cleaner who has not taken the job sees the job, not the household
-- **Priority:** P1
+- **Priority:** P2
 - **Role:** Cleaner
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /flows/execution-and-completion#what-a-cleaner-who-has-not-taken-the-job-can-see — the board redacts the customer's name, e-mail, phone, address, coordinates, free text and the crew's phones
@@ -298,7 +298,7 @@ Ids are `E2E-XCUT-NNN`. DEV has one operating company (`cleansia-cz`) and one de
 - **DEV:** none.
 
 ### E2E-XCUT-037 — A cleaner cannot cancel a customer's booking with what the job shows them
-- **Priority:** P1
+- **Priority:** P2
 - **Role:** Cleaner
 - **Surfaces:** API
 - **Rule:** → /architecture/security-rules#gate-secret-wrong-people — the guest credential is server-issued, single-channel, and reaches no DTO a cleaner reads
@@ -330,7 +330,7 @@ Ids are `E2E-XCUT-NNN`. DEV has one operating company (`cleansia-cz`) and one de
 - **DEV:** whether the admin web does the same is unsure; record it.
 
 ### E2E-XCUT-041 — A shared phone shows nothing of the previous account
-- **Priority:** P1
+- **Priority:** P2
 - **Role:** Customer
 - **Surfaces:** iOS · Android
 - **Rule:** → /architecture/security-rules#s11-—-every-per-user-cache-on-mobile-is-wiped-on-session-end-shared-device-leak — every per-user cache is flushed on session end

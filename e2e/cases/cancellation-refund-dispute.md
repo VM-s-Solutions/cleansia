@@ -253,7 +253,7 @@ Timing recipes the DEV notes refer to. A fee needs a cleaner on the job, so each
 ## No-show, unfilled bookings and the no-cleaner remedy
 
 ### E2E-CANCEL-030 — The customer reports that the cleaner did not arrive and the administrators are alerted
-- **Priority:** P1
+- **Priority:** P2
 - **Role:** Customer
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /flows/cancellation-refund-dispute#dispute — a signed-in *service not provided* dispute on a staffed, unstarted job raises `admin.order.cleaner_not_started`
@@ -261,7 +261,7 @@ Timing recipes the DEV notes refer to. A fee needs a cleaner on the job, so each
 - **DEV:** Run before the start + 30 reminder or after; the alert is once per order either way.
 
 ### E2E-CANCEL-031 — An administrator confirms the no-show: refund, credit, apology and the dispute closes
-- **Priority:** P1
+- **Priority:** P2
 - **Role:** Admin
 - **Surfaces:** API · Web
 - **Rule:** → /product/business-rules#when-the-cleaner-cancels-or-no-shows — the confirmation runs the sweep's body: no fee, whole refund, applied credit back, apology
@@ -545,7 +545,7 @@ Timing recipes the DEV notes refer to. A fee needs a cleaner on the job, so each
 ## Disputes: filing
 
 ### E2E-CANCEL-065 — A customer files a complaint after the clean and the administrators are told
-- **Priority:** P1
+- **Priority:** P2
 - **Role:** Customer
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /flows/cancellation-refund-dispute#dispute — a filing writes one feed row per administrator Support or above and one e-mail per address
@@ -587,7 +587,7 @@ Timing recipes the DEV notes refer to. A fee needs a cleaner on the job, so each
 ## Disputes: resolution
 
 ### E2E-CANCEL-070 — An administrator resolves a complaint with a card refund
-- **Priority:** P1
+- **Priority:** P2
 - **Role:** Admin
 - **Surfaces:** API · Web
 - **Rule:** → /flows/cancellation-refund-dispute#dispute — resolving with a refund moves the money first, then writes the dispute
@@ -595,7 +595,7 @@ Timing recipes the DEV notes refer to. A fee needs a cleaner on the job, so each
 - **DEV:** The customer sees the resolved dispute on web and in the apps.
 
 ### E2E-CANCEL-071 — A complaint the customer chose to settle in credit is paid as credit
-- **Priority:** P1
+- **Priority:** P2
 - **Role:** Customer
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /product/business-rules#dispute-settlement — with credit chosen and an account, the amount is issued as credit

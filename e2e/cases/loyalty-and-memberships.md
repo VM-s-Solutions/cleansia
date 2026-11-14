@@ -13,7 +13,7 @@ Reading notes for every case below:
 ## Points
 
 ### E2E-LOYAL-001 — A completed order earns floor(total / divisor) points
-- **Priority:** P1
+- **Priority:** P2
 - **Role:** Customer
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /flows/loyalty-and-memberships#points : a completed order earns `floor(total / Currency.LoyaltyPointsDivisor)` in the order's currency.
@@ -37,7 +37,7 @@ Reading notes for every case below:
 - **DEV:** run after E2E-LOYAL-001, E2E-LOYAL-004 and E2E-LOYAL-008.
 
 ### E2E-LOYAL-004 — A partial refund takes back the same share of the points
-- **Priority:** P1
+- **Priority:** P2
 - **Role:** Admin
 - **Surfaces:** API · Web
 - **Rule:** → /product/business-rules#money-constants : every refund takes back the share `floor(earned x returned so far / TotalPrice)` less what was already taken.
@@ -127,7 +127,7 @@ Reading notes for every case below:
 - **DEV:** continues E2E-LOYAL-012.
 
 ### E2E-LOYAL-015 — The tier discount applies above the floor and not below it
-- **Priority:** P1
+- **Priority:** P2
 - **Role:** Customer
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /product/business-rules#money-constants : the tier floor (`MinimumOrderAmountForDiscount`, seeded 1000 in the platform default currency) only keeps the discount off small orders.
@@ -177,7 +177,7 @@ Reading notes for every case below:
 - **DEV:** creates nothing. The cap is 10 000 per the business rules.
 
 ### E2E-LOYAL-021 — Credit pays up to 70 % of a card booking, and the card pays the rest
-- **Priority:** P1
+- **Priority:** P2
 - **Role:** Customer
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /product/business-rules#credit : credit is spent automatically on the next card booking in the same currency, at most 70 % of the total, floored to cents.
@@ -193,7 +193,7 @@ Reading notes for every case below:
 - **DEV:** creates one cash order; cancel it.
 
 ### E2E-LOYAL-023 — A cancelled or refunded booking gives its credit back once
-- **Priority:** P1
+- **Priority:** P2
 - **Role:** Customer
 - **Surfaces:** API · Web
 - **Rule:** → /flows/loyalty-and-memberships#points-vs-credit : a refunded or cancelled booking gives back what it spent.

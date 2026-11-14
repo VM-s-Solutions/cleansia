@@ -40,7 +40,7 @@ async function showRefunded(page: Page) {
 }
 
 test.describe('customer web', () => {
-  test('the customer cancels the paid card job nobody took, the page shows no fee and the money goes back', { tag: ['@E2E-CANCEL-001', '@E2E-CANCEL-005'] }, async ({ page }) => {
+  test('the customer cancels the paid card job nobody took, the page shows no fee and the money goes back', { tag: ['@E2E-CANCEL-001'] }, async ({ page }) => {
     const o = open('webCancelCustomer');
     await customerSignIn(page, emailOf(run, 'webcustomer'), run.password);
     await page.goto(`${SITES.customer}/orders/${o.id}`);
@@ -94,7 +94,7 @@ test.describe('admin web', () => {
 });
 
 test.describe('pay periods and invoices', () => {
-  test('the administrator reads the pay periods: one is open, and a closed one names who closed it', { tag: ['@E2E-PAYOUT-013'] }, async ({ page }) => {
+  test('the administrator reads the pay periods: one is open, and a closed one names who closed it', async ({ page }) => {
     await adminSignIn(page, DEV_ADMIN.email, DEV_ADMIN.password);
     await page.goto(`${SITES.admin}/pay-periods`);
     await expect(page.locator('tbody tr', { hasText: 'Open' })).toHaveCount(1);
@@ -140,7 +140,9 @@ test.describe('pay periods and invoices', () => {
     const detail = (await call(await admin(), 'GET', `/api/AdminInvoice/details/${str(invoice, 'id')}`)).body;
     const money = (n: number) => `CZK ${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     const figures = [str(invoice, 'invoiceNumber') || str(detail, 'invoiceNumber'), money(num(detail, 'totalAmount')), money(num(detail, 'cashSetOffAmount')), money(num(detail, 'transferAmount'))];
+    // Set-off: min(cash held, invoice total), transfer = total - set-off (E2E-PAYOUT-055).
     expect(num(detail, 'cashSetOffAmount')).toBeCloseTo(Math.min(num(detail, 'totalAmount'), run.orders['webCash'].total), 2);
+    expect(num(detail, 'transferAmount')).toBeCloseTo(num(detail, 'totalAmount') - num(detail, 'cashSetOffAmount'), 2);
 
     await adminSignIn(page, DEV_ADMIN.email, DEV_ADMIN.password);
     await page.goto(`${SITES.admin}/invoice-management`);

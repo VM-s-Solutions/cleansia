@@ -26,7 +26,7 @@ async function startAndRefuseEarlyComplete(s: Session, o: RunOrder) {
   expect(start.status, JSON.stringify(start.body)).toBe(200);
   expect(num(start.body, 'newStatus')).toBe(4);
   const noPhoto = await call(s, 'POST', '/api/Order/CompleteOrder', { orderId: o.id, completionNotes: 'no after photo yet' });
-  expect(noPhoto.status, 'a completion without an after photo is refused').toBe(400);
+  expect(errorKeys(noPhoto.body), JSON.stringify(noPhoto.body)).toContain('order.after_photos.required');
   const after = await photo(s, o.id);
   expect(after.status, JSON.stringify(after.body)).toBe(200);
 }
@@ -63,7 +63,7 @@ test.describe('execute', () => {
     const s = await cleanerMobile();
     await startAndRefuseEarlyComplete(s, o);
     const unpaid = await call(s, 'POST', '/api/Order/CompleteOrder', { orderId: o.id, completionNotes: 'cash not recorded yet' });
-    expect(unpaid.status, 'a cash job cannot complete before its cash is recorded').toBe(400);
+    expect(errorKeys(unpaid.body), JSON.stringify(unpaid.body)).toContain('order.cash_not_collected');
     const cash = await call(s, 'POST', '/api/Order/MarkCashCollected', { orderId: o.id });
     expect(cash.status, JSON.stringify(cash.body)).toBe(200);
     expect(num(cash.body, 'paymentStatus')).toBe(2);

@@ -127,7 +127,7 @@ test.describe('customer web', () => {
     slots = nextSlots(new Date(), 4);
   });
 
-  test('the customer books by card in the wizard, pays in Stripe test Checkout and reads the paid order', { tag: ['@E2E-AUTH-009', '@E2E-AUTH-014', '@E2E-BOOK-011', '@E2E-BOOK-028', '@E2E-BOOK-048', '@E2E-BOOK-065', '@E2E-PAY-002'] }, async ({ page }) => {
+  test('the customer books by card in the wizard, pays in Stripe test Checkout and reads the paid order', { tag: ['@E2E-AUTH-009', '@E2E-AUTH-014', '@E2E-BOOK-028', '@E2E-BOOK-048', '@E2E-BOOK-065', '@E2E-PAY-002'] }, async ({ page }) => {
     await customerSignIn(page, emailOf(run, 'webcustomer'), run.password);
     expect(await page.evaluate(() => document.cookie)).not.toMatch(/token|jwt|auth/i);
     await page.reload();

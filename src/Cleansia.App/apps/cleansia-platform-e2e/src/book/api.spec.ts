@@ -299,19 +299,22 @@ test.describe('book', () => {
       const textId = str(preview.body, 'legalDocumentTextId');
       expect(textId).not.toBe('');
       const bare = await call(s, 'POST', '/api/Order/TakeOrder', { orderId: id });
-      expect(bare.status).toBe(400);
+      expect(errorKeys(bare.body), JSON.stringify(bare.body)).toContain('contract.not_accepted');
       const take = await call(s, 'POST', '/api/Order/TakeOrder', { orderId: id, acceptedWorkContractTextId: textId });
       expect(take.status, JSON.stringify(take.body)).toBe(200);
       order(key).taken = true;
       saveRun(run);
       const twice = await call(s, 'POST', '/api/Order/TakeOrder', { orderId: id, acceptedWorkContractTextId: textId });
-      expect(twice.status).toBe(400);
+      // A one-cleaner order: the free-seat check comes before the already-assigned one (E2E-TAKE-022).
+      expect(errorKeys(twice.body), JSON.stringify(twice.body)).toContain('order.no_available_spots');
       expect(await onBoard(id)).toBe(false);
+      for (const step of ['NotifyOnTheWay', 'StartOrder']) {
+        const early = await call(s, 'POST', `/api/Order/${step}`, { orderId: id });
+        expect(errorKeys(early.body), `${step} two hours ahead: ${JSON.stringify(early.body)}`).toContain('order.too_early_to_start');
+      }
       const seen = await customerOrder(id);
       expect(named(seen, 'status', ORDER_STATUS) || named(seen, 'orderStatus', ORDER_STATUS)).toBe('Confirmed');
       if (key === 'card') expect(named(seen, 'paymentStatus', PAYMENT_STATUS)).toBe('Paid');
-      const early = await call(s, 'POST', '/api/Order/StartOrder', { orderId: id });
-      expect(early.status, 'a start two hours ahead is refused').toBe(400);
     }
   });
 });

@@ -26,7 +26,7 @@ Ids are `E2E-PAYOUT-NNN`. A DEV pay period lasts 3 days (end = start + 2) and th
 - **Priority:** P2
 - **Role:** Cleaner
 - **Surfaces:** API · Web · iOS · Android
-- **Rule:** → /decisions/adr-0082#d4-r4-next-payout-leaves-the-cleaner-apps — "next payout" is removed because the platform cannot know a date it does not control
+- **Rule:** → /decisions/adr-0082#d4-—-r4-next-payout-leaves-the-cleaner-apps — "next payout" is removed because the platform cannot know a date it does not control
 - **Given** a signed-in cleaner with pay. **When** the cleaner reads the dashboard (JSON and screens) and My Pay on every surface. **Then** no field named `nextPayoutDate` is in the JSON, and no screen shows a "next payout" label or date; the only date offered is when the period closes.
 - **DEV:** none.
 
@@ -116,7 +116,7 @@ Ids are `E2E-PAYOUT-NNN`. A DEV pay period lasts 3 days (end = start + 2) and th
 - **Priority:** P1
 - **Role:** Admin
 - **Surfaces:** API · Web
-- **Rule:** → /decisions/adr-0082#d1-r1-a-period-closes-by-itself-early-close-is-an-exception-no-period-is-reopened — the 02:00 UTC run closes every open period whose end is before today and opens the successor in the same commit
+- **Rule:** → /decisions/adr-0082#d1-—-r1-a-period-closes-by-itself-early-close-is-an-exception-no-period-is-reopened — the 02:00 UTC run closes every open period whose end is before today and opens the successor in the same commit
 - **Given** an open period whose end date is today (UTC). **When** the 02:00 UTC run has passed. **Then** the period is `Closed`, `Closed By` reads *Automatically*, and a new `Open` period starts the day after the old end and lasts 3 days.
 - **DEV:** waits for the next 02:00 UTC run; the period must be left to reach its end date naturally or be shortened with PAYOUT-021 so that the end falls on the day of the test.
 
@@ -164,7 +164,7 @@ Ids are `E2E-PAYOUT-NNN`. A DEV pay period lasts 3 days (end = start + 2) and th
 - **Priority:** P2
 - **Role:** Admin
 - **Surfaces:** API · Web
-- **Rule:** → /decisions/adr-0082#d5-the-permission-map — `CanClosePayPeriod` and `CanUpdatePayPeriod` keep the Accountant-and-above permission
+- **Rule:** → /decisions/adr-0082#d5-—-the-permission-map — `CanClosePayPeriod` and `CanUpdatePayPeriod` keep the Accountant-and-above permission
 - **Given** an open period and an admin whose role is Support. **When** the admin calls Close now and Change end date. **Then** both answer 403, the web does not offer the buttons, and an Accountant or Manager can do both.
 - **DEV:** needs a Support admin created on DEV by the Administrator.
 
@@ -220,7 +220,7 @@ Ids are `E2E-PAYOUT-NNN`. A DEV pay period lasts 3 days (end = start + 2) and th
 - **Priority:** P2
 - **Role:** Admin
 - **Surfaces:** API · Web
-- **Rule:** → /decisions/adr-0082#d5-the-permission-map — `CanOpenPayPeriod` and `CanReopenPayPeriod` are deleted with their endpoints
+- **Rule:** → /decisions/adr-0082#d5-—-the-permission-map — `CanOpenPayPeriod` and `CanReopenPayPeriod` are deleted with their endpoints
 - **Given** a closed period. **When** the admin tries `POST api/AdminPayPeriod/reopen` and `POST api/AdminPayPeriod/open`, and looks at the closed period's page. **Then** both calls answer 404 or 405, and the page offers no Reopen and no Open, only Mark Period as Paid when applicable.
 - **DEV:** none.
 
@@ -414,7 +414,7 @@ Ids are `E2E-PAYOUT-NNN`. A DEV pay period lasts 3 days (end = start + 2) and th
 - **Priority:** P2
 - **Role:** Admin
 - **Surfaces:** API · Web
-- **Rule:** → /decisions/adr-0082#d5-the-permission-map — `CanRejectInvoice` is deleted with the Reject action and its endpoint
+- **Rule:** → /decisions/adr-0082#d5-—-the-permission-map — `CanRejectInvoice` is deleted with the Reject action and its endpoint
 - **Given** a `Pending` invoice. **When** the admin looks for Reject on the invoice page and calls `PUT api/AdminInvoice/reject`. **Then** the page has no such action and the call answers 404 or 405; no invoice can reach `Rejected`.
 - **DEV:** none.
 
@@ -510,7 +510,7 @@ Ids are `E2E-PAYOUT-NNN`. A DEV pay period lasts 3 days (end = start + 2) and th
 
 ## Not testable on DEV
 
-- **Moving money.** The platform never talks to a bank or Stripe for a payout (→ /decisions/adr-0082#d3-r3-payouts-are-manual-first-then-the-bank-and-never-stripe). The case set checks that Mark paid records and sends nothing; whether a transfer really left a bank cannot be seen.
+- **Moving money.** The platform never talks to a bank or Stripe for a payout (→ /decisions/adr-0082#d3-—-r3-payouts-are-manual-first-then-the-bank-and-never-stripe). The case set checks that Mark paid records and sends nothing; whether a transfer really left a bank cannot be seen.
 - **E-mails.** The period-closed e-mail with the PDF, the period-end reminders (3 and 1 day before the end, only for a cleaner with a job or a fee-share row) and the cash remittance request are e-mails to `@example.com` addresses; no case can read them. The 30-day request also needs a balance older than the DEV data.
 - **Two currencies in one period.** Two invoices, two references and two e-mails need pay in two currencies, which is reachable only through an admin reassignment onto an order in another currency; whether DEV serves a second currency is unsure, so it is not run.
 - **The 02:00 window.** A job finished between midnight and the 02:00 UTC run lands in the period that has just ended; the timing cannot be forced.

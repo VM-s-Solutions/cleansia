@@ -100,7 +100,7 @@ Ids are `E2E-XCUT-NNN`. DEV has one operating company (`cleansia-cz`) and one de
 - **Priority:** P2
 - **Role:** Customer
 - **Surfaces:** API · iOS · Android
-- **Rule:** → /architecture/security-rules#s3-resource-by-id-endpoints-must-check-ownership — every by-id write checks that the row belongs to the caller
+- **Rule:** → /architecture/security-rules#s3-—-resource-by-id-endpoints-must-check-ownership — every by-id write checks that the row belongs to the caller
 - **Given** two customers, each with unread rows. **When** the first marks one of their rows read, then sends `MarkRead` with an id of the second customer's row, then Mark all read. **Then** the first's count falls to 0 only after the last call; the second's rows stay unread throughout; the foreign id is refused or ignored and changes nothing.
 - **DEV:** the exact answer for a foreign id is not in the docs; record it.
 
@@ -192,7 +192,7 @@ Ids are `E2E-XCUT-NNN`. DEV has one operating company (`cleansia-cz`) and one de
 - **Priority:** P1
 - **Role:** Customer
 - **Surfaces:** API
-- **Rule:** → /architecture/security-rules#s2-authorization-on-every-endpoint — every action carries `[Permission]` or an explicit anonymous or authenticated attribute, and the server is the gate
+- **Rule:** → /architecture/security-rules#s2-—-authorization-on-every-endpoint — every action carries `[Permission]` or an explicit anonymous or authenticated attribute, and the server is the gate
 - **Given** a customer token, a cleaner token and an Administrator token. **When** the customer token calls an admin route and a partner route; the cleaner token calls an admin route and a customer route. **Then** every call answers 401 or 403, never 200, and returns no body with data; the Administrator's token passes the admin routes.
 - **DEV:** whether the wrong audience answers 401 or 403 is not fixed in the docs; record which, and report a 200.
 
@@ -200,7 +200,7 @@ Ids are `E2E-XCUT-NNN`. DEV has one operating company (`cleansia-cz`) and one de
 - **Priority:** P1
 - **Role:** Customer
 - **Surfaces:** API · Web
-- **Rule:** → /architecture/security-rules#s2-authorization-on-every-endpoint — the admin host serves administrators only
+- **Rule:** → /architecture/security-rules#s2-—-authorization-on-every-endpoint — the admin host serves administrators only
 - **Given** a confirmed customer and a confirmed cleaner. **When** each signs in at the admin web or `POST api/AdminAuth/Login` with the right password. **Then** both are refused `auth.insufficient_privileges` and no token is issued; an unknown e-mail answers `validation.invalid_password`, the same as a wrong password. The admin web shows both in the user's language.
 - **DEV:** none.
 
@@ -208,7 +208,7 @@ Ids are `E2E-XCUT-NNN`. DEV has one operating company (`cleansia-cz`) and one de
 - **Priority:** P1
 - **Role:** Customer
 - **Surfaces:** API · Web · iOS · Android
-- **Rule:** → /architecture/security-rules#s2-authorization-on-every-endpoint — the partner hosts serve cleaners and administrators only
+- **Rule:** → /architecture/security-rules#s2-—-authorization-on-every-endpoint — the partner hosts serve cleaners and administrators only
 - **Given** a confirmed customer. **When** the customer signs in on the partner web and on the partner iOS and Android apps with the right password. **Then** each refuses with `auth.insufficient_privileges` and issues no session.
 - **DEV:** none.
 
@@ -240,7 +240,7 @@ Ids are `E2E-XCUT-NNN`. DEV has one operating company (`cleansia-cz`) and one de
 - **Priority:** P1
 - **Role:** Admin
 - **Surfaces:** API · Web
-- **Rule:** → /architecture/security-rules#s2-authorization-on-every-endpoint — every admin mutation leaves an append-only `AdminActionAudit` row carrying the role it ran under
+- **Rule:** → /architecture/security-rules#s2-—-authorization-on-every-endpoint — every admin mutation leaves an append-only `AdminActionAudit` row carrying the role it ran under
 - **Given** an Accountant who has just closed a period (PAYOUT-016) and approved an invoice (PAYOUT-039). **When** a Support admin opens the audit log (`GET api/AdminAuditLog/get-paged`, `get-by-id`). **Then** both acts are listed with the actor's e-mail, the role `Accountant`, an action label and a time; the Close now row holds the old and new end and the reason, and no row holds a customer's name, address, card data or a token; an Accountant gets 403 from the log (it is Support and above).
 - **DEV:** the action labels are read from the log at run time.
 
@@ -258,7 +258,7 @@ Ids are `E2E-XCUT-NNN`. DEV has one operating company (`cleansia-cz`) and one de
 - **Priority:** P1
 - **Role:** Customer
 - **Surfaces:** API
-- **Rule:** → /architecture/security-rules#s3-resource-by-id-endpoints-must-check-ownership — a cross-user access answers not-found so that the existence of the resource is not confirmed
+- **Rule:** → /architecture/security-rules#s3-—-resource-by-id-endpoints-must-check-ownership — a cross-user access answers not-found so that the existence of the resource is not confirmed
 - **Given** customer A's order and a signed-in customer B. **When** B calls `GET api/Order/GetById`, `CancellationPreview`, `GetPhotos` and `DownloadReceipt` with A's order id, then with a made-up id. **Then** every call answers `order.not_found` (`receipt.not_found` can appear for a receipt not yet issued on the made-up id), the two answers are indistinguishable in body and status, and B's order list never contains A's order.
 - **DEV:** the apps give no way to type an id, so only the API is run.
 
@@ -266,7 +266,7 @@ Ids are `E2E-XCUT-NNN`. DEV has one operating company (`cleansia-cz`) and one de
 - **Priority:** P1
 - **Role:** Customer
 - **Surfaces:** API
-- **Rule:** → /architecture/security-rules#s3-resource-by-id-endpoints-must-check-ownership — ownership is checked in the handler, so it holds on every host
+- **Rule:** → /architecture/security-rules#s3-—-resource-by-id-endpoints-must-check-ownership — ownership is checked in the handler, so it holds on every host
 - **Given** customer A's `New` order and customer B. **When** B calls `POST api/Order/Cancel`, `SubmitReview` and `ReportIssue` with A's order id on both the customer web host and the customer mobile host. **Then** every call answers `order.not_found` (or `dispute.not_owned_by_user` for a dispute) and A's order is unchanged, no fee is charged and no refund is raised.
 - **DEV:** none.
 
@@ -274,7 +274,7 @@ Ids are `E2E-XCUT-NNN`. DEV has one operating company (`cleansia-cz`) and one de
 - **Priority:** P2
 - **Role:** Customer
 - **Surfaces:** API · Web
-- **Rule:** → /architecture/security-rules#s3-resource-by-id-endpoints-must-check-ownership — listed guest access is a narrow permission for a confirmed session whose e-mail matches
+- **Rule:** → /architecture/security-rules#s3-—-resource-by-id-endpoints-must-check-ownership — listed guest access is a narrow permission for a confirmed session whose e-mail matches
 - **Given** a guest booking made with e-mail X, a confirmed customer account with X, and a confirmed customer with another e-mail Y. **When** each opens My orders and tries to open and cancel that booking by its id. **Then** the account with X lists it, redacted, and can cancel it under guest terms; the account with Y does not list it and gets `order.not_found` on open and cancel.
 - **DEV:** the guest token flow itself is the BOOK journey.
 
@@ -314,7 +314,7 @@ Ids are `E2E-XCUT-NNN`. DEV has one operating company (`cleansia-cz`) and one de
 - **Priority:** P2
 - **Role:** Customer
 - **Surfaces:** API
-- **Rule:** → /architecture/security-rules#s1-userid-is-server-truth-not-client-input — never trust `userId`, `tenantId` or `email` from the request body
+- **Rule:** → /architecture/security-rules#s1-—-userid-is-server-truth-not-client-input — never trust `userId`, `tenantId` or `email` from the request body
 - **Given** two customers A and B, and a write command in the generated client that still has a `userId`, `email` or `employeeId` field. **When** A sends that command with B's id in the field. **Then** the effect belongs to A (or the command is refused), B's data is unchanged, and no tenant id can be supplied by any request.
 - **DEV:** which commands still carry the field is read from the generated client at run time (grep for `userId`).
 
@@ -322,7 +322,7 @@ Ids are `E2E-XCUT-NNN`. DEV has one operating company (`cleansia-cz`) and one de
 - **Priority:** P2
 - **Role:** Customer
 - **Surfaces:** API · iOS · Android
-- **Rule:** → /architecture/security-rules#s10-soft-delete-isactive-semantics — every query that should hide deactivated rows filters them itself, for example "list my saved addresses"
+- **Rule:** → /architecture/security-rules#s10-—-soft-delete-isactive-semantics — every query that should hide deactivated rows filters them itself, for example "list my saved addresses"
 - **Given** a customer with two saved addresses. **When** the customer deletes one (`DELETE api/SavedAddress/Delete/{id}`). **Then** the list (`GET api/SavedAddress/GetMine`) shows one; the deleted one cannot be chosen in the booking wizard; a booking already made with it is unchanged.
 - **DEV:** whether the customer web has a saved-address screen is unsure.
 
@@ -330,7 +330,7 @@ Ids are `E2E-XCUT-NNN`. DEV has one operating company (`cleansia-cz`) and one de
 - **Priority:** P2
 - **Role:** Customer
 - **Surfaces:** Web
-- **Rule:** → /architecture/security-rules#s1-userid-is-server-truth-not-client-input — the web session is an HttpOnly cookie
+- **Rule:** → /architecture/security-rules#s1-—-userid-is-server-truth-not-client-input — the web session is an HttpOnly cookie
 - **Given** a customer and a cleaner signed in on their web apps. **When** `document.cookie`, `localStorage` and `sessionStorage` are read from the page, and the sign-in response headers are read. **Then** the session cookie is `HttpOnly` and absent from `document.cookie`, and no access or refresh token is in either storage.
 - **DEV:** whether the admin web does the same is unsure; record it.
 
@@ -338,7 +338,7 @@ Ids are `E2E-XCUT-NNN`. DEV has one operating company (`cleansia-cz`) and one de
 - **Priority:** P1
 - **Role:** Customer
 - **Surfaces:** iOS · Android
-- **Rule:** → /architecture/security-rules#s11-every-per-user-cache-on-mobile-is-wiped-on-session-end-shared-device-leak — every per-user cache is flushed on session end
+- **Rule:** → /architecture/security-rules#s11-—-every-per-user-cache-on-mobile-is-wiped-on-session-end-shared-device-leak — every per-user cache is flushed on session end
 - **Given** account A with orders, a profile and notifications visible in the app. **When** A signs out and account B (with different data) signs in on the same simulator or emulator, with the network on and again with it off. **Then** at no moment before B's own data loads does a screen show A's orders, name, addresses, notifications or invoices.
 - **DEV:** run once per app (customer and partner, each with two accounts); with the network off the lists are empty or an offline message, never A's rows.
 
@@ -346,7 +346,7 @@ Ids are `E2E-XCUT-NNN`. DEV has one operating company (`cleansia-cz`) and one de
 - **Priority:** P2
 - **Role:** Cleaner
 - **Surfaces:** API
-- **Rule:** → /architecture/security-rules#s7-idempotency-on-side-effecting-commands — a double submit must not repeat a side effect
+- **Rule:** → /architecture/security-rules#s7-—-idempotency-on-side-effecting-commands — a double submit must not repeat a side effect
 - **Given** an in-progress cash job. **When** the cleaner sends `POST api/Order/MarkCashCollected` twice at the same instant. **Then** exactly one succeeds, the other is refused, and the cleaner's cash held rose by the amount due once.
 - **DEV:** the cash-ledger rule behind it is in /product/business-rules#cash-held; the refusal's key is recorded, not asserted.
 
@@ -356,13 +356,13 @@ Ids are `E2E-XCUT-NNN`. DEV has one operating company (`cleansia-cz`) and one de
 - **Priority:** P2
 - **Role:** Guest
 - **Surfaces:** API
-- **Rule:** → /architecture/security-rules#s5-rate-limiting-on-auth-side-effecting-endpoints — the `auth` window is 10 requests a minute per real client IP for anonymous callers
+- **Rule:** → /architecture/security-rules#s5-—-rate-limiting-on-auth-side-effecting-endpoints — the `auth` window is 10 requests a minute per real client IP for anonymous callers
 - **Given** a fresh minute and a made-up e-mail. **When** twelve sign-in attempts are sent in one minute. **Then** the first ten answer with the ordinary refusal and a later one answers 429 (with a retry hint); after the window passes, a sign-in with a real account works again.
 - **DEV:** run it last and alone: the window is per IP, so it also throttles every other sign-in from the runner during that minute; use a made-up e-mail so that no real account takes a failed-login count.
 
 ## Not testable on DEV
 
-- **Isolation between two operating companies.** DEV holds one company and no second tenant, so a CZ admin that lists none of another company's rows, `404` on every by-id read and a second operator's numbering are covered only by `SecondTenantIsolationHostTests` in CI (→ /architecture/security-rules#s8-tenant-isolation-correctness). The case set checks only that rows carry the one company.
+- **Isolation between two operating companies.** DEV holds one company and no second tenant, so a CZ admin that lists none of another company's rows, `404` on every by-id read and a second operator's numbering are covered only by `SecondTenantIsolationHostTests` in CI (→ /architecture/security-rules#s8-—-tenant-isolation-correctness). The case set checks only that rows carry the one company.
 - **A deactivated or archived company.** `auth.company_deactivated`, a market that stops being a market, `tenant.archived` (409) and the frozen-books write guard need an action on the only company, which would end DEV (→ /decisions/adr-0064, /product/business-rules#company-lifecycle).
 - **The market selector and the `preferred_market` cookie.** With one market the web shows a static chip and the apps offer one choice.
 - **`employee.work_country_operator_mismatch` and `order.country_operator_mismatch`.** They need a market served by another company.

@@ -1,4 +1,6 @@
 import { expect, test } from '@playwright/test';
+import { crc32 } from 'node:zlib';
+import { png } from './support/dev';
 import { nextSlots, startOpensAt } from './support/slots';
 
 const iso = (d: Date) => d.toISOString().replace('.000', '');
@@ -32,5 +34,22 @@ test.describe('slot grid', () => {
 
   test('a job can be started from 60 minutes before its slot', () => {
     expect(iso(startOpensAt(new Date('2026-11-14T11:15:00Z')))).toBe('2026-11-14T10:15:00Z');
+  });
+});
+
+test.describe('upload fixtures', () => {
+  test('png() is a 16x16 PNG whose chunks carry valid CRCs, and two calls differ', () => {
+    const bytes = Buffer.from(png(), 'base64');
+    expect([...bytes.subarray(0, 8)]).toEqual([137, 80, 78, 71, 13, 10, 26, 10]);
+    expect(bytes.toString('ascii', 12, 16)).toBe('IHDR');
+    expect([bytes.readUInt32BE(16), bytes.readUInt32BE(20)]).toEqual([16, 16]);
+    let at = 8;
+    while (at < bytes.length) {
+      const len = bytes.readUInt32BE(at);
+      expect(bytes.readUInt32BE(at + 8 + len)).toBe(crc32(bytes.subarray(at + 4, at + 8 + len)));
+      at += len + 12;
+    }
+    expect(at).toBe(bytes.length);
+    expect(png()).not.toBe(png());
   });
 });

@@ -28,3 +28,12 @@ export function nextSlots(now: Date, count: number, leadMinutes = 140): Date[] {
 }
 
 export const startOpensAt = (slot: Date) => new Date(slot.getTime() - 60 * MINUTE);
+
+const pragueDay = new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Prague', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+/** How the customer web's date and time step names a slot: the day button, the part-of-day tab and the time button. */
+export function wizardLabels(slot: Date) {
+  const minutes = pragueMinutes(slot);
+  const part = minutes < 12 * 60 ? 'Morning' : minutes < 16 * 60 ? 'Afternoon' : 'Evening';
+  return { day: pragueDay.format(slot), part, time: pragueClock.format(slot) };
+}

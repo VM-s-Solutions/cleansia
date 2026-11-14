@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { crc32 } from 'node:zlib';
 import { png } from './support/dev';
-import { nextSlots, startOpensAt } from './support/slots';
+import { nextSlots, startOpensAt, wizardLabels } from './support/slots';
 
 const iso = (d: Date) => d.toISOString().replace('.000', '');
 
@@ -34,6 +34,21 @@ test.describe('slot grid', () => {
 
   test('a job can be started from 60 minutes before its slot', () => {
     expect(iso(startOpensAt(new Date('2026-11-14T11:15:00Z')))).toBe('2026-11-14T10:15:00Z');
+  });
+});
+
+test.describe('booking wizard labels', () => {
+  test('a winter evening slot reads in Prague time', () => {
+    expect(wizardLabels(new Date('2026-11-14T17:45:00Z'))).toEqual({ day: 'Saturday, November 14, 2026', part: 'Evening', time: '18:45' });
+  });
+
+  test('the day follows Prague, not UTC, around midnight', () => {
+    expect(wizardLabels(new Date('2026-11-14T23:30:00Z')).day).toBe('Sunday, November 15, 2026');
+  });
+
+  test('the parts of the day split at 12:00 and 16:00', () => {
+    const part = (utc: string) => wizardLabels(new Date(`2026-11-14T${utc}Z`)).part;
+    expect([part('07:00:00'), part('10:45:00'), part('11:00:00'), part('14:45:00'), part('15:00:00')]).toEqual(['Morning', 'Morning', 'Afternoon', 'Afternoon', 'Evening']);
   });
 });
 

@@ -1,5 +1,6 @@
 import { nxE2EPreset } from '@nx/playwright/preset';
 import { defineConfig, devices } from '@playwright/test';
+import { join } from 'node:path';
 
 // The whole platform on DEV, staged because DEV time is real (e2e/README.md, "Running").
 // E2E_STAGE picks one stage; without it only the offline logic tests run, so a bare run never touches DEV.
@@ -16,6 +17,17 @@ export default defineConfig({
   expect: { timeout: 30_000 },
   reporter: [['list'], ['./src/support/case-reporter.ts']],
   use: { ...devices['Desktop Chrome'], trace: 'retain-on-failure', locale: 'en-US' },
+  // The admin SPA, served locally: DEV's admin web is behind Microsoft sign-in, and its API admits only that web's origin.
+  // The devremote configuration proxies same-origin /api to the DEV admin API.
+  webServer: stage
+    ? {
+        command: 'npx nx serve cleansia-admin.app --configuration=devremote',
+        cwd: join(__dirname, '..', '..'),
+        url: 'http://localhost:4201',
+        reuseExistingServer: true,
+        timeout: 5 * 60_000,
+      }
+    : undefined,
   projects: stage
     ? [{ name: stage, testDir: `./src/${stage}` }]
     : [{ name: 'logic', testMatch: /\.logic\.spec\.ts$/ }],

@@ -12,6 +12,7 @@ export interface RunOrder {
   total: number;
   payment: 'cash' | 'card';
   guestToken?: string;
+  number?: string;
   taken?: boolean;
   completed?: boolean;
   cancelled?: boolean;
@@ -23,6 +24,8 @@ export interface RunState {
   countryId?: string;
   addressId?: string;
   employeeId?: string;
+  employee2Id?: string;
+  webAddressId?: string;
   customerUserId?: string;
   cashHeldAfterExecute?: number;
   closedPeriodId?: string;
@@ -60,5 +63,5 @@ export function saveRun(state: RunState) {
   writeFileSync(join(runDir(state.runId), 'state.json'), JSON.stringify(state, null, 2));
 }
 
-export const emailOf = (state: RunState, role: 'customer' | 'cleaner' | 'guest') =>
+export const emailOf = (state: RunState, role: 'customer' | 'webcustomer' | 'cleaner' | 'cleaner2' | 'guest') =>
   `e2e.${state.runId}.${role}@example.com`;

@@ -39,6 +39,9 @@ and pricing), TAKE (offerability and take), EXEC (execution and completion), PAY
 (cancellation, refund and dispute), PAYOUT (pay and payouts), LOYAL (loyalty and memberships), GDPR (GDPR and
 audit), XCUT (cross-cutting).
 
+An assertion is catalogued once, in the file whose flow page owns its rule. A case another file owns keeps its id
+and heading, and its body is one line: `- **See** E2E-<FLOW>-NNN`.
+
 ## DEV facts a case must respect
 
 - Bookings open at 07:00 UTC (08:00 Prague); a job can be started from 60 minutes before its slot.

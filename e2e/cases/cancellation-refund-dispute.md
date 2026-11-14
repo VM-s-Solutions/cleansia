@@ -81,7 +81,7 @@ Timing recipes the DEV notes refer to. A fee needs a cleaner on the job, so each
 - **Role:** Cleaner
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /product/business-rules#fee-share — each seat is paid its share of half of what the company collected as fee
-- **Given** the cancelled order of E2E-CANCEL-006 (fee F, one seat). **When** the cleaner opens My Pay after the pay queue ran. **Then** a line of type late-cancellation fee share equals F × 0.5 for a one-seat job; a free cancellation (E2E-CANCEL-003) writes no such line.
+- **Given** the cancelled order of E2E-CANCEL-006 (fee F, one seat). **When** the cleaner opens My Pay after the pay queue ran. **Then** a line of type late-cancellation fee share equals F × 0.5 for a one-seat job; the invoice line later says it is a share of the fee; a free cancellation (E2E-CANCEL-003) writes no such line.
 - **DEV:** The queue consumer may take a minute; if no row appears, check again before logging a defect.
 
 ### E2E-CANCEL-010 — The cancellation is recorded as the server priced it

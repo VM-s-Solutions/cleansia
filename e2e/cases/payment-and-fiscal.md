@@ -241,7 +241,7 @@ Webhooks have no user surface: a case that says "the webhook lands" is observed 
 - **Role:** Customer
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /product/business-rules#saved-cards — `DELETE api/SavedCard/Remove/{id}`; another's card is `saved_card.not_found`
-- **Given** customer A with a saved card and customer B signed in. **When** B calls Remove with A's card id, then A removes it from the UI. **Then** B's call answers `saved_card.not_found` and A's card is untouched; A's removal drops it from the list and cash is again refused with `order.cash_requires_saved_card`.
+- **Given** customer A with a saved card and customer B signed in. **When** B calls Remove with A's card id, then A removes it from the UI. **Then** B's call answers `saved_card.not_found` and A's card is untouched; A's list showed the card before; A's removal drops it from the list and cash is again refused with `order.cash_requires_saved_card`, while A's earlier cash booking keeps its agreed tender.
 - **DEV:** Needs two customers.
 
 ### E2E-PAY-030 — A recurring card occurrence offers the same tick
@@ -353,12 +353,7 @@ Webhooks have no user surface: a case that says "the webhook lands" is observed 
 - **DEV:** The fee receipt is reachable by the administrator on the order page or the receipt list: unsure which control shows it, since `docs/` says only that the download serves the sale receipt.
 
 ### E2E-PAY-043 — While a customer owes anything, no booking is taken, cash or card
-- **Priority:** P1
-- **Role:** Customer
-- **Surfaces:** API · Web · iOS · Android
-- **Rule:** → /product/business-rules#receivables — one open receivable refuses every new booking in any company
-- **Given** the customer has an open receivable. **When** they try to book once with cash and once with card (web wizard, apps, `CreateOrder`). **Then** both are refused with `order.unpaid_receivable` before any credit, promo or Stripe session is touched; the web returns to the payment step listing what is owed with *Pay now*, the apps open a dialog with *Pay now*; the pay link and the list still work. After payment or write-off the next booking succeeds.
-- **DEV:** A guest is not matched: a guest booking with the same e-mail still goes through, and that is checked separately in E2E-PAY-044.
+- **See** E2E-BOOK-038: the same assertion, kept once in the file whose flow page owns the rule.
 
 ### E2E-PAY-044 — A guest is not refused for a debt
 - **Priority:** P2

@@ -73,7 +73,7 @@ From an assigned cleaner to a finished job, a receipt and a pay row, and the ord
 - **Role:** Admin, Cleaner
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /flows/execution-and-completion#the-contract-gate — a cleaner who dropped and was re-added has a new seat and no acceptance
-- **Given** Cleaner A accepted a placement, dropped the job, and Admin placed A again (E2E-TAKE-054). **When** A starts the job. **Then** Start answers `contract.acceptance_required`; after A accepts, Start succeeds. A second crew member who neither starts nor completes is never prompted.
+- **Given** Cleaner A accepted a placement (E2E-TAKE-050), dropped the job, and Admin placed A again. **When** A starts the job. **Then** the seat shows "contract pending" again and Start answers `contract.acceptance_required`; after A accepts, Start succeeds. A second crew member who neither starts nor completes is never prompted.
 - **DEV:** the second sentence needs a two-cleaner job.
 
 ### E2E-EXEC-010 — One job in progress at a time
@@ -259,12 +259,7 @@ From an assigned cleaner to a finished job, a receipt and a pay row, and the ord
 - **DEV:** a guest cash order cannot be made any more; only the first half runs (unsure).
 
 ### E2E-EXEC-032 — A customer who owes books nothing
-- **Priority:** P1
-- **Role:** Customer
-- **Surfaces:** API · Web · iOS · Android
-- **Rule:** → /flows/execution-and-completion#cash-not-paid — every new booking, cash or card, in any company, is refused `order.unpaid_receivable` until the debt is paid or written off
-- **Given** the Customer of E2E-EXEC-029. **When** the Customer books a new order (cash or card) and opens the debt's pay link. **Then** the booking answers `order.unpaid_receivable` and the customer apps show the owed amount with the pay action.
-- **DEV:** use the same account; E2E-EXEC-033 and -034 lift the ban.
+- **See** E2E-BOOK-038 (run it with the Customer of E2E-EXEC-029): the same assertion, kept once in the file whose flow page owns the rule.
 
 ### E2E-EXEC-033 — Admin undoes a wrong report
 - **Priority:** P2

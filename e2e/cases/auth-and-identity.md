@@ -147,9 +147,9 @@ How each role registers, signs in, keeps a session and loses it, and how a clean
 ### E2E-AUTH-018 — A customer account cannot sign in on a partner host
 - **Priority:** P2
 - **Role:** Customer
-- **Surfaces:** API
+- **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /flows/auth-and-identity#registration-requires-the-tick-writes-the-consent-and-the-record-of-it — a Customer-profile account is refused `auth.insufficient_privileges` on a partner host and no cleaner account is created
-- **Given** the confirmed run customer. **When** the same credentials are sent to `POST api/Auth/Login` on Partner :5000 and on Partner Mobile :5002. **Then** both answers are 400 `auth.insufficient_privileges`; no token is issued; no `Employee` exists for the user afterwards; the Customer actions segment gains no row from either call (a partner host writes none).
+- **Given** the confirmed run customer. **When** the same credentials are sent to `POST api/Auth/Login` on Partner :5000 and on Partner Mobile :5002, and entered on the partner web and the partner iOS and Android apps. **Then** both answers are 400 `auth.insufficient_privileges` and each client shows that refusal; no token or session is issued; no `Employee` exists for the user afterwards; the Customer actions segment gains no row from either call (a partner host writes none).
 - **DEV:** `docs/api/authentication.md` still says such a login "auto-upgrades" the profile to Employee; the flow page and the code refuse it (finding). The case pins the refusal.
 
 ### E2E-AUTH-019 — The native customer apps need an account

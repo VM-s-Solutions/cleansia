@@ -71,12 +71,7 @@ Ids are `E2E-PAYOUT-NNN`. A DEV pay period lasts 3 days (end = start + 2) and th
 - **DEV:** none.
 
 ### E2E-PAYOUT-009 — A late cancellation of a paid card order pays the crew half the fee collected
-- **Priority:** P2
-- **Role:** Cleaner
-- **Surfaces:** API · Web
-- **Rule:** → /product/business-rules#fee-share — each seat is paid its share of half of what the company collected as the cancellation fee
-- **Given** a paid card order with a cleaner on it, cancelled by the customer inside the fee window. **When** the cleaner reads My Pay. **Then** a row of type `CancellationFeeShare` exists with total equal to a seat's share of half the fee still held after refunds, and the invoice line later says it is a share of the fee.
-- **DEV:** the cancel itself is the CANCEL journey; this case only reads the pay side.
+- **See** E2E-CANCEL-009: the same assertion, kept once in the file whose flow page owns the rule.
 
 ### E2E-PAYOUT-010 — A confirmed lockout pays each seat its full reward
 - **Priority:** P2
@@ -501,12 +496,7 @@ Ids are `E2E-PAYOUT-NNN`. A DEV pay period lasts 3 days (end = start + 2) and th
 - **DEV:** needs a Manager admin.
 
 ### E2E-PAYOUT-062 — Above the float cap a cleaner no longer sees cash jobs
-- **Priority:** P2
-- **Role:** Cleaner
-- **Surfaces:** API · Web · iOS · Android
-- **Rule:** → /domain/offerability#cash-float-cap — a cleaner holding strictly more than `cash.float_cap` loses cash jobs from the board; a take is refused `order.cash_float_cap_exceeded`; it lifts by itself
-- **Given** the DEV company's `cash.float_cap` set by an admin to a value just below a cleaner's balance, and an open cash job. **When** the cleaner opens the board and tries to take the cash job; an Accountant then records a remittance bringing the balance to the cap. **Then** the cash job is absent from the board, the preview and the count, and the take answers `order.cash_float_cap_exceeded`; card jobs stay; *cash I hold* states the cap and that cash jobs are hidden; after the remittance the cash job reappears with no other action.
-- **DEV:** edits a company setting; restore it to 0 afterwards.
+- **See** E2E-TAKE-009: the same assertion, kept once in the file whose flow page owns the rule.
 
 ## Not testable on DEV
 

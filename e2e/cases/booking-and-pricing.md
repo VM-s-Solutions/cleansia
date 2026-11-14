@@ -312,7 +312,7 @@ Reading notes for every case below:
 - **DEV:** creates up to four orders; cancel all of them at the end. Cancelling inside 15 minutes (60 on a first booking) is free.
 
 ### E2E-BOOK-038 — A customer who owes books nothing
-- **Priority:** P2
+- **Priority:** P1
 - **Role:** Customer
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /flows/booking-and-pricing#owes-nothing : an open receivable refuses every new booking, cash or card, `order.unpaid_receivable`.
@@ -328,12 +328,7 @@ Reading notes for every case below:
 - **DEV:** creates one guest order and keeps the token for E2E-BOOK-056 onward.
 
 ### E2E-BOOK-040 — The "save this card" tick keeps a card only when ticked
-- **Priority:** P2
-- **Role:** Customer
-- **Surfaces:** API · Web · iOS · Android
-- **Rule:** → /product/business-rules#save-card : ticked saves a card row with consent evidence once the payment succeeds; unticked keeps nothing.
-- **Given** a customer with no saved card and the tick unticked by default. **When** the customer pays one booking by card with the tick off, and a second with it ticked (4242 card). **Then** after the first payment `SavedCard/GetMine` is empty; after the second it lists one card (brand, last four, expiry, CZK); a third card booking with a different test card and the tick ticked replaces the first (one card per currency).
-- **DEV:** creates two paid test orders; refunds are the payment flow's business. Stripe webhook must reach DEV for the card to be listed.
+- **See** E2E-PAY-022 and E2E-PAY-023: the same assertion, kept once in the file whose flow page owns the rule.
 
 ### E2E-BOOK-041 — A guest cannot save a card
 - **Priority:** P2
@@ -344,12 +339,7 @@ Reading notes for every case below:
 - **DEV:** creates nothing.
 
 ### E2E-BOOK-042 — A saved card can be listed and removed, and only by its owner
-- **Priority:** P2
-- **Role:** Customer
-- **Surfaces:** API · Web · iOS · Android
-- **Rule:** → /product/business-rules#saved-cards : the customer lists and removes their own card; another's id is `saved_card.not_found`.
-- **Given** two customers, A with a saved card. **When** A lists, B calls `SavedCard/Remove/{A's card id}`, A removes the card, A books cash. **Then** B gets `saved_card.not_found`; A's list is empty after removal; A's cash booking is refused `order.cash_requires_saved_card`, while A's earlier cash booking keeps its agreed tender. Web: Profile, Saved cards; iOS and Android: Profile, Payments.
-- **DEV:** two customer accounts needed in the run (second one created by the AUTH cases).
+- **See** E2E-PAY-029: the same assertion, kept once in the file whose flow page owns the rule.
 
 ### E2E-BOOK-043 — Credit is shown on the quote and applies to card bookings only
 - **Priority:** P2

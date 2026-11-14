@@ -205,12 +205,7 @@ Ids are `E2E-XCUT-NNN`. DEV has one operating company (`cleansia-cz`) and one de
 - **DEV:** none.
 
 ### E2E-XCUT-025 — Partner sign-in refuses a customer
-- **Priority:** P1
-- **Role:** Customer
-- **Surfaces:** API · Web · iOS · Android
-- **Rule:** → /architecture/security-rules#s2-—-authorization-on-every-endpoint — the partner hosts serve cleaners and administrators only
-- **Given** a confirmed customer. **When** the customer signs in on the partner web and on the partner iOS and Android apps with the right password. **Then** each refuses with `auth.insufficient_privileges` and issues no session.
-- **DEV:** none.
+- **See** E2E-AUTH-018: the same assertion, kept once in the file whose flow page owns the rule.
 
 ### E2E-XCUT-026 — The admin roles gate the server, and the web only hints
 - **Priority:** P1

@@ -73,7 +73,7 @@ How a job reaches a cleaner's board and what happens when cleaners take, drop, c
 - **Role:** Cleaner (Admin sets the cap)
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /domain/offerability#cash-float-cap — a cleaner holding strictly more company cash than `cash.float_cap` is not offered cash jobs; the take answers `order.cash_float_cap_exceeded`
-- **Given** the company's float cap is set below the cash Cleaner A holds (one collected cash job), and one open cash order and one open card order exist. **When** Cleaner A reads the board, the dashboard count and `GetCashHeld`, then takes the cash order by id. **Then** the cash order is off the board and the count, the card order stays, `GetCashHeld` reports `cashJobsHidden` for the currency, and the take answers `order.cash_float_cap_exceeded`; after Admin records a remittance bringing the cash to the cap or below, the cash order is on the board again on the next read.
+- **Given** the company's float cap is set below the cash Cleaner A holds (one collected cash job), and one open cash order and one open card order exist. **When** Cleaner A reads the board, the dashboard count and `GetCashHeld`, then takes the cash order by id. **Then** the cash order is off the board and the count, the card order stays, `GetCashHeld` reports `cashJobsHidden` for the currency and *cash I hold* states the cap and that cash jobs are hidden, and the take answers `order.cash_float_cap_exceeded`; after Admin records a remittance bringing the cash to the cap or below, the cash order is on the board again on the next read.
 - **DEV:** changes a company setting and writes a remittance; restore the setting after. Needs cash held by Cleaner A from an earlier collection (EXEC flow).
 
 ## The contract for work and the take
@@ -441,12 +441,7 @@ How a job reaches a cleaner's board and what happens when cleaners take, drop, c
 - **DEV:** restore the cap after.
 
 ### E2E-TAKE-054 — A placement dropped and re-added needs a new acceptance
-- **Priority:** P2
-- **Role:** Admin, Cleaner
-- **Surfaces:** API · Web · iOS · Android
-- **Rule:** → /flows/offerability-and-take#edge-cases — a cleaner who drops and is re-added by Admin has a new seat with no acceptance, refused at Start until they accept again
-- **Given** Cleaner A accepted a placement (E2E-TAKE-050), then dropped the job. **When** Admin places A again. **Then** the seat shows "contract pending" again; A's Start attempt answers `contract.acceptance_required` (EXEC flow) until A accepts.
-- **DEV:** continues in E2E-EXEC-009.
+- **See** E2E-EXEC-009: the same assertion, kept once in the file whose flow page owns the rule.
 
 ### E2E-TAKE-055 — Staff roles and non-staff callers
 - **Priority:** P2

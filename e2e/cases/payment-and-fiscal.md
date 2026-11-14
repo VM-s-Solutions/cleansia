@@ -88,7 +88,7 @@ Webhooks have no user surface: a case that says "the webhook lands" is observed 
 
 ## Mobile payment (PaymentSheet)
 
-### E2E-PAY-020 — iOS: a customer pays a booking in PaymentSheet and the order settles
+### E2E-PAY-011 — iOS: a customer pays a booking in PaymentSheet and the order settles
 - **Priority:** P1
 - **Role:** Customer
 - **Surfaces:** API · iOS
@@ -96,7 +96,7 @@ Webhooks have no user surface: a case that says "the webhook lands" is observed 
 - **Given** a signed-in customer on the iOS booking review with card chosen. **When** they submit, complete PaymentSheet with 4242 4242 4242 4242 and reach the success screen. **Then** the success screen says *Paid by card*; the order detail then reads payment `Paid`, status `New`; an `order.payment_confirmed` push and inbox entry exist; the Stripe amount shown in the sheet equals *To pay by card* on the review step.
 - **DEV:** Simulator with the DEV build; Stripe test mode accepts the test card in PaymentSheet. The success screen may read the order before the webhook, so check the detail screen after a pause.
 
-### E2E-PAY-021 — Android: a customer pays a booking in PaymentSheet and the order settles
+### E2E-PAY-012 — Android: a customer pays a booking in PaymentSheet and the order settles
 - **Priority:** P1
 - **Role:** Customer
 - **Surfaces:** API · Android
@@ -104,7 +104,7 @@ Webhooks have no user surface: a case that says "the webhook lands" is observed 
 - **Given** a signed-in customer on the Android booking review with card chosen. **When** they submit and complete PaymentSheet with 4242 4242 4242 4242. **Then** the success screen says *Paid by card*; the order detail reads payment `Paid`, status `New`; the push `order.payment_confirmed` arrives.
 - **DEV:** Emulator `cleansia35`.
 
-### E2E-PAY-022 — Re-opening PaymentSheet hands back the same intent and does not cancel the booking
+### E2E-PAY-013 — Re-opening PaymentSheet hands back the same intent and does not cancel the booking
 - **Priority:** P2
 - **Role:** Customer
 - **Surfaces:** API · iOS · Android
@@ -112,7 +112,7 @@ Webhooks have no user surface: a case that says "the webhook lands" is observed 
 - **Given** a booked card order, PaymentSheet opened once and dismissed. **When** the customer opens it again. **Then** the second `POST api/Payment/CreatePaymentIntent` returns the same payment intent id and amount, the order is still `New` with payment `Pending` and not cancelled, and paying completes the order.
 - **DEV:** Compare the two responses by intent id (API call from the same session).
 
-### E2E-PAY-023 — Changing the save-card tick replaces the intent without cancelling the order
+### E2E-PAY-014 — Changing the save-card tick replaces the intent without cancelling the order
 - **Priority:** P2
 - **Role:** Customer
 - **Surfaces:** API · iOS · Android
@@ -120,7 +120,7 @@ Webhooks have no user surface: a case that says "the webhook lands" is observed 
 - **Given** a card order whose sheet was opened with the tick off. **When** the customer reopens the sheet with the tick on (or calls `CreatePaymentIntent` with `saveCard: true`) and waits for webhooks. **Then** a different intent id is returned, the order is not cancelled (still `New`, payment `Pending`, no `order.cancelled` push), and paying the new intent settles it.
 - **DEV:** The `payment_intent.canceled` webhook for the old intent arrives within seconds; wait 30 seconds before reading the order.
 
-### E2E-PAY-024 — A declined card in PaymentSheet keeps the booking open
+### E2E-PAY-015 — A declined card in PaymentSheet keeps the booking open
 - **Priority:** P2
 - **Role:** Customer
 - **Surfaces:** iOS · Android
@@ -128,17 +128,17 @@ Webhooks have no user surface: a case that says "the webhook lands" is observed 
 - **Given** the PaymentSheet open on a booked card order. **When** the customer enters 4000 0000 0000 0002 and the sheet shows the decline, then retries with 4242 4242 4242 4242. **Then** the sheet reports the decline and stays usable, the order stays payment `Pending` between attempts, and the second card settles it.
 - **DEV:** Same Stripe decline test card note as E2E-PAY-009.
 
-### E2E-PAY-025 — Credit is a tender: the card is asked for what the credit leaves
+### E2E-PAY-016 — Credit is a tender: the card is asked for what the credit leaves
 - **Priority:** P2
 - **Role:** Customer
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /flows/payment-and-fiscal#amounts-are-never-reconciled-and-do-not-need-to-be — `AmountDueOnCard = TotalPrice − CreditAppliedAmount`
-- **Given** the customer holds a credit balance in the order's currency (granted by the administrator, `POST api/AdminCredit/issue`). **When** they book by card. **Then** the confirm step shows *Your credit −X* and *To pay by card Y* with X no more than 70 % of the total, Stripe asks exactly Y, the order reads `creditAppliedAmount` X and `amountDueOnCard` Y, and the success screen and order detail show the same two figures; the receipt (E2E-PAY-050) states the credit applied and what the card paid.
+- **Given** the customer holds a credit balance in the order's currency (granted by the administrator, `POST api/AdminCredit/issue`). **When** they book by card. **Then** the confirm step shows *Your credit −X* and *To pay by card Y* with X no more than 70 % of the total, Stripe asks exactly Y, the order reads `creditAppliedAmount` X and `amountDueOnCard` Y, and the success screen and order detail show the same two figures; the receipt (E2E-PAY-032) states the credit applied and what the card paid.
 - **DEV:** The administrator grants credit first (CZK, say 100). Credit is not spent on a cash booking.
 
 ## Webhook endpoint
 
-### E2E-PAY-030 — A webhook call without a signature header is refused
+### E2E-PAY-017 — A webhook call without a signature header is refused
 - **Priority:** P1
 - **Role:** Guest
 - **Surfaces:** API
@@ -146,7 +146,7 @@ Webhooks have no user surface: a case that says "the webhook lands" is observed 
 - **Given** the three hosts that serve the webhook (Customer, Partner, Customer Mobile). **When** an anonymous `POST api/Payment/webhook` carries a JSON body and no `Stripe-Signature` header. **Then** each answers 400 with `payment.stripe_signature_required`, and no order or event row changes.
 - **DEV:** Anonymous call, no Stripe access needed. Rate limit `webhook` may answer 429 after many calls; keep to a handful.
 
-### E2E-PAY-031 — A webhook call with a forged signature is refused
+### E2E-PAY-018 — A webhook call with a forged signature is refused
 - **Priority:** P1
 - **Role:** Guest
 - **Surfaces:** API
@@ -154,7 +154,7 @@ Webhooks have no user surface: a case that says "the webhook lands" is observed 
 - **Given** a body shaped like a `checkout.session.completed` event for a real DEV order id and a made-up `Stripe-Signature` value. **When** it is posted to each webhook host. **Then** the answer is 400 with `InvalidSignature` ("Invalid webhook signature") and the order stays unchanged (payment still `Pending`).
 - **DEV:** Use a throwaway order the test created. Never use an order that matters.
 
-### E2E-PAY-032 — A webhook call with an empty body is refused
+### E2E-PAY-019 — A webhook call with an empty body is refused
 - **Priority:** P2
 - **Role:** Guest
 - **Surfaces:** API
@@ -162,7 +162,7 @@ Webhooks have no user surface: a case that says "the webhook lands" is observed 
 - **Given** any webhook host. **When** an anonymous `POST api/Payment/webhook` has an empty body and a signature header. **Then** the answer is 400 with `payment.json_payload_required`.
 - **DEV:** API only.
 
-### E2E-PAY-033 — A chargeback on a guest's web card booking reaches the console as an escalated dispute
+### E2E-PAY-020 — A chargeback on a guest's web card booking reaches the console as an escalated dispute
 - **Priority:** P2
 - **Role:** Admin
 - **Surfaces:** API · Web
@@ -170,17 +170,17 @@ Webhooks have no user surface: a case that says "the webhook lands" is observed 
 - **Given** a guest card booking paid with Stripe's chargeback test card 4000 0000 0000 0259. **When** Stripe raises the dispute (minutes after the charge) and the webhook lands. **Then** the order's payment status is unchanged, a `Chargeback` dispute (reason 8) is escalated on the order in the console, and an `admin.dispute.chargeback` row (reversed amount, dispute) is in the feed for every admin role including the Accountant.
 - **DEV:** 4000 0000 0000 0259 is Stripe's documented test card for a chargeback and is not in `e2e/README.md`; confirm it in Stripe's test docs and with the owner, because it opens a dispute on the shared test account. The guest cannot see anything: the guest's check is that nothing changed on the order page.
 
-### E2E-PAY-034 — A chargeback on a mobile card booking finds the order by its intent
+### E2E-PAY-021 — A chargeback on a mobile card booking finds the order by its intent
 - **Priority:** P2
 - **Role:** Admin
 - **Surfaces:** API · Web
 - **Rule:** → /flows/payment-and-fiscal#edge-cases — an app's payment stores its intent when it is created, so the webhook finds the order
 - **Given** a signed-in customer's PaymentSheet booking paid with 4000 0000 0000 0259. **When** the chargeback webhook lands. **Then** the console shows an escalated `Chargeback` dispute on that order, linked to the customer's account, and `admin.dispute.chargeback` is raised once.
-- **DEV:** Same card and consent note as E2E-PAY-033.
+- **DEV:** Same card and consent note as E2E-PAY-020.
 
 ## Saved cards
 
-### E2E-PAY-040 — A ticked card payment lands a saved card
+### E2E-PAY-022 — A ticked card payment lands a saved card
 - **Priority:** P1
 - **Role:** Customer
 - **Surfaces:** API · Web · iOS · Android
@@ -188,7 +188,7 @@ Webhooks have no user surface: a case that says "the webhook lands" is observed 
 - **Given** a signed-in customer with no saved card and the box *Save this card for my next bookings* ticked (unticked by default, consent sentence printed with it). **When** they pay a card booking with 4242 4242 4242 4242. **Then** once Stripe confirms, Saved cards (web `/profile`; apps Profile → Payments) list one card: brand Visa, last four 4242, expiry, the booking's currency; it is retained across a reload; cash is now selectable on the next booking (see the cash cases in `booking-and-pricing.md`).
 - **DEV:** The card appears a few seconds after the webhook; pending setups are not listed.
 
-### E2E-PAY-041 — An unticked card payment keeps no card
+### E2E-PAY-023 — An unticked card payment keeps no card
 - **Priority:** P1
 - **Role:** Customer
 - **Surfaces:** API · Web · iOS · Android
@@ -196,7 +196,7 @@ Webhooks have no user surface: a case that says "the webhook lands" is observed 
 - **Given** a customer with no saved card. **When** they pay a card booking with the box unticked. **Then** the order is `Paid` and Saved cards stays empty (*No card saved.* / the empty-state copy), on all clients, and on the apps the PaymentSheet did not show Stripe's own save box.
 - **DEV:** Check the list after the webhook has surely landed (order `Paid`).
 
-### E2E-PAY-042 — A guest is never offered the tick
+### E2E-PAY-024 — A guest is never offered the tick
 - **Priority:** P2
 - **Role:** Guest
 - **Surfaces:** API · Web
@@ -204,7 +204,7 @@ Webhooks have no user surface: a case that says "the webhook lands" is observed 
 - **Given** a guest on the web payment step. **When** the guest chooses card. **Then** no save-card box is shown; and a direct `POST api/Payment/CreateOrder` with `saveCard: true` and no account is refused with `saved_card.requires_account`, creating no order.
 - **DEV:** The API half needs a hand-built request from the guest session.
 
-### E2E-PAY-043 — Saving a card without consent is refused
+### E2E-PAY-025 — Saving a card without consent is refused
 - **Priority:** P2
 - **Role:** Customer
 - **Surfaces:** API · iOS
@@ -212,7 +212,7 @@ Webhooks have no user surface: a case that says "the webhook lands" is observed 
 - **Given** a signed-in customer. **When** they call `POST api/SavedCard/CreateSetupIntent` (mobile) or `POST api/SavedCard/CreateCheckoutSession` (web host) with consent false; and on iOS press *Save a card* without ticking the consent. **Then** the API answers `saved_card.consent_not_accepted`, the iOS button stays disabled or shows the consent error, and no `SavedCards` row appears in the list.
 - **DEV:** The web has no screen for the standalone capture since 2026-10-04, so the web half is API only.
 
-### E2E-PAY-044 — iOS saves a card from Profile → Payments
+### E2E-PAY-026 — iOS saves a card from Profile → Payments
 - **Priority:** P2
 - **Role:** Customer
 - **Surfaces:** API · iOS
@@ -220,7 +220,7 @@ Webhooks have no user surface: a case that says "the webhook lands" is observed 
 - **Given** a signed-in customer with consent ticked on Profile → Payments. **When** they complete the setup sheet with 4242 4242 4242 4242. **Then** `setup_intent.succeeded` lands the card and the list shows it; the account is charged nothing.
 - **DEV:** Android has no standalone *Save a card* in the docs; whether it has one is unsure, so no Android case is claimed.
 
-### E2E-PAY-045 — A newer card in the same currency retires the earlier one
+### E2E-PAY-027 — A newer card in the same currency retires the earlier one
 - **Priority:** P2
 - **Role:** Customer
 - **Surfaces:** API · Web · iOS · Android
@@ -228,15 +228,15 @@ Webhooks have no user surface: a case that says "the webhook lands" is observed 
 - **Given** a saved Visa 4242 in CZK. **When** the customer pays another CZK booking with a ticked Mastercard 5555 5555 5555 4444. **Then** the list shows only the Mastercard.
 - **DEV:** Needs two paid bookings.
 
-### E2E-PAY-046 — A payment that never completes saves nothing
+### E2E-PAY-028 — A payment that never completes saves nothing
 - **Priority:** P2
 - **Role:** Customer
 - **Surfaces:** API · Web
 - **Rule:** → /product/business-rules#save-card — a row whose payment never succeeds is never captured
 - **Given** the box ticked on a card booking. **When** the customer abandons Checkout (or is declined with 4000 0000 0000 0002). **Then** Saved cards stays empty and a cash booking is still refused with `order.cash_requires_saved_card`.
-- **DEV:** Compare with E2E-PAY-040, where the same steps with a good card save one.
+- **DEV:** Compare with E2E-PAY-022, where the same steps with a good card save one.
 
-### E2E-PAY-047 — Removing a saved card works only on one's own card
+### E2E-PAY-029 — Removing a saved card works only on one's own card
 - **Priority:** P2
 - **Role:** Customer
 - **Surfaces:** API · Web · iOS · Android
@@ -244,7 +244,7 @@ Webhooks have no user surface: a case that says "the webhook lands" is observed 
 - **Given** customer A with a saved card and customer B signed in. **When** B calls Remove with A's card id, then A removes it from the UI. **Then** B's call answers `saved_card.not_found` and A's card is untouched; A's removal drops it from the list and cash is again refused with `order.cash_requires_saved_card`.
 - **DEV:** Needs two customers.
 
-### E2E-PAY-048 — A recurring card occurrence offers the same tick
+### E2E-PAY-030 — A recurring card occurrence offers the same tick
 - **Priority:** P2
 - **Role:** Customer
 - **Surfaces:** API · Web · iOS · Android
@@ -252,17 +252,17 @@ Webhooks have no user surface: a case that says "the webhook lands" is observed 
 - **Given** an unconfirmed recurring occurrence on a card schedule. **When** the customer confirms it with the tick on, then (second occurrence) off. **Then** ticked: the card is saved and listed; unticked: nothing saved; both occurrences are `Paid` after payment; on the apps the sheet after a ticked confirm opens on the Customer.
 - **DEV:** Needs occurrences from the recurring materialiser, which runs on a timer; the first card occurrence may take a day to appear.
 
-### E2E-PAY-049 — Nothing charges a saved card
+### E2E-PAY-031 — Nothing charges a saved card
 - **Priority:** P2
 - **Role:** Admin
 - **Surfaces:** API · Web
 - **Rule:** → /flows/payment-and-fiscal#saved-cards-and-receivables — the off-session charges stay switched off
-- **Given** a customer with a saved card and an open receivable (see E2E-PAY-070). **When** more than two 15-minute sweeps pass. **Then** the receivable is still `Open` with no charge attempt recorded and the customer received no payment; the pay link is still the only way to pay it.
+- **Given** a customer with a saved card and an open receivable (see E2E-PAY-041). **When** more than two 15-minute sweeps pass. **Then** the receivable is still `Open` with no charge attempt recorded and the customer received no payment; the pay link is still the only way to pay it.
 - **DEV:** Waits about 35 minutes. The agent cannot see Stripe, so the check is the receivable row and the absence of a `Paid` order or fee receipt.
 
 ## Receipts
 
-### E2E-PAY-050 — A paid card order has a sale receipt the customer can download
+### E2E-PAY-032 — A paid card order has a sale receipt the customer can download
 - **Priority:** P1
 - **Role:** Customer
 - **Surfaces:** API · Web · iOS · Android
@@ -270,15 +270,15 @@ Webhooks have no user surface: a case that says "the webhook lands" is observed 
 - **Given** a card order just settled. **When** the customer downloads the receipt (`GET api/Order/DownloadReceipt`; web order detail; app order detail). **Then** a PDF arrives with a receipt number, the customer's name and address and no e-mail or phone, lines that add up to the order total to the cent, the payment status and method as words, and the clean time in the market's zone; downloading again returns the same stored copy and number.
 - **DEV:** Receipt generation is queued: allow up to a minute. Read the PDF with a text extractor.
 
-### E2E-PAY-051 — An unpaid order has no receipt
+### E2E-PAY-033 — An unpaid order has no receipt
 - **Priority:** P1
 - **Role:** Customer
 - **Surfaces:** API · Web
 - **Rule:** → /flows/payment-and-fiscal#what-the-receipt-says — a cash booking and an unpaid card order get none
 - **Given** a cash booking (payment `Pending`) and a card order left unpaid. **When** the customer calls `DownloadReceipt` for each. **Then** both answer `receipt.not_found`, and the web order page shows no receipt button.
-- **DEV:** Same call after the cash is recorded is E2E-PAY-052.
+- **DEV:** Same call after the cash is recorded is E2E-PAY-034.
 
-### E2E-PAY-052 — A cash sale's receipt appears at completion, after the cleaner records the cash
+### E2E-PAY-034 — A cash sale's receipt appears at completion, after the cleaner records the cash
 - **Priority:** P1
 - **Role:** Customer
 - **Surfaces:** API · Web · iOS · Android
@@ -286,7 +286,7 @@ Webhooks have no user surface: a case that says "the webhook lands" is observed 
 - **Given** a cash booking taken by a cleaner and started. **When** the cleaner records the cash (`MarkCashCollected`), the customer calls `DownloadReceipt`, the cleaner completes the job, and the customer calls it again. **Then** after the cash and before completion the answer is `receipt.not_found`; after completion a receipt exists that prints the booked slot, the completion time and the cash-received time, all in market time, with payment `Paid`.
 - **DEV:** The cash and completion steps belong to `execution-and-completion.md`; the job starts 60 minutes before its slot.
 
-### E2E-PAY-053 — A receipt belongs to its customer
+### E2E-PAY-035 — A receipt belongs to its customer
 - **Priority:** P2
 - **Role:** Customer
 - **Surfaces:** API
@@ -294,7 +294,7 @@ Webhooks have no user surface: a case that says "the webhook lands" is observed 
 - **Given** customer A's paid order and customer B signed in. **When** B calls `DownloadReceipt` with A's order id. **Then** the answer is `order.not_found` and no file is served.
 - **DEV:** Needs two customers.
 
-### E2E-PAY-054 — A receipt is in the language the booking was made in
+### E2E-PAY-036 — A receipt is in the language the booking was made in
 - **Priority:** P2
 - **Role:** Customer
 - **Surfaces:** API · Web
@@ -302,7 +302,7 @@ Webhooks have no user surface: a case that says "the webhook lands" is observed 
 - **Given** a booking made with the web in Czech, then the account switched to English. **When** the receipt is downloaded. **Then** labels, payment status and method are in Czech and amounts are written Czech style ("2 000,00 Kč"); the PDF is unchanged after the language switch.
 - **DEV:** Repeat with Slovak, Ukrainian and Russian only as P2 extras; any other code prints English.
 
-### E2E-PAY-055 — Receipt lines add up, surcharges and discounts are lines of their own
+### E2E-PAY-037 — Receipt lines add up, surcharges and discounts are lines of their own
 - **Priority:** P2
 - **Role:** Customer
 - **Surfaces:** API · Web
@@ -310,15 +310,15 @@ Webhooks have no user surface: a case that says "the webhook lands" is observed 
 - **Given** a card booking with an extra, the heavy dirtiness level, an express slot (2 to 4 hours ahead) and a promo code. **When** the receipt is downloaded. **Then** it lists each service/extra at its price, *Heavy dirtiness surcharge*, *Express surcharge* and the promo discount as separate lines (zero lines absent), and the sum equals the total to the cent.
 - **DEV:** The express slot needs a booking made 2 to 4 hours before a start time inside 08:00 to 19:45 Prague. Promo codes depend on DEV seed data: unsure which exist.
 
-### E2E-PAY-056 — The receipt states credit applied and what the card paid
+### E2E-PAY-038 — The receipt states credit applied and what the card paid
 - **Priority:** P2
 - **Role:** Customer
 - **Surfaces:** API · Web
 - **Rule:** → /flows/payment-and-fiscal#amounts-are-never-reconciled-and-do-not-need-to-be — the sale keeps `TotalPrice`; the receipt states credit and the card share
-- **Given** the credit booking of E2E-PAY-025. **When** the receipt is downloaded. **Then** the lines sum to the full order total, and the receipt states credit applied X and paid by card Y.
-- **DEV:** Depends on E2E-PAY-025.
+- **Given** the credit booking of E2E-PAY-016. **When** the receipt is downloaded. **Then** the lines sum to the full order total, and the receipt states credit applied X and paid by card Y.
+- **DEV:** Depends on E2E-PAY-016.
 
-### E2E-PAY-057 — The receipt prints the sale's VAT posture
+### E2E-PAY-039 — The receipt prints the sale's VAT posture
 - **Priority:** P2
 - **Role:** Customer
 - **Surfaces:** API · Web
@@ -326,7 +326,7 @@ Webhooks have no user surface: a case that says "the webhook lands" is observed 
 - **Given** a paid order. **When** its receipt is read. **Then** if the order charged VAT the PDF shows subtotal without VAT, VAT at the order's rate and the issuer's VAT number; if it charged none it shows the total and *Nejsme plátci DPH* (Czech) and no VAT-number line.
 - **DEV:** Unsure which posture the DEV company row has; the case passes with either, provided the two never mix.
 
-### E2E-PAY-058 — Fiscal registration is off on DEV and fails nothing
+### E2E-PAY-040 — Fiscal registration is off on DEV and fails nothing
 - **Priority:** P2
 - **Role:** Admin
 - **Surfaces:** API · Web
@@ -336,7 +336,7 @@ Webhooks have no user surface: a case that says "the webhook lands" is observed 
 
 ## What a customer owes (receivables and pay links)
 
-### E2E-PAY-070 — A customer lists what they owe and pays it through the pay link
+### E2E-PAY-041 — A customer lists what they owe and pays it through the pay link
 - **Priority:** P1
 - **Role:** Customer
 - **Surfaces:** API · Web · iOS · Android
@@ -344,23 +344,23 @@ Webhooks have no user surface: a case that says "the webhook lands" is observed 
 - **Given** the customer has an open cash-cancellation-fee receivable (made by the late cash cancellation case in `cancellation-refund-dispute.md`). **When** they open what they owe (`GET api/Receivable/GetMine`; web order page; apps Profile → Payments), press *Pay now* (`POST api/Receivable/CreatePayLink/{id}`) and pay the Checkout with 4242 4242 4242 4242. **Then** the list showed kind, amount and currency before payment; after the webhook the receivable is `Paid`, the list is empty, and the order's own payment status, charge surface and refunds are untouched.
 - **DEV:** Needs a prior late cash cancellation; see the CANCEL case for how long it takes to set up.
 
-### E2E-PAY-071 — A paid fee earns a fee receipt of its own
+### E2E-PAY-042 — A paid fee earns a fee receipt of its own
 - **Priority:** P1
 - **Role:** Customer
 - **Surfaces:** API · Web
 - **Rule:** → /flows/payment-and-fiscal#fee-receipt — a receivable's payment is a sale of its own, stating the fee alone
-- **Given** the receivable of E2E-PAY-070 now paid. **When** the customer looks for a receipt. **Then** the order has a fee receipt with its own number, one line labelled by the kind (*Late cancellation fee*) for the fee only, and it was not e-mailed (cannot be seen); `DownloadReceipt` on a cancelled cash order still answers `receipt.not_found` because it serves the sale receipt only.
+- **Given** the receivable of E2E-PAY-041 now paid. **When** the customer looks for a receipt. **Then** the order has a fee receipt with its own number, one line labelled by the kind (*Late cancellation fee*) for the fee only, and it was not e-mailed (cannot be seen); `DownloadReceipt` on a cancelled cash order still answers `receipt.not_found` because it serves the sale receipt only.
 - **DEV:** The fee receipt is reachable by the administrator on the order page or the receipt list: unsure which control shows it, since `docs/` says only that the download serves the sale receipt.
 
-### E2E-PAY-072 — While a customer owes anything, no booking is taken, cash or card
+### E2E-PAY-043 — While a customer owes anything, no booking is taken, cash or card
 - **Priority:** P1
 - **Role:** Customer
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /product/business-rules#receivables — one open receivable refuses every new booking in any company
 - **Given** the customer has an open receivable. **When** they try to book once with cash and once with card (web wizard, apps, `CreateOrder`). **Then** both are refused with `order.unpaid_receivable` before any credit, promo or Stripe session is touched; the web returns to the payment step listing what is owed with *Pay now*, the apps open a dialog with *Pay now*; the pay link and the list still work. After payment or write-off the next booking succeeds.
-- **DEV:** A guest is not matched: a guest booking with the same e-mail still goes through, and that is checked separately in E2E-PAY-073.
+- **DEV:** A guest is not matched: a guest booking with the same e-mail still goes through, and that is checked separately in E2E-PAY-044.
 
-### E2E-PAY-073 — A guest is not refused for a debt
+### E2E-PAY-044 — A guest is not refused for a debt
 - **Priority:** P2
 - **Role:** Guest
 - **Surfaces:** API · Web
@@ -368,15 +368,15 @@ Webhooks have no user surface: a case that says "the webhook lands" is observed 
 - **Given** an account with an open receivable. **When** a guest books by card with the same e-mail. **Then** the booking is accepted and no `order.unpaid_receivable` is returned.
 - **DEV:** Use a throwaway guest booking and cancel it free afterwards.
 
-### E2E-PAY-074 — The pay link is one per receivable, and only the owner's open receivable gets one
+### E2E-PAY-045 — The pay link is one per receivable, and only the owner's open receivable gets one
 - **Priority:** P2
 - **Role:** Customer
 - **Surfaces:** API
 - **Rule:** → /flows/payment-and-fiscal#saved-cards-and-receivables — the link recorded on the receivable is handed back while Stripe reports it open
 - **Given** an open receivable, a second customer and a paid receivable. **When** the owner calls `CreatePayLink` twice in a row; the second customer calls it with the first's id; the owner calls it on the paid one. **Then** the two calls return the same session url; the second customer gets `receivable.not_found`; the paid receivable answers `receivable.not_open`.
-- **DEV:** Needs a second customer and one paid receivable (after E2E-PAY-070).
+- **DEV:** Needs a second customer and one paid receivable (after E2E-PAY-041).
 
-### E2E-PAY-075 — A Manager writes off a receivable and its pay link dies
+### E2E-PAY-046 — A Manager writes off a receivable and its pay link dies
 - **Priority:** P2
 - **Role:** Admin
 - **Surfaces:** API · Web
@@ -384,7 +384,7 @@ Webhooks have no user surface: a case that says "the webhook lands" is observed 
 - **Given** an open receivable whose customer has pressed *Pay now* and holds the Checkout url. **When** a Manager or Administrator writes it off on Orders → Receivables with a note (`POST api/AdminReceivable/write-off`). **Then** the receivable reads `WrittenOff` with the note; the customer's held Checkout url shows an expired session; `CreatePayLink` now answers `receivable.not_open`; the customer can book again; a Support user or Accountant doing the same is refused with 403.
 - **DEV:** Needs one administrator of each role (created in admin user management). The note is required and at most 500 characters: 501 characters answers `common.max_length`, an empty note `common.required`.
 
-### E2E-PAY-076 — Administrators list receivables and filter them
+### E2E-PAY-047 — Administrators list receivables and filter them
 - **Priority:** P2
 - **Role:** Admin
 - **Surfaces:** API · Web
@@ -392,7 +392,7 @@ Webhooks have no user surface: a case that says "the webhook lands" is observed 
 - **Given** open, paid and written-off receivables. **When** an administrator of any role opens Orders → Receivables and filters by status and kind. **Then** each filter returns only matching rows and another company's receivables never appear.
 - **DEV:** One company on DEV (`cleansia-cz`), so the other-company half is not testable.
 
-### E2E-PAY-077 — A door default's pay-link payment earns a fee receipt labelled unpaid cash and no second crew pay
+### E2E-PAY-048 — A door default's pay-link payment earns a fee receipt labelled unpaid cash and no second crew pay
 - **Priority:** P2
 - **Role:** Customer
 - **Surfaces:** API · Web
@@ -400,7 +400,7 @@ Webhooks have no user surface: a case that says "the webhook lands" is observed 
 - **Given** a cash job the cleaner completed with *Customer did not pay* (an `UnpaidCash` receivable for the price less credit). **When** the customer pays the pay link. **Then** the receivable is `Paid`, a fee receipt labelled *Unpaid cash payment* exists, the order stays completed with payment `Pending`, and the cleaner's My Pay shows no second line for the job.
 - **DEV:** The report is part of `execution-and-completion.md`. Reading the cleaner's pay needs the pay queue to have run.
 
-### E2E-PAY-078 — Recording the cash on a door default writes the debt off as paid in cash
+### E2E-PAY-049 — Recording the cash on a door default writes the debt off as paid in cash
 - **Priority:** P2
 - **Role:** Admin
 - **Surfaces:** API · Web
@@ -408,7 +408,7 @@ Webhooks have no user surface: a case that says "the webhook lands" is observed 
 - **Given** an unpaid-cash door default with an open pay link. **When** the administrator records the cash (`POST api/AdminOrder/record-cash`, who, when, amount). **Then** the order becomes `Paid`, the sale receipt is issued because the order is complete, the receivable reads written off *Paid in cash* with no fee receipt, and the customer's held Checkout url shows an expired session.
 - **DEV:** Time must be after the clean could begin and not in the future.
 
-### E2E-PAY-079 — Recording cash is refused when the customer already paid online
+### E2E-PAY-050 — Recording cash is refused when the customer already paid online
 - **Priority:** P2
 - **Role:** Admin
 - **Surfaces:** API · Web
@@ -416,7 +416,7 @@ Webhooks have no user surface: a case that says "the webhook lands" is observed 
 - **Given** a door default whose pay link the customer has paid. **When** the administrator records the cash. **Then** the answer is `order.payment_not_outstanding` and nothing is recorded.
 - **DEV:** If the webhook already marked the receivable paid, the refusal may come from the order state instead; both give the same key.
 
-### E2E-PAY-080 — Recording cash validates amount and time
+### E2E-PAY-051 — Recording cash validates amount and time
 - **Priority:** P2
 - **Role:** Admin
 - **Surfaces:** API · Web
@@ -426,7 +426,7 @@ Webhooks have no user surface: a case that says "the webhook lands" is observed 
 
 ## Kill switch and cleaner cash on a card order
 
-### E2E-PAY-090 — With card payments switched off every card surface refuses, and cash still works
+### E2E-PAY-052 — With card payments switched off every card surface refuses, and cash still works
 - **Priority:** P2
 - **Role:** Customer
 - **Surfaces:** API · Web · iOS · Android
@@ -434,15 +434,15 @@ Webhooks have no user surface: a case that says "the webhook lands" is observed 
 - **Given** the owner has set `Stripe__Enabled=false` on DEV for the run. **When** a customer books by card on the web, books by card on an app, resumes a checkout and starts a Plus subscription; then books cash. **Then** each card attempt answers `order.payment_gateway_unavailable` and no Stripe session or intent exists; the cash booking is accepted; the translated message reads the same as a Stripe outage.
 - **DEV:** Needs an app-setting change by the owner and a restore afterwards; the agents do not change DEV settings. Run last.
 
-### E2E-PAY-091 — With card payments switched off refunds and write-offs still work
+### E2E-PAY-053 — With card payments switched off refunds and write-offs still work
 - **Priority:** P2
 - **Role:** Admin
 - **Surfaces:** API · Web
 - **Rule:** → /architecture/infrastructure#kill-switches — returning or releasing money is not gated
 - **Given** `Stripe__Enabled=false` and a paid card order made before the switch, plus an open receivable with a pay link. **When** an administrator refunds the order and a Manager writes the receivable off. **Then** the refund succeeds and the write-off closes the link with no `order.payment_gateway_unavailable`.
-- **DEV:** Same owner-only precondition as E2E-PAY-090.
+- **DEV:** Same owner-only precondition as E2E-PAY-052.
 
-### E2E-PAY-092 — A cleaner cannot record cash on an order that is already paid by card
+### E2E-PAY-054 — A cleaner cannot record cash on an order that is already paid by card
 - **Priority:** P2
 - **Role:** Cleaner
 - **Surfaces:** API · Web · iOS · Android

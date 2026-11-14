@@ -48,4 +48,6 @@ and heading, and its body is one line: `- **See** E2E-<FLOW>-NNN`.
 - A pay period on DEV lasts 3 days and closes in the 02:00 UTC run after its end date; Close now ends it today.
 - Stripe is in test mode: 4242 4242 4242 4242 pays, 4000 0000 0000 5126 pays and then fails any refund.
 - E-mail goes to SendGrid and `@example.com` never receives it, so a test account is confirmed by the DEV-only
-  `sql-scripts/dev-e2e-confirm-accounts.sql`, and no case can read an e-mail.
+  `sql-scripts/dev-e2e-confirm-accounts.sql`, and no case can read an e-mail. That script is not written yet: sub-phase 1b
+  writes it, and running it on DEV waits for the owner's OK. Until then every customer and cleaner P1 case after
+  registration is blocked.

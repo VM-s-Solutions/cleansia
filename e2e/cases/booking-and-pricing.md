@@ -260,7 +260,7 @@ Reading notes for every case below:
 - **Role:** Customer
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /flows/booking-and-pricing#cash-eligibility : cash needs a signed-in customer, a usable saved card in the currency and a one-cleaner job.
-- **Given** a customer holding an active verified CZK saved card (saved by ticking "Save this card" on a card payment, E2E-BOOK-040) and owing nothing, a one-cleaner selection. **When** the customer books it as cash. **Then** the order exists `New` with payment `Pending`, `creditAppliedAmount` 0, `amountDueOnCard` not charged anywhere; no Stripe session opens; the customer's booking e-mail would carry the cash line (not checkable: see the closing section). The saved card is not charged.
+- **Given** a customer holding an active verified CZK saved card (saved by ticking "Save this card" on a card payment, E2E-PAY-022) and owing nothing, a one-cleaner selection. **When** the customer books it as cash. **Then** the order exists `New` with payment `Pending`, `creditAppliedAmount` 0, `amountDueOnCard` not charged anywhere; no Stripe session opens; the customer's booking e-mail would carry the cash line (not checkable: see the closing section). The saved card is not charged.
 - **DEV:** creates one cash order that counts toward the cap of two (E2E-BOOK-037). Cancel it at the end.
 
 ### E2E-BOOK-032 — Cash is refused to a guest

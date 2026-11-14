@@ -72,8 +72,10 @@ Run each stage from `src/Cleansia.App` with Node 22:
 | execute | `E2E_STAGE=execute npx nx e2e cleansia-platform-e2e` | starts, photographs and completes the two taken jobs (the cash one with its cash recorded), reads the receipts, the pay rows and the cash held | from 60 minutes before each job's slot; before that a job's test skips and says when its window opens |
 | settle | `E2E_STAGE=settle npx nx e2e cleansia-platform-e2e` | cancels the three untaken jobs (customer, guest, administrator) and checks the refunds; once both jobs are complete, presses Close now on the open pay period and checks the invoice and its cash set-off | any time for the cancellations; Close now after execute; the invoice follows 15 to 25 minutes after the close, so the stage waits up to 25 |
 
-Each stage prints every case id it touched with its outcome (`passed`, `failed`, or `skipped` with the reason) and
-writes it to `report-<stage>.json` in the run folder. `execute` and `settle` can be run again: a step already done is skipped. `book` always starts a new run.
+Each stage prints every case id of the run's stage with its outcome (`passed`, `failed`, `skipped` with the reason, or
+`finding`: passed on an answer the catalogue calls wrong, for the triager) and merges it into `report-<stage>.json` in
+the run folder, per test: a later skip never replaces an earlier outcome, so a re-run keeps what earlier invocations
+proved. `execute` and `settle` can be run again: a step already done is skipped. `book` always starts a new run.
 Without `E2E_STAGE` only the offline logic tests run, so a bare run never reaches DEV.
 
 Environment:

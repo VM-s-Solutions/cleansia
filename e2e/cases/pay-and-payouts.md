@@ -136,8 +136,8 @@ Ids are `E2E-PAYOUT-NNN`. A DEV pay period lasts 3 days (end = start + 2) and th
 - **Role:** Admin
 - **Surfaces:** API · Web
 - **Rule:** → /flows/pay-and-payouts#one-invoice-per-currency — the five-minute sweep invoices every closed period whose close is older than 15 minutes, whoever closed it
-- **Given** E2E-PAYOUT-016 and a cleaner with pay in the closed period. **When** the invoice list is read at 25 minutes after the close. **Then** that cleaner has a `Pending` invoice in the period, and the cleaner received the period-closed notification in their e-mail (not readable on DEV).
-- **DEV:** wait 15 to 20 minutes; do not call it a defect before 25.
+- **Given** E2E-PAYOUT-016 and a cleaner with pay in the closed period. **When** the invoice list is read at 25 minutes after the close. **Then** that cleaner has a `Pending` invoice in the period.
+- **DEV:** wait 15 to 20 minutes; do not call it a defect before 25. The period-closed e-mail to the cleaner cannot be read on DEV.
 
 ### E2E-PAYOUT-018 — Close now needs a reason of at most 500 characters
 - **Priority:** P2

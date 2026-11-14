@@ -53,9 +53,11 @@ and heading, and its body is one line: `- **See** E2E-<FLOW>-NNN`.
 - Stripe is in test mode: 4242 4242 4242 4242 pays, 4000 0000 0000 5126 pays and then fails any refund.
 - E-mail goes to SendGrid and `@example.com` never receives it, so a test account is confirmed by the DEV-only
   `sql-scripts/dev-e2e-confirm-accounts.sql` (the book stage runs it, below), and no case can read an e-mail.
-- The deployed admin web sits behind an Azure Static Web Apps gate: a browser run needs a Microsoft identity the
-  owner has invited with the `admin_console` role (docs/admin-app/overview.md), which a role agent cannot get alone.
-  Until the owner provides one, an admin case runs on the admin API and records its Web half as not run.
+- The deployed admin web sits behind an Azure Static Web Apps gate: a browser needs a Microsoft identity the owner
+  has invited with the `admin_console` role (docs/admin-app/overview.md), and the DEV admin API admits only that web's
+  origin. The suite therefore serves the admin SPA locally (`nx serve cleansia-admin.app --configuration=devremote`,
+  port 4201, started by Playwright's web server) and its dev-server proxy forwards same-origin `/api` to the DEV admin
+  API, so an admin browser case signs in with the published DEV administrator and needs no Microsoft identity.
 
 ## Running
 
@@ -89,6 +91,22 @@ period it closed; the later stages read and extend it. The accounts are `e2e.<ru
 `e2e.<run id>.cleaner@example.com`, and `e2e.<run id>.guest@example.com` for the guest booking. Delete a run's
 folder to forget it; what it created on DEV stays there.
 
-Browser specs for the web apps go in the same stage folders (`src/<stage>/`) and reuse `src/support/`: `run.ts` for
-the run folder and the accounts, `dev.ts` for signing in per host, the Stripe test Checkout and the upload images.
+Browser specs sit next to the API specs in the same stage folders (`src/<stage>/web.spec.ts`) and reuse `src/support/`:
+`run.ts` for the run folder and the accounts, `dev.ts` for signing in per host, the Stripe test Checkout and the upload
+images, `web.ts` for the three web apps' sign-in and the customer booking wizard. They run on the same run as the API
+half, with two people of their own so the API half's jobs stay untouched: `e2e.<run id>.webcustomer@example.com`, who
+books through the wizard, and `e2e.<run id>.cleaner2@example.com`, who is approved in the admin SPA, takes on the partner
+web and works the jobs there. The stages then read as follows.
 
+- book: the web customer books three card jobs and one cash job in the wizard and pays the card jobs in Stripe
+  test Checkout; a second confirmation dispatch confirms the two new accounts; the admin SPA approves the
+  cleaner's identity card and the cleaner; the partner web takes the first card job and the cash job with the contract.
+- execute: the partner web starts the two jobs it took from the job page (before photo, start, after photo, cash
+  recorded, complete), then reads My Pay and the dashboard; each test skips with the time its window opens.
+- settle: the customer web and the admin SPA cancel the two untaken card jobs, the Refunds page lists both refunds with
+  their Stripe refund id, the pay periods page is read, Close now is pressed in the SPA only when nothing closed the period
+  and it has started, and the web cleaner's invoice must show the same figures on the admin invoices page and on the
+  partner web, with identical PDFs.
+
+Not driven in a browser: the guest booking and its tracking page, a cash job's cancellation, and the early-start
+refusal; the API half covers them.

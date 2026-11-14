@@ -1,4 +1,4 @@
-import { Page } from '@playwright/test';
+import { expect, Page } from '@playwright/test';
 import { DEV_ADMIN, Session, signIn } from './dev';
 import { RunState } from './run';
 import { wizardLabels } from './slots';
@@ -55,6 +55,9 @@ export async function placeOrderInWizard(page: Page, run: RunState, slot: Date, 
   await acceptCookies(page);
   await page.getByRole('button', { name: 'Select service: Bathroom Cleaning' }).click();
   await next();
+  await expect(page.getByRole('button', { name: /^Normal/ })).toHaveAttribute('aria-pressed', 'false');
+  await next();
+  await expect(page.getByText('How clean is your home?')).toBeVisible();
   await page.getByRole('button', { name: /^Normal/ }).click();
   await next();
   await page.getByRole('button', { name: /^Use saved address/ }).click();

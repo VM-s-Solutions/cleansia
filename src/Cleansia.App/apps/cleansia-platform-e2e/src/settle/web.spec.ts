@@ -2,7 +2,7 @@ import { expect, Locator, Page, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { call, DEV_ADMIN, list, named, num, ORDER_STATUS, poll, str } from '../support/dev';
 import { emailOf, loadRun, RunOrder, saveRun } from '../support/run';
-import { adminSignIn, cachedAdmin, closeNowGate, customerSignIn, partnerSignIn, SITES } from '../support/web';
+import { adminSignIn, cachedAdmin, cancelledOnDev, closeNowGate, customerSignIn, partnerSignIn, SITES } from '../support/web';
 
 // Stage 'settle', web half: the web customer's and the administrator's cancellations of the two web jobs nobody
 // took, the Refunds page, and the pay periods and invoices as the administrator and the web cleaner read them.
@@ -12,10 +12,11 @@ const rows = (body: unknown) => (list(body, 'data').length ? list(body, 'data') 
 const admin = cachedAdmin;
 const orderDetail = async (id: string) => (await call(await admin(), 'GET', `/api/AdminOrder/details/${id}`)).body;
 
-function open(key: string): RunOrder {
+async function open(key: string): Promise<RunOrder> {
   const o = run.orders[key];
   test.skip(!o, `run ${run.runId} booked no ${key} order`);
   test.skip(!!o.cancelled, `the ${key} order was cancelled by an earlier settle run`);
+  test.skip(await cancelledOnDev(o.id), `the ${key} order already reads Cancelled on DEV: settle runs its cancellations before each slot plus 30 minutes`);
   return o;
 }
 
@@ -41,7 +42,7 @@ async function showRefunded(page: Page) {
 
 test.describe('customer web', () => {
   test('the customer cancels the paid card job nobody took, the page shows no fee and the money goes back', { tag: ['@E2E-CANCEL-001'] }, async ({ page }) => {
-    const o = open('webCancelCustomer');
+    const o = await open('webCancelCustomer');
     await customerSignIn(page, emailOf(run, 'webcustomer'), run.password);
     await page.goto(`${SITES.customer}/orders/${o.id}`);
     await page.getByRole('button', { name: 'Cancel booking' }).click();
@@ -62,7 +63,7 @@ test.describe('customer web', () => {
 
 test.describe('admin web', () => {
   test('the administrator cancels the other paid card job and the full refund reaches Stripe', { tag: ['@E2E-CANCEL-039'] }, async ({ page }) => {
-    const o = open('webCancelAdmin');
+    const o = await open('webCancelAdmin');
     await adminSignIn(page, DEV_ADMIN.email, DEV_ADMIN.password);
     await page.goto(`${SITES.admin}/order-management/${o.id}`);
     await expect(page.locator('main')).toContainText('Order Operations');

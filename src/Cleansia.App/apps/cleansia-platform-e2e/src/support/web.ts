@@ -1,5 +1,5 @@
 import { expect, Page } from '@playwright/test';
-import { call, DEV_ADMIN, list, poll, Session, signIn, str } from './dev';
+import { call, DEV_ADMIN, list, named, ORDER_STATUS, poll, Session, signIn, str } from './dev';
 import { emailOf, RunState } from './run';
 import { wizardLabels } from './slots';
 
@@ -98,6 +98,11 @@ export async function cachedAdmin(): Promise<Session> {
       await new Promise((r) => setTimeout(r, 30_000));
     }
   }
+}
+
+/** Whether DEV already reads the order Cancelled: the unfilled sweep cancels an order nobody took 30 minutes past its slot. */
+export async function cancelledOnDev(orderId: string) {
+  return named((await call(await cachedAdmin(), 'GET', `/api/AdminOrder/details/${orderId}`)).body, 'orderStatus', ORDER_STATUS) === 'Cancelled';
 }
 
 // Who works which job of a run: the API half's cleaner and the web half's.

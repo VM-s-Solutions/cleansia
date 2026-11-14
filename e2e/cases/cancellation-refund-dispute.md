@@ -47,7 +47,7 @@ Timing recipes the DEV notes refer to. A fee needs a cleaner on the job, so each
 - **Role:** Customer
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /flows/cancellation-refund-dispute#cancellation — both previews return `oopsWindowMinutes` beside the tier
-- **Given** an order of each tier (E2E-CANCEL-001, -003, -010, -011). **When** the customer opens the cancel sheet (`GET api/Order/CancellationPreview`). **Then** the preview's tier, fee rate, refund and `oopsWindowMinutes` (15 or 60) equal the figures the cancel then records, and the sheet prints that window, not a fixed text.
+- **Given** an order of each tier (E2E-CANCEL-001, E2E-CANCEL-003, E2E-CANCEL-006, E2E-CANCEL-007). **When** the customer opens the cancel sheet (`GET api/Order/CancellationPreview`). **Then** the preview's tier, fee rate, refund and `oopsWindowMinutes` (15 or 60) equal the figures the cancel then records, and the sheet prints that window, not a fixed text.
 - **DEV:** Read the preview just before the cancel; tiers move with time.
 
 ## Customer cancellation: fee tiers
@@ -73,7 +73,7 @@ Timing recipes the DEV notes refer to. A fee needs a cleaner on the job, so each
 - **Role:** Cleaner
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /product/business-rules#a-guest-cancels-under-the-same-policy — assigned cleaners still receive their cancellation notice
-- **Given** a cleaner with the order of E2E-CANCEL-006 or -011 among their jobs. **When** the customer cancels it. **Then** the cleaner's job list and board no longer offer it as an active job, the job detail reads cancelled, and a cancellation notice (push or inbox) arrives; the slot is free for the cleaner's other work.
+- **Given** a cleaner with the order of E2E-CANCEL-006 or E2E-CANCEL-007 among their jobs. **When** the customer cancels it. **Then** the cleaner's job list and board no longer offer it as an active job, the job detail reads cancelled, and a cancellation notice (push or inbox) arrives; the slot is free for the cleaner's other work.
 - **DEV:** The cleaner agent checks the partner web or app on the same run. Android and iOS partner apps read the same list.
 
 ### E2E-CANCEL-009 — A late cancellation pays the crew half of the fee collected

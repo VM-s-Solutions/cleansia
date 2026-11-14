@@ -449,7 +449,8 @@ How each role registers, signs in, keeps a session and loses it, and how a clean
 - **DEV:** never the published admin. Repeated wrong current passwords lock the account (`auth.account_locked`); send one.
 
 ### E2E-AUTH-055 — An Administrator creates a Manager, a Support and an Accountant
-- **Priority:** P1- **Role:** Admin
+- **Priority:** P1
+- **Role:** Admin
 - **Surfaces:** API · Web
 - **Rule:** → /domain/roles/admin-role-gate#the-four-roles-and-the-five-sets — an administrator account carries one of four roles, and role assignment belongs to the Administrator alone
 - **Given** the published admin (role Administrator). **When** the admin creates three accounts, one per role (`POST api/AdminUser/create`), one with an existing address, and each created admin signs in. **Then** each sign-in carries its `adminRole`; the duplicate is refused `admin_user.email_exists`; a created admin whose password is under 12 characters is refused `auth.admin_password_too_short`; the new accounts show in the Administrators list.

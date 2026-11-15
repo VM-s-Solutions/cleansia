@@ -348,7 +348,7 @@ fun OwnJobRow(
     val pay = rules.payText(row, locale)
     val team = (row.requiredEmployees ?: 1) > 1
     val caption = stringResource(R.string.orders_card_your_share).takeIf { team && pay != null }
-    val lines = listOfNotNull(rules.streetLine(row.customerAddress), rules.scopeLead(row, locale.language))
+    val lines = listOfNotNull(rules.streetLine(row.customerAddress), rules.scopeLead(row, locale.language)?.text())
     val cash = rules.cashFlag(row, locale)?.text()
     val teamText = rules.heroTeam(row)?.text()
     val sentence = spokenSentence(

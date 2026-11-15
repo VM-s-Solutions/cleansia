@@ -269,13 +269,20 @@ object OrdersBoardRules {
             BoardText.Joined(ordered.map(::extraLabel), separator = ", ", prefix = "+ ")
         }
 
-    fun scopeLead(row: OrderListItem, lang: String?): String? =
-        row.selectedPackages.orEmpty().firstNotNullOfOrNull { resolveTranslatedName(it.translations, lang, it.name)?.takeIf(String::isNotBlank) }
-            ?: row.selectedServices.orEmpty().firstNotNullOfOrNull { resolveTranslatedName(it.translations, lang, it.name)?.takeIf(String::isNotBlank) }
+    fun scopeNames(row: OrderListItem, lang: String?): List<String> =
+        row.selectedPackages.orEmpty().mapNotNull { resolveTranslatedName(it.translations, lang, it.name)?.takeIf(String::isNotBlank) } +
+            row.selectedServices.orEmpty().mapNotNull { resolveTranslatedName(it.translations, lang, it.name)?.takeIf(String::isNotBlank) }
+
+    /** "Deep clean", or "Deep clean +2 more" when the job has more packages or services. */
+    fun scopeLead(row: OrderListItem, lang: String?): BoardText? {
+        val names = scopeNames(row, lang)
+        val first = BoardText.Literal(names.firstOrNull() ?: return null)
+        return if (names.size == 1) first else BoardText.Joined(listOf(first, BoardText.Res(R.string.offers_card_more, listOf(names.size - 1))), separator = " ")
+    }
 
     /** "Standard clean", "2 rooms", "1 bath", "+ oven, fridge": the scope's separator-flow items. */
     fun scopeItems(row: OrderListItem, lang: String?): List<BoardText> = listOfNotNull(
-        scopeLead(row, lang)?.let { BoardText.Literal(it) },
+        scopeLead(row, lang),
         row.rooms?.takeIf { it > 0 }?.let { BoardText.Plural(R.plurals.scope_rooms, it) },
         row.bathrooms?.takeIf { it > 0 }?.let { BoardText.Plural(R.plurals.scope_baths, it) },
         extrasLine(extraSlugsOf(row)),

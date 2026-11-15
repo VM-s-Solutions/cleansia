@@ -64,7 +64,7 @@ class OrderDetailCardStringsTest {
                 scopeCard.contains("R.plurals.$name") || boardRules.contains("R.plurals.$name"),
             )
         }
-        assertTrue("Property & scope names the package or service the board names", scopeCard.contains("rules.scopeLead("))
+        assertTrue("Property & scope names every package and service the board counts", scopeCard.contains("rules.scopeNames("))
     }
 
     @Test

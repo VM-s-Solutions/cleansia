@@ -1932,7 +1932,7 @@ private fun LedgerDay(rows: List<OrderListItem>, now: Instant, onOrderClick: (St
             rows.forEach { row ->
                 val window = rules.window(rules.start(row), rules.minutes(row), zone, locale)
                 val pay = rules.payText(row, locale)
-                val lines = listOfNotNull(rules.areaLine(row), rules.scopeLead(row, locale.language), rules.heroTeam(row)?.text())
+                val lines = listOfNotNull(rules.areaLine(row), rules.scopeLead(row, locale.language)?.text(), rules.heroTeam(row)?.text())
                 val cash = rules.historyCash(row, locale).map { it.text() }
                 val sentence = spokenSentence(
                     listOf(rules.start(row)?.let { dayAndDate(it, now) }, window),

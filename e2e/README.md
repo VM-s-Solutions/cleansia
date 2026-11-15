@@ -120,6 +120,10 @@ Environment:
 - `E2E_SCRATCH=1`: a build lane's validation run before the real one. It skips every test that would create a role
   account or the throwaway service, press Close now, run the publish SQL, edit a pay period or wait for a night
   run, and uses only the run's ordinary accounts and orders.
+- `E2E_DAY1`: scratch runs only, the date (`YYYY-MM-DD`) the orders stage books the plan's Day 1 on; default is
+  tomorrow in Prague, and Day 1 + 1 and Day 2 are the day after. The real run always books on the ruled days.
+- `E2E_ANDROID_RUN_ID`: the Android lane's run id, handed over by that lane after EXEC-029. Day 2's `payroll`
+  writes off that run's `cashToCancel` receivable; without it the clean-up test skips and the debt stays open.
 - `E2E_ASSIST`, `E2E_ASSIST_EMAIL`, `E2E_ASSIST_ORDER`, `E2E_ASSIST_EXPECT`: the assist stage's mode and inputs (above).
 - `E2E_CONFIRM_REF`: the pushed git ref that holds `sql-scripts/dev-e2e-confirm-accounts.sql`, which the book stage
   dispatches through **Execute SQL Script** on DEV (`scripts/confirm-accounts.sh`), and of the two phase-2 scripts;
@@ -178,8 +182,8 @@ below, except where a mobile run is named). Times are UTC; Prague is UTC+1.
 | Day 2, Thu 19 | Command | What |
 |---|---|---|
 | 02:00 | DEV | the night run closes 16-18, opens 19-21 and invoices |
-| 07:00 | `E2E_STAGE=payroll` #1 | the night close, the role boundaries, J1, Close now in the SPA (F-012), the invoice lifecycle, J2, clean-up |
-| 07:45 | `E2E_STAGE=payroll` #2, if anything waited | the rest, and the six PDFs read |
+| 07:00 | `E2E_STAGE=payroll E2E_ANDROID_RUN_ID=<android run>` #1 | the night close, the role boundaries, J1, Close now in the SPA (F-012), the invoice lifecycle, J2, clean-up |
+| 07:45 | `E2E_STAGE=payroll E2E_ANDROID_RUN_ID=<android run>` #2, if anything waited | the rest, and the six PDFs read |
 | last | TAKE-025, after every take of the run, the mobile lanes' included | `scripts/publish-cleaner-document.sh` publishes the new cleaner documents; a run cleaner's take is refused, they accept through the API, the take succeeds, the order is cancelled |
 
 ### P1 cases the suite does not cover yet

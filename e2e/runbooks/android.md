@@ -252,7 +252,7 @@ env NX_DAEMON=false NX_NO_CLOUD=true E2E_CONFIRM_REF=master E2E_STAGE=assist E2E
 | then | Register twice (AUTH-002), `assist confirm`, `assist address`, the phone step; level step, picker range, then express (BOOK-011, BOOK-019, BOOK-015) once the cancel has freed a cash slot |
 | about 08:00 | the two card bookings and `assist evidence` (PAY-012, PAY-022, PAY-023), only with the key; cancel both paid orders |
 | after the people stage reports AUTH-049 passed | Locks and rejection (AUTH-034, AUTH-049) |
-| 08:50 to about 10:00 | Customer did not pay (EXEC-029) on `cashToCancel`, last: the customer owes afterwards; hand the run id to the suite runner for payroll's write-off |
+| 08:50 to about 10:00 | Customer did not pay (EXEC-029) on `cashToCancel`, last: the customer owes afterwards; hand the run id to the suite runner, who passes it as `E2E_ANDROID_RUN_ID` to Day 2's payroll for the write-off |
 | any time | Translated refusal in five locales on both apps (XCUT-019), with `nobody`, not the run customer |
 
 Shut the emulator down at the end (`adb emu kill`) and delete `customer-app/build partner-app/build core/build build`.

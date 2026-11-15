@@ -25,7 +25,7 @@ Repository paths (`src/…`, `docs/…`, `e2e/…`) are read at the commit that 
 Timeline (UTC): book main 05:54; settle main 06:12 (the five cancellations, Close now gate skipped because no job was
 complete); execute main 07:31 (API cash job, web card job) and 07:45 (API card job, web cash job, pay pages); settle
 main 07:47:06, Close now pressed **once** on period `01M7CWCCGGRX35BTE8SH20PW1Y` (2026-11-15 to 17), both invoices
-checked by 08:06; settle re-run after the reporter fix (F-010). iOS lane 07:09 to 10:17; Android lane 07:12 to 08:54.
+checked by 08:06; settle re-run after the reporter fix (F-010). iOS lane 06:09 to 09:17; Android lane 06:12 to 07:54.
 
 The two gates the goal named are proven: **Close now** (`run1c/suite/settle-main-2.log:31`, both cleaners' pay rows
 in the period before the press, completions 07:45:37Z and 07:46:15Z) and the **web card execute** E2E-EXEC-014 and
@@ -130,9 +130,9 @@ register's outcome differs from the lane's own label, the lane's label is in bra
 | E2E-AUTH-009 | passed: customer and cleaner sign in | `cust-01-after-signin.png`, `part-01b-dashboard.png` |
 | E2E-AUTH-015 | passed | `cust-01-after-signin.png` |
 | E2E-BOOK-001 | passed: live quote 960 Kč | `cust-09-quote-step1.png` |
-| E2E-BOOK-011 | partly shown: Increased 862.50 against Normal 750; duration not read | `cust-11-step2-increased.png`, `cust-11b-step2-normal.png` |
+| E2E-BOOK-011 | partly shown: Increased 862.50 against Normal 750; duration not read [lane: pass] | `cust-11-step2-increased.png`, `cust-11b-step2-normal.png` |
 | E2E-BOOK-015 | partly shown: Today's chips carry the express mark; no express booking made | `cust-13-step3-today.png` |
-| E2E-BOOK-019 | partly shown: the pickers start at 08:00; the API refusals are not read | `cust-13-step3-today.png` |
+| E2E-BOOK-019 | partly shown: the pickers start at 08:00; the API refusals are not read [lane: pass] | `cust-13-step3-today.png` |
 | E2E-BOOK-021 | not shown: the 60-day horizon was not read [lane: pass] | |
 | E2E-BOOK-065 | passed: the saved address is pre-filled | `cust-12-step3.png` |
 | E2E-BOOK-031, E2E-BOOK-033, E2E-BOOK-048 | passed: ORD-750DAD47, cash, *Booking received* | `cust-19-booked-cash.png` |
@@ -160,16 +160,16 @@ Emulator API 35, the 1b APKs; the build has no Stripe key, so card steps are not
 | E2E-AUTH-009 | passed: customer and cleaner sign in | `01-signin-filled.png`, `42-partner-dashboard.png` |
 | E2E-AUTH-015 | passed: *Welcome aboard*, 2 of 3 done | `02-signin-welcome.png` |
 | E2E-BOOK-001 | passed: *Continue · 960 Kč* | `06-quote-step1.png` |
-| E2E-BOOK-011 | partly shown: Normal, Increased +15 %, Heavy +30 % listed; no surcharge read | `08-quote-step2.png` |
+| E2E-BOOK-011 | partly shown: Normal, Increased +15 %, Heavy +30 % listed; no surcharge read [lane: pass] | `08-quote-step2.png` |
 | E2E-BOOK-015 | not shown: the booking was day-ahead, Mon 16 10:00 [lane: pass] | `13-date-chosen.png` |
-| E2E-BOOK-019 | partly shown: 16 slots per part of day, Morning from 08:00 | `14-time-chosen.png` |
+| E2E-BOOK-019 | partly shown: 16 slots per part of day, Morning from 08:00 [lane: pass] | `14-time-chosen.png` |
 | E2E-BOOK-021 | not shown [lane: pass] | |
 | E2E-BOOK-031, E2E-BOOK-033, E2E-BOOK-048, E2E-TAKE-002 | passed: ORD-DAD2463F, cash 960 Kč, *Booking received* | `31-booking-result.png`, `32-order-detail-new.png` |
 | E2E-BOOK-037 | not run | |
 | E2E-BOOK-028, E2E-BOOK-029, E2E-PAY-012, E2E-PAY-022, E2E-PAY-023 | not drivable: no Stripe key, Cash only | `17-pay-options.png` |
 | E2E-CANCEL-001 | passed: ORD-9AFCAB66, untaken, free, Cancelled [lane: CANCEL-002, CANCEL-005] | `10-cancel-sheet.png`, `11-cancelled.png` |
 | E2E-CANCEL-002 | not run: the job cancelled had no cleaner on it (F-047) | |
-| E2E-CANCEL-005 | partly shown: the sheet states why it is free, no oops window figure read | `10-cancel-sheet.png` |
+| E2E-CANCEL-005 | partly shown: the sheet states why it is free, no oops window figure read [lane: pass] | `10-cancel-sheet.png` |
 | E2E-TAKE-001, E2E-TAKE-004 | passed: *Available, 5 jobs*, detail with *Exact address after you take the job* | `43-board.png`, `44-job-detail.png` |
 | E2E-TAKE-010, E2E-TAKE-013 | passed: Contract for Work 2026-10-27, *Job taken* | `45-contract.png`, `46-job-taken.png` |
 | E2E-TAKE-014 | passed: the customer reads Confirmed, *E2E accepted your booking* | `49-order-confirmed.png` |
@@ -183,7 +183,7 @@ Emulator API 35, the 1b APKs; the build has no Stripe key, so card steps are not
 | E2E-EXEC-026 | passed: *Mark 360 Kč as collected*, *Cash collected* | `60-cash-dialog.png`, `61-cash-collected.png` |
 | E2E-EXEC-029 | not run: *Customer did not pay* not tapped | |
 | E2E-EXEC-036 | passed: Completed, step 4 / 4 | `62-completed.png` |
-| E2E-EXEC-020 | partly shown: the crew reads name and phone; the off-crew half not shown | `62-completed.png` |
+| E2E-EXEC-020 | partly shown: the crew reads name and phone; the off-crew half not shown [lane: pass] | `62-completed.png` |
 | E2E-PAYOUT-001, E2E-PAYOUT-002 | passed: *This period, not invoiced yet 150 Kč* | `63-dashboard-after.png` |
 | E2E-PAYOUT-035, E2E-PAYOUT-056 | not run: no period of this cleaner has closed | `75-partner-invoices.png` |
 | E2E-PAY-034 | passed: Cash, Paid, receipt RCP-2026-0056 opens | `71-order-receipt.png`, `72-receipt-open.png` |
@@ -194,8 +194,11 @@ Emulator API 35, the 1b APKs; the build has no Stripe key, so card steps are not
 The main run's four taken jobs are complete and its five untaken jobs cancelled, with the card refunds. The mobile runs
 left: ORD-E72BC0D0 In Progress, ORD-DA6B4DBD and ORD-750DAD47 On the way, ORD-C6520164 Confirmed (paid by card),
 ORD-9EC8219C New (iOS run); ORD-DAD2463F Confirmed for Mon 16 Nov 10:00, ORD-150C4F7D taken, ORD-7C26FE16 and the
-guest job untouched (Android run). The aborted run left `e2e.202611150603.customer` and `.cleaner`, registered and
-unconfirmed. Nothing in this register asks for them to be cleaned up.
+guest job untouched (Android run). The iOS run's API half also left its guest job (`01M7EX5BHN4XZX3EBXNK4KAJ17`, 360 Kč paid by card, slot 09:00Z;
+`run1c/suite/book-ios-2.log:52`), untouched by the lane. The aborted run left `e2e.202611150603.customer` and
+`.cleaner`, registered and unconfirmed. The fix step's verification run `202611151006` (book API half only,
+`run1c/fix/book-fix.log`) left its two taken jobs Confirmed (slots 12:30Z and 12:45Z) and three untaken ones (cash,
+card and guest, slots 13:00Z to 13:30Z) for the unfilled sweep. Nothing in this register asks for them to be cleaned up.
 
 ## (b) The register
 
@@ -211,7 +214,7 @@ for defects only: P1 blocks a core journey or loses money, P2 is wrong but worka
 | F-003 | 1b `harness/fixes.json:32`; 1c `run1c/suite.json:26`, `run1c/ios.json:37` (merged) | E2E-EXEC-002 · API | 1b recorded that taken jobs nobody started read Cancelled at their slot. Not reproduced: run 202611141637's taken jobs ORD-1663013C and ORD-FB1E1A69 still read Confirmed, crew 1, past their slots (`run1c/suite/history-202611141637.txt:2-9`, `run1c/suite/watch-taken.log`); the iOS run's ORD-DA6B4DBD stayed On the way after its slot (`run1c/ios/exec-24-card-old-after-slot.png`). 1b's ORD-56E6A1C7 and ORD-C235E2CA were cancelled at 16:03:03Z, 27 and 42 minutes **before** their slots (`run1c/suite/history-202611141359.txt:1-10`), and the 1b web lane lists both among the orders it cancelled as cleanup (`harness/web-journeys.json:62`). | `docs/product/business-rules.md#when-the-cleaner-cancels-or-no-shows` (lines 505-516): no timer cancels a staffed job; 30 minutes after the start the sweep only raises `admin.order.cleaner_not_started`. | test bug | The wrong claim sits only in the 1b record `harness/fixes.json:32`; no committed harness file carries it. No change. |
 | F-004 | 1b `harness/api-journeys.json:57`; 1c `run1c/suite.json:28` (merged) | E2E-PAYOUT-016, E2E-PAYOUT-017 · API | 1b: a job completed 10 s before Close now had its pay row written 6 s after it, in the next period. 1c: the Close-now gate waited for both cleaners' rows (`run1c/suite/settle-main-2.log:31`) and both invoices carried them. | ADR-0082 D2 (`docs/decisions/adr-0082.md:92-97`): late pay goes to the next period; `docs/flows/pay-and-payouts.md:239`: jobs finished after a Close now go into the next period. | by design | None. The harness gate (commit d8cf16a2c, `src/support/web.ts` `closeNowGate`) already waits for the rows. |
 | F-005 | 1b `harness/api-journeys.json:59`, `harness/android.json:79` (merged) | all · DEV | Every DEV host timed out from about 09:22 to 09:32 UTC on 2026-11-14 with no deploy running, then recovered. | | environment | DEV: an unexplained ten-minute outage of all five hosts. None in 1c. |
-| F-006 | 1c `run1c/suite.json:24` | E2E-AUTH-001 · DEV | The aborted run's confirm SQL dispatch failed: psql to the DEV Postgres server `Connection timed out` (execute-sql run 43683699460, 06:03Z; `run1c/suite/book-ios.log:32-47`). The dispatches at 05:55, 05:59, 06:06 and 06:09 succeeded. | | environment | DEV: one GitHub-runner-to-DEV-Postgres connection timed out. It left two unconfirmed e2e accounts. |
+| F-006 | 1c `run1c/suite.json:24` | E2E-AUTH-001 · DEV | The aborted run's confirm SQL dispatch failed: in execute-sql run 43683699460 (dispatched 06:03Z) the *Execute on DEV* job failed at 06:06:15Z with psql's `port 5432 failed: Connection timed out`, and *Execute on PRO* was skipped (`gh run view 43683699460 --log-failed`); `run1c/suite/book-ios.log:32-47` shows only the failed test. The dispatches at 05:55, 05:59, 06:06 and 06:09 succeeded. | | environment | DEV: one GitHub-runner-to-DEV-Postgres connection timed out. It left two unconfirmed e2e accounts. |
 | F-007 | 1b `harness/api-journeys.json:60`, `harness/fixes.json:13` (merged) | · CI | `execute-sql.yml`'s DEV-only refusal list had no row for `dev-e2e-confirm-accounts.sql`. | | test bug | Fixed in 0ab0ff601 (`.github/workflows/execute-sql.yml`, `sql-scripts/README.md`). The 1b review flagged that it touches `.github`: a refusal row, not a CI job for the suite. |
 | F-008 | 1b `harness/api-journeys.json:61`, `harness/fixes.json:16` (merged) | · harness | The Nx Playwright plugin infers cached `e2e-ci` and `e2e-ci--<spec>` targets that ignore `E2E_STAGE` and the run folder. | | test bug | Mitigated in 13e005735: `e2e/README.md` and `project.json` say to run only `nx e2e`. `nx.json` untouched. |
 | F-009 | 1b `harness/web-journeys.json:73` | · harness | The Nx Playwright plugin warns that it cannot infer an Nx task from the web server command (`apps/cleansia-platform-e2e/playwright.config.ts:22-28`). | | test bug | Harmless, no fix: nothing depends on an inferred serve task. |
@@ -250,7 +253,7 @@ for defects only: P1 blocks a core journey or loses money, P2 is wrong but worka
 | F-042 | 1c `run1c/android.json:233` | · Android | Both apps ask for notification permission on first launch; the runbook said they did not (`run1c/android/00-notif-dialog-dismissed.png`). | | test bug | Fixed in 89098e081 (`e2e/runbooks/android.md:111`). |
 | F-043 | 1c `run1c/android.json:239` | E2E-BOOK-031 · Android customer | The booking sheet keeps its draft (step 4, Cash, terms ticked) after it is dismissed (`run1c/android/30-resumed.png`). | `docs/mobile-app/patterns.md#booking-draft` (line 621): a booking swiped away keeps its draft. | by design | None; the runbook notes it. |
 | F-044 | 1c `run1c/android.json:245` | E2E-PAY-034 · Android customer | The detail's footer (Rate, Book again, Report issue) covers the screen below y 1850, and a swipe that starts on it scrolls nothing, so the receipt looked absent (`run1c/android/70-order-bottom2.png`). | | test bug | Fixed in 89098e081 (`e2e/runbooks/android.md:151`). The detail scrolls from above the footer; no product defect. |
-| F-045 | 1c `run1c/android.json:251` | E2E-PAYOUT-002 · Android partner | *Invoiced when the period closes on* moved from 17 to 18 Nov between 07:25 and 08:49 (`run1c/android/42-partner-dashboard.png`, `63-dashboard-after.png`). | The main run's Close now at 07:47:06Z; `docs/flows/pay-and-payouts.md:239`: the next period opens tomorrow. | by design | None. |
+| F-045 | 1c `run1c/android.json:251` | E2E-PAYOUT-002 · Android partner | *Invoiced when the period closes on* moved from 17 to 18 Nov between 06:23Z and 07:48Z (`run1c/android/42-partner-dashboard.png`, `63-dashboard-after.png`, by their file times). | The main run's Close now at 07:47:06Z; `docs/flows/pay-and-payouts.md:239`: the next period opens tomorrow. | by design | None. |
 | F-046 | 1c `run1c/android.json:257` | E2E-PAYOUT-001 · Android partner | *Last month* shows +100 % when last month had no job (`run1c/android/63-dashboard-after.png`), from `DashboardScreen.kt:1150`. | No docs page states it; `docs/partner-app/dashboard.md:23-33` gives the web's trend as a division by last month, which is undefined at 0. | defect | Show no trend when last month is 0, or document the +100 %. P3. |
 | F-047 | 1c `run1c/android.json:263` and this triage (merged) | E2E-CANCEL-002, E2E-CANCEL-005, E2E-TAKE-050, E2E-EXEC-007, E2E-EXEC-038, E2E-BOOK-021, E2E-XCUT-011, E2E-PAY-022, E2E-PAY-023 · iOS, Android | Runbook rows name cases their step does not exercise, and the 1c lanes recorded those cases passed: an untaken free cancel as E2E-CANCEL-002 and -005 (`e2e/runbooks/android.md:150`); a take as E2E-TAKE-050 (`ios.md:129`, `android.md:165`); a start as E2E-EXEC-007 (`ios.md:131`, `android.md:169`); adding the after photo as E2E-EXEC-038 (`ios.md:132`, `android.md:170`); the date chips as E2E-BOOK-021 (`ios.md:114`, `android.md:144`); the orders list as E2E-XCUT-011 (`ios.md:116`); one card booking as both E2E-PAY-022 and -023 (`ios.md:119`). The Android sheet for an untaken job reads *Free cancellation — no cleaner has taken this booking yet*, not the grace-period text. | E2E-CANCEL-002 needs a cleaner on the job; E2E-TAKE-050 and E2E-EXEC-007 an admin placement (E2E-TAKE-049); E2E-EXEC-038 a refused Complete; E2E-BOOK-021 the 60-day horizon; E2E-XCUT-011 the feed. | test bug | Fixed: `e2e/runbooks/ios.md` and `android.md` drop E2E-TAKE-050 from the take rows, E2E-EXEC-007 from the start rows, E2E-EXEC-038 from the photo rows, E2E-BOOK-021 from the date rows, E2E-XCUT-011 from the orders-list rows and E2E-PAY-022 and -023 from the card rows; the Android cancel row names E2E-CANCEL-001 for the untaken booking and keeps E2E-CANCEL-002 for the 1b cancel with a cleaner on the job. The five cases this left with no cover (E2E-BOOK-021, E2E-EXEC-007, E2E-PAY-022, E2E-PAY-023, E2E-TAKE-050) are in `e2e/README.md` (*P1 cases the suite does not cover yet*). |
 | F-048 | 1a `catalogue/lane-findings.md:1` | E2E-AUTH-009 · API | | `docs/api/authentication.md:169` says a Customer signing into the Partner app is upgraded to Employee; `docs/flows/auth-and-identity.md:80,333` and `PartnerLogin.cs:64`, `MobilePartnerLogin.cs:77` refuse it `auth.insufficient_privileges`. | defect | Docs stale: drop the auto-upgrade line. P3. |

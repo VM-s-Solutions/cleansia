@@ -239,8 +239,8 @@ Reading notes for every case below:
 - **Role:** Customer
 - **Surfaces:** API · Web
 - **Rule:** → /flows/loyalty-and-memberships#referrals — you cannot redeem your own code and you cannot be referred twice.
-- **Given** customer A and customer B already referred by A. **When** A enters their own code on a booking, a new customer registers with a code nobody owns, and B tries a different customer's code on a later booking. **Then** the own code and the second referral are refused or ignored without a second `Referral` row (record the exact key the server returns; the flow page does not name it); the unknown code leaves the registration working without a referral.
-- **DEV:** unsure of the keys and whether an unknown code refuses the registration or is dropped; the case records what the server does and the triager checks it against the docs.
+- **Given** customer A and customer B already referred by A. **When** A enters their own code on a booking, a new customer registers with a code nobody owns, and B tries a different customer's code on a later booking. **Then** the own code and the second referral are ignored without a second `Referral` row and without an error key (the booking succeeds; `ValidateReferral` answers `isValid: false` with `errorCode` `SelfReferral`, `AlreadyReferred` or `NotFound`); the unknown code leaves the registration working without a referral.
+- **DEV:** the refusal is the `errorCode` name of the validate query, not a `BusinessErrorMessage` key (→ /flows/loyalty-and-memberships#referrals).
 
 ### E2E-LOYAL-029 — A same-household referral is held for an Admin
 - **Priority:** P2

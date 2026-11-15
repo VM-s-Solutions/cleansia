@@ -24,12 +24,17 @@ The "Completed This Month" card includes a **trend indicator** showing the perce
 
 ```typescript
 // Trend calculation
+if (previous === 0) {
+  return { value: 0, direction: 'neutral' };
+}
 const percentChange = ((current - previous) / previous) * 100;
 return {
   value: Math.abs(Math.round(percentChange)),
   direction: percentChange > 0 ? 'up' : percentChange < 0 ? 'down' : 'neutral',
 };
 ```
+
+When last month had no completed job there is nothing to compare with, so the trend is neutral with a value of 0. The Android dashboard's *Last month* line follows the same rule: the web shows a neutral 0 %, the Android line shows no chip.
 
 Cards with a `route` property are clickable and navigate to the relevant page (e.g., clicking "Available Orders" navigates to `/orders`).
 

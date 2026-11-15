@@ -166,8 +166,9 @@ sequenceDiagram
   debt online.
 - **The partner web, Android and iOS** offer *Customer did not pay* beside *Mark cash collected*, on the
   order detail only, to a cleaner on the crew of a cash job in progress whose payment is pending. The
-  apps show it once the after photos are in, as they do *Complete*; the web warns as *Complete* does when
-  there is none. A confirmation states the consequence first: use it only when nothing was paid (a part
+  apps show it once the after photos are in, as they do *Complete*. The web hides *Complete* until an after
+  photo exists too (on a crew job whose seats are all marked done, a line says an after photo is needed; a solo job shows no line), but shows *Customer did not pay* regardless and warns, sending
+  nothing, when there is none. A confirmation states the consequence first: use it only when nothing was paid (a part
   payment is told to the company); the job completes and the cleaner is paid; the customer will owe the
   price less any credit applied, is told so and cannot book until it is paid; an administrator is
   alerted, and only an administrator can undo it. All three clients say this in the same words; the
@@ -256,6 +257,9 @@ token that reaches only their mailbox.
 | Cleaner opens tomorrow's job and taps Start | Refused with `order.too_early_to_start` until the job is within an hour. |
 | Cleaner is early at the door — 09:50 for a 10:00 job | Allowed. The window is a grace, not an exact time; cleaners arrive early and the platform must not argue with that. |
 | Cleaner starts three hours late | Allowed and recorded. Late is a real thing that happened. |
+| A cleaner taps Start on a second job while another is in progress | Refused with `order.employee_already_has_order_in_progress` (`StartOrder`, after the contract rule and before the clock rule): one job in progress per cleaner at a time, on any crew. A solo job started and never completed stays `InProgress` past its slot and keeps manual Complete; only a crew with every seat marked is auto-closed ([above](#crew-completion)). |
+| Completion notes or a photo over the limit | `CompleteOrder` refuses completion notes over **1000** characters with `order.completion_notes.too_long`; `UploadOrderPhoto` refuses a file over **10 MB** with `file.size_exceeded` (and a file name over 255 characters with `common.max_length`); `SaveOrderPhotos` takes at most **30** photos a request. |
+| A cleaner who is not on the crew drops the job | `DropOrder` answers **success** and changes nothing, before the status gate: the caller is already off it, so the desired state holds (the same idempotent silence as declining a preferred-cleaner offer twice). A crew member's drop of a job on the way or in progress is the refusal, `order.not_confirmed`. |
 | Admin needs to force a status | A separate admin-only override, which is audited; strictly forward, refuses `Confirmed` on an order with nobody assigned (reassign instead), and dates an override to `Completed` so the order is revenue of a month. `Completed` on an order with no *after* photo needs a written reason (`order.status.force_complete_reason_required`), kept on the audit row; a sale already settled in cash gets its receipt there, and a signed-in customer's cash order in progress whose cash was not recorded opens the door debt, as the cleaner's report does (since 2026-10-06, [Business rules](/product/business-rules#cash-not-paid)). |
 | Nobody has taken a job a day before its start | The company's administrators are told once (`admin.order.no_cleaner_yet`), after any preferred-cleaner hold lapses and an hour after its last status change or customer confirmation; nothing is sent once the start has passed. If nobody takes it, the unfilled-order sweep cancels it 30 minutes after its start. An administrator who calls it off before then cancels it as a no-show, which since the fix plan of 2026-10-25 is allowed before the start on a booking nobody is on and pays the sweep's refund and apology credit → [When the cleaner cancels or no-shows](/product/business-rules#when-the-cleaner-cancels-or-no-shows) |
 | A job is still not started 30 minutes after its start | The company's administrators are told once (`admin.order.cleaner_not_started`); nothing is cancelled until one of them confirms the no-show. |

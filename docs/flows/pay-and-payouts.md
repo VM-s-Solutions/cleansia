@@ -208,7 +208,7 @@ invoice's detail no longer lists the jobs it held, since they move to the correc
 | Close now | period is `Open`, and its start is on or before today |
 | Change end date | period is `Open`; the start is unchanged; the end is from tomorrow to the period's last allowed day |
 | Mark paid | period is `Closed`, every pay row in it is invoiced (`pay_period.has_uninvoiced_pay`) and every invoice in it is `Paid` or `Cancelled` (`pay_period.has_unpaid_invoices`) |
-| Delete | period is `Open` |
+| Delete | period is `Open` and has no pay rows (`pay_period.has_order_pays`) |
 | Create | no period is open (`company.has_open_pay_period`) and the start is not after today (`validation.invalid_date`) |
 
 **A closed period is never reopened.** There is no Reopen and no Open: invoices are issued once a period
@@ -419,7 +419,7 @@ already does.
 
 | Case | What happens |
 |---|---|
-| Close a period twice | Refused — it is no longer `Open`. |
+| Close a period twice | Refused `payroll.pay_period.not_open` — it is no longer `Open`. Creating a period while one is open is `company.has_open_pay_period`. |
 | Reopen a closed period | Not possible: there is no Reopen. A mistaken close loses nothing, because its jobs are invoiced sooner. |
 | Request an invoice for an open period | Refused — `pay_period.not_closed`, before any reference is claimed. |
 | Create a period while one is open, or one that starts after today | Refused — `company.has_open_pay_period`, `validation.invalid_date`. |

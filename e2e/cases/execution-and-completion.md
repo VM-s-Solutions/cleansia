@@ -7,10 +7,10 @@ From an assigned cleaner to a finished job, a receipt and a pay row, and the ord
 ### E2E-EXEC-001 — The assigned cleaner sets off and the customer is told
 - **Priority:** P1
 - **Role:** Cleaner · Customer
-- **Surfaces:** API · iOS · Android
+- **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /flows/execution-and-completion#the-path — "on my way" moves the order to `OnTheWay` and the customer gets a push
-- **Given** Cleaner A is on a `Confirmed` job whose start is within 60 minutes. **When** Cleaner A taps On my way (`NotifyOnTheWay`). **Then** the order is `OnTheWay`; the Customer's order page and the customer apps show "on the way"; the customer gets `order.on_the_way` (iOS adds a Live Activity). On a job that is neither `Confirmed` nor `OnTheWay` (a `New` or `Completed` one) the call answers `order.not_confirmed`.
-- **DEV:** the partner web app has no On my way action (none found in the partner web libraries), so the web is not a surface. The push needs a device; the simulator check is the order status.
+- **Given** Cleaner A is on a `Confirmed` job whose start is within 60 minutes. **When** Cleaner A taps On my way (`NotifyOnTheWay`; the partner web job page offers it beside Start, as the apps do). **Then** the order is `OnTheWay`; the Customer's order page and the customer apps show "on the way"; the customer gets `order.on_the_way` (iOS adds a Live Activity). On a job that is not `Confirmed` (a `New` or `Completed` one, or one already `OnTheWay`) the call answers `order.not_confirmed`.
+- **DEV:** the partner web shows On my way only on a `Confirmed` job from 60 minutes before the start. The push needs a device; the simulator check is the order status.
 
 ### E2E-EXEC-002 — Start moves the order to InProgress
 - **Priority:** P1
@@ -308,7 +308,7 @@ From an assigned cleaner to a finished job, a receipt and a pay row, and the ord
 - **Role:** Cleaner (two accounts)
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /flows/execution-and-completion#the-contract-gate — `CompleteOrder` refuses a caller off the crew first, then a seat without the contract; the order of the state and photo refusals after that is read from `CompleteOrder`'s validator, not from the docs
-- **Given** jobs in each state. **When** callers send `CompleteOrder`. **Then** a cleaner off the crew gets `order.employee_not_assigned` (an unknown order id gets `order.not_found`); a seat without the contract gets `contract.acceptance_required`; a `Confirmed` job `order.not_in_progress`; an `InProgress` job without an after photo `order.after_photos.required` (the web warns before the call); a second Complete on a finished job `order.not_in_progress`.
+- **Given** jobs in each state. **When** callers send `CompleteOrder`. **Then** a cleaner off the crew gets `order.employee_not_assigned` (an unknown order id gets `order.not_found`); a seat without the contract gets `contract.acceptance_required`; a `Confirmed` job `order.not_in_progress`; an `InProgress` job without an after photo `order.after_photos.required` (the web page offers no Complete until an after photo exists, and only a crew job whose seats are all marked done shows a line saying why, so the call is not sent from the web); a second Complete on a finished job `order.not_in_progress`.
 - **DEV:** the gate order follows the validator chain in the code (assignment, contract, profile, approval, state, photo); the docs list the contract rule right after the assignment rule.
 
 ### E2E-EXEC-039 — Complete is refused until the payment is settled

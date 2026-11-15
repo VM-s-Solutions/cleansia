@@ -58,8 +58,9 @@ A customer sign-up **must** send `termsAccepted: true` — a missing or `false` 
 `consent.terms_not_accepted` before any account exists (owner ruling 2026-09-14; the refusal itself
 is a row with the caller's IP). With the tick, the **server** grants `TermsOfService` and
 `PrivacyPolicy` in the same commit as the account — each `UserConsents` row stamped with the
-**document in force for the chosen market** (its version is its effective date, `2026-09-14` today,
-and its id; [ADR-0063](/decisions/adr-0063)), the IP address and the device, read server-side and never
+**document in force for the chosen market** (its version is its effective date, and its id; the dates
+in force are in [Business rules — the legal texts](/product/business-rules#legal-texts);
+[ADR-0063](/decisions/adr-0063)), the IP address and the device, read server-side and never
 from the body. Nothing is parked in the browser or on the phone to be flushed later: the customer web,
 the Android and the iOS customer apps all send the tick on the registration itself. An email
 registration additionally leaves a `customer.account.register` audit row carrying the method, the
@@ -131,6 +132,18 @@ hash is withdrawn, updating alone cannot restore it: Forgot password is needed b
 Installed builds do not acquire this screen from a server deploy. Android tester releases remain
 deferred; the new TestFlight builds remain signing-blocked. Tell testers about the legacy reset
 behavior until they run an updated client.
+
+## Where a cleaner completes a password reset {#partner-reset}
+
+The partner apps only **request** the reset: *Forgot password* calls the partner mobile host's
+`ForgotPassword`, which mails the code. That host has no `ChangePassword` route (the other four hosts
+do). The e-mail link is the sending host's `SendGrid:ClientDomainUrl` plus its `ResetPasswordUrl` path.
+On DEV and PRO every API host, the partner mobile host included, is given the **customer web's** base URL
+and `/forgot-password` (`deploy/bicep/main.bicep`, *LINK COMPOSITION*), so the link opens the customer
+web's reset page, which completes the reset through the Customer API's `PUT User/ChangePassword` (that
+command checks no profile type). Only a local run differs: each host's `appsettings.json` sets
+`ResetPasswordUrl` to `http://localhost:4200/forgot-password`, the partner web. A cleaner who only has
+the app finishes the reset in a browser.
 
 ## The native customer apps need an account {#native-account-only}
 
@@ -321,6 +334,8 @@ hosts have no device id, which is why the admin TTL was shortened instead.
 
 | Case | What happens |
 |---|---|
+| Five wrong passwords in a row | The account is locked for **15 minutes** (`User.MaxFailedLoginAttempts` = 5, `User.FailedLoginLockout`): sign-in answers `auth.account_locked` until `LockoutEndsAt` passes, except from a device the account already trusts; a successful sign-in or an authenticated password change clears the count. Completing a reset does not lift a lockout. |
+| Five wrong codes against one e-mail-confirmation or reset code | The code's attempt budget (`MaxCodeVerificationAttempts` = 5, counted per code) is spent: the answer is `auth.too_many_attempts`, and a new code (which restarts the count) is the way on. A reset code also expires after 15 minutes. |
 | Logout presenting an already-rotated token | Walks the successor chain and kills the live descendant — session-scoped, so a benign client race logs out one session rather than all devices. |
 | Logout with an unknown token | Silently succeeds. Logout is idempotent and must not confirm whether a token exists. |
 | Password reset while a thief holds a session | All sessions revoked; the revoke is committed before the password change, so the failure mode is "tokens dead, retry" and never "tokens alive". |

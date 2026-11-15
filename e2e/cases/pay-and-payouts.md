@@ -378,8 +378,8 @@ Ids are `E2E-PAYOUT-NNN`. A DEV pay period lasts 3 days (end = start + 2) and th
 - **Role:** Admin
 - **Surfaces:** API
 - **Rule:** → /flows/pay-and-payouts#approval-is-the-last-refusal — Cancel is offered on `Pending`, `Approved` and `Disputed`; a paid invoice is marked paid instead
-- **Given** a `Pending`, a `Paid` and a `Cancelled` invoice. **When** the Accountant cancels with an empty reason, with 1001 characters, then the paid and the cancelled invoice with a reason. **Then** the answers are `common.required`, `dispute.max_length_exceeded` (the key the validator emits for this length rule), `payroll.invoice.cannot_cancel_paid` and `payroll.invoice.already_cancelled`.
-- **DEV:** the triager decides whether a payroll refusal speaking of a dispute is a defect or by design; the key is taken from the code, not from the docs.
+- **Given** a `Pending`, a `Paid` and a `Cancelled` invoice. **When** the Accountant cancels with an empty reason, with 1001 characters, then the paid and the cancelled invoice with a reason. **Then** the answers are `common.required`, `common.max_length`, `payroll.invoice.cannot_cancel_paid` and `payroll.invoice.already_cancelled`.
+- **DEV:** the length refusal is the shared `common.max_length`; the key is taken from the code, not from the docs.
 
 ### E2E-PAYOUT-048 — Adjust amounts re-renders the PDF and works only before approval
 - **Priority:** P2

@@ -138,7 +138,7 @@ Reading notes for every case below:
 - **Role:** Customer
 - **Surfaces:** API
 - **Rule:** → /product/business-rules#dirtiness-price — express is measured on top of the dirtiness surcharge, so Heavy and express is x 1.56.
-- **Given** the same selection and a 3 h slot. **When** the customer quotes it Heavy. **Then** `totalPrice` equals S x 1.30 x 1.20 before discounts (S x 1.56). Note: the flow page's edge-case table states x 1.92, which is the superseded +60 % rate; the business rule is the reference.
+- **Given** the same selection and a 3 h slot. **When** the customer quotes it Heavy. **Then** `totalPrice` equals S x 1.30 x 1.20 before discounts (S x 1.56). The flow page's edge-case table and the business rule agree on x 1.56.
 - **DEV:** creates nothing; same clock window as E2E-BOOK-015.
 
 ### E2E-BOOK-017 — A start 4 h or more away has no express surcharge

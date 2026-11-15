@@ -833,6 +833,7 @@ on nothing about the order, so it can leak neither existence nor the hold) and t
 
 | # | Rule | Error key |
 |---|---|---|
+| 0 | On both partner hosts, before the validator runs: the caller's profile is complete, a document is on file and the contract is `Approved` or `Active` — the class-level `[RequireCompleteProfile]` filter answers HTTP **403** `Registration incomplete` (not a key) | — |
 | 1 | `orderId` present | `common.required` |
 | 2 | `acceptedWorkContractTextId` present | `contract.not_accepted` |
 | 3 | Order exists, **is not held from this caller** (ADR-0036), **and is in the currency the caller is paid in** — or the caller is already on it (`OrderVisibility.OpenTo`) | `order.not_found` |

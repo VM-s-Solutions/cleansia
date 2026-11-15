@@ -498,6 +498,10 @@ the back button frames the job again (since 2026-11-05). A tap on the map opens 
 is in the run sheet. The Active hero reuses the detail's head. On iOS the detail
 and the Orders root mount Core's edge swipe-back (`InteractivePopGestureEnabler`).
 
+- **The job's scope is named in full on the detail.** *Services & packages* lists every package and every
+  service of the job, as the contract sheet does, so a cleaner judges the work before the take on all of
+  it. The board card shows the first name and *+N more* (`offers_card_more`, five locales on both apps)
+  when there are more.
 - **Three tabs on one sliding switcher** — *Available*, *Active* and *History*. Active carries its
   tab's total from the server as a count; Available carries that total less the loaded rows whose
   booked slot has ended, so it never reads 1 over *No open jobs right now*, and *See N open jobs*

@@ -39,7 +39,7 @@ The web list shows no total. The Android and iOS invoice lists carry a **Total e
 | `Pending` | Invoice generated, awaiting approval |
 | `Approved` | Approved by admin, pending payment |
 | `Paid` | Payment has been made |
-| `Disputed` | Partner has disputed the invoice |
+| `Disputed` | An administrator has marked the invoice disputed (`PUT AdminPayroll/dispute-invoice`); a partner has no dispute route of their own |
 | `Rejected` | Written before 2026-11; no action produces it any more, and the value stays in the enum |
 | `Cancelled` | Invoice was cancelled |
 

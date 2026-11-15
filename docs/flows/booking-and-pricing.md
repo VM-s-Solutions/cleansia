@@ -400,7 +400,7 @@ time and the express window still apply to the exact selected instant, including
 | Under 2 h lead time | Refused outright. Not priced higher — refused. |
 | A start off the 15-minute grid, before 08:00 or after 19:45 in the market's zone, or more than 60 days ahead | Refused on the quote and the booking alike, `order.cleaning_date.outside_booking_window`. |
 | 2–4 h lead time | Accepted with a **+20 %** express surcharge, unless a Plus waiver applies. |
-| A *Heavy* home on an express slot | Both surcharges: +60 % on the basket, then +20 % on that — × 1.92 before discounts. |
+| A *Heavy* home on an express slot | Both surcharges: +30 % on the basket, then +20 % on that — × 1.56 before discounts. |
 | A request that carries no dirtiness level | Priced, timed and booked at *Normal*. No shipped client books without one. |
 | An unknown dirtiness level | Refused, `common.invalid_enum_value`, on the quote, the Plus preview, the booking and both recurring commands. |
 | A 120-minute selection at *Increased* or *Heavy* | 156 or 192 booked minutes: two cleaners, so card only. |

@@ -117,6 +117,8 @@ test.describe('orders: settle', () => {
     if (mine.some((r) => str(r, 'id') === id)) {
       const owed = mine.find((r) => str(r, 'id') === id);
       expect(str(owed, 'kind.name')).toBe('CashCancellationFee');
+      // The fee CANCEL-016 recorded: D2's total at the rate frozen on its cancel (25 % of 300 = 75 on the real run).
+      expect(Number(str(owed, 'amount'))).toBeCloseTo(cancelSplit(d2.total, Number(str(before, 'cancellationFeeRate'))).fee, 2);
       expect(str(owed, 'currencyCode')).toBe('CZK');
       const link = await call(s, 'POST', `/api/Receivable/CreatePayLink/${id}`);
       expect(link.status, JSON.stringify(link.body)).toBe(200);

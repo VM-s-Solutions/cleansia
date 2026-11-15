@@ -62,21 +62,22 @@ const wizard = {
     await page.getByRole('button', { name: 'I will be home' }).click();
   },
   pay: (page: Page, payment: 'card' | 'cash') => page.getByRole('button', { name: payment === 'card' ? /^Card online/ : /^Cash on the day/ }),
-  /** Every time chip of the selected day, part by part: its label and whether it can be picked. */
-  times: async (page: Page) => {
-    const out: { label: string; enabled: boolean }[] = [];
-    const parts = page.locator('.cl-wiz__daypart');
-    for (let i = 0; i < (await parts.count()); i++) {
-      if (await parts.nth(i).isDisabled()) continue;
-      // The chips re-render for the part clicked: wait until they start where its range says.
-      const [from] = (await parts.nth(i).locator('.cl-wiz__daypart-range').innerText()).split(/[–-]/).map((x) => x.trim());
-      await parts.nth(i).click();
-      await expect(page.locator('.cl-wiz__time').first()).toHaveText(from);
-      for (const chip of await page.locator('.cl-wiz__time').all()) out.push({ label: (await chip.innerText()).trim(), enabled: await chip.isEnabled() });
-    }
-    return out;
-  },
 };
+
+/** Every time chip of the selected day, part by part: its label and whether it can be picked. */
+async function wizardTimes(page: Page) {
+  const out: { label: string; enabled: boolean }[] = [];
+  const parts = page.locator('.cl-wiz__daypart');
+  for (let i = 0; i < (await parts.count()); i++) {
+    if (await parts.nth(i).isDisabled()) continue;
+    // The chips re-render for the part clicked: wait until they start where its range says.
+    const [from] = (await parts.nth(i).locator('.cl-wiz__daypart-range').innerText()).split(/[–-]/).map((x) => x.trim());
+    await parts.nth(i).click();
+    await expect(page.locator('.cl-wiz__time').first()).toHaveText(from);
+    for (const chip of await page.locator('.cl-wiz__time').all()) out.push({ label: (await chip.innerText()).trim(), enabled: await chip.isEnabled() });
+  }
+  return out;
+}
 
 /** A booking walked to the payment step: Bathroom Cleaning, Normal, the saved address, the slot. */
 async function toPayment(page: Page, slot: Date) {
@@ -112,7 +113,7 @@ test.describe('booking wizard rules', () => {
     // A day well ahead: no lead time greys any of it.
     const ahead = new Date(Date.now() + 3 * 24 * HOUR);
     await wizard.day(page, ahead);
-    const times = await wizard.times(page);
+    const times = await wizardTimes(page);
     const grid = Array.from({ length: 48 }, (_, i) => `${String(8 + Math.floor(i / 4)).padStart(2, '0')}:${String((i % 4) * 15).padStart(2, '0')}`);
     expect(times.map((x) => x.label)).toEqual(grid);
     expect(times.every((x) => x.enabled)).toBe(true);
@@ -130,7 +131,7 @@ test.describe('booking wizard rules', () => {
     await customerSignIn(page, emailOf(run, 'customer'), run.password);
     await toPaymentStepDate(page);
     await wizard.day(page, now);
-    const times = await wizard.times(page);
+    const times = await wizardTimes(page);
     const opened = Date.now();
     for (const x of times) {
       const lead = pragueSlot(today, x.label).getTime() - opened;

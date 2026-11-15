@@ -73,5 +73,5 @@ test('an applicant who has not confirmed the e-mail is sent to confirm it by the
   test.skip(!flag(run, 'people.registered'), `people/10 has not registered the applicant of run ${run.runId}`);
   test.skip(!!flag(run, 'people.confirmed'), `the applicant of run ${run.runId} was confirmed at ${flag(run, 'people.confirmed')} (people/30)`);
   await submitSignIn(page, 'partner', emailOf(run, 'applicant'), run.password);
-  await page.waitForURL(/\/confirm-email/);
+  await expect(page).toHaveURL(/\/confirm-email/);
 });

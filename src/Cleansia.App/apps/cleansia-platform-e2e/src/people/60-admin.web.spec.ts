@@ -21,7 +21,7 @@ const noRoles = () => scratch() && 'E2E_SCRATCH=1: a scratch run creates no role
 let lastSpaSignIn = 0;
 async function spaSignIn(page: Page, role: AdminRole) {
   const wait = lastSpaSignIn + 7_000 - Date.now();
-  if (wait > 0) await page.waitForTimeout(wait);
+  if (wait > 0) await new Promise((r) => setTimeout(r, wait));
   lastSpaSignIn = Date.now();
   await adminSignIn(page, role === 'admin' ? DEV_ADMIN.email : emailOf(run, role), role === 'admin' ? DEV_ADMIN.password : run.password);
 }

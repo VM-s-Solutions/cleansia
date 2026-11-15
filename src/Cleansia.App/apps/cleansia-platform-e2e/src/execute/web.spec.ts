@@ -42,7 +42,7 @@ async function startOnJobPage(page: Page, o: RunOrder) {
   await expect(page.locator('main')).toContainText('In Progress', { timeout: 60_000 });
 }
 
-/** The completion is offered only once the after photo is saved; a finished job keeps both photos. A fresh page: the photo section keeps its saving state after the before photo. */
+/** The completion is offered only once the after photo is saved; a finished job keeps both photos. A fresh page, kept from an early run where Save Photos once stayed loading after the before photo; the cash test saves on the same page. */
 async function addAfterPhotoAndComplete(page: Page) {
   await page.reload();
   const complete = page.getByRole('button', { name: 'Complete Order' });

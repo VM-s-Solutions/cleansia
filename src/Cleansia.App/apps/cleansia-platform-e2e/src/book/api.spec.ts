@@ -172,6 +172,7 @@ test.describe('book', () => {
     expect(errorKeys(foreign.body)).toContain('legal.document_not_in_force');
     const after = (await call(a, 'GET', `/api/AdminEmployee/details/${run.employeeId}`)).body;
     expect(after).toMatchObject({ isProfileComplete: true, contractStatus: 'Pending' });
+    expect((await call(cleaner, 'GET', '/api/Employee/CheckCurrentEmployee')).body).toMatchObject({ hasCompletedProfile: true });
   });
 
   test('the admin reads the application, approves the identity card, and cannot approve the cleaner before the third acceptance', { tag: ['@E2E-AUTH-043', '@E2E-AUTH-044', '@E2E-AUTH-042'] }, async () => {

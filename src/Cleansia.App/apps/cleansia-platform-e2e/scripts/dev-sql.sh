@@ -13,9 +13,13 @@ if [ -z "${GH_TOKEN:-}" ]; then
   export GH_TOKEN
 fi
 T0=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
-gh workflow run execute-sql.yml --repo "$REPO" --ref "$REF" -f environment=DEV -f script_path="$SCRIPT"
-id=
+out=$(gh workflow run execute-sql.yml --repo "$REPO" --ref "$REF" -f environment=DEV -f script_path="$SCRIPT")
+echo "$out"
+# The dispatch prints its own run's URL, so a second dispatch seconds later cannot be taken for this one.
+id=$(printf '%s\n' "$out" | sed -n 's#.*/actions/runs/\([0-9][0-9]*\).*#\1#p' | head -1)
+# shortcut: without that URL, the first run created after T0 is taken, which another dispatch in the same seconds can cross.
 for _ in $(seq 1 30); do
+  [ -n "$id" ] && break
   id=$(gh run list --repo "$REPO" --workflow execute-sql.yml --limit 10 --json databaseId,createdAt \
     --jq "[.[] | select(.createdAt >= \"$T0\")] | sort_by(.createdAt) | first | .databaseId // empty")
   [ -n "$id" ] && break

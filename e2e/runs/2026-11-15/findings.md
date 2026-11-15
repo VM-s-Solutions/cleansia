@@ -260,7 +260,7 @@ for defects only: P1 blocks a core journey or loses money, P2 is wrong but worka
 | F-052 | 1a `catalogue/lane-findings.md:5` | E2E-AUTH (reset) · partner apps | The partner mobile host has no `ChangePassword` route (`src/Cleansia.Web.Mobile.Partner/Controllers/AuthController.cs`, `UserController.cs`); the other four hosts do. | No docs page says where a partner completes a password reset. | defect | Docs gap, for Mike: name the host that completes a partner reset. P3. |
 | F-053 | 1a `catalogue/lane-findings.md:6` | E2E-GDPR-018 · API | `GrantConsent` refuses the same document again with `gdpr.consent_already_granted` and records no evidence (`GrantConsent.cs:57-63`). | `docs/product/business-rules.md:4605-4606`: the same document again is a no-op on the row and still a row in the trail. Docs and code conflict. | defect | For Mike: which is right. P3. |
 | F-054 | 1a `catalogue/lane-findings.md:7` | E2E-AUTH-049 · admin | `RejectEmployee` accepts an Approved cleaner (only Rejected is refused, `RejectEmployee.cs:31-36`) and a rejection releases future Confirmed seats; the console offers Reject on Pending only. | ADR-0067 (`docs/decisions/adr-0067.md:33`): a rejection releases future Confirmed seats; `docs/admin-app/user-management.md:236`: Reject is offered on Pending only. | by design | None; the user-management page could say the server accepts more than the console offers. |
-| F-055 | 1a `catalogue/lane-findings.md:8` | E2E-GDPR (export) · iOS, Android | No app screen exports the customer's data. | `docs/flows/gdpr-and-audit.md#subject-export`: the export is `POST api/v1/Gdpr/export` and the web; the cases list API and Web only. | by design | None. |
+| F-055 | 1a `catalogue/lane-findings.md:8` | E2E-GDPR (export) · iOS, Android | No app screen exports the customer's data: neither app's sources call the export, which only the generated customer mobile API spec carries (`src/cleansia_android/openapi/customer-mobile-api.json:1944`). | `docs/flows/gdpr-and-audit.md#subject-export` (lines 299-303) describes the customer's `POST api/v1/Gdpr/export` and the admin's export, and never says the apps leave it out; `docs/product/features.md:267` lists data export among the Customer's account features with no surface named. No docs page supports leaving it out. | defect | Docs gap, for Mike: say whether export is web-only. P3. |
 | F-056 | 1a `catalogue/lane-findings.md:9` | admin web cases · DEV | The deployed admin console sits behind Azure Static Web Apps with a Microsoft sign-in. | | environment | DEV: the SWA gate. The suite serves the SPA locally (`e2e/README.md`, DEV facts). |
 | F-057 | 1a `catalogue/lane-findings.md:10` | P2 and not-run cases · catalogue | Several cases carry *unsure* DEV notes (`e2e/cases/auth-and-identity.md:195,261`, `cross-cutting.md:137,147,179,322,330`, `cancellation-refund-dispute.md:93,101,335`, `booking-and-pricing.md:36,296`). | | test bug | Open questions in `e2e/cases`, answered by the first run of each case; none was run here. |
 | F-058 | 1a `catalogue/lane-findings.md:11` | E2E-BOOK-011, E2E-BOOK-015 · API | Increased is +15 % and Heavy +30 % on both apps (`run1c/android/08-quote-step2.png`; iOS 862.50 on 750). | `docs/flows/booking-and-pricing.md:403` says Heavy on an express slot is × 1.92 (+60 %, then +20 %); `docs/product/business-rules.md:1255` says × 1.56. | defect | Docs stale on the flow page. P3. |
@@ -284,8 +284,8 @@ for defects only: P1 blocks a core journey or loses money, P2 is wrong but worka
 
 | Verdict | Findings |
 |---|---|
-| defect | 24 (P1 0, P2 1: F-035; P3 23) |
-| by design | 14 |
+| defect | 25 (P1 0, P2 1: F-035; P3 24) |
+| by design | 13 |
 | test bug | 17 |
 | environment | 16 |
 | catalogue error | 2 (F-001, F-002, both fixed in `e2e/cases`) |
@@ -293,7 +293,7 @@ for defects only: P1 blocks a core journey or loses money, P2 is wrong but worka
 
 Sources merged: F-001, F-003, F-004, F-005, F-007, F-008, F-013, F-016, F-018, F-019, F-020, F-031, F-036, F-047, F-073.
 
-Of the 24 defects, 20 are docs faults (gaps, stale text, or docs that disagree with the code), three of them a choice
+Of the 25 defects, 21 are docs faults (gaps, stale text, or docs that disagree with the code), three of them a choice
 between docs and code for Mike (F-028, F-053, F-066). The product defects are F-035 (P2), F-022, F-046 and F-068 (P3).
 No P1 defect: every core journey ran end to end on DEV.
 

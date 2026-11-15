@@ -37,3 +37,18 @@ export function wizardLabels(slot: Date) {
   const part = minutes < 12 * 60 ? 'Morning' : minutes < 16 * 60 ? 'Afternoon' : 'Evening';
   return { day: pragueDay.format(slot), part, time: pragueClock.format(slot) };
 }
+
+/** A Prague wall-clock time ('HH:MM') on a calendar day ('YYYY-MM-DD'), as the UTC instant it is. */
+export function pragueSlot(day: string, hhmm: string): Date {
+  const [h, m] = hhmm.split(':').map(Number);
+  const wall = Date.parse(`${day}T00:00:00Z`) + (h * 60 + m) * MINUTE;
+  // Prague is UTC+1 or UTC+2: start from +1 and correct by what the clock then reads.
+  const guess = wall - 60 * MINUTE;
+  return new Date(guess - (pragueMinutes(new Date(guess)) - (h * 60 + m)) * MINUTE);
+}
+
+/** The calendar day after 'YYYY-MM-DD'. */
+export const dayAfter = (day: string) => new Date(Date.parse(`${day}T00:00:00Z`) + 24 * 60 * MINUTE).toISOString().slice(0, 10);
+
+/** The hours of notice an instant gives a slot, the figure the cancellation tiers are read by. */
+export const noticeHours = (slot: Date, at: Date) => (slot.getTime() - at.getTime()) / (60 * MINUTE);

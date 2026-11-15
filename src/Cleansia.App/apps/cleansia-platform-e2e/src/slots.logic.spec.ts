@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { crc32 } from 'node:zlib';
-import { png } from './support/dev';
-import { nextSlots, startOpensAt, wizardLabels } from './support/slots';
+import { png, retryAfterMs } from './support/dev';
+import { dayAfter, nextSlots, noticeHours, pragueSlot, startOpensAt, wizardLabels } from './support/slots';
 
 const iso = (d: Date) => d.toISOString().replace('.000', '');
 
@@ -37,6 +37,27 @@ test.describe('slot grid', () => {
   });
 });
 
+test.describe('named slots', () => {
+  test('a Prague time on a winter day is an hour ahead of UTC', () => {
+    expect(iso(pragueSlot('2026-11-18', '19:45'))).toBe('2026-11-18T18:45:00Z');
+    expect(iso(pragueSlot('2026-11-19', '08:00'))).toBe('2026-11-19T07:00:00Z');
+  });
+
+  test('a Prague time on a summer day is two hours ahead of UTC', () => {
+    expect(iso(pragueSlot('2026-07-01', '08:00'))).toBe('2026-07-01T06:00:00Z');
+  });
+
+  test('the day after rolls over the month and the year', () => {
+    expect([dayAfter('2026-11-18'), dayAfter('2026-11-30'), dayAfter('2026-12-31')]).toEqual(['2026-11-19', '2026-12-01', '2027-01-01']);
+  });
+
+  test('the notice is the hours from an instant to the slot, fractional', () => {
+    const slot = pragueSlot('2026-11-18', '19:45');
+    expect(noticeHours(slot, new Date('2026-11-17T18:45:00Z'))).toBe(24);
+    expect(noticeHours(slot, new Date('2026-11-18T08:15:00Z'))).toBe(10.5);
+  });
+});
+
 test.describe('booking wizard labels', () => {
   test('a winter evening slot reads in Prague time', () => {
     expect(wizardLabels(new Date('2026-11-14T17:45:00Z'))).toEqual({ day: 'Saturday, November 14, 2026', part: 'Evening', time: '18:45' });
@@ -49,6 +70,24 @@ test.describe('booking wizard labels', () => {
   test('the parts of the day split at 12:00 and 16:00', () => {
     const part = (utc: string) => wizardLabels(new Date(`2026-11-14T${utc}Z`)).part;
     expect([part('07:00:00'), part('10:45:00'), part('11:00:00'), part('14:45:00'), part('15:00:00')]).toEqual(['Morning', 'Morning', 'Afternoon', 'Afternoon', 'Evening']);
+  });
+});
+
+test.describe('rate-limit backoff', () => {
+  const now = Date.parse('2026-11-18T07:00:00Z');
+
+  test('Retry-After in seconds is waited in full', () => {
+    expect(retryAfterMs('12', now)).toBe(12_000);
+  });
+
+  test('Retry-After as an HTTP date is waited until that instant', () => {
+    expect(retryAfterMs('Wed, 18 Nov 2026 07:00:20 GMT', now)).toBe(20_000);
+  });
+
+  test('no header, a past date or garbage waits 30 s, and nothing waits under 1 s', () => {
+    expect([retryAfterMs(undefined, now), retryAfterMs('soon', now)]).toEqual([30_000, 30_000]);
+    expect(retryAfterMs('Wed, 18 Nov 2026 06:59:00 GMT', now)).toBe(1_000);
+    expect(retryAfterMs('0', now)).toBe(1_000);
   });
 });
 

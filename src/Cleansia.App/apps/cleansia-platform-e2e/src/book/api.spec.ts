@@ -231,15 +231,10 @@ test.describe('book', () => {
     const textId = str(preview.body, 'legalDocumentTextId') || '01AAAAAAAAAAAAAAAAAAAAAAAA';
     for (const s of [cleaner, await signIn('partner-mobile', emailOf(run, 'cleaner'), run.password)]) {
       const r = await call(s, 'POST', '/api/Order/TakeOrder', { orderId: id, acceptedWorkContractTextId: textId });
-      // The catalogue expects employee.not_approved; DEV answers the registration lock's 403 before the validator
-      // runs (RequireCompleteProfileAttribute). Either is a refusal, so the journey goes on; any answer but the
-      // catalogued key is reported as a finding, which the case reporter prints instead of 'passed'.
-      expect([...errorKeys(r.body), str(r.body, 'title')], `${s.host}: ${JSON.stringify(r.body)}`).toEqual(
-        expect.arrayContaining([expect.stringMatching(/^(employee\.not_approved|Registration incomplete)$/)]),
-      );
-      if (!errorKeys(r.body).includes('employee.not_approved')) {
-        test.info().annotations.push({ type: 'finding', description: `${s.host} answers HTTP ${r.status} '${str(r.body, 'title')}', the catalogue expects employee.not_approved: for triage` });
-      }
+      // The partner hosts' registration gate ([RequireCompleteProfile]) answers before TakeOrder's validator runs.
+      expect(r.status, `${s.host}: ${JSON.stringify(r.body)}`).toBe(403);
+      expect(str(r.body, 'title')).toBe('Registration incomplete');
+      expect(errorKeys(r.body)).not.toContain('employee.not_approved');
     }
   });
 

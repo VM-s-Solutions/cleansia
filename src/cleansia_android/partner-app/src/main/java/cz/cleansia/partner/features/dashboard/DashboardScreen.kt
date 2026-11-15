@@ -1146,8 +1146,8 @@ internal fun todaysJobCount(upcoming: List<OrderListItem>?, today: LocalDate, zo
         runCatching { Instant.parse(iso).atZone(zone).toLocalDate() }.getOrNull() == today
     }
 
-private fun computeMonthDelta(thisMonth: Int, lastMonth: Int): Int? {
-    if (lastMonth == 0) return if (thisMonth > 0) 100 else null
+internal fun computeMonthDelta(thisMonth: Int, lastMonth: Int): Int? {
+    if (lastMonth == 0) return null
     return ((thisMonth - lastMonth).toDouble() / lastMonth.toDouble() * 100.0).toInt()
 }
 

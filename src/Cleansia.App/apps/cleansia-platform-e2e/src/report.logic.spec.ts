@@ -28,7 +28,7 @@ test.describe('case report merge', () => {
   });
 
   test('a case one test proved reads passed when its twin skipped, and skipped only when every test skipped', () => {
-    // Run 202611150554: the API half pressed Close now, so the web half's Close now test skipped by design.
+    // The API half pressed Close now, so the web half's Close now test skipped.
     const now: CaseReport = { 'E2E-PAYOUT-016': { status: 'skipped', tests: { api: one('passed'), web: one('skipped', 'already closed') } } };
     expect(mergeReports({}, now)['E2E-PAYOUT-016'].status).toBe('passed');
     const none: CaseReport = { 'E2E-PAYOUT-017': { status: 'passed', tests: { api: one('skipped'), web: one('skipped') } } };

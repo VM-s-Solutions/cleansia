@@ -190,6 +190,7 @@ test.describe('orders: takes', () => {
       expect(str(o, 'accessInstructions'), role).toBe('key under the mat');
     }
     const e = await call(await as('cleaner3'), 'GET', `/api/Order/GetById?OrderId=${w.id}`);
+    expect(e.status, 'a cleaner off the crew still reads the job, redacted (OrderPiiRedaction.RedactForBrowsingCleaner)').toBe(200);
     expect([str(e.body, 'customerPhone'), str(e.body, 'address.street'), str(e.body, 'accessInstructions')], JSON.stringify(e.body).slice(0, 300)).toEqual(['', '', '']);
   });
 

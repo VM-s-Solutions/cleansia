@@ -43,6 +43,9 @@ function inWindow(key: string): RunOrder {
   return o;
 }
 
+/** A's earlier job of the day is taken and not yet done (StartOrder allows one job in progress per cleaner). */
+const busyWith = (key: string) => !!run.orders[key]?.taken && !run.orders[key].completed && !run.orders[key].cancelled;
+
 function completed(o: RunOrder) {
   o.completed = true;
   saveRun(run);
@@ -114,7 +117,7 @@ test.describe('work: afternoon', () => {
 
   test('Z, refunded in full while in progress, cannot then take cash, and still completes', { tag: ['@E2E-EXEC-027'] }, async () => {
     const o = inWindow('Z');
-    test.skip(!run.orders['X']?.completed, 'A finishes X first: one job in progress per cleaner');
+    test.skip(busyWith('X'), 'A finishes X first: one job in progress per cleaner');
     const a = await as('cleaner');
     if (statusOf(await adminDetail(o.id)) === 'Confirmed') expect((await start(a, o.id)).status).toBe(200);
     if (named(await adminDetail(o.id), 'paymentStatus', PAYMENT_STATUS) === 'Paid') {
@@ -132,7 +135,7 @@ test.describe('work: afternoon', () => {
     const o = inWindow('W');
     test.skip(!!flag(run, 'w.aMarked'), `A marked W at ${flag(run, 'w.aMarked')}`);
     test.skip(!flag(run, 'w.webOnTheWay'), 'B has not set off on the partner web yet (w.webOnTheWay, work/20)');
-    test.skip(!run.orders['Z']?.completed, 'A finishes Z first: one job in progress per cleaner');
+    test.skip(busyWith('Z'), 'A finishes Z first: one job in progress per cleaner');
     const [a, b] = [await as('cleaner'), await as('cleaner2')];
     refused(await drop(b, o.id), 'order.not_confirmed');
     if (statusOf(await adminDetail(o.id)) !== 'InProgress') expect((await start(a, o.id)).status).toBe(200);
@@ -178,7 +181,7 @@ test.describe('work: afternoon', () => {
   test('P: on the way needs no contract and allows no drop; Start needs the contract; two accepts keep one acceptance; started, no drop; completed', { tag: ['@E2E-TAKE-044', '@E2E-EXEC-007', '@E2E-TAKE-050'] }, async () => {
     const o = inWindow('P');
     test.skip(!flag(run, 'p.dropped'), 'P was not dropped and placed (orders/20)');
-    test.skip(!run.orders['W']?.completed, 'A finishes W first: one job in progress per cleaner');
+    test.skip(busyWith('W'), 'A finishes W first: one job in progress per cleaner');
     const a = await as('cleaner');
     const aId = run.employeeId ?? (await employeeOf('cleaner'));
     if (statusOf(await adminDetail(o.id)) === 'Confirmed') {

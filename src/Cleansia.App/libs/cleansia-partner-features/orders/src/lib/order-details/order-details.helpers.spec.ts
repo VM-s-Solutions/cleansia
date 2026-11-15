@@ -16,6 +16,7 @@ import {
   canCompleteOrder,
   canDropOrder,
   canMarkCashCollected,
+  canNotifyOnTheWay,
   canReportCashNotPaid,
   canTakeOrder,
   canUploadAfterPhotos,
@@ -442,6 +443,55 @@ describe('completing a crew job', () => {
         'pages.order_details.employee_finished',
         'pages.order_details.employee_not_finished',
         'api.order.crew_not_done',
+      ])
+    ).toEqual([]);
+  });
+});
+
+describe('canNotifyOnTheWay', () => {
+  const START = '2026-09-29T10:00:00Z';
+  const at = (iso: string) => new Date(iso).getTime();
+  const jobSheet = (
+    status: OrderStatus,
+    employeeId = EMPLOYEE_ID,
+    cleaningDateTime: string | null = START
+  ): OrderItem =>
+    OrderItem.fromJS({ orderStatus: { value: status }, assignedEmployees: [{ employeeId }], cleaningDateTime });
+
+  it.each([
+    ['61 minutes before the start', '2026-09-29T08:59:00Z', false],
+    ['60 minutes before the start', '2026-09-29T09:00:00Z', true],
+    ['at the start', '2026-09-29T10:00:00Z', true],
+    ['after the start', '2026-09-29T11:00:00Z', true],
+  ])('opens an hour before the start: %s', (_, now, offered) => {
+    expect(canNotifyOnTheWay(jobSheet(OrderStatus.Confirmed), EMPLOYEE_ID, at(now))).toBe(offered);
+  });
+
+  it.each([OrderStatus.New, OrderStatus.OnTheWay, OrderStatus.InProgress, OrderStatus.Completed, OrderStatus.Cancelled])(
+    'is offered only on a Confirmed job, not status %s',
+    (status) => {
+      expect(canNotifyOnTheWay(jobSheet(status), EMPLOYEE_ID, at(START))).toBe(false);
+    }
+  );
+
+  it('is not offered to a cleaner off the crew', () => {
+    expect(canNotifyOnTheWay(jobSheet(OrderStatus.Confirmed, 'emp-2'), EMPLOYEE_ID, at(START))).toBe(false);
+  });
+
+  it('leaves it to the status when the job carries no start', () => {
+    expect(canNotifyOnTheWay(jobSheet(OrderStatus.Confirmed, EMPLOYEE_ID, null), EMPLOYEE_ID, at(START))).toBe(true);
+  });
+
+  it.each(PARTNER_LOCALES)('words the action, its answer and every refusal in %s', (locale) => {
+    expect(
+      missingIn(locale, [
+        'pages.order_details.notify_on_the_way',
+        'global.messages.orders.on_the_way_notified',
+        'api.common.required',
+        'api.order.not_found',
+        'api.order.not_confirmed',
+        'api.order.employee_not_assigned',
+        'api.order.too_early_to_start',
       ])
     ).toEqual([]);
   });

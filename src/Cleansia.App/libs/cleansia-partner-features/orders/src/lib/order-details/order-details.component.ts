@@ -37,6 +37,7 @@ import {
   canStartOrder,
   canCompleteOrder,
   canDropOrder,
+  canNotifyOnTheWay,
   CrewCloseStanding,
   crewCloseLineKey,
   crewCloseStanding,
@@ -151,6 +152,13 @@ export class OrderDetailsComponent implements OnInit {
     const eid = this.currentEmployeeId();
     if (!order || !eid) return false;
     return canStartOrder(order.orderStatus.value, order.assignedEmployees, eid);
+  });
+
+  protected readonly canNotifyOnTheWay = computed((): boolean => {
+    const order = this.orderDetails();
+    const eid = this.currentEmployeeId();
+    if (!order || !eid) return false;
+    return canNotifyOnTheWay(order, eid, Date.now());
   });
 
   // Tracks whether the child order-photos component currently reports persisted After photos.
@@ -336,6 +344,13 @@ export class OrderDetailsComponent implements OnInit {
     const orderId = this.orderDetails()?.id;
     if (orderId) {
       this.facade.startOrder(orderId);
+    }
+  }
+
+  protected notifyOnTheWay(): void {
+    const orderId = this.orderDetails()?.id;
+    if (orderId) {
+      this.facade.notifyOnTheWay(orderId);
     }
   }
 

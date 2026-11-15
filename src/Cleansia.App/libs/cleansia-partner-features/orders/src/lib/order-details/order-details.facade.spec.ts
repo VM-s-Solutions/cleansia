@@ -9,6 +9,7 @@ import {
   MarkCashCollectedResponse,
   MarkMyPartDoneCommand,
   MarkMyPartDoneResponse,
+  NotifyOnTheWayResponse,
   OrderItem,
   OrderStatus,
   PartnerClient,
@@ -87,6 +88,7 @@ describe('OrderDetailsFacade', () => {
     reportCashNotPaid: jest.Mock;
     takeOrder: jest.Mock;
     startOrder: jest.Mock;
+    notifyOnTheWay: jest.Mock;
     reportIssue: jest.Mock;
     addNote: jest.Mock;
     getById: jest.Mock;
@@ -130,6 +132,7 @@ describe('OrderDetailsFacade', () => {
       reportCashNotPaid: jest.fn(),
       takeOrder: jest.fn(),
       startOrder: jest.fn(),
+      notifyOnTheWay: jest.fn(),
       reportIssue: jest.fn(),
       addNote: jest.fn(),
       getById: jest.fn().mockReturnValue(of(buildOrder())),
@@ -235,6 +238,61 @@ describe('OrderDetailsFacade', () => {
       facade.markCashCollected('');
 
       expect(orderClient.markCashCollected).not.toHaveBeenCalled();
+      expect(snackbar.showErrorTranslated).toHaveBeenCalledWith(
+        'global.messages.orders.invalid_request'
+      );
+    });
+  });
+
+  describe('notifyOnTheWay', () => {
+    it('tells the customer, reports it and re-reads the order', () => {
+      const facade = createFacade();
+      orderClient.notifyOnTheWay.mockReturnValue(
+        of(NotifyOnTheWayResponse.fromJS({ orderId: ORDER_ID, newStatus: OrderStatus.OnTheWay }))
+      );
+
+      facade.notifyOnTheWay(ORDER_ID);
+
+      expect(orderClient.notifyOnTheWay).toHaveBeenCalledTimes(1);
+      expect(orderClient.notifyOnTheWay.mock.calls[0][0].orderId).toBe(ORDER_ID);
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
+        'global.messages.orders.on_the_way_notified'
+      );
+      expect(orderClient.getById).toHaveBeenCalledWith(ORDER_ID);
+      expect(facade.loading()).toBe(false);
+    });
+
+    // A crew mate may already have set off: the re-read stops offering the action.
+    it('leaves a refusal to the translated toast and re-reads the order', () => {
+      const facade = createFacade();
+      orderClient.notifyOnTheWay.mockReturnValue(throwError(() => refusal('order.not_confirmed')));
+
+      facade.notifyOnTheWay(ORDER_ID);
+
+      expect(orderClient.getById).toHaveBeenCalledTimes(1);
+      expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
+      expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
+      expect(facade.loading()).toBe(false);
+    });
+
+    it('keeps the job sheet when the call never reached the server', () => {
+      const facade = createFacade();
+      orderClient.notifyOnTheWay.mockReturnValue(
+        throwError(() => new HttpErrorResponse({ status: 0, statusText: 'Unknown Error' }))
+      );
+
+      facade.notifyOnTheWay(ORDER_ID);
+
+      expect(orderClient.getById).not.toHaveBeenCalled();
+      expect(facade.loading()).toBe(false);
+    });
+
+    it('never calls the endpoint without an order id', () => {
+      const facade = createFacade();
+
+      facade.notifyOnTheWay('');
+
+      expect(orderClient.notifyOnTheWay).not.toHaveBeenCalled();
       expect(snackbar.showErrorTranslated).toHaveBeenCalledWith(
         'global.messages.orders.invalid_request'
       );

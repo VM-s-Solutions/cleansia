@@ -7,6 +7,7 @@ import {
   GetMyAssignmentRemovalResponse,
   MarkCashCollectedCommand,
   MarkMyPartDoneCommand,
+  NotifyOnTheWayCommand,
   OrderClient,
   OrderItem,
   OrderStatus,
@@ -226,6 +227,41 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
         }),
         catchError((error) => {
           this.openAcceptDialogWhenRequired(error);
+          return of(null);
+        }),
+        finalize(() => this.loading.set(false))
+      )
+      .subscribe();
+  }
+
+  // A refusal is re-read: a crew mate may already have set off, which ends the Confirmed window.
+  notifyOnTheWay(orderId: string): void {
+    if (!orderId) {
+      this.snackbarService.showErrorTranslated(
+        'global.messages.orders.invalid_request'
+      );
+      return;
+    }
+
+    this.loading.set(true);
+
+    const command = new NotifyOnTheWayCommand();
+    command.orderId = orderId;
+
+    this.partnerClient.orderClient
+      .notifyOnTheWay(command)
+      .pipe(
+        takeUntil(this.destroyed$),
+        tap(() => {
+          this.snackbarService.showSuccessTranslated(
+            'global.messages.orders.on_the_way_notified'
+          );
+          this.loadOrderDetails(orderId);
+        }),
+        catchError((error) => {
+          if (extractApiErrorCode(error)) {
+            this.loadOrderDetails(orderId);
+          }
           return of(null);
         }),
         finalize(() => this.loading.set(false))

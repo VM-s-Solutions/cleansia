@@ -135,6 +135,19 @@ export function canStartOrder(
   return isReadyToStart && isEmployeeAssigned(assignedEmployees, employeeId);
 }
 
+// BookingPolicy.StartGraceWindowMinutes: how long before the booked start a cleaner may set off.
+const START_GRACE_WINDOW_MINUTES = 60;
+
+// Mirrors NotifyOnTheWay: a cleaner on the crew of a Confirmed job, from an hour before its start.
+export function canNotifyOnTheWay(order: OrderItem, employeeId: string, now: number): boolean {
+  const start = order.cleaningDateTime ? new Date(order.cleaningDateTime).getTime() : NaN;
+  return (
+    order.orderStatus?.value === OrderStatus.Confirmed &&
+    isEmployeeAssigned(order.assignedEmployees, employeeId) &&
+    (Number.isNaN(start) || now >= start - START_GRACE_WINDOW_MINUTES * 60_000)
+  );
+}
+
 // A one-cleaner job completes on its cleaner's one tap; a crew job once every seat still on it is
 // marked done (owner ruling 2026-10-26), which is when the server stops answering order.crew_not_done.
 export function canCompleteOrder(

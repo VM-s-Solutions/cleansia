@@ -45,3 +45,6 @@ f0e39d7e594611bac9359cb92c24bc7abaded992:deploy/bicep/main.bicep:generic-api-key
 
 # Not a credential: the owned simulator UUID in the retained audit's simctl keychain reset command.
 32984a69240f2b0941a202b2071bae7eb6219626:agents/AUDIT-2026-10-07.md:generic-api-key:4893
+
+# Not a credential: the Android runbook's Mapbox placeholder (pk.e2e-placeholder-no-map), which builds the apps without a map.
+166e8159f178a9c948100b0edd955b08781535f8:e2e/runbooks/android.md:generic-api-key:17

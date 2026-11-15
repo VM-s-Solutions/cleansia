@@ -226,7 +226,7 @@ for defects only: P1 blocks a core journey or loses money, P2 is wrong but worka
 | F-018 | 1b `harness/ios.json:61`, `harness/fixes.json:19` (merged) | · iOS build | Building the iOS apps rewrote the tracked `src/cleansia_ios/CleansiaCore/Package.resolved`. The worktree was clean when this register was written. | | environment | The local Xcode toolchain rewrites the file on resolve; restore it after any build. |
 | F-019 | 1b `harness/ios.json:62`, `harness/android.json:85` (merged) | · iOS, Android build | Free disk fell to 2.3 GB and 1.8 GB while lanes built at once. | | environment | The run machine's disk; 1c built nothing. |
 | F-020 | 1b `harness/ios.json:63`, `harness/android.json:86` (merged) | all · iOS, Android | Neither app carries accessibility identifiers or Compose test tags, so every runbook recipe keys on English label text. | | test bug | Accepted limit of `e2e/runbooks/ios.md` and `android.md`, which assume English; XCUITest and Compose targets are out of this ticket. |
-| F-021 | 1b `harness/ios.json:64` | · iOS customer | A completed, unrated order opens the rating sheet at each launch until *Not now* or a review. | `docs/mobile-app/features.md#rating-cleaning` (lines 101-106): the completion popup with *Not now*. | by design | None. |
+| F-021 | 1b `harness/ios.json:64` | · iOS customer | A completed, unrated order opens the rating sheet at each launch until *Not now* or a review. | `docs/mobile-app/features.md#rating-cleaning`: the popup with *Not now* (lines 101-106), and *the automatic prompt still asks once per booking* (line 112). The code stamps the order as asked when the prompt is shown, not when it is answered (`src/cleansia_ios/CleansiaCustomer/Sources/Features/Shell/CustomerShellView.swift:209-211`, kept in UserDefaults by `AppSettingsStore.swift:118-119`). Docs and code agree; the observation contradicts both. | environment | Not reproduced in 1c (`run1c/ios.json` records no prompt). 1b signed in with the shared payproof customer (`harness/ios.json:41`), whose several completed, unrated orders each get their one prompt, one per launch, which reads as every launch; unconfirmed. Re-check on an e2e account with one completed order. |
 | F-022 | 1b `harness/android.json:80` | · Android customer | A debug build with a blank `MAPBOX_ACCESS_TOKEN` crashes (MapboxConfigurationException in `OrderDetailMap`) the first time an order detail opens. | `src/cleansia_android/customer-app/build.gradle.kts:76-78` promises the empty fallback keeps the app from crashing and only the map fails. The code and its own comment conflict. | defect | Guard `OrderDetailMap` when the token is blank. P3 (developer builds only). |
 | F-023 | 1b `harness/android.json:81` | E2E-AUTH-033 · Android partner | During the DEV outage (F-005) in-app sign-up spun over 30 s and returned to the form with no error seen. | `RegisterViewModel.kt:134-136` shows a snackbar on every error; it was not reproduced. | environment | The DEV outage. No product defect proven. |
 | F-024 | 1b `harness/android.json:82` | E2E-BOOK-037 · Android | After a third cash booking was refused the Cash row deselected with no message seen in 3 s. | `docs/product/business-rules.md#card-guarantee` (line 1595): at most two unpaid cash bookings. `BookingViewModelTest.kt:2477-2500` pins the snackbar with the refusal and the cleared choice. | by design | None; the snackbar came and went. |
@@ -285,9 +285,9 @@ for defects only: P1 blocks a core journey or loses money, P2 is wrong but worka
 | Verdict | Findings |
 |---|---|
 | defect | 24 (P1 0, P2 1: F-035; P3 23) |
-| by design | 15 |
+| by design | 14 |
 | test bug | 17 |
-| environment | 15 |
+| environment | 16 |
 | catalogue error | 2 (F-001, F-002, both fixed in `e2e/cases`) |
 | **total** | **73** |
 

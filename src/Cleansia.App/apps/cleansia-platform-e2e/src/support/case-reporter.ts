@@ -30,6 +30,16 @@ export function mergeReports(previous: CaseReport, current: CaseReport): CaseRep
   return out;
 }
 
+/** The printed note: the reason of a test with the case's outcome, plus why any test of a case that did not skip skipped. */
+export function caseNote(c: CaseReport[string]): string {
+  const tests = Object.values(c.tests);
+  const note = tests.find((t) => t.status === c.status && t.note)?.note ?? '';
+  const skipped = c.status === 'skipped' ? [] : tests.filter((t) => t.status === 'skipped');
+  if (!skipped.length) return note;
+  const reasons = skipped.map((t) => t.note).filter(Boolean).join('; ');
+  return `${note ? `${note} ` : ''}(${skipped.length} skipped${reasons ? `: ${reasons}` : ''})`;
+}
+
 /**
  * Reports each catalogue case id (a test tag such as @E2E-BOOK-007) with the worst outcome of the tests tagged with
  * it, merged into the run folder's report-<stage>.json so a re-run of a stage keeps what earlier invocations proved.
@@ -64,9 +74,7 @@ export default class CaseReporter implements Reporter {
     const merged = mergeReports(previous, this.cases);
     console.log(`\nCases (${this.stage}, this invocation ${result.status}; merged with earlier invocations of run ${run?.runId ?? '-'}):`);
     for (const id of Object.keys(merged).sort()) {
-      const c = merged[id];
-      const note = Object.values(c.tests).find((t) => t.status === c.status && t.note)?.note ?? '';
-      console.log(`  ${id.padEnd(16)} ${c.status.padEnd(8)} ${note}`);
+      console.log(`  ${id.padEnd(16)} ${merged[id].status.padEnd(8)} ${caseNote(merged[id])}`);
     }
     if (file) writeFileSync(file, JSON.stringify(merged, null, 2));
   }

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { CaseReport, mergeReports } from './support/case-reporter';
+import { CaseReport, caseNote, mergeReports } from './support/case-reporter';
 
 const one = (status: string, note = '') => ({ status, note });
 
@@ -33,6 +33,13 @@ test.describe('case report merge', () => {
     expect(mergeReports({}, now)['E2E-PAYOUT-016'].status).toBe('passed');
     const none: CaseReport = { 'E2E-PAYOUT-017': { status: 'passed', tests: { api: one('skipped'), web: one('skipped') } } };
     expect(mergeReports({}, none)['E2E-PAYOUT-017'].status).toBe('skipped');
+  });
+
+  test('a case that passed with a skipped twin prints the skip reason, and an all-skipped case prints its own reason once', () => {
+    const half = { status: 'passed', tests: { web: one('passed'), api: one('skipped', 'can be started from 07:45') } };
+    expect(caseNote(half)).toBe('(1 skipped: can be started from 07:45)');
+    expect(caseNote({ status: 'skipped', tests: { api: one('skipped', 'can be started from 07:45') } })).toBe('can be started from 07:45');
+    expect(caseNote({ status: 'passed', tests: { api: one('passed') } })).toBe('');
   });
 
   test('a report in the old shape is read as no history', () => {

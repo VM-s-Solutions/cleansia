@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import { anonymous, call, errorKeys, Host, list, named, ORDER_STATUS, PAYMENT_STATUS, payStripeCheckout, poll, Reply, Session, signIn, str } from '../support/dev';
 import { book, cancel, feed } from '../support/flows';
-import { planned, RULED_DAYS } from '../support/plan';
+import { cancelSplit, planned, RULED_DAYS } from '../support/plan';
 import { emailOf, flag, loadRun, Role, RunOrder, RunState, saveRun, scratch, setFlag } from '../support/run';
 import { pragueSlot } from '../support/slots';
 import { cachedAdminAs } from '../support/web';
@@ -18,7 +18,6 @@ let run: RunState;
 /** A refusal's keys: one field's several keys arrive joined by '; '. */
 const keys = (body: unknown) => errorKeys(body).flatMap((k) => k.split('; '));
 const sessions: Record<string, { s: Session; at: number }> = {};
-const round2 = (x: number) => Math.round(x * 100) / 100;
 
 async function as(role: Role, host: Host = 'customer'): Promise<Session> {
   const key = `${host}:${role}`;
@@ -94,7 +93,7 @@ test.describe('orders: settle', () => {
     // refund = round(T x (1 - rate), 2).
     const rate = Number(str(await adminDetail(o.id), 'cancellationFeeRate'));
     if (!scratch()) expect(rate).toBe(0.25);
-    const refundDue = round2(o.total * (1 - rate));
+    const refundDue = cancelSplit(o.total, rate).refund;
     const payment = rate ? 'PartiallyRefunded' : 'Refunded';
     if (reply) expect(reply.body).toMatchObject({ feeRate: rate, refundPending: false });
     const d = await poll(() => adminDetail(o.id), (v) => named(v, 'paymentStatus', PAYMENT_STATUS) === payment, 90_000);

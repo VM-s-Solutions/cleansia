@@ -2,6 +2,7 @@ import { expect, Page, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { at, call, DEV_ADMIN, errorKeys, list, named, num, ORDER_STATUS, PAYMENT_STATUS, poll, Session, signIn, str } from '../support/dev';
+import { cancelSplit } from '../support/plan';
 import { emailOf, flag, loadRun, Role, RunOrder, saveRun, scratch, setFlag } from '../support/run';
 import { pragueSlot, wizardLabels } from '../support/slots';
 import { acceptCookies, adminSignIn, cachedAdmin, customerSignIn, SITES } from '../support/web';
@@ -376,7 +377,7 @@ test.describe('cancelling on the web', () => {
     test.skip(notice < 4 * HOUR + 5 * 60_000 || notice > 24 * HOUR, `tierB's slot ${o.slot} is not 4 to 24 hours away`);
     const body = await cancelOnWeb(page, 'customer', o, [t('pages.order_detail.cancellation.tier.3'), 'Cancelling within 15 minutes of booking is free', '(25%)']);
     expect(num(body, 'feeRate')).toBe(0.25);
-    expect(num(body, 'refundAmount')).toBeCloseTo(o.total - Math.round(o.total * 25) / 100, 2);
+    expect(num(body, 'refundAmount')).toBeCloseTo(cancelSplit(o.total, 0.25).refund, 2);
     expect(at(body, 'refundPending')).toBe(false);
     setFlag(run, 'tierB.webCancelled');
 

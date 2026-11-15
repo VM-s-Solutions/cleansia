@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { ORDER_PLAN, planned, plannedMinutes, RULED_DAYS, slotOf } from './support/plan';
+import { cancelSplit, ORDER_PLAN, planned, plannedMinutes, RULED_DAYS, slotOf } from './support/plan';
 import { nextSlots, noticeHours, pragueSlot } from './support/slots';
 
 // The order plan of T-0934 (BRIEF §2.4) on the ruled days: Day 1 Wed 18 Nov, Day 2 Thu 19 Nov (owner ruling 2026-11-15).
@@ -94,5 +94,13 @@ test.describe('order plan', () => {
   test('a day passed in replaces the ruled one, so D2 can follow the period DEV closed', () => {
     const j1 = planned('J1');
     expect(slotOf(j1, BOOKING_TO, { ...RULED_DAYS, D2: '2026-11-20' })).toEqual(pragueSlot('2026-11-20', '09:00'));
+  });
+
+  test('a cancel refunds round(T x (1 - rate), 2) and the fee is the rest, as CancellationAssessor prices it', () => {
+    // tierB on DEV: 950 + 15 % Increased = 1092.50; 25 % rounds the refund up to 819.38, never the fee up to 273.13.
+    expect(cancelSplit(1092.5, 0.25)).toEqual({ refund: 819.38, fee: 273.12 });
+    expect(cancelSplit(360, 0.5)).toEqual({ refund: 180, fee: 180 });
+    expect(cancelSplit(300, 0.25)).toEqual({ refund: 225, fee: 75 });
+    expect(cancelSplit(300, 0)).toEqual({ refund: 300, fee: 0 });
   });
 });

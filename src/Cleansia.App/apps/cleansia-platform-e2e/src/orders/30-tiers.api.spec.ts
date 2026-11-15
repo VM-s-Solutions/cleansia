@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { anonymous, call, errorKeys, Host, list, named, ORDER_STATUS, PAYMENT_STATUS, poll, Reply, Session, signIn, str } from '../support/dev';
 import { book, cancel, feed, preview } from '../support/flows';
-import { planned, RULED_DAYS } from '../support/plan';
+import { cancelSplit, planned, RULED_DAYS } from '../support/plan';
 import { emailOf, loadRun, Role, RunOrder, RunState, saveRun, scratch, setFlag } from '../support/run';
 import { noticeHours, pragueSlot } from '../support/slots';
 import { cachedAdminAs } from '../support/web';
@@ -18,7 +18,6 @@ const keys = (body: unknown) => errorKeys(body).flatMap((k) => k.split('; '));
 const TIER = ['FreeNotAccepted', 'FreeOopsWindow', 'FreeOutsideWindow', 'Partial', 'LastMinute'];
 const MINUTE = 60_000;
 const sessions: Record<string, { s: Session; at: number }> = {};
-const round2 = (x: number) => Math.round(x * 100) / 100;
 
 async function as(role: Role, host: Host = 'customer'): Promise<Session> {
   const key = `${host}:${role}`;
@@ -58,8 +57,8 @@ function checkPreview(key: string, o: RunOrder, p: Reply, oops: number) {
   expect(Number(str(p.body, 'feeRate')), key).toBe(rate);
   if (!scratch() && planned(key).cancelFee !== undefined) expect(rate, `${key}: the plan's tier`).toBe(planned(key).cancelFee);
   // CancellationAssessor: refund = round(T x (1 - rate), 2); the fee is the rest.
-  expect(Number(str(p.body, 'refundAmount')), key).toBeCloseTo(round2(o.total * (1 - rate)), 2);
-  expect(Number(str(p.body, 'feeAmount')), key).toBeCloseTo(o.total - round2(o.total * (1 - rate)), 2);
+  expect(Number(str(p.body, 'refundAmount')), key).toBeCloseTo(cancelSplit(o.total, rate).refund, 2);
+  expect(Number(str(p.body, 'feeAmount')), key).toBeCloseTo(cancelSplit(o.total, rate).fee, 2);
   expect(Number(str(p.body, 'oopsWindowMinutes')), key).toBe(oops);
   return { tier, rate };
 }
@@ -159,7 +158,7 @@ test.describe('orders: tiers', () => {
     const [, rate] = expected(o, 15);
     expect(Number(str(p.body, 'feeRate'))).toBe(rate);
     test.skip(rate === 0, `D2 cancelled now would be free (${noticeHours(new Date(o.slot), new Date()).toFixed(1)} h of notice)`);
-    const fee = o.total - round2(o.total * (1 - rate));
+    const { fee } = cancelSplit(o.total, rate);
     const c = await cancel(s, o.id, `E2E run ${run.runId} D2`);
     await cancelled('D2', o, c);
     expect(c.body).toMatchObject({ refundInitiated: false });

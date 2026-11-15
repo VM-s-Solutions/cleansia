@@ -90,3 +90,10 @@ export function slotOf(o: PlannedOrder, bookedAt: Date, days: Record<PlanDay, st
 /** Booked minutes on DEV: every seeded service is 2 minutes (F-031); the throwaway is 119 plus 1 per room and bathroom. */
 export const plannedMinutes = (o: PlannedOrder) =>
   o.services.reduce((sum, s) => sum + (s === THROWAWAY ? 119 + o.rooms + o.bathrooms : 2), 0);
+
+/** A cancel's split (CancellationAssessor): the refund is round(T x (1 - rate), 2), half away from zero; the fee is the rest. */
+export function cancelSplit(total: number, rate: number): { refund: number; fee: number } {
+  const cents = Math.round(total * 100);
+  const refund = Math.round(cents * (1 - rate));
+  return { refund: refund / 100, fee: (cents - refund) / 100 };
+}

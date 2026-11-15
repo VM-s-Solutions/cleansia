@@ -44,3 +44,4 @@ One PR merged with CI green; every item above is fixed or documented.
 ## Work record
 
 - 2026-11-15 — Filed and started on `fix/e2e-findings-t0933`.
+- 2026-11-15 — F-022 has no guard test: the gate reads the `BuildConfig.MAPBOX_ACCESS_TOKEN` constant, which a unit test cannot vary, and a blank token occurs only on developer builds (P3).

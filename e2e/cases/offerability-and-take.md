@@ -196,8 +196,8 @@ How a job reaches a cleaner's board and what happens when cleaners take, drop, c
 - **Priority:** P1
 - **Role:** Cleaner
 - **Surfaces:** API · Web
-- **Rule:** → /domain/offerability#the-take-is-gated-not-just-the-list — complete profile and `ContractStatus.Approved` precede the seat
-- **Given** a newly registered Cleaner C with documents pending, and an open order. **When** Cleaner C sends `TakeOrder`. **Then** the call answers `employee.profile_incomplete` while the profile is incomplete, and `employee.not_approved` once the profile is complete but Admin has not approved the documents; no seat is created.
+- **Rule:** → /domain/offerability#the-take-is-gated-not-just-the-list — complete profile and `ContractStatus.Approved` precede the seat; on the partner hosts the registration gate checks both before the validator (→ /decisions/adr-0041)
+- **Given** a newly registered Cleaner C with documents pending, and an open order. **When** Cleaner C sends `TakeOrder`. **Then** the call answers HTTP 403 with the problem title `Registration incomplete` (`[RequireCompleteProfile]` on the Order controller of :5000 and :5002) both while the profile is incomplete and once it is complete but Admin has not approved the documents, so the validator's `employee.profile_incomplete` and `employee.not_approved` are never the answer; no seat is created.
 - **DEV:** Cleaner C comes from the AUTH onboarding cases, taken before Admin approves.
 
 ### E2E-TAKE-025 — A cleaner who has not accepted the cleaner documents cannot take

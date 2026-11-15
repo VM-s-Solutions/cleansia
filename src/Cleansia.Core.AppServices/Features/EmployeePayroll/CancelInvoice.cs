@@ -36,7 +36,7 @@ public class CancelInvoice
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
                 .MaximumLength(1000)
-                .WithMessage(BusinessErrorMessage.MaxLengthExceeded);
+                .WithMessage(BusinessErrorMessage.MaxLength);
 
             RuleFor(x => x)
                 .MustAsync(InvoiceNotPaidAsync)

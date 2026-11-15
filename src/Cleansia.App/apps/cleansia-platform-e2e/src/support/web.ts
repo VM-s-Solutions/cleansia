@@ -1,6 +1,6 @@
 import { expect, Page } from '@playwright/test';
 import { call, DEV_ADMIN, list, named, ORDER_STATUS, poll, Session, signIn, str } from './dev';
-import { emailOf, RunState } from './run';
+import { emailOf, RunState, scratch } from './run';
 import { wizardLabels } from './slots';
 
 // The deployed customer and partner webs, and the admin SPA served locally (playwright.config.ts): the deployed
@@ -84,21 +84,33 @@ export async function placeOrderInWizard(page: Page, run: RunState, slot: Date, 
   return heading.replace(/.*#/, '').trim();
 }
 
-let adminSession: { session: Session; at: number } | undefined;
+export type AdminRole = 'admin' | 'manager' | 'support' | 'accountant';
+const adminSessions: Partial<Record<AdminRole, { session: Session; at: number }>> = {};
 
-/** One administrator API session per spec file: the admin host throttles sign-ins (HTTP 429), and a session lapses in about 15 minutes. */
-export async function cachedAdmin(): Promise<Session> {
-  if (adminSession && Date.now() - adminSession.at < 8 * 60_000) return adminSession.session;
+/**
+ * One admin API session per role per spec file: the admin host throttles sign-ins (HTTP 429), and a session lapses in
+ * about 15 minutes. 'admin' is the published DEV administrator; the run's Manager, Support and Accountant (people/10)
+ * sign in with the run's password, so they need the run.
+ */
+export async function cachedAdminAs(role: AdminRole, run?: RunState): Promise<Session> {
+  const cached = adminSessions[role];
+  if (cached && Date.now() - cached.at < 8 * 60_000) return cached.session;
+  if (role !== 'admin' && !run) throw new Error(`cachedAdminAs('${role}') needs the run: the account is e2e.<run>.${role}@example.com`);
+  const [email, password] = role === 'admin' || !run ? [DEV_ADMIN.email, DEV_ADMIN.password] : [emailOf(run, role), run.password];
   for (let attempt = 1; ; attempt++) {
     try {
-      adminSession = { session: await signIn('admin', DEV_ADMIN.email, DEV_ADMIN.password), at: Date.now() };
-      return adminSession.session;
+      const session = await signIn('admin', email, password);
+      adminSessions[role] = { session, at: Date.now() };
+      return session;
     } catch (e) {
       if (attempt >= 5 || !String(e).includes('HTTP 429')) throw e;
       await new Promise((r) => setTimeout(r, 30_000));
     }
   }
 }
+
+/** The published DEV administrator's cached session. */
+export const cachedAdmin = () => cachedAdminAs('admin');
 
 /** Whether DEV already reads the order Cancelled: the unfilled sweep cancels an order nobody took 30 minutes past its slot. */
 export async function cancelledOnDev(orderId: string) {
@@ -112,11 +124,14 @@ const CREWS = [
 ] as const;
 
 /**
- * The one gate before either half presses Close now: every job the run took is complete, the open period has
+ * The one gate before either half presses Close now (E2E_NO_CLOSE_NOW=1 and E2E_SCRATCH=1 always skip it): every job the run took is complete, the open period has
  * started, and each cleaner's pay rows for those jobs are in it (a queue writes them seconds after the completion,
  * and a row written after the close lands in the next period). Resolves with the open period's id, or the reason to skip.
  */
 export async function closeNowGate(run: RunState): Promise<{ periodId?: string; skip?: string }> {
+  // Phase 2 keeps the period DEV closes at night: no stage presses Close now while it runs, nor a scratch run ever.
+  if (process.env['E2E_NO_CLOSE_NOW'] === '1') return { skip: 'E2E_NO_CLOSE_NOW=1: Close now is not pressed on this run' };
+  if (scratch()) return { skip: 'E2E_SCRATCH=1: a scratch run never presses Close now' };
   const taken = Object.entries(run.orders).filter(([, o]) => o.taken);
   const open = taken.filter(([, o]) => !o.completed).map(([k]) => k);
   if (!taken.length || open.length) return { skip: open.length ? `the ${open.join(', ')} job(s) of run ${run.runId} are not complete` : `run ${run.runId} took no job` };

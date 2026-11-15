@@ -17,6 +17,7 @@ The platform tested end to end on **DEV**, by role, from the case catalogue in `
 | Guest | nobody | customer web without an account |
 | Cleaner | `e2e.<run>.cleaner@example.com` | partner web, partner API, partner mobile API, partner iOS and Android apps |
 | Admin | the published DEV admin (README.md) | admin web, admin API |
+| Manager, Support, Accountant | `e2e.<run>.manager@example.com` and so on (phase 2, below) | admin web, admin API |
 
 The QA lead owns the catalogue and sequences a run. A failure becomes a finding only after the **triager** has
 reproduced it and read `docs/` and the ADRs: each one is a *defect*, *by design*, a *test bug* or an *environment*
@@ -58,6 +59,22 @@ and heading, and its body is one line: `- **See** E2E-<FLOW>-NNN`.
   origin. The suite therefore serves the admin SPA locally (`nx serve cleansia-admin.app --configuration=devremote`,
   port 4201, started by Playwright's web server) and its dev-server proxy forwards same-origin `/api` to the DEV admin
   API, so an admin browser case signs in with the published DEV administrator and needs no Microsoft identity.
+- DEV services are 2 minutes long (F-031), so no seeded booking needs two cleaners. Phase 2's Manager creates one
+  throwaway service, "E2E two-cleaner <run>" (119 minutes plus 1 per room, a price per currency and a pay config
+  copied from Bathroom Cleaning's), in the people stage on Day 1 (about 07:20 UTC) and switches it off in the orders
+  stage (about 08:20 UTC); booked orders keep working, and its pay config row stays.
+- The admin roles other than Administrator exist only as a run's own accounts: the people stage creates
+  `e2e.<run>.manager`, `.support` and `.accountant@example.com` with the run's password, and the payroll stage
+  deactivates them. The admin host answers 429 to repeated sign-ins, so a spec signs each role in once and reuses the
+  session (`cachedAdminAs`). The `auth` rate window admits 10 anonymous calls a minute per IP: the suite paces its
+  sign-ins 6.5 s apart per host and retries a 429 up to 3 times after its `Retry-After`.
+- Two more DEV-only SQL scripts serve phase 2, each dispatched through **Execute SQL Script** by a wrapper in
+  `scripts/` (refused against PRO): `sql-scripts/dev-e2e-read-fee-receipts.sql` (read-only: the fee receipts of the
+  e2e orders, PAY-042, `scripts/read-fee-receipts.sh`), and `sql-scripts/dev-e2e-publish-cleaner-document.sql` (a new
+  version of the three CZ cleaner documents, TAKE-025, `scripts/publish-cleaner-document.sh`). **The publish script
+  gates every DEV cleaner until they accept the new version**: it runs once, as the very last step of Day 2, refuses
+  any other day than 19 Nov 2026 and is never run on a scratch run. A dispatch runs the script of the ref
+  `E2E_CONFIRM_REF` names, so both need this branch merged (`master`) or pushed before Day 1.
 
 ## Running
 
@@ -73,6 +90,11 @@ Run each stage from `src/Cleansia.App` with Node 22:
 | book | `E2E_STAGE=book npx nx e2e cleansia-platform-e2e` | starts a new run: registers the customer and the cleaner, confirms them with the SQL script, onboards and approves the cleaner, saves a card, books two cash jobs, two card jobs and one guest job at the next open slots (paid in Stripe's test Checkout), takes one cash and one card job | from 07:00 UTC, about 4 minutes |
 | execute | `E2E_STAGE=execute npx nx e2e cleansia-platform-e2e` | starts, photographs and completes the two taken jobs (the cash one with its cash recorded), reads the receipts, the pay rows and the cash held | from 60 minutes before each job's slot; before that a job's test skips and says when its window opens |
 | settle | `E2E_STAGE=settle npx nx e2e cleansia-platform-e2e` | cancels the three untaken jobs (customer, guest, administrator) and checks the refunds; once both jobs are complete, presses Close now on the open pay period and checks the invoice and its cash set-off | the cancellations before each slot plus 30 minutes (then the unfilled sweep has cancelled the order, and its test skips); Close now after execute; the invoice follows 15 to 25 minutes after the close, so the stage waits up to 25 |
+| people | `E2E_STAGE=people E2E_RUN_ID=<run> …` | phase 2: the Manager, Support and Accountant accounts; the applicant, `cleaner3` (E), `first`, `nocard`, `debtor`, `cashcap` registered and confirmed by one dispatch; onboarding refusals and the rejected applicant; the translated sign-in refusal; the throwaway service; E approved; saved cards for `debtor` and `cashcap` | Day 1 07:13 UTC, about 18 minutes |
+| orders | `E2E_STAGE=orders E2E_RUN_ID=<run> …` | phase 2: every order of the plan (`src/support/plan.ts`) booked and paid, the takes, the race, the drops and placements, the webhook refusals; then the tier previews and cancels, the receivable, the fee receipt and the service switched off | Day 1 07:35, 07:58 and, if anything waited, 08:15 UTC |
+| work | `E2E_STAGE=work E2E_RUN_ID=<run> …` | phase 2: the jobs of Day 1 in their windows (refunds, late start, the two-cleaner job, cash and customer did not pay, the placed cleaner); the last invocation writes off Day 1's debt | Day 1 08:55 to 16:00 UTC, one invocation per window |
+| payroll | `E2E_STAGE=payroll E2E_RUN_ID=<run> …` | phase 2: the night close of 16-18 Nov and its invoices, the role boundaries, J1, Close now in the admin SPA (F-012), approve, mark paid, cancel and correct, mark the period paid, J2, clean-up | Day 2 07:00 and 07:45 UTC |
+| assist | `E2E_STAGE=assist E2E_RUN_ID=<mobile run> E2E_ASSIST=<mode> …` | what a mobile lane cannot do in its app, for its own run: `confirm` (the confirm dispatch), `address` (a saved address for `E2E_ASSIST_EMAIL`), `photo` (an after photo on `E2E_ASSIST_ORDER` as the run's cleaner), `evidence` (the consents, the register audit row and the saved cards of `E2E_ASSIST_EMAIL`; with `E2E_ASSIST_EXPECT=card` or `nocard` they are asserted) | on demand; starts no admin SPA |
 
 Each stage prints every case id of the run's stage with its outcome (`passed`, `failed`, `skipped` with the reason, or
 `finding`: passed on an answer the catalogue calls wrong, for the triager) and merges it into `report-<stage>.json` in
@@ -80,13 +102,33 @@ the run folder, per test: a later skip never replaces an earlier outcome, so a r
 proved. `execute` and `settle` can be run again: a step already done is skipped. `book` always starts a new run.
 Without `E2E_STAGE` only the offline logic tests run, so a bare run never reaches DEV.
 
+A phase-2 stage (people, orders, work, payroll) continues a `book` run named by `E2E_RUN_ID`, always passed
+explicitly: a mobile lane's own `book` moves `.run/current`. Its files are numbered, and Playwright runs them in name
+order with one worker, so API and web files interleave inside one invocation; a file that needs another's step reads
+its gate with `flag()` (the time `setFlag()` recorded it in `state.json`). Every test skips with the reason and the
+time it can run when its moment has not come, and skips a step already done, so a stage is run again until its
+report is full. The order plan is data in `src/support/plan.ts` (the brief's slots on the ruled days), checked by
+`src/plan.logic.spec.ts`; the API calls the stages share are in `src/support/flows.ts`.
+
 Environment:
 
-- `E2E_STAGE`: `book`, `execute` or `settle`.
-- `E2E_RUN_ID`: the run that `execute` and `settle` continue; default is the latest `book` run.
+- `E2E_STAGE`: `book`, `execute`, `settle`, `people`, `orders`, `work`, `payroll` or `assist`.
+- `E2E_RUN_ID`: the run that every stage but `book` continues; default is the latest `book` run. Phase 2 always
+  passes it.
+- `E2E_NO_CLOSE_NOW=1`: no test presses Close now, in the API or the admin SPA. Every phase-2 invocation of
+  `settle` sets it, so the period DEV closes at night is the one the run reads.
+- `E2E_SCRATCH=1`: a build lane's validation run before the real one. It skips every test that would create a role
+  account or the throwaway service, press Close now, run the publish SQL, edit a pay period or wait for a night
+  run, and uses only the run's ordinary accounts and orders.
+- `E2E_DAY1`: scratch runs only, the date (`YYYY-MM-DD`) the orders stage books the plan's Day 1 on; default is
+  tomorrow in Prague, and Day 1 + 1 and Day 2 are the day after. The real run always books on the ruled days.
+- `E2E_ANDROID_RUN_ID`: the Android lane's run id, handed over by that lane after EXEC-029. Day 2's `payroll`
+  writes off that run's `cashToCancel` receivable; without it the clean-up test skips and the debt stays open.
+- `E2E_ASSIST`, `E2E_ASSIST_EMAIL`, `E2E_ASSIST_ORDER`, `E2E_ASSIST_EXPECT`: the assist stage's mode and inputs (above).
 - `E2E_CONFIRM_REF`: the pushed git ref that holds `sql-scripts/dev-e2e-confirm-accounts.sql`, which the book stage
-  dispatches through **Execute SQL Script** on DEV (`scripts/confirm-accounts.sh`); default is the current branch,
-  which must then be on GitHub. `GH_TOKEN` is read from the git credential store when it is not set.
+  dispatches through **Execute SQL Script** on DEV (`scripts/confirm-accounts.sh`), and of the two phase-2 scripts;
+  default is the current branch, which must then be on GitHub. `GH_TOKEN` is read from the git credential store
+  when it is not set.
 
 The run folder is `.run/<run id>/` in the project, gitignored. The run id is the book stage's UTC start
 (`YYYYMMDDHHMM`), and `.run/current` names the latest one. `state.json` holds the run's one password, the ids of the
@@ -115,75 +157,49 @@ web and works the jobs there. The stages then read as follows.
 Not driven in a browser: the guest booking and its tracking page, a cash job's cancellation, and the early-start
 refusal; the API half covers them.
 
+### The phase-2 run: Wednesday 18 and Thursday 19 November 2026
+
+Owner ruling 2026-11-15: Day 1 is Wednesday 18 November, the last day of the period 16-18; DEV's 02:00 UTC run
+closes that period on Thursday 19, which is Day 2. DEV stays quiet from 18 November 07:00 to 19 November 08:00 UTC:
+no deploy, no other e2e run and nobody pressing Close now. Every command runs from `src/Cleansia.App` with Node 22,
+under `withlock heavy`, with `E2E_CONFIRM_REF=master` and an explicit `E2E_RUN_ID` (the suite run's id, called R2
+below, except where a mobile run is named). Times are UTC; Prague is UTC+1.
+
+| Day 1, Wed 18 | Command | What |
+|---|---|---|
+| 06:30 | preflight | `/health` on the five hosts; `nx e2e cleansia-platform-e2e` (logic only) green; the open period is 16-18 (else Day 2 = its end + 1); `cash.float_cap` 0 |
+| 06:40, 06:45 | `E2E_STAGE=book … -- src/book/api.spec.ts`, twice | the iOS run and the Android run |
+| 07:00 | `E2E_STAGE=book` | R2, the API and web halves (about 8 minutes) |
+| 07:09 | `E2E_STAGE=settle E2E_NO_CLOSE_NOW=1`, once | cancels R2's untaken phase-1 orders; never again on R2 |
+| 07:13 | `E2E_STAGE=people` | roles, onboarding, the throwaway service, saved cards (about 18 minutes) |
+| 07:35 | `E2E_STAGE=orders` #1 | every booking and payment of the plan, takes, races, drops, placements, refusals, webhooks; the mobile lanes start |
+| 07:58 | `E2E_STAGE=orders` #2 | tier previews and cancels, the receivable, F1's web cancel, PAY-041/042, the service off |
+| 08:05 | `E2E_STAGE=execute E2E_RUN_ID=<ios run> -- src/execute/api.spec.ts -g "the cash job"` | one completed order for the iOS rating prompt (F-021) |
+| 08:15 | `E2E_STAGE=orders` #3, if anything waited | F1 must be cancelled within 60 minutes of its booking |
+| 08:30, 08:45 | `E2E_STAGE=execute` | R2's phase-1 jobs of A and B |
+| 08:55 → 16:00 | `E2E_STAGE=work` #1 to #8 | 08:55, 10:50, 11:35, 12:02, 13:32, 13:45, 15:47, 16:00: each window's jobs |
+
+| Day 2, Thu 19 | Command | What |
+|---|---|---|
+| 02:00 | DEV | the night run closes 16-18, opens 19-21 and invoices |
+| 07:00 | `E2E_STAGE=payroll E2E_ANDROID_RUN_ID=<android run>` #1 | the night close, the role boundaries, J1, Close now in the SPA (F-012), the invoice lifecycle, J2, clean-up |
+| 07:45 | `E2E_STAGE=payroll E2E_ANDROID_RUN_ID=<android run>` #2, if anything waited | the rest, and the six PDFs read |
+| last | TAKE-025, after every take of the run, the mobile lanes' included | `scripts/publish-cleaner-document.sh` publishes the new cleaner documents; a run cleaner's take is refused, they accept through the API, the take succeeds, the order is cancelled |
+
 ### P1 cases the suite does not cover yet
 
-A stage's report lists only the case ids its tests carry, so it never reads as full P1 coverage. These P1 cases
-have no test and no runbook step yet ("runbook step" counts a row of the P1 table in `runbooks/`):
+A stage's report lists only the case ids its tests carry, so it never reads as full P1 coverage. Phase 2 (T-0934)
+gives every P1 case a test or a row in the P1 tables of `runbooks/` (F-012, F-021, F-027 and F-038 too). What stays
+open is a part of a case DEV cannot show, not a case:
 
-| Case | Title | Why not yet |
+| Case | The part not covered | Why |
 |---|---|---|
-| E2E-AUTH-045 | An admin rejects a document with a reason | a refusal path off the core journey, not written yet |
-| E2E-AUTH-047 | Approval is refused until the paperwork is complete | a refusal path off the core journey, not written yet |
-| E2E-AUTH-049 | An admin rejects a cleaner and the cleaner reads the reason | a refusal path off the core journey, not written yet |
-| E2E-AUTH-055 | An Administrator creates a Manager, a Support and an Accountant | needs the Manager, Support and Accountant accounts, which no stage creates yet |
-| E2E-BOOK-014 | A start under 2 h away is refused, not priced higher | a refusal path off the core journey, not written yet |
-| E2E-BOOK-018 | The start must sit on the 15-minute grid | a refusal path off the core journey, not written yet |
-| E2E-BOOK-021 | The horizon is 60 days | a refusal path off the core journey, not written yet; the runbooks' date chips never reach the horizon |
-| E2E-BOOK-029 | An Increased booking by card keeps the level on the order | a refusal path off the core journey, not written yet |
-| E2E-BOOK-035 | A job that needs two cleaners cannot be paid in cash | needs a two-cleaner job, which DEV's 2-minute services reach only through an admin edit of a throwaway service |
-| E2E-BOOK-038 | A customer who owes books nothing | needs a receivable (a late cash cancellation or a cash job reported unpaid), which no stage builds yet |
-| E2E-BOOK-046 | The terms tick is required for a guest, and a refusal is recorded | a refusal path off the core journey, not written yet |
-| E2E-CANCEL-003 | A cancellation with 24 hours or more of notice is free | needs a taken job cancelled inside a fee tier or past its slot, which takes DEV time no stage spends yet |
-| E2E-CANCEL-006 | A cancellation with 4 to 24 hours of notice costs 25 % | needs a taken job cancelled inside a fee tier or past its slot, which takes DEV time no stage spends yet |
-| E2E-CANCEL-007 | A cancellation with under 4 hours of notice costs 50 % | needs a taken job cancelled inside a fee tier or past its slot, which takes DEV time no stage spends yet |
-| E2E-CANCEL-016 | A late cancellation of a cash booking opens a receivable and blocks booking | needs a receivable (a late cash cancellation or a cash job reported unpaid), which no stage builds yet |
-| E2E-CANCEL-018 | After the booked start, with a cleaner on the job and not started, the customer cannot cancel | needs a taken job cancelled inside a fee tier or past its slot, which takes DEV time no stage spends yet |
-| E2E-CANCEL-049 | An administrator refunds a paid card order in full and the customer sees it | an administrator refund of a completed card order, which no stage makes yet |
-| E2E-CANCEL-051 | A partial line refund refunds the share of the lines chosen | an administrator refund of a completed card order, which no stage makes yet |
-| E2E-CANCEL-053 | A refund is bounded by what is left | an administrator refund of a completed card order, which no stage makes yet |
-| E2E-EXEC-005 | Only the assigned cleaner may move the job | a refusal path off the core journey, not written yet |
-| E2E-EXEC-006 | The transition guard refuses a move out of order | a refusal path off the core journey, not written yet |
-| E2E-EXEC-007 | Start and Complete are refused without the contract for work, travel is not | needs an admin placement (E2E-TAKE-049), which no stage makes yet |
-| E2E-EXEC-027 | Cash collection refusals | a refusal path off the core journey, not written yet |
-| E2E-EXEC-030 | Customer did not pay: refusals in order | a refusal path off the core journey, not written yet |
-| E2E-EXEC-042 | A crew marks done, then any cleaner completes | needs a two-cleaner job, which DEV's 2-minute services reach only through an admin edit of a throwaway service |
-| E2E-EXEC-043 | A premature Complete is refused | needs a two-cleaner job, which DEV's 2-minute services reach only through an admin edit of a throwaway service |
-| E2E-PAY-022 | A ticked card payment lands a saved card | needs a card booking by a customer with no saved card, then Saved cards read, which no stage or runbook step does yet (the book stage saves the card through Checkout first) |
-| E2E-PAY-023 | An unticked card payment keeps no card | needs a card booking by a customer with no saved card, then Saved cards read, which no stage or runbook step does yet (the book stage saves the card through Checkout first) |
-| E2E-PAY-017 | A webhook call without a signature header is refused | a refusal path off the core journey, not written yet |
-| E2E-PAY-018 | A webhook call with a forged signature is refused | a refusal path off the core journey, not written yet |
-| E2E-PAY-041 | A customer lists what they owe and pays it through the pay link | needs a receivable (a late cash cancellation or a cash job reported unpaid), which no stage builds yet |
-| E2E-PAY-042 | A paid fee earns a fee receipt of its own | needs a receivable (a late cash cancellation or a cash job reported unpaid), which no stage builds yet |
-| E2E-PAYOUT-013 | Only one period is open, and it has the configured length | partly: the settle web test reads one Open period on the pay periods page; the period length and the details heading are not checked |
-| E2E-PAYOUT-014 | The night run closes the period the night after its end date | needs the 02:00 UTC night run or the invoice lifecycle after the close (approve, mark paid, cancel), which no stage drives yet |
-| E2E-PAYOUT-015 | The night close invoices each cleaner who has pay, and only them | needs the 02:00 UTC night run or the invoice lifecycle after the close (approve, mark paid, cancel), which no stage drives yet |
-| E2E-PAYOUT-029 | Mark period as paid is refused until every row is invoiced and every invoice is settled | needs the 02:00 UTC night run or the invoice lifecycle after the close (approve, mark paid, cancel), which no stage drives yet |
-| E2E-PAYOUT-030 | Mark period as paid closes the cycle | needs the 02:00 UTC night run or the invoice lifecycle after the close (approve, mark paid, cancel), which no stage drives yet |
-| E2E-PAYOUT-033 | Invoice number and variable symbol follow the company's series | needs the 02:00 UTC night run or the invoice lifecycle after the close (approve, mark paid, cancel), which no stage drives yet |
-| E2E-PAYOUT-037 | A cleaner cannot read another cleaner's invoice | a refusal path off the core journey, not written yet |
-| E2E-PAYOUT-039 | Approve moves a pending invoice to approved | needs the 02:00 UTC night run or the invoice lifecycle after the close (approve, mark paid, cancel), which no stage drives yet |
-| E2E-PAYOUT-043 | Mark paid records the transfer and is final | needs the 02:00 UTC night run or the invoice lifecycle after the close (approve, mark paid, cancel), which no stage drives yet |
-| E2E-PAYOUT-045 | The Mark paid confirmation shows what to transfer before it sends anything | needs the 02:00 UTC night run or the invoice lifecycle after the close (approve, mark paid, cancel), which no stage drives yet |
-| E2E-PAYOUT-046 | Cancel an invoice and a corrected one follows | needs the 02:00 UTC night run or the invoice lifecycle after the close (approve, mark paid, cancel), which no stage drives yet |
-| E2E-PAYOUT-052 | The payroll actions are refused to Support and open to Accountant | needs the Manager, Support and Accountant accounts, which no stage creates yet |
-| E2E-PAYOUT-057 | The PDF prints the set-off statement in the cleaner's language | needs the 02:00 UTC night run or the invoice lifecycle after the close (approve, mark paid, cancel), which no stage drives yet |
-| E2E-TAKE-020 | Two cleaners, one seat, the same instant | a refusal path off the core journey, not written yet |
-| E2E-TAKE-023 | A cancelled or completed order says the job is gone | a refusal path off the core journey, not written yet |
-| E2E-TAKE-025 | A cleaner who has not accepted the cleaner documents cannot take | a refusal path off the core journey, not written yet |
-| E2E-TAKE-029 | A time conflict blocks a take | a refusal path off the core journey, not written yet |
-| E2E-TAKE-031 | A two-cleaner job fills seat by seat, with no spare seat | needs a two-cleaner job, which DEV's 2-minute services reach only through an admin edit of a throwaway service |
-| E2E-TAKE-040 | The last cleaner drops a confirmed job | a drop of a taken job, which no stage makes yet |
-| E2E-TAKE-041 | The customer is told a cleaner can no longer come | a drop of a taken job, which no stage makes yet |
-| E2E-TAKE-042 | The administrators are told, and the audit has the drop | a drop of a taken job, which no stage makes yet |
-| E2E-TAKE-043 | One of two cleaners drops: the job stays confirmed and short | needs a two-cleaner job, which DEV's 2-minute services reach only through an admin edit of a throwaway service |
-| E2E-TAKE-044 | A drop of a job on the way or in progress is refused | a drop of a taken job, which no stage makes yet |
-| E2E-TAKE-049 | Admin places a cleaner on an open order | a refusal path off the core journey, not written yet |
-| E2E-TAKE-050 | The placed cleaner accepts the contract with the same act as a take | needs an admin placement (E2E-TAKE-049), which no stage makes yet |
-| E2E-XCUT-007 | A new offerable order raises an admin notice for Support and above, not for Accountant | needs the Manager, Support and Accountant accounts, which no stage creates yet |
-| E2E-XCUT-019 | A backend refusal is shown translated in each locale | a refusal path off the core journey, not written yet |
+| E2E-AUTH-049 | the push to the rejected cleaner | a simulator and an emulator get no push from DEV |
+| E2E-TAKE-049 | the notice to the placed cleaner | the same |
+| E2E-EXEC-029 | the customer's push and e-mail | no push reaches a simulator, and `@example.com` receives no mail |
+| E2E-EXEC-042 | the crew's push | no push reaches a simulator |
+| E2E-EXEC-020 | the apps' half for a cleaner off the crew | the API and the partner web show it; the apps' runbooks show the crew's view only |
+| E2E-PAY-042 | the fee receipt's PDF | no endpoint serves it and it is not e-mailed; its row is read by `sql-scripts/dev-e2e-read-fee-receipts.sql` |
+| E2E-PAY-012, and the Android halves of E2E-PAY-022 and E2E-PAY-023 | the Android PaymentSheet | only if the Android build has no Stripe test publishable key: Card is hidden without it |
 
-Partly covered, so no test carries their tag: E2E-BOOK-011 (the runbooks show the three dirtiness levels and the
-price moving, but nothing quotes Increased or Heavy and checks the surcharge and the duration), E2E-CANCEL-005 (the
-customer web shows `CZK 0 (0%)` and the Android sheet the grace text, but no check reads `oopsWindowMinutes`) and
-E2E-PAYOUT-013 (above). One runbook row is partial too: E2E-EXEC-020 shows the crew reading the customer's name and
-phone, not that a cleaner off the crew sees none of it.
+E2E-EXEC-027 and E2E-EXEC-030 read `employee.not_approved` as the partner hosts' 403 (F-073).

@@ -92,6 +92,8 @@ jobs:
           fix-deactivate-local-dev-admin.sql|retires the published-password administrator from the shared DEV database|Production never holds that administrator: insert_local_dev_admin.sql is refused there.
           fix-service-city-zip-prefixes.sql|moves the seeded DEV service cities to the ZIP prefixes the booking gate enforces|Production is seeded with those prefixes by prod-bootstrap.sql, and its cities are kept in the admin console.
           dev-e2e-confirm-accounts.sql|confirms the e-mail of the e2e test accounts|Production has no test accounts.
+          dev-e2e-publish-cleaner-document.sql|publishes a new version of the cleaner documents for an E2E run, which every cleaner must accept again|Production's legal texts are seeded from the repository's embedded markdown at host start.
+          dev-e2e-read-fee-receipts.sql|reads the fee receipts of the e2e test orders|Production has no test orders.
           DEV_ONLY_SCRIPTS
           echo "Not a DEV-only script — continuing."
 

@@ -28,6 +28,9 @@ export interface Session {
   login?: Reply;
 }
 
+const lastSignIn: Partial<Record<Host, number>> = {};
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 export async function anonymous(host: Host): Promise<Session> {
   return { host, ctx: await request.newContext({ baseURL: HOSTS[host] }), headers: {} };
 }
@@ -39,6 +42,10 @@ export async function anonymous(host: Host): Promise<Session> {
  */
 export async function signIn(host: Host, email: string, password: string): Promise<Session> {
   const s = await anonymous(host);
+  // The 'auth' rate window admits 10 anonymous calls a minute per IP (RateLimitPolicies.cs): sign-ins go 6.5 s apart.
+  const wait = (lastSignIn[host] ?? 0) + 6_500 - Date.now();
+  if (wait > 0) await sleep(wait);
+  lastSignIn[host] = Date.now();
   const login = await call(s, 'POST', host === 'admin' ? '/api/AdminAuth/Login' : '/api/Auth/Login', { email, password, rememberMe: true });
   const mobile = host.endsWith('-mobile');
   if (login.status !== 200 || !str(login.body, mobile ? 'token' : 'csrfToken') || at(login.body, 'isEmailConfirmed') !== true) {
@@ -49,8 +56,20 @@ export async function signIn(host: Host, email: string, password: string): Promi
   return s;
 }
 
+/** How long a 429 asks to wait: Retry-After in seconds or as an HTTP date, else 30 s; never under 1 s. */
+export function retryAfterMs(header: string | undefined, now = Date.now()): number {
+  const seconds = Number(header);
+  const ms = header && Number.isFinite(seconds) ? seconds * 1000 : header && !Number.isNaN(Date.parse(header)) ? Date.parse(header) - now : 30_000;
+  return Math.max(ms, 1_000);
+}
+
+/** One HTTP call; a 429 (a rate window, refused before any handler runs) is retried up to 3 times after its Retry-After. */
 export async function call(s: Session, method: string, path: string, data?: unknown): Promise<Reply> {
-  const res = await s.ctx.fetch(path, { method, headers: { Accept: 'application/json', ...s.headers }, data, failOnStatusCode: false, timeout: 90_000 });
+  let res = await s.ctx.fetch(path, { method, headers: { Accept: 'application/json', ...s.headers }, data, failOnStatusCode: false, timeout: 90_000 });
+  for (let retry = 1; res.status() === 429 && retry <= 3; retry++) {
+    await sleep(retryAfterMs(res.headers()['retry-after']));
+    res = await s.ctx.fetch(path, { method, headers: { Accept: 'application/json', ...s.headers }, data, failOnStatusCode: false, timeout: 90_000 });
+  }
   const raw = await res.body();
   let body: unknown = null;
   try {

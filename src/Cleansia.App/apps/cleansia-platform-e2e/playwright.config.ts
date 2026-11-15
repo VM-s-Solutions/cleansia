@@ -5,7 +5,7 @@ import { join } from 'node:path';
 // The whole platform on DEV, staged because DEV time is real (e2e/README.md, "Running").
 // E2E_STAGE picks one stage; without it only the offline logic tests run, so a bare run never touches DEV.
 const stage = process.env['E2E_STAGE'];
-const stages = ['book', 'execute', 'settle'];
+const stages = ['book', 'execute', 'settle', 'people', 'orders', 'work', 'payroll', 'assist'];
 if (stage && !stages.includes(stage)) throw new Error(`E2E_STAGE must be one of ${stages.join(', ')}`);
 
 export default defineConfig({
@@ -18,8 +18,8 @@ export default defineConfig({
   reporter: [['list'], ['./src/support/case-reporter.ts']],
   use: { ...devices['Desktop Chrome'], trace: 'retain-on-failure', locale: 'en-US' },
   // The admin SPA, served locally: DEV's admin web is behind Microsoft sign-in, and its API admits only that web's origin.
-  // The devremote configuration proxies same-origin /api to the DEV admin API.
-  webServer: stage
+  // The devremote configuration proxies same-origin /api to the DEV admin API. 'assist' drives no browser and skips it.
+  webServer: stage && stage !== 'assist'
     ? {
         command: 'npx nx serve cleansia-admin.app --configuration=devremote',
         cwd: join(__dirname, '..', '..'),

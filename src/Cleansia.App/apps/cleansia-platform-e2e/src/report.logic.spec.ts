@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
+import { mkdirSync, rmSync } from 'node:fs';
 import { CaseReport, caseNote, mergeReports } from './support/case-reporter';
+import { flag, RunState, runDir, saveRun, setFlag } from './support/run';
 
 const one = (status: string, note = '') => ({ status, note });
 
@@ -45,5 +47,26 @@ test.describe('case report merge', () => {
   test('a report in the old shape is read as no history', () => {
     const old = { 'E2E-BOOK-001': { status: 'skipped', tests: ['a'], notes: [] } } as unknown as CaseReport;
     expect(mergeReports(old, { 'E2E-BOOK-001': { status: 'passed', tests: { a: one('passed') } } })['E2E-BOOK-001'].status).toBe('passed');
+  });
+});
+
+test.describe('run state flags', () => {
+  test('a gate one file set survives another file saving the state it loaded before', () => {
+    const runId = `logic-${process.pid}`;
+    mkdirSync(runDir(runId), { recursive: true });
+    try {
+      const fresh = (): RunState => ({ runId, password: '-', orders: {} });
+      saveRun(fresh());
+      const tenFile = fresh();
+      const twentyFile = fresh();
+      setFlag(tenFile, 'f1.previewed', new Date('2026-11-18T07:58:00Z'));
+      expect(flag(twentyFile, 'f1.previewed')).toBe('2026-11-18T07:58:00.000Z');
+      twentyFile.serviceId = 'svc';
+      saveRun(twentyFile);
+      expect(flag(fresh(), 'f1.previewed')).toBe('2026-11-18T07:58:00.000Z');
+      expect(flag(fresh(), 'never.set')).toBeUndefined();
+    } finally {
+      rmSync(runDir(runId), { recursive: true, force: true });
+    }
   });
 });

@@ -62,6 +62,11 @@ slide(){ axe swipe --start-x 48 --start-y 778 --end-x 372 --end-y 778 --duration
 
 Rules learned the hard way:
 
+- **After tapping a field, wait one second before `typ`.** Typed straight away, the first character is lost
+  (`e2e.…` arrived as `2e.…`). Clear a wrong value with `axe key-sequence --keycodes 42,42,… --delay 0.03` (42 is Backspace).
+- **Do not start a list swipe on a card.** A swipe that began at (196,650) on the service list selected the Upholstery
+  card under it, so the quote read 750 Kč (Bathroom 300 + Upholstery 450) instead of one service. Scroll from a gap
+  or check the footer price against the one service you tapped.
 - **Describe again after every tap that focuses a field or opens a sheet.** Floating labels and the keyboard move the
   layout by 10 to 60 pt; a tap at the old coordinate lands on the wrong field and the typed text goes into it.
 - Off-screen elements stay in the tree; judge visibility from the coordinates (the `ui` filter drops them) or a screenshot.
@@ -107,12 +112,12 @@ Customer app, coordinates are iPhone 16 (393 x 852).
 | Quote | BOOK-001, BOOK-011 | `Book` (196,769) opens a four step sheet. Step 1 `What do you need?`: tap one service button by its label; the footer shows `Continue · 960 Kč`, the live server quote. Step 2 `How clean is your home?`: Continue stays disabled until one of `Normal` (196,190), `Increased` (+15%), `Heavy` (+30%) is picked; the price in the footer moves. | yes |
 | Address | BOOK-065 | Step 3 `When & where`: a signed-in customer with a saved address gets it pre-filled. Without one: `Select address`, `Add address`, the map opens on Prague, `Use this address`, then `Save and continue` on `Confirm address`. | yes (map and confirm shown; the pre-filled path completed the booking) |
 | Date and time | BOOK-019, BOOK-021 | Date chips are labelled `Mon, 16`; `Today`, then a row of days. Part-of-day chips `Morning, 08:00–11:45`, `Afternoon`, `Evening`; a time chip is a button labelled `11:00`, tap by coordinate (a label hits two rows). `Continue · 960 Kč`. | yes |
-| Book cash | BOOK-031, BOOK-033, TAKE-002 | Step 4 `Confirm booking`. Scroll to `How do you want to pay?`, tap `Cash, Pay on delivery`. Tick `Ask for the cleaning to start within the withdrawal period` (BOOK-048). Then `slide` the `Slide to pay · 960 Kč` handle from (48,778) to (372,778). Result sheet `Booking received` with `ORD-xxxxxxxx`, `Please pay in cash to the cleaner on the day.`, buttons `Back to home` and `View order`. Cash needs a saved card on the account, else the Cash row is refused. | yes (ORD-EA8E7B19, Mon 16 Nov 10:00 UTC, 960 Kč) |
+| Book cash | BOOK-031, BOOK-033, TAKE-002 | Step 4 `Confirm booking`. Scroll to `How do you want to pay?`, tap `Cash, Pay on delivery`. Scroll to the very bottom and tick `Ask for the cleaning to start within the withdrawal period` (BOOK-048). Then `slide` the `Slide to pay · 960 Kč` handle from (48,778) to (372,778). Result sheet `Booking received` with `ORD-xxxxxxxx`, `Please pay in cash to the cleaner on the day.`, buttons `Back to home` and `View order`. Cash needs a saved card on the account, else the Cash row is refused. | yes (ORD-EA8E7B19, Mon 16 Nov 10:00 UTC, 960 Kč) |
 | Orders list | XCUT-011 | Tab `Orders`: segments `All`, `Upcoming`, `Completed`, `Cancelled`; each order is one `Button` labelled `#ORD-…, <status>, <date>, <address>, <service>, <price>`. | yes |
 | Review prompt | | A completed order the account has not rated opens `How was your clean?` at launch. `Not now` closes it. | yes |
 | Log out | | `Profile`, swipe up twice, `Log out`, confirm `Log out` in the alert (264,502). | yes |
-| Book by card | BOOK-028, PAY-011, PAY-022, PAY-023 | Same sheet; tap `Card, Pay securely via Stripe`. The Stripe PaymentSheet opens: card 4242 4242 4242 4242, 12/34, 123. | no (see below) |
-| Cancel | CANCEL-001, -003, -006, -007 | `Orders`, open the order, `Cancel order` (the order sheet also has `Report issue`). | no |
+| Book by card | BOOK-028, PAY-011, PAY-022, PAY-023 | Same sheet; tap `Card, Pay securely via Stripe`, tick the withdrawal box, `slide`. The Stripe PaymentSheet (badge `TEST`) opens and is in the tree: tap `Card number` (128,490), `typ 4242424242424242`, then `typ 1234` (the expiry field takes focus by itself and reads `12/34`), then `typ 123` (CVC), then `Pay 960,00 CZK` (196,746; read it from `describe-ui`). The result sheet says `Booking received` and `Paid by card`. | yes (ORD-C6520164, 960 Kč) |
+| Cancel | CANCEL-001, -003, -006, -007 | `Orders`, open the order (wait for the spinner to finish), `Cancel order`. The sheet `Cancel this cleaning?` shows the fee for now (free inside 15 minutes of booking or while no cleaner has taken it; 480 Kč of 960 Kč inside 4 hours); pick a reason (`Booked by mistake`), `Confirm cancellation`; toast `Order cancelled.`, status `Cancelled`. `Keep my booking` closes the sheet and cancels nothing. The order sheet also has `Report issue`. | yes (free cancel of an untaken cash job; fee quote read and declined on a taken card job) |
 
 Partner app (cleaner).
 
@@ -122,27 +127,24 @@ Partner app (cleaner).
 | Board | TAKE-001, TAKE-002, TAKE-004 | `tap "Orders"`. Segments `Available`, `Active`, `History`. A job is one `Button` labelled `Monday, November 16, 11:00–11:02, you earn 300 Kč. Praha 1, under 3 km from home. Eco-Friendly Cleaning, 1 room, 1 bath. Cash: collect 960 Kč for the company. Opens the job.` The board shows the area band only; the street arrives with the take. | yes |
 | Open a job | TAKE-004 | Tap the card. Detail shows `#ORD-…`, status `New`, `Exact address after you take the job`, `Property & scope`, `Shown after you take it`, and the pinned `Take this job`. | yes |
 | Take with the contract | TAKE-010, TAKE-013, TAKE-050 | `tap "Take this job"`. The sheet `Contract for Work` shows the reward and the frozen facts. `slide` the `Swipe to accept the contract for work` handle from (44,778) to (372,778). The button reads `Accepting…` for about 15 s on DEV; then `Job taken` (`Open job`, `Back to jobs`) and the order is `Confirmed`, step `Setting off`, with `Navigate`, `Call`, `SMS` and the customer's name and phone. | yes |
-| Set off | EXEC-001, EXEC-003 | Detail, pinned action `Swipe to mark on the way` (`swipe_to_notify_on_the_way`), then `Customer notified · on the way`. Locked until the start window opens. | no |
-| Start | EXEC-002, EXEC-007 | `Slide to start cleaning`, `Started!`. Server opens the window 60 minutes before the slot. | no |
-| Photos | EXEC-014, EXEC-015, EXEC-038 | `Add Photo` or `Take the after photo`. | no (see below) |
+| Set off | EXEC-001, EXEC-003 | Detail, pinned action `Swipe to mark on the way`; `slide 44` (the handle starts at x=44). Order `On the way`, step 2 / 4; the customer's list shows `On the way`. Before the window opens the bar reads `You can set off from <time>`. | yes |
+| Start | EXEC-002, EXEC-007 | `Slide to start cleaning`, `slide 44`. Order `In Progress`, step 3 / 4, action `Take the after photo`. The window opens 60 minutes before the slot. A cleaner can have **one** order in progress: starting a second shows the toast `You already have another order in progress. Finish it before starting a new one.`. | yes (one job per cleaner; the second start was refused as above) |
+| Photos | EXEC-014, EXEC-015, EXEC-038 | `Take the after photo`. | no (see below) |
 | Cash | EXEC-026, EXEC-036, PAY-034 | `Mark cash collected`, then `Yes, cash collected`. Order: after photo, cash, then `Slide to complete`. `Customer did not pay` is EXEC-029. | no |
 | Complete | EXEC-036, EXEC-037, PAYOUT-001 | `Slide to complete`, toast `Order marked as completed`. | no |
 
 ## 5. What could not be driven, and why
 
-- **Start, photos, cash, complete (EXEC-*)**: the only job taken was for Monday 16 Nov 10:00 UTC, so the start window
-  (from 09:00 UTC that day) was closed on 14 Nov. The recipes above come from the code and the strings, not from a run.
-  Run them in the window of a job a book-stage run's cleaner took (`orders.cash` or `orders.card` in its `state.json`).
+- **Cash, complete (EXEC-026, -036, -037)**: they need the after photo first, and the simulator cannot take one, so a
+  started job stays `In Progress`. Because a cleaner may have only one order in progress, that also stops every other
+  taken job of the run from starting: start the job you can finish and treat the others as not startable. A started job that is never completed
+  stays `In Progress` past its slot (still so 45 minutes after it), and the lock with it.
 - **Photos on the simulator**: the partner app takes order photos from the camera only
-  (`PhotosSection.openCamera`); the simulator has none, so `Add Photo` shows the "camera unavailable" alert. An agent
-  uploads the photo through the partner mobile API instead (`POST /api/Order/UploadPhoto`, body `orderId`, `photoType`
-  1 before or 2 after, `fileName`, `contentType`, `fileData` base64), then continues in the app. Document photos at
-  registration have a library path and are not affected.
-- **Card booking (PaymentSheet)**: not attempted. The `Card` row is offered, so the Stripe key is present; the sheet is
-  Stripe's own UI and its labels were not mapped. Pay by card in the customer web app (card journeys are in the
-  Playwright project) and read the order in the app.
-- **Cancel with a refund**: left alone so the order stays available for the execute stage. `Cancel order` is on the
-  customer's order sheet.
+  (`PhotosSection.openCamera`). On the iOS 18.6 simulator `Take the after photo` asks for camera access (`Allow`), then
+  opens a grey viewfinder whose `Take Picture` button adds no photo; `Cancel` returns. There is no "camera unavailable"
+  alert. An agent uploads the photo through the partner mobile API instead (`POST /api/Order/UploadPhoto`, body
+  `orderId`, `photoType` 1 before or 2 after, `fileName`, `contentType`, `fileData` base64), then continues in the
+  app; it was not made on 2026-11-15. Document photos at registration have a library path and are not affected.
 - **Sign in with Apple and Google**: system sheets; not driven.
 - **Push, Live Activity**: no APNs token on a simulator ("No APNS token specified before fetching FCM Token" is logged
   and harmless); the feed (`Notifications` bell) is the substitute.

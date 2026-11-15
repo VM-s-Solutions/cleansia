@@ -33,7 +33,7 @@ How a job reaches a cleaner's board and what happens when cleaners take, drop, c
 - **Role:** Cleaner
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /flows/execution-and-completion#what-a-cleaner-who-has-not-taken-the-job-can-see — a browsing cleaner gets no customer name, e-mail, phone, address, coordinates, notes, special or entry instructions, review or crew phone numbers
-- **Given** an open order whose customer wrote a note, special instructions and entry instructions. **When** Cleaner A (not on the crew) reads the board row and then the order detail. **Then** none of those fields, and none of the customer's name, e-mail, phone, street or coordinates, appear; the services, rooms, window, reward and the coarse location do.
+- **Given** an open order whose customer wrote a note, special instructions and entry instructions. **When** Cleaner A (not on the crew) reads the board row and then the order detail. **Then** none of those fields, and none of the customer's name, e-mail, phone, street or coordinates, appear; the services (every package and service on the detail; the board card shows the first and "+N more"), rooms, window, reward and the coarse location do.
 - **DEV:** the same order is read by Cleaner A before the take and by Admin for contrast.
 
 ### E2E-TAKE-005 — The coarse location is the district or the city, never the postcode
@@ -429,7 +429,7 @@ How a job reaches a cleaner's board and what happens when cleaners take, drop, c
 - **Role:** Admin
 - **Surfaces:** API · Web
 - **Rule:** → /admin-app/order-management#order-reassignment — placement refuses a missing, unapproved, other-market, busy or document-less cleaner and a finished order
-- **Given** open orders and cleaners: one unapproved, one in another market, one busy at the slot, one who has not accepted the cleaner documents. **When** Admin places each, then places A on a completed and on a cancelled order, then A on an order A is already on, then on a full order. **Then** the answers are `order.reassign.employee_not_approved`, `order.reassign.employee_other_market`, `order.reassign.employee_busy`, `employee.legal_documents_not_accepted`, `order.already_completed`, `order.already_cancelled`, `order.employee_already_assigned` and `order.no_available_spots`. The code checks the documents second and the market third; the docs table lists the documents last, which only matters when two apply at once.
+- **Given** open orders and cleaners: one unapproved, one in another market, one busy at the slot, one who has not accepted the cleaner documents. **When** Admin places each, then places A on a completed and on a cancelled order, then A on an order A is already on, then on a full order. **Then** the answers are `order.reassign.employee_not_approved`, `order.reassign.employee_other_market`, `order.reassign.employee_busy`, `employee.legal_documents_not_accepted`, `order.already_completed`, `order.already_cancelled`, `order.employee_already_assigned` and `order.no_available_spots`. The documents are checked second, after not-approved, and the market third, which only matters when two apply at once.
 - **DEV:** the other-market cleaner needs a second market (unsure DEV has one); report the others.
 
 ### E2E-TAKE-053 — A placement skips the weekly cap, the hold and the profile checks

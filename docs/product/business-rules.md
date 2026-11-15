@@ -1493,7 +1493,7 @@ customer owed nothing the platform could claim.
    | Refusal | Key |
    |---|---|
    | The caller is not on the crew (so a cleaner off the job learns nothing about it) | `order.not_found` |
-   | The caller is not approved, or their profile is incomplete | `employee.not_approved`, `employee.profile_incomplete` |
+   | The caller is not approved, or their profile is incomplete | `employee.not_approved`, `employee.profile_incomplete` — reachable only as the validator's own answer: the partner hosts' `[RequireCompleteProfile]` filter answers HTTP 403 `Registration incomplete` first ([Authentication](/api/authentication)) |
    | The seat has no accepted contract for work | `contract.acceptance_required` |
    | The order is not in progress | `order.not_in_progress` |
    | The order is a card order | `order.cash_not_allowed_on_card_order` |
@@ -4603,7 +4603,8 @@ effective date; the currency it names is filled in from the market and the compa
 version and the document are stamped on the consent row (`UserConsents.DocumentVersion` + `LegalDocumentId`) and the
 version string on the registration and booking rows at the moment of acceptance. A re-acceptance
 under a **different document** moves the consent row to it and writes a consent-grant row; the same
-document again is a no-op on the row and still a row in the trail. → [ADR-0063](/decisions/adr-0063)
+document again is refused with `gdpr.consent_already_granted` (`GrantConsent`): the row is untouched
+and no trail row is written. → [ADR-0063](/decisions/adr-0063)
 
 **A newer text is accepted before the next booking** (owner ruling 2026-09-28). A consent *covers* the
 text in force (`UserConsent.Covers`) when it is granted, not withdrawn and points at **that very

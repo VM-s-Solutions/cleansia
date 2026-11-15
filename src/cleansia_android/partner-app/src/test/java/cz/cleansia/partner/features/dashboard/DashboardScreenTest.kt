@@ -14,6 +14,14 @@ import org.junit.Test
  */
 class DashboardScreenTest {
 
+    @Test
+    fun `the month trend is a change against last month, and none when last month had no job`() {
+        assertEquals(50, computeMonthDelta(thisMonth = 3, lastMonth = 2))
+        assertEquals(-50, computeMonthDelta(thisMonth = 1, lastMonth = 2))
+        assertEquals(null, computeMonthDelta(thisMonth = 4, lastMonth = 0))
+        assertEquals(null, computeMonthDelta(thisMonth = 0, lastMonth = 0))
+    }
+
     /** With no mail app on the phone the tap did nothing; now it copies the address and says so, as the customer Help does. */
     @Test
     fun `the Help shortcut opens an e-mail to support, or copies the address and says so`() {

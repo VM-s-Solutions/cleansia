@@ -10,7 +10,7 @@ choice explains most of what follows.
 
 ```mermaid
 flowchart LR
-  A[Erasure request] --> B{Blocking order live, or a request not yet completed?}
+  A[Erasure request] --> B{An order New, Pending, Confirmed, OnTheWay or InProgress, or a request not yet completed?}
   B -- yes --> C[Refused — a cleaner may be en route, or the earlier request is still the platform's to finish]
   B -- no --> D[Anonymise user, employee, addresses]
   D --> E["Anonymise the subject's orders — the account's, and the ENDED guest bookings under its e-mail — with their photos, pay rows and guest audit rows; stamp the disputes' text window"]
@@ -298,6 +298,10 @@ order"*).
 
 ## The subject export {#subject-export}
 
+**The customer's own export exists on the customer web only** (`libs/cleansia-customer-features/gdpr`).
+Neither the Android nor the iOS customer app has an export screen, and neither calls the endpoint, though
+the generated customer mobile API spec carries it.
+
 The Art. 15 export is **JSON**, one document for both callers — the customer's own
 (`POST api/v1/Gdpr/export`, a `customer.gdpr.export` row with the section counts) and the admin's
 (`POST api/v1/AdminGdpr/export/{userId}`, `gdpr.user.export`) — and both commit their `GdprRequest`
@@ -427,7 +431,7 @@ What survives what:
 
 | Case | What happens |
 |---|---|
-| Erasure requested with a job in progress | Refused. Erasing mid-job would anonymise a customer while a cleaner is on the way to their home. |
+| Erasure requested with a job in progress | Refused. Erasing mid-job would anonymise a customer while a cleaner is on the way to their home. The account's order blocks while its status is `New`, `Pending`, `Confirmed`, `OnTheWay` or `InProgress` (`GdprDeletionService.ErasureBlockingStatuses`) and answers `gdpr.deletion_blocked_by_order`; `Completed` and `Cancelled` orders do not block. |
 | Erasure of a customer who holds credit | Not refused. Every positive balance, in every currency, is written off in the erasure's commit (`Expired`, key `account-deletion:<account id>`) — no payout. A refused or failed erasure leaves it untouched. |
 | A refund or cancellation on an erased customer's order | The card share is refunded as usual; the credit share is not returned — no balance, no new account, no larger card refund. |
 | Erasure requested twice | Refused as already pending while any earlier request is not yet `Completed` — a `Failed` one included, which the daily retry or an admin finishes. |

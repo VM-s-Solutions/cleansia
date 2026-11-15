@@ -84,7 +84,9 @@ Silver at 500 points and Gold at 2 000, and the grant reading an account at 450:
 | +30, Bronze on its own read | another grant of 40 (490) | 520 | Silver |
 | +100, Silver on its own read | a grant of 1 500 (1 950), announced as Silver | 2 050 | Gold |
 
-**A market cannot open without one.** An order completed while its currency has no divisor earns
+### A market cannot open without a points divisor {#market-divisor}
+
+An order completed while its currency has no divisor earns
 nothing, permanently: the earn returns before any ledger row is written and nothing re-fires it when
 the divisor is set later, so the only remedy is a manual grant per affected customer. That is why the
 platform refuses rather than warns: `ActivateCurrency` refuses a currency whose divisor is unset or not
@@ -348,6 +350,13 @@ idempotency key. This flow does not look up whether the address has a registered
 
 A referral code is randomly generated, never derived from a name — which is also why erasure leaves it
 alone. You cannot redeem your own code, and you cannot be referred twice.
+
+**These refusals carry no error key.** A code is judged by `ReferralService.ValidateAsync`, and the answer is
+the `ReferralValidationError` name, not a `BusinessErrorMessage`: `NotFound` (an unknown code),
+`SelfReferral` (the customer's own), `AlreadyReferred` (a second referral) and `Inactive`. The check-as-you-type
+query (`ValidateReferral`) returns it as `isValid: false` with that name in `errorCode`. At sign-up and at a
+booking the code is accepted on a best effort — a code that fails is logged, no `Referral` row is written, and
+the registration or the booking goes through; a booking never errs on a customer's code.
 
 **A qualified referral pays both sides credit, not points** (owner ruling 2026-10-04, since
 2026-10-05), **each side in the currency it books in** (owner ruling 2026-10-05). Until 2026-10-05 each

@@ -133,6 +133,13 @@ book*. The 2026-10-01 ruling had counted this screen among the auth screens; it 
 booking needs rather than for a sign-in, and it no longer counts. Both platforms draw it, so
 ADR-0018's branding parity holds here too.
 
+**What *Ready to book* is judged on.** The card reads what the onboarding form holds now. Android
+judges both names as saved, iOS as typed; both read the account e-mail as saved and the phone **as
+typed**, not as saved (Android `OnboardingChecklist`, iOS `OnboardingChecklist`). A phone the server refuses on save (`user.existing_phone_number`, say)
+therefore still turns the card *Ready to book*; the booking's pre-flight is what catches a phone that
+was not saved, and opens *Edit profile* with nothing booked (`BookingSubmitOutcome.ProfileIncomplete` on
+Android).
+
 **The customer sign-in fits one screen.** Without the mascot and the guest link the form fits every
 supported iPhone, the SE included, and ordinary Android phones; only the legacy 360×640dp size still
 scrolls. The scroll view stays on both platforms, because the keyboard, field errors and large text

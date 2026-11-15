@@ -339,10 +339,10 @@ class OrdersBoardRulesTest {
     fun `the scope line leads with the translated package, then rooms, baths and extras`() {
         val pkg = PackageListItem(id = "p", name = "Deep clean", translations = mapOf("cs" to Translation(name = "Hloubkový úklid")))
         val svc = ServiceListItem(id = "s", name = "Standard clean")
-        val r = row(packages = listOf(pkg), services = listOf(svc), rooms = 2, baths = 1, extras = mapOf("inside-oven" to true))
-        assertEquals("Hloubkový úklid", rules.scopeLead(r, "cs"))
-        assertEquals("Deep clean", rules.scopeLead(r, "en"))
-        assertEquals("Standard clean", rules.scopeLead(row(services = listOf(svc)), "cs"))
+        val r = row(packages = listOf(pkg), rooms = 2, baths = 1, extras = mapOf("inside-oven" to true))
+        assertEquals(BoardText.Literal("Hloubkový úklid"), rules.scopeLead(r, "cs"))
+        assertEquals(BoardText.Literal("Deep clean"), rules.scopeLead(r, "en"))
+        assertEquals(BoardText.Literal("Standard clean"), rules.scopeLead(row(services = listOf(svc)), "cs"))
         assertEquals(
             BoardText.Joined(
                 listOf(
@@ -357,6 +357,26 @@ class OrdersBoardRulesTest {
             rules.scopeLine(r, "cs"),
         )
         assertNull(rules.scopeLine(row(), "cs"))
+    }
+
+    @Test
+    fun `the scope names every package, then every service, and the card leads with the first and counts the rest`() {
+        val pkg = PackageListItem(id = "p", name = "Deep clean", translations = mapOf("cs" to Translation(name = "Hloubkový úklid")))
+        val blank = PackageListItem(id = "b", name = " ")
+        val bath = ServiceListItem(id = "s1", name = "Bathroom Cleaning")
+        val upholstery = ServiceListItem(id = "s2", name = "Upholstery Cleaning")
+        val r = row(packages = listOf(pkg, blank), services = listOf(bath, upholstery))
+        assertEquals(listOf("Hloubkový úklid", "Bathroom Cleaning", "Upholstery Cleaning"), rules.scopeNames(r, "cs"))
+        assertEquals(
+            BoardText.Joined(listOf(BoardText.Literal("Hloubkový úklid"), BoardText.Res(R.string.offers_card_more, listOf(2))), separator = " "),
+            rules.scopeLead(r, "cs"),
+        )
+        assertEquals(
+            BoardText.Joined(listOf(BoardText.Literal("Bathroom Cleaning"), BoardText.Res(R.string.offers_card_more, listOf(1))), separator = " "),
+            rules.scopeLead(row(services = listOf(bath, upholstery)), "en"),
+        )
+        assertEquals(emptyList<String>(), rules.scopeNames(row(), "cs"))
+        assertNull(rules.scopeLead(row(), "cs"))
     }
 
     // ── distance band ─────────────────────────────────────────────────────

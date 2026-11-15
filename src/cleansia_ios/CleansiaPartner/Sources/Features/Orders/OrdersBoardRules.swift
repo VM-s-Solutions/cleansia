@@ -214,15 +214,16 @@ enum OrdersBoardRules {
 
     static func leadName(_ row: OrderListItem, locale: Locale) -> String? {
         let lang = locale.language.languageCode?.identifier
-        if let package = row.selectedPackages?.first,
-           let name = ScopeTranslation.resolveTranslatedName(package.translations, lang: lang, fallback: package.name),
-           !name.isBlank
-        {
-            return name
-        }
-        guard let service = row.selectedServices?.first else { return nil }
-        let name = ScopeTranslation.resolveTranslatedName(service.translations, lang: lang, fallback: service.name)
-        return name?.isBlank == false ? name : nil
+        let named = (row.selectedPackages ?? []).map { ($0.translations, $0.name) }
+            + (row.selectedServices ?? []).map { ($0.translations, $0.name) }
+        return lead(named.compactMap { ScopeTranslation.resolveTranslatedName($0, lang: lang, fallback: $1) }
+            .filter { !$0.isBlank })
+    }
+
+    /// "Deep clean +2 more": the first package or service, and how many more the job has.
+    static func lead(_ names: [String]) -> String? {
+        guard let first = names.first else { return nil }
+        return names.count > 1 ? first + " " + L10n.Offers.cardMore(names.count - 1) : first
     }
 
     static func scopeLine(_ row: OrderListItem, locale: Locale) -> String? {

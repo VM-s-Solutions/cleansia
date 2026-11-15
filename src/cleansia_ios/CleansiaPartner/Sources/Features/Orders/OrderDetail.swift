@@ -454,8 +454,7 @@ extension OrderDetail {
     /// The package or service, rooms, baths, then the extras: the board's scope line.
     func scopeItems(locale: Locale) -> [String] {
         [
-            packages.first.map { $0.localizedName(for: locale) } ?? services.first
-                .map { $0.localizedName(for: locale) },
+            OrdersBoardRules.lead(scopeNames(locale: locale)),
             rooms > 0 ? L10n.Orders.rooms(rooms) : nil,
             bathrooms > 0 ? L10n.Orders.baths(bathrooms) : nil,
             OrdersBoardRules.extrasLine(extras)

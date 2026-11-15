@@ -447,8 +447,8 @@ struct ScopeSection: View {
     }
 
     private var service: String? {
-        order.packages.first.map { $0.localizedName(for: locale) }
-            ?? order.services.first.map { $0.localizedName(for: locale) }
+        let names = order.scopeNames(locale: locale)
+        return names.isEmpty ? nil : names.joined(separator: ", ")
     }
 
     private var property: String {

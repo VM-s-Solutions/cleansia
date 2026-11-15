@@ -166,7 +166,7 @@ POST /api/Auth/Login
 If `isEmailConfirmed` is `false`, the `token` field will be an empty string. The client must redirect to the email confirmation flow.
 :::
 
-**Auto-upgrade:** If a Customer-profile user logs into the Partner app, their profile is automatically upgraded to Employee and an Employee record is created.
+**No auto-upgrade:** a Customer-profile user signing into the Partner app is refused `auth.insufficient_privileges`; a cleaner's account is opened through `RegisterEmployee` ([Auth and identity](/flows/auth-and-identity#registration-requires-the-tick-writes-the-consent-and-the-record-of-it)).
 
 ---
 

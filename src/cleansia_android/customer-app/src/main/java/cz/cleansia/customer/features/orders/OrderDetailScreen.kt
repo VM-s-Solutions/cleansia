@@ -84,6 +84,7 @@ import cz.cleansia.core.ui.components.SnapSheetDefaults
 import cz.cleansia.core.ui.components.rememberSnapSheetState
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.core.ui.theme.primaryText
+import cz.cleansia.customer.BuildConfig
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.market.MarketState
 import cz.cleansia.customer.core.orders.OrderCurrencyDetailDto
@@ -464,7 +465,8 @@ private fun OrderDetailMapLayout(
     // content's top has got to is to read the same scroll state.
     val contentScroll = rememberScrollState()
 
-    val showMap = canShowOrderMap(
+    // A build without a Mapbox token throws on the first MapboxMap; it gets the placeholder instead.
+    val showMap = BuildConfig.MAPBOX_ACCESS_TOKEN.isNotBlank() && canShowOrderMap(
         latitude = order.address?.latitude,
         longitude = order.address?.longitude,
     )

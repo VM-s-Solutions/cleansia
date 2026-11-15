@@ -142,14 +142,25 @@
       }
 
       <!-- Start Order Action - Prominently placed at top -->
-      @if (canStartOrder()) {
+      @if (canNotifyOnTheWay() || canStartOrder()) {
       <div class="cleansia-order-details__primary-action">
+        @if (canNotifyOnTheWay()) {
+        <cleansia-button
+          [label]="'pages.order_details.notify_on_the_way' | translate"
+          [icon]="'pi pi-send'"
+          [outlined]="true"
+          (onClick)="notifyOnTheWay()"
+          [loading]="loading()"
+        />
+        }
+        @if (canStartOrder()) {
         <cleansia-button
           [label]="'pages.order_details.start_order' | translate"
           [icon]="'pi pi-play'"
           (onClick)="startOrder()"
           [loading]="loading()"
         />
+        }
       </div>
       }
 

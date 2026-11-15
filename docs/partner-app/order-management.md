@@ -179,7 +179,10 @@ against an invoice. → [Business rules — the company's cash in a cleaner's ha
 **Time conflict detection:** the server checks for overlaps against the partner's live commitments
 (`New`, `Pending`, `Confirmed`, `OnTheWay`, `InProgress` — terminal orders free the slot).
 
-**Profile and approval checks:** the partner needs an address on file (`employee.profile_incomplete`)
+**Profile and approval checks:** the partner hosts answer HTTP 403 `Registration incomplete` first
+(`[RequireCompleteProfile]`, class-level on the partner `OrderController`, so a cleaner who is not
+approved or whose profile is incomplete never reaches the validator); the keys below are the validator's
+own. The partner needs an address on file (`employee.profile_incomplete`)
 and `ContractStatus == Approved` (`employee.not_approved`). A rejected, still-pending or terminated
 cleaner is turned away. Document upload alone is not the gate. And while a partner document — the
 framework contract, the self-billing agreement, the data-processing agreement — is in force and its
@@ -208,6 +211,16 @@ two seats and no more, so a partner will never find an extra slot on a job that 
 On in-progress crew jobs, each row also shows **Done** with the cleaner's mark time or **Not yet**.
 The mark records that cleaner's part, not the whole job's completion; customer/browsing DTOs do not
 receive it.
+
+### On my way
+
+- An **On my way** button on the job page, beside *Start*, shown to a cleaner on the crew of a
+  `Confirmed` job inside the server's time window — at most 60 minutes before the booked start
+  (`order.too_early_to_start` earlier; later is never blocked); a page opened before the window shows
+  the button after a reload → [Execution and completion](/flows/execution-and-completion#start-grace-window)
+- Sends `NotifyOnTheWayCommand { orderId }` through the generated client's `notifyOnTheWay`
+- The order becomes `OnTheWay` and the customer is pushed; the button is not offered again, and
+  *Start* stays offered from `Confirmed` or `OnTheWay`
 
 ### Start Order
 
@@ -248,8 +261,9 @@ reports it from the order detail instead of completing the job, and the job comp
 
 - **Where it shows.** Beside *Mark cash collected*, only on a cash order in progress whose payment is
   still pending, to a cleaner on its crew (`canReportCashNotPaid` in `order-details.helpers.ts`, which
-  mirrors the server's order gates; the contract for work is the server's to check). With no after photo
-  the page warns as *Complete* does and sends nothing.
+  mirrors the server's order gates; the contract for work is the server's to check). Unlike *Complete*,
+  which the page hides until an after photo exists (on a crew job whose seats are all marked done, a line says an after photo is needed; a solo job shows no line), this button is shown without
+  one; with no after photo the page warns and sends nothing.
 - **What it asks.** `OrderDetailsFacade.openReportCashNotPaidDialog()` opens the shared confirmation,
   marked dangerous: report this only if the customer paid nothing; the order is completed and its price
   becomes an amount the customer owes; the customer is told at once and cannot book again until it is

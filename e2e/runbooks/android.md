@@ -149,6 +149,11 @@ Customer app, coordinates are the 1080 x 2400 screen.
 | Order detail | | Orders tab: segments `All 11`, `Upcoming 2`, `Completed 5`, `Cancelled 4`; an order is a card with `#ORD-…`, status chip (`New`, `Confirmed`, `Completed`, `Cancelled`), date, address, service, price. Open it: `Step 1 / 5` `Booking received`, price breakdown, `Cancel order`. | yes |
 | Cancel | CANCEL-001, CANCEL-002, CANCEL-005 | Order detail, `Cancel order`. The sheet `Cancel this cleaning?` quotes the fee first: `This booking is within the cancellation grace period. No cancellation fee.` Pick a reason chip (`Booked by mistake`), `Confirm cancellation`. The order shows `Cancelled`. | yes (CANCEL-002: free, inside the oops window, with a cleaner on the job; CANCEL-001: an untaken booking, where the sheet reads `Free cancellation — no cleaner has taken this booking yet.`) |
 | Receipt | PAY-034 | A completed cash order: scroll to the end, with swipes that start above y 1600 (the three footer buttons cover everything below y 1850, and a swipe that starts on them scrolls nothing; the order then looks to end at `Instructions`); `Download receipt` with `RCP-2026-0013` and a button of the same name. The PDF opens in the emulator's Google PDF viewer (`01M7….pdf`). | yes |
+| Register twice, consents (phase 2) | AUTH-002 | The row above, twice, on the run's `e2e.<run>.androidreg1@example.com` and `e2e.<run>.androidreg2@example.com` with the run's password (`typ "$(cat $PW_FILE)"`). Screenshot `Create account` before the tick (pale and inert), tick `Accept terms and privacy policy`, `TAPN=-1 tap "Create account"`: `Verify your email`. When both exist, `assist confirm`, `assist address` for each (section 6), sign in, the phone step with a number built from the run id and unique per account, and later `assist evidence`. | no |
+| Card booking, save ticked or not (phase 2) | PAY-012, PAY-022, PAY-023 | Only if Step 4 offers `Card` / `Pay securely via Stripe` (section 6: the build needs the owner's Stripe key); if it offers `Cash` only, record all three as not drivable and stop. Book Bathroom, tomorrow, Normal. Step 4: tap `Card`; **androidreg1 ticks `Save this card for my next bookings`, androidreg2 leaves it empty**; tick the terms checkbox; `slide 2232`. PaymentSheet is Stripe's own UI (not driven before: read the dump): card `4242424242424242`, expiry `1234`, CVC `123`, then the pay button. Result `Booking received`; the order reads `Paid by card`, payment Paid, status `New`; the bell shows `Booking confirmed ✅` (`Your booking #ORD-… is confirmed. Tap to see the details.`). `Profile`, `Payments`, `Saved card`: androidreg1 `Visa •••• 4242`, androidreg2 `No card saved.` Then `assist evidence` with `E2E_ASSIST_EXPECT=card` or `nocard`, and cancel the paid order in the app so no card order stays open on the board. | no |
+| Level step, picker range, express (phase 2) | BOOK-011, BOOK-019, BOOK-015 | Run customer, `Book`, any service, `Continue`. Step 2 `How clean is your home?` (`Dirtiness level`): none chosen and `Continue` inert (screenshot); `Increased` (`+15%`) and `Heavy` (`+30%`) move the footer `Continue · …` by 15 % and 30 % of the subtotal and print `Increased dirtiness surcharge (+15%)` / `Heavy dirtiness surcharge (+30%)`. Step 3 on a day-ahead chip: `Morning` starts at `08:00`, `Evening` ends at `19:45`. Express: only after the first-booking cancel below has freed a cash slot (the customer holds two). `Today`, a chip `<time>, Express +20%`, step 4 `Express surcharge (+20%)`, `Cash`, terms, `slide 2232`: `Booking received`. Runs only 04:00 to 15:45 UTC. Cancel that express order afterwards (untaken, free) so it does not sit on the board. | no |
+| First booking cancel (phase 2) | CANCEL-002, CANCEL-005, CANCEL-008 | The run's `cash` order is the account's first booking, taken by the run cleaner in the book stage, and is booked in the first minutes of that stage (06:45 start). Between 15 and 60 minutes after it was booked (Android run: from about 07:06, to be safe until 07:45 UTC), `Cancel order`: the sheet `Cancel this cleaning?` prints `Cancelling within 60 minutes of booking is free, even after a cleaner has accepted.` and `No cancellation fee.` (screenshot); `Booked by mistake`, `Confirm cancellation`: `Cancelled`. Partner app, run cleaner: `Active` no longer lists it and the bell shows `Job cancelled`, `A job you accepted was cancelled: #ORD-…`. If the sheet prints 15 minutes or a fee, the window is gone: record CANCEL-002 as missed. | no |
+| Translated refusal, five locales (phase 2) | XCUT-019 | Per locale: `adb root`, `adb shell setprop persist.sys.locale <tag>` with `en-GB`, `cs-CZ`, `sk-SK`, `uk-UA`, `ru-RU`, restart (`adb shell stop; adb shell start`, then force-stop the app), on a fresh install: the in-app language, once set, overrides the device locale at launch. Check a screen text changed, then sign in as `nobody@example.com` with the wrong password `Wrong-pass-1`; 7 s or more between attempts. The message equals the app's `error_validation_invalid_password`: `Incorrect password.` / `Nesprávné heslo.` / `Nesprávne heslo.` / `Невірний пароль.` / `Неверный пароль.` for the customer app; the partner app (below) is the same but Ukrainian reads `Неправильний пароль.`. Never "An error occurred" and never the key. Reset with `adb shell setprop persist.sys.locale en-GB`. | no |
 | Log out | | Profile, swipe up twice, `Log out`, confirm `Log out` (`TAPN=-1`). | yes |
 | Book by card | BOOK-028, PAY-012 | Needs the Stripe key (section 5). | no |
 
@@ -170,6 +175,8 @@ Partner app (cleaner).
 | Photos | EXEC-014, EXEC-015, EXEC-016 | `Open job`, section `Photos`: `Before · 0` and `After · 0`, each with `Add`. Tap `Add` under After (688,2080): the permission dialog `Allow Cleansia Partner to take pictures and record video?` (`While using the app`), then the emulator's camera (`com.android.camera2`): `Shutter`, then `Done`. The app uploads it: `After · 1` and, in the timeline, `After photo 11:32`. The pinned button before it reads `Take the after photo`. | yes (after photo). The before photo goes the same way from `Add` under Before (222,2080) and shows `Before · 1` (proven 2026-11-15) |
 | Cash | EXEC-026, EXEC-029 | After the photo the pinned button reads `Mark 1 152 Kč as collected` (the stored total, not typed) with `Customer did not pay` beneath. `TAPC=1 tap "as collected"`, the dialog `Mark cash as collected?` (`This cannot be undone.`), `Yes, cash collected`. The timeline gains `Cash collected`. | yes (collected); `Customer did not pay` not tapped |
 | Complete | EXEC-036, EXEC-020, PAYOUT-001, PAYOUT-002 | Pinned `Slide to complete`: `swipe 127 2232 1000 2232 700`. The job reads `Completed`, `Done · finished 11:32`, `Step 4 / 4`; the customer's name and phone stay with `Customer's details close tomorrow at 11:32`. Dashboard: `This period, not invoiced yet 300 Kč`, `Day 1 of 3`, `Invoiced when the period closes on 16 Nov 2026`. The customer's order shows `Completed`, `Payment Paid`, then the receipt. | yes (ORD-4E968983, cash 1,152 Kč, completed in 2 minutes, reward 300 Kč) |
+| Customer did not pay (phase 2) | EXEC-029 | The run cleaner takes the run's `cashToCancel` order (about 09:50 UTC; the start window opens 60 minutes before its slot, so about 08:50). In the window: set off, start, after photo (`Add` under After (688,2080), camera works), then the pinned `Customer did not pay` (under `Mark … as collected`), the dialog `Customer did not pay?`, `Yes, report it`; toast `Reported. The job is completed and the customer has been told.` and the job reads `Completed`. The last step of the run customer's session: the customer then owes the total and cannot book. Give the run id to the suite runner: payroll writes the debt off. | no |
+| Locks and rejection (phase 2) | AUTH-034, AUTH-049 | A cleaner registered in the app (`Sign up here`, `e2e.<run>.androidpartner@example.com`, the run's password), then `assist confirm`: sign in, the lock `Finish setup to start earning` reads `0 of 4 steps complete` with `Profile`, `Documents`, `Contract documents`, `Approval`. Then, after the people stage reports AUTH-049 passed, sign in as R2's applicant `e2e.<R2 run>.applicant@example.com` with R2's password: the `Approval` row shows `Your application was rejected. Contact support for details.`, the admin's reason `Photo of the identity card is unreadable` verbatim and `Contact support`. | no |
 
 ## 5. What could not be driven, and why
 
@@ -189,3 +196,63 @@ Partner app (cleaner).
 - **Sign in with Google**: a system sheet; not driven. There is no Apple sign-in on Android.
 - **Push**: `google-services.json` is the placeholder, so no FCM token; the bell feed (`Notifications`) is the substitute.
 - **The map**: the placeholder Mapbox token leaves tiles blank; the `Navigate` button is not exercised.
+
+## 6. The phase-2 run on Wednesday 18 November
+
+The rows marked "(phase 2)" in section 4 run on Day 1 (Wed 18 Nov, UTC) on the lane's own `book` run (06:45, started by
+the suite runner) and only on that run's accounts, plus R2's applicant for AUTH-049. Never take, cancel or touch an
+order that is not the run's: R2's open orders are on every DEV board.
+
+**Build: rebuild the customer app with the owner's Stripe key.** Mike puts `STRIPE_PUBLISHABLE_KEY` in his own
+`~/.gradle/gradle.properties` before Day 1, and Gradle reads it itself (`customer-app/build.gradle.kts` takes the
+Gradle property before the environment). **Never open, print or grep that file**, never run `./gradlew properties`,
+and do not export the key. Build both apps as in section 1 (the partner app also changed in T-0933):
+
+```bash
+cd src/cleansia_android
+export JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home
+export ANDROID_HOME=$HOME/Library/Android/sdk
+export MAPBOX_ACCESS_TOKEN=pk.e2e-placeholder-no-map     # fallback only: a MAPBOX_ACCESS_TOKEN in the owner's Gradle home wins
+df -h /Users/michael                                      # under 3 GB free: stop
+/Users/michael/cleansia-work.noindex/tools/withlock.sh gradle \
+  ./gradlew :customer-app:assembleDebug :partner-app:assembleDebug --console=plain --no-daemon
+```
+
+Then install both on the lane's emulator (`withlock.sh emulator` around the start, section 1) and look at the booking's
+Step 4 of any account that can reach it: **if `Card` / `Pay securely via Stripe` is there, the key is in**. If only
+`Cash` is offered, the key is absent: record PAY-012 and the Android halves of PAY-022 and PAY-023 as "not drivable:
+no Stripe key in the build" (the API halves of PAY-022 and PAY-023 are the suite's and are unaffected) and drive no card
+row. Do the build and this check before 07:30 on Wed 18 (Tue 17 is fine if the key is already in). Section 5's line
+about the missing key describes the 14 November build, not this one.
+
+**The assist stage** (FOUNDATION, `e2e/README.md`): from `src/Cleansia.App` with Node 22, never with `E2E_SCRATCH`:
+
+```bash
+export PATH=/Users/michael/.codex/scratchpads/cleansia-audit-2026-10-07/tools/web-tooling/node_modules/node/bin:$PATH
+cd src/Cleansia.App
+env NX_DAEMON=false NX_NO_CLOUD=true E2E_CONFIRM_REF=master E2E_STAGE=assist E2E_RUN_ID=<android run> \
+  E2E_ASSIST=<mode> <the extra variables below> \
+  /Users/michael/cleansia-work.noindex/tools/withlock.sh heavy node node_modules/nx/dist/bin/nx.js e2e cleansia-platform-e2e
+```
+
+| Mode | Extra variables | When | Proves |
+|---|---|---|---|
+| `confirm` | `E2E_ASSIST_EMAIL=e2e.<run>.androidreg2@example.com` (the one whose line the log must hold) | once, after the customers and `androidpartner` are registered; not between 07:13 and 07:35 (the people stage dispatches the same script; a second dispatch in the same minute can read the other's log) | the DEV-only confirm SQL ran for the accounts registered in the app |
+| `address` | `E2E_ASSIST_EMAIL=<androidreg1>`, then `<androidreg2>` (and the run customer if it has none) | after confirm | a saved address in Prague, because the emulator's map cannot place a pin without a real Mapbox token |
+| `evidence` | `E2E_ASSIST_EMAIL=<androidreg1>`, `E2E_ASSIST_EXPECT=card`; again with `<androidreg2>` and `nocard` | after each account's card booking (leave `E2E_ASSIST_EXPECT` out when Card is absent: the cards are then only printed) | AUTH-002 (both consents granted and current, the `customer.account.register` audit row) and PAY-022 / PAY-023 |
+
+`photo` is not needed on Android: the emulator camera works.
+
+**Order on Wed 18 Nov (UTC).**
+
+| UTC | Step |
+|---|---|
+| before 07:30 | build and install (above); partner signed in as the run cleaner (`e2e.<run>.cleaner`); customer signed in as the run customer |
+| 07:35, first | First booking cancel (CANCEL-002, 005, 008): its 60-minute window closes about 07:50 |
+| then | Register twice (AUTH-002), `assist confirm`, `assist address`, the phone step; level step, picker range, then express (BOOK-011, BOOK-019, BOOK-015) once the cancel has freed a cash slot |
+| about 08:00 | the two card bookings and `assist evidence` (PAY-012, PAY-022, PAY-023), only with the key; cancel both paid orders |
+| after the people stage reports AUTH-049 passed | Locks and rejection (AUTH-034, AUTH-049) |
+| 08:50 to about 10:00 | Customer did not pay (EXEC-029) on `cashToCancel`, last: the customer owes afterwards; hand the run id to the suite runner for payroll's write-off |
+| any time | Translated refusal in five locales on both apps (XCUT-019), with `nobody`, not the run customer |
+
+Shut the emulator down at the end (`adb emu kill`) and delete `customer-app/build partner-app/build core/build build`.

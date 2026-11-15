@@ -41,3 +41,5 @@ the PR is merged.
 ## Work record
 
 - 2026-11-15 — Filed; starts when T-0933 is merged and deployed to DEV.
+- 2026-11-15 — Mike's rulings on the plan: Day 1 of the run is Wednesday 18 November and Day 2 Thursday 19 November, after the 02:00 UTC night close of the period 16 to 18 November, with DEV quiet from 18 November 07:00 to 19 November 08:00 UTC; he adds the Stripe test publishable key to the Android build himself; TAKE-025 runs, on a cleaner-document version published on DEV by a DEV-only SQL script as the run's last step (every DEV cleaner then re-accepts); PAY-042 is read by a read-only DEV-only SQL script. Build started on `test/e2e-phase2`.
+

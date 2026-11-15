@@ -75,6 +75,11 @@ database seeded before the seed changed. Run these through **Execute SQL Script*
   enforce it; no row is deleted or switched on or off. A row an administrator added keeps its prefix,
   and the last query lists every Czech row that still carries one. One transaction, idempotent.
   Written for DEV: `prod-bootstrap.sql` seeds these values, and `execute-sql.yml` refuses it against PRO.
+- **`dev-e2e-confirm-accounts.sql`** — confirms the e-mail of the end-to-end test accounts
+  (`e2e.<run>.<role>@example.com`, whose mail SendGrid never delivers) and of nobody else, so the E2E
+  harness (`e2e/README.md`, "Running") can sign them in. It refuses to run on a database without the
+  published DEV administrator. One transaction, idempotent. DEV only: production has no test accounts,
+  and `execute-sql.yml` refuses it against PRO.
 
 ## `seed/` — dev fixture data
 

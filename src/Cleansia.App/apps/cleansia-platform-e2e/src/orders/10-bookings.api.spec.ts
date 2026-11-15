@@ -2,7 +2,7 @@ import { expect, Page, test } from '@playwright/test';
 import { anonymous, at, call, errorKeys, HOSTS, list, named, num, PAYMENT_STATUS, poll, Session, signIn, str } from '../support/dev';
 import { adminFeed, book, Booking, payCard, quote, Selection } from '../support/flows';
 import { PlanDay, planned, RULED_DAYS, slotOf, THROWAWAY } from '../support/plan';
-import { emailOf, loadRun, Role, RunState, saveRun, scratch } from '../support/run';
+import { emailOf, flag, loadRun, Role, RunState, saveRun, scratch, setFlag } from '../support/run';
 import { dayAfter, nextSlots, pragueSlot } from '../support/slots';
 import { cachedAdminAs } from '../support/web';
 
@@ -99,6 +99,7 @@ test.describe('orders: bookings', () => {
 
   test('a cash booking (K1, cashcap, the two-cleaner service at 1 room 0 baths) tells Support as Info, not the Accountant', { tag: ['@E2E-XCUT-007'] }, async ({ page }) => {
     test.skip(!run.serviceId && !scratch(), 'the throwaway two-cleaner service was not created (people/50)');
+    test.skip(!!flag(run, 'k1.told'), `checked at ${flag(run, 'k1.told')}: the shared feed has moved on since`);
     // A scratch run has no Support or Accountant (people/10 skips role accounts): the DEV administrator reads the Support side.
     const support = scratch() ? 'admin' : 'support';
     const unread = async () => num((await call(await cachedAdminAs(support, run), 'GET', '/api/AdminNotification/unread-count')).body, 'count');
@@ -114,11 +115,9 @@ test.describe('orders: bookings', () => {
     expect(critical.map((n) => str(n, 'args.orderId'))).not.toContain(k1);
     // The feed is shared DEV-wide: the unread delta is recorded, not asserted.
     test.info().annotations.push({ type: 'note', description: `${support} unread ${before} -> ${await unread()}` });
-    if (scratch()) {
-      test.info().annotations.push({ type: 'note', description: 'scratch: no Accountant account, its half not checked' });
-      return;
-    }
-    expect((await adminFeed(run, 'accountant')).map((n) => str(n, 'args.orderId'))).not.toContain(k1);
+    if (scratch()) test.info().annotations.push({ type: 'note', description: 'scratch: no Accountant account, its half not checked' });
+    else expect((await adminFeed(run, 'accountant')).map((n) => str(n, 'args.orderId'))).not.toContain(k1);
+    setFlag(run, 'k1.told');
   });
 
   test('an Increased booking must carry the Increased total, and keeps the level (tierB)', { tag: ['@E2E-BOOK-029'] }, async ({ page }) => {

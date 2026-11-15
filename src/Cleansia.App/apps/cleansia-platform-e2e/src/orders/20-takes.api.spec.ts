@@ -78,8 +78,9 @@ test.describe('orders: takes', () => {
       const o = order(key);
       if (o.cancelled) continue;
       const customer = await as(o.customer ?? 'customer', 'customer');
-      // E stays off every fee-bearing job: race only while the cancel below is still inside the 15-minute oops window.
-      const fresh = Date.now() - Date.parse(o.createdAt ?? '') < 12 * 60_000;
+      // E stays off every fee-bearing job: race only while the cancel below is still inside the oops window, 60 minutes
+      // on nocard's first booking (R1), else 15.
+      const fresh = Date.now() - Date.parse(o.createdAt ?? '') < ((key === 'R1' ? 60 : 15) - 3) * 60_000;
       if (fresh && !o.taken) {
         const [tb, te] = await Promise.all([contractText(b, o.id), contractText(e, o.id)]);
         const [rb, re] = await Promise.all([take(b, o.id, tb), take(e, o.id, te)]);
@@ -115,7 +116,7 @@ test.describe('orders: takes', () => {
       const rows = await poll(() => feed(run, winner, 'partner-mobile'), (v) => v.some((n) => str(n, 'args.orderId') === o.id), 60_000);
       expect(rows.find((n) => str(n, 'args.orderId') === o.id)).toMatchObject({ eventKey: 'order.assignment_cancelled' });
     }
-    test.skip(!raced, 'every race order was older than 12 minutes (its oops window) or already settled, so none was raced');
+    test.skip(!raced, 'every race order was near the end of its oops window or already settled, so none was raced');
   });
 
   test('the plan\'s crews take their jobs: A the tier orders, D1, D2 and C3; E F1, J1 and J2', async () => {

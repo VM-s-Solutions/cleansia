@@ -108,7 +108,12 @@ test.describe('work: afternoon', () => {
     setFlag(run, 'x.refunded');
     refused(await partial(kitchen, windows), 'refund.nothing_refundable');
     expect(named(await adminDetail(o.id), 'paymentStatus', PAYMENT_STATUS)).toBe('Refunded');
-    // CANCEL-051: the customer gets a refund notice.
+  });
+
+  // Its own test, so a missing notice fails CANCEL-051 alone and a later invocation reads the feed again.
+  test('X\'s customer has a refund notice in the feed', { tag: ['@E2E-CANCEL-051'] }, async () => {
+    const o = run.orders['X'];
+    test.skip(!flag(run, 'x.refunded'), 'X has not been refunded yet (x.refunded)');
     const notices = await poll(() => feed(run, 'customer', 'customer-mobile'), (v) => v.some((n) => str(n, 'args.orderId') === o.id && str(n, 'eventKey').includes('refund')), 60_000);
     expect(notices.filter((n) => str(n, 'args.orderId') === o.id).map((n) => str(n, 'eventKey')), 'a refund notice for X in the customer feed').toEqual(
       expect.arrayContaining([expect.stringContaining('refund')]),

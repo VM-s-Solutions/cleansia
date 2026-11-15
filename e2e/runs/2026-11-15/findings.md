@@ -243,7 +243,7 @@ for defects only: P1 blocks a core journey or loses money, P2 is wrong but worka
 | F-035 | 1c `run1c/ios.json:34` | E2E-TAKE-004 · iOS, Android partner | On ORD-750DAD47 (Bathroom and Upholstery Cleaning) the board card and the job detail's *Services & packages* name Bathroom Cleaning only, while the contract sheet and the customer's order name both (`run1c/ios/part-04-job-detail.png` against `part-05-contract.png`). iOS takes the first package or service (`CleansiaPartner/Sources/Features/Orders/OrderDetailCards.swift:449-452`); Android does the same (`OrdersBoardRules.kt:272-274`, `ScopeCard.kt:47`). | No docs page says how many services the detail lists; the label is plural, and the contract for the same job lists every one. The cleaner judges the job before the take on less than its scope. | defect | List every package and service on the detail (and at least *+N more* on the card), both apps. P2. |
 | F-036 | 1c `run1c/ios.json:35`; 1a `catalogue/lane-findings.md:19` (merged) | E2E-EXEC-002 · API, iOS | A second start while another job is in progress is refused *You already have another order in progress* (`run1c/ios/exec-13-card-old-start-1s.png`, `exec-32-mine-cash-start-refused.png`), from `StartOrder.cs:61` (`order.employee_already_has_order_in_progress`). A solo job started and never completed stays In Progress past its slot (`exec-30-0916.png`). | No docs page states the one-in-progress rule. The second half is documented: only a marked crew is auto-closed, a solo job keeps manual Complete (`docs/flows/execution-and-completion.md#crew-completion`, lines 97-106). | defect | Docs gap: state the rule on `/flows/execution-and-completion`. P3. For the harness: one job per cleaner per run can be started. |
 | F-037 | 1c `run1c/ios.json:36` | E2E-EXEC-014, E2E-EXEC-015, E2E-EXEC-038 · iOS | The simulator shows the camera permission, then a grey viewfinder whose *Take Picture* adds nothing (`run1c/ios/exec-05-photo-after-allow.png`, `exec-07-photo-tap2.png`). | | environment | The iOS simulator has no camera. Runbook corrected in 437b89ac9. |
-| F-038 | 1c `run1c/ios.json:38` | E2E-TAKE-014 · iOS customer | The open order detail kept *New* after the cleaner took the job, until it was reopened (`run1c/ios/cust-30-orders-after-exec.png`). | No docs page says whether an open customer order detail refreshes; `docs/mobile-app/features.md:258-261` says an open partner detail does not refresh on a push. | defect | Docs gap, for Mike: say whether the customer detail refreshes. P3. |
+| F-038 | 1c `run1c/ios.json:38` | E2E-TAKE-014 · iOS customer | The lane noted that the open order detail kept *New* after the cleaner took the job, until it was reopened (`run1c/ios.json:38`). No screenshot shows it: the cited `run1c/ios/cust-30-orders-after-exec.png` is the *Cancel this cleaning?* sheet quoting 480 Kč (8:48), and `cust-25-card-order.png` reads *New* at 7:14, before the take (`part-05-contract.png`, 7:16). | No docs page says whether an open customer order detail refreshes; `docs/mobile-app/features.md:258-261` says an open partner detail does not refresh on a push. | test bug | The lane's record cites evidence that does not show the claim, so no defect is proven. An unevidenced lane observation, for Mike: re-check on the next iOS run with a screenshot of the open detail after the take. |
 | F-039 | 1c `run1c/ios.json:39` | · iOS runbook | The first typed character after a tap is lost, a list swipe starting on a card selects it, and the PaymentSheet, cancel, set-off and start recipes were missing. | | test bug | Fixed in 437b89ac9 (`e2e/runbooks/ios.md`). |
 | F-040 | 1c `run1c/ios.json:40` | E2E-EXEC-026, E2E-EXEC-036, E2E-EXEC-037 · iOS | The agent's permission classifier refused the after-photo upload through curl with the cleaner's password, so the cash and complete steps were not run. | | environment | The agent sandbox, not DEV. |
 | F-041 | 1c `run1c/android.json:227` | E2E-BOOK-033 · Android customer | The runbook's phone +420777123456 belongs to another DEV account: `UpdateCurrentUser` answers 400 `user.existing_phone_number` (`run1c/android/28-phone-400.png`). The lane saw no error in a 1 to 4 s window. | `ProfileViewModel.kt:261-264` puts the refusal in a snackbar, so the silent refusal is not proven. | test bug | Fixed in 89098e081 (`e2e/runbooks/android.md` uses 603150609). |
@@ -284,16 +284,16 @@ for defects only: P1 blocks a core journey or loses money, P2 is wrong but worka
 
 | Verdict | Findings |
 |---|---|
-| defect | 25 (P1 0, P2 1: F-035; P3 24) |
+| defect | 24 (P1 0, P2 1: F-035; P3 23) |
 | by design | 13 |
-| test bug | 17 |
+| test bug | 18 |
 | environment | 16 |
 | catalogue error | 2 (F-001, F-002, both fixed in `e2e/cases`) |
 | **total** | **73** |
 
 Sources merged: F-001, F-003, F-004, F-005, F-007, F-008, F-013, F-016, F-018, F-019, F-020, F-031, F-036, F-047, F-073.
 
-Of the 25 defects, 21 are docs faults (gaps, stale text, or docs that disagree with the code), three of them a choice
+Of the 24 defects, 20 are docs faults (gaps, stale text, or docs that disagree with the code), three of them a choice
 between docs and code for Mike (F-028, F-053, F-066). The product defects are F-035 (P2), F-022, F-046 and F-068 (P3).
 No P1 defect: every core journey ran end to end on DEV.
 

@@ -40,3 +40,11 @@ extension OrderDetailPackage {
         ) ?? name
     }
 }
+
+extension OrderDetail {
+    /// Every package, then every service.
+    func scopeNames(locale: Locale) -> [String] {
+        (packages.map { $0.localizedName(for: locale) } + services.map { $0.localizedName(for: locale) })
+            .filter { !$0.isBlank }
+    }
+}

@@ -194,7 +194,10 @@ final class OrdersBoardRulesTests: XCTestCase {
         row.rooms = 2
         row.bathrooms = 1
         row.extras = ["inside-oven": true]
-        let expected = ["Deep clean", L10n.Orders.rooms(2), L10n.Orders.baths(1), "+ " + L10n.Orders.extraShortOven]
+        let expected = [
+            "Deep clean " + L10n.Offers.cardMore(1), L10n.Orders.rooms(2), L10n.Orders.baths(1),
+            "+ " + L10n.Orders.extraShortOven
+        ]
         XCTAssertEqual(Rules.scopeLine(row, locale: english), expected.joined(separator: Rules.dot))
         row.selectedPackages = nil
         XCTAssertEqual(Rules.leadName(row, locale: english), "Standard clean")

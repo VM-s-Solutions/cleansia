@@ -70,4 +70,20 @@ final class ScopeTranslationTests: XCTestCase {
         let package = OrderDetailPackage(id: "p1", name: "Deep Cleaning", price: nil, translations: translations)
         XCTAssertEqual(package.localizedName(for: Locale(identifier: "uk")), "Deep Cleaning")
     }
+
+    func testTheLeadNamesTheFirstPackageOrServiceAndCountsTheRest() {
+        var row = OrderListItem()
+        row.selectedPackages = [PackageListItem(id: "p", name: " ")]
+        row.selectedServices = [
+            ServiceListItem(id: "a", name: "Bathroom Cleaning"), ServiceListItem(id: "b", name: "Upholstery Cleaning")
+        ]
+        let lead = OrdersBoardRules.leadName(row, locale: Locale(identifier: "en"))
+        XCTAssertEqual(lead, "Bathroom Cleaning " + L10n.Offers.cardMore(1))
+        XCTAssertEqual(
+            OrdersBoardRules.lead(["Deep clean", "Bathroom", "Upholstery"]),
+            "Deep clean " + L10n.Offers.cardMore(2)
+        )
+        XCTAssertEqual(OrdersBoardRules.lead(["Deep clean"]), "Deep clean")
+        XCTAssertNil(OrdersBoardRules.lead([]))
+    }
 }

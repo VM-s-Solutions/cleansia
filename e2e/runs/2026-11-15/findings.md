@@ -249,7 +249,7 @@ for defects only: P1 blocks a core journey or loses money, P2 is wrong but worka
 | F-038 | 1c `run1c/ios.json:38` | E2E-TAKE-014 · iOS customer | The lane noted that the open order detail kept *New* after the cleaner took the job, until it was reopened (`run1c/ios.json:38`). No screenshot shows it: the cited `run1c/ios/cust-30-orders-after-exec.png` is the *Cancel this cleaning?* sheet quoting 480 Kč (8:48), and `cust-25-card-order.png` reads *New* at 7:14, before the take (`part-05-contract.png`, 7:16). | No docs page says whether an open customer order detail refreshes; `docs/mobile-app/features.md:258-261` says an open partner detail does not refresh on a push. | test bug | The lane's record cites evidence that does not show the claim, so no defect is proven. An unevidenced lane observation, for Mike: re-check on the next iOS run with a screenshot of the open detail after the take. |
 | F-039 | 1c `run1c/ios.json:39` | · iOS runbook | The first typed character after a tap is lost, a list swipe starting on a card selects it, and the PaymentSheet, cancel, set-off and start recipes were missing. | | test bug | Fixed in 437b89ac9 (`e2e/runbooks/ios.md`). |
 | F-040 | 1c `run1c/ios.json:40` | E2E-EXEC-026, E2E-EXEC-036, E2E-EXEC-037 · iOS | The agent's permission classifier refused the after-photo upload through curl with the cleaner's password, so the cash and complete steps were not run. | | environment | The agent sandbox, not DEV. |
-| F-041 | 1c `run1c/android.json:227` | E2E-BOOK-033 · Android customer | The runbook's phone +420777123456 belongs to another DEV account: `UpdateCurrentUser` answers 400 `user.existing_phone_number` (`run1c/android/28-phone-400.png`). The lane saw no error in a 1 to 4 s window. | `ProfileViewModel.kt:261-264` puts the refusal in a snackbar, so the silent refusal is not proven. | test bug | Fixed in 89098e081 (`e2e/runbooks/android.md` uses 603150609). |
+| F-041 | 1c `run1c/android.json:227` | E2E-BOOK-033 · Android customer | The runbook's phone +420777123456 belongs to another DEV account: `UpdateCurrentUser` answers 400 `user.existing_phone_number` (`run1c/android/28-phone-400.png`). The lane saw no error in a 1 to 4 s window. | `ProfileViewModel.kt:261-264` puts the refusal in a snackbar, so the silent refusal is not proven. | test bug | Fixed in 89098e081 (`e2e/runbooks/android.md` uses 603150609). The card turning *Ready to book* after the refusal is F-074. |
 | F-042 | 1c `run1c/android.json:233` | · Android | Both apps ask for notification permission on first launch; the runbook said they did not (`run1c/android/00-notif-dialog-dismissed.png`). | | test bug | Fixed in 89098e081 (`e2e/runbooks/android.md:111`). |
 | F-043 | 1c `run1c/android.json:239` | E2E-BOOK-031 · Android customer | The booking sheet keeps its draft (step 4, Cash, terms ticked) after it is dismissed (`run1c/android/30-resumed.png`). | `docs/mobile-app/patterns.md#booking-draft` (line 621): a booking swiped away keeps its draft. | by design | None; the runbook notes it. |
 | F-044 | 1c `run1c/android.json:245` | E2E-PAY-034 · Android customer | The detail's footer (Rate, Book again, Report issue) covers the screen below y 1850, and a swipe that starts on it scrolls nothing, so the receipt looked absent (`run1c/android/70-order-bottom2.png`). | | test bug | Fixed in 89098e081 (`e2e/runbooks/android.md:151`). The detail scrolls from above the footer; no product defect. |
@@ -282,22 +282,23 @@ for defects only: P1 blocks a core journey or loses money, P2 is wrong but worka
 | F-071 | 1a `catalogue/lane-findings.md:27` | E2E-PAYOUT · admin API | Delete is also refused for a period that has pay rows (`pay_period.has_order_pays`). | `docs/flows/pay-and-payouts.md:211` requires only an Open period. | defect | Docs gap. P3. |
 | F-072 | 1a `catalogue/lane-findings.md:28` | E2E-PAYOUT · admin API | `DELETE api/AdminPayPeriod/delete/{id}` exists. | ADR-0082 D1.8 (`docs/decisions/adr-0082.md:89-90`) keeps a Delete **button** out of the admin; `docs/flows/pay-and-payouts.md#periods` (line 211) lists Delete as a transition. | by design | None. |
 | F-073 | this triage, from F-001; the 1c review (merged: `TakeOrder`) | E2E-EXEC-030, E2E-TAKE-024 · API | `ReportCashNotPaid` and `TakeOrder` sit on the same partner `OrderController` behind `[RequireCompleteProfile]` (`src/Cleansia.Web.Partner/Controllers/OrderController.cs:16`, `src/Cleansia.Web.Mobile.Partner/Controllers/OrderController.cs:16`), so a not-approved or incomplete cleaner gets the 403 first (`src/Cleansia.Config/Filters/RequireCompleteProfileAttribute.cs:32-48`). | `docs/product/business-rules.md:1496` lists `employee.not_approved` and `employee.profile_incomplete` among `ReportCashNotPaid`'s refusals; `docs/partner-app/order-management.md:182-184` and `docs/api/orders.md:844-845` give the same two keys for a take. `docs/api/authentication.md:347-355` documents the 403. Docs and code conflict. | defect | Docs: on those three pages, say the partner hosts answer 403 `Registration incomplete` before these keys. P3. |
+| F-074 | 1c `run1c/android.json:227` (A1, its second half) | E2E-BOOK-033 · Android customer | After the refused phone save (F-041) the onboarding card still turned *Ready to book*, and the first booking slide opened *Edit profile* with nothing booked (`e2e/runbooks/android.md:142`). The card is judged on the saved name and e-mail and on the phone **as typed**, not as saved (`src/cleansia_android/customer-app/src/main/java/cz/cleansia/customer/features/profile/OnboardingChecklist.kt:6,12-16`, used at `ProfileOnboardingScreen.kt:114-115`); the booking then catches the missing phone (`BookingSubmitOutcome.ProfileIncomplete`). | No docs page says what *Ready to book* is judged on: `docs/mobile-app/patterns.md:129-133` names the state only. The code's choice is deliberate (its own comment), and no money or booking is lost. | defect | Docs gap, for Mike: document that the card reads the typed phone, or judge it on the saved one. P3. |
 
 ## (c) Totals
 
 | Verdict | Findings |
 |---|---|
-| defect | 24 (P1 0, P2 1: F-035; P3 23) |
+| defect | 25 (P1 0, P2 1: F-035; P3 24) |
 | by design | 13 |
 | test bug | 18 |
 | environment | 16 |
 | catalogue error | 2 (F-001, F-002, both fixed in `e2e/cases`) |
-| **total** | **73** |
+| **total** | **74** |
 
 Sources merged: F-001, F-003, F-004, F-005, F-007, F-008, F-013, F-016, F-018, F-019, F-020, F-031, F-036, F-047, F-073.
 
-Of the 24 defects, 20 are docs faults (gaps, stale text, or docs that disagree with the code), three of them a choice
-between docs and code for Mike (F-028, F-053, F-066). The product defects are F-035 (P2), F-022, F-046 and F-068 (P3).
+Of the 25 defects, 21 are docs faults (gaps, stale text, or docs that disagree with the code), four of them a choice
+between docs and code for Mike (F-028, F-053, F-066, F-074). The product defects are F-035 (P2), F-022, F-046 and F-068 (P3).
 No P1 defect: every core journey ran end to end on DEV.
 
 **P1 coverage, 146 cases:** 73 passed by a test or runbook step · 2 failed (E2E-AUTH-051 and E2E-TAKE-024 as

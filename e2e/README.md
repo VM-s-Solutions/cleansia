@@ -128,6 +128,7 @@ have no test and no runbook step yet ("runbook step" counts a row of the P1 tabl
 | E2E-AUTH-055 | An Administrator creates a Manager, a Support and an Accountant | needs the Manager, Support and Accountant accounts, which no stage creates yet |
 | E2E-BOOK-014 | A start under 2 h away is refused, not priced higher | a refusal path off the core journey, not written yet |
 | E2E-BOOK-018 | The start must sit on the 15-minute grid | a refusal path off the core journey, not written yet |
+| E2E-BOOK-021 | The horizon is 60 days | a refusal path off the core journey, not written yet; the runbooks' date chips never reach the horizon |
 | E2E-BOOK-029 | An Increased booking by card keeps the level on the order | a refusal path off the core journey, not written yet |
 | E2E-BOOK-035 | A job that needs two cleaners cannot be paid in cash | needs a two-cleaner job, which DEV's 2-minute services reach only through an admin edit of a throwaway service |
 | E2E-BOOK-038 | A customer who owes books nothing | needs a receivable (a late cash cancellation or a cash job reported unpaid), which no stage builds yet |
@@ -142,10 +143,13 @@ have no test and no runbook step yet ("runbook step" counts a row of the P1 tabl
 | E2E-CANCEL-053 | A refund is bounded by what is left | an administrator refund of a completed card order, which no stage makes yet |
 | E2E-EXEC-005 | Only the assigned cleaner may move the job | a refusal path off the core journey, not written yet |
 | E2E-EXEC-006 | The transition guard refuses a move out of order | a refusal path off the core journey, not written yet |
+| E2E-EXEC-007 | Start and Complete are refused without the contract for work, travel is not | needs an admin placement (E2E-TAKE-049), which no stage makes yet |
 | E2E-EXEC-027 | Cash collection refusals | a refusal path off the core journey, not written yet |
 | E2E-EXEC-030 | Customer did not pay: refusals in order | a refusal path off the core journey, not written yet |
 | E2E-EXEC-042 | A crew marks done, then any cleaner completes | needs a two-cleaner job, which DEV's 2-minute services reach only through an admin edit of a throwaway service |
 | E2E-EXEC-043 | A premature Complete is refused | needs a two-cleaner job, which DEV's 2-minute services reach only through an admin edit of a throwaway service |
+| E2E-PAY-022 | A ticked card payment lands a saved card | needs a card booking by a customer with no saved card, then Saved cards read, which no stage or runbook step does yet (the book stage saves the card through Checkout first) |
+| E2E-PAY-023 | An unticked card payment keeps no card | needs a card booking by a customer with no saved card, then Saved cards read, which no stage or runbook step does yet (the book stage saves the card through Checkout first) |
 | E2E-PAY-017 | A webhook call without a signature header is refused | a refusal path off the core journey, not written yet |
 | E2E-PAY-018 | A webhook call with a forged signature is refused | a refusal path off the core journey, not written yet |
 | E2E-PAY-041 | A customer lists what they owe and pays it through the pay link | needs a receivable (a late cash cancellation or a cash job reported unpaid), which no stage builds yet |
@@ -174,6 +178,7 @@ have no test and no runbook step yet ("runbook step" counts a row of the P1 tabl
 | E2E-TAKE-043 | One of two cleaners drops: the job stays confirmed and short | needs a two-cleaner job, which DEV's 2-minute services reach only through an admin edit of a throwaway service |
 | E2E-TAKE-044 | A drop of a job on the way or in progress is refused | a drop of a taken job, which no stage makes yet |
 | E2E-TAKE-049 | Admin places a cleaner on an open order | a refusal path off the core journey, not written yet |
+| E2E-TAKE-050 | The placed cleaner accepts the contract with the same act as a take | needs an admin placement (E2E-TAKE-049), which no stage makes yet |
 | E2E-XCUT-007 | A new offerable order raises an admin notice for Support and above, not for Accountant | needs the Manager, Support and Accountant accounts, which no stage creates yet |
 | E2E-XCUT-019 | A backend refusal is shown translated in each locale | a refusal path off the core journey, not written yet |
 

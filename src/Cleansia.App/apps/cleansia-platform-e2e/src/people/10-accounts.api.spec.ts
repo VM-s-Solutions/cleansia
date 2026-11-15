@@ -132,7 +132,7 @@ test.describe('people: accounts', () => {
     for (const other of periods.filter((x) => x !== p)) expect(['Closed', 'Paid']).toContain(str(other, 'status'));
     if (!run.periodAtStart) {
       run.periodAtStart = { id: str(p, 'id'), startDate: str(p, 'startDate'), endDate: str(p, 'endDate') };
-      // The night run closes a period on the night after its end date: Day 2 (BRIEF §6, recomputed here).
+      // The night run closes a period on the night after its end date: Day 2.
       run.day2 = dayAfter(str(p, 'endDate'));
       saveRun(run);
     }

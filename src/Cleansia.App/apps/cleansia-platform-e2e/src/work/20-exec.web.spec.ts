@@ -4,7 +4,7 @@ import { emailOf, flag, loadRun, RunOrder, scratch, setFlag } from '../support/r
 import { startOpensAt } from '../support/slots';
 import { AdminRole, adminSignIn, cachedAdmin, customerSignIn, partnerSignIn, SITES } from '../support/web';
 
-// Stage 'work', web half (T-0934 BRIEF §1.6-§1.8, F-027): Support's full refund in the admin SPA (CANCEL-049), the
+// Stage 'work', web half (F-027 too): Support's full refund in the admin SPA (CANCEL-049), the
 // customer web past X's start (CANCEL-018), B's job page on the two-cleaner job W while Confirmed (F-027, EXEC-020),
 // On the way and In progress (TAKE-044, EXEC-043), and the SPA's Refunds page and P's accepted contract (CANCEL-051,
 // TAKE-050). Runs in each Day 1 work window between work/10 and work/30; every test skips until its moment.

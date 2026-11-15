@@ -81,7 +81,7 @@ test.describe('payroll: after the period is paid, the clean-up, and TAKE-025', (
     const foreign: string[] = [];
     for (const inv of invoices.filter((x) => status(x) !== 'Cancelled')) {
       const email = str((await call(admin, 'GET', `/api/AdminEmployee/details/${str(inv, 'employeeId')}`)).body, 'email');
-      // Never settle a non-e2e invoice (owner default, BRIEF §6 question 6).
+      // Never settle a non-e2e invoice (owner default).
       if (!E2E_ACCOUNT.test(email)) {
         foreign.push(`${str(inv, 'invoiceNumber')} (${str(inv, 'employeeName')})`);
         continue;

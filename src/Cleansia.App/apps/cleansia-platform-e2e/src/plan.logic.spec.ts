@@ -2,7 +2,8 @@ import { expect, test } from '@playwright/test';
 import { cancelSplit, ORDER_PLAN, planned, plannedMinutes, RULED_DAYS, slotOf } from './support/plan';
 import { nextSlots, noticeHours, pragueSlot } from './support/slots';
 
-// The order plan of T-0934 (BRIEF §2.4) on the ruled days: Day 1 Wed 18 Nov, Day 2 Thu 19 Nov (owner ruling 2026-11-15).
+// The phase-2 order plan (e2e/README.md, "The phase-2 run") on the ruled days: Day 1 Wed 18 Nov, Day 2 Thu 19 Nov
+// (owner ruling 2026-11-15).
 // orders/10 books every order between 07:30 and 08:00 UTC on Day 1; orders/30 cancels the tier orders 07:58-08:15.
 const MINUTE = 60_000;
 const at = (hhmm: string) => new Date(`${RULED_DAYS.D1}T${hhmm}:00Z`);

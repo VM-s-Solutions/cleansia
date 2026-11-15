@@ -6,7 +6,7 @@ import { emailOf, flag, loadRun, saveRun, scratch, setFlag } from '../support/ru
 import { dayAfter } from '../support/slots';
 import { adminSignIn, cachedAdmin, SITES } from '../support/web';
 
-// Stage 'payroll', web half 1 (T-0934 BRIEF §1.9, F-012): on Day 2, once J1's pay is in the period the night run
+// Stage 'payroll', web half 1 (F-012 too): on Day 2, once J1's pay is in the period the night run
 // opened, the Accountant presses the admin SPA's own Close now. It is the only Close now of the run, never pressed on a
 // scratch run nor with E2E_NO_CLOSE_NOW=1, and never on any day but Day 2.
 // Not serial: every test has its own gate, so one failure does not skip the tests after it (one worker keeps the order).

@@ -5,7 +5,7 @@ import { emailOf, flag, loadRun, RunState, saveRun, scratch } from '../support/r
 import { cachedAdmin, cachedAdminAs } from '../support/web';
 
 // Stage 'people', file 50 (Day 1, after the web onboarding of people/40): the Manager creates the throwaway
-// two-cleaner service and its pay config (BRIEF §2.5), E (cleaner3) completes the profile and the documents, has a spare
+// two-cleaner service and its pay config, E (cleaner3) completes the profile and the documents, has a spare
 // document rejected with a note (AUTH-045), accepts the legal documents and is approved, and the debtor and the cash-cap
 // customer save a card in Stripe test Checkout. E2E_SCRATCH=1 builds the service but creates nothing.
 test.describe.configure({ mode: 'serial' });

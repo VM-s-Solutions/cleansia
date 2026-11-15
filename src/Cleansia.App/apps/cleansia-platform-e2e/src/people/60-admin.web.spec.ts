@@ -4,7 +4,7 @@ import { openPeriod } from '../support/flows';
 import { emailOf, flag, loadRun, scratch } from '../support/run';
 import { AdminRole, adminSignIn, SITES } from '../support/web';
 
-// Stage 'people', web half 3 (T-0934 BRIEF §1.1, §1.2): the run's Manager, Support and Accountant in the admin SPA
+// Stage 'people', web half 3: the run's Manager, Support and Accountant in the admin SPA
 // (AUTH-055), Support kept out of payroll and the Accountant let in (PAYOUT-052), the open pay period as the SPA
 // names it (PAYOUT-013), and E's documents after people/50's review (AUTH-045). The role accounts exist only on a
 // real run (E2E_SCRATCH=1 skips them); the period reads as the DEV administrator on a scratch run.

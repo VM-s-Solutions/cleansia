@@ -6,7 +6,7 @@ import { emailOf, flag, loadRun, Role, RunState, saveRun, scratch, setFlag } fro
 import { dayAfter, nextSlots, pragueSlot } from '../support/slots';
 import { cachedAdminAs } from '../support/web';
 
-// Stage 'orders', 10: every order of the plan (src/support/plan.ts, BRIEF §2.4) booked and each card order paid in
+// Stage 'orders', 10: every order of the plan (src/support/plan.ts) booked and each card order paid in
 // Stripe test Checkout, with the booking refusals around them: the dirtiness level, the lead time, the grid, the
 // window, the horizon, the cash rules, the terms tick and the webhook signature. The tier orders, F1 and D2 go first:
 // orders/30 cancels them 15 minutes after their booking (their oops window). A booked order is never booked again,

@@ -3,7 +3,7 @@ import { call, DEV_ADMIN, named, Session, signIn, str } from '../support/dev';
 import { emailOf, loadRun, Role } from '../support/run';
 import { acceptCookies, adminSignIn, SITES } from '../support/web';
 
-// Stage 'people', web half 2 (T-0934 BRIEF §1.2): the partner web's registration lock as E sees it before its
+// Stage 'people', web half 2: the partner web's registration lock as E sees it before its
 // profile (AUTH-034) and as the rejected applicant sees it (AUTH-049), and the admin SPA offering no approval for a
 // profile that is not complete (AUTH-047). People/30 confirms both and rejects the applicant; people/50 completes E.
 // Not serial: every test has its own gate, so one failure does not skip the tests after it (one worker keeps the order).

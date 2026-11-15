@@ -7,7 +7,7 @@ import { emailOf, flag, loadRun, Role, RunOrder, saveRun, scratch, setFlag } fro
 import { pragueSlot, wizardLabels } from '../support/slots';
 import { acceptCookies, adminSignIn, cachedAdmin, customerSignIn, SITES } from '../support/web';
 
-// Stage 'orders', web half (T-0934 BRIEF §1.3-§1.5, §1.7): the customer web's booking wizard rules (level, lead time,
+// Stage 'orders', web half: the customer web's booking wizard rules (level, lead time,
 // grid, window, horizon, express, two-cleaner cash, cash cap, what is owed, the guest's terms tick), the saved cards
 // page, F1's and tierB's cancellation in the web dialog, and the admin SPA's view of the takes, drop and placement.
 // Runs at 07:35, 07:58 and 08:15 on Day 1 after the API files of the same invocation; each test skips until its gate.
@@ -31,7 +31,7 @@ function planned(key: string): RunOrder {
   return o;
 }
 
-// ---- the wizard, one step at a time (the steps of order-wizard.component.html) ----
+// The wizard, one step at a time (the steps of order-wizard.component.html).
 
 const wizard = {
   open: async (page: Page) => {

@@ -1,7 +1,7 @@
 import { nextSlots, pragueSlot } from './slots';
 
-// The phase-2 order plan (T-0934, BRIEF §2.4) as data. The brief's table is in UTC; the slots here are the same
-// instants as Prague wall-clock times (UTC+1 in November), because that is how the booking window reads them.
+// The phase-2 order plan (e2e/README.md, "The phase-2 run") as data. The plan's times are UTC; the slots here are the
+// same instants as Prague wall-clock times (UTC+1 in November), because that is how the booking window reads them.
 // Who is who: cleaner = A, cleaner2 = B, cleaner3 = E. orders/10 books every order on Day 1 from 07:30 UTC.
 
 export type PlanDay = 'D1' | 'D1+1' | 'D2';

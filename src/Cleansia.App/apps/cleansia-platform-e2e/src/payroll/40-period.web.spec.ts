@@ -4,7 +4,7 @@ import { RULED_DAYS } from '../support/plan';
 import { emailOf, flag, loadRun, Role, scratch, setFlag } from '../support/run';
 import { adminSignIn, cachedAdmin, SITES } from '../support/web';
 
-// Stage 'payroll', web half 2 (T-0934 BRIEF §1.9): Day 2 in the admin SPA as the Accountant. The night close of the
+// Stage 'payroll', web half 2: Day 2 in the admin SPA as the Accountant. The night close of the
 // Day 1 period reads "Automatically" (PAYOUT-014) and lists only the cleaners with pay (PAYOUT-015); the period F-012
 // closed cannot be marked paid while an invoice in it is open (PAYOUT-029); E's approved invoice is marked paid
 // through the in-page confirmation (PAYOUT-045); then the period is marked paid (PAYOUT-030). No scratch run reaches

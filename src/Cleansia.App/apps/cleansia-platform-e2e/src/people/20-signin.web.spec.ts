@@ -5,7 +5,7 @@ import { at } from '../support/dev';
 import { emailOf, flag, loadRun } from '../support/run';
 import { SITES } from '../support/web';
 
-// Stage 'people', web half 1 (T-0934 BRIEF §1.1, §1.2, §1.10): the sign-in refusal in every locale of the three webs
+// Stage 'people', web half 1: the sign-in refusal in every locale of the three webs
 // (XCUT-019), and the applicant people/10 registered, still unconfirmed, sent to /confirm-email (AUTH-034). Needs no
 // role account, so a scratch run validates it.
 // Not serial: every test has its own gate, so one failure does not skip the tests after it (one worker keeps the order).

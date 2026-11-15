@@ -27,6 +27,14 @@ test.describe('case report merge', () => {
     expect(mergeReports(merged, skipAndFinding)['E2E-AUTH-051'].status).toBe('finding');
   });
 
+  test('a case one test proved reads passed when its twin skipped, and skipped only when every test skipped', () => {
+    // Run 202611150554: the API half pressed Close now, so the web half's Close now test skipped by design.
+    const now: CaseReport = { 'E2E-PAYOUT-016': { status: 'skipped', tests: { api: one('passed'), web: one('skipped', 'already closed') } } };
+    expect(mergeReports({}, now)['E2E-PAYOUT-016'].status).toBe('passed');
+    const none: CaseReport = { 'E2E-PAYOUT-017': { status: 'passed', tests: { api: one('skipped'), web: one('skipped') } } };
+    expect(mergeReports({}, none)['E2E-PAYOUT-017'].status).toBe('skipped');
+  });
+
   test('a report in the old shape is read as no history', () => {
     const old = { 'E2E-BOOK-001': { status: 'skipped', tests: ['a'], notes: [] } } as unknown as CaseReport;
     expect(mergeReports(old, { 'E2E-BOOK-001': { status: 'passed', tests: { a: one('passed') } } })['E2E-BOOK-001'].status).toBe('passed');

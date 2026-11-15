@@ -6,13 +6,16 @@ import { findRun, runDir } from './run';
 type TestOutcome = { status: string; note: string };
 export type CaseReport = Record<string, { status: string; tests: Record<string, TestOutcome> }>;
 // 'finding': the test passed on an answer the catalogue calls wrong, annotated for the triager.
-const RANK: Record<string, number> = { passed: 0, skipped: 1, finding: 2, interrupted: 3, timedOut: 4, failed: 5 };
+// A skip ranks lowest: a case another test proved is not unproven because its twin skipped (the web half's Close now
+// skips once the API half has closed the period), and a case reads skipped only when every test of it skipped.
+const RANK: Record<string, number> = { skipped: 0, passed: 1, finding: 2, interrupted: 3, timedOut: 4, failed: 5 };
 const worst = (tests: Record<string, TestOutcome>) =>
-  Object.values(tests).reduce((s, t) => ((RANK[t.status] ?? 5) > (RANK[s] ?? 5) ? t.status : s), 'passed');
+  Object.values(tests).reduce((s, t) => ((RANK[t.status] ?? 5) > (RANK[s] ?? 5) ? t.status : s), 'skipped');
 
 /**
  * Folds one invocation into the stage's report so far. Per test, a skip never replaces an earlier outcome that was
- * not a skip (a job an earlier run finished is skipped now); anything else replaces it. A case is its worst test.
+ * not a skip (a job an earlier run finished is skipped now); anything else replaces it. A case is its worst test,
+ * a skip counting only when every test skipped.
  */
 export function mergeReports(previous: CaseReport, current: CaseReport): CaseReport {
   const out: CaseReport = { ...previous };

@@ -222,6 +222,26 @@ public class SavedCardWebhookTests
     }
 
     /// <summary>
+    /// The two events of one web payment arrive together (on DEV 0.4 s apart, E2E-PAY-022): the later one loaded the card
+    /// before the earlier one committed its capture, so the card it is capturing is already among the customer's captured
+    /// cards in that currency. It must not count as a card it replaces.
+    /// </summary>
+    [Fact]
+    public async Task The_Card_Being_Captured_Is_Never_Replaced_By_Itself_When_Both_Events_Of_One_Payment_Race()
+    {
+        var card = PendingCard();
+        ArrangeOrder();
+        _savedCards.Setup(r => r.GetCapturedForUserInCurrencyAsync(UserId, CurrencyId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([card]);
+
+        var result = await DeliverAsync(PaymentSessionCompleted("evt_cs_pay_race", OrderId, card.Id));
+
+        Assert.True(result.IsSuccess);
+        Assert.True(card.IsCaptured);
+        _savedCards.Verify(r => r.Deactivate(card), Times.Never);
+    }
+
+    /// <summary>
     /// A web payment raises checkout.session.completed and its PaymentIntent's own payment_intent.succeeded,
     /// which carries the saved card but no order: whichever comes second finds the card captured.
     /// </summary>

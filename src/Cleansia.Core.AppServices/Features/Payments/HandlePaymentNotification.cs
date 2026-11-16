@@ -575,10 +575,15 @@ public class HandlePaymentNotification
                 return BusinessResult.Success();
             }
 
+            // The two events of one payment arrive together: the later one finds this very card already captured by
+            // the earlier one's commit, and must not switch it off as a card it replaces (E2E-PAY-022).
             foreach (var replaced in await savedCardRepository.GetCapturedForUserInCurrencyAsync(
                          card.UserId, card.CurrencyId, cancellationToken))
             {
-                savedCardRepository.Deactivate(replaced);
+                if (replaced.Id != card.Id)
+                {
+                    savedCardRepository.Deactivate(replaced);
+                }
             }
 
             card.Capture(details.PaymentMethodId, details.Brand, details.Last4, details.ExpMonth, details.ExpYear);

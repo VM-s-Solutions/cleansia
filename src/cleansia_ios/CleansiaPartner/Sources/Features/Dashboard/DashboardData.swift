@@ -32,12 +32,11 @@ struct DashboardData: Equatable {
         weekCompletedCount > 0 ? weekEarnings / Double(weekCompletedCount) : 0
     }
 
+    /// The web's `Math.round`: halves go toward +infinity, so -2.5 is -2.
     var monthDeltaPercent: Int? {
-        if lastMonthCompletedOrders == 0 {
-            return thisMonthCompletedOrders > 0 ? 100 : nil
-        }
+        guard lastMonthCompletedOrders > 0 else { return nil }
         let delta = Double(thisMonthCompletedOrders - lastMonthCompletedOrders)
-        return Int(delta / Double(lastMonthCompletedOrders) * 100)
+        return Int((delta / Double(lastMonthCompletedOrders) * 100 + 0.5).rounded(.down))
     }
 
     static func from(

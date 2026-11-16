@@ -73,6 +73,26 @@ final class DashboardDataTests: XCTestCase {
         XCTAssertEqual(data.todaysJobsCount, 3)
     }
 
+    /// The web's `Math.abs(Math.round(percentChange))`: no trend at 0 last month, halves round toward +infinity.
+    func testMonthDeltaIsNilWithoutALastMonthAndRoundsLikeTheWeb() {
+        XCTAssertNil(monthDelta(this: 3, last: 0))
+        XCTAssertNil(monthDelta(this: 0, last: 0))
+        XCTAssertEqual(monthDelta(this: 3, last: 2), 50)
+        XCTAssertEqual(monthDelta(this: 2, last: 3), -33)
+        XCTAssertEqual(monthDelta(this: 1, last: 3), -67)
+        XCTAssertEqual(monthDelta(this: 41, last: 40), 3)
+        XCTAssertEqual(monthDelta(this: 39, last: 40), -2)
+        XCTAssertEqual(monthDelta(this: 0, last: 4), -100)
+        XCTAssertEqual(monthDelta(this: 4, last: 4), 0)
+    }
+
+    private func monthDelta(this: Int, last: Int) -> Int? {
+        DashboardData.from(
+            stats: .stub(lastMonthCompletedOrders: last, thisMonthCompletedOrders: this),
+            preview: nil, upcoming: [], firstName: nil, now: Self.now
+        ).monthDeltaPercent
+    }
+
     private func from(preview: AvailableJobsPreview?, upcoming: [OrderListItem]) -> DashboardData {
         DashboardData.from(stats: .stub(), preview: preview, upcoming: upcoming, firstName: nil, now: Self.now)
     }

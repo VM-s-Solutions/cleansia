@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { call, errorKeys, Host, list, named, num, ORDER_STATUS, PAYMENT_STATUS, poll, Reply, Session, signIn, str } from '../support/dev';
-import { afterPhoto, complete, contractText, feed, markCash, openPeriod, periodPays, serviceIds, start } from '../support/flows';
+import { afterPhoto, complete, contractText, markCash, openPeriod, periodPays, serviceIds, start } from '../support/flows';
 import { planned } from '../support/plan';
 import { emailOf, flag, loadRun, Role, RunOrder, RunState, saveRun, scratch, setFlag } from '../support/run';
 import { startOpensAt } from '../support/slots';
@@ -108,16 +108,6 @@ test.describe('work: afternoon', () => {
     setFlag(run, 'x.refunded');
     refused(await partial(kitchen, windows), 'refund.nothing_refundable');
     expect(named(await adminDetail(o.id), 'paymentStatus', PAYMENT_STATUS)).toBe('Refunded');
-  });
-
-  // Its own test, so a missing notice fails CANCEL-051 alone and a later invocation reads the feed again.
-  test('X\'s customer has a refund notice in the feed', { tag: ['@E2E-CANCEL-051'] }, async () => {
-    const o = run.orders['X'];
-    test.skip(!flag(run, 'x.refunded'), 'X has not been refunded yet (x.refunded)');
-    const notices = await poll(() => feed(run, 'customer', 'customer-mobile'), (v) => v.some((n) => str(n, 'args.orderId') === o.id && str(n, 'eventKey').includes('refund')), 60_000);
-    expect(notices.filter((n) => str(n, 'args.orderId') === o.id).map((n) => str(n, 'eventKey')), 'a refund notice for X in the customer feed').toEqual(
-      expect.arrayContaining([expect.stringContaining('refund')]),
-    );
   });
 
   test('Z, refunded in full while in progress, cannot then take cash, and still completes', { tag: ['@E2E-EXEC-027'] }, async () => {

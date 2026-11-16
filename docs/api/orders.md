@@ -212,7 +212,8 @@ serves, asked with its city **and its postcode**: a Prague row answers by a vali
 ::: info Start-time window and horizon
 `cleaningDate` must be on the 15-minute grid from 08:00 to 19:45 in the service address's market zone,
 and no more than 60 days ahead — else `order.cleaning_date.outside_booking_window`, after the future and
-lead-time rules. `Quote` answers the same key for the same slot.
+lead-time rules. `Quote` answers the same keys for the same slot: since 2026-11-16 it also refuses a start in
+the past (`order.cleaning_date.future`) and one under the 2 h floor (`order.cleaning_date.below_lead_time`), in that order.
 → [Business rules — the start-time window](/product/business-rules#start-time-window)
 :::
 
@@ -343,7 +344,9 @@ POST /api/Order/Quote
 ```
 
 `cleaningDate` is optional — omit it on the wizard's first step, before a slot is chosen, and the
-express-surcharge check is skipped.
+express-surcharge check is skipped. With one, the quote refuses what `CreateOrder` refuses: a start in the past
+(`order.cleaning_date.future`), one under the 2 h floor (`order.cleaning_date.below_lead_time`), then one outside
+the window. The home page's quick quote therefore sends a start only once a time is chosen.
 
 `rooms` / `bathrooms` must be nonnegative and no greater than 8 / 4 respectively. Oversized baskets
 are refused as `order.size_exceeds_maximum`, using the same upper bounds as order creation.

@@ -121,6 +121,50 @@ describe('QuickQuoteFacade', () => {
     });
   });
 
+  // The quote refuses a start in the past or under the 2 h floor, as the booking does, so only a start the
+  // visitor chose is sent, and a chosen time the new day cannot take is dropped.
+  describe('the start the quote is priced at', () => {
+    beforeEach(() => jest.useFakeTimers({ now: new Date(2026, 10, 16, 14, 0) }));
+    afterEach(() => jest.useRealTimers());
+
+    it('sends no start for a date with no time', () => {
+      facade.selectService('svc-1');
+      facade.selectDate('2026-11-16');
+
+      expect(lastCommand().cleaningDate).toBeUndefined();
+    });
+
+    it('sends the chosen date and time as a local start', () => {
+      facade.selectService('svc-1');
+      facade.selectDate('2026-11-17');
+      facade.selectTime('10:00');
+
+      expect(lastCommand().cleaningDate).toEqual(new Date(2026, 10, 17, 10, 0));
+    });
+
+    it('drops a time picked for another day when today cannot take it, and sends no start', () => {
+      facade.selectService('svc-1');
+      facade.selectDate('2026-11-17');
+      facade.selectTime('10:00');
+
+      facade.selectDate('2026-11-16');
+
+      expect(facade.cleaningTime()).toBeNull();
+      expect(lastCommand().cleaningDate).toBeUndefined();
+    });
+
+    it('keeps a time today can still take', () => {
+      facade.selectService('svc-1');
+      facade.selectDate('2026-11-17');
+      facade.selectTime('17:00');
+
+      facade.selectDate('2026-11-16');
+
+      expect(facade.cleaningTime()).toBe('17:00');
+      expect(lastCommand().cleaningDate).toEqual(new Date(2026, 10, 16, 17, 0));
+    });
+  });
+
   describe('the dirtiness level', () => {
     it('is quoted as Normal until the visitor picks one, then at the level picked', () => {
       facade.selectService('svc-1');

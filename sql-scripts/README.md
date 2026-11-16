@@ -90,6 +90,10 @@ database seeded before the seed changed. Run these through **Execute SQL Script*
 - **`dev-e2e-read-fee-receipts.sql`** — read-only: the fee receipts (`OrderReceipts` rows that name a receivable)
   of the end-to-end test orders of the last 14 days, for PAY-042, which no endpoint or e-mail shows. It refuses
   to run on a database without the published DEV administrator, and `execute-sql.yml` refuses it against PRO.
+- **`dev-e2e-read-saved-cards.sql`** — read-only: the saved cards of the end-to-end test customers of the last 7
+  days (captured or still waiting for Stripe), their card orders and the Stripe events DEV processed, to trace a
+  ticked card payment that kept no card (PAY-022). It refuses to run on a database without the published DEV
+  administrator, and `execute-sql.yml` refuses it against PRO.
 
 ## `seed/` — dev fixture data
 

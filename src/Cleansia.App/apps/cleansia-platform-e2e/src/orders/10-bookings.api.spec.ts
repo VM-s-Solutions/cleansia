@@ -223,9 +223,9 @@ test.describe('orders: bookings', () => {
     const before = await count();
     const r = await book(s, run, 'probe-lead', { ...sel, payment: 'card', customer: 'customer', addressId: await addressOf(s) });
     expect(keys(r.body), JSON.stringify(r.body)).toContain('order.cleaning_date.below_lead_time');
-    // The case: refused, not priced. QuoteOrder's validator has no lead-time rule (only CreateOrder.cs:202-203 has).
+    // The case: refused, not priced. The quote applies the create's lead-time rule with its key.
     const q = await quote(s, run, sel);
-    expect.soft(keys(q.reply.body), `the quote under 2 h: HTTP ${q.reply.status}, total ${q.total}`).toContain('order.cleaning_date.below_lead_time');
+    expect(keys(q.reply.body), `the quote under 2 h: HTTP ${q.reply.status}, total ${q.total}`).toContain('order.cleaning_date.below_lead_time');
     expect(await count(), 'no order was created').toBe(before);
   });
 

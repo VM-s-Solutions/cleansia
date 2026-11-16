@@ -36,7 +36,7 @@ country's `CountryConfiguration.TimeZoneId`, else the default market's, else UTC
 | Path | What it refuses |
 |---|---|
 | `CreateOrder` | a start off the grid, outside the window or past the horizon — `order.cleaning_date.outside_booking_window`, judged after the future and lead-time rules, so those keep their own keys |
-| `QuoteOrder` | the same, with the same key, so a slot the platform will not book never comes back priced |
+| `QuoteOrder` | the same, with the same key, and before it, since 2026-11-16, a start in the past (`order.cleaning_date.future`) and one under the 2 h floor (`order.cleaning_date.below_lead_time`) with `CreateOrder`'s keys, so a slot the platform will not book never comes back priced |
 | `CreateRecurringBooking` / `UpdateRecurringBooking` | a `TimeOfDay` that is not a bookable time of day, and a `StartsOn` more than 60 days out (on an update this is an upper bound only; a past `StartsOn` is kept) |
 | The recurring materialiser | an active template whose time is outside the window is **skipped** with a warning and kept as authored; and it never creates an occurrence closer than the 2 h floor |
 | `ConfirmRecurringOrder` | an occurrence closer than 2 h — `order.cleaning_date.below_lead_time`, the one-off booking's own floor |

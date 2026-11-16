@@ -94,6 +94,7 @@ jobs:
           dev-e2e-confirm-accounts.sql|confirms the e-mail of the e2e test accounts|Production has no test accounts.
           dev-e2e-publish-cleaner-document.sql|publishes a new version of the cleaner documents for an E2E run, which every cleaner must accept again|Production's legal texts are seeded from the repository's embedded markdown at host start.
           dev-e2e-read-fee-receipts.sql|reads the fee receipts of the e2e test orders|Production has no test orders.
+          dev-e2e-read-saved-cards.sql|reads the saved cards, card orders and Stripe events of the e2e test customers|Production has no test customers.
           DEV_ONLY_SCRIPTS
           echo "Not a DEV-only script — continuing."
 

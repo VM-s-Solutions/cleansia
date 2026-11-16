@@ -33,11 +33,11 @@ public class AdminUpdateEmployee
 
             RuleFor(c => c.FirstName)
                 .NotEmpty().WithMessage(BusinessErrorMessage.Required)
-                .MaximumLength(50).WithMessage(BusinessErrorMessage.MaxLengthExceeded);
+                .MaximumLength(50).WithMessage(BusinessErrorMessage.MaxLength);
 
             RuleFor(c => c.LastName)
                 .NotEmpty().WithMessage(BusinessErrorMessage.Required)
-                .MaximumLength(50).WithMessage(BusinessErrorMessage.MaxLengthExceeded);
+                .MaximumLength(50).WithMessage(BusinessErrorMessage.MaxLength);
 
             RuleFor(c => c.BirthDate)
                 .MustBeValidDate()
@@ -67,7 +67,7 @@ public class AdminUpdateEmployee
             // section it saves, so judging an untouched number would hold every unrelated edit on the register.
             RuleFor(c => c.RegistrationNumber)
                 .Cascade(CascadeMode.Stop)
-                .MaximumLength(50).WithMessage(BusinessErrorMessage.MaxLengthExceeded)
+                .MaximumLength(50).WithMessage(BusinessErrorMessage.MaxLength)
                 .CustomAsync(async (registrationNumber, context, cancellationToken) =>
                 {
                     var command = context.InstanceToValidate;
@@ -101,7 +101,7 @@ public class AdminUpdateEmployee
                 .When(c => c.RegistrationNumber is not null);
 
             RuleFor(c => c.LegalEntityName)
-                .MaximumLength(200).WithMessage(BusinessErrorMessage.MaxLengthExceeded)
+                .MaximumLength(200).WithMessage(BusinessErrorMessage.MaxLength)
                 .When(c => !string.IsNullOrWhiteSpace(c.LegalEntityName));
 
             // Unlike the number, an untouched missing name is refused too, judged on the merge the handler

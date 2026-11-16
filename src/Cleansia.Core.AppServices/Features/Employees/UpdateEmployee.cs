@@ -103,7 +103,7 @@ public class UpdateEmployee
 
             RuleFor(c => c.RegistrationNumber)
                 .MaximumLength(50)
-                .WithMessage(BusinessErrorMessage.MaxLengthExceeded);
+                .WithMessage(BusinessErrorMessage.MaxLength);
 
             RuleFor(c => c.RegistrationNumber)
                 .Cascade(CascadeMode.Stop)

@@ -284,4 +284,16 @@ public class UpdateBankDetailsTests
         Assert.True(result.IsSuccess);
         Assert.Null(added!.CurrencyId);
     }
+
+    [Fact]
+    public async Task A_Bank_Or_Holder_Name_Over_Its_Length_Is_Refused_With_The_Common_Length_Key()
+    {
+        var result = await CreateValidator().ValidateAsync(
+            Valid() with { BankName = new string('x', 101), HolderName = new string('x', 201) });
+
+        Assert.Contains(result.Errors, e =>
+            e.PropertyName == nameof(UpdateBankDetails.Command.BankName) && e.ErrorMessage == BusinessErrorMessage.MaxLength);
+        Assert.Contains(result.Errors, e =>
+            e.PropertyName == nameof(UpdateBankDetails.Command.HolderName) && e.ErrorMessage == BusinessErrorMessage.MaxLength);
+    }
 }

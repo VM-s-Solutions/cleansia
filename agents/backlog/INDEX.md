@@ -447,6 +447,7 @@
 | T-0932 | End-to-end tests, phase 1: the case catalogue, the DEV suite and one triaged run | L | `done` | — | Mike 2026-11-13: E2E of the whole platform with role agents; DEV, APIs + web + mobile apps, committed, core journeys first |
 | T-0933 | The E2E phase 1 findings fixed: the multi-service job card, three app and API defects, On my way on the partner web, and the docs | M | `done` | — | Mike 2026-11-15: fix all of the findings of the T-0932 report; On my way added to the partner web |
 | T-0934 | End-to-end tests, phase 2: every P1 case DEV can run, and one triaged run | L | `in_progress` | — | Mike 2026-11-15: after the T-0933 fixes, run phase 2 over all the P1 cases phase 1 left open |
+| T-0935 | The E2E phase 2 scratch runs' real defects fixed: a ticked card payment keeps its card, and the quote refuses a start under 2 hours | S | `in_progress` | — | Mike 2026-11-16: fix the scratch-run signals that are real, before the phase 2 run |
 
 > **T-0785–T-0799 filed 2026-09-20** — the UI-polish and dead-code batch, on the owner's ruling of
 > that day (*"I want to polish alignments in admin app a bit on all of the overview/detail pages.
@@ -491,7 +492,7 @@
 > reported not absorbed. Owed: the DEV drop at the next DEV deploy (MS-2 / A1, `20260920204705`);
 > the merge order is #255 then #260. Open rows: none.
 
-*Next id: **T-0935**.*
+*Next id: **T-0936**.*
 
 
 Current startup checkpoint — 2026-10-16 UTC: PR #344 merged C12 `70d9c8b1ea82` as M5 `a8d308126dc4`; C12 local8, PR5 workflows/7 checks and M5 4/5 passed, all attempt 1/no reruns, with guarded manual skips and prior application limits retained. First read-only observation `38947741183/a1` failed before its baseline with a generic validation error; one POST, GET-only discovery, final artifact saved once, no resize/restart/B3 trial. T-0636 remains `in_progress`; safe diagnostic correction and the temporary comparison remain pending. The ticket's dated PR #344 closure and `pr344-closure-preparation001/CLAIMS-AND-PINS001.json` carry the bounds.

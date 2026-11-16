@@ -26,6 +26,7 @@ import {
   tap,
 } from 'rxjs';
 
+import { EXPRESS_LEAD_TIME_HOURS } from '@cleansia/models';
 import { DEFAULT_PROPERTY_SIZE, PropertySizePreset } from './property-size-presets';
 
 /** The three states the calculator can be in, rendered explicitly. */
@@ -302,6 +303,12 @@ export class QuickQuoteFacade extends UnsubscribeControlDirective {
       return;
     }
     this._cleaningDate.set(next);
+    // A time picked for another day that this one cannot take (today, under the 2 h floor) is dropped, as the
+    // picker disables it: the quote refuses such a start, as the booking does.
+    const time = this._cleaningTime();
+    if (next && time && startsUnderFloor(next, time)) {
+      this._cleaningTime.set(null);
+    }
     this.refresh();
   }
 
@@ -364,12 +371,15 @@ export class QuickQuoteFacade extends UnsubscribeControlDirective {
     command.bathrooms = size.bathrooms;
     command.dirtinessLevel = this._dirtinessLevel();
 
+    // Only a chosen start is quoted, as the wizard does: a placeholder hour can be past or under the 2 h floor
+    // today, which the quote refuses as the booking does.
     const date = this._cleaningDate();
-    if (date) {
+    const time = this._cleaningTime();
+    if (date && time) {
       // Local time on purpose: the express surcharge is judged against the
       // customer's clock, and appending "Z" would shift a morning booking into
       // the previous day for anyone west of UTC.
-      command.cleaningDate = new Date(`${date}T${this._cleaningTime() ?? '09:00'}`);
+      command.cleaningDate = new Date(`${date}T${time}`);
     }
 
     this._state.set('loading');
@@ -382,4 +392,9 @@ export class QuickQuoteFacade extends UnsubscribeControlDirective {
     // as the caption directly above a correct, fresh number.
     this.pending$.next(command);
   }
+}
+
+/** Whether a local date and time start less than the 2 h floor from now, the rule the time picker disables by. */
+function startsUnderFloor(date: string, time: string): boolean {
+  return (new Date(`${date}T${time}`).getTime() - Date.now()) / 3_600_000 < EXPRESS_LEAD_TIME_HOURS;
 }

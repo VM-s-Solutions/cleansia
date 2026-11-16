@@ -46,3 +46,4 @@ One PR merged with CI green.
 
 - 2026-11-16 — Filed and fixed on `fix/e2e-scratch-signals`.
 - 2026-11-16 — The review's rows fixed on the branch: PAYOUT-045's detail clause restored with an API assertion, the quick quote's placeholder start, case ids out of source comments, the e2e quote assertion made hard, and the API contract page.
+- 2026-11-16 — Shipped in #385 (merge 9bb0b0b9e), CI green on every check; deployed to DEV with Mike's OK before the phase 2 run, so the run's PAY-022 and BOOK-014 cases test the fixed code.

@@ -447,7 +447,7 @@
 | T-0932 | End-to-end tests, phase 1: the case catalogue, the DEV suite and one triaged run | L | `done` | — | Mike 2026-11-13: E2E of the whole platform with role agents; DEV, APIs + web + mobile apps, committed, core journeys first |
 | T-0933 | The E2E phase 1 findings fixed: the multi-service job card, three app and API defects, On my way on the partner web, and the docs | M | `done` | — | Mike 2026-11-15: fix all of the findings of the T-0932 report; On my way added to the partner web |
 | T-0934 | End-to-end tests, phase 2: every P1 case DEV can run, and one triaged run | L | `in_progress` | — | Mike 2026-11-15: after the T-0933 fixes, run phase 2 over all the P1 cases phase 1 left open |
-| T-0935 | The E2E phase 2 scratch runs' real defects fixed: a ticked card payment keeps its card, and the quote refuses a start under 2 hours | S | `in_progress` | — | Mike 2026-11-16: fix the scratch-run signals that are real, before the phase 2 run |
+| T-0935 | The E2E phase 2 scratch runs' real defects fixed: a ticked card payment keeps its card, and the quote refuses a start under 2 hours | S | `done` | — | Mike 2026-11-16: fix the scratch-run signals that are real, before the phase 2 run |
 
 > **T-0785–T-0799 filed 2026-09-20** — the UI-polish and dead-code batch, on the owner's ruling of
 > that day (*"I want to polish alignments in admin app a bit on all of the overview/detail pages.

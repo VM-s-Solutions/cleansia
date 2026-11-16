@@ -181,9 +181,14 @@ public class QuoteOrder
                 .LessThanOrEqualTo(BookingPolicy.MaxBathrooms)
                 .WithMessage(BusinessErrorMessage.OrderSizeExceedsMaximum);
 
-            // The window CreateOrder refuses, with its key: a slot the platform will not book must not
-            // first come back priced.
+            // CreateOrder's start rules, in its order and with its keys: a slot the platform will not book must not
+            // first come back priced, and under the 2 h floor it is refused, not priced (→ /product/business-rules#booking-window).
             RuleFor(x => x.CleaningDate)
+                .Cascade(CascadeMode.Stop)
+                .GreaterThan(DateTime.UtcNow)
+                .WithMessage(BusinessErrorMessage.CleaningDateInFuture)
+                .Must(cleaningDate => !BookingPolicy.IsBelowMinimumLeadTime(cleaningDate!.Value, DateTime.UtcNow))
+                .WithMessage(BusinessErrorMessage.CleaningDateBelowLeadTime)
                 .MustAsync(IsBookableStartAsync)
                 .WithMessage(BusinessErrorMessage.CleaningDateOutsideBookingWindow)
                 .When(x => x.CleaningDate.HasValue);

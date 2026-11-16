@@ -1016,7 +1016,7 @@
       "employee_already_assigned": "Partner is already assigned to this order",
       "employee_not_assigned": "Partner is not assigned to this order",
       "not_in_progress": "Order is not in progress",
-      "not_confirmed": "Order must be in confirmed status to start",
+      "not_confirmed": "This job isn't confirmed yet.",
       "too_early_to_start": "Too early to start — you can begin up to an hour before the booking.",
       "cash_not_collected": "Collect the cash and mark it as received before completing this order.",
       "cash_already_collected": "Cash has already been collected for this order.",

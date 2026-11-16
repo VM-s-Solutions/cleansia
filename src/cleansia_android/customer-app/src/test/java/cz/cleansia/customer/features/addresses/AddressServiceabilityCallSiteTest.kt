@@ -2,6 +2,8 @@ package cz.cleansia.customer.features.addresses
 
 import java.io.File
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -46,4 +48,14 @@ class AddressServiceabilityCallSiteTest {
 
     private fun lookups(text: String): List<String> =
         Regex("""\b(?:CityNameMatch\.isServiced|(?:\w+\.)?isCityServiced)\([^)]*\)""").findAll(text).map { it.value }.toList()
+
+    @Test
+    fun `the address map is only composed when a Mapbox token is set`() {
+        val pane = screen.substringAfter("private fun AddOnMapPane(")
+        val guarded = pane.substringAfter("if (BuildConfig.MAPBOX_ACCESS_TOKEN.isNotBlank()) {").substringBefore("// ── Top: back button")
+
+        assertTrue(guarded.contains("MapboxMap("))
+        assertTrue(guarded.contains("CleansiaMapPin("))
+        assertFalse(pane.substringBefore("if (BuildConfig.MAPBOX_ACCESS_TOKEN.isNotBlank()) {").contains("MapboxMap("))
+    }
 }

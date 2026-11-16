@@ -107,6 +107,7 @@ import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.core.ui.theme.Poppins
 import cz.cleansia.core.ui.theme.primaryText
+import cz.cleansia.customer.BuildConfig
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.data.AddressRepository
 import cz.cleansia.customer.core.data.UserAddress
@@ -645,30 +646,34 @@ private fun AddOnMapPane(
     var cardCoverHeight by remember { mutableStateOf(0.dp) }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // ── Map ──
-        MapboxMap(
-            modifier = Modifier.fillMaxSize(),
-            mapViewportState = viewportState,
-            style = { CleansiaMapStyle(darkTheme) },
-            scaleBar = {}, // hide Mapbox's default 0–300m scale bar overlay
-            // Mapbox's terms require the wordmark and the attribution. Lifted above the address card,
-            // which covers the map's bottom edge where they sit by default. Only the ornaments move:
-            // the camera centre, which the pin marks, stays the map's centre.
-            logo = {
-                Logo(contentPadding = PaddingValues(start = 4.dp, bottom = cardCoverHeight + 4.dp))
-            },
-            attribution = {
-                Attribution(contentPadding = PaddingValues(start = 92.dp, bottom = cardCoverHeight + 4.dp))
-            },
-        )
+        // A build without a Mapbox token throws on the first MapboxMap; it gets no map and no pin.
+        if (BuildConfig.MAPBOX_ACCESS_TOKEN.isNotBlank()) {
+            // ── Map ──
+            MapboxMap(
+                modifier = Modifier.fillMaxSize(),
+                mapViewportState = viewportState,
+                style = { CleansiaMapStyle(darkTheme) },
+                scaleBar = {}, // hide Mapbox's default 0–300m scale bar overlay
+                // Mapbox's terms require the wordmark and the attribution. Lifted above the address card,
+                // which covers the map's bottom edge where they sit by default. Only the ornaments move:
+                // the camera centre, which the pin marks, stays the map's centre.
+                logo = {
+                    Logo(contentPadding = PaddingValues(start = 4.dp, bottom = cardCoverHeight + 4.dp))
+                },
+                attribution = {
+                    Attribution(contentPadding = PaddingValues(start = 92.dp, bottom = cardCoverHeight + 4.dp))
+                },
+            )
 
-        // ── Centre pin ── lifted by its own height, so its tip is the map's centre: the point the
-        // reverse geocode resolves.
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center,
-        ) {
-            CleansiaMapPin(darkTheme = darkTheme, modifier = Modifier.padding(bottom = CleansiaMapPinHeight))
+            // ── Centre pin ── lifted by its own height, so its tip is the map's centre: the point the
+            // reverse geocode resolves.
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) {
+                CleansiaMapPin(darkTheme = darkTheme, modifier = Modifier.padding(bottom = CleansiaMapPinHeight))
+            }
+
         }
 
         // ── Top: back button + search bar overlay ──

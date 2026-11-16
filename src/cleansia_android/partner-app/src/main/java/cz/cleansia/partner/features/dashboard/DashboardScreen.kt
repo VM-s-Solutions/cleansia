@@ -97,6 +97,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.Locale
+import kotlin.math.roundToInt
 
 /**
  * Cleaner-first dashboard, composed top-to-bottom around the four questions a cleaner has on opening the
@@ -1148,7 +1149,7 @@ internal fun todaysJobCount(upcoming: List<OrderListItem>?, today: LocalDate, zo
 
 internal fun computeMonthDelta(thisMonth: Int, lastMonth: Int): Int? {
     if (lastMonth == 0) return null
-    return ((thisMonth - lastMonth).toDouble() / lastMonth.toDouble() * 100.0).toInt()
+    return ((thisMonth - lastMonth).toDouble() / lastMonth.toDouble() * 100.0).roundToInt()
 }
 
 @Composable

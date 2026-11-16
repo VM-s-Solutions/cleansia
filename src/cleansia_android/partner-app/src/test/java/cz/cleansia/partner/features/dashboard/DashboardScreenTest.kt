@@ -22,6 +22,15 @@ class DashboardScreenTest {
         assertEquals(null, computeMonthDelta(thisMonth = 0, lastMonth = 0))
     }
 
+    @Test
+    fun `the month trend rounds as the web does, halves toward positive infinity`() {
+        assertEquals(67, computeMonthDelta(thisMonth = 5, lastMonth = 3))
+        assertEquals(-33, computeMonthDelta(thisMonth = 2, lastMonth = 3))
+        assertEquals(3, computeMonthDelta(thisMonth = 41, lastMonth = 40))
+        assertEquals(-2, computeMonthDelta(thisMonth = 39, lastMonth = 40))
+        assertEquals(-67, computeMonthDelta(thisMonth = 1, lastMonth = 3))
+    }
+
     /** With no mail app on the phone the tap did nothing; now it copies the address and says so, as the customer Help does. */
     @Test
     fun `the Help shortcut opens an e-mail to support, or copies the address and says so`() {

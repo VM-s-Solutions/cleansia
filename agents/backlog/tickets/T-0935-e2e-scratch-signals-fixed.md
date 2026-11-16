@@ -26,8 +26,11 @@ are)", before the phase 2 run of 18 and 19 November.
    never replaces the card itself.
 2. BOOK-014: `QuoteOrder` priced a start under the 2 h floor, while `/product/business-rules#booking-window` says it
    is refused, not priced. The quote now applies `CreateOrder`'s future and lead-time rules with its keys.
-3. CANCEL-051 and PAYOUT-045: the cases asked for a customer notice on a partial refund and the constant symbol on
-   the invoice detail, which no docs page promises: catalogue errors, corrected with the spec.
+3. CANCEL-051: the case asked for a customer notice on a partial refund, which no docs page promises: a catalogue
+   error, corrected with the spec. PAYOUT-045's invoice-detail clause stays (docs/flows/pay-and-payouts.md says the
+   detail carries the constant symbol) and gains an API assertion on the detail.
+4. The home page's quick quote sent a placeholder 09:00 start for a date with no time, which the quote now refuses
+   when it is past or under 2 h: it sends a start only once a time is chosen, and drops a time the new day cannot take.
 
 ## Not doing
 
@@ -42,3 +45,4 @@ One PR merged with CI green.
 ## Work record
 
 - 2026-11-16 — Filed and fixed on `fix/e2e-scratch-signals`.
+- 2026-11-16 — The review's rows fixed on the branch: PAYOUT-045's detail clause restored with an API assertion, the quick quote's placeholder start, case ids out of source comments, the e2e quote assertion made hard, and the API contract page.

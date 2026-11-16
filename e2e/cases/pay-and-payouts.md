@@ -360,9 +360,9 @@ Ids are `E2E-PAYOUT-NNN`. A DEV pay period lasts 3 days (end = start + 2) and th
 ### E2E-PAYOUT-045 — The Mark paid confirmation shows what to transfer before it sends anything
 - **Priority:** P1
 - **Role:** Admin
-- **Surfaces:** Web
+- **Surfaces:** API · Web
 - **Rule:** → /flows/pay-and-payouts#approval-is-the-last-refusal — the confirm shows the amount to transfer, the variable symbol, the constant symbol and the masked account
-- **Given** an `Approved` CZ invoice. **When** the admin presses Mark paid on the invoice page. **Then** an in-page confirm lists the amount (the transfer amount, not the total), the variable symbol, the constant symbol `0308` and the masked account, with a note field; nothing is sent and the invoice stays `Approved` until the confirm button is pressed.
+- **Given** an `Approved` CZ invoice. **When** the admin presses Mark paid on the invoice page. **Then** an in-page confirm lists the amount (the transfer amount, not the total), the variable symbol, the constant symbol `0308` and the masked account, with a note field; nothing is sent and the invoice stays `Approved` until the confirm button is pressed; the invoice detail (`GET api/AdminInvoice/details/{id}`) carries the same constant symbol `0308`.
 - **DEV:** none.
 
 ### E2E-PAYOUT-046 — Cancel an invoice and a corrected one follows

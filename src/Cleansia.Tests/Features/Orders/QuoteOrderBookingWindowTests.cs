@@ -62,7 +62,7 @@ public sealed class QuoteOrderBookingWindowTests
         AssertOutsideWindow(result);
     }
 
-    /// <summary>Under the 2 h floor a booking is refused, not priced higher (E2E-BOOK-014), so the quote refuses it too.</summary>
+    /// <summary>Under the 2 h floor a booking is refused, not priced higher, so the quote refuses it too.</summary>
     [Fact]
     public async Task A_Start_Under_Two_Hours_Away_Is_Refused_At_The_Quote_With_Creates_Key()
     {

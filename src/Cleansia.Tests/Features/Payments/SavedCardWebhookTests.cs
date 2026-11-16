@@ -222,7 +222,7 @@ public class SavedCardWebhookTests
     }
 
     /// <summary>
-    /// The two events of one web payment arrive together (on DEV 0.4 s apart, E2E-PAY-022): the later one loaded the card
+    /// The two events of one web payment arrive together (on DEV 0.4 s apart): the later one loaded the card
     /// before the earlier one committed its capture, so the card it is capturing is already among the customer's captured
     /// cards in that currency. It must not count as a card it replaces.
     /// </summary>

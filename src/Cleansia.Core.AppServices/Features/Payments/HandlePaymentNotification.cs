@@ -576,7 +576,7 @@ public class HandlePaymentNotification
             }
 
             // The two events of one payment arrive together: the later one finds this very card already captured by
-            // the earlier one's commit, and must not switch it off as a card it replaces (E2E-PAY-022).
+            // the earlier one's commit, and must not switch it off as a card it replaces.
             foreach (var replaced in await savedCardRepository.GetCapturedForUserInCurrencyAsync(
                          card.UserId, card.CurrencyId, cancellationToken))
             {

@@ -87,6 +87,7 @@ test('E\'s approved invoice is marked paid through the confirmation, which shows
   const invoiceId = str(listed, 'id');
   const before = (await call(await admin(), 'GET', `/api/AdminInvoice/details/${invoiceId}`)).body;
   test.skip(status(before) === 'Paid', 'E\'s invoice is already paid');
+  expect(str(before, 'constantSymbol'), 'the invoice detail carries the constant symbol the PDF prints').toBe('0308');
   const masked = str((await call(await admin(), 'GET', `/api/AdminEmployee/${e}/payout-details`)).body, 'maskedAccount');
   const note = `E2E run ${run.runId}: transfer sent`;
 

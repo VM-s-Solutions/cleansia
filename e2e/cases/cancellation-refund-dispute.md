@@ -431,7 +431,7 @@ Timing recipes the DEV notes refer to. A fee needs a cleaner on the job, so each
 - **Role:** Admin
 - **Surfaces:** API · Web
 - **Rule:** → /flows/cancellation-refund-dispute#refund — `IssuePartialRefund` loads every component of the split
-- **Given** a completed paid card order with a service and an extra. **When** the administrator refunds the service line only (`POST api/AdminRefund/partial`) with a reason. **Then** the refund is the service's share of what was paid (before any processing fee), the extra stays in the denominator, payment reads `PartiallyRefunded`, the Refunds page lists it with origin partial refund, and the customer gets a refund notice.
+- **Given** a completed paid card order with a service and an extra. **When** the administrator refunds the service line only (`POST api/AdminRefund/partial`) with a reason. **Then** the refund is the service's share of what was paid (before any processing fee), the extra stays in the denominator, payment reads `PartiallyRefunded`, and the Refunds page lists it with origin partial refund. No customer notice is promised for a partial refund (the `order.refunded` senders are the cancellations, the full refund and a dispute's settlement).
 - **DEV:** The refund window is 14 days from completion, so a freshly completed order needs no override reason.
 
 ### E2E-CANCEL-052 — A partial refund validates its lines and the override reason

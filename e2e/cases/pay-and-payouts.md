@@ -362,7 +362,7 @@ Ids are `E2E-PAYOUT-NNN`. A DEV pay period lasts 3 days (end = start + 2) and th
 - **Role:** Admin
 - **Surfaces:** Web
 - **Rule:** → /flows/pay-and-payouts#approval-is-the-last-refusal — the confirm shows the amount to transfer, the variable symbol, the constant symbol and the masked account
-- **Given** an `Approved` CZ invoice. **When** the admin presses Mark paid on the invoice page. **Then** an in-page confirm lists the amount (the transfer amount, not the total), the variable symbol, the constant symbol `0308` and the masked account, with a note field; nothing is sent and the invoice stays `Approved` until the confirm button is pressed; the invoice detail shows the same constant symbol.
+- **Given** an `Approved` CZ invoice. **When** the admin presses Mark paid on the invoice page. **Then** an in-page confirm lists the amount (the transfer amount, not the total), the variable symbol, the constant symbol `0308` and the masked account, with a note field; nothing is sent and the invoice stays `Approved` until the confirm button is pressed.
 - **DEV:** none.
 
 ### E2E-PAYOUT-046 — Cancel an invoice and a corrected one follows

@@ -158,7 +158,8 @@ public sealed class AuditSensitiveSnapshotTests
 
         var handler = new IssuePartialRefund.Handler(
             orderRepository.Object, refundRepository.Object, extraRepository.Object, countryRepository.Object,
-            refundService.Object, loyaltyService.Object, AdminSession(), auditContext,
+            refundService.Object, loyaltyService.Object, AdminSession(),
+            new Mock<INotificationProducer>().Object, new Mock<IOutboxMessageRepository>().Object, auditContext,
             NullLogger<IssuePartialRefund.Handler>.Instance);
 
         var result = await handler.Handle(

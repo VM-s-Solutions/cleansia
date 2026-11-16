@@ -4,9 +4,11 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Packages;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Common.Validations;
 using System.Security.Cryptography;
 using System.Text;
@@ -85,6 +87,8 @@ public class IssuePartialRefund
         IRefundService refundService,
         ILoyaltyService loyaltyService,
         IUserSessionProvider userSessionProvider,
+        INotificationProducer notificationProducer,
+        IOutboxMessageRepository outboxMessageRepository,
         IAuditContext auditContext,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
@@ -166,6 +170,28 @@ public class IssuePartialRefund
             // leg plus the credit leg, gross: the earn was on the whole gross price.
             var result = refund.Value!;
             var refundVat = ApportionVat(result.Amount, order.AppliedVatRate);
+
+            // Before the clawback, which flushes the unit of work; asked of the outbox so a replayed selection
+            // whose notice committed is not queued twice on the refund's key.
+            if (!string.IsNullOrEmpty(order.UserId)
+                && await outboxMessageRepository.GetByQueueAndKeyAsync(
+                    QueueNames.NotificationsDispatch,
+                    MessageKeys.Push(order.UserId, NotificationEventCatalog.OrderRefunded, result.RefundId),
+                    cancellationToken) is null)
+            {
+                await notificationProducer.NotifyAsync(
+                    order.UserId,
+                    NotificationEventCatalog.OrderRefunded,
+                    new Dictionary<string, string>
+                    {
+                        ["orderId"] = order.Id,
+                        ["orderNumber"] = order.DisplayOrderNumber,
+                    },
+                    order.TenantId,
+                    result.RefundId,
+                    cancellationToken);
+            }
+
             await loyaltyService.RevokeForRefundAsync(
                 order.Id, result.Amount + result.CreditReturned, result.RefundKey, actorId, cancellationToken);
 

@@ -198,7 +198,8 @@ public sealed class ConcurrentPartialRefundAuditTests(PostgresContainerFixture f
             Mock.Of<INotificationProducer>(), NullLogger<LoyaltyService>.Instance);
         var auditContext = new AuditContext();
         var handler = new IssuePartialRefund.Handler(orders, refunds, new ExtraRepository(ctx), new CountryConfigurationRepository(ctx),
-            seam, loyalty, Session(), auditContext, NullLogger<IssuePartialRefund.Handler>.Instance);
+            seam, loyalty, Session(), Mock.Of<INotificationProducer>(), Mock.Of<IOutboxMessageRepository>(), auditContext,
+            NullLogger<IssuePartialRefund.Handler>.Instance);
         var command = new IssuePartialRefund.Command(OrderId, [new IssuePartialRefund.RefundLineSelection(ServiceId, null)],
             RefundReason.ServiceNotRendered, null);
         var audience = new HostAudienceProvider(JwtAudiences.Admin);

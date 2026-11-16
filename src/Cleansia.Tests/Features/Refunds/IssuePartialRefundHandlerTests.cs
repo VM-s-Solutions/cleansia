@@ -8,12 +8,15 @@ using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Outbox;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Services;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Common.Validations;
 using Microsoft.Extensions.Logging.Abstractions;
 using MockQueryable;
@@ -45,6 +48,8 @@ public class IssuePartialRefundHandlerTests
     private readonly RecordingRefundService _refundService = new();
     private readonly RecordingLoyaltyService _loyaltyService = new();
     private readonly Mock<IUserSessionProvider> _session = new();
+    private readonly Mock<INotificationProducer> _notifications = new();
+    private readonly Mock<IOutboxMessageRepository> _outbox = new();
 
     public IssuePartialRefundHandlerTests()
     {
@@ -62,6 +67,8 @@ public class IssuePartialRefundHandlerTests
             _refundService,
             _loyaltyService,
             _session.Object,
+            _notifications.Object,
+            _outbox.Object,
             _auditContext,
             NullLogger<IssuePartialRefund.Handler>.Instance);
 
@@ -741,6 +748,75 @@ public class IssuePartialRefundHandlerTests
         Assert.Equal(480m, firstAmount + secondAmount);
     }
 
+    private Task<BusinessResult<IssuePartialRefund.Response>> RefundTheOneLineAsync()
+    {
+        var order = CreateOrder(1000m, appliedVatRate: null, completed: true, services: [Svc("svc-a", 1000m)]);
+        ArrangeOrder(order);
+        ArrangeConsumed(0m);
+        return CreateHandler().Handle(
+            new IssuePartialRefund.Command(
+                OrderId,
+                [new IssuePartialRefund.RefundLineSelection("svc-a", null)],
+                RefundReason.ServiceNotRendered,
+                OverrideReason: null),
+            CancellationToken.None);
+    }
+
+    private void VerifyNotified(Times times) =>
+        _notifications.Verify(n => n.NotifyAsync(
+            "user-1",
+            NotificationEventCatalog.OrderRefunded,
+            It.Is<Dictionary<string, string>>(args =>
+                args.Count == 2 && args["orderId"] == OrderId && args.ContainsKey("orderNumber")),
+            It.IsAny<string?>(),
+            "refund-1",
+            It.IsAny<CancellationToken>()), times);
+
+    [Fact]
+    public async Task A_Partial_Refund_Tells_The_Customer_Once_Keyed_On_The_Refund_Before_The_Clawback()
+    {
+        decimal? clawedBackWhenNotified = -1m;
+        _notifications
+            .Setup(n => n.NotifyAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Dictionary<string, string>>(),
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .Callback(() => clawedBackWhenNotified = _loyaltyService.LastAmountReturned)
+            .Returns(Task.CompletedTask);
+
+        var result = await RefundTheOneLineAsync();
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        VerifyNotified(Times.Once());
+        Assert.Null(clawedBackWhenNotified);
+        Assert.Equal(1000m, _refundService.LastRequest!.Amount);
+        Assert.Equal(1000m, _loyaltyService.LastAmountReturned);
+    }
+
+    [Fact]
+    public async Task A_Partial_Refund_Whose_Notice_The_Outbox_Already_Holds_Does_Not_Queue_It_Again()
+    {
+        var pushKey = MessageKeys.Push("user-1", NotificationEventCatalog.OrderRefunded, "refund-1");
+        _outbox
+            .Setup(o => o.GetByQueueAndKeyAsync(QueueNames.NotificationsDispatch, pushKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(OutboxMessage.Create(QueueNames.NotificationsDispatch, pushKey, "{}", "tenant-1"));
+
+        var result = await RefundTheOneLineAsync();
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        VerifyNotified(Times.Never());
+    }
+
+    [Fact]
+    public async Task A_Partial_Refund_That_Fails_Tells_The_Customer_Nothing()
+    {
+        _refundService.Fails = new Error(nameof(IssuePartialRefund.Command.OrderId), BusinessErrorMessage.RefundFailed);
+
+        var result = await RefundTheOneLineAsync();
+
+        Assert.Equal(BusinessErrorMessage.RefundFailed, result.Error!.Message);
+        _notifications.VerifyNoOtherCalls();
+    }
+
     private sealed class RecordingRefundService : IRefundService
     {
         public Task<BusinessResult<RefundResult>> RedriveAsync(string refundId, string actorId, CancellationToken cancellationToken)
@@ -759,6 +835,8 @@ public class IssuePartialRefundHandlerTests
         /// <summary>What the seam writes to the order when it settles a refund.</summary>
         public Action? Settles { get; set; }
 
+        public Error? Fails { get; set; }
+
         public void Reset()
         {
             CallCount = 0;
@@ -771,6 +849,11 @@ public class IssuePartialRefundHandlerTests
             CallCount++;
             LastRequest = request;
             Settles?.Invoke();
+            if (Fails is not null)
+            {
+                return Task.FromResult(BusinessResult.Failure<RefundResult>(Fails));
+            }
+
             return Task.FromResult(BusinessResult.Success(new RefundResult(
                 RefundId: "refund-1",
                 // The REAL builder, not a restatement of it. This fake used to hardcode

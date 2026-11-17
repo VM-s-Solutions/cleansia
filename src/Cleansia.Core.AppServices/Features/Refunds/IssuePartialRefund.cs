@@ -171,27 +171,6 @@ public class IssuePartialRefund
             var result = refund.Value!;
             var refundVat = ApportionVat(result.Amount, order.AppliedVatRate);
 
-            // Before the clawback, which flushes the unit of work; asked of the outbox so a replayed selection
-            // whose notice committed is not queued twice on the refund's key.
-            if (!string.IsNullOrEmpty(order.UserId)
-                && await outboxMessageRepository.GetByQueueAndKeyAsync(
-                    QueueNames.NotificationsDispatch,
-                    MessageKeys.Push(order.UserId, NotificationEventCatalog.OrderRefunded, result.RefundId),
-                    cancellationToken) is null)
-            {
-                await notificationProducer.NotifyAsync(
-                    order.UserId,
-                    NotificationEventCatalog.OrderRefunded,
-                    new Dictionary<string, string>
-                    {
-                        ["orderId"] = order.Id,
-                        ["orderNumber"] = order.DisplayOrderNumber,
-                    },
-                    order.TenantId,
-                    result.RefundId,
-                    cancellationToken);
-            }
-
             await loyaltyService.RevokeForRefundAsync(
                 order.Id, result.Amount + result.CreditReturned, result.RefundKey, actorId, cancellationToken);
 
@@ -206,6 +185,27 @@ public class IssuePartialRefund
             }
             else
             {
+                // Behind the refund-row lock, so an identical concurrent request queues no second notice on the
+                // refund's key; asked of the outbox too, since RetryRefund may already have told the customer.
+                if (!string.IsNullOrEmpty(order.UserId)
+                    && await outboxMessageRepository.GetByQueueAndKeyAsync(
+                        QueueNames.NotificationsDispatch,
+                        MessageKeys.Push(order.UserId, NotificationEventCatalog.OrderRefunded, result.RefundId),
+                        cancellationToken) is null)
+                {
+                    await notificationProducer.NotifyAsync(
+                        order.UserId,
+                        NotificationEventCatalog.OrderRefunded,
+                        new Dictionary<string, string>
+                        {
+                            ["orderId"] = order.Id,
+                            ["orderNumber"] = order.DisplayOrderNumber,
+                        },
+                        order.TenantId,
+                        result.RefundId,
+                        cancellationToken);
+                }
+
                 auditContext.RecordChange(
                     "Order",
                     order.Id,

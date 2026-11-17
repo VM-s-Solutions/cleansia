@@ -773,23 +773,29 @@ public class IssuePartialRefundHandlerTests
             It.IsAny<CancellationToken>()), times);
 
     [Fact]
-    public async Task A_Partial_Refund_Tells_The_Customer_Once_Keyed_On_The_Refund_Before_The_Clawback()
+    public async Task A_Partial_Refund_Tells_The_Customer_Once_Keyed_On_The_Refund()
     {
-        decimal? clawedBackWhenNotified = -1m;
-        _notifications
-            .Setup(n => n.NotifyAsync(
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Dictionary<string, string>>(),
-                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
-            .Callback(() => clawedBackWhenNotified = _loyaltyService.LastAmountReturned)
-            .Returns(Task.CompletedTask);
-
         var result = await RefundTheOneLineAsync();
 
         Assert.True(result.IsSuccess, result.Error?.Message);
         VerifyNotified(Times.Once());
-        Assert.Null(clawedBackWhenNotified);
         Assert.Equal(1000m, _refundService.LastRequest!.Amount);
         Assert.Equal(1000m, _loyaltyService.LastAmountReturned);
+    }
+
+    [Fact]
+    public async Task An_Identical_Partial_Refund_Whose_Success_Audit_Another_Request_Holds_Tells_The_Customer_Nothing()
+    {
+        // The outbox check sees committed rows only: a concurrent twin passes it, and only the
+        // refund-row lock tells the two apart.
+        _refundRepository
+            .Setup(r => r.HasPartialRefundAuditUnderLockAsync("refund-1", It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        var result = await RefundTheOneLineAsync();
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        VerifyNotified(Times.Never());
     }
 
     [Fact]

@@ -42,11 +42,11 @@ public class UpdateBankDetails
 
             RuleFor(c => c.BankName)
                 .MaximumLength(100)
-                .WithMessage(BusinessErrorMessage.MaxLengthExceeded);
+                .WithMessage(BusinessErrorMessage.MaxLength);
 
             RuleFor(c => c.HolderName)
                 .MaximumLength(200)
-                .WithMessage(BusinessErrorMessage.MaxLengthExceeded);
+                .WithMessage(BusinessErrorMessage.MaxLength);
 
             // The currency the ACCOUNT holds -- a bank's country does not decide it (a Czech bank sells
             // EUR accounts), so it is declared, never derived. Existence is the whole check: a cleaner may

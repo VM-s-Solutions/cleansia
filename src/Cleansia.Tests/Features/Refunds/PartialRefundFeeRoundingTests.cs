@@ -59,6 +59,8 @@ public class PartialRefundFeeRoundingTests
             _refundService,
             _loyaltyService,
             _session.Object,
+            new Mock<INotificationProducer>().Object,
+            new Mock<IOutboxMessageRepository>().Object,
             _auditContext,
             NullLogger<IssuePartialRefund.Handler>.Instance);
 

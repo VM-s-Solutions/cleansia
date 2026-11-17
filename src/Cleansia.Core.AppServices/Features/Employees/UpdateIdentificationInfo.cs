@@ -73,7 +73,7 @@ public class UpdateIdentificationInfo
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
                 .MaximumLength(50)
-                .WithMessage(BusinessErrorMessage.MaxLengthExceeded);
+                .WithMessage(BusinessErrorMessage.MaxLength);
 
             RuleFor(c => c.RegistrationNumber)
                 .Cascade(CascadeMode.Stop)

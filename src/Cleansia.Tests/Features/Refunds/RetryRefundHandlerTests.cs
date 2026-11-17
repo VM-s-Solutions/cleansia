@@ -75,7 +75,7 @@ public sealed class RetryRefundHandlerTests
             It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), times);
 
     [Fact]
-    public async Task A_Not_Sent_Partial_Refund_Stripe_Now_Accepts_Turns_Refunded_Moves_The_Payment_Status_And_Claws_Back_Once()
+    public async Task A_Not_Sent_Partial_Refund_Stripe_Now_Accepts_Turns_Refunded_Moves_The_Payment_Status_Tells_The_Customer_And_Claws_Back_Once()
     {
         var order = ArrangeOrder();
         var refund = ArrangeRefund(order);
@@ -89,8 +89,8 @@ public sealed class RetryRefundHandlerTests
         _stripe.Verify(s => s.RefundCheckoutSessionAsync(It.IsAny<string>(), 400m, refund.RefundKey, It.IsAny<CancellationToken>()), Times.Once);
         _loyalty.Verify(l => l.RevokeForRefundAsync(OrderId, 400m, refund.RefundKey, AdminId, It.IsAny<CancellationToken>()), Times.Once);
         _notifications.Verify(n => n.NotifyAsync(
-            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Dictionary<string, string>>(), It.IsAny<string?>(),
-            It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
+            "user-1", NotificationEventCatalog.OrderRefunded, It.IsAny<Dictionary<string, string>>(), It.IsAny<string?>(),
+            refund.Id, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

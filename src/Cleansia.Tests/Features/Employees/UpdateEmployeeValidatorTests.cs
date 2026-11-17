@@ -393,4 +393,16 @@ public class UpdateEmployeeValidatorTests
             e.PropertyName == nameof(UpdateEmployee.Command.LastName)
             && e.ErrorMessage == BusinessErrorMessage.Required);
     }
+
+    [Fact]
+    public async Task RegistrationNumber_Too_Long_Fails_MaxLength()
+    {
+        ArrangePassingContext();
+
+        var result = await CreateValidator().ValidateAsync(Valid() with { RegistrationNumber = new string('1', 51) });
+
+        Assert.Contains(result.Errors, e =>
+            e.PropertyName == nameof(UpdateEmployee.Command.RegistrationNumber)
+            && e.ErrorMessage == BusinessErrorMessage.MaxLength);
+    }
 }

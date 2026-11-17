@@ -358,4 +358,16 @@ public class UpdateIdentificationInfoValidatorTests
 
         Assert.True(result.IsValid);
     }
+
+    [Fact]
+    public async Task A_Registration_Number_Over_Fifty_Characters_Is_Refused_With_The_Common_Length_Key()
+    {
+        ArrangePassingContext();
+
+        var result = await CreateValidator().ValidateAsync(Valid() with { RegistrationNumber = new string('1', 51) });
+
+        Assert.Contains(result.Errors, e =>
+            e.PropertyName == nameof(UpdateIdentificationInfo.Command.RegistrationNumber)
+            && e.ErrorMessage == BusinessErrorMessage.MaxLength);
+    }
 }

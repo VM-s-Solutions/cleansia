@@ -94,7 +94,7 @@ public class RetryRefund
 
             var settled = result.Value!;
             var origin = refund.MapToOrigin();
-            if (origin is RefundOrigin.Cancellation or RefundOrigin.FullRefund
+            if (origin is RefundOrigin.Cancellation or RefundOrigin.FullRefund or RefundOrigin.PartialRefund
                 && !string.IsNullOrEmpty(order.UserId)
                 && await outboxMessageRepository.GetByQueueAndKeyAsync(
                     QueueNames.NotificationsDispatch,

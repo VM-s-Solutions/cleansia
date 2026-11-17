@@ -405,7 +405,9 @@ persisted service, package and extra snapshots. The detail repository includes `
 their value remains in the denominator even when the selected refund line is a service. On an
 undiscounted order with a 1,000 service and a 200 extra, the split allocates 1,000 to that service,
 before any applicable processing fee, instead of the whole 1,200. The refund service still applies
-its remaining-money ceiling.
+its remaining-money ceiling. A partial refund that goes through tells a customer with an account with the
+full refund's own `order.refunded` (push and the in-app feed), keyed on the refund and naming no amount,
+when the outbox holds none on that key (since 2026-11-17). A refund that fails tells them nothing.
 
 **Every refund takes back its share of the order's points** (owner rulings 2026-10-03), **on the
 order's running total** (since 2026-10-04). One clawback, `RevokeForRefundAsync`, takes
@@ -479,7 +481,7 @@ rendered* cancellation reads as a cancellation.
 - **Retry** (`POST api/AdminRefund/retry`, `CanIssueRefund`, audited as `order.refund.retry`) is offered
   for *Not sent* refunds only, never for a dispute's (resolve the dispute again), and for a cancellation's
   only on a cancelled order (`refund.not_retryable`). It asks Stripe first through `RedriveAsync`. On
-  success the customer with an account gets `order.refunded` for a cancellation or a full refund (behind an
+  success the customer with an account gets `order.refunded` for a cancellation, a full or a partial refund (behind an
   outbox check, so a redelivery sends nothing twice) and the loyalty clawback runs: the order's price for a
   full refund, the card amount plus the credit leg for a partial one, and none for a cancellation's, whose
   points went with the cancel. When Stripe has failed it, the close is committed and the answer is the

@@ -246,8 +246,27 @@ public class AdminUpdateEmployeeValidatorTests
 
         var result = await CreateValidator().ValidateAsync(Edit(new string('1', 51)));
 
-        AssertRefusedOnTheNumber(result, BusinessErrorMessage.MaxLengthExceeded);
+        AssertRefusedOnTheNumber(result, BusinessErrorMessage.MaxLength);
         _registry.VerifyNoOtherCalls();
+    }
+
+    [Theory]
+    [InlineData(nameof(AdminUpdateEmployee.Command.FirstName))]
+    [InlineData(nameof(AdminUpdateEmployee.Command.LastName))]
+    [InlineData(nameof(AdminUpdateEmployee.Command.LegalEntityName))]
+    public async Task A_Name_Over_Its_Length_Is_Refused_With_The_Common_Length_Key(string property)
+    {
+        var edit = Edit(registrationNumber: null);
+        edit = property switch
+        {
+            nameof(AdminUpdateEmployee.Command.FirstName) => edit with { FirstName = new string('x', 51) },
+            nameof(AdminUpdateEmployee.Command.LastName) => edit with { LastName = new string('x', 51) },
+            _ => edit with { LegalEntityName = new string('x', 201) },
+        };
+
+        var result = await CreateValidator().ValidateAsync(edit);
+
+        Assert.Contains(result.Errors, e => e.PropertyName == property && e.ErrorMessage == BusinessErrorMessage.MaxLength);
     }
 
     private const string CompanyName = "Úklid Nováková s.r.o.";

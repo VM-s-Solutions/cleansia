@@ -151,10 +151,13 @@ test.describe('orders: takes', () => {
       if (!crewIds(await adminDetail(w.id)).includes(a)) expect((await take(await as('cleaner'), w.id)).status).toBe(200);
       let d = await adminDetail(w.id);
       expect(statusOf(d)).toBe('Confirmed');
-      expect(at(d, 'availableSpots')).toBe(1);
-      expect(await onBoard('cleaner2', w.id)).toBe(true);
-      const tb = await contractText(await as('cleaner2'), w.id);
-      expect((await take(await as('cleaner2'), w.id, tb)).status).toBe(200);
+      // An invocation that stopped after B's take re-enters with both seats filled.
+      if (!crewIds(d).includes(bId)) {
+        expect(at(d, 'availableSpots')).toBe(1);
+        expect(await onBoard('cleaner2', w.id)).toBe(true);
+        const tb = await contractText(await as('cleaner2'), w.id);
+        expect((await take(await as('cleaner2'), w.id, tb)).status).toBe(200);
+      }
       d = await adminDetail(w.id);
       expect(crewIds(d).sort()).toEqual([a, bId].sort());
       expect(at(d, 'availableSpots')).toBe(0);

@@ -264,7 +264,7 @@ test.describe('cash and what is owed', () => {
     for (let i = 0; i < 4; i++) await wizard.next(page);
     await expect(wizard.pay(page, 'cash')).toBeDisabled();
     await expect(page.locator('#wizard-cash-reason')).toContainText('This booking needs 2 cleaners. Pay by card.');
-    await expect(page.getByText(t('pages.order.cash_cleared'))).toBeVisible();
+    await expect(page.getByRole('status').getByText(t('pages.order.cash_cleared'))).toBeVisible();
     await expect(wizard.pay(page, 'card')).toHaveAttribute('aria-pressed', 'false');
     setFlag(run, 'book035.webDone');
   });

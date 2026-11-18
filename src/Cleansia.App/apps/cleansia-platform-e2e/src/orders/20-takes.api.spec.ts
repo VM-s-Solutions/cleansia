@@ -162,7 +162,9 @@ test.describe('orders: takes', () => {
       expect(crewIds(d).sort()).toEqual([a, bId].sort());
       expect(at(d, 'availableSpots')).toBe(0);
       for (const role of ['cleaner', 'cleaner2', 'cleaner3'] as Role[]) expect(await onBoard(role, w.id), role).toBe(false);
-      const full = await take(await as('cleaner3'), w.id);
+      // E is off the full job and is served no contract preview for it: a take with an empty text id is refused for the
+      // tick (contract.not_accepted) before the seats are counted, so E echoes the job's text as read by the crew.
+      const full = await take(await as('cleaner3'), w.id, await contractText(await as('cleaner2'), w.id));
       expect(keys(full.body), JSON.stringify(full.body)).toContain('order.no_available_spots');
       // TAKE-043: one of two drops.
       const drop = await call(await as('cleaner'), 'POST', '/api/Order/DropOrder', { orderId: w.id });

@@ -15,6 +15,8 @@ const run = loadRun();
 const ROLES = ['manager', 'support', 'accountant'] as const;
 const DOC_STATUS = ['', 'Pending', 'Approved', 'Rejected'];
 const DOC_TYPE = ['', 'IdentityCard', 'Passport', 'DriversLicense', 'WorkPermit', 'Contract', 'Certificate'];
+// The menu host is an inline custom element with no box of its own, which Playwright reads as hidden: assert on its aside.
+const SIDEBAR = 'cleansia-sidebar-menu aside.sidebar';
 const noRoles = () => scratch() && 'E2E_SCRATCH=1: a scratch run creates no role accounts';
 
 // The admin host answers 429 to sign-ins in quick succession: the SPA's are spaced like signIn()'s.
@@ -46,7 +48,7 @@ test('the Administrator lists the three role accounts, and each signs in to the 
   for (const role of ROLES) {
     const { ctx, page: spa } = await asRole(browser, role);
     await expect(spa).not.toHaveURL(/\/profile|\/login|\/unauthorized/);
-    await expect(spa.locator('cleansia-sidebar-menu')).toBeVisible();
+    await expect(spa.locator(SIDEBAR)).toBeVisible();
     await ctx.close();
   }
 });
@@ -55,7 +57,7 @@ test('Support has no pay periods or invoices in the SPA and is turned away from 
   const skip = noRoles();
   test.skip(!!skip, skip || '');
   const support = await asRole(browser, 'support');
-  const menu = support.page.locator('cleansia-sidebar-menu');
+  const menu = support.page.locator(SIDEBAR);
   await expect(menu).toBeVisible();
   for (const entry of ['Pay Periods', 'Invoices']) await expect(menu.getByText(entry, { exact: true })).toHaveCount(0);
   for (const path of ['pay-periods', 'invoice-management']) {
@@ -65,7 +67,7 @@ test('Support has no pay periods or invoices in the SPA and is turned away from 
   await support.ctx.close();
 
   const accountant = await asRole(browser, 'accountant');
-  const accountantMenu = accountant.page.locator('cleansia-sidebar-menu');
+  const accountantMenu = accountant.page.locator(SIDEBAR);
   for (const entry of ['Pay Periods', 'Invoices']) await expect(accountantMenu.getByText(entry, { exact: true })).toBeVisible();
   await accountant.page.goto(`${SITES.admin}/pay-periods`);
   await expect(accountant.page).toHaveURL(/\/pay-periods/);

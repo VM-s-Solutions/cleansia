@@ -194,9 +194,15 @@ test.describe('orders: takes', () => {
       expect(str(o, 'address.street'), role).not.toBe('');
       expect(str(o, 'accessInstructions'), role).toBe('key under the mat');
     }
+    // B of the case reads none of it: a job on E's board is served redacted (RedactForBrowsingCleaner); W is full again,
+    // so it is off E's board and not served at all (GetOrderDetails: CanBrowseOrderAsync, order.not_found).
     const e = await call(await as('cleaner3'), 'GET', `/api/Order/GetById?OrderId=${w.id}`);
-    expect(e.status, 'a cleaner off the crew still reads the job, redacted (OrderPiiRedaction.RedactForBrowsingCleaner)').toBe(200);
-    expect([str(e.body, 'customerPhone'), str(e.body, 'address.street'), str(e.body, 'accessInstructions')], JSON.stringify(e.body).slice(0, 300)).toEqual(['', '', '']);
+    if (e.status === 200) {
+      expect([str(e.body, 'customerPhone'), str(e.body, 'address.street'), str(e.body, 'accessInstructions')], JSON.stringify(e.body).slice(0, 300)).toEqual(['', '', '']);
+    } else {
+      expect(e.status, JSON.stringify(e.body)).toBe(400);
+      expect(keys(e.body), JSON.stringify(e.body)).toContain('order.not_found');
+    }
   });
 
   test('the last cleaner drops: the job is back on the board at New, the customer and the admins are told, the audit has it (P)', { tag: ['@E2E-TAKE-040', '@E2E-TAKE-041', '@E2E-TAKE-042'] }, async () => {

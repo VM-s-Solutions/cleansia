@@ -305,6 +305,20 @@ test.describe('cash and what is owed', () => {
     test.skip(!!flag(run, 'receivable.webShown'), `shown at ${flag(run, 'receivable.webShown')}`);
     await customerSignIn(page, emailOf(run, 'debtor'), run.password);
     await toPayment(page, pragueSlot(pragueDate(new Date(Date.now() + 2 * 24 * HOUR)), '12:00'));
+    // The wizard learns of the debt from the refused create (order-wizard.facade.ts onCreateRefused), then returns to
+    // the payment step listing what is owed (E2E-BOOK-038).
+    await wizard.pay(page, 'cash').click();
+    await wizard.next(page);
+    const skipPlus = page.getByRole('button', { name: 'Continue without Plus' });
+    if (await skipPlus.isVisible().catch(() => false)) await skipPlus.click();
+    else await wizard.next(page);
+    await page.locator('input#wizard-early-performance').check();
+    if (await page.locator('input#wizard-terms').isVisible()) await page.locator('input#wizard-terms').check();
+    const refused = page.waitForResponse((r) => new URL(r.url()).pathname.endsWith('/api/Order/CreateOrder'));
+    await page.getByRole('button', { name: 'Place Order' }).click();
+    const reply = await refused;
+    expect(reply.status()).toBe(400);
+    expect(errorKeys(await reply.json())).toContain('order.unpaid_receivable');
     await expect(page.getByText(t('pages.order.unpaid_owed'))).toBeVisible();
     const due = page.locator('cleansia-customer-amount-due');
     await expect(due).toContainText(t('pages.amount_due.kind.cash_cancellation_fee'));

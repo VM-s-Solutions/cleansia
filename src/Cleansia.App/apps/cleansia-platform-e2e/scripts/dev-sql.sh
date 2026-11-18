@@ -29,7 +29,8 @@ done
 echo "execute-sql run $id (ref $REF)"
 state=
 for _ in $(seq 1 60); do
-  state=$(gh run view "$id" --repo "$REPO" --json status,conclusion --jq '.status + " " + (.conclusion // "")')
+  # A run just dispatched can answer 404 for a few seconds: keep polling rather than stop under set -e.
+  state=$(gh run view "$id" --repo "$REPO" --json status,conclusion --jq '.status + " " + (.conclusion // "")' 2>/dev/null || true)
   case "$state" in completed*) break ;; esac
   sleep 10
 done

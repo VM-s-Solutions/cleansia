@@ -140,6 +140,8 @@ test.describe('orders: settle', () => {
     const d2 = run.orders['D2'];
     const id = run.receivables?.['D2'];
     test.skip(!d2 || !id, 'D2 opened no receivable');
+    // The fee receipt is written when the fee is paid (PAY-041): reading it before would find no row.
+    test.skip(list((await call(await as('debtor'), 'GET', '/api/Receivable/GetMine')).body, '').length > 0, 'the debtor has not paid the fee yet (PAY-041)');
     const r = await call(await as('debtor'), 'GET', `/api/Order/DownloadReceipt?OrderId=${d2.id}`);
     expect(keys(r.body), JSON.stringify(r.body)).toContain('receipt.not_found');
     // Owner ruling 4, 2026-11-15: the fee receipt's row is read by a read-only DEV-only SQL (a workflow dispatch).

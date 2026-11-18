@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { anonymous, call, errorKeys, Host, list, named, ORDER_STATUS, PAYMENT_STATUS, poll, Reply, Session, signIn, str } from '../support/dev';
 import { book, cancel, feed, preview } from '../support/flows';
 import { cancelSplit, planned, RULED_DAYS } from '../support/plan';
-import { emailOf, loadRun, Role, RunOrder, RunState, saveRun, scratch, setFlag } from '../support/run';
+import { emailOf, flag, loadRun, Role, RunOrder, RunState, saveRun, scratch, setFlag } from '../support/run';
 import { noticeHours, pragueSlot } from '../support/slots';
 import { cachedAdminAs } from '../support/web';
 
@@ -139,6 +139,8 @@ test.describe('orders: tiers', () => {
     for (const key of ['K2', 'F2']) {
       const o = run.orders[key];
       if (!o || o.cancelled) continue;
+      // K2 is one of cashcap's two unpaid cash bookings: it stays until the customer web has met the cap (orders/40).
+      if (key === 'K2' && !flag(run, 'book037.webDone')) continue;
       const s = await as(o.customer ?? 'customer');
       const p = await preview(s, o.id);
       expect(named(p.body, 'tier', TIER), key).toBe('FreeNotAccepted');

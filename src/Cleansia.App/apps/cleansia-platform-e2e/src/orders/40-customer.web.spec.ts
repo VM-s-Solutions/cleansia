@@ -297,6 +297,7 @@ test.describe('cash and what is owed', () => {
     expect(errorKeys(await reply.json())).toContain('order.cash_open_bookings_limit_reached');
     await expect(page.getByText(t('api.order.cash_open_bookings_limit_reached'))).toBeVisible();
     expect(created).toBe(0);
+    setFlag(run, 'book037.webDone');
   });
 
   test('someone who owes is shown what and offered to pay it on the payment step', { tag: ['@E2E-BOOK-038'] }, async ({ page }) => {

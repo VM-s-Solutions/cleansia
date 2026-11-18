@@ -83,7 +83,10 @@ test.describe('work: afternoon', () => {
     const lines = list(q.body, 'lines');
     const gross = (id: string) => num(lines.find((l) => str(l, 'itemId') === id), 'amount');
     const G = lines.reduce<number>((sum, l) => sum + num(l, 'amount'), 0);
-    expect(G, 'the lines sum to the total X was booked at').toBeCloseTo(o.total, 2);
+    // A booking made under 4 h ahead carries the 20 % express surcharge on top of the lines (BookingPolicy); the plan
+    // books X earlier than that, but an orders invocation that ran late does not.
+    const express = Date.parse(o.slot) - Date.parse(o.createdAt ?? '') < 4 * 3_600_000 ? round2(0.2 * G) : 0;
+    expect(G + express, 'the lines, with any express surcharge, sum to the total X was booked at').toBeCloseTo(o.total, 2);
     const T = o.total;
     // RefundAllocator: a selection's refund = round(its grosses / all grosses (the extra included) x T, 2). Reason 4,
     // ServiceNotRendered: the platform absorbs the Stripe fee, so the amount sent is the share (IssuePartialRefund).

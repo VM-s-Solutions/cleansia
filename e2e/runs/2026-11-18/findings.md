@@ -185,18 +185,19 @@ consent tick as the terms, P2); F-081 and F-095 are P3, and F-082 and F-092 docs
 phone save is unexplained and open for Mike (its *Ready to book* half is by design). No P1 defect is open: every
 core journey ran end to end on DEV, the night close and both Close now paths included.
 
-**P1 coverage, 146 cases:** 135 passed in phase 2 · 9 passed by phase 1 and not re-run · 1 failed · 1 not run ·
-0 not covered.
+**P1 coverage, 146 cases:** 133 passed in phase 2 · 9 passed by phase 1 and not re-run · 1 failed · 3 not run or
+partly shown · 0 not covered.
 
-- Passed in phase 2: the 132 P1 cases the suite passed on R2 (BOOK-035, PAYOUT-033 and PAYOUT-046 among them, which
+- Passed in phase 2: the 130 P1 cases the suite passed in full on R2 (BOOK-035, PAYOUT-033 and PAYOUT-046 among them, which
   their reports read failed from a re-run, F-077), plus E2E-AUTH-002 (iOS and Android), E2E-EXEC-001 and E2E-PAY-012
-  (Android), which only a runbook covers. Passed in part: E2E-BOOK-037 (its web half never ran on R2, F-078) and
-  E2E-AUTH-049 (its iOS half, F-091).
+  (Android), which only a runbook covers.
 - Passed by phase 1 and not re-run: E2E-PAYOUT-016, E2E-PAYOUT-017, E2E-PAYOUT-032, E2E-PAYOUT-035, E2E-PAYOUT-036,
   E2E-PAYOUT-055 and E2E-PAYOUT-056 (skipped in settle by design under `E2E_NO_CLOSE_NOW=1`; F-012 pressed Close now
   in the SPA on Day 2), and E2E-XCUT-011 (Android) and E2E-PAY-011 (iOS), whose runbook rows the phase-2 lanes did not
   repeat.
 - Failed: E2E-PAYOUT-057 (F-075).
-- Not run: E2E-TAKE-025 (its test failed at the publish SQL before any product step, F-076).
+- Not run (a test covers it, but the run did not show its outcome): E2E-TAKE-025 (its test failed at the publish SQL
+  before any product step, F-076); and, partly shown: E2E-BOOK-037 (its web half never ran on R2, F-078) and
+  E2E-AUTH-049 (its iOS half, F-091).
 - Not covered: none. The parts of cases DEV cannot show are listed in `e2e/README.md` (*P1 cases the suite does not
   cover yet*).

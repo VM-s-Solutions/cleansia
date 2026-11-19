@@ -190,8 +190,8 @@ below, except where a mobile run is named). Times are UTC; Prague is UTC+1.
 
 A stage's report lists only the case ids its tests carry, so it never reads as full P1 coverage. Every P1 case has a
 test or a row in the P1 tables of `runbooks/`, and the phase-2 run of 18 and 19 November 2026 ran all of them
-(`runs/2026-11-18/findings.md`, part (c)): 135 passed, 9 passed by phase 1 and not re-run, E2E-PAYOUT-057 failed on a
-product defect (F-075) and E2E-TAKE-025 was not run (F-076). What stays open is a part of a case, not a case:
+(`runs/2026-11-18/findings.md`, part (c)): 133 passed, 9 passed by phase 1 and not re-run, E2E-PAYOUT-057 failed on a
+product defect (F-075), E2E-TAKE-025 was not run (F-076), and E2E-BOOK-037 and E2E-AUTH-049 were shown in part. What stays open is a part of a case, not a case:
 
 | Case | The part not covered | Why |
 |---|---|---|

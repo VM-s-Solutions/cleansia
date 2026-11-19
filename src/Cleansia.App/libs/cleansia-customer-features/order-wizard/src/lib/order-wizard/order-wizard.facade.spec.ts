@@ -1739,7 +1739,7 @@ describe('OrderWizardFacade', () => {
       expect(facade.formData().paymentType).toBe(PaymentType.Card);
     });
 
-    it('is taken away, and not replaced by card, when the selection grows past one cleaner', async () => {
+    it('is taken away, and not replaced by card, when the selection grows past one cleaner, said in the status line and not in a toast', async () => {
       signedIn.set(true);
       await quoted();
       facade.selectPaymentType(PaymentType.Cash);
@@ -1751,7 +1751,7 @@ describe('OrderWizardFacade', () => {
 
       expect(facade.formData().paymentType).toBeNull();
       expect(facade.cashCleared()).toBe(true);
-      expect(snackbar.showInfoTranslated).toHaveBeenCalledWith('pages.order.cash_cleared');
+      expect(snackbar.showInfoTranslated).not.toHaveBeenCalledWith('pages.order.cash_cleared');
     });
 
     it('is taken away when a heavier level makes the booking a job for two', async () => {

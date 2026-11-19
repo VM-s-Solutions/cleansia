@@ -282,8 +282,10 @@ currency — but only while the cached quote matches the current selection. The 
 
 A cash choice that becomes refused — a sign-out, a selection that grows to two cleaners, a removed or
 expired card, or a different currency — is **taken
-away, never switched to card**: `paymentType` becomes `null`, the step says *Cash is no longer
-available for this booking…* (`pages.order.cash_cleared`) and the customer chooses again. Submit never
+away, never switched to card**: `paymentType` becomes `null`, the payment step's status line says
+*Cash is unavailable. Choose another payment method.* (`pages.order.cash_cleared`) and the customer
+chooses again. The notice shows once, in that status line, never as a toast as well; the recurring
+schedule form does the same with `recurring_booking.cash_cleared`. Submit never
 sends refused cash and refreshes the saved cards before submission; if the server still answers
 `order.cash_not_available` or `order.cash_requires_saved_card`, the choice is cleared and
 the wizard returns to the payment step. → [Paying in cash](/product/business-rules#cash)

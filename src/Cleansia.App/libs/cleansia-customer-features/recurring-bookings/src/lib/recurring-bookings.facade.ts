@@ -215,7 +215,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
   readonly cashClearedNotice = computed(() => this.cashCleared() && !this.cashSelectable());
   private readonly cashEffect = effect(() => {
     if (this.formData().paymentType === PaymentType.Cash && cashIsRefused(this.cashEligibility())) {
-      untracked(() => this.dropCash(true));
+      untracked(() => this.dropCash());
     }
   });
 
@@ -834,11 +834,10 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     this.updateFormData({ paymentType: type });
   }
 
-  /** Never replaced by card: the customer is told and chooses again. */
-  private dropCash(announce: boolean): void {
+  /** Never replaced by card: the payment step's status line tells the customer, who chooses again. */
+  private dropCash(): void {
     this.updateFormData({ paymentType: null });
     this.cashCleared.set(true);
-    if (announce) this.snackbar.showInfoTranslated('recurring_booking.cash_cleared');
   }
 
   // ─── A package and a service it already includes ──────────────────
@@ -1099,7 +1098,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
       if (code && CASH_REFUSALS.includes(code)) {
         this.cashCardReadSequence++;
         this.cashCards.set(null);
-        this.dropCash(false);
+        this.dropCash();
         void this.refreshCashCards();
         return false;
       }
@@ -1130,7 +1129,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     await this.refreshCashCards();
     if (this.cashSelectable()) return true;
     if (cashIsRefused(this.cashEligibility())) {
-      this.dropCash(true);
+      this.dropCash();
     } else {
       this.snackbar.showError(this.translate.instant('recurring_booking.cash_unchecked'));
     }

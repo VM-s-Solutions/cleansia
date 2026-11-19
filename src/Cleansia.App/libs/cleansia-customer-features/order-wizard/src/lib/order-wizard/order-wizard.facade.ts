@@ -347,7 +347,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     });
     effect(() => {
       if (this.formData().paymentType === PaymentType.Cash && cashIsRefused(this.cashEligibility())) {
-        untracked(() => this.dropCash(true));
+        untracked(() => this.dropCash());
       }
     });
     effect(() => {
@@ -381,11 +381,10 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     this.saveCard.set(save);
   }
 
-  /** Never replaced by card: the customer is told and chooses again. */
-  private dropCash(announce: boolean): void {
+  /** Never replaced by card: the payment step's status line tells the customer, who chooses again. */
+  private dropCash(): void {
     this.updateFormData({ paymentType: null });
     this.cashCleared.set(true);
-    if (announce) this.snackbarService.showInfoTranslated('pages.order.cash_cleared');
   }
 
   selectPreferredCleaner(employeeId: string | null): void {
@@ -1068,7 +1067,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
       (paymentType === PaymentType.Cash && !this.cashSelectable())
     ) {
       this.submitting.set(false);
-      if (paymentType === PaymentType.Cash) this.dropCash(true);
+      if (paymentType === PaymentType.Cash) this.dropCash();
       this.goToPaymentStep();
       return;
     }
@@ -1229,7 +1228,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     if (code && CASH_REFUSALS.includes(code)) {
       this.cashCardReadSequence++;
       this.cashCards.set(null);
-      this.dropCash(false);
+      this.dropCash();
       void this.refreshCashCards();
       this.goToPaymentStep();
       return;

@@ -303,6 +303,9 @@ test.describe('cash and what is owed', () => {
   test('someone who owes is shown what and offered to pay it on the payment step', { tag: ['@E2E-BOOK-038'] }, async ({ page }) => {
     test.skip(!flag(run, 'd2.receivableOpen'), 'D2\'s cancellation fee is not open yet (orders/30)');
     test.skip(!!flag(run, 'receivable.webShown'), `shown at ${flag(run, 'receivable.webShown')}`);
+    // Once PAY-041 has paid the fee, Place Order would book a real cash order instead of being refused.
+    const debtor = await signIn('customer', emailOf(run, 'debtor'), run.password);
+    test.skip(!list((await call(debtor, 'GET', '/api/Receivable/GetMine')).body, '').length, 'the debtor owes nothing: D2\'s fee is paid (PAY-041)');
     await customerSignIn(page, emailOf(run, 'debtor'), run.password);
     await toPayment(page, pragueSlot(pragueDate(new Date(Date.now() + 2 * 24 * HOUR)), '12:00'));
     // The wizard learns of the debt from the refused create (order-wizard.facade.ts onCreateRefused), then returns to

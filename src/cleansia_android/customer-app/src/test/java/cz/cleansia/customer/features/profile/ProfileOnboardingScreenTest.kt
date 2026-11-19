@@ -32,6 +32,20 @@ class ProfileOnboardingScreenTest {
     }
 
     @Test
+    fun `the wheels offer only the days the server accepts as a birth date`() {
+        val sheet = body(source, "private fun BirthDateWheelSheet(")
+        assertTrue(
+            "the wheels reach today, which UpdateCurrentUser refuses (validation.date_must_be_in_past)",
+            sheet.contains("maxDate = today.minusDays(1)."),
+        )
+        assertTrue(
+            "the wheels reach past 120 years back, which UpdateCurrentUser refuses (validation.invalid_age)",
+            sheet.contains("minDate = today.minusYears(120)."),
+        )
+        assertFalse("the wheels end at the current instant", sheet.contains("System.currentTimeMillis()"))
+    }
+
+    @Test
     fun `only a moving wheel stores the day, and Done only closes`() {
         val sheet = body(source, "private fun BirthDateWheelSheet(")
         val listener = block(sheet, sheet.indexOf("init(seed.year, seed.monthValue - 1, seed.dayOfMonth)"))

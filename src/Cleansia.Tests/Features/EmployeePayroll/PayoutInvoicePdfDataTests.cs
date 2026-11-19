@@ -273,8 +273,8 @@ public class PayoutInvoicePdfDataTests
     /// <para>This test asserted the opposite until that ruling, and the behaviour it pinned was a live
     /// hazard rather than a feature: the posture was derived from <c>employee.VatNumber</c>, a field the
     /// CLEANER sets on themselves from the partner mobile app, and <c>RegenerateInvoicePdf</c> — which
-    /// has no status gate, so a PAID invoice qualifies — re-reads it and overwrites the issued PDF at
-    /// the same blob URL. A cleaner could change the tax treatment of a document already sent by editing
+    /// had no status gate, so a PAID invoice qualified — re-reads it, and its render becomes the
+    /// document the invoice serves. A cleaner could change the tax treatment of a document already sent by editing
     /// their own profile.</para>
     ///
     /// <para>The FIELD is gone as of chunk 4: a cleaner has no VAT number to hold, on the entity or on

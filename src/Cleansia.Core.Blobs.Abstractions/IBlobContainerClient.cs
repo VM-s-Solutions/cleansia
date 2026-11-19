@@ -21,6 +21,11 @@ public interface IBlobContainerClient
     /// </summary>
     Task<bool> UploadIfAbsentAsync(string blobName, Stream stream, CancellationToken cancellationToken);
     Task DeleteAsync(string blobName, CancellationToken cancellationToken);
+    /// <summary>
+    /// Open a stream that writes the blob, replacing one of that name if it exists. Never point it at a
+    /// container of issued documents: those are written with <see cref="DocumentVersions.UploadNewVersionAsync"/>
+    /// (→ /decisions/adr-0083).
+    /// </summary>
     Task<Stream> CreateFileForWritingAsync(string blobName, CancellationToken cancellationToken);
 
     /// <summary>
@@ -55,7 +60,9 @@ public interface IBlobContainerClient
 
     /// <summary>
     /// Copy contents blob to another blob
-    /// Only works when source and target blobs are in the same storage account
+    /// Only works when source and target blobs are in the same storage account.
+    /// An existing target blob is replaced: never point it at a container of issued documents
+    /// (→ /decisions/adr-0083).
     /// </summary>
     /// <param name="sourceUri">Uri of the source blob</param>
     /// <param name="targetBlob">Name of the target blob</param>
@@ -63,7 +70,9 @@ public interface IBlobContainerClient
     /// <returns></returns>
     Task CopyAsync(Uri sourceUri, string targetBlob, CancellationToken cancellationToken);
     /// <summary>
-    /// Copy contents blob to another blob within the same container
+    /// Copy contents blob to another blob within the same container.
+    /// An existing target blob is replaced: never point it at a container of issued documents
+    /// (→ /decisions/adr-0083).
     /// </summary>
     /// <param name="sourceBlob">Uri of the source blob</param>
     /// <param name="targetBlob">Name of the target blob</param>

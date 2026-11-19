@@ -110,8 +110,8 @@ public static class FileExtensions
         // This is the fix for a live hazard, not a tidy-up. The supplier's posture used to be derived
         // as `vatNumber != null` from a field the CLEANER can set on themselves at any time, from their
         // own phone (PUT /api/Employee/UpdateIdentificationInfo on the partner mobile host). Nothing
-        // snapshots it, and RegenerateInvoicePdf -- which has no status gate, so a PAID invoice
-        // qualifies -- re-reads it and overwrites the issued PDF AT THE SAME BLOB URL. So a cleaner
+        // snapshots it, and RegenerateInvoicePdf -- which had no status gate, so a PAID invoice
+        // qualified -- re-reads it, and its render BECOMES THE DOCUMENT THE INVOICE SERVES. So a cleaner
         // could change the tax treatment of a document that had already been sent, after the fact, by
         // editing their own profile.
         //

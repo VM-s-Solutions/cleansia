@@ -182,7 +182,8 @@ banners in place, which say what the code does now; no record supersedes them.
 
 **[ADR-0083](./adr-0083)** (`accepted` 2026-11-19, T-0937) supersedes nothing: it records Mike's ruling that an
 issued invoice or receipt PDF is never overwritten, so a re-render is a new numbered file and the row moves to
-it.
+it. [ADR-0046](./adr-0046) D4.3 step 3, which said the regeneration overwrites the same blob name, carries a
+dated banner in place.
 
 ## All records
 

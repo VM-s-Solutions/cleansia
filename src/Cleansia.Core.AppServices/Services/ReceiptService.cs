@@ -166,8 +166,7 @@ public sealed class ReceiptService(
     private async Task UploadAsync(OrderReceipt receipt, byte[] pdfBytes, CancellationToken cancellationToken)
     {
         var blobClient = blobClientFactory.GetBlobContainerClient(Constants.BlobContainers.GeneratedReceipts);
-        using var pdfStream = new MemoryStream(pdfBytes);
-        await blobClient.UploadAsync(receipt.BlobName, pdfStream, cancellationToken: cancellationToken);
+        receipt.MoveToRender(await blobClient.UploadNewVersionAsync(receipt.FirstBlobName, pdfBytes, cancellationToken));
     }
 
     private static void StampFiscalData(ReceiptPdfData receiptData, OrderReceipt receipt)
@@ -476,7 +475,7 @@ public sealed class ReceiptService(
                     result.FiscalCode,
                     DateTime.TryParse(result.RegisteredAt, out var parsedAt) ? parsedAt : DateTime.UtcNow);
 
-                // Regenerate the PDF with the fiscal code and re-upload it.
+                // A new render beside the one the customer was sent, which stays as issued.
                 var receiptData = CreateReceiptData(
                     order,
                     receipt,

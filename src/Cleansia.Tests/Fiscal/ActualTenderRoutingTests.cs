@@ -12,6 +12,7 @@ using Cleansia.Core.Domain.Users;
 using Cleansia.Core.Fiscal.Abstractions;
 using Cleansia.Infra.Services.Pdf;
 using Cleansia.Infra.Services.Pdf.Models;
+using Cleansia.TestUtilities;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
@@ -84,7 +85,7 @@ public class ActualTenderRoutingTests
 
         _blobClientFactory
             .Setup(f => f.GetBlobContainerClient(It.IsAny<string>()))
-            .Returns(new Mock<IBlobContainerClient>().Object);
+            .Returns(new InMemoryBlobContainer("generated-receipts"));
     }
 
     [Theory]

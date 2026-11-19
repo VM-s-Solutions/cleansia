@@ -35,4 +35,22 @@ public static class DocumentVersions
         throw new InvalidOperationException($"{firstName} already has {MaxVersions} versions");
     }
 
+    /// <summary>
+    /// Deletes every version, newest first: renders take the lowest free number and nothing else deletes
+    /// one, so the versions are contiguous from the first, and a run that stops half way leaves them so.
+    /// </summary>
+    public static async Task DeleteAllVersionsAsync(
+        this IBlobContainerClient client, string firstName, CancellationToken cancellationToken)
+    {
+        var last = 0;
+        while (await client.ExistsAsync(VersionName(firstName, last + 1), cancellationToken))
+        {
+            last++;
+        }
+
+        for (var version = last; version >= 1; version--)
+        {
+            await client.DeleteAsync(VersionName(firstName, version), cancellationToken);
+        }
+    }
 }

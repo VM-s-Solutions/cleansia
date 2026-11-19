@@ -146,11 +146,8 @@ public class CashReceiptAtCompletionTests(PostgresContainerFixture fixture) : Ba
             .Returns(bytes);
         services.Replace(ServiceDescriptor.Singleton(pdf.Object));
 
-        var blob = new Mock<IBlobContainerClient>();
-        blob.Setup(b => b.DownloadAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(() => new BlobFile(new MemoryStream(bytes), "application/pdf"));
         var blobs = new Mock<IBlobContainerClientFactory>();
-        blobs.Setup(f => f.GetBlobContainerClient(It.IsAny<string>())).Returns(blob.Object);
+        blobs.Setup(f => f.GetBlobContainerClient(It.IsAny<string>())).Returns(new InMemoryBlobContainer("generated-receipts"));
         services.Replace(ServiceDescriptor.Singleton(blobs.Object));
 
         services.Replace(ServiceDescriptor.Scoped<IEmailService>(_ => Mock.Of<IEmailService>()));

@@ -187,7 +187,7 @@ commit against the deleted row. Cleaner erasure also replaces the employee's add
 | `OrderPhoto` | references `CapturedBy`, `Order`; the weekly sweep deletes its blob and row after the order's photo window (default seven days), counted from completion, or from cancellation on a cancelled order, held while any dispute is neither `Resolved` nor `Closed`. The order's tenant determines the window. `MayBeAddedAt` / `MayBeDeletedAt` are the upload and deletion windows the photo commands enforce → [Photos](/product/business-rules#photos-and-access) |
 | `OrderNote` | references `Order` |
 | `OrderIssue` | references `Order` |
-| `OrderReceipt` | references `Language`; unique `(TenantId, ReceiptNumber)`, nulls not distinct — the number comes from a per-operator `FiscalCounter`, so two operators' first receipts of a year are the same string and the tenant term is what keeps them apart. `BlobDeletedAt` (nullable) marks a receipt whose PDF the retention sweep deleted; the row stays as the record |
+| `OrderReceipt` | references `Language`; unique `(TenantId, ReceiptNumber)`, nulls not distinct — the number comes from a per-operator `FiscalCounter`, so two operators' first receipts of a year are the same string and the tenant term is what keeps them apart. `BlobName` names the newest render of the PDF, and every earlier render stays beside it ([ADR-0083](/decisions/adr-0083)). `BlobDeletedAt` (nullable) marks a receipt whose PDF the retention sweep deleted; the row stays as the record |
 | `Address` | — |
 | `RecurringBookingTemplate` | references `User` |
 | `SavedAddress` | references `Address`, `User` |

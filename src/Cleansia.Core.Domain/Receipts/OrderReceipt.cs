@@ -132,6 +132,14 @@ public class OrderReceipt : TenantAuditable
         return receipt;
     }
 
+    /// <summary>
+    /// The name of the receipt's first render. A later render is a numbered file beside it and
+    /// <see cref="BlobName"/> moves to that one (→ /decisions/adr-0083).
+    /// </summary>
+    public string FirstBlobName => $"{BlobName[..(BlobName.LastIndexOf('/') + 1)]}{FileName}";
+
+    public void MoveToRender(string blobName) => BlobName = blobName;
+
     public void MarkBlobDeleted(DateTime deletedAtUtc) => BlobDeletedAt ??= deletedAtUtc;
 
     public void MarkEmailSent(string messageId)

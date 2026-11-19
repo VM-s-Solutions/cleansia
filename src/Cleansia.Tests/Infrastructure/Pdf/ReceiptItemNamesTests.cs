@@ -13,6 +13,7 @@ using Cleansia.Core.Domain.Users;
 using Cleansia.Core.Fiscal.Abstractions;
 using Cleansia.Infra.Services.Pdf;
 using Cleansia.Infra.Services.Pdf.Models;
+using Cleansia.TestUtilities;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using OrderService = Cleansia.Core.Domain.Orders.OrderService;
@@ -49,7 +50,7 @@ public class ReceiptItemNamesTests
             .Returns([1, 2, 3]);
         _blobClientFactory
             .Setup(f => f.GetBlobContainerClient(It.IsAny<string>()))
-            .Returns(Mock.Of<IBlobContainerClient>());
+            .Returns(new InMemoryBlobContainer("generated-receipts"));
         _languageRepository
             .Setup(r => r.GetByIdAsync(CzechLanguageId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Language.Create("cs", "Čeština"));

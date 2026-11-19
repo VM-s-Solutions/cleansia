@@ -100,6 +100,13 @@ card, and what else is kept differs:
   an intent that keeps nothing, and a card saved through that box would stay on the Customer with no
   `SavedCards` row and no consent.
 
+**Card is the only payment method, named in code** (owner ruling 2026-11-19). Every PaymentIntent,
+SetupIntent, Checkout Session and subscription the platform opens on Stripe sends
+`payment_method_types=[card]` and never asks for automatic payment methods, so no Stripe Dashboard
+setting can add a method to a sheet or checkout page. Stripe Link is off: no sheet or checkout page
+offers Link or its *Save my info for faster checkout with Link* box. Google Pay in the Android sheet is
+paid as a card, so it stays.
+
 **Until the 2026-10-01 ruling every card paid in the apps was kept.** Every PaymentIntent the apps
 opened, a booking's and a recurring occurrence's alike, asked Stripe for
 `setup_future_usage=off_session` unconditionally, so each card paid in the apps was kept on the Stripe

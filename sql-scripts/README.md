@@ -97,9 +97,12 @@ database seeded before the seed changed. Run these through **Execute SQL Script*
   ticked card payment that kept no card (PAY-022). It refuses to run on a database without the published DEV
   administrator, and `execute-sql.yml` refuses it against PRO.
 
-Every `dev-e2e-*.sql` runs in CI before it can meet DEV: `DevE2eScriptsTests` (`src/Cleansia.IntegrationTests`)
-executes each against a Postgres built from the migration and seeded as DEV is, with its dispatch's confirmation.
-A new `dev-e2e-*.sql` is picked up by name, so it must run there without error.
+Every `dev-e2e-*.sql` runs in backend CI, on a pull request that touches `sql-scripts/` or the backend and on
+`master`: `DevE2eScriptsTests`
+(`src/Cleansia.IntegrationTests`) executes each against a Postgres built from the migration and seeded as DEV is,
+with its dispatch's confirmation. A new `dev-e2e-*.sql` is picked up by name, so it must run there without error.
+CI does not gate a dispatch: `dev-sql.sh` dispatches from the current branch, so dispatch a script only from a ref
+whose backend CI has passed.
 
 ## `seed/` — dev fixture data
 

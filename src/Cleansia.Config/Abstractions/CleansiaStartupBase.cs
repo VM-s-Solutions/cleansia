@@ -93,6 +93,9 @@ public abstract class CleansiaStartupBase(IConfiguration configuration, IWebHost
         // Tolerant DateOnly deserialization for the Swift clients —
         // see [TolerantDateOnlyConverter] for the rationale.
         options.Converters.Add(new TolerantDateOnlyConverter());
+
+        options.Converters.Add(new MicrosecondDateTimeConverter());
+        options.Converters.Add(new MicrosecondDateTimeOffsetConverter());
     }
 
     public void ConfigureServices(IServiceCollection services)

@@ -20,6 +20,7 @@ using Cleansia.Infra.Services.Pdf;
 using Cleansia.Infra.Services.Pdf.Layouts;
 using Cleansia.Infra.Services.Pdf.Models;
 using Cleansia.Tests.Features.Orders;
+using Cleansia.TestUtilities;
 using Microsoft.Extensions.Logging.Abstractions;
 using MockQueryable;
 using Moq;
@@ -116,7 +117,7 @@ public class ReceiptLinesReconcileTests
             .Returns([1, 2, 3]);
         _blobClientFactory
             .Setup(f => f.GetBlobContainerClient(It.IsAny<string>()))
-            .Returns(new Mock<IBlobContainerClient>().Object);
+            .Returns(new InMemoryBlobContainer("generated-receipts"));
     }
 
     /// <summary>

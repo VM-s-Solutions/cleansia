@@ -1,7 +1,6 @@
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Blobs.Abstractions;
-using Cleansia.Core.Blobs.Abstractions.Extensions;
 using Cleansia.Core.Domain.Company;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
@@ -136,6 +135,9 @@ public class PayPeriodInvoicePdfFailureRecordingTests
             .Setup(f => f.GetBlobContainerClient(It.IsAny<string>()))
             .Returns(_blobContainerClient.Object);
         _blobContainerClient
+            .Setup(c => c.UploadIfAbsentAsync(It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        _blobContainerClient
             .Setup(c => c.GetBlobUri(It.IsAny<string>()))
             .Returns(new Uri(PdfUrl));
     }
@@ -202,8 +204,7 @@ public class PayPeriodInvoicePdfFailureRecordingTests
     public async Task An_Upload_That_Throws_Records_Its_Own_Cause()
     {
         _blobContainerClient
-            .Setup(c => c.UploadAsync(
-                It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<Metadata?>(), It.IsAny<CancellationToken>()))
+            .Setup(c => c.UploadIfAbsentAsync(It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new IOException("blob storage unreachable"));
 
         await Run();

@@ -12,8 +12,8 @@ namespace Cleansia.Tests.Features.EmployeePayroll;
 /// A SETTLED PAYOUT INVOICE IS NOT RE-RENDERED. Owner ruling 2026-09-09.
 ///
 /// <para><b>Why it needed a gate at all.</b> The validator checked that the invoice existed and that
-/// the language existed, and nothing else — while the handler OVERWRITES THE PDF IN PLACE, at the URL
-/// the cleaner already holds. The money cannot move (amounts and currency are frozen on the row, and
+/// the language existed, and nothing else — while the handler's render BECOMES THE DOCUMENT THE INVOICE
+/// SERVES, in place of the one the cleaner already holds (→ /decisions/adr-0083). The money cannot move (amounts and currency are frozen on the row, and
 /// the VAT posture is fixed by ruling), but the LANGUAGE can: re-rendering a paid invoice in another
 /// language replaces the document a cleaner has already filed with their tax return.
 /// <c>InvoiceDocumentLanguageTests</c> states in its own words that a copy in another language is a

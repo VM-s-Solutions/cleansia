@@ -600,17 +600,15 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         CancellationToken cancellationToken)
     {
         // THE EMPLOYEE'S ID, NOT THEIR NAME, and the same segment the regenerate path keys on so both
-        // writers address one file. The name is mutable, and it is also the only segment that told two
-        // companies' documents apart: each company numbers its own invoices, so two first invoices of a
-        // year are both INV-YYYY-000001 under the same period folder.
+        // writers number one invoice's renders in one folder. The name is mutable, and it is also the
+        // only segment that told two companies' documents apart: each company numbers its own invoices,
+        // so two first invoices of a year are both INV-YYYY-000001 under the same period folder.
         var employeeFolder = employee.Id;
         var invoiceFileName = invoice.InvoiceNumber;
 
-        var blobName = $"{PayPeriod.BlobFolder(startDate, endDate)}/{employeeFolder}/{invoiceFileName}.pdf";
         var blobClient = _blobContainerClientFactory.GetBlobContainerClient(Common.Constants.BlobContainers.GeneratedInvoices);
-
-        using var pdfStream = new MemoryStream(pdfBytes);
-        await blobClient.UploadAsync(blobName, pdfStream, cancellationToken: cancellationToken);
+        var blobName = await blobClient.UploadNewVersionAsync(
+            $"{PayPeriod.BlobFolder(startDate, endDate)}/{employeeFolder}/{invoiceFileName}.pdf", pdfBytes, cancellationToken);
 
         return blobClient.GetBlobUri(blobName).ToString();
     }

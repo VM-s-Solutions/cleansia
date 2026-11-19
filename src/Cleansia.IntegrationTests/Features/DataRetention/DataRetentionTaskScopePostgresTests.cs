@@ -105,7 +105,10 @@ public sealed class DataRetentionTaskScopePostgresTests(PostgresContainerFixture
         using var stop = new CancellationTokenSource();
         var scopes = new List<ObservedScope>();
         var deletes = new List<string>();
+        var stored = new HashSet<string>(StringComparer.Ordinal);
         var client = new Mock<IBlobContainerClient>();
+        client.Setup(c => c.ExistsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string name, CancellationToken _) => stored.Contains(name));
         client.Setup(c => c.DeleteAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Returns<string, CancellationToken>((name, ct) =>
             {
@@ -125,6 +128,7 @@ public sealed class DataRetentionTaskScopePostgresTests(PostgresContainerFixture
                     receipt.TenantId = TestTenants.Default;
                     typeof(OrderReceipt).GetProperty(nameof(OrderReceipt.IssuedAt))!.SetValue(receipt, DateTime.UtcNow.AddYears(-12));
                     context.OrderReceipts.Add(receipt);
+                    stored.Add(receipt.BlobName);
                 }
                 await context.CommitAsync(CancellationToken.None);
             },

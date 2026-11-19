@@ -179,6 +179,7 @@ export default withMermaid(
               { text: "ADR-0080 — The order-status tint table lives in Core, keyed by the wire value", link: '/decisions/adr-0080' },
               { text: "ADR-0081 — The profile reports an Apple placeholder name", link: '/decisions/adr-0081' },
               { text: "ADR-0082 — Pay periods close and invoice once, payouts by bank transfer", link: '/decisions/adr-0082' },
+              { text: "ADR-0083 — An issued invoice or receipt PDF is never overwritten", link: '/decisions/adr-0083' },
             ],
           },
         ],

@@ -37,8 +37,9 @@ public interface IReceiptService
     Task<byte[]> DownloadReceiptPdfAsync(OrderReceipt receipt, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Retries fiscal registration for a previously-failed receipt. On success, regenerates the
-    /// PDF with the fiscal code and re-uploads it to the blob store. Returns <c>true</c> if the
+    /// Retries fiscal registration for a previously-failed receipt. On success, renders the PDF
+    /// with the fiscal code as a new numbered file and moves <c>BlobName</c> to it; the file the
+    /// customer was sent is kept (→ /decisions/adr-0083). Returns <c>true</c> if the
     /// fiscal authority issued a code; <c>false</c> if the retry failed. This method updates the
     /// receipt's retry tracking state (RetryCount, NextRetryAt, etc.) but does NOT commit.
     /// The <paramref name="order"/> must be fully loaded (services, packages, currency, address).

@@ -1,7 +1,6 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.EmployeePayroll;
 using Cleansia.Core.Blobs.Abstractions;
-using Cleansia.Core.Blobs.Abstractions.Extensions;
 using Cleansia.Core.Domain.Company;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
@@ -81,6 +80,9 @@ public class RegenerateInvoicePdfFailureRecordingTests
             .Setup(f => f.GetBlobContainerClient(It.IsAny<string>()))
             .Returns(_blobContainerClient.Object);
         _blobContainerClient
+            .Setup(c => c.UploadIfAbsentAsync(It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        _blobContainerClient
             .Setup(c => c.GetBlobUri(It.IsAny<string>()))
             .Returns(new Uri(FreshPdfUrl));
     }
@@ -116,10 +118,9 @@ public class RegenerateInvoicePdfFailureRecordingTests
         Assert.Equal(BusinessErrorMessage.PdfGenerationFailed, result.Error!.Message);
         AssertFailureIsPersisted();
 
-        // A zero-byte upload would overwrite the readable document already at that blob name with an
-        // unopenable one, and the row would go on claiming a URL that resolves to nothing.
+        // A zero-byte upload would store an unopenable document for the row to point at.
         _blobContainerClient.Verify(
-            c => c.UploadAsync(It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<Metadata?>(), It.IsAny<CancellationToken>()),
+            c => c.UploadIfAbsentAsync(It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -127,7 +128,7 @@ public class RegenerateInvoicePdfFailureRecordingTests
     public async Task An_Upload_That_Throws_Is_Recorded_On_The_Row()
     {
         _blobContainerClient
-            .Setup(c => c.UploadAsync(It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<Metadata?>(), It.IsAny<CancellationToken>()))
+            .Setup(c => c.UploadIfAbsentAsync(It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new IOException("blob storage unreachable"));
 
         var result = await Handle();

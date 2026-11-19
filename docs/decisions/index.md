@@ -2,7 +2,7 @@
 
 Every architecture and business decision on record, with the argument that settled it.
 
-**82 records.** A decision keeps a stable id — `ADR-0037` — and roughly six hundred source
+**83 records.** A decision keeps a stable id — `ADR-0037` — and roughly six hundred source
 files cite ids in that form. The id is the reference, not the file name or the title, so a record can
 be retitled without breaking a single citation.
 
@@ -180,6 +180,11 @@ no arrow; and it gives Mike's 2026-08-08 ruling that an administrator marks an i
 of its own. [ADR-0002](./adr-0002) D3.4, [ADR-0041](./adr-0041) and [ADR-0046](./adr-0046) carry dated
 banners in place, which say what the code does now; no record supersedes them.
 
+**[ADR-0083](./adr-0083)** (`accepted` 2026-11-19, T-0937) supersedes nothing: it records Mike's ruling that an
+issued invoice or receipt PDF is never overwritten, so a re-render is a new numbered file and the row moves to
+it. [ADR-0046](./adr-0046) D4.3 step 3, which said the regeneration overwrites the same blob name, carries a
+dated banner in place.
+
 ## All records
 
 | | Decision | Status |
@@ -266,6 +271,7 @@ banners in place, which say what the code does now; no record supersedes them.
 | **[ADR-0080](./adr-0080)** | The order-status tint and tone table lives in Core, keyed by the backend's wire integer, so both apps read one table per platform; a status mapping crosses into Core as that integer only when both apps map it the same way (Mike's approval of mock v2, 2026-11-02; T-0910; changes the `OrderStatusTone` doc-comment rule, supersedes no record) | `proposed` |
 | **[ADR-0081](./adr-0081)** | The current-user profile says when an Apple account's stored name is the placeholder, computed from the stored name on every read; an app treats that name as no name, gates nothing on it, and a mobile mapper reads an absent member as `false` (Mike's ruling 2026-11-08; T-0920; one named exception to ADR-0048 D1 rule 2, supersedes no record) | `accepted` |
 | **[ADR-0082](./adr-0082)** | A pay period closes by itself and is invoiced once; early close is an exception (Close now, Change end date), a closed period is never reopened; late pay goes to the next period; cleaners are paid by bank transfer, never through Stripe; "next payout" leaves the cleaner apps (Mike's rulings 2026-11-08 and 2026-11-09; T-0923 to T-0929; supersedes decision 48's Stripe route and two rows of ADR-0001 and ADR-0066's permission map) | `accepted` |
+| **[ADR-0083](./adr-0083)** | An issued invoice or receipt PDF is never overwritten: every render is a new file numbered after the first (`-2`, `-3` …), created only under a free name, the row points at the newest, and the earlier files stay as issued; retention removes every render of a receipt (Mike's ruling 2026-11-19; T-0937; supersedes no record) | `accepted` |
 
 ⟲ = superseded in whole or in part by a later record.
 

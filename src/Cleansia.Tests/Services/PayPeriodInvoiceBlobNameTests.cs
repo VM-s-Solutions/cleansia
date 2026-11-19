@@ -1,7 +1,6 @@
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Blobs.Abstractions;
-using Cleansia.Core.Blobs.Abstractions.Extensions;
 using Cleansia.Core.Domain.Company;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
@@ -151,10 +150,9 @@ public class PayPeriodInvoiceBlobNameTests
             .Setup(f => f.GetBlobContainerClient(It.IsAny<string>()))
             .Returns(_blobContainerClient.Object);
         _blobContainerClient
-            .Setup(c => c.UploadAsync(
-                It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<Metadata?>(), It.IsAny<CancellationToken>()))
-            .Callback<string, Stream, Metadata?, CancellationToken>((name, _, _, _) => _uploadedBlobNames.Add(name))
-            .Returns(Task.CompletedTask);
+            .Setup(c => c.UploadIfAbsentAsync(It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+            .Callback<string, Stream, CancellationToken>((name, _, _) => _uploadedBlobNames.Add(name))
+            .ReturnsAsync(true);
         _blobContainerClient
             .Setup(c => c.GetBlobUri(It.IsAny<string>()))
             .Returns(new Uri(PdfUrl));

@@ -39,7 +39,7 @@ Stripe webhook → Order saved → Receipt generated
               On failure → FiscalNextRetryAt scheduled → retry job
 ```
 
-The customer receives their receipt email on the normal path. If the fiscal authority is unreachable, the receipt is marked `FiscalRegistrationFailed` with a classified `FiscalErrorKind` and picked up by the retry job later. The retry job regenerates the PDF with the fiscal code and re-uploads it to the blob store.
+The customer receives their receipt email on the normal path. If the fiscal authority is unreachable, the receipt is marked `FiscalRegistrationFailed` with a classified `FiscalErrorKind` and picked up by the retry job later. The retry job renders the PDF again with the fiscal code as a new file beside the first (`receipt_….pdf`, then `receipt_…-2.pdf`), points the receipt at it, and keeps the first as the customer received it → [ADR-0083](/decisions/adr-0083).
 
 ### BlockingOnline — strict countries (DE/AT/ES)
 
@@ -135,7 +135,7 @@ After `MaxFiscalRetries = 10` attempts, `FiscalNextRetryAt` is cleared and the r
 ### Orchestration (`Cleansia.Core.AppServices`)
 
 - **`ReceiptService.HandleFiscalAsync`** — Reads the enforcement mode from `CountryConfiguration`, branches on it, and catches every exception so the customer flow is never aborted. The request is built from the order's own currency code and country ISO code and **never from a default**: an order with no resolved currency (`FiscalCurrencyCodeOf`) or no resolved country (`FiscalCountryCodeOf`) throws before the authority is called, lands as a recorded failed attempt, and is retried like any other failure. The receipt-number counter resolves an empty provider key to the `DEFAULT` issuer scope, not the Czech provider's. → [Payment and fiscal](/flows/payment-and-fiscal#no-guessed-unit-no-guessed-regime)
-- **`ReceiptService.RetryFiscalRegistrationAsync`** — Re-attempts registration for a previously-failed receipt, regenerates the PDF with the fiscal code on success, and re-uploads it to the blob store.
+- **`ReceiptService.RetryFiscalRegistrationAsync`** — Re-attempts registration for a previously-failed receipt, renders the PDF with the fiscal code on success as a new numbered file, and moves `OrderReceipt.BlobName` to it; no render overwrites another (ADR-0083).
 - **`FiscalRetryService.ProcessDueRetriesAsync`** — Batch processes receipts where `FiscalNextRetryAt <= UtcNow`. For `BlockingOnline` modes, releases the held receipt email once a retry succeeds.
 
 ### Background worker (`Cleansia.Functions`)

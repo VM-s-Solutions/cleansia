@@ -269,13 +269,11 @@ public sealed class FiscalRetryScopeIsolationTests(PostgresContainerFixture fixt
         var pdf = new Mock<IPdfService>();
         pdf.Setup(p => p.GenerateReceiptPdf(It.IsAny<ReceiptPdfData>(), It.IsAny<string?>())).Returns([1, 2, 3]);
         services.AddSingleton(pdf.Object);
+        var receipts = new InMemoryBlobContainer("generated-receipts");
         services.AddScoped<IBlobContainerClientFactory>(_ =>
         {
-            var blob = new Mock<IBlobContainerClient>();
-            blob.Setup(b => b.DownloadAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(() => new BlobFile(new MemoryStream([1, 2, 3]), "application/pdf"));
             var factory = new Mock<IBlobContainerClientFactory>();
-            factory.Setup(f => f.GetBlobContainerClient(It.IsAny<string>())).Returns(blob.Object);
+            factory.Setup(f => f.GetBlobContainerClient(It.IsAny<string>())).Returns(receipts);
             return factory.Object;
         });
         services.AddScoped<IFiscalServiceResolver>(sp =>

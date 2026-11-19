@@ -117,7 +117,10 @@ financial creation. Cancellation still stops the remaining document work. This c
 queue callers. PDF generation explicitly reads the invoice's
 pay period before formatting the document, and stores the file under
 `{start yyyy-MM-dd}_{end yyyy-MM-dd}/{employeeId}/{invoiceNumber}.pdf`, a path that does not depend on a
-language. A failed render records document failure;
+language. **No render overwrites another.** Each later render of the invoice, by Regenerate PDF or by Adjust
+amounts, is a new file numbered after the first, `{invoiceNumber}-2.pdf`, then `-3`, and so on, created only
+under a name no file holds; the invoice points at the newest and a download serves it, and every earlier file
+stays as it was issued ([ADR-0083](/decisions/adr-0083)). A failed render records document failure;
 it does not undo an invoice that was already created. The existing administrator regeneration action is
 the recovery path if rendering fails or a process stops between the financial commit and rendering. It is
 offered on `Pending`, `Approved` and `Disputed` invoices only, matching the server, which refuses a paid
@@ -133,7 +136,8 @@ the cleaner.
 **An action on an invoice between the night run's commit and its PDF stamp makes the stamp lose.** The
 invoice carries Postgres's `xmin` as its concurrency token. An admin action committed in that gap leaves the
 invoice with no PDF address and no PDF error flag until Regenerate PDF, and that cleaner falls back to the
-plain period-closed e-mail. An admin action that loses the reverse race is refused with
+plain period-closed e-mail. The night's file stays where it was written, and Regenerate PDF writes the next
+numbered file beside it and points the invoice at that one. An admin action that loses the reverse race is refused with
 `payroll.invoice.changed_concurrently`.
 
 Document readiness is separate from invoice existence. An owned invoice with no PDF path reports that

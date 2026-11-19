@@ -15,7 +15,7 @@ on:
         required: true
         type: string
       confirm:
-        description: 'Type "execute" to confirm (required for PRO)'
+        description: 'Type "execute" to confirm (required for PRO). On DEV, a script that asks for it reads this as cleansia.confirm'
         required: false
         type: string
 
@@ -137,6 +137,7 @@ jobs:
           PGSSLMODE: verify-full
           PGSSLROOTCERT: /etc/ssl/certs/ca-certificates.crt
           SCRIPT_PATH: ${{ inputs.script_path }}
+          CONFIRM: ${{ inputs.confirm }}
         run: |
           SCRIPT="sql-scripts/$SCRIPT_PATH"
           test -r "$PGSSLROOTCERT" || { echo "::error::Trusted root certificate file is unavailable"; exit 1; }
@@ -145,6 +146,16 @@ jobs:
             echo "::error::DB_CONNECTION_STRING_DEV secret is not set"
             exit 1
           fi
+
+          # The confirmation reaches the script as the session setting cleansia.confirm, so a script that changes
+          # every DEV user of a kind (dev-e2e-publish-cleaner-document.sql) publishes only when the dispatch names it.
+          # It is quoted into SQL below, so it may hold only the characters of a file name.
+          case "$CONFIRM" in
+            *[!A-Za-z0-9._-]*)
+              echo "::error::confirm may hold only letters, digits, '.', '_' and '-'"
+              exit 1
+              ;;
+          esac
 
           # Parse connection string components
           DB_HOST=$(echo "$DB_CONNECTION_STRING" | grep -oP 'Host=\K[^;]+')
@@ -164,6 +175,7 @@ jobs:
             -U "$DB_USER" \
             -d "$DB_NAME" \
             --set ON_ERROR_STOP=1 \
+            -c "SET cleansia.confirm = '$CONFIRM'" \
             -f "$SCRIPT"
 
           echo "---"

@@ -13,6 +13,7 @@ using Cleansia.Core.Fiscal.Abstractions;
 using Cleansia.Infra.Services.Pdf;
 using Cleansia.Infra.Services.Pdf.Layouts;
 using Cleansia.Infra.Services.Pdf.Models;
+using Cleansia.TestUtilities;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
@@ -179,7 +180,7 @@ public class CashReceiptAtCompletionTests
                 .Returns([37, 80, 68, 70]);
             _blobClientFactory
                 .Setup(f => f.GetBlobContainerClient(It.IsAny<string>()))
-                .Returns(Mock.Of<IBlobContainerClient>());
+                .Returns(new InMemoryBlobContainer("generated-receipts"));
             _languageRepository
                 .Setup(r => r.GetByIdAsync(LanguageId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Language.Create("cs", "Čeština"));

@@ -31,6 +31,7 @@ public sealed class ReceiptBlobRetentionSweepTests : IDisposable
     private readonly Mock<IBlobContainerClientFactory> _blobClientFactory = new();
     private readonly Mock<IBlobContainerClient> _receipts = new();
     private readonly List<string> _deleted = [];
+    private readonly HashSet<string> _stored = new(StringComparer.Ordinal);
 
     public ReceiptBlobRetentionSweepTests()
     {
@@ -49,8 +50,15 @@ public sealed class ReceiptBlobRetentionSweepTests : IDisposable
             .Returns(_receipts.Object);
         _receipts
             .Setup(c => c.DeleteAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Callback<string, CancellationToken>((name, _) => _deleted.Add(name))
+            .Callback<string, CancellationToken>((name, _) =>
+            {
+                _deleted.Add(name);
+                _stored.Remove(name);
+            })
             .Returns(Task.CompletedTask);
+        _receipts
+            .Setup(c => c.ExistsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string name, CancellationToken _) => _stored.Contains(name));
     }
 
     public void Dispose() => _connection.Dispose();
@@ -89,6 +97,21 @@ public sealed class ReceiptBlobRetentionSweepTests : IDisposable
     }
 
     [Fact]
+    public async Task Every_Render_Of_The_Receipt_Is_Deleted_Newest_First_And_The_Row_Is_Marked()
+    {
+        await EnsureSchemaAsync();
+        var receipt = Receipt("rcpt-retried", DateTime.UtcNow.AddYears(-12));
+        _stored.Add("2016/rcpt-retried-2.pdf");
+        receipt.MoveToRender("2016/rcpt-retried-2.pdf");
+        await SeedAsync(receipt);
+
+        await RunSweepAsync();
+
+        Assert.Equal(["2016/rcpt-retried-2.pdf", "2016/rcpt-retried.pdf"], _deleted);
+        Assert.NotNull(Assert.Single(await ReadAllAsync()).BlobDeletedAt);
+    }
+
+    [Fact]
     public async Task A_Pdf_That_Would_Not_Delete_Stays_Unmarked()
     {
         await EnsureSchemaAsync();
@@ -115,10 +138,11 @@ public sealed class ReceiptBlobRetentionSweepTests : IDisposable
         Assert.Empty(_deleted);
     }
 
-    private static OrderReceipt Receipt(string id, DateTime issuedAt)
+    private OrderReceipt Receipt(string id, DateTime issuedAt)
     {
         var receipt = OrderReceipt.Create($"order-{id}", $"CZ-{id}", $"{id}.pdf", $"2016/{id}.pdf", "language-en");
         receipt.Id = id;
+        _stored.Add(receipt.BlobName);
         receipt.TenantId = TestTenants.Default;
         typeof(OrderReceipt).GetProperty(nameof(OrderReceipt.IssuedAt))!.SetValue(receipt, issuedAt);
         return receipt;

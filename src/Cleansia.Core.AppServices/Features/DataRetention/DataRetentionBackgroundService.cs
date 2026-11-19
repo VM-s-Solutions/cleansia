@@ -515,7 +515,7 @@ public class DataRetentionBackgroundService(
                 ct.ThrowIfCancellationRequested();
                 try
                 {
-                    await blobClient.DeleteAsync(receipt.BlobName, ct);
+                    await blobClient.DeleteAllVersionsAsync(receipt.FirstBlobName, ct);
                 }
                 catch (OperationCanceledException) when (ct.IsCancellationRequested)
                 {

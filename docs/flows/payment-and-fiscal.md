@@ -261,7 +261,10 @@ reported unpaid at the door (since 2026-10-06): it completes with its payment pe
 administrator's *record cash received* on it issues the sale receipt instead
 → [Business rules — when the customer does not pay at the door](/product/business-rules#cash-not-paid). The `FiscalReconciliation` timer
 re-sends the issue for a `Paid` order whose receipt never landed, but not while collected cash waits for
-the completion. The PDF is stored and the customer's download serves that stored copy.
+the completion. The PDF is stored and the customer's download serves that stored copy. **No render
+overwrites another**: the fiscal retry, which renders the receipt again with its fiscal code, writes a new
+file numbered after the first (`…-2.pdf`), the receipt points at it and the download serves it, and the
+copy the customer was first sent stays as issued → [ADR-0083](/decisions/adr-0083).
 → [Business rules — cash is paid when the cleaner records it](/product/business-rules#cash-handover)
 
 **A cash booking gets an e-mail instead.** Booking cash, or confirming a recurring cash occurrence,
@@ -273,8 +276,8 @@ booking gets no such e-mail.
 **It names the buyer, not how to reach them.** The receipt prints the customer's name and address only;
 the e-mail address and the phone are not printed (owner ruling 2026-09-28) — they add nothing to a tax
 document and would outlive the account on it. **Its PDF is kept for the statutory period**: the
-retention sweep deletes a receipt's stored PDF ten years (`retention.receipts.years`) after the end of
-the calendar year it was issued in, keeps the receipt row stamped `BlobDeletedAt`, and a download
+retention sweep deletes a receipt's stored PDF, every render of it, ten years (`retention.receipts.years`)
+after the end of the calendar year it was issued in, keeps the receipt row stamped `BlobDeletedAt`, and a download
 afterwards answers `receipt.not_found` → [Retention](/product/business-rules#customer-record).
 
 **Its lines add up to its total.** First the catalogue lines at their snapshot prices — each service,

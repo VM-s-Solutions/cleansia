@@ -1,19 +1,20 @@
 -- DEV ONLY. Publishes a new version of each cleaner document a Czech cleaner must hold (the framework contract,
 -- the self-billing agreement and the data processing agreement: LegalDocument.CleanerAcceptedTypes), for the E2E
--- harness's TAKE-025 (T-0934, owner ruling 2026-11-15). Each new version is a copy of the one the resolver serves
--- a CZ cleaner today (LegalDocumentRepository.GetInForceAsync: the CZ copy before the platform-wide one, the
--- latest effective date first), with the same market, the same texts, and today's date as its effective date and
--- version.
+-- harness's TAKE-025 (owner ruling 2026-11-15). Each new version is a copy of the one the resolver serves a CZ
+-- cleaner today (LegalDocumentRepository.GetInForceAsync: the CZ copy before the platform-wide one, the latest
+-- effective date first), with the same market, the same texts, and today's date as its effective date and version.
 --
 -- !! IT GATES EVERY CLEANER ON DEV: a cleaner's acceptance covers one document id (UserConsent.Covers), so from
 -- !! the moment this commits no DEV cleaner can take a job until they accept the new version again (TakeOrder,
--- !! ApproveEmployee). Run it ONLY as the last step of Day 2 of the T-0934 run, after every take of the run, the
+-- !! ApproveEmployee). Run it ONLY as the last step of Day 2 of an E2E run, after every take of the run, the
 -- !! mobile lanes' included (e2e/README.md, "Running"). Never on a scratch run.
 --
--- It refuses to run on any day but Day 2 (Thu 19 Nov 2026, UTC): move that date only when the owner moves Day 2.
+-- It publishes only when the dispatch names it: Execute SQL Script with confirm set to this file's name, which the
+-- DEV job hands the script as the session setting cleansia.confirm (scripts/publish-cleaner-document.sh does both).
 -- It refuses to run on a database that does not hold the published DEV administrator, which PRO never does.
 -- Idempotent: a type that already has a version dated today is left alone. Nothing in the repository changes, so
 -- nothing of this reaches PRO; the start-up seeder never deletes or edits a row it did not seed.
+-- DevE2eScriptsTests runs it against a migrated, seeded Postgres in CI.
 BEGIN;
 
 DO $$
@@ -21,16 +22,17 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM "Users" WHERE "Email" = 'admin@cleansia.local') THEN
     RAISE EXCEPTION 'dev-e2e-publish-cleaner-document.sql is DEV only: the published DEV administrator is missing';
   END IF;
-  IF (now() AT TIME ZONE 'UTC')::date <> DATE '2026-11-19' THEN
-    RAISE EXCEPTION 'dev-e2e-publish-cleaner-document.sql runs only on Day 2 of the T-0934 run (2026-11-19 UTC), as its last step';
+  IF current_setting('cleansia.confirm', true) IS DISTINCT FROM 'dev-e2e-publish-cleaner-document.sql' THEN
+    RAISE EXCEPTION 'dev-e2e-publish-cleaner-document.sql gates every DEV cleaner: dispatch it with confirm=dev-e2e-publish-cleaner-document.sql, as the last step of an E2E run';
   END IF;
 END $$;
 
--- A ULID-shaped id: ten characters of the millisecond clock, sixteen random, in Crockford base32.
+-- A ULID-shaped id: ten characters of the millisecond clock, sixteen random, in Crockford base32. Each string_agg
+-- names its own generate_series column, so it aggregates there and not over the outer query.
 CREATE FUNCTION pg_temp.e2e_ulid() RETURNS text LANGUAGE sql VOLATILE AS $f$
   SELECT (SELECT string_agg(substr(a, ((floor(extract(epoch FROM clock_timestamp()) * 1000)::bigint >> (5 * (9 - i))) & 31)::int + 1, 1), '' ORDER BY i)
           FROM generate_series(0, 9) AS i)
-      || (SELECT string_agg(substr(a, floor(random() * 32)::int + 1, 1), '') FROM generate_series(1, 16))
+      || (SELECT string_agg(substr(a, floor(random() * 32)::int + 1, 1), '' ORDER BY r) FROM generate_series(1, 16) AS r)
   FROM (SELECT '0123456789ABCDEFGHJKMNPQRSTVWXYZ'::text AS a) AS alphabet
 $f$;
 
@@ -53,7 +55,7 @@ WHERE served."EffectiveFrom" < today.d;
 
 INSERT INTO "LegalDocuments" ("Id", "Audience", "Type", "CountryId", "EffectiveFrom", "Version", "Notes", "IsActive")
 SELECT new_id, 1, "Type", "CountryId", d, to_char(d, 'YYYY-MM-DD'),
-       'DEV only: T-0934 E2E run (TAKE-025), a copy of version ' || old_version, TRUE
+       'DEV only: an E2E run (TAKE-025), a copy of version ' || old_version, TRUE
 FROM published;
 
 INSERT INTO "LegalDocumentTexts" ("Id", "LegalDocumentId", "Language", "Title", "ContentMarkdown", "ContentHash", "IsActive")

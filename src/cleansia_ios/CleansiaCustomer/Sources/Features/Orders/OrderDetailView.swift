@@ -4,6 +4,7 @@ import SwiftUI
 
 struct OrderDetailView: View {
     @StateObject private var vm: OrderDetailViewModel
+    @Environment(\.scenePhase) private var scenePhase
     @State private var showCancelSheet = false
     @State private var showReviewSheet = false
     @State private var showPhotos = false
@@ -78,6 +79,10 @@ struct OrderDetailView: View {
             .navigationBarTitleDisplayMode(.inline)
             .background(CleansiaColors.background.ignoresSafeArea())
             .task { await vm.load() }
+            // A push that arrived while the app was away was never shown to the bus.
+            .onChange(of: scenePhase) { phase in
+                if phase == .active { Task { await vm.load() } }
+            }
             // The prompted arrival. Waits for the order to actually resolve — raising the sheet over a
             // spinner shows a card with no date and no cleaner. Fires once, and consumes the shell's
             // flag either way so a later manual visit to the same order does not re-open it.

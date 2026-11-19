@@ -706,6 +706,7 @@ private fun WhereAndPayStep(
             checked = state.termsAccepted,
             onCheckedChange = viewModel::setTermsAccepted,
             html = stringResource(R.string.register_terms_and_conditions),
+            toggleContentDescription = stringResource(cz.cleansia.core.R.string.core_consent_toggle),
             modifier = Modifier.fillMaxWidth(),
         )
     }
@@ -716,6 +717,7 @@ private fun WhereAndPayStep(
             checked = state.earlyPerformanceRequested,
             onCheckedChange = viewModel::setEarlyPerformanceRequested,
             html = stringResource(R.string.consent_early_performance_draft_2026_09_29),
+            toggleContentDescription = stringResource(R.string.booking_early_performance_toggle),
             modifier = Modifier.fillMaxWidth(),
         )
     }

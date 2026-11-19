@@ -42,6 +42,7 @@ struct CleansiaCustomerApp: App {
                     appDelegate.onForegroundPush = { [weak badge = container.notificationBadge] eventKey in
                         badge?.notePushReceived(eventKey: eventKey)
                     }
+                    appDelegate.orderEvents = container.orderEventBus
                     container.startPush()
                     container.startLanguageReconcile()
                     Task { await container.marketStore.refresh() }

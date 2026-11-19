@@ -340,6 +340,7 @@
     <!-- Booking review: the contract sentence and the request to start within the withdrawal period -->
     <string name="booking_contract_notice"><![CDATA[Подтверждая заказ, вы заключаете договор на уборку с операционной компанией рынка, на котором находится ваше жильё, в соответствии с её <a href="cleansia://terms">Условиями использования</a>. Уборку выполняет уборщик как субподрядчик компании, и он не является стороной вашего договора.]]></string>
     <string name="consent_early_performance_draft_2026_09_29">Я прошу начать уборку в течение 14-дневного срока для отказа от договора и признаю, что после полного выполнения уборки теряю право на отказ.</string>
+    <string name="booking_early_performance_toggle">Просьба начать уборку в течение срока для отказа</string>
 
     <!-- Profile tab -->
     <string name="profile_row_edit">Редактировать</string>

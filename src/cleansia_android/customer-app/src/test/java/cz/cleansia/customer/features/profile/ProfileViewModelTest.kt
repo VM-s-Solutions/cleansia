@@ -219,6 +219,59 @@ class ProfileViewModelTest {
         coVerify { settings.markOnboardingSeen("user-1") }
     }
 
+    @Test
+    fun `completeOnboarding before the profile has loaded loads it, then saves`() = runTest {
+        coEvery { userRepository.refreshCurrentUser() } coAnswers {
+            currentUser.value = sampleUser
+            ApiResult.Success(Unit)
+        }
+        coEvery {
+            userRepository.updateCurrentUser(any(), any(), any(), any(), any(), any(), any())
+        } returns ApiResult.Success(Unit)
+
+        var completed = false
+        val vm = viewModel()
+        vm.completeOnboarding("+420603180645", null) { completed = true }
+        advanceUntilIdle()
+
+        assertTrue(completed)
+        coVerify(exactly = 1) {
+            userRepository.updateCurrentUser("Ann", "Brown", "+420603180645", null, any(), null, false)
+        }
+    }
+
+    @Test
+    fun `completeOnboarding whose profile cannot be loaded says so on the step`() = runTest {
+        coEvery { userRepository.refreshCurrentUser() } returns ApiResult.Error(ApiError.Network("offline"))
+
+        var completed = false
+        val vm = viewModel()
+        vm.completeOnboarding("+420603180645", null) { completed = true }
+        advanceUntilIdle()
+
+        assertFalse(completed)
+        assertEquals(ActionState.Error("offline"), vm.saveState.value)
+        coVerify(exactly = 0) { userRepository.updateCurrentUser(any(), any(), any(), any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `completeOnboarding refusal is reported on the step, not in a snackbar`() = runTest {
+        currentUser.value = sampleUser
+        coEvery {
+            userRepository.updateCurrentUser(any(), any(), any(), any(), any(), any(), any())
+        } returns ApiResult.Error(ApiError.BadRequest("Please enter a valid phone number."))
+
+        var completed = false
+        val vm = viewModel()
+        vm.completeOnboarding("+420611180645", null) { completed = true }
+        advanceUntilIdle()
+
+        assertFalse(completed)
+        assertEquals(ActionState.Error("Please enter a valid phone number."), vm.saveState.value)
+        verify(exactly = 0) { snackbar.showError(any<ApiError>()) }
+        coVerify(exactly = 0) { settings.markOnboardingSeen(any()) }
+    }
+
     /**
      * Onboarding used to send `Locale.getDefault()`, the phone's language, and so overwrote the language
      * picked in the app (and pushed at session start) with the handset's on the server.

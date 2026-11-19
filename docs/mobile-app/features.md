@@ -433,6 +433,15 @@ as does Profile on Android for its *Credit* row, showing the cached figures mean
 2026-10-02; Rewards used to keep whatever it held until a pull). A re-read on entry shows no spinner:
 on Android the Rewards pull indicator follows the user's own pull only, as Home's does.
 
+**The customer's open order detail follows the order's pushes.** The app hands the order id of an
+`order.*` or `recurring.scheduled` push to an in-process order event bus, and an open detail of the
+same order re-fetches at once; a detail of another order ignores it. Without this, an order still
+*New* is not polled at all, so after a cleaner took it the open detail read *New* until the customer
+left and reopened it (iOS until 2026-11-19, F-092). Android receives the data message even in the
+background. iOS sees a push only when it is shown in the foreground or tapped, so its detail also
+re-fetches each time the app returns to the foreground. The partner apps' open job detail does none of
+this; see [Crew completion](#crew-completion).
+
 ## Partner dashboard
 
 Screens are not inventoried here, but the partner dashboard's rules span both apps and several files,

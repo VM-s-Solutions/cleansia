@@ -53,3 +53,15 @@ The three fixes are merged with CI green, each with a test that fails without it
 ## Work record
 
 - 2026-11-19 — Filed with T-0938 and T-0939 on `fix/t0937-wave1-documents-and-data`, after Mike's rulings.
+- 2026-11-19 — Built on `fix/t0937-wave1-documents-and-data`, one review and its in-scope rows fixed. F-075: each
+  re-render is a new numbered file (`INV-2026-000017-2.pdf`, then `-3`) written through
+  `DocumentVersions.UploadNewVersionAsync`, for Regenerate PDF, Adjust Amounts, the recovery after a lost night stamp
+  and the receipt's fiscal retry; the row points at the newest, the earlier files stay, and retention deletes every
+  render; ADR-0083 records the ruling. F-081: the API hosts write timestamps cut to the microsecond as Npgsql stores
+  them. F-076: the publish script's ULID function is fixed, its date pin is replaced by a confirmation the dispatch
+  must name, and `DevE2eScriptsTests` runs every dev-e2e script against Postgres in CI. No schema change.
+- 2026-11-19 — Shipped in #388 (merge `c76007860`), CI green on every check; DEV deploy dispatched after the merge
+  (run 44577499932). Reported to Mike, not fixed: the review's R9 (an upload fault after the fiscal stamp leaves a
+  receipt that is never retried) and R10 (a failed first receipt upload is never repaired in fiscal mode None), the
+  company archive copying only a document's newest render, and R14 (`dotnet ef` re-creates the literal `bin\Debug`
+  folders on macOS).

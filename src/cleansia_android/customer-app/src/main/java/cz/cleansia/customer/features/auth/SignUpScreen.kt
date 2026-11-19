@@ -235,6 +235,7 @@ fun SignUpScreen(
             checked = acceptedTerms,
             onCheckedChange = { acceptedTerms = it },
             html = stringResource(R.string.register_terms_and_conditions),
+            toggleContentDescription = stringResource(cz.cleansia.core.R.string.core_consent_toggle),
             modifier = Modifier.fillMaxWidth(),
         )
 

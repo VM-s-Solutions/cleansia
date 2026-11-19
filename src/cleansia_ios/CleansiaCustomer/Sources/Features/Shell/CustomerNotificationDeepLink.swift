@@ -28,6 +28,15 @@ enum CustomerNotificationDeepLink {
         )
     }
 
+    /// The order a push is about, for the open detail to refetch: every `order.*` event and
+    /// `recurring.scheduled`, as on Android.
+    static func orderEventId(_ userInfo: [AnyHashable: Any]) -> String? {
+        guard let eventKey = userInfo[eventKeyField] as? String,
+              eventKey.hasPrefix("order.") || eventKey == "recurring.scheduled"
+        else { return nil }
+        return nonEmpty(userInfo[orderIdField])
+    }
+
     /// The same destination for the inbox row of the push.
     static func resolve(_ notification: UserNotification) -> CustomerNotificationDestination? {
         resolve(

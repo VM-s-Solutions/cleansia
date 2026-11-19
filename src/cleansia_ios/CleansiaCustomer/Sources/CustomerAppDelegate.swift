@@ -9,6 +9,7 @@ final class CustomerAppDelegate: NSObject, UIApplicationDelegate, UNUserNotifica
     weak var registrar: (any PushRegistrar)?
     let pushTap = PushTapBuffer<CustomerNotificationDestination>()
     var onForegroundPush: (@MainActor (_ eventKey: String) -> Void)?
+    var orderEvents: OrderEventBus?
     private(set) var firebaseConfigured = false
 
     func application(
@@ -83,6 +84,7 @@ final class CustomerAppDelegate: NSObject, UIApplicationDelegate, UNUserNotifica
         if let eventKey = userInfo[CustomerNotificationDeepLink.eventKeyField] as? String {
             Task { @MainActor in onForegroundPush?(eventKey) }
         }
+        emitOrderEvent(userInfo)
         completionHandler([.banner, .sound])
     }
 
@@ -124,6 +126,12 @@ final class CustomerAppDelegate: NSObject, UIApplicationDelegate, UNUserNotifica
             // this runs before the SwiftUI .task wires pushTap.onTap.
             Task { @MainActor in pushTap.deliver(destination) }
         }
+        emitOrderEvent(userInfo)
         completionHandler()
+    }
+
+    func emitOrderEvent(_ userInfo: [AnyHashable: Any]) {
+        guard let orderId = CustomerNotificationDeepLink.orderEventId(userInfo) else { return }
+        Task { @MainActor in orderEvents?.emit(orderId: orderId) }
     }
 }

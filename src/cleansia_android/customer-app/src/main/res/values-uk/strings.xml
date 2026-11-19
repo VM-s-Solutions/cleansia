@@ -340,6 +340,7 @@
     <!-- Booking review: the contract sentence and the request to start within the withdrawal period -->
     <string name="booking_contract_notice"><![CDATA[Підтверджуючи замовлення, ви укладаєте договір про прибирання з операційною компанією ринку, на якому розташоване ваше житло, відповідно до її <a href="cleansia://terms">Умов використання</a>. Прибирання виконує прибиральник як субпідрядник компанії, і він не є стороною вашого договору.]]></string>
     <string name="consent_early_performance_draft_2026_09_29">Я прошу розпочати прибирання протягом 14-денного строку для відмови від договору та визнаю, що після повного виконання прибирання втрачаю право на відмову.</string>
+    <string name="booking_early_performance_toggle">Прохання розпочати прибирання протягом строку для відмови</string>
 
     <!-- Profile tab -->
     <string name="profile_row_edit">Редагувати</string>

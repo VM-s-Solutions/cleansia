@@ -35,7 +35,7 @@ class ProfilePhoneSanitisingTest {
         )
         assertTrue(
             "ProfileOnboardingScreen.kt must take its phone from the shared field, which sanitises every edit",
-            Regex("""CleansiaPhoneInput\(\s*value = phone,\s*onValueChange = \{ phone = it \},\s*label = [^\n]+,\s*countryRegion = "CZ",?\s*\)""")
+            Regex("""CleansiaPhoneInput\(\s*value = phone,\s*onValueChange = \{ phone = it \},\s*label = [^\n]+,\s*countryRegion = "CZ"""")
                 .containsMatchIn(source("ProfileOnboardingScreen.kt")),
         )
         listOf("EditProfileScreen.kt", "ProfileOnboardingScreen.kt").forEach { name ->

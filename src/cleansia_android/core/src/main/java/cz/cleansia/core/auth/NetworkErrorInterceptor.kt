@@ -4,6 +4,7 @@ import android.util.Log
 import cz.cleansia.core.snackbar.SnackbarController
 import java.io.IOException
 import java.io.InterruptedIOException
+import java.net.SocketTimeoutException
 import okhttp3.Interceptor
 import okhttp3.Response
 
@@ -55,7 +56,8 @@ class NetworkErrorInterceptor(
      * **The cancel flag is set ASYNCHRONOUSLY**, so checking it alone misses cases where the exception is
      * thrown before it propagates — a fast tab switch or a pop on forced sign-out then shows the user an
      * infrastructure error. Message text, InterruptedIOException and a socket closed under a cancelled
-     * call are the additional signals. -> /mobile-app/patterns#cancellation-noise
+     * call are the additional signals. A read timeout is an InterruptedIOException too, and it is a real
+     * failure. -> /mobile-app/patterns#cancellation-noise
      */
     private fun shouldSurfaceToast(
         chain: Interceptor.Chain,
@@ -64,7 +66,7 @@ class NetworkErrorInterceptor(
     ): Boolean {
         if (chain.call().isCanceled()) return false
         if (request.url.encodedPath.contains("RefreshToken", ignoreCase = true)) return false
-        if (e is InterruptedIOException) return false
+        if (e is InterruptedIOException && e !is SocketTimeoutException) return false
         if (Thread.currentThread().isInterrupted) return false
         val msg = e.message?.lowercase().orEmpty()
         if ("canceled" in msg || "cancelled" in msg) return false

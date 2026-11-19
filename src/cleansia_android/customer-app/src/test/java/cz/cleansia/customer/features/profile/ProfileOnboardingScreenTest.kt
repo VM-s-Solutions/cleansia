@@ -32,6 +32,20 @@ class ProfileOnboardingScreenTest {
     }
 
     @Test
+    fun `the wheels offer only the days the server accepts as a birth date`() {
+        val sheet = body(source, "private fun BirthDateWheelSheet(")
+        assertTrue(
+            "the wheels reach today, which UpdateCurrentUser refuses (validation.date_must_be_in_past)",
+            sheet.contains("maxDate = today.minusDays(1)."),
+        )
+        assertTrue(
+            "the wheels reach past 120 years back, which UpdateCurrentUser refuses (validation.invalid_age)",
+            sheet.contains("minDate = today.minusYears(120)."),
+        )
+        assertFalse("the wheels end at the current instant", sheet.contains("System.currentTimeMillis()"))
+    }
+
+    @Test
     fun `only a moving wheel stores the day, and Done only closes`() {
         val sheet = body(source, "private fun BirthDateWheelSheet(")
         val listener = block(sheet, sheet.indexOf("init(seed.year, seed.monthValue - 1, seed.dayOfMonth)"))
@@ -101,6 +115,16 @@ class ProfileOnboardingScreenTest {
             assertTrue("$dir: the birth date note is not \"$text\"", xml.contains("<string name=\"onboarding_birthdate_helper\">$text</string>"))
             perks.forEach { assertFalse("$dir still promises $it", xml.contains(it, ignoreCase = true)) }
         }
+    }
+
+    /** A refused save once left the step unchanged: the refusal only reached a snackbar the run never saw. */
+    @Test
+    fun `a refused save shows under the phone it refused`() {
+        assertTrue("the phone field no longer shows the refusal", source.contains("errorText = error?.takeIf { phone.trim() == savedPhone }"))
+        assertTrue("Save no longer records the phone it sends", source.contains("savedPhone = phone.trim()"))
+        val navHost = File(moduleDir, "src/main/java/cz/cleansia/customer/navigation/CleansiaNavHost.kt").readText()
+        val route = navHost.substring(navHost.indexOf("ProfileOnboardingScreen("), navHost.indexOf("composable<Routes.EditProfile>"))
+        assertTrue("the route does not hand the save's refusal to the step: $route", route.contains("error = (saveState as? cz.cleansia.core.ui.state.ActionState.Error)?.message"))
     }
 
     private val moduleDir: File by lazy {

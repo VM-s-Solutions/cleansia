@@ -79,6 +79,11 @@ The cancel flag is set **asynchronously**, so checking it alone misses cases whe
 thrown before the flag propagates. Additional signals are needed: a message containing *canceled* or
 *closed*, an `InterruptedIOException`, and a socket closed underneath a cancelled call.
 
+A read timeout is not one of them. OkHttp's `SocketTimeoutException` is an `InterruptedIOException`, and
+treating it as a cancellation made a timed-out request silent: callers leave connection failures to
+this toast, so a sign-in or a save on a slow server did nothing visible (F-089, seen on sign-in on DEV,
+2026-11-19). It toasts like any other connection failure.
+
 Get this wrong and every fast tab switch shows the user an infrastructure error.
 
 ## Only a successful answer is cached {#negative-caching}
@@ -140,6 +145,15 @@ therefore still turns the card *Ready to book*; the booking's pre-flight is what
 was not saved, and opens *Edit profile* with nothing booked (`BookingSubmitOutcome.ProfileIncomplete` on
 Android).
 
+**A refused save shows on the step.** On Android, *Save and continue* reports any refusal under the
+phone field, the server's own text (*Please enter a valid phone number.*, a number another account
+holds, a lost connection), for as long as the field holds the number that was refused. The step
+itself raises no snackbar; a lost connection or a timeout also gets the app's connection toast
+(*Check your internet connection and try again.*) from the shared `NetworkErrorInterceptor`. A refusal used to reach only a 6-second snackbar over the button, after a spinner as long
+as the server took (19 s on DEV, 2026-11-19); a save that timed out reached nothing at all
+([above](#cancellation-noise)); and the E2E runs twice saw the step do nothing (F-041, F-089). A step
+opened before the profile has loaded loads it first, rather than ignoring the tap.
+
 **The customer sign-in fits one screen.** Without the mascot and the guest link the form fits every
 supported iPhone, the SE included, and ordinary Android phones; only the legacy 360×640dp size still
 scrolls. The scroll view stays on both platforms, because the keyboard, field errors and large text
@@ -177,6 +191,24 @@ bottom on a tall phone. The customer forms are unchanged: centred on iOS, top-an
 ruling 2026-10-01). Even without it, the form is about 220pt taller than a 6.1" iPhone, and it is
 taller again on an SE. The one layout that fits every phone is a two-step sign-up (social buttons,
 e-mail and the terms tick first; name, password and referral second). It was offered and not taken.
+
+## Every consent tick names its own consent {#consent-ticks}
+
+The consent checkbox (`CleansiaConsentCheckbox` on both platforms) gives its tick a short screen-reader
+label of its own, apart from the sentence beside it. That label has **no default**: every caller names
+the consent its tick gives. Android once defaulted it to the terms (*Accept terms and privacy policy*),
+so TalkBack announced the card-saving tick and the early-performance tick as the terms (F-093); iOS
+already required `toggleAccessibilityLabel`. The ticks and their labels:
+
+| Tick | Label (en) | Android string | iOS key |
+|---|---|---|---|
+| Terms and privacy policy (sign-up, booking, recurring, order detail, partner registration) | *Accept terms and privacy policy* | `core_consent_toggle` | `register_terms_toggle` (customer), `accept_terms_toggle` (partner) |
+| Save the card | *Save this card for my next bookings* | `booking_save_card_label` (every card-saving tick, Payments included) | `booking_save_card` |
+| Save the card, iOS Payments | *Consent to save this card* | — | `booking_card_guarantee_title` |
+| Start within the withdrawal period | *Ask for the cleaning to start within the withdrawal period* | `booking_early_performance_toggle` | `booking_early_performance_toggle` |
+
+A new tick needs its own label in all five locales. On Android `ConsentCatalogTest` lists every call
+and the label it passes, and fails on a call it does not list.
 
 ## Tab roots clear the Book FAB, not just the bar {#bottom-chrome-clearance}
 
@@ -1441,8 +1473,10 @@ What changed on iOS:
   The recurring schedule's *Starts on* is still the system's compact date picker. Since 2026-11-08
   (owner decision on concept D) Android's customer profile completion also opens day, month and year
   wheels in a half-height sheet, the system's spinner date picker: a wheel stores its day as it moves,
-  **Done** only closes, and a sheet closed untouched stores nothing. Android's Edit profile and the
-  partner's personal details keep Material's calendar.
+  **Done** only closes, and a sheet closed untouched stores nothing. Its wheels end yesterday and start
+  120 years back, the days `UpdateCurrentUser` accepts, so the step's Save never draws a birth-date
+  refusal that would show under the phone field. Android's Edit profile and the partner's personal
+  details keep Material's calendar.
 - **A few symbols bounce, from iOS 17.** The notification bell (customer Home, partner dashboard)
   bounces once when the unread count rises, and stays still when it falls. The booking-success check,
   the Plus welcome screen's check and the *code applied* check of the promo and referral sheets bounce

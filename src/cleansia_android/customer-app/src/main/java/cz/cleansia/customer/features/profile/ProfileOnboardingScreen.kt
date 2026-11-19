@@ -94,6 +94,7 @@ import cz.cleansia.customer.core.user.CurrentUser
 import cz.cleansia.customer.ui.theme.CleansiaTheme
 import cz.cleansia.customer.ui.theme.LightTextSecondary
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale
@@ -105,10 +106,12 @@ import kotlinx.coroutines.launch
 fun ProfileOnboardingScreen(
     user: CurrentUser? = null,
     saving: Boolean = false,
+    error: String? = null,
     onSkip: () -> Unit = {},
     onSave: (phone: String, birthDate: String?) -> Unit = { _, _ -> },
 ) {
     var phone by remember(user?.id) { mutableStateOf(user?.phoneNumber.orEmpty()) }
+    var savedPhone by remember { mutableStateOf<String?>(null) }
     var birthDate by remember(user?.id) { mutableStateOf(user?.birthDate.orEmpty()) }
     var showBirthSheet by remember { mutableStateOf(false) }
     val checklist = user?.let { OnboardingChecklist.of(it, phone) }
@@ -208,7 +211,13 @@ fun ProfileOnboardingScreen(
                             Spacer(Modifier.height(Spacing.XS))
                             // shortcut: Czech numbers only, the one market served today; pass the market's country when a
                             // second one opens.
-                            CleansiaPhoneInput(value = phone, onValueChange = { phone = it }, label = phoneLabel, countryRegion = "CZ")
+                            CleansiaPhoneInput(
+                                value = phone,
+                                onValueChange = { phone = it },
+                                label = phoneLabel,
+                                countryRegion = "CZ",
+                                errorText = error?.takeIf { phone.trim() == savedPhone },
+                            )
                             Spacer(Modifier.height(Spacing.XS))
                             CleanerExample(name = user.fullName, phone = phone, reachable = checklist.phone)
                         }
@@ -246,7 +255,10 @@ fun ProfileOnboardingScreen(
         ) {
             CleansiaPrimaryButton(
                 text = stringResource(R.string.onboarding_save),
-                onClick = { onSave(phone.trim(), birthDate.trim().takeIf { it.isNotBlank() }) },
+                onClick = {
+                    savedPhone = phone.trim()
+                    onSave(phone.trim(), birthDate.trim().takeIf { it.isNotBlank() })
+                },
                 enabled = ready && !saving,
                 loading = saving,
             )
@@ -524,7 +536,8 @@ private fun BirthDateWheelSheet(
     val scope = rememberCoroutineScope()
     val latest by rememberUpdatedState(onBirthDate)
     val dark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
-    val seed = remember { birthDateWheelSeed(birthDate, LocalDate.now()) }
+    val today = remember { LocalDate.now() }
+    val seed = remember { birthDateWheelSeed(birthDate, today) }
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
@@ -567,7 +580,11 @@ private fun BirthDateWheelSheet(
                     DatePicker(themed, null, 0, R.style.Widget_Cleansia_BirthDateWheels).apply {
                         // A tap on a wheel's middle value would otherwise open a keyboard to type it.
                         descendantFocusability = ViewGroup.FOCUS_BLOCK_DESCENDANTS
-                        maxDate = System.currentTimeMillis()
+                        // Only days UpdateCurrentUser accepts: not today (validation.date_must_be_in_past), not over
+                        // 120 years back (validation.invalid_age). Save would otherwise show that refusal under the phone.
+                        val zone = ZoneId.systemDefault()
+                        minDate = today.minusYears(120).atStartOfDay(zone).toInstant().toEpochMilli()
+                        maxDate = today.minusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
                         init(seed.year, seed.monthValue - 1, seed.dayOfMonth) { _, y, m, d -> latest(LocalDate.of(y, m + 1, d).toString()) }
                     }
                 },

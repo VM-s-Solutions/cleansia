@@ -719,6 +719,13 @@ describe('CreateRecurringWizardComponent — the request to start within the wit
     );
   });
 
+  it('is named for assistive tech by its own label, never by the terms consent', () => {
+    const box = tick()?.querySelector<HTMLInputElement>('input[type="checkbox"]');
+    expect(box?.closest('label')).toBe(tick());
+    expect(box?.hasAttribute('aria-label') || box?.hasAttribute('aria-labelledby')).toBe(false);
+    expect(tick()?.textContent).not.toContain('pages.order.accept_terms');
+  });
+
   it('is not asked when a schedule is edited', () => {
     facade.editingId.set('t1');
     fixture.detectChanges();

@@ -31,6 +31,7 @@ fun CardSavingConsent(saved: Boolean, onSavedChange: (Boolean) -> Unit) {
             checked = saved,
             onCheckedChange = onSavedChange,
             html = stringResource(R.string.booking_save_card_label),
+            toggleContentDescription = stringResource(R.string.booking_save_card_label),
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(Modifier.height(4.dp))

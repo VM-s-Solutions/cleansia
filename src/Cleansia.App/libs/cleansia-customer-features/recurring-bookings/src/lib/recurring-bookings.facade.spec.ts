@@ -1525,7 +1525,7 @@ describe('RecurringBookingsFacade', () => {
       expect(facade.formData().paymentType).toBe(PaymentType.Card);
     });
 
-    it('takes an ineligible cash away from a legacy template opened for edit, without choosing card', async () => {
+    it('takes an ineligible cash away from a legacy template opened for edit, without choosing card, said in the status line and not in a toast', async () => {
       orderClient.quote.mockReturnValue(of(crewOf(2)));
       facade.loadForEdit(
         template({ selectedServiceIds: ['s1'], paymentType: PaymentType.Cash, requiresPaymentMethodChange: true }),
@@ -1537,7 +1537,7 @@ describe('RecurringBookingsFacade', () => {
       expect(facade.formData().paymentType).toBeNull();
       expect(facade.cashCleared()).toBe(true);
       expect(facade.missing()).toContain('payment');
-      expect(snackbar.showInfoTranslated).toHaveBeenCalledWith('recurring_booking.cash_cleared');
+      expect(snackbar.showInfoTranslated).not.toHaveBeenCalledWith('recurring_booking.cash_cleared');
     });
 
     it('takes cash prefilled from an order away when the selection needs two cleaners', async () => {

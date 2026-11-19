@@ -128,6 +128,14 @@ describe('OrderDetailComponent — keeping the card when confirming a recurring 
     expect(position & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
+  it('is named for assistive tech by its own label, never by the recurring terms consent', async () => {
+    await setup(occurrence(PaymentType.Card));
+    const box = saveCardTick()?.querySelector<HTMLInputElement>('input[type="checkbox"]');
+    expect(box?.closest('label')).toBe(saveCardTick());
+    expect(box?.hasAttribute('aria-label') || box?.hasAttribute('aria-labelledby')).toBe(false);
+    expect(saveCardTick()?.textContent).not.toContain('pages.order.accept_terms');
+  });
+
   it.each([
     { what: 'a cash occurrence', booked: () => occurrence(PaymentType.Cash), signedIn: true },
     { what: 'a card order not awaiting confirmation', booked: () => occurrence(PaymentType.Card, false), signedIn: true },

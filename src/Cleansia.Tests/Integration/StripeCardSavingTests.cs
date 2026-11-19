@@ -93,6 +93,37 @@ public class StripeCardSavingTests
     }
 
     /// <summary>
+    /// Stripe Link stays off whatever the Dashboard enables: every intent, subscription and checkout a sheet or
+    /// checkout page can show names card as its only payment method type, and none asks for automatic methods.
+    /// </summary>
+    [Theory]
+    [InlineData("payment-intent", "payment_method_types")]
+    [InlineData("setup-intent", "payment_method_types")]
+    [InlineData("subscription", "payment_settings[payment_method_types]")]
+    [InlineData("membership-checkout", "payment_method_types")]
+    public async Task Every_Payment_Surface_Names_Card_As_Its_Only_Payment_Method(string surface, string parameter)
+    {
+        var transport = new RecordingHandler();
+        var client = Client(transport);
+
+        Task create = surface switch
+        {
+            "payment-intent" => client.CreatePaymentIntentAsync(
+                1500m, "CZK", "cus_czk", "order-sheet", "CL-1", SavedCardId, currentPaymentIntentId: null, CancellationToken.None),
+            "setup-intent" => client.CreateSetupIntentAsync("cus_czk", CancellationToken.None),
+            "subscription" => client.CreateSubscriptionAsync("cus_czk", "price_plus", 0, "attempt-1", CancellationToken.None),
+            _ => client.CreateMembershipCheckoutSessionAsync(
+                "cus_czk", "price_plus", "user-1", "plus", 0, "attempt-1", CancellationToken.None),
+        };
+        await create;
+
+        var body = Assert.Single(transport.Requests).Body;
+        Assert.Contains($"{parameter}[0]=card", body);
+        Assert.DoesNotContain($"{parameter}[1]", body);
+        Assert.DoesNotContain("automatic_payment_methods", body);
+    }
+
+    /// <summary>
     /// The sheet re-opened with the tick still on is handed the intent the order records, with its own saved
     /// card, and Stripe is asked to create nothing.
     /// </summary>

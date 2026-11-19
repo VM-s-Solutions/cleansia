@@ -57,3 +57,4 @@ deployed with the wave.
 ## Work record
 
 - 2026-11-19 — Filed with T-0937 and T-0939, after Mike's rulings.
+- 2026-11-19 — Started on `fix/t0938-wave2-apps-and-web`, after T-0937 merged as `c76007860`.

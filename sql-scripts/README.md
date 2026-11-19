@@ -7,7 +7,8 @@ Operational SQL scripts for the Cleansia database. These are executed via the **
 1. Go to **Actions** → **Execute SQL Script**
 2. Select **DEV** or **PRO** environment
 3. Enter the script filename (e.g., `check-db-health.sql`)
-4. For PRO: type `execute` to confirm
+4. For PRO: type `execute` to confirm. On DEV the confirmation reaches the script as the session setting
+   `cleansia.confirm`; `dev-e2e-publish-cleaner-document.sql` runs only when it holds that file's name
 
 ## Naming conventions
 
@@ -80,13 +81,14 @@ database seeded before the seed changed. Run these through **Execute SQL Script*
   harness (`e2e/README.md`, "Running") can sign them in. It refuses to run on a database without the
   published DEV administrator. One transaction, idempotent. DEV only: production has no test accounts,
   and `execute-sql.yml` refuses it against PRO.
-- **`dev-e2e-publish-cleaner-document.sql`** — for the E2E run of T-0934 (TAKE-025, owner ruling 2026-11-15):
-  publishes a new version of each cleaner document a Czech cleaner must hold (framework contract, self-billing
-  agreement, data processing agreement), a copy of the version in force with today's date as its effective date
-  and version. **It gates every DEV cleaner until they accept again**, so it runs only as the last step of Day 2 of
-  that run (`e2e/README.md`, "Running"); it refuses any other day and a database without the published DEV
-  administrator. One transaction, idempotent. The repository's legal texts are untouched, so nothing reaches PRO,
-  and `execute-sql.yml` refuses it against PRO.
+- **`dev-e2e-publish-cleaner-document.sql`** — for an E2E run's TAKE-025 (owner ruling 2026-11-15): publishes a
+  new version of each cleaner document a Czech cleaner must hold (framework contract, self-billing agreement, data
+  processing agreement), a copy of the version in force with today's date as its effective date and version. **It
+  gates every DEV cleaner until they accept again**, so it runs only as the last step of Day 2 of a run
+  (`e2e/README.md`, "Running"); it refuses a dispatch whose `confirm` is not
+  `dev-e2e-publish-cleaner-document.sql` (the E2E wrapper `scripts/publish-cleaner-document.sh` passes it) and a
+  database without the published DEV administrator. One transaction, idempotent. The repository's legal texts are
+  untouched, so nothing reaches PRO, and `execute-sql.yml` refuses it against PRO.
 - **`dev-e2e-read-fee-receipts.sql`** — read-only: the fee receipts (`OrderReceipts` rows that name a receivable)
   of the end-to-end test orders of the last 14 days, for PAY-042, which no endpoint or e-mail shows. It refuses
   to run on a database without the published DEV administrator, and `execute-sql.yml` refuses it against PRO.
@@ -94,6 +96,10 @@ database seeded before the seed changed. Run these through **Execute SQL Script*
   days (captured or still waiting for Stripe), their card orders and the Stripe events DEV processed, to trace a
   ticked card payment that kept no card (PAY-022). It refuses to run on a database without the published DEV
   administrator, and `execute-sql.yml` refuses it against PRO.
+
+Every `dev-e2e-*.sql` runs in CI before it can meet DEV: `DevE2eScriptsTests` (`src/Cleansia.IntegrationTests`)
+executes each against a Postgres built from the migration and seeded as DEV is, with its dispatch's confirmation.
+A new `dev-e2e-*.sql` is picked up by name, so it must run there without error.
 
 ## `seed/` — dev fixture data
 

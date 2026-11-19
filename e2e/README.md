@@ -72,9 +72,10 @@ and heading, and its body is one line: `- **See** E2E-<FLOW>-NNN`.
   `scripts/` (refused against PRO): `sql-scripts/dev-e2e-read-fee-receipts.sql` (read-only: the fee receipts of the
   e2e orders, PAY-042, `scripts/read-fee-receipts.sh`), and `sql-scripts/dev-e2e-publish-cleaner-document.sql` (a new
   version of the three CZ cleaner documents, TAKE-025, `scripts/publish-cleaner-document.sh`). **The publish script
-  gates every DEV cleaner until they accept the new version**: it runs once, as the very last step of Day 2, refuses
-  any other day than 19 Nov 2026 and is never run on a scratch run. A dispatch runs the script of the ref
-  `E2E_CONFIRM_REF` names, so both need this branch merged (`master`) or pushed before Day 1.
+  gates every DEV cleaner until they accept the new version**: it runs once, as the very last step of Day 2, and is
+  never run on a scratch run. It publishes only when the dispatch's `confirm` names it, which the wrapper alone passes
+  (through `dev-sql.sh`'s `E2E_SQL_CONFIRM`); a dispatch without it is refused, on any day. A dispatch runs the
+  script of the ref `E2E_CONFIRM_REF` names, so both need this branch merged (`master`) or pushed before Day 1.
 
 ## Running
 
@@ -196,7 +197,7 @@ the following open:
 
 | Case | The part not covered | Why |
 |---|---|---|
-| E2E-TAKE-025 | the whole case | the publish script fails before it publishes (F-076), and it refuses any day but 19 November 2026: it needs the fix, a new date and Mike's OK, since it gates every DEV cleaner |
+| E2E-TAKE-025 | the whole case | the publish script failed before it published (F-076, fixed in T-0937: `DevE2eScriptsTests` now runs every `dev-e2e-*.sql` against Postgres in CI); a re-run needs Mike's OK, since it gates every DEV cleaner |
 | E2E-PAYOUT-057 | the set-off statement in five languages | a regenerate of an invoice whose PDF exists fails (F-075), so no PDF is rendered after the language change |
 | E2E-PAYOUT-016, E2E-PAYOUT-017, E2E-PAYOUT-032, E2E-PAYOUT-035, E2E-PAYOUT-036, E2E-PAYOUT-055, E2E-PAYOUT-056 | the settle stage's Close now, invoice and cash set-off | phase 2's settle runs with `E2E_NO_CLOSE_NOW=1`, so they stand on phase 1's pass; the payroll stage reads the night close and the SPA's Close now (F-012) but no set-off (F-102) |
 | E2E-XCUT-011 (Android), E2E-PAY-011 (iOS) | the whole case on that client | they stand on phase 1's pass: the phase-2 runbook rows (`runbooks/android.md:148`, `runbooks/ios.md:127`) were not repeated |

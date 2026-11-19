@@ -825,6 +825,17 @@ describe('OrderWizardComponent (a11y)', () => {
         expect(saveCardTick()?.querySelector<HTMLInputElement>('input[type="checkbox"]')?.checked).toBe(false);
       });
 
+      it('is named for assistive tech by its own label, never by the terms consent', async () => {
+        await setup();
+        facade.activeStep.set(4);
+        facade.saveCardOffered.set(true);
+        fixture.detectChanges();
+        const box = saveCardTick()?.querySelector<HTMLInputElement>('input[type="checkbox"]');
+        expect(box?.closest('label')).toBe(saveCardTick());
+        expect(box?.hasAttribute('aria-label') || box?.hasAttribute('aria-labelledby')).toBe(false);
+        expect(saveCardTick()?.textContent).not.toContain('pages.order.accept_terms');
+      });
+
       it('hands the tick to the facade', async () => {
         await setup();
         facade.activeStep.set(4);
@@ -1269,6 +1280,16 @@ describe('OrderWizardComponent (a11y)', () => {
       facade.alreadyConsented.set(true);
       fixture.detectChanges();
       expect(earlyStartTick()?.textContent).toContain(TICK_KEY);
+    });
+
+    it('is named for assistive tech by its own label, never by the terms consent', async () => {
+      await setup();
+      facade.activeStep.set(CONFIRM_STEP);
+      fixture.detectChanges();
+      const box = earlyStartTick()?.querySelector<HTMLInputElement>('input[type="checkbox"]');
+      expect(box?.closest('label')).toBe(earlyStartTick());
+      expect(box?.hasAttribute('aria-label') || box?.hasAttribute('aria-labelledby')).toBe(false);
+      expect(earlyStartTick()?.textContent).not.toContain('pages.order.accept_terms');
     });
 
     it('holds the order and names what is missing until it is ticked', async () => {

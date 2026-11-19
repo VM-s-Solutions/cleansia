@@ -83,7 +83,10 @@ test.describe('work: afternoon', () => {
     const lines = list(q.body, 'lines');
     const gross = (id: string) => num(lines.find((l) => str(l, 'itemId') === id), 'amount');
     const G = lines.reduce<number>((sum, l) => sum + num(l, 'amount'), 0);
-    expect(G, 'the lines sum to the total X was booked at').toBeCloseTo(o.total, 2);
+    // A booking made under 4 h ahead carries the 20 % express surcharge on top of the lines (BookingPolicy); the plan
+    // books X earlier than that, but an orders invocation that ran late does not.
+    const express = Date.parse(o.slot) - Date.parse(o.createdAt ?? '') < 4 * 3_600_000 ? round2(0.2 * G) : 0;
+    expect(G + express, 'the lines, with any express surcharge, sum to the total X was booked at').toBeCloseTo(o.total, 2);
     const T = o.total;
     // RefundAllocator: a selection's refund = round(its grosses / all grosses (the extra included) x T, 2). Reason 4,
     // ServiceNotRendered: the platform absorbs the Stripe fee, so the amount sent is the share (IssuePartialRefund).
@@ -151,7 +154,9 @@ test.describe('work: afternoon', () => {
     expect(first.status, JSON.stringify(first.body)).toBe(200);
     expect(first.body).toMatchObject({ crewDone: false });
     const second = await markDone(a, o.id);
-    expect(str(second.body, 'completionConfirmedAt')).toBe(str(first.body, 'completionConfirmedAt'));
+    // The same instant: the first reply carries the clock's 100 ns ticks, the second the stored microseconds.
+    expect(Date.parse(str(second.body, 'completionConfirmedAt'))).toBe(Date.parse(str(first.body, 'completionConfirmedAt')));
+    expect(Number.isNaN(Date.parse(str(first.body, 'completionConfirmedAt')))).toBe(false);
     refused(await complete(a, o.id), 'order.crew_not_done');
     expect(statusOf(await adminDetail(o.id))).toBe('InProgress');
     setFlag(run, 'w.aMarked');

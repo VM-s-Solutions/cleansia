@@ -52,3 +52,17 @@ Every row was ground-truthed against master 9bb0b0b9e before work started.
 
 One PR with every CI gate green, merged to master and deployed to DEV (Mike's OK of 17 November) before the phase 2
 run. Each code change has a test.
+
+## Work record
+
+- 2026-11-17 — Filed and fixed on `fix/t0936-partial-refund-notice`.
+- 2026-11-17 — The review's rows fixed on the branch. F1: two identical partial refunds sent at the same moment both
+  queued the notice on one outbox key, and the second request failed its commit with 23505; the notice now sits behind
+  the refund-row lock, with the success audit. F2: the iOS partner error roster no longer names the three employee
+  commands as emitters of `dispute.max_length_exceeded`. Reported to Mike, not filed: F3, the Android partner address
+  picker composes `MapboxMap` without a token guard; F4, a role doc and a code comment say three handlers raise
+  `order.refunded`, where seven do.
+- 2026-11-17 — Shipped in #386 (merge 5df227390), CI green on every check on the first run; deployed to DEV with Mike's
+  OK before the phase 2 run (deploy run 43989403316, green after four rounds of the SCM-preflight recovery; every
+  failed leg failed at `scm-auth-preflight`). All five APIs answered 200 before and after a 15-minute settle, and both
+  web apps after it.

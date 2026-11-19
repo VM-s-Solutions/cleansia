@@ -11,7 +11,8 @@ import { cachedAdmin, cachedAdminAs } from '../support/web';
 // System, invoiced inline), the invoice numbers, a cleaner refused another's invoice, the cash set-off statement's
 // language (six PDFs the run agent reads), the Accountant's approve, mark paid and cancel with its corrected invoice,
 // and E's J1 in the new period before payroll/20 presses Close now in the SPA. A scratch run proves the skips only.
-test.describe.configure({ mode: 'serial' });
+// Not serial: every test has its own gate, so one failure (a PDF that cannot be rendered) does not hold up the invoice
+// lifecycle, J1 and Close now after it (one worker keeps the order).
 
 const run = loadRun();
 // One property's refusals arrive joined in one string ("a; b"): split them so a key is looked for on its own.
@@ -107,7 +108,9 @@ test.describe('payroll: the night close and the invoice lifecycle', () => {
     dayTwo('02:30', 'the night run invoices the closed period');
     const id = invoice('A');
     test.skip(!!flag(run, 'a.pdfsSaved'), `the PDFs were saved at ${flag(run, 'a.pdfsSaved')}`);
-    test.skip(status(await detail(id)) !== 'Pending', 'regenerate refuses an approved or paid invoice: A\'s is no longer Pending');
+    const now = status(await detail(id));
+    // RegenerateInvoicePdf refuses only a cancelled or paid invoice: an approved one is rendered again.
+    test.skip(now === 'Paid' || now === 'Cancelled', `regenerate refuses a paid or cancelled invoice: A's is ${now}`);
     const a = await cleaner('cleaner');
     const me = (await call(a, 'GET', '/api/User/GetCurrent')).body;
     const setLanguage = async (languageCode: string) => {
@@ -117,6 +120,8 @@ test.describe('payroll: the night close and the invoice lifecycle', () => {
       });
       expect(r.status, `${languageCode}: ${JSON.stringify(r.body)}`).toBe(200);
     };
+    // Tried once is enough to let PAYOUT-039 approve A's invoice: a render that fails is this case's failure alone.
+    if (!flag(run, 'a.pdfsTried')) setFlag(run, 'a.pdfsTried');
     const saved: string[] = [];
     for (const lang of ['en', 'cs', 'sk', 'uk', 'ru', 'cs']) {
       await setLanguage(lang);
@@ -137,7 +142,7 @@ test.describe('payroll: the night close and the invoice lifecycle', () => {
   test('the Accountant approves A\'s invoice; A reads it Approved and the audit log holds the approval', { tag: ['@E2E-PAYOUT-039'] }, async () => {
     dayTwo('02:30', 'the night run invoices the closed period');
     const id = invoice('A');
-    test.skip(!flag(run, 'a.pdfsSaved'), 'the set-off PDFs (PAYOUT-057) are saved while A\'s invoice is Pending');
+    test.skip(!flag(run, 'a.pdfsSaved') && !flag(run, 'a.pdfsTried'), 'the set-off PDFs (PAYOUT-057) are tried while A\'s invoice is Pending');
     if (status(await detail(id)) === 'Pending') {
       const r = await call(await accountant(), 'PUT', '/api/AdminInvoice/approve', { invoiceId: id, adminNotes: `E2E run ${run.runId}` });
       expect(r.status, JSON.stringify(r.body)).toBe(200);
@@ -174,6 +179,7 @@ test.describe('payroll: the night close and the invoice lifecycle', () => {
     dayTwo('02:30', 'the night run invoices the closed period');
     test.setTimeout(20 * 60_000);
     const id = invoice('B');
+    test.skip(!!run.invoices?.['Bfix'], 'B\'s corrected invoice is recorded: the clean-up (payroll/50) settles it since, so it is no longer Pending');
     const p = run.periodAtStart as NonNullable<typeof run.periodAtStart>;
     const old = await detail(id);
     if (status(old) !== 'Cancelled') {

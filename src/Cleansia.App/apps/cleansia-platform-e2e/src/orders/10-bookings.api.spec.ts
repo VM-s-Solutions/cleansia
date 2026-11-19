@@ -269,6 +269,7 @@ test.describe('orders: bookings', () => {
 
   test('a two-cleaner booking cannot be cash; by card it books two seats (W); at 120 minutes it is one cleaner and cash (K1)', { tag: ['@E2E-BOOK-035'] }, async ({ page }) => {
     test.skip(!run.serviceId, 'the throwaway two-cleaner service exists only on the real run (people/50)');
+    test.skip(!!flag(run, 'service.off'), `the two-cleaner service was switched off at ${flag(run, 'service.off')} (orders/50): it is quoted no more`);
     const s = await as('customer');
     const w = selectionOf('W');
     const two = await quote(s, run, w);

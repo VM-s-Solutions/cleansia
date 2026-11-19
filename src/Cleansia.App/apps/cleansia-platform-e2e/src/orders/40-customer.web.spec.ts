@@ -264,7 +264,7 @@ test.describe('cash and what is owed', () => {
     for (let i = 0; i < 4; i++) await wizard.next(page);
     await expect(wizard.pay(page, 'cash')).toBeDisabled();
     await expect(page.locator('#wizard-cash-reason')).toContainText('This booking needs 2 cleaners. Pay by card.');
-    await expect(page.getByText(t('pages.order.cash_cleared'))).toBeVisible();
+    await expect(page.getByRole('status').getByText(t('pages.order.cash_cleared'))).toBeVisible();
     await expect(wizard.pay(page, 'card')).toHaveAttribute('aria-pressed', 'false');
     setFlag(run, 'book035.webDone');
   });
@@ -297,13 +297,33 @@ test.describe('cash and what is owed', () => {
     expect(errorKeys(await reply.json())).toContain('order.cash_open_bookings_limit_reached');
     await expect(page.getByText(t('api.order.cash_open_bookings_limit_reached'))).toBeVisible();
     expect(created).toBe(0);
+    setFlag(run, 'book037.webDone');
   });
 
   test('someone who owes is shown what and offered to pay it on the payment step', { tag: ['@E2E-BOOK-038'] }, async ({ page }) => {
     test.skip(!flag(run, 'd2.receivableOpen'), 'D2\'s cancellation fee is not open yet (orders/30)');
     test.skip(!!flag(run, 'receivable.webShown'), `shown at ${flag(run, 'receivable.webShown')}`);
+    // Once PAY-041 has paid the fee, Place Order would book a real cash order instead of being refused.
+    const debtor = await signIn('customer', emailOf(run, 'debtor'), run.password);
+    const owed = await call(debtor, 'GET', '/api/Receivable/GetMine');
+    expect(owed.status, JSON.stringify(owed.body)).toBe(200);
+    test.skip(!list(owed.body, '').length, 'the debtor owes nothing: D2\'s fee is paid (PAY-041)');
     await customerSignIn(page, emailOf(run, 'debtor'), run.password);
     await toPayment(page, pragueSlot(pragueDate(new Date(Date.now() + 2 * 24 * HOUR)), '12:00'));
+    // The wizard learns of the debt from the refused create (order-wizard.facade.ts onCreateRefused), then returns to
+    // the payment step listing what is owed (E2E-BOOK-038).
+    await wizard.pay(page, 'cash').click();
+    await wizard.next(page);
+    const skipPlus = page.getByRole('button', { name: 'Continue without Plus' });
+    if (await skipPlus.isVisible().catch(() => false)) await skipPlus.click();
+    else await wizard.next(page);
+    await page.locator('input#wizard-early-performance').check();
+    if (await page.locator('input#wizard-terms').isVisible()) await page.locator('input#wizard-terms').check();
+    const refused = page.waitForResponse((r) => new URL(r.url()).pathname.endsWith('/api/Order/CreateOrder'));
+    await page.getByRole('button', { name: 'Place Order' }).click();
+    const reply = await refused;
+    expect(reply.status()).toBe(400);
+    expect(errorKeys(await reply.json())).toContain('order.unpaid_receivable');
     await expect(page.getByText(t('pages.order.unpaid_owed'))).toBeVisible();
     const due = page.locator('cleansia-customer-amount-due');
     await expect(due).toContainText(t('pages.amount_due.kind.cash_cancellation_fee'));

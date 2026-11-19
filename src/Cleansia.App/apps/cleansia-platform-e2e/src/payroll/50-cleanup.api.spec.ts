@@ -152,7 +152,7 @@ test.describe('payroll: after the period is paid, the clean-up, and TAKE-025', (
     test.skip(!!flag(run, 'take025.done'), `shown at ${flag(run, 'take025.done')}`);
     test.setTimeout(25 * 60_000);
     if (!flag(run, 'take025.published')) {
-      // The wrapper passes the dispatch's confirmation, which the script requires (T-0937); E2E_TAKE025=1 is the operator's.
+      // The wrapper passes the dispatch's confirmation, which the script requires; E2E_TAKE025=1 is the operator's.
       const out = execFileSync('bash', [join(__dirname, '..', '..', 'scripts', 'publish-cleaner-document.sh')], { encoding: 'utf8', timeout: 18 * 60_000 });
       console.log(out);
       setFlag(run, 'take025.published');

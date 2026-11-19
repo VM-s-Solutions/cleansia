@@ -198,7 +198,7 @@ the following open:
 | Case | The part not covered | Why |
 |---|---|---|
 | E2E-TAKE-025 | the whole case | the publish script failed before it published (F-076, fixed in T-0937: `DevE2eScriptsTests` now runs every `dev-e2e-*.sql` against Postgres in CI); a re-run needs Mike's OK, since it gates every DEV cleaner |
-| E2E-PAYOUT-057 | the set-off statement in five languages | a regenerate of an invoice whose PDF exists fails (F-075), so no PDF is rendered after the language change |
+| E2E-PAYOUT-057 | the set-off statement in five languages | a regenerate of an invoice whose PDF existed failed (F-075, fixed in T-0937: a re-render is a new numbered file beside the first), so no PDF was rendered after the language change; the re-run is T-0939 |
 | E2E-PAYOUT-016, E2E-PAYOUT-017, E2E-PAYOUT-032, E2E-PAYOUT-035, E2E-PAYOUT-036, E2E-PAYOUT-055, E2E-PAYOUT-056 | the settle stage's Close now, invoice and cash set-off | phase 2's settle runs with `E2E_NO_CLOSE_NOW=1`, so they stand on phase 1's pass; the payroll stage reads the night close and the SPA's Close now (F-012) but no set-off (F-102) |
 | E2E-XCUT-011 (Android), E2E-PAY-011 (iOS) | the whole case on that client | they stand on phase 1's pass: the phase-2 runbook rows (`runbooks/android.md:148`, `runbooks/ios.md:127`) were not repeated |
 | E2E-BOOK-037 | the web's refusal of a third unpaid cash booking | it never ran on the phase-2 run (F-078); the fix that orders it is unproven |

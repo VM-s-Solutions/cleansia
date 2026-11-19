@@ -1473,8 +1473,10 @@ What changed on iOS:
   The recurring schedule's *Starts on* is still the system's compact date picker. Since 2026-11-08
   (owner decision on concept D) Android's customer profile completion also opens day, month and year
   wheels in a half-height sheet, the system's spinner date picker: a wheel stores its day as it moves,
-  **Done** only closes, and a sheet closed untouched stores nothing. Android's Edit profile and the
-  partner's personal details keep Material's calendar.
+  **Done** only closes, and a sheet closed untouched stores nothing. Its wheels end yesterday and start
+  120 years back, the days `UpdateCurrentUser` accepts, so the step's Save never draws a birth-date
+  refusal that would show under the phone field. Android's Edit profile and the partner's personal
+  details keep Material's calendar.
 - **A few symbols bounce, from iOS 17.** The notification bell (customer Home, partner dashboard)
   bounces once when the unread count rises, and stays still when it falls. The booking-success check,
   the Plus welcome screen's check and the *code applied* check of the promo and referral sheets bounce

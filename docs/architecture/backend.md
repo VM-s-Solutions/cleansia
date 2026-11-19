@@ -432,8 +432,11 @@ something the server gets to dictate after the clients ship.
 `timestamp with time zone` holds microseconds, and Npgsql truncates the seventh fractional digit on
 write. A reply built before the commit therefore used to differ from every later read of the same value
 (`MarkMyPartDone` answered `…51.1991616Z`, then `…51.199161Z` on the idempotent repeat). Every
-`DateTime` and `DateTimeOffset` an API host writes, nullable included, is now truncated to the whole
-microsecond; the format is otherwise the default ISO 8601 one, with the same `Z` or offset per kind.
+`DateTime` and `DateTimeOffset` an API host writes, nullable included, is now cut to the whole
+microsecond exactly as Npgsql cuts it: counted from Postgres's 2000-01-01 epoch and truncated toward it, so
+a value before 2000 moves up to the next microsecond, and a `DateTimeOffset` is cut on its UTC instant,
+which is what Npgsql stores. The format is otherwise the default ISO 8601 one, with the same `Z` or offset
+per kind.
 Reading is unchanged — a client may still send seven digits — and the OpenAPI schema stays `string`,
 `date-time`. This lives in the one shared host configuration, so it reaches all five APIs and nothing
 else: the Functions' queue messages are not API output.

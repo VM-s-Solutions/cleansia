@@ -39,6 +39,25 @@ public class MicrosecondTimestampConverterTests
         Assert.Equal("\"2026-11-18T13:32:51.999999Z\"", json);
     }
 
+    // Npgsql counts microseconds from 2000-01-01 and truncates toward it, so before 2000 the 7th digit
+    // rounds UP to the next microsecond. Values taken from Npgsql 10.0.1's own PgTimestamp.Encode.
+    [Theory]
+    [InlineData("1999-12-31T23:59:59.1991616Z", "1999-12-31T23:59:59.199162Z")]
+    [InlineData("1990-05-12T10:00:00.0000005Z", "1990-05-12T10:00:00.000001Z")]
+    [InlineData("2000-01-01T00:00:00.0000005Z", "2000-01-01T00:00:00Z")]
+    public void Matches_What_Npgsql_Stores_On_Both_Sides_Of_Its_2000_Epoch(string sent, string stored)
+    {
+        Assert.Equal($"\"{stored}\"", JsonSerializer.Serialize(Utc(sent), HostOptions));
+    }
+
+    [Fact]
+    public void Writes_A_Pre_2000_DateTimeOffset_As_Npgsql_Stores_It()
+    {
+        var value = DateTimeOffset.Parse("2000-01-01T00:59:59.1991616+01:00");
+
+        Assert.Equal("\"2000-01-01T00:59:59.199162+01:00\"", JsonSerializer.Serialize(value, HostOptions));
+    }
+
     [Theory]
     [InlineData("2026-11-18T13:32:51.199161Z")]
     [InlineData("2026-11-18T13:32:51.1991Z")]

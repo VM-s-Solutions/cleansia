@@ -7,7 +7,7 @@ consistency survives even when an agent (or human) doesn't read carefully. The p
 
 > ## ⚠️ WHAT CAN ACTUALLY FAIL A BUILD — corrected 2026-08-13, re-checked against `.github/workflows/` 2026-10-05. Read this before trusting any `T1-CI` token below.
 >
-> **Four checkers gate a pull request. Five do not.**
+> **Four checkers gate a pull request. Six do not.**
 >
 > | Checker | Gates a PR? | Where |
 > |---|---|---|
@@ -20,6 +20,7 @@ consistency survives even when an agent (or human) doesn't read carefully. The p
 > | `check-available-status-parity.mjs` | no | on demand only |
 > | `check-nx-project-registration.mjs` | no | on demand only |
 > | `check-backlog-consistency.mjs` | no | on demand only |
+> | `check-error-text-parity.mjs` | no | on demand only — not wired while the drift it measures waits on an owner ruling (T-0938, F-095) |
 >
 > One more runs in CI without gating a pull request: `deploy-pro.yml` runs `check-legal-drafts.mjs`, its
 > self-test first, before a production deploy. The other scripts under `agents/tools/` are measuring
@@ -35,7 +36,7 @@ consistency survives even when an agent (or human) doesn't read carefully. The p
 > about.
 >
 > **How to read a `T1-CI` token below.** If it names a checker in a `yes, blocking` row, it is accurate. If it
-> names one of the other five, or cites `catalog-claims.yml` / `module-boundaries.yml` /
+> names one of the other six, or cites `catalog-claims.yml` / `module-boundaries.yml` /
 > `offerability-parity.yml` / `nx-project-registration.yml` — **none of which exist** — treat the rule as
 > `T2-ADVISORY`: a convention a human upholds. `conventions.md` §*"The price of a law"* is explicit that a
 > tier naming a mechanism that cannot fail a build is not `T1-CI`. The 53 individual tokens are not
@@ -44,10 +45,11 @@ consistency survives even when an agent (or human) doesn't read carefully. The p
 > sentence on this page or under `agents/knowledge/` that named one of those four files as running a
 > checker now names the workflow that does, or says that none does.
 >
-> **What the five ungated checkers would still catch, so the trade stays visible:** customer→partner
+> **What the six ungated checkers would still catch, so the trade stays visible:** customer→partner
 > module-boundary regressions, offerability-status drift between the C# source of truth and eight client
 > literals across three languages, libraries becoming invisible to Nx, the **declared** convention
-> violations moving, and the backlog being edited into disagreeing with itself. Each is a real defect
+> violations moving, the backlog being edited into disagreeing with itself, and one backend error key reading
+> differently between clients in the same language. Each is a real defect
 > class with a measured baseline.
 >
 > The declared set lives in `agents/cleanup/consistency-baseline.md` and **is deliberately not counted

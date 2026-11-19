@@ -201,8 +201,9 @@ already required `toggleAccessibilityLabel`. The ticks and their labels:
 
 | Tick | Label (en) | Android string | iOS key |
 |---|---|---|---|
-| Terms and privacy policy (sign-up, booking, recurring, order detail, partner registration) | *Accept terms and privacy policy* | `core_consent_toggle` | `register_terms_toggle` |
-| Save the card | *Save this card for my next bookings* | `booking_save_card_label` | `booking_save_card` (booking), `booking_card_guarantee_title` (Payments) |
+| Terms and privacy policy (sign-up, booking, recurring, order detail, partner registration) | *Accept terms and privacy policy* | `core_consent_toggle` | `register_terms_toggle` (customer), `accept_terms_toggle` (partner) |
+| Save the card | *Save this card for my next bookings* | `booking_save_card_label` (every card-saving tick, Payments included) | `booking_save_card` |
+| Save the card, iOS Payments | *Consent to save this card* | — | `booking_card_guarantee_title` |
 | Start within the withdrawal period | *Ask for the cleaning to start within the withdrawal period* | `booking_early_performance_toggle` | `booking_early_performance_toggle` |
 
 A new tick needs its own label in all five locales. On Android `ConsentCatalogTest` lists every call

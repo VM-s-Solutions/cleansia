@@ -238,6 +238,28 @@ final class CustomerNotificationDeepLinkTests: XCTestCase {
         XCTAssertNil(CustomerNotificationDeepLink.resolve(userInfo))
     }
 
+    func testAnOrderPushCarriesItsOrderIdToTheOpenDetail() {
+        let userInfo = alertCarryingUserInfo(
+            eventKey: "order.cleaner_assigned",
+            locArgs: ["CL-1042"],
+            extra: ["orderId": "ord-9", "orderNumber": "CL-1042"]
+        )
+        XCTAssertEqual(CustomerNotificationDeepLink.orderEventId(userInfo), "ord-9")
+    }
+
+    func testARecurringBookingPushCarriesItsOrderId() {
+        let userInfo: [AnyHashable: Any] = ["event_key": "recurring.scheduled", "orderId": "ord-3"]
+        XCTAssertEqual(CustomerNotificationDeepLink.orderEventId(userInfo), "ord-3")
+    }
+
+    func testOnlyOrderPushesWithAnIdCarryAnOrderEvent() {
+        XCTAssertNil(CustomerNotificationDeepLink.orderEventId(["event_key": "dispute.reply", "orderId": "ord-1"]))
+        XCTAssertNil(CustomerNotificationDeepLink.orderEventId(["event_key": "recurring.paused", "orderId": "ord-1"]))
+        XCTAssertNil(CustomerNotificationDeepLink.orderEventId(["event_key": "order.completed", "orderId": ""]))
+        XCTAssertNil(CustomerNotificationDeepLink.orderEventId(["event_key": "order.completed"]))
+        XCTAssertNil(CustomerNotificationDeepLink.orderEventId(["orderId": "ord-1"]))
+    }
+
     private func alertCarryingUserInfo(
         eventKey: String,
         locArgs: [String],

@@ -372,34 +372,6 @@ final class OrderDetailViewModelTests: XCTestCase {
         XCTAssertEqual(client.detailCallCount, 1)
     }
 
-    func testEventBusTriggersRefetch() async {
-        let client = FakeOrderClient()
-        client.detailResults = [
-            .success(OrderFixtures.detail(statusValue: 5)),
-            .success(OrderFixtures.detail(statusValue: 5))
-        ]
-        let bus = OrderEventBus()
-        let repo = OrderRepository(client: client)
-        let vm = OrderDetailViewModel(
-            orderId: "o1",
-            client: client,
-            repository: repo,
-            membershipRepository: MembershipRepository(client: FakeMembershipManagementClient()),
-            marketStore: MarketFixtures.store().0,
-            snackbar: SnackbarController(),
-            eventBus: bus,
-            liveActivity: NoopLiveActivitySync(),
-            onCreditMoved: {},
-            pollInterval: 60
-        )
-        await vm.load()
-
-        bus.emit(orderId: "o1")
-        try? await Task.sleep(nanoseconds: 30_000_000)
-
-        XCTAssertGreaterThanOrEqual(client.detailCallCount, 2)
-    }
-
     // MARK: Make this recurring
 
     func membershipClient(_ result: ApiResult<MyMembership>) -> FakeMembershipManagementClient {

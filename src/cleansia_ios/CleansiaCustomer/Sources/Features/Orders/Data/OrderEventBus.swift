@@ -5,11 +5,8 @@ struct OrderEvent: Equatable {
     let orderId: String
 }
 
-/// Seam for a future push-triggered refetch (the `OrderEventBus.kt` parity). A
-/// push handler would `emit(orderId)`; the OrderDetail VM filters to its own id
-/// and refetches. Customer push registration is NOT built in this slice (that
-/// was partner T-0311) — the 5-minute poller + refresh-on-appear cover refresh
-/// until customer push lands, so nothing emits here yet.
+/// The `OrderEventBus.kt` parity: the app delegate emits the order id of every order push, shown or
+/// tapped, and an open order detail with that id refetches.
 @MainActor
 final class OrderEventBus {
     private let subject = PassthroughSubject<OrderEvent, Never>()

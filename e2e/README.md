@@ -188,7 +188,7 @@ below, except where a mobile run is named). Times are UTC; Prague is UTC+1.
 | 02:00 | DEV | the night run closes 16-18, opens 19-21 and invoices |
 | 07:00 | `E2E_STAGE=payroll E2E_ANDROID_RUN_ID=<android run>` #1 | the night close, the role boundaries, J1, Close now in the SPA (F-012), the invoice lifecycle, J2, clean-up |
 | 07:45 | `E2E_STAGE=payroll E2E_ANDROID_RUN_ID=<android run>` #2, if anything waited | the rest, and the six PDFs read |
-| last | TAKE-025, after every take of the run, the mobile lanes' included | `scripts/publish-cleaner-document.sh` publishes the new cleaner documents; a run cleaner's take is refused, they accept through the API, the take succeeds, the order is cancelled |
+| last | `E2E_STAGE=payroll E2E_TAKE025=1 … -- src/payroll/50-cleanup.api.spec.ts -g @E2E-TAKE-025`, after every take of the run, the mobile lanes' included | `scripts/publish-cleaner-document.sh` publishes the new cleaner documents; a run cleaner's take is refused, they accept through the API, the take succeeds, the order is cancelled |
 
 ### The fix-proof run: Friday 20 November 2026
 
@@ -294,9 +294,9 @@ the following open:
 
 | Case | The part not covered | Why |
 |---|---|---|
-| E2E-TAKE-025 | the whole case | the publish script failed before it published (F-076, fixed in T-0937: `DevE2eScriptsTests` now runs every `dev-e2e-*.sql` against Postgres in CI); a re-run needs Mike's OK, since it gates every DEV cleaner |
+| E2E-TAKE-025 | the whole case | the publish script failed before it published (F-076, fixed in T-0937: `DevE2eScriptsTests` now runs every `dev-e2e-*.sql` against Postgres in CI); it gates every DEV cleaner, and Mike gave the OK for a re-run on 19 November: it runs last in the fix-proof run |
 | E2E-PAYOUT-057 | the set-off statement in five languages | a regenerate of an invoice whose PDF existed failed (F-075, fixed in T-0937: a re-render is a new numbered file beside the first), so no PDF was rendered after the language change; the re-run is T-0939 |
-| E2E-PAYOUT-016, E2E-PAYOUT-017, E2E-PAYOUT-032, E2E-PAYOUT-035, E2E-PAYOUT-036, E2E-PAYOUT-055, E2E-PAYOUT-056 | the settle stage's Close now, invoice and cash set-off | phase 2's settle runs with `E2E_NO_CLOSE_NOW=1`, so they stand on phase 1's pass; the payroll stage reads the night close and the SPA's Close now (F-012) but no set-off (F-102) |
+| E2E-PAYOUT-016, E2E-PAYOUT-017, E2E-PAYOUT-032, E2E-PAYOUT-035, E2E-PAYOUT-036, E2E-PAYOUT-055, E2E-PAYOUT-056 | the settle stage's Close now, invoice and cash set-off | phase 2's settle runs with `E2E_NO_CLOSE_NOW=1`, so they stand on phase 1's pass; the payroll stage reads the night close and the SPA's Close now (F-012) but no set-off (F-102): payroll/10 reads A's set-off since T-0939, first on DEV in the fix-proof run |
 | E2E-XCUT-011 (Android), E2E-PAY-011 (iOS) | the whole case on that client | they stand on phase 1's pass: the phase-2 runbook rows (`runbooks/android.md:148`, `runbooks/ios.md:127`) were not repeated |
 | E2E-BOOK-037 | the web's refusal of a third unpaid cash booking | it never ran on the phase-2 run (F-078); the fix that orders it is unproven |
 | E2E-AUTH-049 | the iOS lock of the rejected cleaner, and the push | the iOS lane could not use the run password (F-091); a simulator and an emulator get no push from DEV |

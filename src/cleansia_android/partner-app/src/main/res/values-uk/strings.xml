@@ -698,7 +698,7 @@
     <string name="error_file_count_too_few">Додайте, будь ласка, хоча б один файл.</string>
     <string name="error_file_required">Файл обов\'язковий.</string>
 
-    <string name="error_validation_invalid_password">Неправильний пароль.</string>
+    <string name="error_validation_invalid_password">Невірний пароль.</string>
     <string name="error_validation_invalid_date">Введіть, будь ласка, дійсну дату.</string>
     <string name="error_validation_date_must_be_in_past">Дата має бути в минулому.</string>
     <string name="error_validation_invalid_age">Введіть, будь ласка, дійсний вік.</string>

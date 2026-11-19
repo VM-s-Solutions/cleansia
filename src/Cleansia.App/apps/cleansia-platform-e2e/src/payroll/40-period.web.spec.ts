@@ -1,5 +1,5 @@
 import { Browser, expect, test } from '@playwright/test';
-import { call, list, Session, signIn, str } from '../support/dev';
+import { call, list, named, Session, signIn, str } from '../support/dev';
 import { RULED_DAYS } from '../support/plan';
 import { emailOf, flag, loadRun, Role, scratch, setFlag } from '../support/run';
 import { adminSignIn, cachedAdmin, SITES } from '../support/web';
@@ -14,7 +14,8 @@ import { adminSignIn, cachedAdmin, SITES } from '../support/web';
 test.use({ timezoneId: 'Europe/Prague', navigationTimeout: 90_000, actionTimeout: 90_000 });
 const run = loadRun();
 const rows = (body: unknown) => (list(body, 'data').length ? list(body, 'data') : list(body, 'items'));
-const status = (v: unknown) => str(v, 'status.name') || str(v, 'status');
+// An invoice's status arrives as its enum number, a period's as its name: named() reads both.
+const status = (v: unknown) => named(v, 'status', ['', 'Pending', 'Approved', 'Paid', 'Disputed', 'Rejected', 'Cancelled']);
 const admin = () => cachedAdmin();
 const periodDetail = async (id: string) => (await call(await admin(), 'GET', `/api/AdminPayPeriod/details/${id}`)).body;
 const invoicesOf = async (employeeId: string, periodId: string) =>

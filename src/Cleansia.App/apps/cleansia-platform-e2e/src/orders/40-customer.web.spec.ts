@@ -265,6 +265,8 @@ test.describe('cash and what is owed', () => {
     await expect(wizard.pay(page, 'cash')).toBeDisabled();
     await expect(page.locator('#wizard-cash-reason')).toContainText('This booking needs 2 cleaners. Pay by card.');
     await expect(page.getByRole('status').getByText(t('pages.order.cash_cleared'))).toBeVisible();
+    // Read once, not polled: a toast raised with the status line would be on the page now (F-082, fixed in T-0938).
+    expect(await page.getByText(t('pages.order.cash_cleared')).count(), 'the notice shows once, in the status line, and no toast repeats it').toBe(1);
     await expect(wizard.pay(page, 'card')).toHaveAttribute('aria-pressed', 'false');
     setFlag(run, 'book035.webDone');
   });

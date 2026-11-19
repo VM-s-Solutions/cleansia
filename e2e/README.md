@@ -188,18 +188,25 @@ below, except where a mobile run is named). Times are UTC; Prague is UTC+1.
 
 ### P1 cases the suite does not cover yet
 
-A stage's report lists only the case ids its tests carry, so it never reads as full P1 coverage. Phase 2 (T-0934)
-gives every P1 case a test or a row in the P1 tables of `runbooks/` (F-012, F-021, F-027 and F-038 too). What stays
-open is a part of a case DEV cannot show, not a case:
+A stage's report lists only the case ids its tests carry, so it never reads as full P1 coverage. Every P1 case has a
+test or a row in the P1 tables of `runbooks/`, and the phase-2 run of 18 and 19 November 2026 ran all of them
+(`runs/2026-11-18/findings.md`, part (c)): 135 passed, 9 passed by phase 1 and not re-run, E2E-PAYOUT-057 failed on a
+product defect (F-075) and E2E-TAKE-025 was not run (F-076). What stays open is a part of a case, not a case:
 
 | Case | The part not covered | Why |
 |---|---|---|
-| E2E-AUTH-049 | the push to the rejected cleaner | a simulator and an emulator get no push from DEV |
-| E2E-TAKE-049 | the notice to the placed cleaner | the same |
+| E2E-TAKE-025 | the whole case | the publish script fails before it publishes (F-076), and it refuses any day but 19 November 2026: it needs the fix, a new date and Mike's OK, since it gates every DEV cleaner |
+| E2E-PAYOUT-057 | the set-off statement in five languages | a regenerate of an invoice whose PDF exists fails (F-075), so no PDF is rendered after the language change |
+| E2E-PAYOUT-016, E2E-PAYOUT-017, E2E-PAYOUT-032, E2E-PAYOUT-035, E2E-PAYOUT-036, E2E-PAYOUT-055, E2E-PAYOUT-056 | the settle stage's Close now, invoice and cash set-off | phase 2's settle runs with `E2E_NO_CLOSE_NOW=1`, so they stand on phase 1's pass; the payroll stage reads the night close and the SPA's Close now (F-012) but no set-off (F-102) |
+| E2E-BOOK-037 | the web's refusal of a third unpaid cash booking | it never ran on the phase-2 run (F-078); the fix that orders it is unproven |
+| E2E-AUTH-049 | the iOS lock of the rejected cleaner, and the push | the iOS lane could not use the run password (F-091); a simulator and an emulator get no push from DEV |
+| E2E-TAKE-049 | the notice to the placed cleaner | no push reaches a simulator |
 | E2E-EXEC-029 | the customer's push and e-mail | no push reaches a simulator, and `@example.com` receives no mail |
 | E2E-EXEC-042 | the crew's push | no push reaches a simulator |
 | E2E-EXEC-020 | the apps' half for a cleaner off the crew | the API and the partner web show it; the apps' runbooks show the crew's view only |
 | E2E-PAY-042 | the fee receipt's PDF | no endpoint serves it and it is not e-mailed; its row is read by `sql-scripts/dev-e2e-read-fee-receipts.sql` |
-| E2E-PAY-012, and the Android halves of E2E-PAY-022 and E2E-PAY-023 | the Android PaymentSheet | only if the Android build has no Stripe test publishable key: Card is hidden without it |
+
+The Android PaymentSheet (E2E-PAY-012 and the Android halves of E2E-PAY-022 and E2E-PAY-023) is covered when the
+Android build carries the Stripe test publishable key, as the phase-2 build did; without it Card is hidden.
 
 E2E-EXEC-027 and E2E-EXEC-030 read `employee.not_approved` as the partner hosts' 403 (F-073).

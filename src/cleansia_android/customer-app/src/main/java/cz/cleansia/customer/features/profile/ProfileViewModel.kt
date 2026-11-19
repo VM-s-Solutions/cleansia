@@ -242,26 +242,31 @@ class ProfileViewModel @Inject constructor(
         onCompleted: () -> Unit,
     ) {
         if (_saveState.value is ActionState.Submitting) return
-        val user = userRepository.currentUser.value ?: return
         _saveState.value = ActionState.Submitting
         viewModelScope.launch {
-            val result = userRepository.updateCurrentUser(
+            if (userRepository.currentUser.value == null) {
+                userRepository.refreshCurrentUser().onError { error ->
+                    _saveState.value = ActionState.Error(error.userMessage(appContext))
+                    return@launch
+                }
+            }
+            val user = userRepository.currentUser.value ?: run {
+                _saveState.value = ActionState.Error(appContext.getString(R.string.error_generic_network))
+                return@launch
+            }
+            userRepository.updateCurrentUser(
                 firstName = user.firstName,
                 lastName = user.lastName,
                 phoneNumber = phoneNumber.trim(),
                 birthDate = birthDate?.trim(),
                 languageCode = settings.emailLanguageTag(),
             )
-            result
                 .onSuccess {
                     _saveState.value = ActionState.Idle
                     settings.markOnboardingSeen(user.id)
                     onCompleted()
                 }
-                .onError { error ->
-                    _saveState.value = ActionState.Error(error.userMessage(appContext))
-                    if (error !is ApiError.Network) snackbar.showError(error)
-                }
+                .onError { error -> _saveState.value = ActionState.Error(error.userMessage(appContext)) }
         }
     }
 

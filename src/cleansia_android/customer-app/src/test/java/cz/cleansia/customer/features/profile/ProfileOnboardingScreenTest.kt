@@ -103,6 +103,16 @@ class ProfileOnboardingScreenTest {
         }
     }
 
+    /** A refused save once left the step unchanged: the refusal only reached a snackbar the run never saw. */
+    @Test
+    fun `a refused save shows under the phone it refused`() {
+        assertTrue("the phone field no longer shows the refusal", source.contains("errorText = error?.takeIf { phone.trim() == savedPhone }"))
+        assertTrue("Save no longer records the phone it sends", source.contains("savedPhone = phone.trim()"))
+        val navHost = File(moduleDir, "src/main/java/cz/cleansia/customer/navigation/CleansiaNavHost.kt").readText()
+        val route = navHost.substring(navHost.indexOf("ProfileOnboardingScreen("), navHost.indexOf("composable<Routes.EditProfile>"))
+        assertTrue("the route does not hand the save's refusal to the step: $route", route.contains("error = (saveState as? cz.cleansia.core.ui.state.ActionState.Error)?.message"))
+    }
+
     private val moduleDir: File by lazy {
         sequenceOf(File("."), File("customer-app"), File("src/cleansia_android/customer-app"))
             .first { File(it, "src/main/res/values/strings.xml").isFile }

@@ -145,6 +145,14 @@ therefore still turns the card *Ready to book*; the booking's pre-flight is what
 was not saved, and opens *Edit profile* with nothing booked (`BookingSubmitOutcome.ProfileIncomplete` on
 Android).
 
+**A refused save shows on the step.** On Android, *Save and continue* reports any refusal under the
+phone field, the server's own text (*Please enter a valid phone number.*, a number another account
+holds, a lost connection), for as long as the field holds the number that was refused, and never in
+a snackbar. A refusal used to reach only a 6-second snackbar over the button, after a spinner as long
+as the server took (19 s on DEV, 2026-11-19); a save that timed out reached nothing at all
+([above](#cancellation-noise)); and the E2E runs twice saw the step do nothing (F-041, F-089). A step
+opened before the profile has loaded loads it first, rather than ignoring the tap.
+
 **The customer sign-in fits one screen.** Without the mascot and the guest link the form fits every
 supported iPhone, the SE included, and ordinary Android phones; only the legacy 360×640dp size still
 scrolls. The scroll view stays on both platforms, because the keyboard, field errors and large text

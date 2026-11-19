@@ -332,6 +332,7 @@ fun CleansiaNavHost(
             cz.cleansia.customer.features.profile.ProfileOnboardingScreen(
                 user = user,
                 saving = saving,
+                error = (saveState as? cz.cleansia.core.ui.state.ActionState.Error)?.message,
                 onSkip = { vm.skipOnboarding { navController.popBackStack() } },
                 onSave = { phone, birthDate ->
                     vm.completeOnboarding(

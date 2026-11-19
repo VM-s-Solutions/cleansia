@@ -105,10 +105,12 @@ import kotlinx.coroutines.launch
 fun ProfileOnboardingScreen(
     user: CurrentUser? = null,
     saving: Boolean = false,
+    error: String? = null,
     onSkip: () -> Unit = {},
     onSave: (phone: String, birthDate: String?) -> Unit = { _, _ -> },
 ) {
     var phone by remember(user?.id) { mutableStateOf(user?.phoneNumber.orEmpty()) }
+    var savedPhone by remember { mutableStateOf<String?>(null) }
     var birthDate by remember(user?.id) { mutableStateOf(user?.birthDate.orEmpty()) }
     var showBirthSheet by remember { mutableStateOf(false) }
     val checklist = user?.let { OnboardingChecklist.of(it, phone) }
@@ -208,7 +210,13 @@ fun ProfileOnboardingScreen(
                             Spacer(Modifier.height(Spacing.XS))
                             // shortcut: Czech numbers only, the one market served today; pass the market's country when a
                             // second one opens.
-                            CleansiaPhoneInput(value = phone, onValueChange = { phone = it }, label = phoneLabel, countryRegion = "CZ")
+                            CleansiaPhoneInput(
+                                value = phone,
+                                onValueChange = { phone = it },
+                                label = phoneLabel,
+                                countryRegion = "CZ",
+                                errorText = error?.takeIf { phone.trim() == savedPhone },
+                            )
                             Spacer(Modifier.height(Spacing.XS))
                             CleanerExample(name = user.fullName, phone = phone, reachable = checklist.phone)
                         }
@@ -246,7 +254,10 @@ fun ProfileOnboardingScreen(
         ) {
             CleansiaPrimaryButton(
                 text = stringResource(R.string.onboarding_save),
-                onClick = { onSave(phone.trim(), birthDate.trim().takeIf { it.isNotBlank() }) },
+                onClick = {
+                    savedPhone = phone.trim()
+                    onSave(phone.trim(), birthDate.trim().takeIf { it.isNotBlank() })
+                },
                 enabled = ready && !saving,
                 loading = saving,
             )

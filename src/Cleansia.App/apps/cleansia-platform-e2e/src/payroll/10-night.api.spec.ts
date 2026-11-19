@@ -108,7 +108,9 @@ test.describe('payroll: the night close and the invoice lifecycle', () => {
     dayTwo('02:30', 'the night run invoices the closed period');
     const id = invoice('A');
     test.skip(!!flag(run, 'a.pdfsSaved'), `the PDFs were saved at ${flag(run, 'a.pdfsSaved')}`);
-    test.skip(status(await detail(id)) !== 'Pending', 'regenerate refuses an approved or paid invoice: A\'s is no longer Pending');
+    const now = status(await detail(id));
+    // RegenerateInvoicePdf refuses only a cancelled or paid invoice: an approved one is rendered again.
+    test.skip(now === 'Paid' || now === 'Cancelled', `regenerate refuses a paid or cancelled invoice: A's is ${now}`);
     const a = await cleaner('cleaner');
     const me = (await call(a, 'GET', '/api/User/GetCurrent')).body;
     const setLanguage = async (languageCode: string) => {

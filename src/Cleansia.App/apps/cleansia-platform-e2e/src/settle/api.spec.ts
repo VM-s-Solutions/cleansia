@@ -105,6 +105,9 @@ test.describe('settle', () => {
       60_000,
     );
     expect(invoice, `no invoice 25 minutes after the close at ${run.closedAt}`).toBeTruthy();
+    // A's invoice of this close: payroll/10 reads its set-off and renders its statement (e2e/README.md, "The fix-proof run").
+    run.invoices = { ...run.invoices, A: str(invoice, 'id') };
+    saveRun(run);
     const a = await admin(); // read after the wait: cachedAdmin signs in again once its session is 8 minutes old
     const detail = (await call(a, 'GET', `/api/AdminInvoice/details/${str(invoice, 'id')}`)).body;
     expect(str(detail, 'status.name') || str(detail, 'status')).toMatch(/^(Pending|1)$/);

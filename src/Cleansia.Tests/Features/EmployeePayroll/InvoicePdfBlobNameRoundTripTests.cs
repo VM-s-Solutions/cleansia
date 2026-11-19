@@ -5,7 +5,6 @@ using Cleansia.Core.AppServices.Behaviors;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Features.EmployeePayroll;
 using Cleansia.Core.Blobs.Abstractions;
-using Cleansia.Core.Blobs.Abstractions.Extensions;
 using Cleansia.Core.Domain.Company;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
@@ -54,9 +53,9 @@ public class InvoicePdfBlobNameRoundTripTests
             .Setup(f => f.GetBlobContainerClient(Constants.BlobContainers.GeneratedInvoices))
             .Returns(_blobContainerClient.Object);
         _blobContainerClient
-            .Setup(c => c.UploadAsync(It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<Metadata?>(), It.IsAny<CancellationToken>()))
-            .Callback<string, Stream, Metadata?, CancellationToken>((name, _, _, _) => _uploadedNames.Add(name))
-            .Returns(Task.CompletedTask);
+            .Setup(c => c.UploadIfAbsentAsync(It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+            .Callback<string, Stream, CancellationToken>((name, _, _) => _uploadedNames.Add(name))
+            .ReturnsAsync(true);
         // The SDK escapes each path segment of the name into the address it returns.
         _blobContainerClient
             .Setup(c => c.GetBlobUri(It.IsAny<string>()))

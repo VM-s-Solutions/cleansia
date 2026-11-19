@@ -964,8 +964,8 @@ public sealed class CompanyWindDownSweepTests(PostgresContainerFixture fixture) 
     private static IBlobContainerClientFactory StubBlobFactory()
     {
         var container = new Mock<IBlobContainerClient>();
-        container.Setup(c => c.UploadAsync(It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<Core.Blobs.Abstractions.Extensions.Metadata?>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
+        container.Setup(c => c.UploadIfAbsentAsync(It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
         container.Setup(c => c.GetBlobUri(It.IsAny<string>()))
             .Returns((string name) => new Uri($"https://blobs.test/generated-invoices/{name}"));
         var factory = new Mock<IBlobContainerClientFactory>();

@@ -2,7 +2,6 @@ using System.Text.Json;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Blobs.Abstractions;
-using Cleansia.Core.Blobs.Abstractions.Extensions;
 using Cleansia.Core.Domain.Company;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
@@ -65,9 +64,9 @@ public sealed class PayPeriodEmployeeIsolationPostgresTests(PostgresContainerFix
                     });
                 services.Replace(ServiceDescriptor.Singleton(pdf.Object));
                 var blob = new Mock<IBlobContainerClient>();
-                blob.Setup(b => b.UploadAsync(It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<Metadata?>(), It.IsAny<CancellationToken>()))
-                    .Callback<string, Stream, Metadata?, CancellationToken>((name, _, _, _) => uploads.Add(name))
-                    .Returns(Task.CompletedTask);
+                blob.Setup(b => b.UploadIfAbsentAsync(It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+                    .Callback<string, Stream, CancellationToken>((name, _, _) => uploads.Add(name))
+                    .ReturnsAsync(true);
                 blob.Setup(b => b.GetBlobUri(It.IsAny<string>())).Returns<string>(name => new Uri($"https://blobs.test/{name}"));
                 var blobs = new Mock<IBlobContainerClientFactory>();
                 blobs.Setup(b => b.GetBlobContainerClient(It.IsAny<string>())).Returns(blob.Object);

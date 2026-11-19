@@ -72,13 +72,13 @@ public class RegenerateInvoicePdf
             // A SETTLED INVOICE IS A FILED DOCUMENT AND IS NOT RE-RENDERED. Owner ruling 2026-09-09.
             //
             // This validator checked only that the invoice and the language existed, so a PAID payout
-            // invoice could be re-rendered — and the render OVERWRITES THE PDF IN PLACE, at the URL the
-            // cleaner already has. Nothing about the money can move (the amounts and the currency are
-            // frozen on the row, and the VAT posture is now fixed by ruling), but the LANGUAGE can:
-            // re-rendering a settled invoice in another language replaces the document a cleaner has
-            // already filed with their tax return. InvoiceDocumentLanguageTests says in its own words
-            // that a copy in another language is a SECOND document; this is what stops the first one
-            // being destroyed to make it.
+            // invoice could be re-rendered — and the render becomes the document the invoice serves, in
+            // place of the one the cleaner already has. Nothing about the money can move (the amounts and
+            // the currency are frozen on the row, and the VAT posture is now fixed by ruling), but the
+            // LANGUAGE can: re-rendering a settled invoice in another language replaces the document a
+            // cleaner has already filed with their tax return. InvoiceDocumentLanguageTests says in its
+            // own words that a copy in another language is a SECOND document; this is what stops the
+            // first one being superseded to make it.
             //
             // The same four-way shape as AssignInvoiceVariableSymbol, minus the two rules that are
             // specific to allocating a payment reference. Both keys already exist and are already
@@ -198,8 +198,7 @@ public class RegenerateInvoicePdf
                 var countryCode = employee.Address?.Country?.IsoCode;
                 var pdfBytes = pdfService.GenerateInvoicePdf(pdfData, countryContext, countryCode);
 
-                // Uploading this would replace a readable document with an unopenable one under the
-                // same blob name, and leave the row pointing at it.
+                // Uploading this would point the row at an unopenable document in place of a readable one.
                 if (pdfBytes is null or { Length: 0 })
                 {
                     return await RecordFailedRenderAsync(
@@ -281,20 +280,15 @@ public class RegenerateInvoicePdf
         private async Task<string> UploadPdfAsync(EmployeeInvoice invoice, Employee employee, byte[] pdfBytes, CancellationToken cancellationToken)
         {
             // THE EMPLOYEE'S ID, NOT THEIR NAME. The path used to interpolate FirstName_LastName, which
-            // is mutable: a cleaner who married and changed their surname made the next render write to
-            // a NEW path, leaving the original PDF orphaned at the old URL and moving PdfBlobUrl to a
-            // document with different contents. "Overwrites in place" was only true while nobody's name
-            // changed. Less readable when browsing the container, and stable, which is the property a
-            // document's address needs.
+            // is mutable: a cleaner who changed their surname split one invoice's renders across two
+            // folders. The id keeps every render of an invoice next to the night run's first one.
             var employeeFolder = employee.Id;
             var periodFolder = PayPeriod.BlobFolder(invoice.PayPeriod!.StartDate, invoice.PayPeriod.EndDate);
             var invoiceFileName = invoice.InvoiceNumber;
 
-            var blobName = $"{periodFolder}/{employeeFolder}/{invoiceFileName}.pdf";
             var blobClient = clientFactory.GetBlobContainerClient(Constants.BlobContainers.GeneratedInvoices);
-
-            using var pdfStream = new MemoryStream(pdfBytes);
-            await blobClient.UploadAsync(blobName, pdfStream, cancellationToken: cancellationToken);
+            var blobName = await blobClient.UploadNewVersionAsync(
+                $"{periodFolder}/{employeeFolder}/{invoiceFileName}.pdf", pdfBytes, cancellationToken);
 
             return blobClient.GetBlobUri(blobName).ToString();
         }

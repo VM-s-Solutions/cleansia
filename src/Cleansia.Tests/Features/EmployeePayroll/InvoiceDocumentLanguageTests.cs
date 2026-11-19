@@ -148,6 +148,9 @@ public class InvoiceDocumentLanguageTests
             .Setup(f => f.GetBlobContainerClient(It.IsAny<string>()))
             .Returns(_blobContainerClient.Object);
         _blobContainerClient
+            .Setup(c => c.UploadIfAbsentAsync(It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        _blobContainerClient
             .Setup(c => c.GetBlobUri(It.IsAny<string>()))
             .Returns(new Uri(PdfUrl));
     }

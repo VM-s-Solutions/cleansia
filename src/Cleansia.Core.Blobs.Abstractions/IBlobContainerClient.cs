@@ -7,6 +7,12 @@ public interface IBlobContainerClient
     Task<IEnumerable<string>> GetFilesAsync(string path, CancellationToken cancellationToken);
     Task<bool> ExistsAsync(string blobName, CancellationToken cancellationToken);
     Task<BlobFile> DownloadAsync(string blobName, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Create a blob under a name nobody holds yet; it fails when the name is taken (Azure answers 409
+    /// BlobAlreadyExists) and never overwrites. A document rendered more than once under a stable name is
+    /// written with <see cref="DocumentVersions.UploadNewVersionAsync"/> instead.
+    /// </summary>
     Task UploadAsync(string blobName, Stream stream, Metadata? metadata = null, CancellationToken cancellationToken = new CancellationToken());
 
     /// <summary>

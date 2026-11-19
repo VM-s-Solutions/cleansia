@@ -12,7 +12,9 @@ import { cachedAdmin, cachedAdminAs } from '../support/web';
 // the close lands in the next period, the closed period reads Paid, the clean-up (every e2e invoice of the night close
 // settled, that period marked paid only if all its invoices are e2e ones, the Android run's debt written off, the three
 // role accounts deactivated), and last of the whole run TAKE-025 (owner ruling 3, 2026-11-15): the DEV-only SQL
-// publishes new cleaner documents, a run cleaner's take is refused until they accept them. A scratch run proves the skips.
+// publishes new cleaner documents, a run cleaner's take is refused until they accept them. TAKE-025 runs only in an
+// invocation with E2E_TAKE025=1, on a phase-2 run after its Day 2 clean-up and J2, on a one-day run once every take of
+// the run and of the mobile lanes is done (e2e/README.md, "The fix-proof run"). A scratch run proves the skips.
 test.describe.configure({ mode: 'serial' });
 
 const run = loadRun();
@@ -22,7 +24,6 @@ const ROLES = ['manager', 'support', 'accountant'] as const;
 const rows = (body: unknown) => list(body, 'data');
 const accountant = () => cachedAdminAs('accountant', run);
 const status = (v: unknown) => named(v, 'status', INVOICE);
-const today = () => new Date().toISOString().slice(0, 10);
 
 function dayTwo(what: string) {
   test.skip(!run.day2 || !run.periodAtStart, 'people/10 records the period open on Day 1 and its Day 2 (run.day2)');
@@ -139,14 +140,19 @@ test.describe('payroll: after the period is paid, the clean-up, and TAKE-025', (
   });
 
   test('last of the run: new cleaner documents are published; an approved cleaner\'s take is refused until they accept them, then succeeds, and the order is cancelled', { tag: ['@E2E-TAKE-025'] }, async () => {
-    dayTwo('TAKE-025 is the last step of Day 2');
-    test.skip(!flag(run, 'admins.deactivated'), 'every other payroll step runs first (the clean-up ends by deactivating the role accounts)');
-    test.skip(!run.orders['J2']?.completed, 'the run\'s last take is J2\'s, worked on Day 2 above; the mobile lanes\' takes are all on Day 1');
-    test.skip(today() !== run.day2, `the publish SQL runs only on Day 2 (${run.day2}); today is ${today()}`);
+    test.skip(scratch(), 'E2E_SCRATCH=1: the cleaner documents are never published on a scratch run');
+    // The publish gates every DEV cleaner until they accept again, so no gate of the run's own state may start it alone.
+    test.skip(process.env['E2E_TAKE025'] !== '1', 'E2E_TAKE025=1 runs it, in the run\'s last invocation, once every take of the run and of the mobile lanes is done');
+    if (run.day2) {
+      // A phase-2 run: after its Day 2 clean-up, and after J2, its last take.
+      dayTwo('TAKE-025 is the last step of Day 2');
+      test.skip(!flag(run, 'admins.deactivated'), 'every other payroll step runs first (the clean-up ends by deactivating the role accounts)');
+      test.skip(!run.orders['J2']?.completed, 'the run\'s last take is J2\'s, worked on Day 2 above; the mobile lanes\' takes are all on Day 1');
+    }
     test.skip(!!flag(run, 'take025.done'), `shown at ${flag(run, 'take025.done')}`);
     test.setTimeout(25 * 60_000);
     if (!flag(run, 'take025.published')) {
-      // It gates every DEV cleaner until they accept again: run on Day 2 only, after every take of the run (owner ruling 3).
+      // The wrapper passes the dispatch's confirmation, which the script requires (T-0937); E2E_TAKE025=1 is the operator's.
       const out = execFileSync('bash', [join(__dirname, '..', '..', 'scripts', 'publish-cleaner-document.sh')], { encoding: 'utf8', timeout: 18 * 60_000 });
       console.log(out);
       setFlag(run, 'take025.published');

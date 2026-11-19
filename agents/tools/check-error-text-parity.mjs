@@ -3,8 +3,8 @@
 //
 // A backend refusal is one sentence the platform says. Six clients each carry their own copy of it —
 // three webs, two Android apps and the iOS catalogue the two iOS apps share — and nothing kept those
-// copies in step: on 2026-11-18 `validation.invalid_password` read four ways in Ukrainian (F-095,
-// T-0938). This checker compares them.
+// copies in step: on 2026-11-18 `validation.invalid_password` read four ways in Ukrainian. This
+// checker compares them.
 //
 // THE KEYS: every key under `api` in the three webs' `assets/i18n/<locale>.json` (the shared
 // HttpErrorInterceptorFn resolves `api.<key>`). The same key is found on each other client the way
@@ -24,8 +24,10 @@
 // the partner and admin webs split about half and half within the same file, which is drift, not a
 // convention. No error text carries a placeholder today, so none is normalised.
 //
-// ANTI-FALSE-GREEN: every one of the 30 client files (6 clients x 5 locales) must exist and parse,
-// and every client must yield at least one error text; otherwise a P0, never a pass.
+// ANTI-FALSE-GREEN: every one of the 26 client files (five locales for each web and each Android app,
+// plus the one iOS catalogue) must exist, the JSON ones must parse (Android's strings.xml is matched
+// by regex, not parsed), and every client must yield at least one error text; otherwise a P0, never
+// a pass.
 //
 // Usage:
 //   node agents/tools/check-error-text-parity.mjs               # any difference -> exit 1

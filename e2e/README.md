@@ -189,15 +189,17 @@ below, except where a mobile run is named). Times are UTC; Prague is UTC+1.
 ### P1 cases the suite does not cover yet
 
 A stage's report lists only the case ids its tests carry, so it never reads as full P1 coverage. Every P1 case has a
-test or a row in the P1 tables of `runbooks/`, and the phase-2 run of 18 and 19 November 2026 ran all of them
-(`runs/2026-11-18/findings.md`, part (c)): 133 passed, 9 passed by phase 1 and not re-run, E2E-PAYOUT-057 failed on a
-product defect (F-075), E2E-TAKE-025 was not run (F-076), and E2E-BOOK-037 and E2E-AUTH-049 were shown in part. What stays open is a part of a case, not a case:
+test or a row in the P1 tables of `runbooks/`. The phase-2 run of 18 and 19 November 2026
+(`runs/2026-11-18/findings.md`, part (c)) passed 133, left 9 standing on phase 1's pass, failed E2E-PAYOUT-057 on a
+product defect (F-075), did not run E2E-TAKE-025 (F-076) and showed E2E-BOOK-037 and E2E-AUTH-049 in part. It left
+the following open:
 
 | Case | The part not covered | Why |
 |---|---|---|
 | E2E-TAKE-025 | the whole case | the publish script fails before it publishes (F-076), and it refuses any day but 19 November 2026: it needs the fix, a new date and Mike's OK, since it gates every DEV cleaner |
 | E2E-PAYOUT-057 | the set-off statement in five languages | a regenerate of an invoice whose PDF exists fails (F-075), so no PDF is rendered after the language change |
 | E2E-PAYOUT-016, E2E-PAYOUT-017, E2E-PAYOUT-032, E2E-PAYOUT-035, E2E-PAYOUT-036, E2E-PAYOUT-055, E2E-PAYOUT-056 | the settle stage's Close now, invoice and cash set-off | phase 2's settle runs with `E2E_NO_CLOSE_NOW=1`, so they stand on phase 1's pass; the payroll stage reads the night close and the SPA's Close now (F-012) but no set-off (F-102) |
+| E2E-XCUT-011 (Android), E2E-PAY-011 (iOS) | the whole case on that client | they stand on phase 1's pass: the phase-2 runbook rows (`runbooks/android.md:148`, `runbooks/ios.md:127`) were not repeated |
 | E2E-BOOK-037 | the web's refusal of a third unpaid cash booking | it never ran on the phase-2 run (F-078); the fix that orders it is unproven |
 | E2E-AUTH-049 | the iOS lock of the rejected cleaner, and the push | the iOS lane could not use the run password (F-091); a simulator and an emulator get no push from DEV |
 | E2E-TAKE-049 | the notice to the placed cleaner | no push reaches a simulator |

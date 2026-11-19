@@ -3754,7 +3754,7 @@
       "date_must_be_in_past": "Дата повинна бути в минулому",
       "invalid_age": "Недійсний вік",
       "invalid_date": "Недійсна дата",
-      "invalid_password": "Недійсний пароль",
+      "invalid_password": "Невірний пароль.",
       "must_be_positive": "Значення повинно бути додатним",
       "page_size_exceeded": "Розмір сторінки не може перевищувати 100",
       "passport_id": {

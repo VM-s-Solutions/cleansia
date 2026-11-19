@@ -130,7 +130,7 @@ final class CustomerAppDelegate: NSObject, UIApplicationDelegate, UNUserNotifica
         completionHandler()
     }
 
-    private func emitOrderEvent(_ userInfo: [AnyHashable: Any]) {
+    func emitOrderEvent(_ userInfo: [AnyHashable: Any]) {
         guard let orderId = CustomerNotificationDeepLink.orderEventId(userInfo) else { return }
         Task { @MainActor in orderEvents?.emit(orderId: orderId) }
     }

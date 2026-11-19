@@ -1,3 +1,4 @@
+import Combine
 import XCTest
 @testable import CleansiaCustomer
 
@@ -258,6 +259,27 @@ final class CustomerNotificationDeepLinkTests: XCTestCase {
         XCTAssertNil(CustomerNotificationDeepLink.orderEventId(["event_key": "order.completed", "orderId": ""]))
         XCTAssertNil(CustomerNotificationDeepLink.orderEventId(["event_key": "order.completed"]))
         XCTAssertNil(CustomerNotificationDeepLink.orderEventId(["orderId": "ord-1"]))
+    }
+
+    /// The delegate is the link between a push and the bus an open order detail listens on.
+    @MainActor
+    func testTheAppDelegateEmitsAnOrderPushOntoTheOrderEventBus() async {
+        let bus = OrderEventBus()
+        let delegate = CustomerAppDelegate()
+        delegate.orderEvents = bus
+        var received: [String] = []
+        let arrived = expectation(description: "ord-9 reaches the bus")
+        let subscription = bus.events.sink { event in
+            received.append(event.orderId)
+            if event.orderId == "ord-9" { arrived.fulfill() }
+        }
+
+        delegate.emitOrderEvent(["event_key": "dispute.reply", "orderId": "ord-1"])
+        delegate.emitOrderEvent(["event_key": "order.cleaner_assigned", "orderId": "ord-9"])
+        await fulfillment(of: [arrived], timeout: 2)
+
+        XCTAssertEqual(received, ["ord-9"])
+        subscription.cancel()
     }
 
     private func alertCarryingUserInfo(

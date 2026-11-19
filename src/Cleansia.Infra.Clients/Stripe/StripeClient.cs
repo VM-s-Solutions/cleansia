@@ -361,10 +361,7 @@ public class StripeClient : IStripeClient
             Amount = amountCents,
             Currency = currency.ToLowerInvariant(),
             Customer = stripeCustomerId,
-            AutomaticPaymentMethods = new PaymentIntentAutomaticPaymentMethodsOptions
-            {
-                Enabled = true,
-            },
+            PaymentMethodTypes = ["card"],
             Metadata = new Dictionary<string, string>
             {
                 { "OrderId", orderId },
@@ -500,10 +497,7 @@ public class StripeClient : IStripeClient
         {
             Customer = stripeCustomerId,
             Usage = "off_session",
-            AutomaticPaymentMethods = new SetupIntentAutomaticPaymentMethodsOptions
-            {
-                Enabled = true,
-            },
+            PaymentMethodTypes = ["card"],
         };
         var intent = await ClassifyAsync(
             nameof(CreateSetupIntentAsync),
@@ -720,6 +714,7 @@ public class StripeClient : IStripeClient
             PaymentBehavior = "default_incomplete",
             PaymentSettings = new SubscriptionPaymentSettingsOptions
             {
+                PaymentMethodTypes = ["card"],
                 SaveDefaultPaymentMethod = "on_subscription",
             },
             Expand = ["latest_invoice.payment_intent"],
@@ -864,6 +859,7 @@ public class StripeClient : IStripeClient
             // does not unwind one that already exists.
             AdaptivePricing = new SessionAdaptivePricingOptions { Enabled = false },
             Customer = stripeCustomerId,
+            PaymentMethodTypes = ["card"],
             LineItems =
             [
                 new SessionLineItemOptions

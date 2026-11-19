@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Enums;
@@ -65,6 +66,12 @@ public sealed class MarkMyPartDoneRouteTests(HostTestPostgresFixture db) : Authz
         return mobile ? MobileClient(token) : PartnerClient(token);
     }
 
+    private static async Task<string> StampOnTheWireAsync(HttpResponseMessage response)
+    {
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        return body.RootElement.GetProperty("completionConfirmedAt").GetString()!;
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -86,8 +93,10 @@ public sealed class MarkMyPartDoneRouteTests(HostTestPostgresFixture db) : Authz
         Assert.NotNull(repeatMark);
         Assert.Equal(firstMark.OrderId, repeatMark.OrderId);
         Assert.Equal(firstMark.CrewDone, repeatMark.CrewDone);
-        Assert.Equal(firstMark.CompletionConfirmedAt.Ticks / TimeSpan.TicksPerMicrosecond,
-            repeatMark.CompletionConfirmedAt.Ticks / TimeSpan.TicksPerMicrosecond);
+        var firstStamp = await StampOnTheWireAsync(first);
+        Assert.Matches(@"^[^.]+(\.\d{1,6})?Z$", firstStamp);
+        Assert.Equal(firstStamp, await StampOnTheWireAsync(repeated));
+        Assert.Equal(firstMark.CompletionConfirmedAt, repeatMark.CompletionConfirmedAt);
 
         var seats = await QueryAsync(context => context.Set<OrderEmployee>()
             .Where(s => s.OrderId == crew.OrderId).ToListAsync());

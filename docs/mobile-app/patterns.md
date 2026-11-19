@@ -147,8 +147,9 @@ Android).
 
 **A refused save shows on the step.** On Android, *Save and continue* reports any refusal under the
 phone field, the server's own text (*Please enter a valid phone number.*, a number another account
-holds, a lost connection), for as long as the field holds the number that was refused, and never in
-a snackbar. A refusal used to reach only a 6-second snackbar over the button, after a spinner as long
+holds, a lost connection), for as long as the field holds the number that was refused. The step
+itself raises no snackbar; a lost connection or a timeout also gets the app's connection toast
+(*Check your internet connection and try again.*) from the shared `NetworkErrorInterceptor`. A refusal used to reach only a 6-second snackbar over the button, after a spinner as long
 as the server took (19 s on DEV, 2026-11-19); a save that timed out reached nothing at all
 ([above](#cancellation-noise)); and the E2E runs twice saw the step do nothing (F-041, F-089). A step
 opened before the profile has loaded loads it first, rather than ignoring the tap.

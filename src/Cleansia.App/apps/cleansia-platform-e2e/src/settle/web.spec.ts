@@ -2,7 +2,7 @@ import { expect, Locator, Page, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { call, DEV_ADMIN, list, named, num, ORDER_STATUS, poll, str } from '../support/dev';
 import { emailOf, loadRun, RunOrder, saveRun } from '../support/run';
-import { adminSignIn, cachedAdmin, cancelledOnDev, closeNowGate, customerSignIn, partnerSignIn, SITES } from '../support/web';
+import { adminSignIn, cachedAdmin, cancelledOnDev, closeNowGate, customerSignIn, partnerSignIn, showRefunded, SITES } from '../support/web';
 
 // Stage 'settle', web half: the web customer's and the administrator's cancellations of the two web jobs nobody
 // took, the Refunds page, and the pay periods and invoices as the administrator and the web cleaner read them.
@@ -32,12 +32,6 @@ async function downloadFrom(page: Page, button: Locator) {
   const [download] = await Promise.all([page.waitForEvent('download'), button.click()]);
   const path = await download.path();
   return { name: download.suggestedFilename(), bytes: readFileSync(path) };
-}
-
-async function showRefunded(page: Page) {
-  await page.goto(`${SITES.admin}/order-management/refunds`);
-  await page.locator('.p-select', { hasText: 'Needs action' }).click();
-  await page.getByRole('option', { name: 'Refunded', exact: true }).click();
 }
 
 test.describe('customer web', () => {

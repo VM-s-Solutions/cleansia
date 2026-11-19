@@ -13,8 +13,6 @@ import { cachedAdminAs } from '../support/web';
 // Not serial: each test skips on the state it needs, so one failure does not stop the jobs after it.
 
 let run: RunState;
-/** A refusal's keys: one field's several keys arrive joined by '; '. */
-const keys = (body: unknown) => errorKeys(body).flatMap((k) => k.split('; '));
 const TIER = ['FreeNotAccepted', 'FreeOopsWindow', 'FreeOutsideWindow', 'Partial', 'LastMinute'];
 const MINUTE = 60_000;
 const sessions: Record<string, { s: Session; at: number }> = {};
@@ -188,7 +186,7 @@ test.describe('orders: tiers', () => {
     for (const [key, payment] of [['D3', 'cash'], ['D4', 'card']] as const) {
       const r = await book(s, run, `probe-${key}`, { services: ['Bathroom Cleaning'], rooms: 1, bathrooms: 1, level: 0, slot: dayPlus1Slot(key), payment, customer: 'debtor', addressId });
       expect(r.status, `${payment}: ${JSON.stringify(r.body)}`).toBe(400);
-      expect(keys(r.body), payment).toContain('order.unpaid_receivable');
+      expect(errorKeys(r.body), payment).toContain('order.unpaid_receivable');
     }
     expect(list((await call(s, 'GET', '/api/Order/GetPaged?Offset=0&Limit=100')).body, 'data')).toHaveLength(before);
     if (!run.orders['G1']) {

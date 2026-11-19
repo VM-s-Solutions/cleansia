@@ -12,8 +12,6 @@ import { cachedAdminAs } from '../support/web';
 // Not serial: each test skips on the state it needs, so one failure does not stop the jobs after it.
 
 let run: RunState;
-/** A refusal's keys: one field's several keys arrive joined by '; '. */
-const keys = (body: unknown) => errorKeys(body).flatMap((k) => k.split('; '));
 const sessions: Record<string, { s: Session; at: number }> = {};
 const UNREGISTERED = { status: 403, title: 'Registration incomplete' };
 
@@ -95,16 +93,16 @@ test.describe('work: morning', () => {
       ['MarkMyPartDone', await call(e, 'POST', '/api/Order/MarkMyPartDone', { orderId: o.id })],
       ['CompleteOrder', await complete(e, o.id)],
     ] as const) {
-      expect(keys(r.body), `${step}: ${JSON.stringify(r.body)}`).toContain('order.employee_not_assigned');
+      expect(errorKeys(r.body), `${step}: ${JSON.stringify(r.body)}`).toContain('order.employee_not_assigned');
     }
-    expect(keys((await reportNotPaid(e, o.id)).body)).toContain('order.not_found');
+    expect(errorKeys((await reportNotPaid(e, o.id)).body)).toContain('order.not_found');
     const applicant = await as('applicant');
     for (const r of [await markCash(applicant, o.id), await reportNotPaid(applicant, o.id)]) {
       expect({ status: r.status, title: str(r.body, 'title') }, JSON.stringify(r.body)).toEqual(UNREGISTERED);
     }
     if (!flag(run, 'd1.photo')) {
       const early = await reportNotPaid(await as('cleaner'), o.id);
-      expect(keys(early.body), JSON.stringify(early.body)).toContain('order.after_photos.required');
+      expect(errorKeys(early.body), JSON.stringify(early.body)).toContain('order.after_photos.required');
     }
   });
 
@@ -136,7 +134,7 @@ test.describe('work: morning', () => {
     saveRun(run);
     const admins = await poll(() => adminFeed(run, scratch() ? 'admin' : 'support'), (v) => v.some((n) => str(n, 'args.orderId') === o.id && str(n, 'eventKey') === 'admin.order.cash_not_paid'), 60_000);
     expect(admins.some((n) => str(n, 'args.orderId') === o.id && str(n, 'eventKey') === 'admin.order.cash_not_paid')).toBe(true);
-    expect(keys((await call(debtor, 'GET', `/api/Order/DownloadReceipt?OrderId=${o.id}`)).body)).toContain('receipt.not_found');
+    expect(errorKeys((await call(debtor, 'GET', `/api/Order/DownloadReceipt?OrderId=${o.id}`)).body)).toContain('receipt.not_found');
     expect(await points()).toBe(pointsBefore);
     expect(await cashHeld(a)).toBe(held);
     const period = await openPeriod();
@@ -154,8 +152,8 @@ test.describe('work: morning', () => {
       const cash = await markCash(a, o.id);
       expect(cash.status, JSON.stringify(cash.body)).toBe(200);
     }
-    expect(keys((await markCash(a, o.id)).body)).toContain('order.cash_already_collected');
-    expect(keys((await reportNotPaid(a, o.id)).body)).toContain('order.cash_already_collected');
+    expect(errorKeys((await markCash(a, o.id)).body)).toContain('order.cash_already_collected');
+    expect(errorKeys((await reportNotPaid(a, o.id)).body)).toContain('order.cash_already_collected');
     const done = await complete(a, o.id);
     expect(done.status, JSON.stringify(done.body)).toBe(200);
     o.completed = true;
@@ -170,9 +168,9 @@ test.describe('work: morning', () => {
     test.skip(statusOf(await adminDetail(o.id)) !== 'Confirmed', 'X is no longer Confirmed');
     const customer = await as('customer', 'customer');
     const p = await preview(customer, o.id);
-    expect(keys(p.body), JSON.stringify(p.body)).toContain('order.start_passed_cannot_cancel');
+    expect(errorKeys(p.body), JSON.stringify(p.body)).toContain('order.start_passed_cannot_cancel');
     const c = await call(customer, 'POST', '/api/Order/Cancel', { orderId: o.id, reason: `E2E run ${run.runId} X` });
-    expect(keys(c.body), JSON.stringify(c.body)).toContain('order.start_passed_cannot_cancel');
+    expect(errorKeys(c.body), JSON.stringify(c.body)).toContain('order.start_passed_cannot_cancel');
     const d = await adminDetail(o.id);
     expect(statusOf(d)).toBe('Confirmed');
     expect(named(d, 'paymentStatus', PAYMENT_STATUS)).toBe('Paid');

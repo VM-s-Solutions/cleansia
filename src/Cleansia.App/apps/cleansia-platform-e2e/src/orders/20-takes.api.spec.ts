@@ -11,8 +11,6 @@ import { cachedAdminAs } from '../support/web';
 // Not serial: each test skips on the state it needs, so one failure does not stop the jobs after it.
 
 let run: RunState;
-/** A refusal's keys: one field's several keys arrive joined by '; '. */
-const keys = (body: unknown) => errorKeys(body).flatMap((k) => k.split('; '));
 const loadedAt = new Date().toISOString();
 const sessions: Record<string, { s: Session; at: number }> = {};
 const reason = () => `E2E run ${run.runId}`;
@@ -87,7 +85,7 @@ test.describe('orders: takes', () => {
         const won = [rb, re].filter((r) => r.status === 200);
         const lost = [rb, re].filter((r) => r.status !== 200);
         expect(won, `${key}: ${JSON.stringify([rb.body, re.body])}`).toHaveLength(1);
-        expect(keys(lost[0].body), key).toContain('order.no_available_spots');
+        expect(errorKeys(lost[0].body), key).toContain('order.no_available_spots');
         const winner: Role = rb.status === 200 ? 'cleaner2' : 'cleaner3';
         const loser: Role = winner === 'cleaner2' ? 'cleaner3' : 'cleaner2';
         o.crew = [winner];
@@ -109,7 +107,7 @@ test.describe('orders: takes', () => {
       const winner = (o.crew?.[0] ?? 'cleaner2') as Role;
       const loser: Role = winner === 'cleaner2' ? 'cleaner3' : 'cleaner2';
       const late = await take(loser === 'cleaner2' ? b : e, o.id, o.textId);
-      expect(keys(late.body), JSON.stringify(late.body)).toContain('order.take.already_cancelled');
+      expect(errorKeys(late.body), JSON.stringify(late.body)).toContain('order.take.already_cancelled');
       // CANCEL-008: off the winner's list, Cancelled on its detail, and a row in its feed.
       expect(await inMyList(winner, ids[winner], o.id)).toBe(false);
       expect(statusOf((await call(await as(winner), 'GET', `/api/Order/GetById?OrderId=${o.id}`)).body)).toBe('Cancelled');
@@ -130,7 +128,7 @@ test.describe('orders: takes', () => {
     const a = await as('cleaner');
     if (!y.cancelled) {
       const clash = await take(a, y.id);
-      expect(keys(clash.body), JSON.stringify(clash.body)).toContain('order.time_conflict');
+      expect(errorKeys(clash.body), JSON.stringify(clash.body)).toContain('order.time_conflict');
     }
     await takeAs('cleaner', 'Z');
     expect(statusOf(await adminDetail(z.id))).toBe('Confirmed');
@@ -165,7 +163,7 @@ test.describe('orders: takes', () => {
       // E is off the full job and is served no contract preview for it: a take with an empty text id is refused for the
       // tick (contract.not_accepted) before the seats are counted, so E echoes the job's text as read by the crew.
       const full = await take(await as('cleaner3'), w.id, await contractText(await as('cleaner2'), w.id));
-      expect(keys(full.body), JSON.stringify(full.body)).toContain('order.no_available_spots');
+      expect(errorKeys(full.body), JSON.stringify(full.body)).toContain('order.no_available_spots');
       // TAKE-043: one of two drops.
       const drop = await call(await as('cleaner'), 'POST', '/api/Order/DropOrder', { orderId: w.id });
       expect(drop.status, JSON.stringify(drop.body)).toBe(200);
@@ -201,7 +199,7 @@ test.describe('orders: takes', () => {
       expect([str(e.body, 'customerPhone'), str(e.body, 'address.street'), str(e.body, 'accessInstructions')], JSON.stringify(e.body).slice(0, 300)).toEqual(['', '', '']);
     } else {
       expect(e.status, JSON.stringify(e.body)).toBe(400);
-      expect(keys(e.body), JSON.stringify(e.body)).toContain('order.not_found');
+      expect(errorKeys(e.body), JSON.stringify(e.body)).toContain('order.not_found');
     }
   });
 
@@ -255,16 +253,16 @@ test.describe('orders: takes', () => {
     expect(list(d, 'workContractAcceptances').filter((x) => str(x, 'orderEmployeeId') === str(seat, 'id'))).toEqual([]);
     // EXEC-007, Start half: the contract gate answers before the clock gate.
     const early = await start(await as('cleaner'), p.id);
-    expect(keys(early.body), JSON.stringify(early.body)).toContain('contract.acceptance_required');
-    expect(keys(early.body)).not.toContain('order.too_early_to_start');
+    expect(errorKeys(early.body), JSON.stringify(early.body)).toContain('contract.acceptance_required');
+    expect(errorKeys(early.body)).not.toContain('order.too_early_to_start');
     // TAKE-050's refusals: not on the job; another order's text; no text.
     const textId = await contractText(await as('cleaner'), p.id);
     const notOn = await call(await as('cleaner3'), 'POST', '/api/Order/AcceptWorkContract', { orderId: p.id, acceptedWorkContractTextId: textId });
-    expect(keys(notOn.body), JSON.stringify(notOn.body)).toContain('order.employee_not_assigned');
+    expect(errorKeys(notOn.body), JSON.stringify(notOn.body)).toContain('order.employee_not_assigned');
     const wrong = await call(await as('cleaner'), 'POST', '/api/Order/AcceptWorkContract', { orderId: p.id, acceptedWorkContractTextId: '01AAAAAAAAAAAAAAAAAAAAAAAA' });
-    expect(keys(wrong.body), JSON.stringify(wrong.body)).toContain('contract.text_mismatch');
+    expect(errorKeys(wrong.body), JSON.stringify(wrong.body)).toContain('contract.text_mismatch');
     const blank = await call(await as('cleaner'), 'POST', '/api/Order/AcceptWorkContract', { orderId: p.id, acceptedWorkContractTextId: '' });
-    expect(keys(blank.body), JSON.stringify(blank.body)).toContain('contract.not_accepted');
+    expect(errorKeys(blank.body), JSON.stringify(blank.body)).toContain('contract.not_accepted');
   });
 
   test('P2: Support places A, overrides it into progress; Complete and Customer did not pay need the contract; after it, card refuses cash; completed', { tag: ['@E2E-EXEC-007', '@E2E-EXEC-030', '@E2E-EXEC-006', '@E2E-TAKE-023'] }, async () => {
@@ -283,15 +281,15 @@ test.describe('orders: takes', () => {
         expect(o.status, JSON.stringify(o.body)).toBe(200);
       }
       const done = await complete(s, p2.id);
-      expect(keys(done.body), JSON.stringify(done.body)).toContain('contract.acceptance_required');
+      expect(errorKeys(done.body), JSON.stringify(done.body)).toContain('contract.acceptance_required');
       const unpaid = await reportNotPaid(s, p2.id);
-      expect(keys(unpaid.body), JSON.stringify(unpaid.body)).toContain('contract.acceptance_required');
+      expect(errorKeys(unpaid.body), JSON.stringify(unpaid.body)).toContain('contract.acceptance_required');
       const textId = await contractText(s, p2.id);
       const ok = await call(s, 'POST', '/api/Order/AcceptWorkContract', { orderId: p2.id, acceptedWorkContractTextId: textId });
       expect(ok.status, JSON.stringify(ok.body)).toBe(200);
       p2.textId = textId;
       const card = await reportNotPaid(s, p2.id);
-      expect(keys(card.body), JSON.stringify(card.body)).toContain('order.cash_not_allowed_on_card_order');
+      expect(errorKeys(card.body), JSON.stringify(card.body)).toContain('order.cash_not_allowed_on_card_order');
       expect((await afterPhoto(s, p2.id, reason())).status).toBe(200);
       const finished = await complete(s, p2.id);
       expect(finished.status, JSON.stringify(finished.body)).toBe(200);
@@ -301,9 +299,9 @@ test.describe('orders: takes', () => {
     expect(statusOf(await adminDetail(p2.id))).toBe('Completed');
     // EXEC-006: a completed job cannot be started. TAKE-023: nor taken.
     const again = await start(s, p2.id);
-    expect(keys(again.body), JSON.stringify(again.body)).toContain('order.not_confirmed');
+    expect(errorKeys(again.body), JSON.stringify(again.body)).toContain('order.not_confirmed');
     const late = await take(await as('cleaner3'), p2.id, p2.textId ?? '01AAAAAAAAAAAAAAAAAAAAAAAA');
-    expect(keys(late.body), JSON.stringify(late.body)).toContain('order.take.already_completed');
+    expect(errorKeys(late.body), JSON.stringify(late.body)).toContain('order.take.already_completed');
   });
 
   test('a cleaner not on a job cannot set off or start it, and the clock gate is not what refuses (E on tierA)', { tag: ['@E2E-EXEC-005'] }, async () => {
@@ -312,8 +310,8 @@ test.describe('orders: takes', () => {
     const e = await as('cleaner3');
     for (const step of ['NotifyOnTheWay', 'StartOrder']) {
       const r = await call(e, 'POST', `/api/Order/${step}`, { orderId: tierA.id });
-      expect(keys(r.body), `${step}: ${JSON.stringify(r.body)}`).toContain('order.employee_not_assigned');
-      expect(keys(r.body), step).not.toContain('order.too_early_to_start');
+      expect(errorKeys(r.body), `${step}: ${JSON.stringify(r.body)}`).toContain('order.employee_not_assigned');
+      expect(errorKeys(r.body), step).not.toContain('order.too_early_to_start');
     }
   });
 
@@ -322,13 +320,13 @@ test.describe('orders: takes', () => {
     test.skip(statusOf(await adminDetail(d1.id)) !== 'Confirmed', 'D1 is past Confirmed (work/10 starts it)');
     const a = await as('cleaner');
     const done = await complete(a, d1.id);
-    expect(keys(done.body), JSON.stringify(done.body)).toContain('order.not_in_progress');
+    expect(errorKeys(done.body), JSON.stringify(done.body)).toContain('order.not_in_progress');
     const cash = await markCash(a, d1.id);
-    expect(keys(cash.body), JSON.stringify(cash.body)).toContain('order.not_in_progress');
+    expect(errorKeys(cash.body), JSON.stringify(cash.body)).toContain('order.not_in_progress');
     const unpaid = await reportNotPaid(a, d1.id);
-    expect(keys(unpaid.body), JSON.stringify(unpaid.body)).toContain('order.not_in_progress');
+    expect(errorKeys(unpaid.body), JSON.stringify(unpaid.body)).toContain('order.not_in_progress');
     const e = await as('cleaner3');
-    expect(keys((await reportNotPaid(e, d1.id)).body)).toContain('order.not_found');
+    expect(errorKeys((await reportNotPaid(e, d1.id)).body)).toContain('order.not_found');
     // The applicant (never approved) meets the partner hosts' registration gate before any order rule (F-073).
     const applicant = await as('applicant');
     for (const r of [await markCash(applicant, d1.id), await reportNotPaid(applicant, d1.id)]) {

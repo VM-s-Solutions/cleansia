@@ -45,3 +45,4 @@ Merged with CI green; the DEV run is recorded under `e2e/runs/`, and Mike has th
 ## Work record
 
 - 2026-11-19 — Filed with T-0937 and T-0938, after Mike's rulings.
+- 2026-11-19 — Started on `fix/t0939-wave3-harness-and-dev-proof`, after T-0938 merged as `d4bc9f045`.

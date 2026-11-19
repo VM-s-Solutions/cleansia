@@ -58,3 +58,19 @@ deployed with the wave.
 
 - 2026-11-19 — Filed with T-0937 and T-0939, after Mike's rulings.
 - 2026-11-19 — Started on `fix/t0938-wave2-apps-and-web`, after T-0937 merged as `c76007860`.
+- 2026-11-19 — Built on `fix/t0938-wave2-apps-and-web`, one review and its in-scope rows fixed. F-088: every Stripe
+  intent, subscription and Checkout Session names card as its only payment method, so Link stays off whatever the
+  Dashboard enables. F-093: Android's consent checkbox has no default label and every tick names its own consent
+  (pinned by `ConsentCatalogTest`); the web's ticks are pinned by specs and iOS was checked. F-092: the iOS
+  customer's pushes feed `OrderEventBus`, so an open detail refetches on its order's push and on return to the app.
+  F-089: two silent paths on Android are closed: the network interceptor no longer swallows a read timeout, and the
+  phone step shows a refused save under the phone field (reproduced on DEV with a recording); the birth-date wheels
+  offer only the days the server accepts. F-082: the cash-cleared notice shows once, in the status line, on the
+  booking and the recurring forms. F-095: every client says *Невірний пароль.*, and
+  `agents/tools/check-error-text-parity.mjs` measured 237 of 412 error keys reading differently across the six
+  clients, over Mike's line of five, so it is committed unwired and the list went to Mike.
+- 2026-11-19 — Shipped in #389 (merge `d4bc9f045`), CI green on every check; DEV deploy dispatched after the merge
+  (run 44601839102). Mike's ruling on the drift (majority wording per key and language, a tie to the Android customer
+  app, then the check in CI) is T-0940. Reported, not fixed: an order intent opened before the deploy can still offer
+  Link until it is replaced; an undeclared consistency violation at `OrdersListViewModel.kt:92`; 13 pre-existing
+  Android lint errors that CI does not run; the iOS open detail polls every 30 s where Android polls every 5 minutes.

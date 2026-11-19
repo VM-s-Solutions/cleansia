@@ -72,8 +72,8 @@ and heading, and its body is one line: `- **See** E2E-<FLOW>-NNN`.
   `scripts/` (refused against PRO): `sql-scripts/dev-e2e-read-fee-receipts.sql` (read-only: the fee receipts of the
   e2e orders, PAY-042, `scripts/read-fee-receipts.sh`), and `sql-scripts/dev-e2e-publish-cleaner-document.sql` (a new
   version of the three CZ cleaner documents, TAKE-025, `scripts/publish-cleaner-document.sh`). **The publish script
-  gates every DEV cleaner until they accept the new version**: it runs once, as the very last step of Day 2, and is
-  never run on a scratch run. It publishes only when the dispatch's `confirm` names it, which the wrapper alone passes
+  gates every DEV cleaner until they accept the new version**: it runs once, as the very last step of a run, only in
+  the payroll invocation that sets `E2E_TAKE025=1`, and never on a scratch run. It publishes only when the dispatch's `confirm` names it, which the wrapper alone passes
   (through `dev-sql.sh`'s `E2E_SQL_CONFIRM`); a dispatch without it is refused, on any day. A dispatch runs the
   script of the ref `E2E_CONFIRM_REF` names, so both need this branch merged (`master`) or pushed before Day 1.
 
@@ -90,12 +90,12 @@ Run each stage from `src/Cleansia.App` with Node 22:
 |---|---|---|---|
 | book | `E2E_STAGE=book npx nx e2e cleansia-platform-e2e` | starts a new run: registers the customer and the cleaner, confirms them with the SQL script, onboards and approves the cleaner, saves a card, books two cash jobs, two card jobs and one guest job at the next open slots (paid in Stripe's test Checkout), takes one cash and one card job | from 07:00 UTC, about 4 minutes |
 | execute | `E2E_STAGE=execute npx nx e2e cleansia-platform-e2e` | starts, photographs and completes the two taken jobs (the cash one with its cash recorded), reads the receipts, the pay rows and the cash held | from 60 minutes before each job's slot; before that a job's test skips and says when its window opens |
-| settle | `E2E_STAGE=settle npx nx e2e cleansia-platform-e2e` | cancels the three untaken jobs (customer, guest, administrator) and checks the refunds; once both jobs are complete, presses Close now on the open pay period and checks the invoice and its cash set-off | the cancellations before each slot plus 30 minutes (then the unfilled sweep has cancelled the order, and its test skips); Close now after execute; the invoice follows 15 to 25 minutes after the close, so the stage waits up to 25 |
+| settle | `E2E_STAGE=settle npx nx e2e cleansia-platform-e2e` | cancels the three untaken jobs (customer, guest, administrator) and checks the refunds; once both jobs are complete, presses Close now on the open pay period and checks the invoice and its cash set-off, recording A's invoice for `payroll/10` | the cancellations before each slot plus 30 minutes (then the unfilled sweep has cancelled the order, and its test skips); Close now after execute; the invoice follows 15 to 25 minutes after the close, so the stage waits up to 25 |
 | people | `E2E_STAGE=people E2E_RUN_ID=<run> …` | phase 2: the Manager, Support and Accountant accounts; the applicant, `cleaner3` (E), `first`, `nocard`, `debtor`, `cashcap` registered and confirmed by one dispatch; onboarding refusals and the rejected applicant; the translated sign-in refusal; the throwaway service; E approved; saved cards for `debtor` and `cashcap` | Day 1 07:13 UTC, about 18 minutes |
 | orders | `E2E_STAGE=orders E2E_RUN_ID=<run> …` | phase 2: every order of the plan (`src/support/plan.ts`) booked and paid, the takes, the race, the drops and placements, the webhook refusals; then the tier previews and cancels, the receivable, the fee receipt and the service switched off | Day 1 07:35, 07:58 and, if anything waited, 08:15 UTC |
 | work | `E2E_STAGE=work E2E_RUN_ID=<run> …` | phase 2: the jobs of Day 1 in their windows (refunds, late start, the two-cleaner job, cash and customer did not pay, the placed cleaner); the last invocation writes off Day 1's debt | Day 1 08:55 to 16:00 UTC, one invocation per window |
-| payroll | `E2E_STAGE=payroll E2E_RUN_ID=<run> …` | phase 2: the night close of 16-18 Nov and its invoices, the role boundaries, J1, Close now in the admin SPA (F-012), approve, mark paid, cancel and correct, mark the period paid, J2, clean-up | Day 2 07:00 and 07:45 UTC |
-| assist | `E2E_STAGE=assist E2E_RUN_ID=<mobile run> E2E_ASSIST=<mode> …` | what a mobile lane cannot do in its app, for its own run: `confirm` (the confirm dispatch), `address` (a saved address for `E2E_ASSIST_EMAIL`), `photo` (an after photo on `E2E_ASSIST_ORDER` as the run's cleaner), `evidence` (the consents, the register audit row and the saved cards of `E2E_ASSIST_EMAIL`; with `E2E_ASSIST_EXPECT=card` or `nocard` they are asserted) | on demand; starts no admin SPA |
+| payroll | `E2E_STAGE=payroll E2E_RUN_ID=<run> …` | phase 2: the night close of 16-18 Nov and its invoices, the role boundaries, J1, Close now in the admin SPA (F-012), approve, mark paid, cancel and correct, mark the period paid, J2, clean-up; on any run, A's cash set-off and PAYOUT-057's six renders on A's invoice once one is recorded (the night close's or settle's Close now's), and TAKE-025 with `E2E_TAKE025=1` | Day 2 07:00 and 07:45 UTC; a one-day run: below |
+| assist | `E2E_STAGE=assist E2E_RUN_ID=<mobile run> E2E_ASSIST=<mode> …` | what a mobile lane cannot do in its app, for its own run: `confirm` (the confirm dispatch, then a sign-in of the customer `E2E_ASSIST_EMAIL` names, which passes whichever dispatch confirmed it), `address` (a saved address for `E2E_ASSIST_EMAIL`), `photo` (an after photo on `E2E_ASSIST_ORDER` as the run's cleaner), `evidence` (the consents, the register audit row and the saved cards of `E2E_ASSIST_EMAIL`; with `E2E_ASSIST_EXPECT=card` or `nocard` they are asserted) | on demand; starts no admin SPA |
 
 Each stage prints every case id of the run's stage with its outcome (`passed`, `failed`, `skipped` with the reason, or
 `finding`: passed on an answer the catalogue calls wrong, for the triager) and merges it into `report-<stage>.json` in
@@ -125,6 +125,9 @@ Environment:
   tomorrow in Prague, and Day 1 + 1 and Day 2 are the day after. The real run always books on the ruled days.
 - `E2E_ANDROID_RUN_ID`: the Android lane's run id, handed over by that lane after EXEC-029. Day 2's `payroll`
   writes off that run's `cashToCancel` receivable; without it the clean-up test skips and the debt stays open.
+- `E2E_TAKE025=1`: the one payroll invocation that runs TAKE-025, which publishes new cleaner documents and so gates
+  every DEV cleaner. Set it only as the run's last step, once every take of the run and of the mobile lanes is done;
+  on a run with a Day 2 the test also waits for that day's clean-up and J2.
 - `E2E_ASSIST`, `E2E_ASSIST_EMAIL`, `E2E_ASSIST_ORDER`, `E2E_ASSIST_EXPECT`: the assist stage's mode and inputs (above).
 - `E2E_CONFIRM_REF`: the pushed git ref that holds `sql-scripts/dev-e2e-confirm-accounts.sql`, which the book stage
   dispatches through **Execute SQL Script** on DEV (`scripts/confirm-accounts.sh`), and of the two phase-2 scripts;
@@ -185,7 +188,101 @@ below, except where a mobile run is named). Times are UTC; Prague is UTC+1.
 | 02:00 | DEV | the night run closes 16-18, opens 19-21 and invoices |
 | 07:00 | `E2E_STAGE=payroll E2E_ANDROID_RUN_ID=<android run>` #1 | the night close, the role boundaries, J1, Close now in the SPA (F-012), the invoice lifecycle, J2, clean-up |
 | 07:45 | `E2E_STAGE=payroll E2E_ANDROID_RUN_ID=<android run>` #2, if anything waited | the rest, and the six PDFs read |
-| last | TAKE-025, after every take of the run, the mobile lanes' included | `scripts/publish-cleaner-document.sh` publishes the new cleaner documents; a run cleaner's take is refused, they accept through the API, the take succeeds, the order is cancelled |
+| last | `E2E_STAGE=payroll E2E_TAKE025=1 … -- src/payroll/50-cleanup.api.spec.ts -g @E2E-TAKE-025`, after every take of the run, the mobile lanes' included | `scripts/publish-cleaner-document.sh` publishes the new cleaner documents; a run cleaner's take is refused, they accept through the API, the take succeeds, the order is cancelled |
+
+### The fix-proof run: Friday 20 November 2026
+
+One day on DEV that proves the fixes of T-0937 and T-0938 and this ticket's harness (T-0939), on Mike's rulings of 19
+November: PAYOUT-057's six renders on A's set-off invoice (a re-render is a new numbered file, F-075), A's set-off
+asserted (F-102), TAKE-025 with the publish as the very last step (F-076), and the phone rows of F-087, F-088, F-089,
+F-092, F-093 and F-095. Its invoices come from **Close now**, pressed once by the settle stage: DEV allows one Close now
+a day (it ends the open period today and opens the next tomorrow), 19 November's is spent, and no period of a fresh
+run closes at night before Monday 23 November. Times are UTC (Prague is UTC+1); the slot times assume the book stage
+starts at 07:00, and every stage skips with the time a step can run, so read the real times from `state.json`.
+
+**Before 06:30.** DEV runs master at `d4bc9f045` (T-0938) or later: the deploy run is green, and no deploy is
+dispatched until TAKE-025 is done (T-0939 changes no product code, so it needs none). The suite runs from a checkout
+that holds T-0939's harness (master once its PR is merged, else `fix/t0939-wave3-harness-and-dev-proof`, e.g. the
+worktree `/Users/michael/cleansia-work.noindex/wt/cleansia`), with `E2E_CONFIRM_REF=master`, which holds the fixed
+SQL scripts of T-0937. The phone lanes build both of their apps from master at `d4bc9f045` or later
+(`runbooks/ios.md` and `runbooks/android.md`, section 1): the phase-1 builds lack F-092, F-093, F-089 and the partner
+app's F-095. The iOS build needs `src/cleansia_ios/Config/Local.xcconfig` in its checkout (check with `test -f`, never
+open it), the Android build the owner's Stripe key in his Gradle home (never open it); without the key a lane records
+F-088 as not drivable on that platform.
+
+Every suite command runs from `src/Cleansia.App` with Node 22, one at a time under the heavy lock, its log in the
+run's evidence folder outside the repository:
+
+```bash
+export PATH=/Users/michael/.codex/scratchpads/cleansia-audit-2026-10-07/tools/web-tooling/node_modules/node/bin:$PATH
+cd src/Cleansia.App
+EV=<evidence folder>
+run() {  # run <log name> [ENV=value ...] [-- playwright args]
+  local name=$1; shift; local envs=()
+  while [ $# -gt 0 ] && [ "$1" != -- ]; do envs+=("$1"); shift; done
+  /Users/michael/cleansia-work.noindex/tools/withlock.sh heavy env NX_DAEMON=false NX_NO_CLOUD=true E2E_CONFIRM_REF=master \
+    "${envs[@]}" node node_modules/nx/dist/bin/nx.js e2e cleansia-platform-e2e "$@" > "$EV/$name" 2>&1
+}
+```
+
+| UTC | Command | What it proves | Gate before the next step |
+|---|---|---|---|
+| 06:30 | `run logic.log` (no stage), then `node /Users/michael/cleansia-work.noindex/e2e-phase2/run/suite/tools/preflight.mjs` (read-only; if it is gone, read the same by hand: `GET /health` on the five hosts, then, signed in as the admin, the open period from `GET /api/AdminPayPeriod/get-paged?Offset=0&Limit=10` and `cash.float_cap` from `GET /api/AdminTenantSettings/get-all` on the admin host) | the logic tests pass; `/health` 200 on the five hosts; the open period and `cash.float_cap` | 35 logic tests passed; five hosts healthy; **the open period starts on 2026-11-20 or earlier** (a start of 2026-11-21 means someone pressed Close now today: stop, the run cannot close a period today); `cash.float_cap` 0 |
+| 06:40 | `run book-ios.log E2E_STAGE=book -- src/book/api.spec.ts` | the iOS lane's run, I (`.run/current` names it) | 14 passed; hand I to the iOS lane |
+| 06:45 | `run book-android.log E2E_STAGE=book -- src/book/api.spec.ts` | the Android lane's run, D | 14 passed; hand D to the Android lane |
+| 07:00 | `run book.log E2E_STAGE=book` | the suite's run, R3: the API half (A takes `cash` and `card`) and the web half (B takes `webCard` and `webCash`), about 8 minutes; each confirmation is proven by a sign-in (F-087) | 22 passed; R3 is the new `.run/current`, and every later command names it with `E2E_RUN_ID=<R3>` |
+| 07:10 | `run xcut-web.log E2E_STAGE=people E2E_RUN_ID=<R3> -- src/people/20-signin.web.spec.ts` | XCUT-019 on the three webs in five languages: the Ukrainian refusal reads *Невірний пароль.* (F-095); the AUTH-034 test skips | XCUT-019 passed |
+| first slot - 60 min (about 08:30) | `run execute1.log E2E_STAGE=execute E2E_RUN_ID=<R3>` | A's `cash` job (cash recorded, the cash A holds read) and B's `webCard` | the two jobs complete; the others skip with the time their window opens |
+| second slot - 60 min (about 08:45) | `run execute2.log E2E_STAGE=execute E2E_RUN_ID=<R3>` | A's `card` job, B's `webCash`, the pay pages | `report-execute.json` all passed; `state.json` reads `completed` on `cash`, `card`, `webCard` and `webCash` |
+| right after (about 08:50) | `run settle.log E2E_STAGE=settle E2E_RUN_ID=<R3>` (**without** `E2E_NO_CLOSE_NOW`) | the untaken jobs cancelled and refunded; **Close now**, the run's only one (PAYOUT-016); A's and B's invoices 15 to 25 minutes later, with the set-off (PAYOUT-017, 032, 035, 036, 055, 056); A's invoice recorded in `state.json` (`invoices.A`) | settle ends by about 09:20; `state.json` holds `closedPeriodId`, `closedAt` and `invoices.A`; `report-settle.json` passed. A Close now test that skips on pay rows not yet in the period is run again at once (the cancellations must be done before each slot plus 30 minutes) |
+| after settle (about 09:20) | `run payroll10.log E2E_STAGE=payroll E2E_RUN_ID=<R3> -- src/payroll/10-night.api.spec.ts` | A's set-off read again on that invoice (PAYOUT-055, F-102) and PAYOUT-057: six renders of A's invoice after the cleaner's language is set to en, cs, sk, uk, ru and cs, each answered 200 (F-075); the night-close tests skip, since R3 has no Day 2 | PAYOUT-055 and PAYOUT-057 passed; the six PDFs are `.run/<R3>/invoice-A-<lang>.pdf` (and `-cs-2`): read each, the set-off statement in that language, the rest Czech, the two cs files alike |
+| last: both lanes reported done, payroll/10 finished | `run take025.log E2E_STAGE=payroll E2E_RUN_ID=<R3> E2E_TAKE025=1 -- src/payroll/50-cleanup.api.spec.ts -g @E2E-TAKE-025` | TAKE-025: `scripts/publish-cleaner-document.sh` publishes the new CZ cleaner documents (its dispatch confirmation passed by the wrapper), A's take of a new cash order is refused with `employee.legal_documents_not_accepted`, A accepts, the take succeeds, the order is cancelled | TAKE-025 passed. From now on every DEV cleaner accepts the new documents before taking work |
+
+**The iOS lane** (run I; `runbooks/ios.md`): its customer `e2e.<I>.customer@example.com` holds a saved card, its
+cleaner `e2e.<I>.cleaner@example.com` is approved with the documents accepted, and the password is I's `state.json`.
+It touches only its own new order, never one of I's, D's or R3's booked orders, and finishes before TAKE-025:
+
+1. From 07:00, both apps rebuilt and installed; the partner app signed in as I's cleaner, the customer app as I's customer.
+2. **F-088 and F-092, in one 15-minute stretch.** Book Bathroom, tomorrow 10:00, Normal, `Card, Pay securely via Stripe`,
+   the withdrawal box, `slide`. On the PaymentSheet, screenshot and `ui`: no *Link* element and no *Save my info for
+   faster checkout with Link* (F-088); pay 4242. `View order`: `New`, Step 1 / 5 (screenshot). Switch to the partner app
+   (`xcrun simctl launch $UDID cz.cleansia.partner`), take that order (the order number from the customer app) with the
+   contract: `Job taken`. Switch back (`xcrun simctl launch $UDID cz.cleansia.customer`) without touching the detail:
+   within 10 seconds it reads `Confirmed`, Step 2 / 5, without being reopened (F-092: the detail refetches when the app
+   returns to the foreground; the push that also refetches it never reaches a simulator, so that half stays unshown).
+   Then, still inside 15 minutes of the booking, `Cancel order`: the sheet reads `Cancelling within 15 minutes of booking
+   is free, even after a cleaner has accepted.` and `No cancellation fee.`; confirm.
+3. **F-095:** the Translated refusal row in `uk` only, on both apps (`Невірний пароль.`), with the keychain reset and
+   pasted fields. It comes last because the keychain reset signs both apps out.
+4. Report done to the suite runner, with the screenshots and the order number.
+
+**The Android lane** (run D; `runbooks/android.md`): `e2e.<D>.androidreg1@example.com` is registered in the app with
+D's password; nothing of R3's or I's is touched. It finishes before TAKE-025:
+
+1. From 07:00, both apps rebuilt with the Stripe key and installed; `Card` offered on step 4 proves the key is in.
+2. **F-093 (terms) and F-087:** register `androidreg1` in the customer app; the dump of the form reads the terms tick's
+   content-desc `Accept terms and privacy policy`. Then `assist confirm` with `E2E_RUN_ID=<D>
+   E2E_ASSIST_EMAIL=e2e.<D>.androidreg1@example.com`: it passes whichever dispatch confirmed the account (R3's book stage
+   at 07:01 may already have). Then `assist address` for the same account.
+3. **F-089:** sign in; on the phone step type `611` and the last six digits of D, `Save and continue`: the refusal
+   `Please enter a valid phone number.` shows under the phone field and stays (screenshot and dump; no snackbar, no
+   silence). Then `clr`, type `601` and the same six digits, `Save and continue`: saved, `Ready to book`.
+4. **F-093 (booking) and F-088:** book Bathroom, tomorrow, Normal; on step 4 tap `Card` and dump: the card-saving tick's
+   content-desc is `Save this card for my next bookings`, the early-performance tick's `Ask for the cleaning to start
+   within the withdrawal period`. Tick the early-performance box, `slide 2232`; the PaymentSheet's dump holds no *Link*
+   and no *Save my info for faster checkout with Link* (F-088); pay 4242, `Booking received`. Cancel the paid order
+   (untaken, free). `Profile`, `Payments`, the add-card form: its card-saving tick reads `Save this card for my next
+   bookings` too.
+5. **F-095:** the Translated refusal row in `uk` only (Settings > Languages), on both apps: `Невірний пароль.`; then the
+   device back to English (United States) with the other languages removed.
+6. Report done to the suite runner, with the dumps and screenshots.
+
+**TAKE-025 last.** It runs after the last command above it and after both lanes have reported done, since the publish
+gates every DEV cleaner, the lanes' included, until they accept the new documents. A lane that cannot finish reports
+what it did not show, and TAKE-025 runs then.
+
+**Not proven by this run:** F-081 (work/30's W test, which needs a phase-2 run's two-cleaner job) and F-082 (orders/40's
+BOOK-035 web test, which needs the people stage's throwaway service). The run is recorded under `runs/2026-11-20/`.
 
 ### P1 cases the suite does not cover yet
 
@@ -197,9 +294,9 @@ the following open:
 
 | Case | The part not covered | Why |
 |---|---|---|
-| E2E-TAKE-025 | the whole case | the publish script failed before it published (F-076, fixed in T-0937: `DevE2eScriptsTests` now runs every `dev-e2e-*.sql` against Postgres in CI); a re-run needs Mike's OK, since it gates every DEV cleaner |
+| E2E-TAKE-025 | the whole case | the publish script failed before it published (F-076, fixed in T-0937: `DevE2eScriptsTests` now runs every `dev-e2e-*.sql` against Postgres in CI); it gates every DEV cleaner, and Mike gave the OK for a re-run on 19 November: it runs last in the fix-proof run |
 | E2E-PAYOUT-057 | the set-off statement in five languages | a regenerate of an invoice whose PDF existed failed (F-075, fixed in T-0937: a re-render is a new numbered file beside the first), so no PDF was rendered after the language change; the re-run is T-0939 |
-| E2E-PAYOUT-016, E2E-PAYOUT-017, E2E-PAYOUT-032, E2E-PAYOUT-035, E2E-PAYOUT-036, E2E-PAYOUT-055, E2E-PAYOUT-056 | the settle stage's Close now, invoice and cash set-off | phase 2's settle runs with `E2E_NO_CLOSE_NOW=1`, so they stand on phase 1's pass; the payroll stage reads the night close and the SPA's Close now (F-012) but no set-off (F-102) |
+| E2E-PAYOUT-016, E2E-PAYOUT-017, E2E-PAYOUT-032, E2E-PAYOUT-035, E2E-PAYOUT-036, E2E-PAYOUT-055, E2E-PAYOUT-056 | the settle stage's Close now, invoice and cash set-off | phase 2's settle runs with `E2E_NO_CLOSE_NOW=1`, so they stand on phase 1's pass; the payroll stage reads the night close and the SPA's Close now (F-012) but no set-off (F-102): payroll/10 reads A's set-off since T-0939, first on DEV in the fix-proof run |
 | E2E-XCUT-011 (Android), E2E-PAY-011 (iOS) | the whole case on that client | they stand on phase 1's pass: the phase-2 runbook rows (`runbooks/android.md:148`, `runbooks/ios.md:127`) were not repeated |
 | E2E-BOOK-037 | the web's refusal of a third unpaid cash booking | it never ran on the phase-2 run (F-078); the fix that orders it is unproven |
 | E2E-AUTH-049 | the iOS lock of the rejected cleaner, and the push | the iOS lane could not use the run password (F-091); a simulator and an emulator get no push from DEV |

@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { crc32 } from 'node:zlib';
-import { png, retryAfterMs } from './support/dev';
+import { errorKeys, png, retryAfterMs } from './support/dev';
 import { dayAfter, nextSlots, noticeHours, pragueSlot, startOpensAt, wizardLabels } from './support/slots';
 
 const iso = (d: Date) => d.toISOString().replace('.000', '');
@@ -88,6 +88,14 @@ test.describe('rate-limit backoff', () => {
     expect([retryAfterMs(undefined, now), retryAfterMs('soon', now)]).toEqual([30_000, 30_000]);
     expect(retryAfterMs('Wed, 18 Nov 2026 06:59:00 GMT', now)).toBe(1_000);
     expect(retryAfterMs('0', now)).toBe(1_000);
+  });
+});
+
+test.describe('refusal keys', () => {
+  test('errorKeys splits the keys FluentValidation joins with "; " under one property, and reads no errors as none', () => {
+    const body = { errors: { Email: ['auth.email_required; auth.email_invalid'], OrderId: ['order.not_found'] } };
+    expect(errorKeys(body)).toEqual(['auth.email_required', 'auth.email_invalid', 'order.not_found']);
+    expect([errorKeys({}), errorKeys(null), errorKeys('text')]).toEqual([[], [], []]);
   });
 });
 

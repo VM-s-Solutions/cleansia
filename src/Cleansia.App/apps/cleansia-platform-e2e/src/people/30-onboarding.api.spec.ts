@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { call, errorKeys, list, named, png, Session, signIn, str } from '../support/dev';
-import { confirmAccounts } from '../support/flows';
-import { emailOf, flag, loadRun, Role, RunState, saveRun, setFlag } from '../support/run';
+import { cleanerProfile, confirmAccounts } from '../support/flows';
+import { emailOf, flag, loadRun, Role, saveRun, setFlag } from '../support/run';
 import { cachedAdmin } from '../support/web';
 
 // Stage 'people', file 30 (Day 1, after people/10 and the web sign-in of people/20): one confirmation dispatch for
@@ -11,22 +11,12 @@ import { cachedAdmin } from '../support/web';
 test.describe.configure({ mode: 'serial' });
 
 const run = loadRun();
-// One property's refusals arrive joined in one string ("a; b"): split them so a key is looked for on its own.
-const keys = (body: unknown) => errorKeys(body).flatMap((k) => k.split('; '));
 const CONFIRMED: Role[] = ['applicant', 'cleaner3', 'first', 'nocard', 'debtor', 'cashcap'];
 const CONTRACT = ['', 'Pending', 'Active', 'Terminated', 'Approved', 'Rejected'];
 const REASON = 'Photo of the identity card is unreadable';
-const rand = (digits: number) => String(Math.floor(Math.random() * 10 ** digits)).padStart(digits, '0');
 const applicantId = () => run.ids?.['applicantEmployee'] ?? '';
 const contract = async () => str((await call(await cachedAdmin(), 'GET', `/api/AdminEmployee/details/${applicantId()}`)).body, 'contractStatus');
 const approve = async () => call(await cachedAdmin(), 'POST', `/api/AdminEmployee/${applicantId()}/approve`, { workCountryId: run.countryId, notes: `E2E run ${run.runId}` });
-
-/** The partner profile body a cleaner saves (as the book stage's cleaner does). */
-const profile = (r: RunState, lastName: string) => ({
-  employeeId: null, firstName: 'E2E', lastName, birthDate: '1990-05-15', street: 'Karlovo náměstí 10', city: 'Praha', zipCode: '12000',
-  countryId: r.countryId, state: null, nationalityId: r.countryId, phone: `+420777${rand(6)}`, passportId: `E2E${rand(6)}CZ`, entityType: 1,
-  registrationNumber: '12345670', legalEntityName: null, emergencyName: null, emergencyPhone: null, consent: true,
-});
 
 let applicant: Session;
 
@@ -35,9 +25,7 @@ test.describe('people: onboarding', () => {
     test.skip(!flag(run, 'people.registered'), 'people/10 registers the run\'s new people first');
     test.skip(!!flag(run, 'people.confirmed'), `confirmed at ${flag(run, 'people.confirmed')}`);
     test.setTimeout(20 * 60_000);
-    console.log(confirmAccounts());
-    // Proved by signing in, not by the log: a mobile lane's own dispatch may confirm these accounts first.
-    for (const role of CONFIRMED) await signIn(role === 'applicant' || role === 'cleaner3' ? 'partner' : 'customer', emailOf(run, role), run.password);
+    console.log(await confirmAccounts(run.password, CONFIRMED.map((role) => [role === 'applicant' || role === 'cleaner3' ? 'partner' : 'customer', emailOf(run, role)])));
     setFlag(run, 'people.confirmed');
   });
 
@@ -66,8 +54,8 @@ test.describe('people: onboarding', () => {
     applicant ??= await signIn('partner', emailOf(run, 'applicant'), run.password);
     // Separate rule chains: each refusal lists every failed chain, so the key asked about is looked for, not matched alone.
     const incomplete = await approve();
-    expect(keys(incomplete.body), JSON.stringify(incomplete.body)).toContain('employee.profile_incomplete');
-    const saved = await call(applicant, 'PUT', '/api/Employee/UpdateEmployee', profile(run, 'applicant'));
+    expect(errorKeys(incomplete.body), JSON.stringify(incomplete.body)).toContain('employee.profile_incomplete');
+    const saved = await call(applicant, 'PUT', '/api/Employee/UpdateEmployee', cleanerProfile(run, 'applicant'));
     expect(saved.status, JSON.stringify(saved.body)).toBe(200);
     const bank = await call(applicant, 'PUT', '/api/Employee/UpdateBankDetails', {
       employeeId: null, iban: 'CZ6508000000192000145399', bankCountryId: run.countryId, accountPrefix: '19', accountNumber: '2000145399',
@@ -75,14 +63,14 @@ test.describe('people: onboarding', () => {
     });
     expect(bank.status, JSON.stringify(bank.body)).toBe(200);
     const noCard = await approve();
-    expect(keys(noCard.body), JSON.stringify(noCard.body)).toContain('employee.documents_not_approved');
-    expect(keys(noCard.body)).not.toContain('employee.profile_incomplete');
+    expect(errorKeys(noCard.body), JSON.stringify(noCard.body)).toContain('employee.documents_not_approved');
+    expect(errorKeys(noCard.body)).not.toContain('employee.profile_incomplete');
     const upload = await call(applicant, 'POST', '/api/Employee/SaveMyDocuments', {
       documents: [{ documentType: 1, file: { fileName: 'e2e-identity-card.png', base64Content: `data:image/png;base64,${png()}`, contentType: 'image/png' }, description: `E2E run ${run.runId}` }],
     });
     expect(upload.status, JSON.stringify(upload.body)).toBe(200);
     const pending = await approve();
-    expect(keys(pending.body), JSON.stringify(pending.body)).toContain('employee.documents_not_approved');
+    expect(errorKeys(pending.body), JSON.stringify(pending.body)).toContain('employee.documents_not_approved');
     const a = await cachedAdmin();
     const docs = list((await call(a, 'POST', '/api/AdminEmployeeDocument/get-paged', { filter: { employeeId: applicantId(), isActive: true }, offset: 0, limit: 50 })).body, 'data');
     expect(docs.length).toBeGreaterThan(0);
@@ -91,7 +79,7 @@ test.describe('people: onboarding', () => {
       expect(r.status, JSON.stringify(r.body)).toBe(200);
     }
     const rejectedCard = await approve();
-    expect(keys(rejectedCard.body), JSON.stringify(rejectedCard.body)).toContain('employee.documents_not_approved');
+    expect(errorKeys(rejectedCard.body), JSON.stringify(rejectedCard.body)).toContain('employee.documents_not_approved');
     expect(await contract()).toBe('Pending');
   });
 
@@ -101,7 +89,7 @@ test.describe('people: onboarding', () => {
     const reject = (reason: string) => call(a, 'POST', `/api/AdminEmployee/${applicantId()}/reject`, { reason });
     if ((await contract()) !== 'Rejected') {
       const long = await reject('x'.repeat(501));
-      expect(keys(long.body), JSON.stringify(long.body)).toContain('common.max_length');
+      expect(errorKeys(long.body), JSON.stringify(long.body)).toContain('common.max_length');
       expect(await contract()).toBe('Pending');
       const ok = await reject(REASON);
       expect(ok.status, JSON.stringify(ok.body)).toBe(200);
@@ -109,9 +97,9 @@ test.describe('people: onboarding', () => {
     const detail = (await call(a, 'GET', `/api/AdminEmployee/details/${applicantId()}`)).body;
     expect(detail).toMatchObject({ contractStatus: 'Rejected', rejectionReason: REASON });
     const again = await reject(REASON);
-    expect(keys(again.body), JSON.stringify(again.body)).toContain('employee.already_rejected');
+    expect(errorKeys(again.body), JSON.stringify(again.body)).toContain('employee.already_rejected');
     applicant ??= await signIn('partner', emailOf(run, 'applicant'), run.password);
-    const edit = await call(applicant, 'PUT', '/api/Employee/UpdateEmployee', profile(run, 'applicant'));
+    const edit = await call(applicant, 'PUT', '/api/Employee/UpdateEmployee', cleanerProfile(run, 'applicant'));
     expect(edit.status, JSON.stringify(edit.body)).toBe(200);
     const check = (await call(applicant, 'GET', '/api/Employee/CheckCurrentEmployee')).body;
     expect(named(check, 'contractStatus', CONTRACT)).toBe('Rejected');

@@ -1,22 +1,22 @@
 import { expect, test } from '@playwright/test';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { call, errorKeys, list, named, poll, Session, signIn, str } from '../support/dev';
+import { call, errorKeys, list, named, num, poll, Session, signIn, str } from '../support/dev';
 import { afterPhoto, complete, feed, openPeriod, periodPays, start } from '../support/flows';
 import { emailOf, flag, loadRun, runDir, RunOrder, saveRun, scratch, setFlag } from '../support/run';
 import { dayAfter, startOpensAt } from '../support/slots';
 import { cachedAdmin, cachedAdminAs } from '../support/web';
 
 // Stage 'payroll', file 10 (Day 2, 07:00 UTC): what the 02:00 UTC night run did to the period of Day 1 (closed by
-// System, invoiced inline), the invoice numbers, a cleaner refused another's invoice, the cash set-off statement's
-// language (six PDFs the run agent reads), the Accountant's approve, mark paid and cancel with its corrected invoice,
-// and E's J1 in the new period before payroll/20 presses Close now in the SPA. A scratch run proves the skips only.
+// System, invoiced inline), the invoice numbers, a cleaner refused another's invoice, A's cash set-off and its
+// statement's language (six PDFs the run agent reads), the Accountant's approve, mark paid and cancel with its
+// corrected invoice, and E's J1 in the new period before payroll/20 presses Close now in the SPA. A scratch run proves
+// the skips only. The set-off and the six PDFs need only A's invoice, so they also run on a one-day run whose settle
+// stage pressed Close now and recorded A's invoice of that close (e2e/README.md, "The fix-proof run").
 // Not serial: every test has its own gate, so one failure (a PDF that cannot be rendered) does not hold up the invoice
 // lifecycle, J1 and Close now after it (one worker keeps the order).
 
 const run = loadRun();
-// One property's refusals arrive joined in one string ("a; b"): split them so a key is looked for on its own.
-const keys = (body: unknown) => errorKeys(body).flatMap((k) => k.split('; '));
 const INVOICE = ['', 'Pending', 'Approved', 'Paid', 'Disputed', 'Rejected', 'Cancelled'];
 const FAKE = '01AAAAAAAAAAAAAAAAAAAAAAAA';
 const NUMBER = /^INV-2026-\d{6}$/;
@@ -24,7 +24,7 @@ const VS = /^[1-9]\d{9}$/;
 const rows = (body: unknown) => list(body, 'data');
 const status = (v: unknown) => named(v, 'status', INVOICE);
 const accountant = () => cachedAdminAs('accountant', run);
-const detail = async (id: string) => (await call(await accountant(), 'GET', `/api/AdminInvoice/details/${id}`)).body;
+const detail = async (id: string) => (await call(await cachedAdmin(), 'GET', `/api/AdminInvoice/details/${id}`)).body;
 const invoicesOf = async (employeeId: string, periodId: string) =>
   rows((await call(await accountant(), 'GET', `/api/AdminInvoice/get-paged?Offset=0&Limit=20&Filter.EmployeeId=${employeeId}&Filter.PayPeriodId=${periodId}`)).body);
 const audit = async (resourceId: string) => rows((await call(await cachedAdmin(), 'GET', `/api/AdminAuditLog/get-paged?Offset=0&Limit=20&Filter.ResourceId=${resourceId}`)).body);
@@ -38,10 +38,10 @@ function dayTwo(hhmm: string, what: string) {
   test.skip(scratch(), 'E2E_SCRATCH=1: a scratch run never waits for the night run');
 }
 
-/** A's or B's invoice of the night close, recorded by the PAYOUT-015 test. */
+/** A's or B's invoice the run reads: the night close's, recorded by the PAYOUT-015 test, or A's of the settle stage's Close now. */
 function invoice(key: 'A' | 'B') {
   const id = run.invoices?.[key];
-  test.skip(!id, `the night close's invoice of ${key} is recorded by the PAYOUT-015 test first`);
+  test.skip(!id, `${key}'s invoice is recorded first: the night close's by the PAYOUT-015 test, or A's of the run's Close now by the settle stage`);
   return id as string;
 }
 
@@ -76,6 +76,19 @@ test.describe('payroll: the night close and the invoice lifecycle', () => {
     saveRun(run);
   });
 
+  test('A\'s invoice sets the cash A held off up to its total, and the bank transfer is the rest', { tag: ['@E2E-PAYOUT-055'] }, async () => {
+    const d = await detail(invoice('A'));
+    const total = num(d, 'totalAmount');
+    const setOff = num(d, 'cashSetOffAmount');
+    const held = list((await call(await cleaner('cleaner'), 'GET', '/api/EmployeePayroll/GetCashHeld')).body, '').find((h) => str(h, 'currencyCode') === str(d, 'currencyCode'));
+    // What A held when the invoice was issued is what A holds now plus what it set off: A collects no cash after the close.
+    const before = (num(held, 'amount') || 0) + setOff;
+    expect(setOff, 'A collected cash in the period, so the invoice sets some off').toBeGreaterThan(0);
+    // Set-off = min(cash held, invoice total); transfer = total - set-off (docs/flows/pay-and-payouts.md#cash-set-off).
+    expect(setOff).toBeCloseTo(Math.min(before, total), 2);
+    expect(num(d, 'transferAmount')).toBeCloseTo(total - setOff, 2);
+  });
+
   test('the night close\'s invoices carry a number and a variable symbol of the payout format, all distinct', { tag: ['@E2E-PAYOUT-033'] }, async () => {
     dayTwo('02:30', 'the night run invoices the closed period');
     const ids = [invoice('A'), invoice('B'), ...(run.invoices?.['Bfix'] ? [run.invoices['Bfix']] : [])];
@@ -96,7 +109,7 @@ test.describe('payroll: the night close and the invoice lifecycle', () => {
       for (const path of [`/api/EmployeePayroll/GetInvoiceById/${id}`, `/api/EmployeePayroll/DownloadInvoice/${id}`]) {
         const r = await call(b, 'GET', path);
         expect(r.status, path).not.toBe(200);
-        expect(keys(r.body), `${path}: ${r.raw.toString().slice(0, 200)}`).toContain('payroll.invoice.not_found');
+        expect(errorKeys(r.body), `${path}: ${r.raw.toString().slice(0, 200)}`).toContain('payroll.invoice.not_found');
       }
     }
     const mine = rows((await call(b, 'GET', '/api/EmployeePayroll/GetPagedInvoices?Offset=0&Limit=50')).body).map((x) => str(x, 'id'));
@@ -105,7 +118,6 @@ test.describe('payroll: the night close and the invoice lifecycle', () => {
   });
 
   test('A\'s set-off statement follows A\'s language, not the admin\'s: six PDFs saved for the run agent', { tag: ['@E2E-PAYOUT-057'] }, async () => {
-    dayTwo('02:30', 'the night run invoices the closed period');
     const id = invoice('A');
     test.skip(!!flag(run, 'a.pdfsSaved'), `the PDFs were saved at ${flag(run, 'a.pdfsSaved')}`);
     const now = status(await detail(id));
@@ -126,7 +138,7 @@ test.describe('payroll: the night close and the invoice lifecycle', () => {
     for (const lang of ['en', 'cs', 'sk', 'uk', 'ru', 'cs']) {
       await setLanguage(lang);
       // The admin asks for English every time: the statement must still follow the cleaner's language.
-      const regen = await call(await accountant(), 'POST', '/api/AdminInvoice/regenerate-pdf', { invoiceId: id, languageCode: 'en' });
+      const regen = await call(await cachedAdmin(), 'POST', '/api/AdminInvoice/regenerate-pdf', { invoiceId: id, languageCode: 'en' });
       expect(regen.status, `${lang}: ${JSON.stringify(regen.body)}`).toBe(200);
       const pdf = await call(a, 'GET', `/api/EmployeePayroll/DownloadInvoice/${id}`);
       expect(pdf.headers['content-type'], lang).toContain('application/pdf');

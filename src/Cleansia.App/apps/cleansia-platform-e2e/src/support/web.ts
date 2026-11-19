@@ -1,5 +1,5 @@
-import { expect, Page } from '@playwright/test';
-import { call, DEV_ADMIN, list, named, ORDER_STATUS, poll, Session, signIn, str } from './dev';
+import { Browser, expect, Page } from '@playwright/test';
+import { call, DEV_ADMIN, list, named, ORDER_STATUS, paceSignIn, poll, Session, signIn, str } from './dev';
 import { emailOf, RunState, scratch } from './run';
 import { wizardLabels } from './slots';
 
@@ -17,31 +17,56 @@ export async function acceptCookies(page: Page) {
   if (await ok.waitFor({ state: 'visible', timeout: 5_000 }).then(() => true, () => false)) await ok.click();
 }
 
+// A DEV page that hangs fails the sign-in in 90 s, not at the 10-minute test timeout, in a file that sets no navigationTimeout too.
+const NAV = { timeout: 90_000 };
+
+// Each web's sign-in is paced with the API sign-ins of the host it posts to (paceSignIn): one rate window per host.
 export async function customerSignIn(page: Page, email: string, password: string) {
-  await page.goto(`${SITES.customer}/login`);
+  await page.goto(`${SITES.customer}/login`, NAV);
   await acceptCookies(page);
   await page.locator('input[type=email]').fill(email);
   await page.locator('input[type=password]').fill(password);
+  await paceSignIn('customer');
   await page.getByRole('button', { name: 'Log In', exact: true }).click();
-  await page.waitForURL(/\/orders/);
+  await page.waitForURL(/\/orders/, NAV);
 }
 
 export async function partnerSignIn(page: Page, email: string, password: string) {
-  await page.goto(`${SITES.partner}/login`);
+  await page.goto(`${SITES.partner}/login`, NAV);
   await acceptCookies(page);
   await page.locator('input[type=email]').fill(email);
   await page.locator('input[type=password]').fill(password);
+  await paceSignIn('partner');
   await page.getByRole('button', { name: 'Login', exact: true }).click();
-  await page.waitForURL(/\/orders/);
+  await page.waitForURL(/\/orders/, NAV);
 }
 
 export async function adminSignIn(page: Page, email: string, password: string) {
-  await page.goto(`${SITES.admin}/login`);
+  await page.goto(`${SITES.admin}/login`, NAV);
   await acceptCookies(page);
   await page.getByRole('textbox', { name: 'Email' }).fill(email);
   await page.getByRole('textbox', { name: 'Password' }).fill(password);
+  // The admin host answers 429 to sign-ins in quick succession, the SPA's (proxied to it) and the API's alike.
+  await paceSignIn('admin');
   await page.getByRole('button', { name: 'Login', exact: true }).click();
-  await page.waitForURL((u) => !u.pathname.startsWith('/login'));
+  await page.waitForURL((u) => !u.pathname.startsWith('/login'), NAV);
+}
+
+/** A fresh admin SPA context in Prague time whose steps fail in 90 s, signed in as one admin role (the accounts of cachedAdminAs). */
+export async function adminSpa(browser: Browser, role: AdminRole, run?: RunState) {
+  const ctx = await browser.newContext({ locale: 'en-US', timezoneId: 'Europe/Prague' });
+  ctx.setDefaultTimeout(90_000);
+  const page = await ctx.newPage();
+  const [email, password] = adminAccount(role, run);
+  await adminSignIn(page, email, password);
+  return { ctx, page };
+}
+
+/** The admin SPA's Refunds page, its status filter switched from Needs action to Refunded. */
+export async function showRefunded(page: Page) {
+  await page.goto(`${SITES.admin}/order-management/refunds`);
+  await page.locator('.p-select', { hasText: 'Needs action' }).click();
+  await page.getByRole('option', { name: 'Refunded', exact: true }).click();
 }
 
 /**
@@ -95,8 +120,7 @@ const adminSessions: Partial<Record<AdminRole, { session: Session; at: number }>
 export async function cachedAdminAs(role: AdminRole, run?: RunState): Promise<Session> {
   const cached = adminSessions[role];
   if (cached && Date.now() - cached.at < 8 * 60_000) return cached.session;
-  if (role !== 'admin' && !run) throw new Error(`cachedAdminAs('${role}') needs the run: the account is e2e.<run>.${role}@example.com`);
-  const [email, password] = role === 'admin' || !run ? [DEV_ADMIN.email, DEV_ADMIN.password] : [emailOf(run, role), run.password];
+  const [email, password] = adminAccount(role, run);
   for (let attempt = 1; ; attempt++) {
     try {
       const session = await signIn('admin', email, password);
@@ -107,6 +131,13 @@ export async function cachedAdminAs(role: AdminRole, run?: RunState): Promise<Se
       await new Promise((r) => setTimeout(r, 30_000));
     }
   }
+}
+
+/** The e-mail and password of an admin role: the published DEV administrator, or the run's Manager, Support or Accountant. */
+function adminAccount(role: AdminRole, run?: RunState): [string, string] {
+  if (role === 'admin') return [DEV_ADMIN.email, DEV_ADMIN.password];
+  if (!run) throw new Error(`the ${role} needs the run: the account is e2e.<run>.${role}@example.com`);
+  return [emailOf(run, role), run.password];
 }
 
 /** The published DEV administrator's cached session. */

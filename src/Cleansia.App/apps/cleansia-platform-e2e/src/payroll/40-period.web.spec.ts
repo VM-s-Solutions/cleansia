@@ -2,7 +2,7 @@ import { Browser, expect, test } from '@playwright/test';
 import { call, list, named, Session, signIn, str } from '../support/dev';
 import { RULED_DAYS } from '../support/plan';
 import { emailOf, flag, loadRun, Role, scratch, setFlag } from '../support/run';
-import { adminSignIn, cachedAdmin, SITES } from '../support/web';
+import { adminSpa, cachedAdmin, SITES } from '../support/web';
 
 // Stage 'payroll', web half 2: Day 2 in the admin SPA as the Accountant. The night close of the
 // Day 1 period reads "Automatically" (PAYOUT-014) and lists only the cleaners with pay (PAYOUT-015); the period F-012
@@ -26,12 +26,9 @@ test.beforeEach(() => {
 });
 
 async function accountantSpa(browser: Browser) {
-  const ctx = await browser.newContext({ locale: 'en-US', timezoneId: 'Europe/Prague' });
-  ctx.setDefaultTimeout(90_000);
-  const page = await ctx.newPage();
-  await adminSignIn(page, emailOf(run, 'accountant'), run.password);
-  await expect(page, 'the Accountant is held on the password change').not.toHaveURL(/\/profile/);
-  return { ctx, page };
+  const spa = await adminSpa(browser, 'accountant', run);
+  await expect(spa.page, 'the Accountant is held on the password change').not.toHaveURL(/\/profile/);
+  return spa;
 }
 
 /** The period the night run closed: the one that was open at the start of the run, ending on Day 1. */

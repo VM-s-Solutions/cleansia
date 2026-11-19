@@ -13,8 +13,6 @@ import { cachedAdminAs } from '../support/web';
 // Not serial: each test skips on the state it needs, so one failure does not stop the jobs after it.
 
 let run: RunState;
-/** A refusal's keys: one field's several keys arrive joined by '; '. */
-const keys = (body: unknown) => errorKeys(body).flatMap((k) => k.split('; '));
 const sessions: Record<string, { s: Session; at: number }> = {};
 const round2 = (x: number) => Math.round(x * 100) / 100;
 
@@ -51,7 +49,7 @@ function completed(o: RunOrder) {
   saveRun(run);
 }
 
-const refused = (r: Reply, key: string) => expect(keys(r.body), JSON.stringify(r.body)).toContain(key);
+const refused = (r: Reply, key: string) => expect(errorKeys(r.body), JSON.stringify(r.body)).toContain(key);
 
 test.describe('work: afternoon', () => {
   test.beforeAll(() => {
@@ -154,8 +152,8 @@ test.describe('work: afternoon', () => {
     expect(first.status, JSON.stringify(first.body)).toBe(200);
     expect(first.body).toMatchObject({ crewDone: false });
     const second = await markDone(a, o.id);
-    // The same instant: the first reply carries the clock's 100 ns ticks, the second the stored microseconds.
-    expect(Date.parse(str(second.body, 'completionConfirmedAt'))).toBe(Date.parse(str(first.body, 'completionConfirmedAt')));
+    // The same stamp, written the same: both replies carry the stored microseconds (F-081).
+    expect(str(second.body, 'completionConfirmedAt')).toBe(str(first.body, 'completionConfirmedAt'));
     expect(Number.isNaN(Date.parse(str(first.body, 'completionConfirmedAt')))).toBe(false);
     refused(await complete(a, o.id), 'order.crew_not_done');
     expect(statusOf(await adminDetail(o.id))).toBe('InProgress');

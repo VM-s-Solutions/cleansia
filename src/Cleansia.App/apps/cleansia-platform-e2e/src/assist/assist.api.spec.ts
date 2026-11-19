@@ -6,7 +6,7 @@ import { cachedAdmin } from '../support/web';
 
 // Stage 'assist': what a mobile lane cannot do in its app, done through the API for the lane's own run (E2E_RUN_ID).
 // One E2E_ASSIST mode per invocation; every other test skips.
-//   confirm   the DEV-only confirm SQL, for accounts registered in the app (E2E_ASSIST_EMAIL: the one to expect)
+//   confirm   the DEV-only confirm SQL, for accounts registered in the app (E2E_ASSIST_EMAIL: a customer that must then sign in)
 //   address   a saved address for E2E_ASSIST_EMAIL (the emulator's map cannot pick one)
 //   photo     an after photo on E2E_ASSIST_ORDER as the run's cleaner (the iOS camera gap, F-037/F-040)
 //   evidence  E2E_ASSIST_EMAIL's consents, its register audit row and its saved cards (E2E_ASSIST_EXPECT=card|nocard)
@@ -23,10 +23,11 @@ const needs = (want: string, ...vars: [string, string][]) => {
 };
 
 test.describe('assist', () => {
-  test('confirm: the DEV-only SQL confirms the accounts registered in the app', async () => {
+  test('confirm: the DEV-only SQL confirms the accounts registered in the app, and the named customer signs in', async () => {
     needs('confirm');
     test.setTimeout(20 * 60_000);
-    const out = confirmAccounts(email || undefined);
+    // Another dispatch may have confirmed the account first (F-087): the sign-in, not this dispatch's log, proves it.
+    const out = await confirmAccounts(run.password, email ? [['customer', email]] : []);
     console.log(out);
     expect(out).toContain('completed success');
   });

@@ -177,6 +177,7 @@ test.describe('payroll: the night close and the invoice lifecycle', () => {
     dayTwo('02:30', 'the night run invoices the closed period');
     test.setTimeout(20 * 60_000);
     const id = invoice('B');
+    test.skip(!!run.invoices?.['Bfix'], 'B\'s corrected invoice is recorded: the clean-up (payroll/50) settles it since, so it is no longer Pending');
     const p = run.periodAtStart as NonNullable<typeof run.periodAtStart>;
     const old = await detail(id);
     if (status(old) !== 'Cancelled') {

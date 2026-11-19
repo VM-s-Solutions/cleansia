@@ -96,7 +96,7 @@ Reading notes for every case below:
 - **Role:** Customer
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /product/business-rules#dirtiness — Normal 0, Increased +15 %, Heavy +30 % on the whole basket, with time and crew following.
-- **Given** a fixed selection with subtotal `S` (packages, services and extras) and a day-ahead slot. **When** the customer quotes it at Normal, Increased and Heavy. **Then** `dirtinessSurchargeAmount` is 0, round(S x 0.15, 2) and round(S x 0.30, 2) (half away from zero); `totalPrice` is S plus that surcharge (before discounts); `estimatedDurationMinutes` is the Normal minutes times 1.15 and 1.3, rounded up. The web wizard, iOS and Android each show a required level step right after the services with nothing preselected, and the next button stays disabled until one is chosen. The summary rail itemises the surcharge under the level.
+- **Given** a fixed selection with subtotal `S` (packages, services and extras) and a day-ahead slot. **When** the customer quotes it at Normal, Increased and Heavy. **Then** `dirtinessSurchargeAmount` is 0, round(S x 0.15, 2) and round(S x 0.30, 2) (half away from zero); `totalPrice` is S plus that surcharge (before discounts); `estimatedDurationMinutes` is the Normal minutes times 1.15 and 1.3, rounded up. The web wizard, iOS and Android each show a required level step right after the services with nothing preselected, and none moves on until one is chosen: iOS and Android disable the next button, the web wizard keeps it enabled, stays on the step and lists the level under *Still needed:*. The summary rail itemises the surcharge under the level.
 - **DEV:** creates nothing for the quote part; the UI part stops at the review step.
 
 ### E2E-BOOK-012 — An unknown dirtiness level is refused everywhere
@@ -372,7 +372,7 @@ Reading notes for every case below:
 - **Role:** Guest
 - **Surfaces:** API · Web
 - **Rule:** → /flows/booking-and-pricing#the-terms-tick-is-required-unless-the-account-already-accepted-the-texts-in-force — a booking asserts `termsAccepted: true` or is refused.
-- **Given** no session and an otherwise valid body. **When** the guest books without `termsAccepted`. **Then** the refusal is `consent.terms_not_accepted` (judged before the price chain, so it also wins over a wrong total); on the web the confirm button is disabled until the box is ticked. The Admin's customer audit list shows a refused `customer.order.create` row with that key and the caller's IP.
+- **Given** no session and an otherwise valid body. **When** the guest books without `termsAccepted`. **Then** the refusal is `consent.terms_not_accepted` (judged before the price chain, so it also wins over a wrong total); on the web *Place Order* sends nothing until the box is ticked: the wizard stays on the step and lists the terms under *Still needed:*. The Admin's customer audit list shows a refused `customer.order.create` row with that key and the caller's IP.
 - **DEV:** creates a failure audit row, no order.
 
 ### E2E-BOOK-047 — A customer whose consents cover the texts in force is not asked

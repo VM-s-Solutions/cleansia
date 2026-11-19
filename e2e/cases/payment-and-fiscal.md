@@ -193,7 +193,7 @@ Webhooks have no user surface: a case that says "the webhook lands" is observed 
 - **Role:** Customer
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /flows/payment-and-fiscal#saved-cards-and-receivables — unticked, neither channel keeps a card
-- **Given** a customer with no saved card. **When** they pay a card booking with the box unticked. **Then** the order is `Paid` and Saved cards stays empty (*No card saved.* / the empty-state copy), on all clients, and on the apps the PaymentSheet did not show Stripe's own save box.
+- **Given** a customer with no saved card. **When** they pay a card booking with the box unticked. **Then** the order is `Paid` and Saved cards stays empty (*No card saved.* / the empty-state copy), on all clients, and on the apps the PaymentSheet did not show Stripe's own save box (Stripe Link's *Save my info for faster checkout with Link* is not that box: the sheet is opened without the account's Stripe Customer, so nothing Link keeps reaches the Customer or Saved cards).
 - **DEV:** Check the list after the webhook has surely landed (order `Paid`).
 
 ### E2E-PAY-024 — A guest is never offered the tick

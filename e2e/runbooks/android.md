@@ -237,7 +237,7 @@ env NX_DAEMON=false NX_NO_CLOUD=true E2E_CONFIRM_REF=master E2E_STAGE=assist E2E
 
 | Mode | Extra variables | When | Proves |
 |---|---|---|---|
-| `confirm` | `E2E_ASSIST_EMAIL=e2e.<run>.androidreg2@example.com` (the one whose line the log must hold) | once, after the customers and `androidpartner` are registered; not between 07:13 and 07:35 (the people stage dispatches the same script; a second dispatch in the same minute can read the other's log) | the DEV-only confirm SQL ran for the accounts registered in the app |
+| `confirm` | `E2E_ASSIST_EMAIL=e2e.<run>.androidreg2@example.com` (a customer, signed in by the test afterwards) | once, after the customers and `androidpartner` are registered | the DEV-only confirm SQL ran (a failed dispatch fails the test) and the named customer opens a session, whichever dispatch confirmed it: another stage's or lane's may come first (F-087) |
 | `address` | `E2E_ASSIST_EMAIL=<androidreg1>`, then `<androidreg2>` (and the run customer if it has none) | after confirm | a saved address in Prague, because the emulator's map cannot place a pin without a real Mapbox token |
 | `evidence` | `E2E_ASSIST_EMAIL=<androidreg1>`, `E2E_ASSIST_EXPECT=card`; again with `<androidreg2>` and `nocard` | after each account's card booking (leave `E2E_ASSIST_EXPECT` out when Card is absent: the cards are then only printed) | AUTH-002 (both consents granted and current, the `customer.account.register` audit row) and PAY-022 / PAY-023 |
 

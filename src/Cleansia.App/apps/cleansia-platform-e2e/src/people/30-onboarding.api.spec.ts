@@ -25,9 +25,7 @@ test.describe('people: onboarding', () => {
     test.skip(!flag(run, 'people.registered'), 'people/10 registers the run\'s new people first');
     test.skip(!!flag(run, 'people.confirmed'), `confirmed at ${flag(run, 'people.confirmed')}`);
     test.setTimeout(20 * 60_000);
-    console.log(confirmAccounts());
-    // Proved by signing in, not by the log: a mobile lane's own dispatch may confirm these accounts first.
-    for (const role of CONFIRMED) await signIn(role === 'applicant' || role === 'cleaner3' ? 'partner' : 'customer', emailOf(run, role), run.password);
+    console.log(await confirmAccounts(run.password, CONFIRMED.map((role) => [role === 'applicant' || role === 'cleaner3' ? 'partner' : 'customer', emailOf(run, role)])));
     setFlag(run, 'people.confirmed');
   });
 

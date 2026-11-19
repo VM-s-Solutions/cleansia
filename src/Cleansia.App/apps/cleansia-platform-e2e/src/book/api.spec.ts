@@ -1,11 +1,9 @@
 import { expect, test } from '@playwright/test';
-import { execFileSync } from 'node:child_process';
-import { join } from 'node:path';
 import {
   anonymous, call, errorKeys, list, named, num, ORDER_STATUS, PAYMENT_STATUS, payStripeCheckout, png, poll, Session,
   signIn, str,
 } from '../support/dev';
-import { cleanerProfile } from '../support/flows';
+import { cleanerProfile, confirmAccounts } from '../support/flows';
 import { emailOf, newRun, RunOrder, RunState, saveRun } from '../support/run';
 import { nextSlots } from '../support/slots';
 import { cachedAdmin } from '../support/web';
@@ -109,9 +107,7 @@ test.describe('book', () => {
 
   test('the DEV-only SQL confirms the run accounts', async () => {
     test.setTimeout(20 * 60_000);
-    const out = execFileSync('bash', [join(__dirname, '..', '..', 'scripts', 'confirm-accounts.sh'), emailOf(run, 'customer')], { encoding: 'utf8', timeout: 18 * 60_000 });
-    console.log(out);
-    expect(out).toContain(emailOf(run, 'cleaner'));
+    console.log(await confirmAccounts(run.password, [['customer', emailOf(run, 'customer')], ['partner', emailOf(run, 'cleaner')]]));
   });
 
   test('the confirmed customer signs in on web (cookies) and mobile (body tokens)', { tag: ['@E2E-AUTH-009', '@E2E-AUTH-014', '@E2E-AUTH-015', '@E2E-AUTH-001'] }, async () => {

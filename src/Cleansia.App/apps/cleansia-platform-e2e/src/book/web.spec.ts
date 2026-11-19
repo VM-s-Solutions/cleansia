@@ -1,8 +1,6 @@
 import { expect, test } from '@playwright/test';
-import { execFileSync } from 'node:child_process';
-import { join } from 'node:path';
 import { anonymous, call, DEV_ADMIN, named, ORDER_STATUS, PAYMENT_STATUS, payStripeCheckout, png, poll, Session, signIn, str } from '../support/dev';
-import { cleanerProfile } from '../support/flows';
+import { cleanerProfile, confirmAccounts } from '../support/flows';
 import { emailOf, loadRun, RunState, saveRun } from '../support/run';
 import { adminSignIn, cachedAdmin, customerSignIn, partnerSignIn, placeOrderInWizard, SITES } from '../support/web';
 import { nextSlots } from '../support/slots';
@@ -59,8 +57,7 @@ test.describe('people', () => {
       if (!(run.employee2Id && role === 'cleaner2')) expect(r.status, JSON.stringify(r.body)).toBe(200);
     }
     saveRun(run);
-    const out = execFileSync('bash', [join(__dirname, '..', '..', 'scripts', 'confirm-accounts.sh'), emailOf(run, 'webcustomer')], { encoding: 'utf8', timeout: 18 * 60_000 });
-    expect(out).toContain(emailOf(run, 'webcustomer'));
+    await confirmAccounts(run.password, [['customer', emailOf(run, 'webcustomer')], ['partner', emailOf(run, 'cleaner2')]]);
 
     customer = await signIn('customer', emailOf(run, 'webcustomer'), run.password);
     const addr = await call(customer, 'POST', '/api/SavedAddress/Add', { label: 'Home', street: 'Václavské náměstí 1', city: 'Praha', zipCode: '11000', countryId: run.countryId, setAsDefault: true, latitude: 50.0811, longitude: 14.428 });

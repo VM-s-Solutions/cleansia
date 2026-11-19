@@ -185,7 +185,7 @@ env NX_DAEMON=false NX_NO_CLOUD=true E2E_CONFIRM_REF=master E2E_STAGE=assist E2E
 
 | Mode | Extra variables | When | Proves |
 |---|---|---|---|
-| `confirm` | `E2E_ASSIST_EMAIL=e2e.<run>.iosreg2@example.com` (the one whose line the log must hold) | once, after both registrations; not between 07:13 and 07:35 (the people stage dispatches the same script and a second dispatch in the same minute can read the other's log) | the DEV-only confirm SQL ran for the accounts registered in the app; then a sign-in of each works |
+| `confirm` | `E2E_ASSIST_EMAIL=e2e.<run>.iosreg2@example.com` (a customer, signed in by the test afterwards) | once, after both registrations | the DEV-only confirm SQL ran (a failed dispatch fails the test) and the named customer opens a session, whichever dispatch confirmed it: another stage's or lane's may come first (F-087) |
 | `evidence` | `E2E_ASSIST_EMAIL=<iosreg1>`, `E2E_ASSIST_EXPECT=card`; again with `<iosreg2>` and `nocard` | after each account's card booking | AUTH-002 (both consents granted and current, the `customer.account.register` audit row) and PAY-022 (Visa 4242) / PAY-023 (none) |
 | `photo` | `E2E_ASSIST_ORDER=<order id>` | optional, not planned: only if a row needs a started iOS job to be completed | the after photo the simulator camera cannot take |
 

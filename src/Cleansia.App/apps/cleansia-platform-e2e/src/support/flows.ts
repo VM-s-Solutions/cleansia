@@ -155,8 +155,15 @@ export async function waitInvoice(employeeId: string, periodId: string, ms: numb
   );
 }
 
-/** Runs the DEV-only confirm SQL through Execute SQL Script (scripts/confirm-accounts.sh); throws unless it confirmed `expect`. */
-export function confirmAccounts(expect?: string) {
+/**
+ * Runs the DEV-only confirm SQL through Execute SQL Script (scripts/confirm-accounts.sh), then proves each account
+ * confirmed by signing it in on its host: the script confirms only the e2e accounts still unconfirmed, so another
+ * dispatch (another stage's, a mobile lane's) may have confirmed one first, and its e-mail is then not in this log
+ * (F-087). Throws on a dispatch that failed and on an account that still opens no session; returns the dispatch's output.
+ */
+export async function confirmAccounts(password: string, accounts: [Host, string][]) {
   const script = join(__dirname, '..', '..', 'scripts', 'confirm-accounts.sh');
-  return execFileSync('bash', [script, ...(expect ? [expect] : [])], { encoding: 'utf8', timeout: 18 * 60_000 });
+  const out = execFileSync('bash', [script], { encoding: 'utf8', timeout: 18 * 60_000 });
+  for (const [host, email] of accounts) await signIn(host, email, password);
+  return out;
 }

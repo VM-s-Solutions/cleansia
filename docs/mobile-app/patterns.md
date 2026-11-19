@@ -79,6 +79,11 @@ The cancel flag is set **asynchronously**, so checking it alone misses cases whe
 thrown before the flag propagates. Additional signals are needed: a message containing *canceled* or
 *closed*, an `InterruptedIOException`, and a socket closed underneath a cancelled call.
 
+A read timeout is not one of them. OkHttp's `SocketTimeoutException` is an `InterruptedIOException`, and
+treating it as a cancellation made a timed-out request silent: callers leave connection failures to
+this toast, so a sign-in or a save on a slow server did nothing visible (F-089, seen on sign-in on DEV,
+2026-11-19). It toasts like any other connection failure.
+
 Get this wrong and every fast tab switch shows the user an infrastructure error.
 
 ## Only a successful answer is cached {#negative-caching}

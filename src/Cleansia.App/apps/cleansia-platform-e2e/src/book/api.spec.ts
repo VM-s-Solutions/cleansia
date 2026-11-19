@@ -5,6 +5,7 @@ import {
   anonymous, call, errorKeys, list, named, num, ORDER_STATUS, PAYMENT_STATUS, payStripeCheckout, png, poll, Session,
   signIn, str,
 } from '../support/dev';
+import { cleanerProfile } from '../support/flows';
 import { emailOf, newRun, RunOrder, RunState, saveRun } from '../support/run';
 import { nextSlots } from '../support/slots';
 import { cachedAdmin } from '../support/web';
@@ -142,12 +143,7 @@ test.describe('book', () => {
     saveRun(run);
     const a = await admin();
     expect(str((await call(a, 'GET', `/api/AdminEmployee/details/${run.employeeId}`)).body, 'contractStatus')).toBe('Pending');
-    const profile = await call(cleaner, 'PUT', '/api/Employee/UpdateEmployee', {
-      employeeId: null, firstName: 'E2E', lastName: 'Cleaner', birthDate: '1990-05-15', street: 'Karlovo náměstí 10', city: 'Praha',
-      zipCode: '12000', countryId: run.countryId, state: null, nationalityId: run.countryId, phone: `+420777${rand(6)}`,
-      passportId: `E2E${rand(6)}CZ`, entityType: 1, registrationNumber: '12345670', legalEntityName: null, emergencyName: null,
-      emergencyPhone: null, consent: true,
-    });
+    const profile = await call(cleaner, 'PUT', '/api/Employee/UpdateEmployee', cleanerProfile(run, 'Cleaner'));
     expect(profile.status, JSON.stringify(profile.body)).toBe(200);
     const bank = await call(cleaner, 'PUT', '/api/Employee/UpdateBankDetails', {
       employeeId: null, iban: 'CZ6508000000192000145399', bankCountryId: run.countryId, accountPrefix: '19', accountNumber: '2000145399',

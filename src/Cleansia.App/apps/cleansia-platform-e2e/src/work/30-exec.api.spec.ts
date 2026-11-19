@@ -13,8 +13,6 @@ import { cachedAdminAs } from '../support/web';
 // Not serial: each test skips on the state it needs, so one failure does not stop the jobs after it.
 
 let run: RunState;
-/** A refusal's keys: one field's several keys arrive joined by '; '. */
-const keys = (body: unknown) => errorKeys(body).flatMap((k) => k.split('; '));
 const sessions: Record<string, { s: Session; at: number }> = {};
 const round2 = (x: number) => Math.round(x * 100) / 100;
 
@@ -51,7 +49,7 @@ function completed(o: RunOrder) {
   saveRun(run);
 }
 
-const refused = (r: Reply, key: string) => expect(keys(r.body), JSON.stringify(r.body)).toContain(key);
+const refused = (r: Reply, key: string) => expect(errorKeys(r.body), JSON.stringify(r.body)).toContain(key);
 
 test.describe('work: afternoon', () => {
   test.beforeAll(() => {

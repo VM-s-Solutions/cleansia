@@ -1,8 +1,8 @@
-import { Browser, expect, Page, test } from '@playwright/test';
-import { call, DEV_ADMIN, list, named, ORDER_STATUS, PAYMENT_STATUS, poll, signIn, str } from '../support/dev';
+import { expect, Page, test } from '@playwright/test';
+import { call, list, named, ORDER_STATUS, PAYMENT_STATUS, poll, signIn, str } from '../support/dev';
 import { emailOf, flag, loadRun, RunOrder, scratch, setFlag } from '../support/run';
 import { startOpensAt } from '../support/slots';
-import { AdminRole, adminSignIn, cachedAdmin, customerSignIn, partnerSignIn, SITES } from '../support/web';
+import { adminSpa, cachedAdmin, customerSignIn, partnerSignIn, showRefunded, SITES } from '../support/web';
 
 // Stage 'work', web half (F-027 too): Support's full refund in the admin SPA (CANCEL-049), the
 // customer web past X's start (CANCEL-018), B's job page on the two-cleaner job W while Confirmed (F-027, EXEC-020),
@@ -25,23 +25,8 @@ function order(key: string): RunOrder {
   return o;
 }
 
-// The admin host answers 429 to sign-ins in quick succession: the SPA's are spaced like signIn()'s.
-let lastSpaSignIn = 0;
-async function spa(browser: Browser, role: AdminRole) {
-  const wait = lastSpaSignIn + 7_000 - Date.now();
-  if (wait > 0) await new Promise((r) => setTimeout(r, wait));
-  lastSpaSignIn = Date.now();
-  const ctx = await browser.newContext({ locale: 'en-US', timezoneId: 'Europe/Prague' });
-  ctx.setDefaultTimeout(90_000);
-  const page = await ctx.newPage();
-  await adminSignIn(page, role === 'admin' ? DEV_ADMIN.email : emailOf(run, role), role === 'admin' ? DEV_ADMIN.password : run.password);
-  return { ctx, page };
-}
-
 async function refundsPageRow(page: Page, number: string) {
-  await page.goto(`${SITES.admin}/order-management/refunds`);
-  await page.locator('.p-select', { hasText: 'Needs action' }).click();
-  await page.getByRole('option', { name: 'Refunded', exact: true }).click();
+  await showRefunded(page);
   return page.locator('tr', { hasText: number });
 }
 
@@ -65,7 +50,7 @@ test('Support issues a full refund of the web card job in the admin SPA; it reac
   test.skip(!!flag(run, 'webCard.refunded'), `refunded at ${flag(run, 'webCard.refunded')}`);
   const detail = await adminDetail(o.id);
   test.skip(named(detail, 'paymentStatus', PAYMENT_STATUS) !== 'Paid', `the web card job's payment reads ${named(detail, 'paymentStatus', PAYMENT_STATUS)}`);
-  const { ctx, page } = await spa(browser, 'support');
+  const { ctx, page } = await adminSpa(browser, 'support', run);
   await page.goto(`${SITES.admin}/order-management/${o.id}`);
   await page.getByRole('button', { name: 'Issue refund' }).first().click();
   const panel = page.locator('.detail-actions__panel', { hasText: 'Issue a full refund without changing the order status.' });
@@ -142,7 +127,7 @@ test('the Refunds page lists X\'s line refunds as Partial refund', { tag: ['@E2E
   const x = order('X');
   const partial = (await refunds(x.id)).filter((r) => named(r, 'origin', ORIGIN) === 'PartialRefund' && str(r, 'state.name') === 'Refunded');
   test.skip(!partial.length, 'X has no settled partial refund yet (work/30)');
-  const { ctx, page } = await spa(browser, 'admin');
+  const { ctx, page } = await adminSpa(browser, 'admin', run);
   const row = await refundsPageRow(page, numberOf(await adminDetail(x.id)));
   await expect(row.first()).toContainText('Partial refund');
   await ctx.close();
@@ -154,7 +139,7 @@ test('the admin SPA shows A\'s accepted contract on P, with its date and version
   const seat = list(detail, 'assignedEmployees').find((e) => str(e, 'employeeId') === run.employeeId);
   const accepted = list(detail, 'workContractAcceptances').find((a) => str(a, 'orderEmployeeId') === str(seat, 'id'));
   test.skip(!seat || !accepted, 'A has not accepted P\'s contract yet (work/30)');
-  const { ctx, page } = await spa(browser, 'admin');
+  const { ctx, page } = await adminSpa(browser, 'admin', run);
   await page.goto(`${SITES.admin}/order-management/${p.id}`);
   await expect(page.locator('.employee-card', { hasText: str(seat, 'fullName') })).toContainText(new RegExp(`Accepted .+, v${str(accepted, 'documentVersion')}`));
   await ctx.close();

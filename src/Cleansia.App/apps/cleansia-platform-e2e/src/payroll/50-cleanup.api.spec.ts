@@ -16,8 +16,6 @@ import { cachedAdmin, cachedAdminAs } from '../support/web';
 test.describe.configure({ mode: 'serial' });
 
 const run = loadRun();
-// One property's refusals arrive joined in one string ("a; b"): split them so a key is looked for on its own.
-const keys = (body: unknown) => errorKeys(body).flatMap((k) => k.split('; '));
 const INVOICE = ['', 'Pending', 'Approved', 'Paid', 'Disputed', 'Rejected', 'Cancelled'];
 const E2E_ACCOUNT = /^e2e\.\d{12}\.[a-z0-9]+@example\.com$/;
 const ROLES = ['manager', 'support', 'accountant'] as const;
@@ -166,7 +164,7 @@ test.describe('payroll: after the period is paid, the clean-up, and TAKE-025', (
     if (!order.taken) {
       const refused = await take(a, order.id);
       expect(refused.status).not.toBe(200);
-      expect(keys(refused.body), JSON.stringify(refused.body)).toContain('employee.legal_documents_not_accepted');
+      expect(errorKeys(refused.body), JSON.stringify(refused.body)).toContain('employee.legal_documents_not_accepted');
       const legal = (await call(a, 'GET', '/api/Employee/GetMyLegalDocuments')).body as unknown[];
       const toAccept = legal.filter((x) => !(x as { isAccepted?: boolean }).isAccepted);
       expect(toAccept.length, 'the published versions wait for acceptance').toBeGreaterThan(0);

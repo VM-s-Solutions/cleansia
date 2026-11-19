@@ -12,8 +12,6 @@ import { cachedAdminAs } from '../support/web';
 test.describe.configure({ mode: 'serial' });
 
 const run = loadRun();
-// One property's refusals arrive joined in one string ("a; b"): split them so a key is looked for on its own.
-const keys = (body: unknown) => errorKeys(body).flatMap((k) => k.split('; '));
 const INVOICE = ['', 'Pending', 'Approved', 'Paid', 'Disputed', 'Rejected', 'Cancelled'];
 const rows = (body: unknown) => list(body, 'data');
 const accountant = () => cachedAdminAs('accountant', run);
@@ -41,14 +39,14 @@ test.describe('payroll: marking the period paid', () => {
     expect(closed, `the period of ${run.day2}`).toMatchObject({ status: 'Closed', endDate: run.day2 });
     expect(next, `its successor from ${dayAfter(run.day2 as string)}`).toMatchObject({ status: 'Open' });
     const open = await markPaid(str(next, 'id'));
-    expect(keys(open.body), JSON.stringify(open.body)).toContain('pay_period.not_closed');
+    expect(errorKeys(open.body), JSON.stringify(open.body)).toContain('pay_period.not_closed');
     const closedId = str(closed, 'id');
     // The sweep invoices a closed period only once its close is 15 minutes old (PayPeriodRepository): until E's invoice
     // exists, J1's pay row is uninvoiced. A run that arrives after the invoice cannot show this refusal any more.
     const eInvoices = async () => rows((await call(await accountant(), 'GET', `/api/AdminInvoice/get-paged?Offset=0&Limit=10&Filter.EmployeeId=${employeeE()}&Filter.PayPeriodId=${closedId}`)).body);
     if (!(await eInvoices()).length) {
       const uninvoiced = await markPaid(closedId);
-      expect(keys(uninvoiced.body), JSON.stringify(uninvoiced.body)).toContain('pay_period.has_uninvoiced_pay');
+      expect(errorKeys(uninvoiced.body), JSON.stringify(uninvoiced.body)).toContain('pay_period.has_uninvoiced_pay');
       setFlag(run, 'payout029.uninvoiced');
     }
     // Soft: a missed window fails the case but must not hold up E's invoice for payroll/40.
@@ -60,7 +58,7 @@ test.describe('payroll: marking the period paid', () => {
     run.invoices = { ...run.invoices, E: str(invoice, 'id') };
     saveRun(run);
     const unpaid = await markPaid(closedId);
-    expect(keys(unpaid.body), JSON.stringify(unpaid.body)).toContain('pay_period.has_unpaid_invoices');
+    expect(errorKeys(unpaid.body), JSON.stringify(unpaid.body)).toContain('pay_period.has_unpaid_invoices');
     // Hand-over to payroll/40: the SPA marks E's approved invoice paid (PAYOUT-045), then the period (PAYOUT-030).
     const approve = await call(await accountant(), 'PUT', '/api/AdminInvoice/approve', { invoiceId: run.invoices['E'], adminNotes: `E2E run ${run.runId}` });
     expect(approve.status, JSON.stringify(approve.body)).toBe(200);

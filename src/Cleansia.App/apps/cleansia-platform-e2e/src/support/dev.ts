@@ -42,10 +42,7 @@ export async function anonymous(host: Host): Promise<Session> {
  */
 export async function signIn(host: Host, email: string, password: string): Promise<Session> {
   const s = await anonymous(host);
-  // The 'auth' rate window admits 10 anonymous calls a minute per IP (RateLimitPolicies.cs): sign-ins go 6.5 s apart.
-  const wait = (lastSignIn[host] ?? 0) + 6_500 - Date.now();
-  if (wait > 0) await sleep(wait);
-  lastSignIn[host] = Date.now();
+  await paceSignIn(host);
   const login = await call(s, 'POST', host === 'admin' ? '/api/AdminAuth/Login' : '/api/Auth/Login', { email, password, rememberMe: true });
   const mobile = host.endsWith('-mobile');
   if (login.status !== 200 || !str(login.body, mobile ? 'token' : 'csrfToken') || at(login.body, 'isEmailConfirmed') !== true) {
@@ -54,6 +51,13 @@ export async function signIn(host: Host, email: string, password: string): Promi
   s.headers = mobile ? { Authorization: `Bearer ${str(login.body, 'token')}` } : { 'X-CSRF-Token': str(login.body, 'csrfToken') };
   s.login = login;
   return s;
+}
+
+/** The 'auth' rate window admits 10 anonymous calls a minute per IP (RateLimitPolicies.cs): sign-ins on one host, API or web, go 6.5 s apart. */
+export async function paceSignIn(host: Host) {
+  const wait = (lastSignIn[host] ?? 0) + 6_500 - Date.now();
+  if (wait > 0) await sleep(wait);
+  lastSignIn[host] = Date.now();
 }
 
 /** How long a 429 asks to wait: Retry-After in seconds or as an HTTP date, else 30 s; never under 1 s. */
@@ -95,10 +99,10 @@ export const list = (v: unknown, path: string): unknown[] => {
   return Array.isArray(x) ? x : [];
 };
 
-/** The error keys of a refusal: the values of its `errors` map. */
+/** The error keys of a refusal: the values of its `errors` map, one property's several keys split where FluentValidation joins them with '; '. */
 export function errorKeys(v: unknown): string[] {
   const e = at(v, 'errors');
-  return e && typeof e === 'object' ? Object.values(e).flat().map(String) : [];
+  return e && typeof e === 'object' ? Object.values(e).flat().flatMap((k) => String(k).split('; ')) : [];
 }
 
 export const ORDER_STATUS = ['New', 'Pending', 'Confirmed', 'OnTheWay', 'InProgress', 'Completed', 'Cancelled'];

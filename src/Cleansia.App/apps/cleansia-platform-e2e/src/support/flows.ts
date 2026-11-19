@@ -91,6 +91,13 @@ export async function payCard(page: Page, customer: Session, run: RunState, key:
   return poll(read, (v) => named(v, 'paymentStatus', PAYMENT_STATUS) === 'Paid');
 }
 
+/** The partner profile body a cleaner saves (UpdateEmployee): complete, so only the documents stand before approval. */
+export const cleanerProfile = (run: RunState, lastName: string) => ({
+  employeeId: null, firstName: 'E2E', lastName, birthDate: '1990-05-15', street: 'Karlovo náměstí 10', city: 'Praha', zipCode: '12000',
+  countryId: run.countryId, state: null, nationalityId: run.countryId, phone: `+420777${rand(6)}`, passportId: `E2E${rand(6)}CZ`, entityType: 1,
+  registrationNumber: '12345670', legalEntityName: null, emergencyName: null, emergencyPhone: null, consent: true,
+});
+
 /** The work contract text a take accepts (GET api/Order/GetWorkContractPreview). */
 export async function contractText(s: Session, orderId: string) {
   return str((await call(s, 'GET', `/api/Order/GetWorkContractPreview?OrderId=${orderId}`)).body, 'legalDocumentTextId');

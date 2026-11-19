@@ -4,7 +4,7 @@ import { openPeriod } from '../support/flows';
 import { RULED_DAYS } from '../support/plan';
 import { emailOf, flag, loadRun, saveRun, scratch, setFlag } from '../support/run';
 import { dayAfter } from '../support/slots';
-import { adminSignIn, cachedAdmin, SITES } from '../support/web';
+import { adminSpa, cachedAdmin, SITES } from '../support/web';
 
 // Stage 'payroll', web half 1 (F-012 too): on Day 2, once J1's pay is in the period the night run
 // opened, the Accountant presses the admin SPA's own Close now. It is the only Close now of the run, never pressed on a
@@ -16,12 +16,9 @@ const run = loadRun();
 const periodDetail = async (id: string) => (await call(await cachedAdmin(), 'GET', `/api/AdminPayPeriod/details/${id}`)).body;
 
 async function accountantSpa(browser: Browser) {
-  const ctx = await browser.newContext({ locale: 'en-US', timezoneId: 'Europe/Prague' });
-  ctx.setDefaultTimeout(90_000);
-  const page = await ctx.newPage();
-  await adminSignIn(page, emailOf(run, 'accountant'), run.password);
-  await expect(page, 'the Accountant is held on the password change').not.toHaveURL(/\/profile/);
-  return { ctx, page };
+  const spa = await adminSpa(browser, 'accountant', run);
+  await expect(spa.page, 'the Accountant is held on the password change').not.toHaveURL(/\/profile/);
+  return spa;
 }
 
 test('the Accountant closes the Day 2 period with the SPA\'s Close now; it ends today in their name and the next one starts tomorrow', { tag: ['@E2E-F-012'] }, async ({ browser }) => {

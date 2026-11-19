@@ -15,8 +15,6 @@ import { cachedAdminAs } from '../support/web';
 // Not serial: each test skips on the state it needs, so one failure does not stop the jobs after it.
 
 let run: RunState;
-/** A refusal's keys: one field's several keys arrive joined by '; '. */
-const keys = (body: unknown) => errorKeys(body).flatMap((k) => k.split('; '));
 const sessions: Record<string, { s: Session; at: number }> = {};
 
 async function as(role: Role, host: Host = 'customer'): Promise<Session> {
@@ -143,7 +141,7 @@ test.describe('orders: settle', () => {
     // The fee receipt is written when the fee is paid (PAY-041): reading it before would find no row.
     test.skip(list((await call(await as('debtor'), 'GET', '/api/Receivable/GetMine')).body, '').length > 0, 'the debtor has not paid the fee yet (PAY-041)');
     const r = await call(await as('debtor'), 'GET', `/api/Order/DownloadReceipt?OrderId=${d2.id}`);
-    expect(keys(r.body), JSON.stringify(r.body)).toContain('receipt.not_found');
+    expect(errorKeys(r.body), JSON.stringify(r.body)).toContain('receipt.not_found');
     // Owner ruling 4, 2026-11-15: the fee receipt's row is read by a read-only DEV-only SQL (a workflow dispatch).
     test.skip(scratch(), 'E2E_SCRATCH=1: a scratch run dispatches no SQL but the confirm script');
     test.setTimeout(20 * 60_000);
@@ -179,7 +177,7 @@ test.describe('orders: settle', () => {
     test.skip(!o?.cancelled, 'tierA is not cancelled yet (orders/30)');
     const s = await as('cleaner', 'partner');
     const r = await call(s, 'POST', '/api/Order/AcceptWorkContract', { orderId: o.id, acceptedWorkContractTextId: o.textId ?? '01AAAAAAAAAAAAAAAAAAAAAAAA' });
-    expect(keys(r.body), JSON.stringify(r.body)).toContain('order.take.already_cancelled');
+    expect(errorKeys(r.body), JSON.stringify(r.body)).toContain('order.take.already_cancelled');
   });
 
   test('the Manager switches the two-cleaner service off once the customer web has used it; W keeps it', async () => {

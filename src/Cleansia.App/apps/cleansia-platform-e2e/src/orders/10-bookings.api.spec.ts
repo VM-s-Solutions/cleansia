@@ -14,8 +14,6 @@ import { cachedAdminAs } from '../support/web';
 // Not serial: each test skips on the state it needs, so one failure does not stop the jobs after it.
 
 let run: RunState;
-/** A refusal's keys: one field's several keys arrive joined by '; '. */
-const keys = (body: unknown) => errorKeys(body).flatMap((k) => k.split('; '));
 let f1Checkout = '';
 const BATHROOM = 'Bathroom Cleaning';
 const DIRTINESS = ['Normal', 'Increased', 'Heavy'];
@@ -128,7 +126,7 @@ test.describe('orders: bookings', () => {
     const increased = await quote(s, run, b);
     expect(increased.total).toBeGreaterThan(normal.total);
     const wrong = await book(s, run, 'tierB', { ...b, addressId: await addressOf(s) }, normal.total);
-    expect(keys(wrong.body), JSON.stringify(wrong.body)).toContain('order.total_price.not_match');
+    expect(errorKeys(wrong.body), JSON.stringify(wrong.body)).toContain('order.total_price.not_match');
     await bookPlanned(page, 'tierB');
     const o = await orderOf(s, 'tierB');
     expect(num(o, 'totalPrice')).toBe(increased.total);
@@ -176,7 +174,7 @@ test.describe('orders: bookings', () => {
     expect(num(cards[0], 'expMonth')).toBeGreaterThan(0);
     expect(num(cards[0], 'expYear')).toBeGreaterThanOrEqual(new Date().getUTCFullYear());
     const f2 = await bookPlanned(page, 'F2');
-    if (f2) expect(keys(f2.body)).not.toContain('order.cash_requires_saved_card');
+    if (f2) expect(errorKeys(f2.body)).not.toContain('order.cash_requires_saved_card');
   });
 
   test('an unticked card payment keeps no card (R1, nocard)', { tag: ['@E2E-PAY-023'] }, async ({ page }) => {
@@ -222,19 +220,19 @@ test.describe('orders: bookings', () => {
     const count = async () => num((await call(s, 'GET', '/api/Order/GetPaged?Offset=0&Limit=1')).body, 'total');
     const before = await count();
     const r = await book(s, run, 'probe-lead', { ...sel, payment: 'card', customer: 'customer', addressId: await addressOf(s) });
-    expect(keys(r.body), JSON.stringify(r.body)).toContain('order.cleaning_date.below_lead_time');
+    expect(errorKeys(r.body), JSON.stringify(r.body)).toContain('order.cleaning_date.below_lead_time');
     // The case: refused, not priced. The quote applies the create's lead-time rule with its key.
     const q = await quote(s, run, sel);
-    expect(keys(q.reply.body), `the quote under 2 h: HTTP ${q.reply.status}, total ${q.total}`).toContain('order.cleaning_date.below_lead_time');
+    expect(errorKeys(q.reply.body), `the quote under 2 h: HTTP ${q.reply.status}, total ${q.total}`).toContain('order.cleaning_date.below_lead_time');
     expect(await count(), 'no order was created').toBe(before);
   });
 
   test('an off-grid start is refused on the quote and the create; the grid slot books (B18, cancelled at once)', { tag: ['@E2E-BOOK-018'] }, async () => {
     const s = await as('customer');
     const off = dayAhead('10:07');
-    expect(keys((await quote(s, run, off)).reply.body)).toContain('order.cleaning_date.outside_booking_window');
+    expect(errorKeys((await quote(s, run, off)).reply.body)).toContain('order.cleaning_date.outside_booking_window');
     const r = await book(s, run, 'probe-offgrid', { ...off, payment: 'card', customer: 'customer', addressId: await addressOf(s) });
-    expect(keys(r.body), JSON.stringify(r.body)).toContain('order.cleaning_date.outside_booking_window');
+    expect(errorKeys(r.body), JSON.stringify(r.body)).toContain('order.cleaning_date.outside_booking_window');
     if (!run.orders['B18']) {
       const ok = await book(s, run, 'B18', { ...selectionOf('B18'), addressId: await addressOf(s) });
       expect(ok.status, JSON.stringify(ok.body)).toBe(200);
@@ -254,7 +252,7 @@ test.describe('orders: bookings', () => {
     for (const [prague, ok] of [['07:45', false], ['08:00', true], ['19:45', true], ['20:00', false]] as const) {
       const q = await quote(s, run, dayAhead(prague));
       if (ok) expect(q.reply.status, `${prague}: ${JSON.stringify(q.reply.body)}`).toBe(200);
-      else expect(keys(q.reply.body), prague).toContain('order.cleaning_date.outside_booking_window');
+      else expect(errorKeys(q.reply.body), prague).toContain('order.cleaning_date.outside_booking_window');
     }
   });
 
@@ -264,7 +262,7 @@ test.describe('orders: bookings', () => {
     const ok = await quote(s, run, dayAhead('10:00', { slot: pragueSlot(plus(59), '10:00') }));
     expect(ok.reply.status, JSON.stringify(ok.reply.body)).toBe(200);
     const far = await quote(s, run, dayAhead('10:00', { slot: pragueSlot(plus(61), '10:00') }));
-    expect(keys(far.reply.body)).toContain('order.cleaning_date.outside_booking_window');
+    expect(errorKeys(far.reply.body)).toContain('order.cleaning_date.outside_booking_window');
   });
 
   test('a two-cleaner booking cannot be cash; by card it books two seats (W); at 120 minutes it is one cleaner and cash (K1)', { tag: ['@E2E-BOOK-035'] }, async ({ page }) => {
@@ -275,7 +273,7 @@ test.describe('orders: bookings', () => {
     const two = await quote(s, run, w);
     expect(num(two.reply.body, 'requiredEmployees')).toBe(2);
     const cash = await book(s, run, 'probe-cash2', { ...w, payment: 'cash', addressId: await addressOf(s) });
-    expect(keys(cash.body), JSON.stringify(cash.body)).toContain('order.cash_not_available');
+    expect(errorKeys(cash.body), JSON.stringify(cash.body)).toContain('order.cash_not_available');
     await bookPlanned(page, 'W');
     expect(num((await call(await cachedAdminAs('admin'), 'GET', `/api/AdminOrder/details/${run.orders['W'].id}`)).body, 'requiredEmployees')).toBe(2);
     const one = await quote(s, run, { ...w, bathrooms: 0 });
@@ -289,7 +287,7 @@ test.describe('orders: bookings', () => {
     await bookPlanned(page, 'K2');
     if (!run.orders['C3']) {
       const third = await book(s, run, 'probe-cash3', { ...dayAhead('12:00'), payment: 'cash', customer: 'cashcap', addressId: await addressOf(s) });
-      expect(keys(third.body), JSON.stringify(third.body)).toContain('order.cash_open_bookings_limit_reached');
+      expect(errorKeys(third.body), JSON.stringify(third.body)).toContain('order.cash_open_bookings_limit_reached');
     }
     await bookPlanned(page, 'K3');
     const k1 = run.orders['K1'];
@@ -318,7 +316,7 @@ test.describe('orders: bookings', () => {
     for (const total of [q.total, q.total + 1]) {
       const r = await call(guest, 'POST', '/api/Order/CreateOrder', body(total));
       expect(r.status).toBe(400);
-      expect(keys(r.body), JSON.stringify(r.body)).toContain('consent.terms_not_accepted');
+      expect(errorKeys(r.body), JSON.stringify(r.body)).toContain('consent.terms_not_accepted');
     }
     const a = await cachedAdminAs('admin');
     const rows = await poll(
@@ -337,7 +335,7 @@ test.describe('orders: bookings', () => {
     for (const host of ['customer', 'partner', 'customer-mobile'] as const) {
       const r = await call(await anonymous(host), 'POST', '/api/Payment/webhook', { id: 'evt_e2e', type: 'checkout.session.completed', data: { object: {} } });
       expect(r.status, `${host}: ${JSON.stringify(r.body)}`).toBe(400);
-      expect(keys(r.body), host).toContain('payment.stripe_signature_required');
+      expect(errorKeys(r.body), host).toContain('payment.stripe_signature_required');
     }
   });
 
@@ -354,7 +352,7 @@ test.describe('orders: bookings', () => {
       const res = await s.ctx.fetch(`${HOSTS[host]}/api/Payment/webhook`, { method: 'POST', headers: { 'Stripe-Signature': signature, 'Content-Type': 'application/json' }, data: event, failOnStatusCode: false });
       const body = await res.json().catch(() => null);
       expect(res.status(), `${host}: ${JSON.stringify(body)}`).toBe(400);
-      expect(keys(body), host).toEqual(['Invalid webhook signature']);
+      expect(errorKeys(body), host).toEqual(['Invalid webhook signature']);
     }
     expect(named(await orderOf(await as('cashcap'), 'K3'), 'paymentStatus', PAYMENT_STATUS)).toBe('Pending');
   });

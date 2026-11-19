@@ -1,8 +1,8 @@
-import { Browser, expect, Page, test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { call, DEV_ADMIN, list, named, signIn, str } from '../support/dev';
 import { openPeriod } from '../support/flows';
 import { emailOf, flag, loadRun, scratch } from '../support/run';
-import { AdminRole, adminSignIn, SITES } from '../support/web';
+import { adminSignIn, adminSpa, SITES } from '../support/web';
 
 // Stage 'people', web half 3: the run's Manager, Support and Accountant in the admin SPA
 // (AUTH-055), Support kept out of payroll and the Accountant let in (PAYOUT-052), the open pay period as the SPA
@@ -19,34 +19,17 @@ const DOC_TYPE = ['', 'IdentityCard', 'Passport', 'DriversLicense', 'WorkPermit'
 const SIDEBAR = 'cleansia-sidebar-menu aside.sidebar';
 const noRoles = () => scratch() && 'E2E_SCRATCH=1: a scratch run creates no role accounts';
 
-// The admin host answers 429 to sign-ins in quick succession: the SPA's are spaced like signIn()'s.
-let lastSpaSignIn = 0;
-async function spaSignIn(page: Page, role: AdminRole) {
-  const wait = lastSpaSignIn + 7_000 - Date.now();
-  if (wait > 0) await new Promise((r) => setTimeout(r, wait));
-  lastSpaSignIn = Date.now();
-  await adminSignIn(page, role === 'admin' ? DEV_ADMIN.email : emailOf(run, role), role === 'admin' ? DEV_ADMIN.password : run.password);
-}
-
-async function asRole(browser: Browser, role: AdminRole) {
-  const ctx = await browser.newContext({ locale: 'en-US', timezoneId: 'Europe/Prague' });
-  ctx.setDefaultTimeout(90_000);
-  const page = await ctx.newPage();
-  await spaSignIn(page, role);
-  return { ctx, page };
-}
-
 test('the Administrator lists the three role accounts, and each signs in to the SPA past the password hold', { tag: ['@E2E-AUTH-055'] }, async ({ page, browser }) => {
   const skip = noRoles();
   test.skip(!!skip, skip || '');
   for (const role of ROLES) test.skip(!flag(run, `${role}.passwordChanged`), `people/10 has not created and signed in the ${role} of run ${run.runId}`);
   test.setTimeout(4 * 60_000);
-  await spaSignIn(page, 'admin');
+  await adminSignIn(page, DEV_ADMIN.email, DEV_ADMIN.password);
   await page.goto(`${SITES.admin}/admin-user-management`);
   for (const role of ROLES) await expect(page.locator('tr', { hasText: emailOf(run, role) })).toBeVisible();
   // people/10 replaced the password the Administrator chose, which clears the hold the SPA keeps on /profile.
   for (const role of ROLES) {
-    const { ctx, page: spa } = await asRole(browser, role);
+    const { ctx, page: spa } = await adminSpa(browser, role, run);
     await expect(spa).not.toHaveURL(/\/profile|\/login|\/unauthorized/);
     await expect(spa.locator(SIDEBAR)).toBeVisible();
     await ctx.close();
@@ -56,7 +39,7 @@ test('the Administrator lists the three role accounts, and each signs in to the 
 test('Support has no pay periods or invoices in the SPA and is turned away from both; the Accountant has both', { tag: ['@E2E-PAYOUT-052'] }, async ({ browser }) => {
   const skip = noRoles();
   test.skip(!!skip, skip || '');
-  const support = await asRole(browser, 'support');
+  const support = await adminSpa(browser, 'support', run);
   const menu = support.page.locator(SIDEBAR);
   await expect(menu).toBeVisible();
   for (const entry of ['Pay Periods', 'Invoices']) await expect(menu.getByText(entry, { exact: true })).toHaveCount(0);
@@ -66,7 +49,7 @@ test('Support has no pay periods or invoices in the SPA and is turned away from 
   }
   await support.ctx.close();
 
-  const accountant = await asRole(browser, 'accountant');
+  const accountant = await adminSpa(browser, 'accountant', run);
   const accountantMenu = accountant.page.locator(SIDEBAR);
   for (const entry of ['Pay Periods', 'Invoices']) await expect(accountantMenu.getByText(entry, { exact: true })).toBeVisible();
   await accountant.page.goto(`${SITES.admin}/pay-periods`);
@@ -77,7 +60,7 @@ test('Support has no pay periods or invoices in the SPA and is turned away from 
 test('the pay periods list one open period, and its page names its first and last day in English', { tag: ['@E2E-PAYOUT-013'] }, async ({ browser }) => {
   const open = await openPeriod();
   expect(open, 'DEV has no open pay period').toBeTruthy();
-  const { ctx, page } = await asRole(browser, scratch() ? 'admin' : 'accountant');
+  const { ctx, page } = await adminSpa(browser, scratch() ? 'admin' : 'accountant', run);
   await page.goto(`${SITES.admin}/pay-periods`);
   await expect(page.locator('tbody tr', { hasText: 'Open' })).toHaveCount(1);
   await page.goto(`${SITES.admin}/pay-periods/${open?.id}`);
@@ -110,7 +93,7 @@ test('E\'s page in the SPA keeps the identity card approved beside the replaced 
   expect(named(card, 'status', DOC_STATUS), 'E\'s identity card').toBe('Approved');
   expect(named(certificate, 'status', DOC_STATUS), 'the replacement certificate').toBe('Pending');
 
-  const { ctx, page } = await asRole(browser, 'admin');
+  const { ctx, page } = await adminSpa(browser, 'admin', run);
   await page.goto(`${SITES.admin}/employee-management/${employeeId}`);
   await expect(page.locator('.documents-group', { hasText: 'Approved Documents' }).locator('.document-card', { hasText: str(card, 'fileName') })).toBeVisible();
   const replaced = page.locator('.documents-group', { hasText: 'Pending Documents' }).locator('.document-card', { hasText: str(certificate, 'fileName') });

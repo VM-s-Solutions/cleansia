@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { anonymous, at, call, errorKeys, list, named, payStripeCheckout, png, poll, Session, signIn, str } from '../support/dev';
-import { serviceIds } from '../support/flows';
-import { emailOf, flag, loadRun, RunState, saveRun, scratch } from '../support/run';
+import { cleanerProfile, serviceIds } from '../support/flows';
+import { emailOf, flag, loadRun, saveRun, scratch } from '../support/run';
 import { cachedAdmin, cachedAdminAs } from '../support/web';
 
 // Stage 'people', file 50 (Day 1, after the web onboarding of people/40): the Manager creates the throwaway
@@ -11,24 +11,14 @@ import { cachedAdmin, cachedAdminAs } from '../support/web';
 test.describe.configure({ mode: 'serial' });
 
 const run = loadRun();
-// One property's refusals arrive joined in one string ("a; b"): split them so a key is looked for on its own.
-const keys = (body: unknown) => errorKeys(body).flatMap((k) => k.split('; '));
 const BATHROOM = 'Bathroom Cleaning';
 const DOC_TYPE = ['', 'IdentityCard', 'Passport', 'DriversLicense', 'WorkPermit', 'Contract', 'Certificate'];
 const DOC_STATUS = ['', 'Pending', 'Approved', 'Rejected'];
 const CONTRACT = ['', 'Pending', 'Active', 'Terminated', 'Approved', 'Rejected'];
 const NOTE = 'The certificate is not readable, upload it again';
-const rand = (digits: number) => String(Math.floor(Math.random() * 10 ** digits)).padStart(digits, '0');
 const employeeE = () => run.ids?.['cleaner3Employee'] ?? '';
 const upload = (type: number, name: string) => ({
   documentType: type, file: { fileName: name, base64Content: `data:image/png;base64,${png()}`, contentType: 'image/png' }, description: `E2E run ${run.runId}`,
-});
-
-/** The partner profile body a cleaner saves (as the book stage's cleaner does). */
-const profile = (r: RunState, lastName: string) => ({
-  employeeId: null, firstName: 'E2E', lastName, birthDate: '1990-05-15', street: 'Karlovo náměstí 10', city: 'Praha', zipCode: '12000',
-  countryId: r.countryId, state: null, nationalityId: r.countryId, phone: `+420777${rand(6)}`, passportId: `E2E${rand(6)}CZ`, entityType: 1,
-  registrationNumber: '12345670', legalEntityName: null, emergencyName: null, emergencyPhone: null, consent: true,
 });
 
 let e: Session;
@@ -83,7 +73,7 @@ test.describe('people: catalogue and E', () => {
     test.skip(!employeeE(), 'people/30 records E (cleaner3) after the confirmation');
     const s = await cleanerE();
     if (at((await call(s, 'GET', '/api/Employee/CheckCurrentEmployee')).body, 'hasCompletedProfile') !== true) {
-      const saved = await call(s, 'PUT', '/api/Employee/UpdateEmployee', profile(run, 'cleaner3'));
+      const saved = await call(s, 'PUT', '/api/Employee/UpdateEmployee', cleanerProfile(run, 'cleaner3'));
       expect(saved.status, JSON.stringify(saved.body)).toBe(200);
       const bank = await call(s, 'PUT', '/api/Employee/UpdateBankDetails', {
         employeeId: null, iban: 'CZ6508000000192000145399', bankCountryId: run.countryId, accountPrefix: '19', accountNumber: '2000145399',
@@ -109,7 +99,7 @@ test.describe('people: catalogue and E', () => {
       expect(no.status, JSON.stringify(no.body)).toBe(200);
     }
     const unknown = await call(a, 'POST', '/api/AdminEmployeeDocument/01AAAAAAAAAAAAAAAAAAAAAAAA/reject', { documentId: '01AAAAAAAAAAAAAAAAAAAAAAAA', notes: NOTE });
-    expect(keys(unknown.body), JSON.stringify(unknown.body)).toContain('general.not_found');
+    expect(errorKeys(unknown.body), JSON.stringify(unknown.body)).toContain('general.not_found');
     const mine = await myDocs();
     const myCard = mine.find((d) => named(d, 'documentType', DOC_TYPE) === 'IdentityCard');
     const myCertificate = mine.find((d) => named(d, 'documentType', DOC_TYPE) === 'Certificate');

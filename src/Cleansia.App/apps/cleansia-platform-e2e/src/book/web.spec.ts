@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import { anonymous, call, DEV_ADMIN, named, ORDER_STATUS, PAYMENT_STATUS, payStripeCheckout, png, poll, Session, signIn, str } from '../support/dev';
+import { cleanerProfile } from '../support/flows';
 import { emailOf, loadRun, RunState, saveRun } from '../support/run';
 import { adminSignIn, cachedAdmin, customerSignIn, partnerSignIn, placeOrderInWizard, SITES } from '../support/web';
 import { nextSlots } from '../support/slots';
@@ -15,7 +16,6 @@ test.describe.configure({ mode: 'serial' });
 let run: RunState;
 let customer: Session;
 let slots: Date[];
-const rand = (digits: number) => String(Math.floor(Math.random() * 10 ** digits)).padStart(digits, '0');
 const orderOf = (key: string) => run.orders[key];
 
 test.beforeAll(() => {
@@ -75,12 +75,7 @@ test.describe('people', () => {
       const cleaner2 = await signIn('partner', emailOf(run, 'cleaner2'), run.password);
       run.employee2Id = str((await call(cleaner2, 'GET', '/api/Employee/GetCurrentEmployee')).body, 'id');
       saveRun(run);
-      const profile = await call(cleaner2, 'PUT', '/api/Employee/UpdateEmployee', {
-        employeeId: null, firstName: 'E2E', lastName: 'Applicant', birthDate: '1991-06-16', street: 'Karlovo náměstí 10', city: 'Praha',
-        zipCode: '12000', countryId: run.countryId, state: null, nationalityId: run.countryId, phone: `+420777${rand(6)}`,
-        passportId: `E2E${rand(6)}CZ`, entityType: 1, registrationNumber: '12345670', legalEntityName: null, emergencyName: null,
-        emergencyPhone: null, consent: true,
-      });
+      const profile = await call(cleaner2, 'PUT', '/api/Employee/UpdateEmployee', cleanerProfile(run, 'Applicant'));
       expect(profile.status, JSON.stringify(profile.body)).toBe(200);
       const bank = await call(cleaner2, 'PUT', '/api/Employee/UpdateBankDetails', {
         employeeId: null, iban: 'CZ6508000000192000145399', bankCountryId: run.countryId, accountPrefix: '19', accountNumber: '2000145399',

@@ -10,8 +10,6 @@ import { AdminRole, cachedAdmin, cachedAdminAs } from '../support/web';
 test.describe.configure({ mode: 'serial' });
 
 const run = loadRun();
-// One property's refusals arrive joined in one string ("a; b"): split them so a key is looked for on its own.
-const keys = (body: unknown) => errorKeys(body).flatMap((k) => k.split('; '));
 const CUSTOMERS: Role[] = ['first', 'nocard', 'debtor', 'cashcap'];
 const CLEANERS: Role[] = ['applicant', 'cleaner3'];
 const ROLES: { role: Exclude<AdminRole, 'admin'>; value: number; name: string }[] = [
@@ -56,13 +54,13 @@ test.describe('people: accounts', () => {
     });
     // The published administrator's e-mail is a duplicate on every run, scratch or not; nothing is created either way.
     const duplicate = await call(a, 'POST', '/api/AdminUser/create', body(DEV_ADMIN.email, `${run.password}-t`));
-    expect(keys(duplicate.body), JSON.stringify(duplicate.body)).toContain('admin_user.email_exists');
+    expect(errorKeys(duplicate.body), JSON.stringify(duplicate.body)).toContain('admin_user.email_exists');
     // Never 'nobody' (the never-registered sign-in of XCUT-019), in case the refusal ever fails.
     // 11 characters that meet the policy but are in no file, from the run's own password.
     const short = await call(a, 'POST', '/api/AdminUser/create', body(`e2e.${run.runId}.shortpassword@example.com`, `${run.password.slice(0, 7)}Aa1!`));
     // A regressed refusal creates a Support administrator: switch it off before failing.
     if (short.status === 200) await call(a, 'POST', `/api/AdminUser/${str(short.body, 'id')}/deactivate`);
-    expect(keys(short.body), JSON.stringify(short.body)).toContain('auth.admin_password_too_short');
+    expect(errorKeys(short.body), JSON.stringify(short.body)).toContain('auth.admin_password_too_short');
   });
 
   test('the Administrator creates the Manager, Support and Accountant; each signs in flagged to change the password, changes it, and is listed', { tag: ['@E2E-AUTH-055'] }, async () => {

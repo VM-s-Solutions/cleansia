@@ -15,8 +15,6 @@ import { cachedAdmin, cachedAdminAs } from '../support/web';
 // lifecycle, J1 and Close now after it (one worker keeps the order).
 
 const run = loadRun();
-// One property's refusals arrive joined in one string ("a; b"): split them so a key is looked for on its own.
-const keys = (body: unknown) => errorKeys(body).flatMap((k) => k.split('; '));
 const INVOICE = ['', 'Pending', 'Approved', 'Paid', 'Disputed', 'Rejected', 'Cancelled'];
 const FAKE = '01AAAAAAAAAAAAAAAAAAAAAAAA';
 const NUMBER = /^INV-2026-\d{6}$/;
@@ -96,7 +94,7 @@ test.describe('payroll: the night close and the invoice lifecycle', () => {
       for (const path of [`/api/EmployeePayroll/GetInvoiceById/${id}`, `/api/EmployeePayroll/DownloadInvoice/${id}`]) {
         const r = await call(b, 'GET', path);
         expect(r.status, path).not.toBe(200);
-        expect(keys(r.body), `${path}: ${r.raw.toString().slice(0, 200)}`).toContain('payroll.invoice.not_found');
+        expect(errorKeys(r.body), `${path}: ${r.raw.toString().slice(0, 200)}`).toContain('payroll.invoice.not_found');
       }
     }
     const mine = rows((await call(b, 'GET', '/api/EmployeePayroll/GetPagedInvoices?Offset=0&Limit=50')).body).map((x) => str(x, 'id'));

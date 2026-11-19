@@ -5,7 +5,7 @@ import { at, call, DEV_ADMIN, errorKeys, list, named, num, ORDER_STATUS, PAYMENT
 import { cancelSplit } from '../support/plan';
 import { emailOf, flag, loadRun, Role, RunOrder, saveRun, scratch, setFlag } from '../support/run';
 import { pragueSlot, wizardLabels } from '../support/slots';
-import { acceptCookies, adminSignIn, cachedAdmin, customerSignIn, SITES } from '../support/web';
+import { acceptCookies, adminSignIn, adminSpa, cachedAdmin, customerSignIn, showRefunded, SITES } from '../support/web';
 
 // Stage 'orders', web half: the customer web's booking wizard rules (level, lead time,
 // grid, window, horizon, express, two-cleaner cash, cash cap, what is owed, the guest's terms tick), the saved cards
@@ -411,14 +411,8 @@ test.describe('cancelling on the web', () => {
     expect(statusOf(detail)).toBe('Cancelled');
     expect(named(detail, 'paymentStatus', PAYMENT_STATUS)).toBe('PartiallyRefunded');
 
-    const ctx = await browser.newContext({ locale: 'en-US', timezoneId: 'Europe/Prague' });
-
-    ctx.setDefaultTimeout(90_000);
-    const spa = await ctx.newPage();
-    await adminSignIn(spa, DEV_ADMIN.email, DEV_ADMIN.password);
-    await spa.goto(`${SITES.admin}/order-management/refunds`);
-    await spa.locator('.p-select', { hasText: 'Needs action' }).click();
-    await spa.getByRole('option', { name: 'Refunded', exact: true }).click();
+    const { ctx, page: spa } = await adminSpa(browser, 'admin');
+    await showRefunded(spa);
     await expect(spa.locator('tr', { hasText: numberOf(detail) })).toContainText('Cancellation');
     await ctx.close();
   });
@@ -448,10 +442,7 @@ test.describe('the takes, the drop and the placement as the webs show them', () 
     } else {
       test.info().annotations.push({ type: 'note', description: `P reads ${statusOf(detail)} with ${list(detail, 'assignedEmployees').length} cleaner(s): the web's New is no longer showable (TAKE-041 rests on the API half)` });
     }
-    const ctx = await browser.newContext({ locale: 'en-US', timezoneId: 'Europe/Prague' });
-    ctx.setDefaultTimeout(90_000);
-    const spa = await ctx.newPage();
-    await adminSignIn(spa, DEV_ADMIN.email, DEV_ADMIN.password);
+    const { ctx, page: spa } = await adminSpa(browser, 'admin');
     await spa.goto(`${SITES.admin}/notifications`);
     const row = spa.locator('.cleansia-notifications__row', { hasText: number }).filter({ hasText: 'An order lost its last cleaner' }).first();
     await expect(row).toBeVisible();

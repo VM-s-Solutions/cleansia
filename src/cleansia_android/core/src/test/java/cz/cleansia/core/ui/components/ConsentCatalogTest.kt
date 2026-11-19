@@ -137,4 +137,51 @@ class ConsentCatalogTest {
             )
         }
     }
+
+    /**
+     * Each tick names its own consent to TalkBack. The description used to default to the terms, so the
+     * card-saving and early-performance ticks were announced as the terms. A new call fails here until
+     * it is pinned.
+     */
+    @Test
+    fun `every consent tick is described as its own consent`() {
+        val expected = listOf(
+            "customer-app CardSavingConsent.kt booking_save_card_label booking_save_card_label",
+            "customer-app ConfirmStep.kt consent_early_performance_draft_2026_09_29 booking_early_performance_toggle",
+            "customer-app ConfirmStep.kt register_terms_and_conditions core_consent_toggle",
+            "customer-app CreateRecurringScreen.kt consent_early_performance_draft_2026_09_29 booking_early_performance_toggle",
+            "customer-app CreateRecurringScreen.kt register_terms_and_conditions core_consent_toggle",
+            "customer-app OrderDetailScreen.kt register_terms_and_conditions core_consent_toggle",
+            "customer-app SignUpScreen.kt register_terms_and_conditions core_consent_toggle",
+            "partner-app RegisterScreen.kt accept_terms core_consent_toggle",
+        )
+        val html = Regex("""\bhtml\s*=\s*stringResource\((?:[\w.]+\.)?R\.string\.(\w+)\)""")
+        val described = Regex("""\btoggleContentDescription\s*=\s*stringResource\((?:[\w.]+\.)?R\.string\.(\w+)\)""")
+        val actual = listOf("customer-app", "partner-app").flatMap { app ->
+            File(androidRoot(), "$app/src/main/java").walkTopDown().filter { it.extension == "kt" }.flatMap { file ->
+                val source = file.readText()
+                Regex("""\bCleansiaConsentCheckbox\(""").findAll(source).map { call ->
+                    val args = argumentsAt(source, call.range.last)
+                    "$app ${file.name} ${html.find(args)?.groupValues?.get(1)} ${described.find(args)?.groupValues?.get(1)}"
+                }
+            }.toList()
+        }.sorted()
+        assertTrue("consent ticks and their descriptions drifted:\n${actual.joinToString("\n")}", actual == expected)
+
+        for (key in setOf("booking_save_card_label", "booking_early_performance_toggle")) {
+            for (localeDir in LOCALE_DIRS) rawValue("customer-app", localeDir, key)
+        }
+    }
+
+    /** The argument list opening at [open], parenthesis-matched so a sibling call cannot leak in. */
+    private fun argumentsAt(source: String, open: Int): String {
+        var depth = 0
+        for (index in open until source.length) {
+            when (source[index]) {
+                '(' -> depth++
+                ')' -> if (--depth == 0) return source.substring(open, index + 1)
+            }
+        }
+        error("unbalanced parentheses after index $open")
+    }
 }

@@ -483,6 +483,7 @@ fun ConfirmStep(
                 checked = state.termsAccepted,
                 onCheckedChange = { onUpdate(state.copy(termsAccepted = it)) },
                 html = stringResource(R.string.register_terms_and_conditions),
+                toggleContentDescription = stringResource(cz.cleansia.core.R.string.core_consent_toggle),
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(Modifier.height(16.dp))
@@ -492,6 +493,7 @@ fun ConfirmStep(
             checked = state.earlyPerformanceRequested,
             onCheckedChange = { onUpdate(state.copy(earlyPerformanceRequested = it)) },
             html = stringResource(R.string.consent_early_performance_draft_2026_09_29),
+            toggleContentDescription = stringResource(R.string.booking_early_performance_toggle),
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(Modifier.height(16.dp))

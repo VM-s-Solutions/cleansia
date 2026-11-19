@@ -13,14 +13,12 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.Dp
-import cz.cleansia.core.R
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.core.ui.theme.primaryText
 
@@ -37,6 +35,9 @@ import cz.cleansia.core.ui.theme.primaryText
  * [html] is a localized sentence carrying `<a href="cleansia://…">` markup —
  * see [ConsentMarkup] for why that markup must be CDATA-wrapped in the
  * `strings.xml` files, and what silently breaks when it isn't.
+ *
+ * [toggleContentDescription] has no default: a shared one made TalkBack announce every tick as the
+ * terms. -> /mobile-app/patterns#consent-ticks
  */
 @Composable
 fun CleansiaConsentCheckbox(
@@ -44,7 +45,7 @@ fun CleansiaConsentCheckbox(
     onCheckedChange: (Boolean) -> Unit,
     html: String,
     modifier: Modifier = Modifier,
-    toggleContentDescription: String = stringResource(R.string.core_consent_toggle),
+    toggleContentDescription: String,
 ) {
     // Colour + underline are set as link styles rather than on the whole Text:
     // a Text-level colour would flatten the links into body copy, and colour

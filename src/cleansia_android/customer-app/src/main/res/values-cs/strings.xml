@@ -342,6 +342,7 @@
     <!-- Booking review: the contract sentence and the request to start within the withdrawal period -->
     <string name="booking_contract_notice"><![CDATA[Potvrzením objednávky uzavíráte smlouvu o úklidu s provozní společností trhu, na kterém se vaše domácnost nachází, za jejích <a href="cleansia://terms">Podmínek služby</a>. Úklid provede uklízeč jako subdodavatel společnosti a stranou vaší smlouvy není.]]></string>
     <string name="consent_early_performance_draft_2026_09_29">Žádám, aby úklid začal ve 14denní lhůtě pro odstoupení od smlouvy, a beru na vědomí, že po úplném provedení úklidu právo na odstoupení ztrácím.</string>
+    <string name="booking_early_performance_toggle">Žádost o zahájení úklidu ve lhůtě pro odstoupení</string>
 
     <!-- Profile tab -->
     <string name="profile_row_edit">Upravit</string>

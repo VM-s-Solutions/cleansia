@@ -340,6 +340,7 @@
     <!-- Booking review: the contract sentence and the request to start within the withdrawal period -->
     <string name="booking_contract_notice"><![CDATA[Potvrdením objednávky uzatvárate zmluvu o upratovaní s prevádzkovou spoločnosťou trhu, na ktorom sa vaša domácnosť nachádza, za jej <a href="cleansia://terms">Podmienok služby</a>. Upratovanie vykoná upratovač ako subdodávateľ spoločnosti a stranou vašej zmluvy nie je.]]></string>
     <string name="consent_early_performance_draft_2026_09_29">Žiadam, aby sa upratovanie začalo v 14-dňovej lehote na odstúpenie od zmluvy, a beriem na vedomie, že po úplnom vykonaní upratovania právo na odstúpenie strácam.</string>
+    <string name="booking_early_performance_toggle">Žiadosť o začatie upratovania v lehote na odstúpenie</string>
 
     <!-- Profile tab -->
     <string name="profile_row_edit">Upraviť</string>

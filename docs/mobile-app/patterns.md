@@ -178,6 +178,23 @@ ruling 2026-10-01). Even without it, the form is about 220pt taller than a 6.1" 
 taller again on an SE. The one layout that fits every phone is a two-step sign-up (social buttons,
 e-mail and the terms tick first; name, password and referral second). It was offered and not taken.
 
+## Every consent tick names its own consent {#consent-ticks}
+
+The consent checkbox (`CleansiaConsentCheckbox` on both platforms) gives its tick a short screen-reader
+label of its own, apart from the sentence beside it. That label has **no default**: every caller names
+the consent its tick gives. Android once defaulted it to the terms (*Accept terms and privacy policy*),
+so TalkBack announced the card-saving tick and the early-performance tick as the terms (F-093); iOS
+already required `toggleAccessibilityLabel`. The ticks and their labels:
+
+| Tick | Label (en) | Android string | iOS key |
+|---|---|---|---|
+| Terms and privacy policy (sign-up, booking, recurring, order detail, partner registration) | *Accept terms and privacy policy* | `core_consent_toggle` | `register_terms_toggle` |
+| Save the card | *Save this card for my next bookings* | `booking_save_card_label` | `booking_save_card` (booking), `booking_card_guarantee_title` (Payments) |
+| Start within the withdrawal period | *Ask for the cleaning to start within the withdrawal period* | `booking_early_performance_toggle` | `booking_early_performance_toggle` |
+
+A new tick needs its own label in all five locales. On Android `ConsentCatalogTest` lists every call
+and the label it passes, and fails on a call it does not list.
+
 ## Tab roots clear the Book FAB, not just the bar {#bottom-chrome-clearance}
 
 The customer Book FAB is docked on the top edge of the bottom bar and rises above it. Content

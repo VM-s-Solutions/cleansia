@@ -187,6 +187,7 @@ fun RegisterScreen(
                 checked = uiState.acceptTerms,
                 onCheckedChange = viewModel::onAcceptTermsChange,
                 html = stringResource(R.string.accept_terms),
+                toggleContentDescription = stringResource(cz.cleansia.core.R.string.core_consent_toggle),
                 modifier = Modifier.fillMaxWidth(),
             )
             uiState.termsError?.let { err ->

@@ -109,6 +109,21 @@ class NameTests(unittest.TestCase):
             'api-cleansia-partner-mobile-weu-dev', 'api-cleansia-customer-mobile-weu-dev',
             'web-cleansia-customer-weu-dev', 'func-cleansia-weu-dev'])
 
+    def test_site_metrics_are_offered_on_every_dev_site_kind(self):
+        # The valid lists Azure returned on 20 Nov 2026 when a read asked for PrivateBytes and Threads.
+        api = set('Requests,BytesReceived,BytesSent,Http101,Http2xx,Http3xx,Http401,Http403,Http404,Http406,'
+                  'Http4xx,Http5xx,MemoryWorkingSet,AverageMemoryWorkingSet,AverageResponseTime,HttpResponseTime,'
+                  'Threads,InstanceCount,HealthCheckStatus,FileSystemUsage'.split(','))
+        ssr = set('CpuTime,Requests,BytesReceived,BytesSent,Http101,Http2xx,Http3xx,Http401,Http403,Http404,'
+                  'Http406,Http4xx,Http5xx,MemoryWorkingSet,AverageMemoryWorkingSet,AverageResponseTime,'
+                  'HttpResponseTime,InstanceCount,HealthCheckStatus,FileSystemUsage'.split(','))
+        func = set('Requests,Http5xx,MemoryWorkingSet,AverageMemoryWorkingSet,AverageResponseTime,HttpResponseTime,'
+                   'FunctionExecutionUnits,FunctionExecutionCount,InstanceCount,PrivateBytes,HealthCheckStatus,'
+                   'FileSystemUsage'.split(','))
+        _, names = metrics.METRICS['sites']
+        for kind, valid in (('api', api), ('ssr', ssr), ('func', func)):
+            self.assertFalse(set(names) - valid, f'{kind} does not offer {sorted(set(names) - valid)}')
+
     def test_refuses_any_stage_but_dev(self):
         with self.assertRaises(ValueError):
             metrics.dev_names(bicep_root() / 'weu.prod.bicepparam')

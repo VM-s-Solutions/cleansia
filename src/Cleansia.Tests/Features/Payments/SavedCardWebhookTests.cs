@@ -24,7 +24,7 @@ namespace Cleansia.Tests.Features.Payments;
 /// as setup_intent.succeeded, from the web as a setup-mode checkout.session.completed, and from a card
 /// payment the customer ticked "save this card" on as payment_intent.succeeded or a payment-mode
 /// checkout.session.completed, which still pays the order. The card is read from Stripe, replaces the
-/// customer's earlier card in that currency, and a second event for the same capture changes nothing. A
+/// customer's earlier card in that currency, which comes off the Stripe Customer, and a second event for the same capture changes nothing. A
 /// SetupIntent with no saved card behind it — the Plus subscribe flow's — is not this flow's, and a
 /// payment without the tick keeps no card. A PaymentSheet intent replaced because the tick changed is
 /// cancelled as a duplicate, and its cancellation leaves the order to be paid.
@@ -152,6 +152,40 @@ public class SavedCardWebhookTests
 
         _savedCards.Verify(r => r.Deactivate(earlier), Times.Once);
         _savedCards.Verify(r => r.Deactivate(card), Times.Never);
+        _stripe.Verify(c => c.DetachSavedCardAsync("cus_card", "pm_old", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>A sheet on the Customer offers its attached cards, so picking the earlier one saves that same card again.</summary>
+    [Fact]
+    public async Task The_Same_Card_Saved_Again_Retires_The_Earlier_Row_And_Stays_On_The_Customer()
+    {
+        var card = PendingCard();
+        var earlier = SavedCard.Start(UserId, CurrencyId, "cus_card", null, null);
+        earlier.Capture("pm_new", "mastercard", "5454", 7, 2031);
+        _savedCards.Setup(r => r.GetCapturedForUserInCurrencyAsync(UserId, CurrencyId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([earlier]);
+
+        await DeliverAsync(SetupIntentSucceeded("evt_seti_same", card.Id));
+
+        Assert.Equal("pm_new", card.StripePaymentMethodId);
+        _savedCards.Verify(r => r.Deactivate(earlier), Times.Once);
+        _stripe.Verify(c => c.DetachSavedCardAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task An_Unreachable_Stripe_While_Detaching_The_Replaced_Card_Fails_The_Delivery_So_Stripe_Retries()
+    {
+        var card = PendingCard();
+        var earlier = SavedCard.Start(UserId, CurrencyId, "cus_card", null, null);
+        earlier.Capture("pm_old", "visa", "4242", 1, 2029);
+        _savedCards.Setup(r => r.GetCapturedForUserInCurrencyAsync(UserId, CurrencyId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([earlier]);
+        _stripe.Setup(c => c.DetachSavedCardAsync("cus_card", "pm_old", It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new StripeException("stripe down"));
+
+        await Assert.ThrowsAsync<StripeException>(() => DeliverAsync(SetupIntentSucceeded("evt_seti_down", card.Id)));
+
+        Assert.False(card.IsCaptured);
     }
 
     [Fact]
@@ -219,6 +253,7 @@ public class SavedCardWebhookTests
 
         _savedCards.Verify(r => r.Deactivate(earlier), Times.Once);
         _savedCards.Verify(r => r.Deactivate(card), Times.Never);
+        _stripe.Verify(c => c.DetachSavedCardAsync("cus_card", "pm_old", It.IsAny<CancellationToken>()), Times.Once);
     }
 
     /// <summary>

@@ -2,6 +2,7 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.EmployeePayroll;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Features.SavedCards;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Queue.Abstractions;
@@ -538,7 +539,7 @@ public class HandlePaymentNotification
         /// profile, a PaymentIntent's when they ticked "save this card" while paying. A SetupIntent with no
         /// saved card behind it — the Plus subscribe flow's — is not this flow's and is ignored. The card is
         /// read from Stripe, so an unreachable Stripe throws, the processed-event stamp rolls back and Stripe
-        /// retries. A new card replaces the customer's earlier one in the same currency.
+        /// retries. A new card replaces the customer's earlier one in the same currency (<see cref="SavedCardCapture"/>).
         /// </summary>
         private async Task<BusinessResult> CaptureSavedCard(
             string? savedCardId,
@@ -566,7 +567,8 @@ public class HandlePaymentNotification
                 tenantProvider.SetTenantOverride(card.TenantId);
             }
 
-            var details = await readCard(stripeClientFactory.CreateClient(), intentId, cancellationToken);
+            var stripeClient = stripeClientFactory.CreateClient();
+            var details = await readCard(stripeClient, intentId, cancellationToken);
             if (details is null)
             {
                 logger.LogWarning(
@@ -575,18 +577,7 @@ public class HandlePaymentNotification
                 return BusinessResult.Success();
             }
 
-            // The two events of one payment arrive together: the later one finds this very card already captured by
-            // the earlier one's commit, and must not switch it off as a card it replaces.
-            foreach (var replaced in await savedCardRepository.GetCapturedForUserInCurrencyAsync(
-                         card.UserId, card.CurrencyId, cancellationToken))
-            {
-                if (replaced.Id != card.Id)
-                {
-                    savedCardRepository.Deactivate(replaced);
-                }
-            }
-
-            card.Capture(details.PaymentMethodId, details.Brand, details.Last4, details.ExpMonth, details.ExpYear);
+            await savedCardRepository.CaptureAsync(stripeClient, card, details, cancellationToken);
             logger.LogInformation("Captured saved card {SavedCardId} for user {UserId}", card.Id, card.UserId);
             return BusinessResult.Success();
         }

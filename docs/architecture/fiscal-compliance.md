@@ -25,7 +25,7 @@ Adding a new strict country only requires: (1) an `IFiscalService` implementatio
 Stripe webhook → Order saved → Receipt generated → Email sent
 ```
 
-No fiscal call, no delay.
+No fiscal call, no delay. A receipt whose first upload failed is still owed its file: the retry job renders it and sends the e-mail ([below](#a-receipt-s-pdf-is-repaired)).
 
 ### AsyncBackground — lenient countries
 
@@ -68,7 +68,7 @@ Legal nuance: in DE TSE and AT RKSV, "delivery" of the receipt is when it reache
 
 The claim-before-register ordering leaves a rare *registered-but-stamp-not-persisted* residual: the authority has the receipt but the local `FiscalCode` was not yet committed, and recovery re-calls `RegisterReceiptAsync` for the same receipt. For a `BlockingOnline` regime a double registration is a compliance incident, so the fiscal contract makes the dedup token explicit and gates blocking regimes on idempotency.
 
-- **Explicit token.** `FiscalReceiptRequest.IdempotencyKey` carries the natural token — the `ReceiptNumber`. The initial register (`ReceiptService.RealizeFiscalAndPdfAsync`) and the recovery re-register (`ReceiptService.RetryFiscalRegistrationAsync`) build the request through the same `FiscalReceiptRequest.Create` factory, so both present the same key for the same receipt.
+- **Explicit token.** `FiscalReceiptRequest.IdempotencyKey` carries the natural token — the `ReceiptNumber`. The initial register (`ReceiptService.RealizeFiscalAndPdfAsync`) and the recovery re-register (`ReceiptService.CompleteReceiptAsync`) build the request through the same `FiscalReceiptRequest.Create` factory, so both present the same key for the same receipt.
 - **Provider self-declaration.** `IFiscalService.RegisterIsIdempotent` states whether a repeat call on the same key returns the prior signature/code without burning a new authority entry.
 - **The gate.** `FiscalGoLiveGate.EnsureRegisterIdempotent` runs in the register path and throws `FiscalGoLiveGateException` if a provider whose `RegisterIsIdempotent` is `false` is used under `BlockingOnline` / `BlockingWithOfflineCache`. `AsyncBackground` tolerates a rare extra registration and is not gated.
 
@@ -111,11 +111,23 @@ DE/AT/ES have no implementation yet (only `NoOpFiscalService` and the CZ stub sh
 
 After `MaxFiscalRetries = 10` attempts, `FiscalNextRetryAt` is cleared and the receipt stops retrying until an admin forces a manual retry or acknowledges the failure.
 
+## A receipt's PDF is repaired {#a-receipt-s-pdf-is-repaired}
+
+`FiscalNextRetryAt` marks a receipt that still owes its fiscal registration **or a stored PDF carrying its code**, in every mode, `None` included:
+
+- `ReserveAsync` sets it on every claim, 15 minutes ahead (`ScheduleRetryAfterClaim`), so the job never races an issue still in progress. The issue clears it once the PDF is stored and no registration is owed (`MarkDocumentComplete`).
+- `GetDueForRetryAsync` selects on the due instant alone, so a receipt stamped before its render failed is picked again.
+- `CompleteReceiptAsync` registers only when the mode requires it and the receipt has no code, so a stamped code is never registered twice, and renders a new numbered file when the current file is missing (`IsPdfStoredAsync`) or the receipt carries a code. A failure records an attempt on the schedule above.
+- `FiscalRetryService` releases the held e-mail of a blocking market once the coded file is stored, and in any other market sends the e-mail only when its own pass stored the receipt's first file.
+- `DownloadOrderReceipt` answers `receipt.not_found` until the file is stored.
+
+The flow, its reasons and its one remaining loss → [Payment and fiscal](/flows/payment-and-fiscal#a-receipt-s-pdf-is-repaired).
+
 ## Components
 
 ### Domain (`Cleansia.Core.Domain`)
 
-- **`OrderReceipt`** — Aggregate that owns the fiscal state. Retry-tracking fields: `FiscalErrorKind`, `FiscalRetryCount`, `FiscalLastRetryAt`, `FiscalNextRetryAt`, `FiscalAcknowledged`, `FiscalAcknowledgedAt`. Domain methods: `SetFiscalData`, `MarkFiscalRegistrationFailed`, `MarkFiscalRetryAttempted`, `AcknowledgeFiscalFailure`, `ScheduleImmediateFiscalRetry`.
+- **`OrderReceipt`** — Aggregate that owns the fiscal state. Retry-tracking fields: `FiscalErrorKind`, `FiscalRetryCount`, `FiscalLastRetryAt`, `FiscalNextRetryAt`, `FiscalAcknowledged`, `FiscalAcknowledgedAt`. Domain methods: `SetFiscalData`, `MarkFiscalRegistrationFailed`, `MarkFiscalRetryAttempted`, `AcknowledgeFiscalFailure`, `ScheduleImmediateFiscalRetry`, `ScheduleRetryAfterClaim`, `MarkDocumentComplete`.
 - **`CountryConfiguration.FiscalEnforcementMode`** — Per-country enforcement policy.
 
 ### Abstractions (`Cleansia.Core.Fiscal.Abstractions`)
@@ -135,8 +147,8 @@ After `MaxFiscalRetries = 10` attempts, `FiscalNextRetryAt` is cleared and the r
 ### Orchestration (`Cleansia.Core.AppServices`)
 
 - **`ReceiptService.HandleFiscalAsync`** — Reads the enforcement mode from `CountryConfiguration`, branches on it, and catches every exception so the customer flow is never aborted. The request is built from the order's own currency code and country ISO code and **never from a default**: an order with no resolved currency (`FiscalCurrencyCodeOf`) or no resolved country (`FiscalCountryCodeOf`) throws before the authority is called, lands as a recorded failed attempt, and is retried like any other failure. The receipt-number counter resolves an empty provider key to the `DEFAULT` issuer scope, not the Czech provider's. → [Payment and fiscal](/flows/payment-and-fiscal#no-guessed-unit-no-guessed-regime)
-- **`ReceiptService.RetryFiscalRegistrationAsync`** — Re-attempts registration for a previously-failed receipt, renders the PDF with the fiscal code on success as a new numbered file, and moves `OrderReceipt.BlobName` to it; no render overwrites another (ADR-0083).
-- **`FiscalRetryService.ProcessDueRetriesAsync`** — Batch processes receipts where `FiscalNextRetryAt <= UtcNow`. For `BlockingOnline` modes, releases the held receipt email once a retry succeeds.
+- **`ReceiptService.CompleteReceiptAsync`** — Completes what a due receipt owes: registers it where the mode requires and it has no code, renders the PDF as a new numbered file when the current file is missing or lacks the stamped code, and moves `OrderReceipt.BlobName` to it; no render overwrites another (ADR-0083).
+- **`FiscalRetryService.ProcessDueRetriesAsync`** — Batch processes receipts where `FiscalNextRetryAt <= UtcNow`. Releases the held receipt email of a blocking mode once the coded file is stored, and sends the email of any other mode when its pass stored the receipt's first file.
 
 ### Background worker (`Cleansia.Functions`)
 
@@ -155,7 +167,7 @@ Multiple defences prevent a fiscal outage from cascading:
 2. **Polly circuit breaker via `AddStandardResilienceHandler`** — Fiscal HttpClients trip a breaker under sustained failure, stopping hammering of the downstream authority during an outage.
 3. **Error classification** — `Permanent` and `Configuration` failures are not retried, so a bad credential doesn't burn through the retry schedule.
 4. **Exponential backoff with a cap** — The retry schedule caps at 24 hour intervals, and `MaxFiscalRetries = 10` ensures no infinite loop.
-5. **Filtered DB index** — The retry job's query only scans receipts with `FiscalNextRetryAt IS NOT NULL`, so retry scanning is O(failures) not O(receipts).
+5. **Filtered DB index** — The retry job's query only scans receipts with `FiscalNextRetryAt IS NOT NULL`, so retry scanning is O(receipts still owed), not O(receipts).
 6. **Admin escalation path** — See [Admin → Fiscal Failures](/admin-app/fiscal-failures). Ops can force a retry or acknowledge a permanent failure.
 
 ## Customer Safety Invariants
@@ -165,6 +177,7 @@ Multiple defences prevent a fiscal outage from cascading:
 - Receipt generation never throws because of fiscal failure — it marks the receipt and continues.
 - A receipt is never registered in a guessed currency or under a guessed regime — a missing currency or country is a recorded failure, not a CZK declaration to the Czech authority.
 - Blocking countries hold the receipt *email*, never the order or payment.
+- A committed receipt is owed a stored PDF until one is stored; the retry job renders it, whatever the mode.
 - An admin can always force a retry or acknowledge a failure, breaking any stuck state.
 
 ## See Also

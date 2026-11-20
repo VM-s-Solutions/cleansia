@@ -1977,8 +1977,8 @@
         "below_lead_time": "Tento čas je príliš blízko. Zvoľte neskorší termín.",
         "outside_booking_window": "Vyberte začiatok medzi 8:00 a 19:45 miestneho času, po štvrťhodinách, najviac 60 dní dopredu."
       },
-      "already_cancelled": "Táto rezervácia je už zrušená.",
-      "already_completed": "Táto rezervácia je už dokončená.",
+      "already_cancelled": "Táto objednávka je už zrušená.",
+      "already_completed": "Táto objednávka je už dokončená.",
       "in_progress_cannot_cancel": "Toto upratovanie už prebieha a nedá sa zrušiť.",
       "invalid_status_transition": "Táto akcia nie je pre aktuálny stav objednávky povolená.",
       "address_exactly_one_required": "Vyberte prosím uloženú adresu alebo zadajte novú.",
@@ -1992,7 +1992,7 @@
         "invalid": "Jedna z vybraných služieb už nie je dostupná."
       },
       "not_found": "Túto objednávku sme nenašli.",
-      "no_available_spots": "Túto zákazku už prevzal iný upratovač.",
+      "no_available_spots": "Všetky miesta na tejto objednávke sú už obsadené.",
       "weekly_limit_reached": "Dosiahli ste týždenný limit zákaziek.",
       "time_conflict": "Táto zákazka sa prekrýva s inou, ktorú ste už prijali.",
       "total_price": {
@@ -2030,7 +2030,7 @@
       "cleaner_already_started": "Upratovač už s upratovaním začal.",
       "start_time_not_reached": "Objednaný čas začiatku ešte nenastal.",
       "recurring_already_confirmed": "Toto upratovanie už máte potvrdené. Upratovačovi zaplatíte v hotovosti v deň upratovania.",
-      "cash_requires_saved_card": "Platba v hotovosti vyžaduje, aby mal zákazník uloženú platnú kartu v mene objednávky."
+      "cash_requires_saved_card": "Platba v hotovosti vyžaduje platnú uloženú kartu v mene objednávky."
     },
     "address": {
       "already_exists": "Túto adresu už máte uloženú.",
@@ -2083,7 +2083,7 @@
       "consent_not_found": "Súhlas nebol nájdený.",
       "consent_already_granted": "Tento súhlas už bol udelený.",
       "deletion_blocked_by_assigned_order": "Účet zatiaľ nie je možné vymazať — existuje priradená zákazka.",
-      "deletion_blocked_by_unsettled_pay": "Účet nie je možné vymazať, kým k nemu nie je vyplatená dlžná odmena.",
+      "deletion_blocked_by_unsettled_pay": "Účet nie je možné vymazať, kým nebude vyplatená celá dlžná odmena.",
       "consent_not_editable": "Tento súhlas tu nemožno zmeniť."
     },
     "promo": {

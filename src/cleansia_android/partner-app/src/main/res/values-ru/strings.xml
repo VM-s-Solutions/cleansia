@@ -625,7 +625,7 @@
     <string name="error_order_cancellation_window_closed">Срок отмены истёк.</string>
     <string name="error_order_empty">Ваш заказ пуст. Пожалуйста, добавьте хотя бы одну услугу.</string>
     <string name="error_order_already_assigned">Этот заказ только что взял другой клинер.</string>
-    <string name="error_order_no_available_spots">Этот заказ уже взял другой клинер.</string>
+    <string name="error_order_no_available_spots">Все места в этом заказе уже заняты.</string>
     <string name="error_order_not_takeable">Этот заказ больше не доступен.</string>
     <string name="error_order_weekly_limit_reached">Вы достигли недельного лимита заказов.</string>
     <string name="error_order_time_conflict">Этот заказ пересекается с другим, который вы уже взяли.</string>
@@ -666,7 +666,7 @@
     <string name="error_order_card_payment_already_settled">Этот заказ уже оплачен картой. Не берите наличные — статус оплаты обновлён.</string>
     <string name="error_order_card_payment_in_progress">Оплата картой за этот заказ ещё обрабатывается. Подождите немного и попробуйте снова.</string>
     <string name="error_order_card_payment_unverified">Не удалось проверить оплату картой за этот заказ. Пока не берите наличные — попробуйте снова через минуту.</string>
-    <string name="error_order_cash_not_allowed_on_card_order">Этот заказ оплачивается картой, поэтому наличные по нему записать нельзя. Наличные за него не берут — это урегулирует офис.</string>
+    <string name="error_order_cash_not_allowed_on_card_order">Этот заказ оплачивается картой, поэтому наличные по нему не берут и не записывают.</string>
     <string name="error_order_payment_not_outstanding">По этому заказу уже нечего собирать — он оплачен или деньги возвращены. Наличные за него не берут.</string>
     <string name="error_credit_cash_not_collectable_on_credit_order">Часть этого заказа уже оплачена кредитом клиента. Обратитесь в офис — не берите сумму, указанную в приложении.</string>
 
@@ -957,7 +957,7 @@
     <string name="error_payroll_invoice_pdf_not_ready">PDF счёта ещё не готов. Попробуйте позже.</string>
     <string name="error_payroll_invoice_pdf_unavailable">PDF счёта недоступен. Обратитесь в поддержку.</string>
     <string name="error_payroll_invoice_pdf_generation_failed">Не удалось создать PDF счёта. Обратитесь в поддержку.</string>
-    <string name="error_order_cash_requires_saved_card">Для оплаты наличными у клиента должна быть действующая сохранённая карта в валюте заказа.</string>
+    <string name="error_order_cash_requires_saved_card">Для оплаты наличными нужна действующая сохранённая карта в валюте заказа.</string>
     <string name="auth_email_placeholder">partner@example.com</string>
     <plurals name="orders_job_count">
         <item quantity="one">%1$d заказ</item>

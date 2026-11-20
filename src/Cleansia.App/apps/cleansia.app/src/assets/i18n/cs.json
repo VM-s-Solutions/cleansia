@@ -1977,8 +1977,8 @@
         "below_lead_time": "Tento čas je příliš blízko. Zvolte pozdější termín.",
         "outside_booking_window": "Vyberte začátek mezi 8:00 a 19:45 místního času, po čtvrthodinách, nejvýše 60 dní dopředu."
       },
-      "already_cancelled": "Tato rezervace je již zrušena.",
-      "already_completed": "Tato rezervace je již dokončena.",
+      "already_cancelled": "Tato objednávka je již zrušena.",
+      "already_completed": "Tato objednávka je již dokončena.",
       "in_progress_cannot_cancel": "Tento úklid už probíhá a nelze jej zrušit.",
       "invalid_status_transition": "Tato akce není pro aktuální stav objednávky povolena.",
       "address_exactly_one_required": "Vyberte prosím uloženou adresu nebo zadejte novou.",
@@ -1992,7 +1992,7 @@
         "invalid": "Jedna z vybraných služeb již není dostupná."
       },
       "not_found": "Tuto objednávku jsme nenašli.",
-      "no_available_spots": "Tuto zakázku už převzal jiný uklízeč.",
+      "no_available_spots": "Všechna místa na této objednávce jsou už obsazená.",
       "weekly_limit_reached": "Dosáhli jste týdenního limitu zakázek.",
       "time_conflict": "Tato zakázka se překrývá s jinou, kterou jste již přijali.",
       "total_price": {
@@ -2030,7 +2030,7 @@
       "cleaner_already_started": "Uklízeč už s úklidem začal.",
       "start_time_not_reached": "Objednaný čas začátku ještě nenastal.",
       "recurring_already_confirmed": "Tento úklid už máte potvrzený. Uklízeči zaplatíte v hotovosti v den úklidu.",
-      "cash_requires_saved_card": "Platba hotově vyžaduje, aby měl zákazník uloženou platnou kartu v měně objednávky."
+      "cash_requires_saved_card": "Platba v hotovosti vyžaduje platnou uloženou kartu v měně objednávky."
     },
     "address": {
       "already_exists": "Tuto adresu už máte uloženou.",
@@ -2083,7 +2083,7 @@
       "consent_not_found": "Souhlas nenalezen.",
       "consent_already_granted": "Tento souhlas již byl udělen.",
       "deletion_blocked_by_assigned_order": "Účet zatím nelze smazat — existuje přiřazená zakázka.",
-      "deletion_blocked_by_unsettled_pay": "Účet nelze smazat, dokud k němu není vyplacena dlužná odměna.",
+      "deletion_blocked_by_unsettled_pay": "Účet nelze smazat, dokud nebude vyplacena veškerá dlužná odměna.",
       "consent_not_editable": "Tento souhlas zde nelze změnit."
     },
     "promo": {

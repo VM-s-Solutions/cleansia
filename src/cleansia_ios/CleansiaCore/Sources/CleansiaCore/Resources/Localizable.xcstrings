@@ -3682,31 +3682,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tato rezervace je již zrušena."
+            "value": "Tato objednávka je již zrušena."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This booking is already cancelled."
+            "value": "This order is already cancelled."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Это бронирование уже отменено."
+            "value": "Этот заказ уже отменён."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Táto rezervácia je už zrušená."
+            "value": "Táto objednávka je už zrušená."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Це бронювання вже скасоване."
+            "value": "Це замовлення вже скасовано."
           }
         }
       }
@@ -3717,31 +3717,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tato rezervace je již dokončena."
+            "value": "Tato objednávka je již dokončena."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This booking is already completed."
+            "value": "This order is already completed."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Это бронирование уже завершено."
+            "value": "Этот заказ уже выполнен."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Táto rezervácia je už dokončená."
+            "value": "Táto objednávka je už dokončená."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Це бронювання вже завершене."
+            "value": "Це замовлення вже виконано."
           }
         }
       }
@@ -3962,31 +3962,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tato zakázka se platí kartou, hotovost u ní proto nelze zaznamenat. Hotovost se za ni nevybírá — vyřízení zajistí kancelář."
+            "value": "Tato objednávka se platí kartou, hotovost se za ni proto nevybírá ani nezaznamenává."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This order is paid by card, so cash can't be recorded for it. No cash is taken for it — the office settles it."
+            "value": "This order is paid by card, so no cash is taken or recorded for it."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Этот заказ оплачивается картой, поэтому наличные по нему записать нельзя. Наличные за него не берут — это урегулирует офис."
+            "value": "Этот заказ оплачивается картой, поэтому наличные по нему не берут и не записывают."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Táto zákazka sa platí kartou, hotovosť pri nej preto nemožno zaznamenať. Hotovosť sa za ňu nevyberá — vybavenie zabezpečí kancelária."
+            "value": "Táto objednávka sa platí kartou, hotovosť sa za ňu preto nevyberá ani nezaznamenáva."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Це замовлення оплачується карткою, тому готівку за нього зафіксувати не можна. Готівку за нього не беруть — це врегульовує офіс."
+            "value": "Це замовлення оплачується карткою, тому готівку за нього не беруть і не фіксують."
           }
         }
       }
@@ -5012,31 +5012,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tuto zakázku už převzal jiný uklízeč."
+            "value": "Všechna místa na této objednávce jsou už obsazená."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Another cleaner has already taken this job."
+            "value": "All spots on this order are already taken."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Этот заказ уже взял другой клинер."
+            "value": "Все места в этом заказе уже заняты."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Túto zákazku už prevzal iný upratovač."
+            "value": "Všetky miesta na tejto objednávke sú už obsadené."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Це замовлення вже взяв інший прибиральник."
+            "value": "Усі місця в цьому замовленні вже зайняті."
           }
         }
       }

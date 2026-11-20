@@ -3538,8 +3538,8 @@
       "after_photos": {
         "required": "Take at least one \"after\" photo before completing the order."
       },
-      "already_cancelled": "This booking is already cancelled.",
-      "already_completed": "This booking is already completed.",
+      "already_cancelled": "This order is already cancelled.",
+      "already_completed": "This order is already completed.",
       "cleaning_date": {
         "future": "Date must be in the future."
       },
@@ -3551,7 +3551,7 @@
       "empty": "Your order is empty. Please add at least one service.",
       "in_progress_cannot_cancel": "This cleaning is already in progress and can no longer be cancelled.",
       "invalid_status_transition": "That action isn't allowed for the order's current status.",
-      "no_available_spots": "Another cleaner has already taken this job.",
+      "no_available_spots": "All spots on this order are already taken.",
       "not_confirmed": "This order isn't confirmed yet.",
       "not_found": "We couldn't find that order.",
       "not_in_progress": "This order isn't in progress.",
@@ -3580,7 +3580,7 @@
       "start_time_not_reached": "The booked start time has not come yet.",
       "cash_already_collected": "Cash has already been collected for this order.",
       "payment_not_outstanding": "This order has no payment left to collect — it is already settled or refunded. No cash is taken for it.",
-      "cash_not_allowed_on_card_order": "This order is paid by card, so cash can't be recorded for it. No cash is taken for it — the office settles it.",
+      "cash_not_allowed_on_card_order": "This order is paid by card, so no cash is taken or recorded for it.",
       "cash_amount_invalid": "Enter an amount above zero, to the cent",
       "cash_received_at_in_future": "The cash cannot have been received in the future",
       "cash_received_at_before_clean": "The cash cannot have been received before the clean could begin"

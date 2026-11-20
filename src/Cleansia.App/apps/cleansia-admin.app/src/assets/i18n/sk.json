@@ -3494,7 +3494,7 @@
       "deletion_blocked_by_order": "Účet zatiaľ nie je možné vymazať — existuje aktívna objednávka.",
       "deletion_blocked_by_invoice": "Účet zatiaľ nie je možné vymazať — existuje nevybavená faktúra.",
       "deletion_blocked_by_assigned_order": "Účet zatiaľ nie je možné vymazať — existuje priradená zákazka.",
-      "deletion_blocked_by_unsettled_pay": "Účet nie je možné vymazať, kým k nemu nie je vyplatená dlžná odmena.",
+      "deletion_blocked_by_unsettled_pay": "Účet nie je možné vymazať, kým nebude vyplatená celá dlžná odmena.",
       "consent_not_found": "Súhlas nebol nájdený.",
       "consent_already_granted": "Tento súhlas už bol udelený.",
       "request_not_found": "Túto žiadosť GDPR sme nenašli.",
@@ -3538,8 +3538,8 @@
       "after_photos": {
         "required": "Pred dokončením zákazky odfoťte aspoň jednu fotografiu „po\"."
       },
-      "already_cancelled": "Táto rezervácia je už zrušená.",
-      "already_completed": "Táto rezervácia je už dokončená.",
+      "already_cancelled": "Táto objednávka je už zrušená.",
+      "already_completed": "Táto objednávka je už dokončená.",
       "cleaning_date": {
         "future": "Dátum musí byť v budúcnosti."
       },
@@ -3551,7 +3551,7 @@
       "empty": "Objednávka je prázdna. Pridajte prosím aspoň jednu službu.",
       "in_progress_cannot_cancel": "Toto upratovanie už prebieha a nedá sa zrušiť.",
       "invalid_status_transition": "Táto akcia nie je pre aktuálny stav objednávky povolená.",
-      "no_available_spots": "Túto zákazku už prevzal iný upratovač.",
+      "no_available_spots": "Všetky miesta na tejto objednávke sú už obsadené.",
       "not_confirmed": "Táto zákazka ešte nie je potvrdená.",
       "not_found": "Túto objednávku sme nenašli.",
       "not_in_progress": "Táto zákazka nie je v priebehu.",
@@ -3580,7 +3580,7 @@
       "start_time_not_reached": "Objednaný čas začiatku ešte nenastal.",
       "cash_already_collected": "Hotovosť za túto zákazku už bola prijatá.",
       "payment_not_outstanding": "Pri tejto zákazke už nie je čo vybrať — je uhradená alebo boli peniaze vrátené. Hotovosť sa za ňu nevyberá.",
-      "cash_not_allowed_on_card_order": "Táto zákazka sa platí kartou, hotovosť pri nej preto nemožno zaznamenať. Hotovosť sa za ňu nevyberá — vybavenie zabezpečí kancelária.",
+      "cash_not_allowed_on_card_order": "Táto objednávka sa platí kartou, hotovosť sa za ňu preto nevyberá ani nezaznamenáva.",
       "cash_amount_invalid": "Zadajte sumu väčšiu ako nula, najviac na centy",
       "cash_received_at_in_future": "Hotovosť nemohla byť prijatá v budúcnosti",
       "cash_received_at_before_clean": "Hotovosť nemohla byť prijatá skôr, ako mohlo upratovanie začať"

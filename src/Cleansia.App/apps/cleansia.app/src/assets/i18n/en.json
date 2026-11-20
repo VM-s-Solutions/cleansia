@@ -1977,8 +1977,8 @@
         "below_lead_time": "This time is too close. Please choose a later slot.",
         "outside_booking_window": "Pick a start between 08:00 and 19:45 local time, on the quarter-hour, no more than 60 days ahead."
       },
-      "already_cancelled": "This booking is already cancelled.",
-      "already_completed": "This booking is already completed.",
+      "already_cancelled": "This order is already cancelled.",
+      "already_completed": "This order is already completed.",
       "in_progress_cannot_cancel": "This cleaning is already in progress and can no longer be cancelled.",
       "invalid_status_transition": "That action isn't allowed for the order's current status.",
       "address_exactly_one_required": "Please select a saved address or enter a new one.",
@@ -1992,7 +1992,7 @@
         "invalid": "One of the selected services is no longer available."
       },
       "not_found": "We couldn't find that order.",
-      "no_available_spots": "Another cleaner has already taken this job.",
+      "no_available_spots": "All spots on this order are already taken.",
       "weekly_limit_reached": "You've reached your weekly order limit.",
       "time_conflict": "This order conflicts with another you've already taken.",
       "total_price": {
@@ -2030,7 +2030,7 @@
       "cleaner_already_started": "The cleaner has already started this cleaning.",
       "start_time_not_reached": "The booked start time has not come yet.",
       "recurring_already_confirmed": "You've already confirmed this cleaning. Pay the cleaner in cash on the day.",
-      "cash_requires_saved_card": "Cash payment requires the customer to have a valid saved card in the order's currency."
+      "cash_requires_saved_card": "Paying in cash needs a valid saved card in the order's currency."
     },
     "address": {
       "already_exists": "You already have this address saved.",

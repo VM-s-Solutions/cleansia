@@ -625,7 +625,7 @@
     <string name="error_order_cancellation_window_closed">Термін скасування вичерпано.</string>
     <string name="error_order_empty">Ваше замовлення порожнє. Будь ласка, додайте принаймні одну послугу.</string>
     <string name="error_order_already_assigned">Це замовлення щойно взяв інший прибиральник.</string>
-    <string name="error_order_no_available_spots">Це замовлення вже взяв інший прибиральник.</string>
+    <string name="error_order_no_available_spots">Усі місця в цьому замовленні вже зайняті.</string>
     <string name="error_order_not_takeable">Це замовлення більше не доступне.</string>
     <string name="error_order_weekly_limit_reached">Ви досягли тижневого ліміту замовлень.</string>
     <string name="error_order_time_conflict">Це замовлення перетинається з іншим, яке ви вже взяли.</string>
@@ -666,7 +666,7 @@
     <string name="error_order_card_payment_already_settled">Це замовлення вже оплачено карткою. Не беріть готівку — статус оплати оновлено.</string>
     <string name="error_order_card_payment_in_progress">Оплата карткою за це замовлення ще обробляється. Зачекайте хвилинку та спробуйте ще раз.</string>
     <string name="error_order_card_payment_unverified">Не вдалося перевірити оплату карткою за це замовлення. Поки не беріть готівку — спробуйте ще раз за хвилину.</string>
-    <string name="error_order_cash_not_allowed_on_card_order">Це замовлення оплачується карткою, тому готівку за нього зафіксувати не можна. Готівку за нього не беруть — це врегульовує офіс.</string>
+    <string name="error_order_cash_not_allowed_on_card_order">Це замовлення оплачується карткою, тому готівку за нього не беруть і не фіксують.</string>
     <string name="error_order_payment_not_outstanding">За цим замовленням уже нічого стягувати — його оплачено або кошти повернено. Готівку за нього не беруть.</string>
     <string name="error_credit_cash_not_collectable_on_credit_order">Частину цього замовлення вже оплачено кредитом клієнта. Зверніться до офісу — не беріть суму, вказану в додатку.</string>
 
@@ -957,7 +957,7 @@
     <string name="error_payroll_invoice_pdf_not_ready">PDF рахунку ще не готовий. Спробуйте пізніше.</string>
     <string name="error_payroll_invoice_pdf_unavailable">PDF рахунку недоступний. Зверніться до підтримки.</string>
     <string name="error_payroll_invoice_pdf_generation_failed">Не вдалося створити PDF рахунку. Зверніться до підтримки.</string>
-    <string name="error_order_cash_requires_saved_card">Для оплати готівкою клієнт повинен мати дійсну збережену картку у валюті замовлення.</string>
+    <string name="error_order_cash_requires_saved_card">Для оплати готівкою потрібна дійсна збережена картка у валюті замовлення.</string>
     <string name="auth_email_placeholder">partner@example.com</string>
     <plurals name="orders_job_count">
         <item quantity="one">%1$d замовлення</item>

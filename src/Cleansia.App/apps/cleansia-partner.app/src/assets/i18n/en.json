@@ -1007,7 +1007,7 @@
         "not_match": "Price changed. Please refresh and try again."
       },
       "not_found": "We couldn't find that order.",
-      "no_available_spots": "Another cleaner has already taken this job.",
+      "no_available_spots": "All spots on this order are already taken.",
       "not_takeable": "This job is no longer available.",
       "take": {
         "already_cancelled": "This order is already cancelled.",
@@ -1024,7 +1024,7 @@
       "card_payment_already_settled": "This order was already paid by card. Don't collect cash — the payment status has been updated.",
       "card_payment_in_progress": "A card payment for this order is still processing. Wait a moment and try again.",
       "card_payment_unverified": "We couldn't check this order's card payment. Don't collect cash yet — try again in a moment.",
-      "cash_not_allowed_on_card_order": "This order is paid by card, so cash can't be recorded for it. No cash is taken for it — the office settles it.",
+      "cash_not_allowed_on_card_order": "This order is paid by card, so no cash is taken or recorded for it.",
       "payment_not_outstanding": "This order has no payment left to collect — it is already settled or refunded. No cash is taken for it.",
       "completion_notes": {
         "too_long": "Completion notes are too long."
@@ -1042,7 +1042,7 @@
         "window_closed": "This photo can't be added now: before photos from the moment you hold the job until it's finished, after photos while the work is in progress.",
         "locked": "Photos can't be deleted once the order is completed or cancelled."
       },
-      "cash_requires_saved_card": "Cash payment requires the customer to have a valid saved card in the order's currency."
+      "cash_requires_saved_card": "Paying in cash needs a valid saved card in the order's currency."
     },
     "user": {
       "email_confirmed": "This email is already confirmed.",

@@ -617,7 +617,7 @@
     <string name="error_order_cancellation_window_closed">Lehota na zrušenie vypršala.</string>
     <string name="error_order_empty">Objednávka je prázdna. Pridajte prosím aspoň jednu službu.</string>
     <string name="error_order_already_assigned">Túto zákazku práve prevzal iný upratovač.</string>
-    <string name="error_order_no_available_spots">Túto zákazku už prevzal iný upratovač.</string>
+    <string name="error_order_no_available_spots">Všetky miesta na tejto objednávke sú už obsadené.</string>
     <string name="error_order_not_takeable">Táto zákazka už nie je k dispozícii.</string>
     <string name="error_order_weekly_limit_reached">Dosiahli ste týždenný limit zákaziek.</string>
     <string name="error_order_time_conflict">Táto zákazka sa prekrýva s inou, ktorú ste už prijali.</string>
@@ -658,7 +658,7 @@
     <string name="error_order_card_payment_already_settled">Táto zákazka už bola zaplatená kartou. Nevyberajte hotovosť — stav platby bol aktualizovaný.</string>
     <string name="error_order_card_payment_in_progress">Platba kartou za túto zákazku sa stále spracúva. Chvíľu počkajte a skúste to znova.</string>
     <string name="error_order_card_payment_unverified">Nepodarilo sa overiť platbu kartou za túto zákazku. Zatiaľ nevyberajte hotovosť — skúste to o chvíľu znova.</string>
-    <string name="error_order_cash_not_allowed_on_card_order">Táto zákazka sa platí kartou, hotovosť pri nej preto nemožno zaznamenať. Hotovosť sa za ňu nevyberá — vybavenie zabezpečí kancelária.</string>
+    <string name="error_order_cash_not_allowed_on_card_order">Táto objednávka sa platí kartou, hotovosť sa za ňu preto nevyberá ani nezaznamenáva.</string>
     <string name="error_order_payment_not_outstanding">Pri tejto zákazke už nie je čo vybrať — je uhradená alebo boli peniaze vrátené. Hotovosť sa za ňu nevyberá.</string>
     <string name="error_credit_cash_not_collectable_on_credit_order">Časť tejto objednávky už bola uhradená z kreditu zákazníka. Požiadajte o vybavenie kanceláriu — sumu uvedenú v aplikácii nevyberajte.</string>
 
@@ -910,7 +910,7 @@
     <string name="delete_account_confirm_yes">Odoslať žiadosť</string>
     <string name="delete_account_requested">Žiadosť o zmazanie bola odoslaná.</string>
     <string name="error_gdpr_deletion_blocked_by_assigned_order">Účet zatiaľ nie je možné vymazať — existuje priradená zákazka.</string>
-    <string name="error_gdpr_deletion_blocked_by_unsettled_pay">Účet nie je možné vymazať, kým k nemu nie je vyplatená dlžná odmena.</string>
+    <string name="error_gdpr_deletion_blocked_by_unsettled_pay">Účet nie je možné vymazať, kým nebude vyplatená celá dlžná odmena.</string>
     <string name="splash_unreachable_title">Nedarí sa nám spojiť s Cleansia</string>
     <string name="splash_unreachable_message">Skontrolujte pripojenie a skúste to znova. S vaším účtom je všetko v poriadku — len sa nám ho nepodarilo načítať.</string>
     <string name="profile_group_legal">Právne informácie</string>
@@ -948,7 +948,7 @@
     <string name="error_payroll_invoice_pdf_not_ready">PDF faktúry ešte nie je pripravené. Skúste to neskôr.</string>
     <string name="error_payroll_invoice_pdf_unavailable">PDF faktúry nie je dostupné. Kontaktujte podporu.</string>
     <string name="error_payroll_invoice_pdf_generation_failed">Nepodarilo sa vygenerovať PDF</string>
-    <string name="error_order_cash_requires_saved_card">Platba v hotovosti vyžaduje, aby mal zákazník uloženú platnú kartu v mene objednávky.</string>
+    <string name="error_order_cash_requires_saved_card">Platba v hotovosti vyžaduje platnú uloženú kartu v mene objednávky.</string>
     <string name="auth_email_placeholder">partner@example.com</string>
     <plurals name="orders_job_count">
         <item quantity="one">%1$d zákazka</item>

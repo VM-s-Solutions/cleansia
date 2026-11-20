@@ -1007,7 +1007,7 @@
         "not_match": "Cena sa zmenila. Obnovte prosím a skúste znova."
       },
       "not_found": "Túto objednávku sme nenašli.",
-      "no_available_spots": "Túto zákazku už prevzal iný upratovač.",
+      "no_available_spots": "Všetky miesta na tejto objednávke sú už obsadené.",
       "not_takeable": "Táto zákazka už nie je k dispozícii.",
       "take": {
         "already_cancelled": "Táto zákazka je už zrušená.",
@@ -1024,7 +1024,7 @@
       "card_payment_already_settled": "Táto zákazka už bola zaplatená kartou. Nevyberajte hotovosť — stav platby bol aktualizovaný.",
       "card_payment_in_progress": "Platba kartou za túto zákazku sa stále spracúva. Chvíľu počkajte a skúste to znova.",
       "card_payment_unverified": "Nepodarilo sa overiť platbu kartou za túto zákazku. Zatiaľ nevyberajte hotovosť — skúste to o chvíľu znova.",
-      "cash_not_allowed_on_card_order": "Táto zákazka sa platí kartou, hotovosť pri nej preto nemožno zaznamenať. Hotovosť sa za ňu nevyberá — vybavenie zabezpečí kancelária.",
+      "cash_not_allowed_on_card_order": "Táto objednávka sa platí kartou, hotovosť sa za ňu preto nevyberá ani nezaznamenáva.",
       "payment_not_outstanding": "Pri tejto zákazke už nie je čo vybrať — je uhradená alebo boli peniaze vrátené. Hotovosť sa za ňu nevyberá.",
       "completion_notes": {
         "too_long": "Poznámky k dokončeniu sú príliš dlhé."
@@ -1042,7 +1042,7 @@
         "window_closed": "Túto fotografiu teraz nemožno pridať: fotografie pred upratovaním od prevzatia zákazky do jej dokončenia, fotografie po upratovaní počas práce.",
         "locked": "Po dokončení alebo zrušení zákazky nemožno fotografie vymazať."
       },
-      "cash_requires_saved_card": "Platba v hotovosti vyžaduje, aby mal zákazník uloženú platnú kartu v mene objednávky."
+      "cash_requires_saved_card": "Platba v hotovosti vyžaduje platnú uloženú kartu v mene objednávky."
     },
     "user": {
       "email_confirmed": "Tento e-mail je už potvrdený.",
@@ -1163,7 +1163,7 @@
       "deletion_blocked_by_order": "Účet zatiaľ nie je možné vymazať — existuje aktívna objednávka.",
       "deletion_blocked_by_invoice": "Účet zatiaľ nie je možné vymazať — existuje nevybavená faktúra.",
       "deletion_blocked_by_assigned_order": "Účet zatiaľ nie je možné vymazať — existuje priradená zákazka.",
-      "deletion_blocked_by_unsettled_pay": "Účet nie je možné vymazať, kým k nemu nie je vyplatená dlžná odmena.",
+      "deletion_blocked_by_unsettled_pay": "Účet nie je možné vymazať, kým nebude vyplatená celá dlžná odmena.",
       "consent_not_editable": "Tento súhlas tu nemožno zmeniť."
     },
     "company": {

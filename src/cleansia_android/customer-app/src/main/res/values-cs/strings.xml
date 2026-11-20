@@ -1002,8 +1002,8 @@
     <string name="error_order_cleaning_date_future">Datum musí být v budoucnosti.</string>
     <string name="error_order_cleaning_date_below_lead_time">Tento čas je příliš blízko. Zvolte pozdější termín.</string>
     <string name="error_order_cleaning_date_outside_booking_window">Vyberte začátek mezi 8:00 a 19:45 místního času, po čtvrthodinách, nejvýše 60 dní dopředu.</string>
-    <string name="error_order_already_cancelled">Tato rezervace je již zrušena.</string>
-    <string name="error_order_already_completed">Tato rezervace je již dokončena.</string>
+    <string name="error_order_already_cancelled">Tato objednávka je již zrušena.</string>
+    <string name="error_order_already_completed">Tato objednávka je již dokončena.</string>
     <string name="error_order_in_progress_cannot_cancel">Tento úklid už probíhá a nelze jej zrušit.</string>
     <string name="error_order_start_passed_cannot_cancel">Čas začátku už uplynul a uklízeč je přidělen, takže rezervaci už nelze zrušit. Pokud uklízeč nedorazil, dejte nám vědět.</string>
     <string name="error_order_cleaner_already_started">Uklízeč už s úklidem začal.</string>
@@ -1016,7 +1016,7 @@
     <string name="error_order_selected_package_invalid">Jeden z vybraných balíčků již není dostupný.</string>
     <string name="error_order_selected_services_invalid">Jedna z vybraných služeb již není dostupná.</string>
     <string name="error_order_not_found">Tuto objednávku jsme nenašli.</string>
-    <string name="error_order_no_available_spots">Tuto zakázku už převzal jiný uklízeč.</string>
+    <string name="error_order_no_available_spots">Všechna místa na této objednávce jsou už obsazená.</string>
     <string name="error_order_weekly_limit_reached">Dosáhli jste týdenního limitu zakázek.</string>
     <string name="error_order_time_conflict">Tato zakázka se překrývá s jinou, kterou jste již přijali.</string>
     <string name="error_order_total_price_not_match">Cena se změnila. Obnovte prosím a zkuste znovu.</string>
@@ -1443,7 +1443,7 @@
     <string name="payments_card_saved">Karta byla uložena</string>
     <string name="order_photos_phase_count">%1$s · %2$d</string>
     <string name="booking_cash_needs_saved_card">Pro platbu hotově uložte platnou kartu v měně objednávky.</string>
-    <string name="error_order_cash_requires_saved_card">Platba hotově vyžaduje, aby měl zákazník uloženou platnou kartu v měně objednávky.</string>
+    <string name="error_order_cash_requires_saved_card">Platba v hotovosti vyžaduje platnou uloženou kartu v měně objednávky.</string>
     <string name="booking_success_details_loading">Načítání údajů rezervace…</string>
     <string name="booking_success_details_unavailable">Údaje rezervace jsou dočasně nedostupné.</string>
     <string name="booking_success_finding">Zatím ji nepřevzal žádný uklízeč.</string>

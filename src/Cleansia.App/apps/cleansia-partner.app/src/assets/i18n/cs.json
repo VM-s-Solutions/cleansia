@@ -1007,7 +1007,7 @@
         "not_match": "Cena se změnila. Obnovte prosím a zkuste znovu."
       },
       "not_found": "Tuto objednávku jsme nenašli.",
-      "no_available_spots": "Tuto zakázku už převzal jiný uklízeč.",
+      "no_available_spots": "Všechna místa na této objednávce jsou už obsazená.",
       "not_takeable": "Tato zakázka už není k dispozici.",
       "take": {
         "already_cancelled": "Tato zakázka je již zrušena.",
@@ -1024,7 +1024,7 @@
       "card_payment_already_settled": "Tato zakázka již byla zaplacena kartou. Nevybírejte hotovost — stav platby byl aktualizován.",
       "card_payment_in_progress": "Platba kartou za tuto zakázku se stále zpracovává. Chvíli počkejte a zkuste to znovu.",
       "card_payment_unverified": "Nepodařilo se ověřit platbu kartou za tuto zakázku. Zatím nevybírejte hotovost — zkuste to za chvíli znovu.",
-      "cash_not_allowed_on_card_order": "Tato zakázka se platí kartou, hotovost u ní proto nelze zaznamenat. Hotovost se za ni nevybírá — vyřízení zajistí kancelář.",
+      "cash_not_allowed_on_card_order": "Tato objednávka se platí kartou, hotovost se za ni proto nevybírá ani nezaznamenává.",
       "payment_not_outstanding": "U této zakázky už není co vybrat — je uhrazená, nebo byly peníze vráceny. Hotovost se za ni nevybírá.",
       "completion_notes": {
         "too_long": "Poznámky k dokončení jsou příliš dlouhé."
@@ -1042,7 +1042,7 @@
         "window_closed": "Tuto fotografii teď nelze přidat: fotografie před úklidem od převzetí zakázky do jejího dokončení, fotografie po úklidu během práce.",
         "locked": "Po dokončení nebo zrušení zakázky nelze fotografie smazat."
       },
-      "cash_requires_saved_card": "Platba hotově vyžaduje, aby měl zákazník uloženou platnou kartu v měně objednávky."
+      "cash_requires_saved_card": "Platba v hotovosti vyžaduje platnou uloženou kartu v měně objednávky."
     },
     "user": {
       "email_confirmed": "Tento e-mail je již potvrzen.",
@@ -1163,7 +1163,7 @@
       "deletion_blocked_by_order": "Účet zatím nelze smazat — existuje aktivní objednávka.",
       "deletion_blocked_by_invoice": "Účet zatím nelze smazat — existuje nevyřízená faktura.",
       "deletion_blocked_by_assigned_order": "Účet zatím nelze smazat — existuje přiřazená zakázka.",
-      "deletion_blocked_by_unsettled_pay": "Účet nelze smazat, dokud k němu není vyplacena dlužná odměna.",
+      "deletion_blocked_by_unsettled_pay": "Účet nelze smazat, dokud nebude vyplacena veškerá dlužná odměna.",
       "consent_not_editable": "Tento souhlas zde nelze změnit."
     },
     "company": {

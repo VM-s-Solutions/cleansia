@@ -269,7 +269,7 @@ final class PartnerErrorVoiceTests: XCTestCase {
     private static let boundTakeRefusals = [
         "order.take.already_cancelled": "This order is already cancelled.",
         "order.take.already_completed": "This order is already completed.",
-        "order.no_available_spots": "Another cleaner has already taken this job.",
+        "order.no_available_spots": "All spots on this order are already taken.",
         "order.not_takeable": "This job is no longer available.",
         "order.weekly_limit_reached": "You've reached your weekly order limit.",
         "order.time_conflict": "This order conflicts with another you've already taken.",

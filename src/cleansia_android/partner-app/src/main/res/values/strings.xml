@@ -638,7 +638,7 @@
     <string name="error_order_cancellation_window_closed">The cancellation window has closed.</string>
     <string name="error_order_empty">Your order is empty. Please add at least one service.</string>
     <string name="error_order_already_assigned">This order was just taken by another cleaner.</string>
-    <string name="error_order_no_available_spots">Another cleaner has already taken this job.</string>
+    <string name="error_order_no_available_spots">All spots on this order are already taken.</string>
     <string name="error_order_not_takeable">This job is no longer available.</string>
     <string name="error_order_weekly_limit_reached">You\'ve reached your weekly order limit.</string>
     <string name="error_order_time_conflict">This order conflicts with another you\'ve already taken.</string>
@@ -680,7 +680,7 @@
     <string name="error_order_card_payment_already_settled">This order was already paid by card. Don\'t collect cash — the payment status has been updated.</string>
     <string name="error_order_card_payment_in_progress">A card payment for this order is still processing. Wait a moment and try again.</string>
     <string name="error_order_card_payment_unverified">We couldn\'t check this order\'s card payment. Don\'t collect cash yet — try again in a moment.</string>
-    <string name="error_order_cash_not_allowed_on_card_order">This order is paid by card, so cash can\'t be recorded for it. No cash is taken for it — the office settles it.</string>
+    <string name="error_order_cash_not_allowed_on_card_order">This order is paid by card, so no cash is taken or recorded for it.</string>
     <string name="error_order_payment_not_outstanding">This order has no payment left to collect — it is already settled or refunded. No cash is taken for it.</string>
     <string name="error_credit_cash_not_collectable_on_credit_order">Part of this order was already paid from the customer’s credit. Ask an office admin to settle it — do not collect the amount shown.</string>
 
@@ -978,7 +978,7 @@
     <string name="error_payroll_invoice_pdf_not_ready">The invoice PDF is not ready yet. Try again later.</string>
     <string name="error_payroll_invoice_pdf_unavailable">The invoice PDF is unavailable. Please contact support.</string>
     <string name="error_payroll_invoice_pdf_generation_failed">Failed to generate PDF</string>
-    <string name="error_order_cash_requires_saved_card">Cash payment requires the customer to have a valid saved card in the order\'s currency.</string>
+    <string name="error_order_cash_requires_saved_card">Paying in cash needs a valid saved card in the order\'s currency.</string>
     <string name="auth_email_placeholder">partner@example.com</string>
     <plurals name="orders_job_count">
         <item quantity="one">%1$d job</item>

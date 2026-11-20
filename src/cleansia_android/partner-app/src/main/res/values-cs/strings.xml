@@ -627,7 +627,7 @@
     <string name="error_order_cancellation_window_closed">Lhůta pro zrušení vypršela.</string>
     <string name="error_order_empty">Objednávka je prázdná. Přidejte prosím alespoň jednu službu.</string>
     <string name="error_order_already_assigned">Tuto zakázku právě převzal jiný uklízeč.</string>
-    <string name="error_order_no_available_spots">Tuto zakázku už převzal jiný uklízeč.</string>
+    <string name="error_order_no_available_spots">Všechna místa na této objednávce jsou už obsazená.</string>
     <string name="error_order_not_takeable">Tato zakázka už není k dispozici.</string>
     <string name="error_order_weekly_limit_reached">Dosáhli jste týdenního limitu zakázek.</string>
     <string name="error_order_time_conflict">Tato zakázka se překrývá s jinou, kterou jste již přijali.</string>
@@ -668,7 +668,7 @@
     <string name="error_order_card_payment_already_settled">Tato zakázka již byla zaplacena kartou. Nevybírejte hotovost — stav platby byl aktualizován.</string>
     <string name="error_order_card_payment_in_progress">Platba kartou za tuto zakázku se stále zpracovává. Chvíli počkejte a zkuste to znovu.</string>
     <string name="error_order_card_payment_unverified">Nepodařilo se ověřit platbu kartou za tuto zakázku. Zatím nevybírejte hotovost — zkuste to za chvíli znovu.</string>
-    <string name="error_order_cash_not_allowed_on_card_order">Tato zakázka se platí kartou, hotovost u ní proto nelze zaznamenat. Hotovost se za ni nevybírá — vyřízení zajistí kancelář.</string>
+    <string name="error_order_cash_not_allowed_on_card_order">Tato objednávka se platí kartou, hotovost se za ni proto nevybírá ani nezaznamenává.</string>
     <string name="error_order_payment_not_outstanding">U této zakázky už není co vybrat — je uhrazená, nebo byly peníze vráceny. Hotovost se za ni nevybírá.</string>
     <string name="error_credit_cash_not_collectable_on_credit_order">Část této objednávky již byla uhrazena z kreditu zákazníka. Požádejte o vyřízení kancelář — částku uvedenou v aplikaci nevybírejte.</string>
 
@@ -920,7 +920,7 @@
     <string name="delete_account_confirm_yes">Odeslat žádost</string>
     <string name="delete_account_requested">Žádost o smazání byla odeslána.</string>
     <string name="error_gdpr_deletion_blocked_by_assigned_order">Účet zatím nelze smazat — existuje přiřazená zakázka.</string>
-    <string name="error_gdpr_deletion_blocked_by_unsettled_pay">Účet nelze smazat, dokud k němu není vyplacena dlužná odměna.</string>
+    <string name="error_gdpr_deletion_blocked_by_unsettled_pay">Účet nelze smazat, dokud nebude vyplacena veškerá dlužná odměna.</string>
     <string name="splash_unreachable_title">Nedaří se nám spojit s Cleansia</string>
     <string name="splash_unreachable_message">Zkontrolujte připojení a zkuste to znovu. S vaším účtem je vše v pořádku — jen se nám ho nepodařilo načíst.</string>
     <string name="profile_group_legal">Právní informace</string>
@@ -958,7 +958,7 @@
     <string name="error_payroll_invoice_pdf_not_ready">PDF faktury zatím není připravené. Zkuste to později.</string>
     <string name="error_payroll_invoice_pdf_unavailable">PDF faktury není dostupné. Kontaktujte podporu.</string>
     <string name="error_payroll_invoice_pdf_generation_failed">Nepodařilo se vygenerovat PDF</string>
-    <string name="error_order_cash_requires_saved_card">Platba hotově vyžaduje, aby měl zákazník uloženou platnou kartu v měně objednávky.</string>
+    <string name="error_order_cash_requires_saved_card">Platba v hotovosti vyžaduje platnou uloženou kartu v měně objednávky.</string>
     <string name="auth_email_placeholder">partner@example.com</string>
     <plurals name="orders_job_count">
         <item quantity="one">%1$d zakázka</item>

@@ -15,7 +15,7 @@ consistency survives even when an agent (or human) doesn't read carefully. The p
 > | `check-catalog-claims.mjs` | **yes, blocking** | `docs-ci.yml` — with its own self-test blocking first |
 > | `check-ios-symbols.mjs` | **yes, blocking** | `ios-symbols-ci.yml` — with its own self-test blocking first |
 > | `check-booking-policy-parity.mjs` | **yes, blocking** | `booking-policy-parity.yml` — with its own self-test blocking first |
-> | `check-error-text-parity.mjs` | **yes, blocking** | `error-text-parity.yml` — with its own self-test blocking first (T-0940) |
+> | `check-error-text-parity.mjs` | **yes, a failing check** | `error-text-parity.yml` — with its own self-test blocking first; advisory for the merge until ruleset 6739260 requires it (read 2026-11-20: it requires only `build`, `References and build` and `No new secret in the history`) |
 > | `check-consistency.mjs` | no | on demand only |
 > | `check-module-boundaries.mjs` | no | on demand only |
 > | `check-available-status-parity.mjs` | no | on demand only |

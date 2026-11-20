@@ -17,6 +17,7 @@ scan — and the rest deploy or run operational jobs. **The required statuses ar
 | `docs-ci.yml` | both halves of the reference contract: two checkers with their own self-tests blocking first, then `vitepress build` with `ignoreDeadLinks: false` |
 | `ios-symbols-ci.yml` | the compiler-free half of the iOS gate — `check-ios-symbols.mjs` on Linux |
 | `booking-policy-parity.yml` | every client's stated booking figures against `BookingPolicy`, and the legal seed's currency placeholders |
+| `error-text-parity.yml` | every backend error key reads one way per language across the three webs, both Android apps and iOS |
 | `secret-scan.yml` | gitleaks over every commit reachable from the head — [below](#secret-scan) |
 
 **Deploy and operational**
@@ -119,6 +120,7 @@ failing, it does not make the secret safe.
 | `docs-ci` | PR to any branch | Docs pointers and written claims resolve; the docs site builds |
 | `ios-symbols-ci` | PR to any branch that touches `src/cleansia_ios/**`, the checker, its self-test or the workflow | `check-ios-symbols.mjs` on Linux |
 | `booking-policy-parity` | PR to any branch that touches a file the checker reads, the checker, its self-test or the workflow | `check-booking-policy-parity.mjs` |
+| `error-text-parity` | PR to any branch, or push to `master`, that touches the three webs' i18n, both Android apps' `res` trees, CleansiaCore's `Localizable.xcstrings`, the checker, its self-test or the workflow | `check-error-text-parity.mjs`, its self-test first. Not a required status, so it does not block a merge |
 | `secret-scan` | PR to any branch, push to `master` | gitleaks — no new secret in the history |
 | `deploy-dev` | **Manual (`workflow_dispatch`)** | Deploy everything to DEV |
 | `deploy-pro` | Manual (`workflow_dispatch`) | Deploy everything to PRO |

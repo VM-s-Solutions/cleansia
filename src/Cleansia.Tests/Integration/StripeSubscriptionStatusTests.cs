@@ -28,7 +28,7 @@ public class StripeSubscriptionStatusTests
 
         Assert.Equal(status, result.Status);
         Assert.Equal("sub_unit", result.SubscriptionId);
-        Assert.Equal(swap ? 2 : 1, transport.Requests);
+        Assert.Equal(2, transport.Requests);
     }
 
     private sealed class SubscriptionResponse(string status) : HttpMessageHandler
@@ -38,15 +38,17 @@ public class StripeSubscriptionStatusTests
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             Requests++;
-            var body = JsonSerializer.Serialize(new
-            {
-                id = "sub_unit", @object = "subscription", status,
-                items = new
+            var body = request.RequestUri!.AbsolutePath == "/v1/setup_intents"
+                ? """{"object":"list","data":[],"has_more":false,"url":"/v1/setup_intents"}"""
+                : JsonSerializer.Serialize(new
                 {
-                    @object = "list",
-                    data = new[] { new { id = "si_unit", @object = "subscription_item", current_period_start = 1789516800L, current_period_end = 1792108800L } },
-                },
-            });
+                    id = "sub_unit", @object = "subscription", status,
+                    items = new
+                    {
+                        @object = "list",
+                        data = new[] { new { id = "si_unit", @object = "subscription_item", current_period_start = 1789516800L, current_period_end = 1792108800L } },
+                    },
+                });
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StringContent(body, Encoding.UTF8, "application/json"),

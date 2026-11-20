@@ -117,7 +117,7 @@ public class StripeCardSavingTests
         };
         await create;
 
-        var body = Assert.Single(transport.Requests).Body;
+        var body = Assert.Single(transport.Requests, r => r.Method == HttpMethod.Post).Body;
         Assert.Contains($"{parameter}[0]=card", body);
         Assert.DoesNotContain($"{parameter}[1]", body);
         Assert.DoesNotContain("automatic_payment_methods", body);
@@ -433,7 +433,9 @@ public class StripeCardSavingTests
                 SessionStatus = "expired";
             }
 
-            var json = path.Contains("/payment_intents")
+            var json = path == "/v1/setup_intents"
+                ? """{"object":"list","data":[],"has_more":false,"url":"/v1/setup_intents"}"""
+                : path.Contains("/payment_intents")
                 ? request.Method == HttpMethod.Get && CurrentIntent is not null
                     ? CurrentIntent
                     : """{"id":"pi_sheet","object":"payment_intent","client_secret":"pi_sheet_secret"}"""

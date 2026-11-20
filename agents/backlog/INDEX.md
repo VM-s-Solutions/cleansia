@@ -451,8 +451,8 @@
 | T-0936 | A partial refund tells the customer, and the T-0933 review's rows R11 to R15 are fixed | M | `done` | — | Mike 2026-11-17: fix R11 to R15, and a customer gets the full refund's notice for a partial refund; DEV deploy after merge, before the phase 2 run |
 | T-0937 | Invoice and receipt PDFs keep every rendered version, API timestamps carry the stored precision, and the DEV publish script is tested against Postgres | M | `done` | — | Mike 2026-11-19: fix every phase-2 finding in waves, with fixes that pay off long term; a re-rendered PDF keeps every version |
 | T-0938 | The phase-2 app and web findings fixed: consent labels, the iOS order detail on push, the Android phone save, one cash notice, Stripe Link off, one Ukrainian wording | L | `done` | — | Mike 2026-11-19: wave 2; Stripe Link off in code; "Невірний пароль." on every client |
-| T-0939 | The E2E harness follow-ups from phase 2, and the phase-2 fixes proven on DEV | M | `in_progress` | — | Mike 2026-11-19: wave 3; DEV deployed after each wave, and TAKE-025's publish on DEV is OK |
-| T-0940 | The follow-ups found while fixing the phase-2 findings: one error text per key across the clients, receipt PDFs that are repaired, the iOS phone step, the web checkbox's label, and Apple Pay on iOS | L | `todo` | — | Mike 2026-11-19: wave 4, after the DEV proof; the majority wording per key, a tie to the Android customer app |
+| T-0939 | The E2E harness follow-ups from phase 2, and the phase-2 fixes proven on DEV | M | `done` | — | Mike 2026-11-19: wave 3; DEV deployed after each wave, and TAKE-025's publish on DEV is OK |
+| T-0940 | The follow-ups found while fixing the phase-2 findings: one error text per key across the clients, receipt PDFs that are repaired, the iOS phone step, the web checkbox's label, and Apple Pay on iOS | L | `in_progress` | — | Mike 2026-11-19: wave 4, after the DEV proof; the majority wording per key, a tie to the Android customer app |
 
 > **T-0785–T-0799 filed 2026-09-20** — the UI-polish and dead-code batch, on the owner's ruling of
 > that day (*"I want to polish alignments in admin app a bit on all of the overview/detail pages.

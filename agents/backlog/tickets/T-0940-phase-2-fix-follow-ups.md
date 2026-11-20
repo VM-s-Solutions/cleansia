@@ -43,6 +43,10 @@ Every row was ground-truthed against master d4bc9f045 before filing.
 6. Apple Pay on iOS: the card sheet offers card only, because `StripePaymentController` sets no Apple Pay
    configuration and the app holds no merchant entitlement. Needs from Mike first: an Apple Merchant ID, its Stripe
    Apple Pay certificate, and the Apple Pay capability on the customer App ID. Then the sheet offers Apple Pay.
+7. F-088, completed (F-109 of the fix-proof run): with every intent naming card only (T-0938), both PaymentSheets
+   still offered *Pay with Link* and Link's save box on DEV on 20 November. Mike's ruling stands, Link off in code on
+   every client: each app's PaymentSheet configuration turns Link off, the reason the card-only intents did not is
+   established, and the sheets are shown without Link on DEV.
 
 ## Not doing
 
@@ -56,3 +60,5 @@ DEV deployed with the wave; Apple Pay waits for Mike's merchant set-up if it has
 ## Work record
 
 - 2026-11-19 — Filed after Mike's rulings, on `fix/t0939-wave3-harness-and-dev-proof`.
+- 2026-11-20 — F-088's completion added as item 7, after the fix-proof run showed Link still offered (F-109); started
+  on `fix/t0940-wave4-follow-ups`.

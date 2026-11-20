@@ -954,7 +954,7 @@
     <string name="error_auth_google_type_error">Эта учётная запись использует вход через Google. Используйте кнопку Google.</string>
     <string name="error_auth_apple_type_error">Эта учётная запись использует вход через Apple. Используйте кнопку Apple.</string>
     <string name="error_auth_external_type_error">Эта учётная запись использует другой способ входа.</string>
-    <string name="error_auth_internal_type_error">Для этой учётной записи войдите по email и паролем.</string>
+    <string name="error_auth_internal_type_error">Для этой учётной записи войдите по email и паролю.</string>
     <string name="error_auth_invalid_confirmation_code">Этот код недействителен или истёк.</string>
     <string name="error_auth_invalid_google_token">Не удалось войти через Google. Попробуйте снова.</string>
     <string name="error_auth_invalid_password_format">Пароль должен содержать минимум 8 символов, буквы и цифры.</string>
@@ -1002,7 +1002,7 @@
     <string name="error_order_cleaning_date_outside_booking_window">Выберите начало между 08:00 и 19:45 по местному времени, кратно четверти часа, не более чем на 60 дней вперёд.</string>
     <string name="error_order_already_cancelled">Это бронирование уже отменено.</string>
     <string name="error_order_already_completed">Это бронирование уже завершено.</string>
-    <string name="error_order_in_progress_cannot_cancel">Это бронирование выполняется и не может быть отменено.</string>
+    <string name="error_order_in_progress_cannot_cancel">Эта уборка уже выполняется, и её нельзя отменить.</string>
     <string name="error_order_start_passed_cannot_cancel">Время начала уже прошло, и уборщик назначен, поэтому это бронирование больше нельзя отменить. Если уборщик не пришёл, сообщите нам.</string>
     <string name="error_order_cleaner_already_started">Уборщик уже начал уборку.</string>
     <string name="error_order_start_time_not_reached">Заказанное время начала ещё не наступило.</string>
@@ -1013,7 +1013,7 @@
     <string name="error_order_span_exceeds_maximum">Этот заказ включает слишком много работы для одного визита. Пожалуйста, уберите часть услуг или пакетов либо закажите их отдельно.</string>
     <string name="error_order_selected_package_invalid">Один из выбранных пакетов больше не доступен.</string>
     <string name="error_order_selected_services_invalid">Одна из выбранных услуг больше не доступна.</string>
-    <string name="error_order_not_found">Бронирование не найдено.</string>
+    <string name="error_order_not_found">Мы не нашли этот заказ.</string>
     <string name="error_order_no_available_spots">Этот заказ уже взял другой клинер.</string>
     <string name="error_order_weekly_limit_reached">Вы достигли недельного лимита заказов.</string>
     <string name="error_order_time_conflict">Этот заказ пересекается с другим, который вы уже взяли.</string>
@@ -1024,7 +1024,7 @@
     <string name="error_order_creation_failed">Не удалось создать бронирование. Попробуйте снова.</string>
     <string name="error_order_cash_not_available">Оплата наличными доступна только после входа в аккаунт и для заказа, с которым справится один уборщик.</string>
     <string name="error_order_cash_open_bookings_limit_reached">У вас уже максимально допустимое количество предстоящих заказов с оплатой наличными. Наличными платят после уборки, поэтому каждый из них учитывается, пока уборка не выполнена и не оплачена. Оплатите этот заказ картой или снова выберите наличные, когда один из них будет оплачен.</string>
-    <string name="error_order_unpaid_receivable">У вас есть неоплаченная сумма, например неоплаченная уборка или плата за отмену. Пока она не оплачена, новый заказ оформить нельзя; заказы, которые у вас уже есть, сохраняются. Оплатить её можно в профиле в разделе Платежи.</string>
+    <string name="error_order_unpaid_receivable">Вы должны нам сумму за предыдущее бронирование, например плату за отмену или неоплаченную уборку. Пока она не оплачена, вы не можете создать или подтвердить бронирование ни картой, ни наличными.</string>
     <string name="error_saved_card_consent_not_accepted">Прежде чем сохранить карту, отметьте согласие на её сохранение.</string>
     <string name="error_saved_card_not_found">Мы не нашли эту сохранённую карту.</string>
     <string name="error_receivable_not_found">Мы не нашли эту сумму к оплате.</string>
@@ -1441,7 +1441,7 @@
     <string name="payments_card_saved">Карта сохранена</string>
     <string name="order_photos_phase_count">%1$s · %2$d</string>
     <string name="booking_cash_needs_saved_card">Для оплаты наличными сохраните действующую карту в валюте заказа.</string>
-    <string name="error_order_cash_requires_saved_card">Для оплаты наличными нужна действующая сохранённая карта в валюте заказа.</string>
+    <string name="error_order_cash_requires_saved_card">Для оплаты наличными у клиента должна быть действующая сохранённая карта в валюте заказа.</string>
     <string name="booking_success_details_loading">Загружаем детали бронирования…</string>
     <string name="booking_success_details_unavailable">Детали бронирования временно недоступны.</string>
     <string name="booking_success_finding">Пока ни один клинер его не взял.</string>

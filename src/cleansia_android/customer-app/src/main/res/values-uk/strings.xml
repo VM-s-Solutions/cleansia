@@ -1002,7 +1002,7 @@
     <string name="error_order_cleaning_date_outside_booking_window">Оберіть початок між 08:00 і 19:45 за місцевим часом, кратно чверті години, не більше ніж на 60 днів наперед.</string>
     <string name="error_order_already_cancelled">Це бронювання вже скасоване.</string>
     <string name="error_order_already_completed">Це бронювання вже завершене.</string>
-    <string name="error_order_in_progress_cannot_cancel">Це бронювання виконується і не може бути скасоване.</string>
+    <string name="error_order_in_progress_cannot_cancel">Це прибирання вже триває, і його не можна скасувати.</string>
     <string name="error_order_start_passed_cannot_cancel">Час початку вже минув, і прибиральника призначено, тому це бронювання більше не можна скасувати. Якщо прибиральник не прийшов, повідомте нам.</string>
     <string name="error_order_cleaner_already_started">Прибиральник уже розпочав прибирання.</string>
     <string name="error_order_start_time_not_reached">Замовлений час початку ще не настав.</string>
@@ -1013,7 +1013,7 @@
     <string name="error_order_span_exceeds_maximum">Це замовлення охоплює забагато роботи для одного візиту. Будь ласка, приберіть частину послуг або пакетів чи замовте їх окремо.</string>
     <string name="error_order_selected_package_invalid">Один із вибраних пакетів більше не доступний.</string>
     <string name="error_order_selected_services_invalid">Одна з вибраних послуг більше не доступна.</string>
-    <string name="error_order_not_found">Бронювання не знайдено.</string>
+    <string name="error_order_not_found">Ми не знайшли це замовлення.</string>
     <string name="error_order_no_available_spots">Це замовлення вже взяв інший прибиральник.</string>
     <string name="error_order_weekly_limit_reached">Ви досягли тижневого ліміту замовлень.</string>
     <string name="error_order_time_conflict">Це замовлення перетинається з іншим, яке ви вже взяли.</string>
@@ -1024,7 +1024,7 @@
     <string name="error_order_creation_failed">Не вдалося створити бронювання. Спробуйте знову.</string>
     <string name="error_order_cash_not_available">Оплата готівкою можлива лише після входу в акаунт і для замовлення, з яким впорається один прибиральник.</string>
     <string name="error_order_cash_open_bookings_limit_reached">У вас уже максимально дозволена кількість майбутніх замовлень з оплатою готівкою. Готівкою платять після прибирання, тож кожне з них враховується, доки прибирання не виконано й не оплачено. Оплатіть це замовлення карткою або знову оберіть готівку, коли одне з них буде оплачено.</string>
-    <string name="error_order_unpaid_receivable">У вас є неоплачена сума, наприклад неоплачене прибирання або плата за скасування. Доки її не сплачено, нове замовлення оформити не можна; замовлення, які у вас уже є, зберігаються. Сплатити її можна в профілі в розділі Платежі.</string>
+    <string name="error_order_unpaid_receivable">Ви винні нам суму за попереднє бронювання, наприклад плату за скасування або неоплачене прибирання. Доки її не сплачено, ви не можете створити чи підтвердити бронювання ні карткою, ні готівкою.</string>
     <string name="error_saved_card_consent_not_accepted">Перш ніж зберегти картку, позначте згоду на її збереження.</string>
     <string name="error_saved_card_not_found">Ми не знайшли цю збережену картку.</string>
     <string name="error_receivable_not_found">Ми не знайшли цю суму до сплати.</string>
@@ -1441,7 +1441,7 @@
     <string name="payments_card_saved">Картку збережено</string>
     <string name="order_photos_phase_count">%1$s · %2$d</string>
     <string name="booking_cash_needs_saved_card">Для оплати готівкою збережіть дійсну картку у валюті замовлення.</string>
-    <string name="error_order_cash_requires_saved_card">Для оплати готівкою потрібна дійсна збережена картка у валюті замовлення.</string>
+    <string name="error_order_cash_requires_saved_card">Для оплати готівкою клієнт повинен мати дійсну збережену картку у валюті замовлення.</string>
     <string name="booking_success_details_loading">Завантажуємо деталі бронювання…</string>
     <string name="booking_success_details_unavailable">Деталі бронювання тимчасово недоступні.</string>
     <string name="booking_success_finding">Поки що жоден клінер його не взяв.</string>

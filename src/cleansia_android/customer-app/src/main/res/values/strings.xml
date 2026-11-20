@@ -1014,7 +1014,7 @@
     <string name="error_order_cleaning_date_outside_booking_window">Pick a start between 08:00 and 19:45 local time, on the quarter-hour, no more than 60 days ahead.</string>
     <string name="error_order_already_cancelled">This booking is already cancelled.</string>
     <string name="error_order_already_completed">This booking is already completed.</string>
-    <string name="error_order_in_progress_cannot_cancel">This booking is in progress and can\'t be cancelled.</string>
+    <string name="error_order_in_progress_cannot_cancel">This cleaning is already in progress and can no longer be cancelled.</string>
     <string name="error_order_start_passed_cannot_cancel">The start time has passed and a cleaner is booked, so this booking can no longer be cancelled. If the cleaner did not arrive, let us know.</string>
     <string name="error_order_cleaner_already_started">The cleaner has already started this cleaning.</string>
     <string name="error_order_start_time_not_reached">The booked start time has not come yet.</string>
@@ -1025,7 +1025,7 @@
     <string name="error_order_span_exceeds_maximum">This booking covers too much work for a single visit. Please remove some services or packages, or book them separately.</string>
     <string name="error_order_selected_package_invalid">One of the selected packages is no longer available.</string>
     <string name="error_order_selected_services_invalid">One of the selected services is no longer available.</string>
-    <string name="error_order_not_found">Booking not found.</string>
+    <string name="error_order_not_found">We couldn\'t find that order.</string>
     <string name="error_order_no_available_spots">Another cleaner has already taken this job.</string>
     <string name="error_order_weekly_limit_reached">You\'ve reached your weekly order limit.</string>
     <string name="error_order_time_conflict">This order conflicts with another you\'ve already taken.</string>
@@ -1036,7 +1036,7 @@
     <string name="error_order_creation_failed">Couldn\'t create booking. Please try again.</string>
     <string name="error_order_cash_not_available">Cash is only available when you\'re signed in and the booking needs a single cleaner.</string>
     <string name="error_order_cash_open_bookings_limit_reached">You already have as many upcoming cash bookings as allowed. Cash is paid after the cleaning, so each one counts until it has been cleaned and paid. Pay this booking by card, or choose cash again once one of them has been paid.</string>
-    <string name="error_order_unpaid_receivable">You have an unpaid amount with us, such as a cleaning you did not pay for or a cancellation fee. You can\'t make a new booking until it is paid; bookings you already have are kept. Pay it under Payments in your profile.</string>
+    <string name="error_order_unpaid_receivable">You owe us an amount from an earlier booking, such as a cancellation fee or a cleaning that was not paid for. Until it is paid, you cannot make or confirm a booking, by card or in cash.</string>
     <string name="error_saved_card_consent_not_accepted">Please tick the box agreeing to save your card before saving it.</string>
     <string name="error_saved_card_not_found">We couldn\'t find that saved card.</string>
     <string name="error_receivable_not_found">We couldn\'t find that amount due.</string>
@@ -1327,8 +1327,8 @@
     <string name="error_gdpr_consent_already_granted">This consent has already been granted.</string>
     <string name="error_gdpr_consent_not_found">Consent not found.</string>
     <string name="error_gdpr_consent_not_editable">This consent can\'t be changed here.</string>
-    <string name="error_gdpr_deletion_blocked_by_invoice">Your account can\'t be deleted yet — there is an open invoice.</string>
-    <string name="error_gdpr_deletion_blocked_by_order">Your account can\'t be deleted yet — there is an active order.</string>
+    <string name="error_gdpr_deletion_blocked_by_invoice">This account can\'t be deleted yet — there is an open invoice.</string>
+    <string name="error_gdpr_deletion_blocked_by_order">This account can\'t be deleted yet — there is an active order.</string>
     <string name="error_general_not_found">Resource not found</string>
     <string name="error_language_not_found">Language not found</string>
     <string name="error_language_not_supported">This language isn\'t supported.</string>
@@ -1445,7 +1445,7 @@
     <string name="payments_card_saved">Card saved</string>
     <string name="order_photos_phase_count">%1$s · %2$d</string>
     <string name="booking_cash_needs_saved_card">Save a valid card for this currency to pay in cash.</string>
-    <string name="error_order_cash_requires_saved_card">Cash requires a valid saved card in the booking currency.</string>
+    <string name="error_order_cash_requires_saved_card">Cash payment requires the customer to have a valid saved card in the order\'s currency.</string>
     <string name="booking_success_details_loading">Loading booking details…</string>
     <string name="booking_success_details_unavailable">Booking details are temporarily unavailable.</string>
     <string name="booking_success_finding">No cleaner has taken it yet.</string>

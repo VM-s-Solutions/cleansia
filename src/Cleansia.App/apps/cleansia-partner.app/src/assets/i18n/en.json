@@ -909,7 +909,7 @@
       "acceptance_required": "Accept the contract for work for this job before you continue."
     },
     "legal": {
-      "document_not_found": "This job cannot be taken right now.",
+      "document_not_found": "This legal text is not available yet.",
       "document_not_in_force": "This document is no longer the version in force. Reload it and accept the current one."
     },
     "auth": {
@@ -951,7 +951,7 @@
       "date_must_be_in_past": "Date must be in the past.",
       "invalid_age": "Please enter a valid age.",
       "passport_id": {
-        "invalid_length": "Your passport / ID number must be 5 to 20 characters long."
+        "invalid_length": "The passport / ID number must be 5 to 20 characters long."
       },
       "registration_number": {
         "invalid_format": "Please enter a valid company registration number for the selected country.",
@@ -1006,26 +1006,26 @@
         "positive": "Total price must be positive",
         "not_match": "Price changed. Please refresh and try again."
       },
-      "not_found": "Booking not found.",
+      "not_found": "We couldn't find that order.",
       "no_available_spots": "Another cleaner has already taken this job.",
       "not_takeable": "This job is no longer available.",
       "take": {
         "already_cancelled": "This order is already cancelled.",
         "already_completed": "This order is already completed."
       },
-      "employee_already_assigned": "You're already assigned to this order.",
-      "employee_not_assigned": "You're not assigned to this order.",
+      "employee_already_assigned": "The partner is already assigned to this order.",
+      "employee_not_assigned": "The partner is not assigned to this order.",
       "not_in_progress": "This order isn't in progress.",
       "not_confirmed": "This order isn't confirmed yet.",
-      "too_early_to_start": "Too early to start — you can begin up to an hour before the booking.",
+      "too_early_to_start": "Too early to start — you can begin up to an hour before the start time.",
       "cash_not_collected": "Collect the cash and mark it as received before completing this order.",
       "cash_already_collected": "Cash has already been collected for this order.",
       "payment_not_confirmed": "This order's payment hasn't been confirmed yet.",
       "card_payment_already_settled": "This order was already paid by card. Don't collect cash — the payment status has been updated.",
       "card_payment_in_progress": "A card payment for this order is still processing. Wait a moment and try again.",
       "card_payment_unverified": "We couldn't check this order's card payment. Don't collect cash yet — try again in a moment.",
-      "cash_not_allowed_on_card_order": "This order is paid by card, so cash can't be recorded for it. Don't take cash — ask an office admin to settle it.",
-      "payment_not_outstanding": "This order has no payment left to collect — it is already settled or refunded. Don't take cash.",
+      "cash_not_allowed_on_card_order": "This order is paid by card, so cash can't be recorded for it. No cash is taken for it — the office settles it.",
+      "payment_not_outstanding": "This order has no payment left to collect — it is already settled or refunded. No cash is taken for it.",
       "completion_notes": {
         "too_long": "Completion notes are too long."
       },
@@ -1042,7 +1042,7 @@
         "window_closed": "This photo can't be added now: before photos from the moment you hold the job until it's finished, after photos while the work is in progress.",
         "locked": "Photos can't be deleted once the order is completed or cancelled."
       },
-      "cash_requires_saved_card": "Cash requires a valid saved card in the booking currency."
+      "cash_requires_saved_card": "Cash payment requires the customer to have a valid saved card in the order's currency."
     },
     "user": {
       "email_confirmed": "This email is already confirmed.",
@@ -1057,17 +1057,17 @@
       "not_found": "Partner not found.",
       "not_allowed_to_update": "You can't edit this partner.",
       "data_not_available": "Partner data not available",
-      "profile_incomplete": "Please complete your profile before taking jobs.",
+      "profile_incomplete": "The partner profile is incomplete; jobs can be taken only once it is complete.",
       "documents_missing": "Required documents are missing. Please upload them in your profile.",
       "not_approved": "Your account hasn't been approved yet.",
       "already_approved": "This partner is already approved.",
       "already_rejected": "This partner is already rejected.",
       "job_radius_out_of_range": "Choose a distance between 1 and 500 km.",
       "legal_entity_not_accepted": "Cleaners work with us as natural persons; a company cannot be registered here",
-      "legal_documents_not_accepted": "Accept the current version of your contract documents before taking jobs.",
+      "legal_documents_not_accepted": "The current version of the contract documents has not been accepted yet; jobs can be taken only once it is accepted.",
       "business_ceased": "The business register (ARES) shows that the business under this company ID (IČO) has ended. Enter the IČO of a business that is still trading.",
-      "trade_licence_inactive": "The business register (ARES) shows no trade licence in force under this company ID (IČO). Check the number, or renew your trade licence first.",
-      "business_registry_unavailable": "We could not reach the business register (ARES) to check your new company ID (IČO), so nothing was saved. Try again in a few minutes."
+      "trade_licence_inactive": "The business register (ARES) shows no trade licence in force under this company ID (IČO). Check the number; otherwise the trade licence has to be renewed first.",
+      "business_registry_unavailable": "The business register (ARES) could not be reached to check this company ID (IČO), so nothing was saved. Try again in a few minutes."
     },
     "employee_document": {
       "not_found": "Document not found.",
@@ -1124,7 +1124,7 @@
       "last_for_live_catalogue_entry": "This is the last pay configuration for a service or package that is still in use. Removing it would leave orders without an estimated pay."
     },
     "payout": {
-      "not_found": "You haven't added your bank details yet. Add them so we can pay you."
+      "not_found": "No bank details have been added yet; payouts can be sent only once they are added."
     },
     "file": {
       "content_type_doesnt_match": "File type doesn't match.",
@@ -1160,10 +1160,10 @@
       "consent_not_found": "Consent not found.",
       "consent_already_granted": "This consent has already been granted.",
       "deletion_already_pending": "Account deletion is already in progress.",
-      "deletion_blocked_by_order": "Your account can't be deleted yet — there is an active order.",
-      "deletion_blocked_by_invoice": "Your account can't be deleted yet — there is an open invoice.",
-      "deletion_blocked_by_assigned_order": "Your account can't be deleted while you are still assigned to a job.",
-      "deletion_blocked_by_unsettled_pay": "Your account can't be deleted while pay is still owed to you. Contact the office to settle it first.",
+      "deletion_blocked_by_order": "This account can't be deleted yet — there is an active order.",
+      "deletion_blocked_by_invoice": "This account can't be deleted yet — there is an open invoice.",
+      "deletion_blocked_by_assigned_order": "This account can't be deleted yet — there is an assigned job.",
+      "deletion_blocked_by_unsettled_pay": "This account can't be deleted until the pay still owed on it has been paid out.",
       "consent_not_editable": "This consent can't be changed here."
     },
     "company": {

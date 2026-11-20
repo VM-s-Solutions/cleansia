@@ -909,7 +909,7 @@
       "acceptance_required": "Skôr než budete pokračovať, prijmite zmluvu o dielo k tejto zákazke."
     },
     "legal": {
-      "document_not_found": "Túto zákazku teraz nie je možné prevziať.",
+      "document_not_found": "Tento právny dokument zatiaľ nie je k dispozícii.",
       "document_not_in_force": "Tento dokument už nie je platnou verziou. Načítajte ho znova a prijmite aktuálnu verziu."
     },
     "auth": {
@@ -1006,15 +1006,15 @@
         "positive": "Celková cena musí byť kladná",
         "not_match": "Cena sa zmenila. Obnovte prosím a skúste znova."
       },
-      "not_found": "Rezervácia nenájdená.",
+      "not_found": "Túto objednávku sme nenašli.",
       "no_available_spots": "Túto zákazku už prevzal iný upratovač.",
       "not_takeable": "Táto zákazka už nie je k dispozícii.",
       "take": {
         "already_cancelled": "Táto zákazka je už zrušená.",
         "already_completed": "Táto zákazka je už dokončená."
       },
-      "employee_already_assigned": "Na túto zákazku ste už priradení.",
-      "employee_not_assigned": "Na túto zákazku nie ste priradení.",
+      "employee_already_assigned": "Partner je už priradený k tejto objednávke.",
+      "employee_not_assigned": "Partner nie je priradený k tejto objednávke.",
       "not_in_progress": "Táto zákazka nie je v priebehu.",
       "not_confirmed": "Táto zákazka ešte nie je potvrdená.",
       "too_early_to_start": "Na štart je príliš skoro — začať môžete až hodinu pred termínom.",
@@ -1024,8 +1024,8 @@
       "card_payment_already_settled": "Táto zákazka už bola zaplatená kartou. Nevyberajte hotovosť — stav platby bol aktualizovaný.",
       "card_payment_in_progress": "Platba kartou za túto zákazku sa stále spracúva. Chvíľu počkajte a skúste to znova.",
       "card_payment_unverified": "Nepodarilo sa overiť platbu kartou za túto zákazku. Zatiaľ nevyberajte hotovosť — skúste to o chvíľu znova.",
-      "cash_not_allowed_on_card_order": "Táto zákazka sa platí kartou, hotovosť pri nej preto nemožno zaznamenať. Hotovosť nevyberajte — požiadajte o vybavenie kanceláriu.",
-      "payment_not_outstanding": "Pri tejto zákazke už nie je čo vybrať — je uhradená alebo boli peniaze vrátené. Hotovosť nevyberajte.",
+      "cash_not_allowed_on_card_order": "Táto zákazka sa platí kartou, hotovosť pri nej preto nemožno zaznamenať. Hotovosť sa za ňu nevyberá — vybavenie zabezpečí kancelária.",
+      "payment_not_outstanding": "Pri tejto zákazke už nie je čo vybrať — je uhradená alebo boli peniaze vrátené. Hotovosť sa za ňu nevyberá.",
       "completion_notes": {
         "too_long": "Poznámky k dokončeniu sú príliš dlhé."
       },
@@ -1042,7 +1042,7 @@
         "window_closed": "Túto fotografiu teraz nemožno pridať: fotografie pred upratovaním od prevzatia zákazky do jej dokončenia, fotografie po upratovaní počas práce.",
         "locked": "Po dokončení alebo zrušení zákazky nemožno fotografie vymazať."
       },
-      "cash_requires_saved_card": "Platba v hotovosti vyžaduje platnú uloženú kartu v mene objednávky."
+      "cash_requires_saved_card": "Platba v hotovosti vyžaduje, aby mal zákazník uloženú platnú kartu v mene objednávky."
     },
     "user": {
       "email_confirmed": "Tento e-mail je už potvrdený.",
@@ -1057,17 +1057,17 @@
       "not_found": "Partner sa nenašiel.",
       "not_allowed_to_update": "Tohto partnera nemôžete upravovať.",
       "data_not_available": "Údaje partnera nie sú k dispozícii",
-      "profile_incomplete": "Pred prijímaním zákaziek si prosím dokončite profil.",
+      "profile_incomplete": "Profil partnera nie je kompletný; zákazky je možné prijímať až po jeho dokončení.",
       "documents_missing": "Chýbajú povinné dokumenty. Nahrajte ich vo svojom profile.",
       "not_approved": "Váš účet zatiaľ nebol schválený.",
       "already_approved": "Tento partner je už schválený.",
       "already_rejected": "Tento partner je už zamietnutý.",
       "job_radius_out_of_range": "Zvoľte vzdialenosť medzi 1 a 500 km.",
       "legal_entity_not_accepted": "Upratovači s nami spolupracujú ako fyzické osoby; firmu tu nie je možné registrovať",
-      "legal_documents_not_accepted": "Skôr než začnete prijímať zákazky, prijmite aktuálnu verziu svojich zmluvných dokumentov.",
+      "legal_documents_not_accepted": "Aktuálna verzia zmluvných dokumentov zatiaľ nebola prijatá; zákazky je možné prijímať až po jej prijatí.",
       "business_ceased": "Podľa registra ekonomických subjektov (ARES) podnikanie pod týmto IČO zaniklo. Zadajte IČO podnikania, ktoré stále trvá.",
-      "trade_licence_inactive": "Podľa registra ekonomických subjektov (ARES) nie je pod týmto IČO platné živnostenské oprávnenie. Skontrolujte číslo, alebo si najprv obnovte živnostenské oprávnenie.",
-      "business_registry_unavailable": "Register ekonomických subjektov (ARES) sa nepodarilo kontaktovať, takže nové IČO nebolo možné overiť a nič sa neuložilo. Skúste to znova o niekoľko minút."
+      "trade_licence_inactive": "Podľa registra ekonomických subjektov (ARES) nie je pod týmto IČO platné živnostenské oprávnenie. Skontrolujte číslo; inak je najprv potrebné živnostenské oprávnenie obnoviť.",
+      "business_registry_unavailable": "Register ekonomických subjektov (ARES) sa nepodarilo kontaktovať, takže toto IČO nebolo možné overiť a nič sa neuložilo. Skúste to znova o niekoľko minút."
     },
     "employee_document": {
       "not_found": "Dokument sa nenašiel.",
@@ -1124,7 +1124,7 @@
       "last_for_live_catalogue_entry": "Toto je posledné nastavenie odmeny pre službu alebo balík, ktoré sa stále používajú. Jeho odstránením by pri zákazkách zmizla odhadovaná odmena."
     },
     "payout": {
-      "not_found": "Zatiaľ ste nezadali svoje bankové údaje. Doplňte ich, aby sme vám mohli poslať výplatu."
+      "not_found": "Zatiaľ nie sú uložené žiadne bankové údaje; výplatu je možné poslať až po ich doplnení."
     },
     "file": {
       "content_type_doesnt_match": "Typ súboru nesedí.",
@@ -1162,8 +1162,8 @@
       "deletion_already_pending": "Vymazanie účtu už prebieha.",
       "deletion_blocked_by_order": "Účet zatiaľ nie je možné vymazať — existuje aktívna objednávka.",
       "deletion_blocked_by_invoice": "Účet zatiaľ nie je možné vymazať — existuje nevybavená faktúra.",
-      "deletion_blocked_by_assigned_order": "Váš účet sa nedá zmazať, kým ste priradený k zakázke.",
-      "deletion_blocked_by_unsettled_pay": "Váš účet sa nedá zmazať, kým vám dlžíme odmenu. Najprv to vyriešte s kanceláriou.",
+      "deletion_blocked_by_assigned_order": "Účet zatiaľ nie je možné vymazať — existuje priradená zákazka.",
+      "deletion_blocked_by_unsettled_pay": "Účet nie je možné vymazať, kým k nemu nie je vyplatená dlžná odmena.",
       "consent_not_editable": "Tento súhlas tu nemožno zmeniť."
     },
     "company": {

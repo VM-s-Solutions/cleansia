@@ -3466,14 +3466,14 @@
       "not_allowed_to_update": "You can't edit this partner.",
       "not_found": "Partner not found.",
       "pay_config_missing": "This cleaner has no pay configured for one or more active services or packages. Add the missing pay configuration before approving them.",
-      "profile_incomplete": "Please complete your profile before taking jobs.",
+      "profile_incomplete": "The partner profile is incomplete; jobs can be taken only once it is complete.",
       "weekly_limit_invalid": "The weekly order limit must be at least 1, or empty for no limit",
       "work_country_operator_mismatch": "The work country belongs to another operating company.",
       "weekly_limit_reason_required": "Write why this cleaner is limited. They are shown the reason.",
-      "legal_documents_not_accepted": "Accept the current version of your contract documents before taking jobs.",
+      "legal_documents_not_accepted": "The current version of the contract documents has not been accepted yet; jobs can be taken only once it is accepted.",
       "business_ceased": "The business register (ARES) shows that the business under this company ID (IČO) has ended. Enter the IČO of a business that is still trading.",
-      "trade_licence_inactive": "The business register (ARES) shows no trade licence in force under this company ID (IČO). Check the number, or renew your trade licence first.",
-      "business_registry_unavailable": "We could not reach the business register (ARES) to check your new company ID (IČO), so nothing was saved. Try again in a few minutes."
+      "trade_licence_inactive": "The business register (ARES) shows no trade licence in force under this company ID (IČO). Check the number; otherwise the trade licence has to be renewed first.",
+      "business_registry_unavailable": "The business register (ARES) could not be reached to check this company ID (IČO), so nothing was saved. Try again in a few minutes."
     },
     "employee_document": {
       "deletion_already_resolved": "This deletion request has already been answered.",
@@ -3491,10 +3491,10 @@
     },
     "gdpr": {
       "deletion_already_pending": "Account deletion is already in progress.",
-      "deletion_blocked_by_order": "Your account can't be deleted yet — there is an active order.",
-      "deletion_blocked_by_invoice": "Your account can't be deleted yet — there is an open invoice.",
-      "deletion_blocked_by_assigned_order": "Your account can't be deleted while you are still assigned to a job.",
-      "deletion_blocked_by_unsettled_pay": "Your account can't be deleted while pay is still owed to you. Contact the office to settle it first.",
+      "deletion_blocked_by_order": "This account can't be deleted yet — there is an active order.",
+      "deletion_blocked_by_invoice": "This account can't be deleted yet — there is an open invoice.",
+      "deletion_blocked_by_assigned_order": "This account can't be deleted yet — there is an assigned job.",
+      "deletion_blocked_by_unsettled_pay": "This account can't be deleted until the pay still owed on it has been paid out.",
       "consent_not_found": "Consent not found.",
       "consent_already_granted": "This consent has already been granted.",
       "request_not_found": "We couldn't find that GDPR request.",
@@ -3510,7 +3510,7 @@
       "not_supported": "This language isn't supported."
     },
     "legal": {
-      "document_not_found": "This job cannot be taken right now."
+      "document_not_found": "This legal text is not available yet."
     },
     "loyalty": {
       "points_exceed_sanity_cap": "That number of points exceeds the limit allowed for a manual adjustment.",
@@ -3546,14 +3546,14 @@
       "completion_notes": {
         "too_long": "Completion notes are too long."
       },
-      "employee_already_assigned": "You're already assigned to this order.",
-      "employee_not_assigned": "You're not assigned to this order.",
+      "employee_already_assigned": "The partner is already assigned to this order.",
+      "employee_not_assigned": "The partner is not assigned to this order.",
       "empty": "Your order is empty. Please add at least one service.",
-      "in_progress_cannot_cancel": "This booking is in progress and can't be cancelled.",
+      "in_progress_cannot_cancel": "This cleaning is already in progress and can no longer be cancelled.",
       "invalid_status_transition": "That action isn't allowed for the order's current status.",
       "no_available_spots": "Another cleaner has already taken this job.",
       "not_confirmed": "This order isn't confirmed yet.",
-      "not_found": "Booking not found.",
+      "not_found": "We couldn't find that order.",
       "not_in_progress": "This order isn't in progress.",
       "payment_gateway_unavailable": "Payment service is temporarily unavailable.",
       "selected_package": {
@@ -3579,8 +3579,8 @@
       "cleaner_already_started": "The cleaner has already started this cleaning.",
       "start_time_not_reached": "The booked start time has not come yet.",
       "cash_already_collected": "Cash has already been collected for this order.",
-      "payment_not_outstanding": "This order has no payment left to collect — it is already settled or refunded. Don't take cash.",
-      "cash_not_allowed_on_card_order": "This order is paid by card, so cash can't be recorded for it. Don't take cash — ask an office admin to settle it.",
+      "payment_not_outstanding": "This order has no payment left to collect — it is already settled or refunded. No cash is taken for it.",
+      "cash_not_allowed_on_card_order": "This order is paid by card, so cash can't be recorded for it. No cash is taken for it — the office settles it.",
       "cash_amount_invalid": "Enter an amount above zero, to the cent",
       "cash_received_at_in_future": "The cash cannot have been received in the future",
       "cash_received_at_before_clean": "The cash cannot have been received before the clean could begin"
@@ -3626,7 +3626,7 @@
       "stripe_signature_required": "Stripe signature header is required"
     },
     "payout": {
-      "not_found": "You haven't added your bank details yet. Add them so we can pay you."
+      "not_found": "No bank details have been added yet; payouts can be sent only once they are added."
     },
     "payroll": {
       "employee_not_assigned": "Partner not assigned to this order",
@@ -3758,7 +3758,7 @@
       "must_be_positive": "Must be a positive number.",
       "page_size_exceeded": "Page size cannot exceed 100",
       "passport_id": {
-        "invalid_length": "Your passport / ID number must be 5 to 20 characters long."
+        "invalid_length": "The passport / ID number must be 5 to 20 characters long."
       },
       "payout": {
         "account_number_required": "Enter your account number — for this bank we pay by account number and bank code, so an IBAN on its own isn't enough.",

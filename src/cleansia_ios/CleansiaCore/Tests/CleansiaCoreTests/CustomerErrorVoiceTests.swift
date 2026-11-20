@@ -259,14 +259,14 @@ final class CustomerErrorVoiceTests: XCTestCase {
         "ru": "экспресс"
     ]
 
-    /// The words the debt and cash-cap refusals are read for: where the amount is paid, the tender a debt no
-    /// longer leaves open, and the bookings the cap counts.
+    /// The words the debt and cash-cap refusals are read for: the two tenders a debt closes, and the bookings
+    /// the cap counts.
     private static let debtVocabulary = [
-        DebtWords(locale: "en", payments: "payments", card: "card", upcoming: "upcoming"),
-        DebtWords(locale: "cs", payments: "platby", card: "kart", upcoming: "nadcházející"),
-        DebtWords(locale: "sk", payments: "platby", card: "kart", upcoming: "nadchádzajúc"),
-        DebtWords(locale: "uk", payments: "платежі", card: "картк", upcoming: "майбутн"),
-        DebtWords(locale: "ru", payments: "платежи", card: "карт", upcoming: "предстоящ")
+        DebtWords(locale: "en", card: "card", cash: "cash", upcoming: "upcoming"),
+        DebtWords(locale: "cs", card: "kart", cash: "hotovost", upcoming: "nadcházející"),
+        DebtWords(locale: "sk", card: "kart", cash: "hotovos", upcoming: "nadchádzajúc"),
+        DebtWords(locale: "uk", card: "картк", cash: "готівк", upcoming: "майбутн"),
+        DebtWords(locale: "ru", card: "карт", cash: "наличн", upcoming: "предстоящ")
     ]
 
     override func tearDown() {
@@ -322,13 +322,14 @@ final class CustomerErrorVoiceTests: XCTestCase {
         }
     }
 
-    /// A debt refuses every new booking, cash or card (owner ruling 2026-10-06), so the refusal names Payments,
-    /// where the amount is paid, and no longer sends the customer to the card.
-    func testTheDebtRefusalPointsToPaymentsAndNeverToTheCard() {
+    /// A debt refuses making or confirming any booking, by card or in cash (owner ruling 2026-10-06), so the
+    /// refusal names both tenders. It names no screen: the customer web, which reads the same wording, has no
+    /// Payments section.
+    func testTheDebtRefusalBansBothCardAndCash() {
         for words in Self.debtVocabulary {
             let resolved = resolve("order.unpaid_receivable", locale: words.locale).lowercased()
-            XCTAssertTrue(resolved.contains(words.payments), "\(words.locale) never names Payments: \(resolved)")
-            XCTAssertFalse(resolved.contains(words.card), "\(words.locale) still offers the card: \(resolved)")
+            XCTAssertTrue(resolved.contains(words.card), "\(words.locale) never names the card: \(resolved)")
+            XCTAssertTrue(resolved.contains(words.cash), "\(words.locale) never names cash: \(resolved)")
         }
     }
 
@@ -375,8 +376,8 @@ final class CustomerErrorVoiceTests: XCTestCase {
 
 private struct DebtWords {
     let locale: String
-    let payments: String
     let card: String
+    let cash: String
     let upcoming: String
 }
 

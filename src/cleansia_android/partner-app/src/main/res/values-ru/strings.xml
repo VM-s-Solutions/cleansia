@@ -582,7 +582,7 @@
     <string name="error_auth_google_type_error">Эта учётная запись использует вход через Google. Используйте кнопку Google.</string>
     <string name="error_auth_apple_type_error">Эта учётная запись использует вход через Apple. Используйте кнопку Apple.</string>
     <string name="error_auth_external_type_error">Эта учётная запись использует другой способ входа.</string>
-    <string name="error_auth_internal_type_error">Для этой учётной записи войдите по email и паролем.</string>
+    <string name="error_auth_internal_type_error">Для этой учётной записи войдите по email и паролю.</string>
     <string name="error_auth_invalid_confirmation_code">Этот код недействителен или истёк.</string>
     <string name="error_auth_invalid_google_token">Не удалось войти через Google. Попробуйте снова.</string>
     <string name="error_auth_invalid_apple_token">Недействительный токен Apple</string>
@@ -607,7 +607,7 @@
     <string name="error_employee_not_found">Партнёр не найден.</string>
     <string name="error_employee_not_existing_email">Партнёр с этим е-мейлом не найден.</string>
     <string name="error_employee_not_allowed_to_update">Вы не можете редактировать этого партнёра.</string>
-    <string name="error_employee_profile_incomplete">Перед приёмом заказов завершите ваш профиль.</string>
+    <string name="error_employee_profile_incomplete">Профиль партнёра не заполнен; брать заказы можно только после его заполнения.</string>
     <string name="error_employee_documents_missing">Отсутствуют обязательные документы. Загрузите их в профиле.</string>
     <string name="error_employee_already_approved">Этот партнёр уже одобрен.</string>
     <string name="error_employee_already_rejected">Этот партнёр уже отклонён.</string>
@@ -618,10 +618,10 @@
     <string name="error_employee_document_deletion_already_requested">Вы уже отправили запрос на удаление этого документа. Мы скоро на него ответим.</string>
     <string name="error_employee_document_duplicate_file">Вы уже загрузили именно этот файл. Выберите другой файл или замените существующий документ.</string>
 
-    <string name="error_order_not_found">Бронирование не найдено.</string>
+    <string name="error_order_not_found">Мы не нашли этот заказ.</string>
     <string name="error_order_take_already_cancelled">Этот заказ уже отменён.</string>
     <string name="error_order_take_already_completed">Этот заказ уже выполнен.</string>
-    <string name="error_order_in_progress_cannot_cancel">Это бронирование выполняется и не может быть отменено.</string>
+    <string name="error_order_in_progress_cannot_cancel">Эта уборка уже выполняется, и её нельзя отменить.</string>
     <string name="error_order_cancellation_window_closed">Срок отмены истёк.</string>
     <string name="error_order_empty">Ваш заказ пуст. Пожалуйста, добавьте хотя бы одну услугу.</string>
     <string name="error_order_already_assigned">Этот заказ только что взял другой клинер.</string>
@@ -629,8 +629,8 @@
     <string name="error_order_not_takeable">Этот заказ больше не доступен.</string>
     <string name="error_order_weekly_limit_reached">Вы достигли недельного лимита заказов.</string>
     <string name="error_order_time_conflict">Этот заказ пересекается с другим, который вы уже взяли.</string>
-    <string name="error_order_employee_already_assigned">Вы уже назначены на этот заказ.</string>
-    <string name="error_order_employee_not_assigned">Вы не назначены на этот заказ.</string>
+    <string name="error_order_employee_already_assigned">Партнёр уже назначен на этот заказ.</string>
+    <string name="error_order_employee_not_assigned">Партнёр не назначен на этот заказ.</string>
     <string name="error_order_max_employees_exceeded">На этом заказе уже максимальное количество клинеров.</string>
     <string name="error_order_preferred_employee_not_eligible">Выбранный клинер недоступен для этого заказа.</string>
     <string name="error_order_employee_already_has_order_in_progress">У вас уже есть другой заказ в работе. Завершите его перед началом нового.</string>
@@ -639,8 +639,8 @@
     <string name="error_contract_not_accepted">Прежде чем взять заказ, прочитайте и примите договор подряда.</string>
     <string name="error_contract_text_mismatch">Договор обновлён \u2014 пожалуйста, прочитайте его ещё раз.</string>
     <string name="error_contract_acceptance_required">Прежде чем продолжить, примите договор подряда для этого заказа.</string>
-    <string name="error_legal_document_not_found">Этот заказ сейчас нельзя взять.</string>
-    <string name="error_employee_legal_documents_not_accepted">Прежде чем брать заказы, примите действующую версию своих договорных документов.</string>
+    <string name="error_legal_document_not_found">Этот юридический документ пока недоступен.</string>
+    <string name="error_employee_legal_documents_not_accepted">Действующая версия договорных документов ещё не принята; брать заказы можно только после её принятия.</string>
     <string name="error_legal_document_not_in_force">Этот документ больше не является действующей версией. Загрузите его заново и примите действующую версию.</string>
 
     <string name="error_order_not_in_progress">Этот заказ не в работе.</string>
@@ -666,8 +666,8 @@
     <string name="error_order_card_payment_already_settled">Этот заказ уже оплачен картой. Не берите наличные — статус оплаты обновлён.</string>
     <string name="error_order_card_payment_in_progress">Оплата картой за этот заказ ещё обрабатывается. Подождите немного и попробуйте снова.</string>
     <string name="error_order_card_payment_unverified">Не удалось проверить оплату картой за этот заказ. Пока не берите наличные — попробуйте снова через минуту.</string>
-    <string name="error_order_cash_not_allowed_on_card_order">Этот заказ оплачивается картой, поэтому наличные по нему записать нельзя. Не берите наличные — обратитесь в офис.</string>
-    <string name="error_order_payment_not_outstanding">По этому заказу уже нечего собирать — он оплачен или деньги возвращены. Не берите наличные.</string>
+    <string name="error_order_cash_not_allowed_on_card_order">Этот заказ оплачивается картой, поэтому наличные по нему записать нельзя. Наличные за него не берут — это урегулирует офис.</string>
+    <string name="error_order_payment_not_outstanding">По этому заказу уже нечего собирать — он оплачен или деньги возвращены. Наличные за него не берут.</string>
     <string name="error_credit_cash_not_collectable_on_credit_order">Часть этого заказа уже оплачена кредитом клиента. Обратитесь в офис — не берите сумму, указанную в приложении.</string>
 
     <string name="error_order_note_content_required">Текст заметки обязателен.</string>
@@ -711,12 +711,12 @@
     <string name="error_validation_registration_number_invalid_format">Введите действительный регистрационный номер компании для выбранной страны.</string>
     <string name="error_validation_registration_number_not_registered">Этого идентификационного номера (IČO) нет в реестре экономических субъектов (ARES). Проверьте номер.</string>
     <string name="error_employee_business_ceased">По данным реестра экономических субъектов (ARES), предпринимательская деятельность под этим идентификационным номером (IČO) прекращена. Введите IČO деятельности, которая ещё ведётся.</string>
-    <string name="error_employee_trade_licence_inactive">По данным реестра экономических субъектов (ARES), под этим идентификационным номером (IČO) нет действующего разрешения на предпринимательскую деятельность. Проверьте номер или сначала возобновите разрешение.</string>
-    <string name="error_employee_business_registry_unavailable">Не удалось связаться с реестром экономических субъектов (ARES), чтобы проверить ваш новый идентификационный номер (IČO), поэтому ничего не сохранено. Попробуйте ещё раз через несколько минут.</string>
+    <string name="error_employee_trade_licence_inactive">По данным реестра экономических субъектов (ARES), под этим идентификационным номером (IČO) нет действующего разрешения на предпринимательскую деятельность. Проверьте номер; иначе сначала нужно возобновить разрешение.</string>
+    <string name="error_employee_business_registry_unavailable">Не удалось связаться с реестром экономических субъектов (ARES), чтобы проверить этот идентификационный номер (IČO), поэтому ничего не сохранено. Попробуйте ещё раз через несколько минут.</string>
     <string name="error_validation_must_be_positive">Должно быть положительное число.</string>
 
     <!-- Payout / bank details -->
-    <string name="error_payout_not_found">Вы ещё не добавили свои банковские реквизиты. Добавьте их, чтобы мы могли отправить вам выплату.</string>
+    <string name="error_payout_not_found">Банковские реквизиты ещё не добавлены; выплату можно отправить только после их добавления.</string>
     <string name="error_validation_payout_country_not_supported">Мы пока не отправляем выплаты в банки этой страны. Проверьте выбранную страну банка или обратитесь в поддержку — мы поможем.</string>
     <string name="error_validation_payout_scheme_not_supported">Мы пока не отправляем выплаты на такой тип счёта. Обратитесь в поддержку — мы поможем это решить.</string>
     <string name="error_validation_payout_looks_like_card">Это похоже на номер платёжной карты. Введите вместо него номер банковского счёта — он указан в выписке или в банковском приложении.</string>
@@ -918,8 +918,8 @@
     <string name="delete_account_confirm_message">Мы свяжемся с вами и официально завершим сотрудничество. Сегодня ничего не удаляется.</string>
     <string name="delete_account_confirm_yes">Отправить</string>
     <string name="delete_account_requested">Запрос на удаление отправлен.</string>
-    <string name="error_gdpr_deletion_blocked_by_assigned_order">Ваш аккаунт нельзя удалить, пока вы назначены на работу.</string>
-    <string name="error_gdpr_deletion_blocked_by_unsettled_pay">Ваш аккаунт нельзя удалить, пока вам не выплачено вознаграждение. Сначала решите это с офисом.</string>
+    <string name="error_gdpr_deletion_blocked_by_assigned_order">Аккаунт пока нельзя удалить — есть назначенный заказ.</string>
+    <string name="error_gdpr_deletion_blocked_by_unsettled_pay">Аккаунт нельзя удалить, пока по нему не выплачено причитающееся вознаграждение.</string>
     <string name="splash_unreachable_title">Не удаётся связаться с Cleansia</string>
     <string name="splash_unreachable_message">Проверьте подключение и попробуйте снова. С вашим аккаунтом всё в порядке — мы просто не смогли его загрузить.</string>
     <string name="profile_group_legal">Правовая информация</string>
@@ -957,7 +957,7 @@
     <string name="error_payroll_invoice_pdf_not_ready">PDF счёта ещё не готов. Попробуйте позже.</string>
     <string name="error_payroll_invoice_pdf_unavailable">PDF счёта недоступен. Обратитесь в поддержку.</string>
     <string name="error_payroll_invoice_pdf_generation_failed">Не удалось создать PDF счёта. Обратитесь в поддержку.</string>
-    <string name="error_order_cash_requires_saved_card">Для оплаты наличными нужна действующая сохранённая карта в валюте заказа.</string>
+    <string name="error_order_cash_requires_saved_card">Для оплаты наличными у клиента должна быть действующая сохранённая карта в валюте заказа.</string>
     <string name="auth_email_placeholder">partner@example.com</string>
     <plurals name="orders_job_count">
         <item quantity="one">%1$d заказ</item>

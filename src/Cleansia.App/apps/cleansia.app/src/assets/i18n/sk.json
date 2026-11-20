@@ -1965,7 +1965,7 @@
       "not_supported": "Tento jazyk nie je podporovaný."
     },
     "legal": {
-      "document_not_found": "Túto zákazku teraz nie je možné prevziať."
+      "document_not_found": "Tento právny dokument zatiaľ nie je k dispozícii."
     },
     "consent": {
       "terms_not_accepted": "Pre pokračovanie prosím prijmite obchodné podmienky a zásady ochrany súkromia.",
@@ -1979,7 +1979,7 @@
       },
       "already_cancelled": "Táto rezervácia je už zrušená.",
       "already_completed": "Táto rezervácia je už dokončená.",
-      "in_progress_cannot_cancel": "Rezervácia prebieha a nie je možné ju zrušiť.",
+      "in_progress_cannot_cancel": "Toto upratovanie už prebieha a nedá sa zrušiť.",
       "invalid_status_transition": "Táto akcia nie je pre aktuálny stav objednávky povolená.",
       "address_exactly_one_required": "Vyberte prosím uloženú adresu alebo zadajte novú.",
       "empty": "Objednávka je prázdna. Pridajte prosím aspoň jednu službu.",
@@ -1991,7 +1991,7 @@
       "selected_services": {
         "invalid": "Jedna z vybraných služieb už nie je dostupná."
       },
-      "not_found": "Rezervácia nenájdená.",
+      "not_found": "Túto objednávku sme nenašli.",
       "no_available_spots": "Túto zákazku už prevzal iný upratovač.",
       "weekly_limit_reached": "Dosiahli ste týždenný limit zákaziek.",
       "time_conflict": "Táto zákazka sa prekrýva s inou, ktorú ste už prijali.",
@@ -2002,7 +2002,7 @@
       "payment_gateway_unavailable": "Platobná služba je dočasne nedostupná.",
       "cash_not_available": "Platba v hotovosti je možná len po prihlásení a pri objednávke, ktorú zvládne jeden upratovač.",
       "cash_open_bookings_limit_reached": "Už máte najvyšší povolený počet nadchádzajúcich objednávok v hotovosti. Hotovosť sa platí až po upratovaní, takže sa každá počíta, kým nie je upratané a zaplatené. Túto objednávku zaplaťte kartou alebo hotovosť zvoľte znova, keď bude niektorá z nich zaplatená.",
-      "unpaid_receivable": "Máte u nás nezaplatenú sumu, napríklad nezaplatené upratovanie alebo stornovací poplatok. Kým ju neuhradíte, nemôžete vytvoriť novú objednávku; objednávky, ktoré už máte, zostávajú. Uhradíte ju v profile v sekcii Platby.",
+      "unpaid_receivable": "Dlhujete nám sumu z predchádzajúcej rezervácie, napríklad stornovací poplatok alebo nezaplatené upratovanie. Kým nebude uhradená, nemôžete vytvoriť ani potvrdiť rezerváciu, kartou ani v hotovosti.",
       "country_operator_mismatch": "Túto adresu obsluhuje iná spoločnosť Cleansia a z tohto účtu ju nie je možné objednať.",
       "payment": {
         "already_paid": "Táto objednávka už bola zaplatená."
@@ -2030,7 +2030,7 @@
       "cleaner_already_started": "Upratovač už s upratovaním začal.",
       "start_time_not_reached": "Objednaný čas začiatku ešte nenastal.",
       "recurring_already_confirmed": "Toto upratovanie už máte potvrdené. Upratovačovi zaplatíte v hotovosti v deň upratovania.",
-      "cash_requires_saved_card": "Platba v hotovosti vyžaduje platnú uloženú kartu v mene objednávky."
+      "cash_requires_saved_card": "Platba v hotovosti vyžaduje, aby mal zákazník uloženú platnú kartu v mene objednávky."
     },
     "address": {
       "already_exists": "Túto adresu už máte uloženú.",
@@ -2082,8 +2082,8 @@
       "deletion_blocked_by_invoice": "Účet zatiaľ nie je možné vymazať — existuje nevybavená faktúra.",
       "consent_not_found": "Súhlas nebol nájdený.",
       "consent_already_granted": "Tento súhlas už bol udelený.",
-      "deletion_blocked_by_assigned_order": "Váš účet sa nedá zmazať, kým ste priradený k zakázke.",
-      "deletion_blocked_by_unsettled_pay": "Váš účet sa nedá zmazať, kým vám dlžíme odmenu. Najprv to vyriešte s kanceláriou.",
+      "deletion_blocked_by_assigned_order": "Účet zatiaľ nie je možné vymazať — existuje priradená zákazka.",
+      "deletion_blocked_by_unsettled_pay": "Účet nie je možné vymazať, kým k nemu nie je vyplatená dlžná odmena.",
       "consent_not_editable": "Tento súhlas tu nemožno zmeniť."
     },
     "promo": {

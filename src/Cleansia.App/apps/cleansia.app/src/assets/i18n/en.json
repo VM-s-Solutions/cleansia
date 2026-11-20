@@ -1965,7 +1965,7 @@
       "not_supported": "This language isn't supported."
     },
     "legal": {
-      "document_not_found": "This job cannot be taken right now."
+      "document_not_found": "This legal text is not available yet."
     },
     "consent": {
       "terms_not_accepted": "Please accept the Terms of Service and Privacy Policy to continue.",
@@ -1979,7 +1979,7 @@
       },
       "already_cancelled": "This booking is already cancelled.",
       "already_completed": "This booking is already completed.",
-      "in_progress_cannot_cancel": "This booking is in progress and can't be cancelled.",
+      "in_progress_cannot_cancel": "This cleaning is already in progress and can no longer be cancelled.",
       "invalid_status_transition": "That action isn't allowed for the order's current status.",
       "address_exactly_one_required": "Please select a saved address or enter a new one.",
       "empty": "Your order is empty. Please add at least one service.",
@@ -1991,7 +1991,7 @@
       "selected_services": {
         "invalid": "One of the selected services is no longer available."
       },
-      "not_found": "Booking not found.",
+      "not_found": "We couldn't find that order.",
       "no_available_spots": "Another cleaner has already taken this job.",
       "weekly_limit_reached": "You've reached your weekly order limit.",
       "time_conflict": "This order conflicts with another you've already taken.",
@@ -2002,7 +2002,7 @@
       "payment_gateway_unavailable": "Payment service is temporarily unavailable.",
       "cash_not_available": "Cash is only available when you're signed in and the booking needs a single cleaner.",
       "cash_open_bookings_limit_reached": "You already have as many upcoming cash bookings as allowed. Cash is paid after the cleaning, so each one counts until it has been cleaned and paid. Pay this booking by card, or choose cash again once one of them has been paid.",
-      "unpaid_receivable": "You have an unpaid amount with us, such as a cleaning you did not pay for or a cancellation fee. You can't make a new booking until it is paid; bookings you already have are kept. Pay it under Payments in your profile.",
+      "unpaid_receivable": "You owe us an amount from an earlier booking, such as a cancellation fee or a cleaning that was not paid for. Until it is paid, you cannot make or confirm a booking, by card or in cash.",
       "country_operator_mismatch": "This address is served by another Cleansia company and cannot be booked from this account.",
       "payment": {
         "already_paid": "This order has already been paid."
@@ -2030,7 +2030,7 @@
       "cleaner_already_started": "The cleaner has already started this cleaning.",
       "start_time_not_reached": "The booked start time has not come yet.",
       "recurring_already_confirmed": "You've already confirmed this cleaning. Pay the cleaner in cash on the day.",
-      "cash_requires_saved_card": "Cash requires a valid saved card in the booking currency."
+      "cash_requires_saved_card": "Cash payment requires the customer to have a valid saved card in the order's currency."
     },
     "address": {
       "already_exists": "You already have this address saved.",
@@ -2078,12 +2078,12 @@
     },
     "gdpr": {
       "deletion_already_pending": "Account deletion is already in progress.",
-      "deletion_blocked_by_order": "Your account can't be deleted yet — there is an active order.",
-      "deletion_blocked_by_invoice": "Your account can't be deleted yet — there is an open invoice.",
+      "deletion_blocked_by_order": "This account can't be deleted yet — there is an active order.",
+      "deletion_blocked_by_invoice": "This account can't be deleted yet — there is an open invoice.",
       "consent_not_found": "Consent not found.",
       "consent_already_granted": "This consent has already been granted.",
-      "deletion_blocked_by_assigned_order": "Your account can't be deleted while you are still assigned to a job.",
-      "deletion_blocked_by_unsettled_pay": "Your account can't be deleted while pay is still owed to you. Contact the office to settle it first.",
+      "deletion_blocked_by_assigned_order": "This account can't be deleted yet — there is an assigned job.",
+      "deletion_blocked_by_unsettled_pay": "This account can't be deleted until the pay still owed on it has been paid out.",
       "consent_not_editable": "This consent can't be changed here."
     },
     "promo": {

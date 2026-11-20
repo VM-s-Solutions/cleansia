@@ -3466,14 +3466,14 @@
       "not_allowed_to_update": "Tohoto partnera nemůžete upravovat.",
       "not_found": "Partner nenalezen.",
       "pay_config_missing": "Tento uklízeč nemá nastavenou odměnu u jedné nebo více aktivních služeb či balíčků. Před schválením chybějící nastavení doplňte.",
-      "profile_incomplete": "Před přijímáním zakázek prosím dokončete svůj profil.",
+      "profile_incomplete": "Profil partnera není kompletní; zakázky lze přijímat až po jeho dokončení.",
       "weekly_limit_invalid": "Týdenní limit zakázek musí být alespoň 1, nebo prázdný pro neomezený počet",
       "work_country_operator_mismatch": "Pracovní země patří jiné provozní společnosti.",
       "weekly_limit_reason_required": "Napište, proč tohoto uklízeče omezujete. Důvod se mu zobrazí.",
-      "legal_documents_not_accepted": "Než začnete přijímat zakázky, přijměte aktuální verzi svých smluvních dokumentů.",
+      "legal_documents_not_accepted": "Aktuální verze smluvních dokumentů zatím nebyla přijata; zakázky lze přijímat až po jejím přijetí.",
       "business_ceased": "Podle registru ekonomických subjektů (ARES) podnikání pod tímto IČO zaniklo. Zadejte IČO podnikání, které stále trvá.",
-      "trade_licence_inactive": "Podle registru ekonomických subjektů (ARES) není pod tímto IČO platné živnostenské oprávnění. Zkontrolujte číslo, nebo si nejprve obnovte živnostenské oprávnění.",
-      "business_registry_unavailable": "Registr ekonomických subjektů (ARES) se nepodařilo kontaktovat, takže nové IČO nešlo ověřit a nic se neuložilo. Zkuste to znovu za několik minut."
+      "trade_licence_inactive": "Podle registru ekonomických subjektů (ARES) není pod tímto IČO platné živnostenské oprávnění. Zkontrolujte číslo; jinak je nejprve nutné živnostenské oprávnění obnovit.",
+      "business_registry_unavailable": "Registr ekonomických subjektů (ARES) se nepodařilo kontaktovat, takže toto IČO nešlo ověřit a nic se neuložilo. Zkuste to znovu za několik minut."
     },
     "employee_document": {
       "deletion_already_resolved": "Tato žádost o smazání již byla vyřízena.",
@@ -3493,8 +3493,8 @@
       "deletion_already_pending": "Smazání účtu již probíhá.",
       "deletion_blocked_by_order": "Účet zatím nelze smazat — existuje aktivní objednávka.",
       "deletion_blocked_by_invoice": "Účet zatím nelze smazat — existuje nevyřízená faktura.",
-      "deletion_blocked_by_assigned_order": "Váš účet nelze smazat, dokud jste přiřazeni k zakázce.",
-      "deletion_blocked_by_unsettled_pay": "Váš účet nelze smazat, dokud vám dlužíme odměnu. Nejprve to vyřešte s kanceláří.",
+      "deletion_blocked_by_assigned_order": "Účet zatím nelze smazat — existuje přiřazená zakázka.",
+      "deletion_blocked_by_unsettled_pay": "Účet nelze smazat, dokud k němu není vyplacena dlužná odměna.",
       "consent_not_found": "Souhlas nenalezen.",
       "consent_already_granted": "Tento souhlas již byl udělen.",
       "request_not_found": "Tuto žádost GDPR jsme nenašli.",
@@ -3510,7 +3510,7 @@
       "not_supported": "Tento jazyk není podporován."
     },
     "legal": {
-      "document_not_found": "Tuto zakázku nyní nelze převzít."
+      "document_not_found": "Tento právní dokument zatím není k dispozici."
     },
     "loyalty": {
       "points_exceed_sanity_cap": "Tento počet bodů překračuje limit povolený pro ruční úpravu.",
@@ -3546,14 +3546,14 @@
       "completion_notes": {
         "too_long": "Poznámky k dokončení jsou příliš dlouhé."
       },
-      "employee_already_assigned": "Na tuto zakázku jste již přiřazeni.",
-      "employee_not_assigned": "Na tuto zakázku nejste přiřazeni.",
+      "employee_already_assigned": "Partner je již přiřazen k této objednávce.",
+      "employee_not_assigned": "Partner není přiřazen k této objednávce.",
       "empty": "Objednávka je prázdná. Přidejte prosím alespoň jednu službu.",
-      "in_progress_cannot_cancel": "Rezervace probíhá a nelze ji zrušit.",
+      "in_progress_cannot_cancel": "Tento úklid už probíhá a nelze jej zrušit.",
       "invalid_status_transition": "Tato akce není pro aktuální stav objednávky povolena.",
       "no_available_spots": "Tuto zakázku už převzal jiný uklízeč.",
       "not_confirmed": "Tato zakázka ještě není potvrzena.",
-      "not_found": "Rezervace nenalezena.",
+      "not_found": "Tuto objednávku jsme nenašli.",
       "not_in_progress": "Tato zakázka není v průběhu.",
       "payment_gateway_unavailable": "Platební služba je dočasně nedostupná.",
       "selected_package": {
@@ -3579,8 +3579,8 @@
       "cleaner_already_started": "Uklízeč už s úklidem začal.",
       "start_time_not_reached": "Objednaný čas začátku ještě nenastal.",
       "cash_already_collected": "Hotovost za tuto zakázku již byla přijata.",
-      "payment_not_outstanding": "U této zakázky už není co vybrat — je uhrazená, nebo byly peníze vráceny. Hotovost nevybírejte.",
-      "cash_not_allowed_on_card_order": "Tato zakázka se platí kartou, hotovost u ní proto nelze zaznamenat. Hotovost nevybírejte — požádejte o vyřízení kancelář.",
+      "payment_not_outstanding": "U této zakázky už není co vybrat — je uhrazená, nebo byly peníze vráceny. Hotovost se za ni nevybírá.",
+      "cash_not_allowed_on_card_order": "Tato zakázka se platí kartou, hotovost u ní proto nelze zaznamenat. Hotovost se za ni nevybírá — vyřízení zajistí kancelář.",
       "cash_amount_invalid": "Zadejte částku větší než nula, nejvýše na haléře",
       "cash_received_at_in_future": "Hotovost nemohla být přijata v budoucnosti",
       "cash_received_at_before_clean": "Hotovost nemohla být přijata dříve, než mohl úklid začít"
@@ -3626,7 +3626,7 @@
       "stripe_signature_required": "Hlavička podpisu Stripe je povinná"
     },
     "payout": {
-      "not_found": "Zatím jste nezadali své bankovní údaje. Doplňte je, abychom vám mohli poslat výplatu."
+      "not_found": "Zatím nejsou uloženy žádné bankovní údaje; výplatu lze poslat až po jejich doplnění."
     },
     "payroll": {
       "employee_not_assigned": "Partner není přiřazen k této objednávce",

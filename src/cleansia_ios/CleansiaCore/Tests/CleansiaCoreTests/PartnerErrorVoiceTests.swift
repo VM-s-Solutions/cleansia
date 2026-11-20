@@ -276,7 +276,7 @@ final class PartnerErrorVoiceTests: XCTestCase {
         "contract.not_accepted": "Please read and accept the contract for work before taking the job.",
         "contract.text_mismatch": "The contract was updated — please read it again.",
         "contract.acceptance_required": "Accept the contract for work for this job before you continue.",
-        "legal.document_not_found": "This job cannot be taken right now."
+        "legal.document_not_found": "This legal text is not available yet."
     ]
 
     override func tearDown() {

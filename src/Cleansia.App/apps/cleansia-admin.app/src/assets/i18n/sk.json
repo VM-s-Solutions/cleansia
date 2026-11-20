@@ -3466,14 +3466,14 @@
       "not_allowed_to_update": "Tohto partnera nemôžete upravovať.",
       "not_found": "Partner sa nenašiel.",
       "pay_config_missing": "Tento upratovač nemá nastavenú odmenu pri jednej alebo viacerých aktívnych službách či balíkoch. Pred schválením chýbajúce nastavenie doplňte.",
-      "profile_incomplete": "Pred prijímaním zákaziek si prosím dokončite profil.",
+      "profile_incomplete": "Profil partnera nie je kompletný; zákazky je možné prijímať až po jeho dokončení.",
       "weekly_limit_invalid": "Týždenný limit zakázok musí byť aspoň 1, alebo prázdny pre neobmedzený počet",
       "work_country_operator_mismatch": "Pracovná krajina patrí inej prevádzkovej spoločnosti.",
       "weekly_limit_reason_required": "Napíšte, prečo tohto upratovača obmedzujete. Dôvod sa mu zobrazí.",
-      "legal_documents_not_accepted": "Skôr než začnete prijímať zákazky, prijmite aktuálnu verziu svojich zmluvných dokumentov.",
+      "legal_documents_not_accepted": "Aktuálna verzia zmluvných dokumentov zatiaľ nebola prijatá; zákazky je možné prijímať až po jej prijatí.",
       "business_ceased": "Podľa registra ekonomických subjektov (ARES) podnikanie pod týmto IČO zaniklo. Zadajte IČO podnikania, ktoré stále trvá.",
-      "trade_licence_inactive": "Podľa registra ekonomických subjektov (ARES) nie je pod týmto IČO platné živnostenské oprávnenie. Skontrolujte číslo, alebo si najprv obnovte živnostenské oprávnenie.",
-      "business_registry_unavailable": "Register ekonomických subjektov (ARES) sa nepodarilo kontaktovať, takže nové IČO nebolo možné overiť a nič sa neuložilo. Skúste to znova o niekoľko minút."
+      "trade_licence_inactive": "Podľa registra ekonomických subjektov (ARES) nie je pod týmto IČO platné živnostenské oprávnenie. Skontrolujte číslo; inak je najprv potrebné živnostenské oprávnenie obnoviť.",
+      "business_registry_unavailable": "Register ekonomických subjektov (ARES) sa nepodarilo kontaktovať, takže toto IČO nebolo možné overiť a nič sa neuložilo. Skúste to znova o niekoľko minút."
     },
     "employee_document": {
       "deletion_already_resolved": "Táto žiadosť o vymazanie už bola vybavená.",
@@ -3493,8 +3493,8 @@
       "deletion_already_pending": "Vymazanie účtu už prebieha.",
       "deletion_blocked_by_order": "Účet zatiaľ nie je možné vymazať — existuje aktívna objednávka.",
       "deletion_blocked_by_invoice": "Účet zatiaľ nie je možné vymazať — existuje nevybavená faktúra.",
-      "deletion_blocked_by_assigned_order": "Váš účet sa nedá zmazať, kým ste priradený k zakázke.",
-      "deletion_blocked_by_unsettled_pay": "Váš účet sa nedá zmazať, kým vám dlžíme odmenu. Najprv to vyriešte s kanceláriou.",
+      "deletion_blocked_by_assigned_order": "Účet zatiaľ nie je možné vymazať — existuje priradená zákazka.",
+      "deletion_blocked_by_unsettled_pay": "Účet nie je možné vymazať, kým k nemu nie je vyplatená dlžná odmena.",
       "consent_not_found": "Súhlas nebol nájdený.",
       "consent_already_granted": "Tento súhlas už bol udelený.",
       "request_not_found": "Túto žiadosť GDPR sme nenašli.",
@@ -3510,7 +3510,7 @@
       "not_supported": "Tento jazyk nie je podporovaný."
     },
     "legal": {
-      "document_not_found": "Túto zákazku teraz nie je možné prevziať."
+      "document_not_found": "Tento právny dokument zatiaľ nie je k dispozícii."
     },
     "loyalty": {
       "points_exceed_sanity_cap": "Tento počet bodov prekračuje limit povolený pre ručnú úpravu.",
@@ -3546,14 +3546,14 @@
       "completion_notes": {
         "too_long": "Poznámky k dokončeniu sú príliš dlhé."
       },
-      "employee_already_assigned": "Na túto zákazku ste už priradení.",
-      "employee_not_assigned": "Na túto zákazku nie ste priradení.",
+      "employee_already_assigned": "Partner je už priradený k tejto objednávke.",
+      "employee_not_assigned": "Partner nie je priradený k tejto objednávke.",
       "empty": "Objednávka je prázdna. Pridajte prosím aspoň jednu službu.",
-      "in_progress_cannot_cancel": "Rezervácia prebieha a nie je možné ju zrušiť.",
+      "in_progress_cannot_cancel": "Toto upratovanie už prebieha a nedá sa zrušiť.",
       "invalid_status_transition": "Táto akcia nie je pre aktuálny stav objednávky povolená.",
       "no_available_spots": "Túto zákazku už prevzal iný upratovač.",
       "not_confirmed": "Táto zákazka ešte nie je potvrdená.",
-      "not_found": "Rezervácia nenájdená.",
+      "not_found": "Túto objednávku sme nenašli.",
       "not_in_progress": "Táto zákazka nie je v priebehu.",
       "payment_gateway_unavailable": "Platobná služba je dočasne nedostupná.",
       "selected_package": {
@@ -3579,8 +3579,8 @@
       "cleaner_already_started": "Upratovač už s upratovaním začal.",
       "start_time_not_reached": "Objednaný čas začiatku ešte nenastal.",
       "cash_already_collected": "Hotovosť za túto zákazku už bola prijatá.",
-      "payment_not_outstanding": "Pri tejto zákazke už nie je čo vybrať — je uhradená alebo boli peniaze vrátené. Hotovosť nevyberajte.",
-      "cash_not_allowed_on_card_order": "Táto zákazka sa platí kartou, hotovosť pri nej preto nemožno zaznamenať. Hotovosť nevyberajte — požiadajte o vybavenie kanceláriu.",
+      "payment_not_outstanding": "Pri tejto zákazke už nie je čo vybrať — je uhradená alebo boli peniaze vrátené. Hotovosť sa za ňu nevyberá.",
+      "cash_not_allowed_on_card_order": "Táto zákazka sa platí kartou, hotovosť pri nej preto nemožno zaznamenať. Hotovosť sa za ňu nevyberá — vybavenie zabezpečí kancelária.",
       "cash_amount_invalid": "Zadajte sumu väčšiu ako nula, najviac na centy",
       "cash_received_at_in_future": "Hotovosť nemohla byť prijatá v budúcnosti",
       "cash_received_at_before_clean": "Hotovosť nemohla byť prijatá skôr, ako mohlo upratovanie začať"
@@ -3626,7 +3626,7 @@
       "stripe_signature_required": "Hlavička s podpisom Stripe je povinná"
     },
     "payout": {
-      "not_found": "Zatiaľ ste nezadali svoje bankové údaje. Doplňte ich, aby sme vám mohli poslať výplatu."
+      "not_found": "Zatiaľ nie sú uložené žiadne bankové údaje; výplatu je možné poslať až po ich doplnení."
     },
     "payroll": {
       "employee_not_assigned": "Partner nie je priradený k tejto objednávke",

@@ -618,7 +618,7 @@
     <string name="error_employee_not_found">Partner not found.</string>
     <string name="error_employee_not_existing_email">No partner found with this email.</string>
     <string name="error_employee_not_allowed_to_update">You can\'t edit this partner.</string>
-    <string name="error_employee_profile_incomplete">Please complete your profile before taking jobs.</string>
+    <string name="error_employee_profile_incomplete">The partner profile is incomplete; jobs can be taken only once it is complete.</string>
     <string name="error_employee_documents_missing">Required documents are missing. Please upload them in your profile.</string>
     <string name="error_employee_already_approved">This partner is already approved.</string>
     <string name="error_employee_already_rejected">This partner is already rejected.</string>
@@ -631,10 +631,10 @@
     <string name="error_employee_document_duplicate_file">You have already uploaded this exact file. Choose a different file, or replace the existing document.</string>
 
     <!-- Order — lifecycle + assignment -->
-    <string name="error_order_not_found">Booking not found.</string>
+    <string name="error_order_not_found">We couldn\'t find that order.</string>
     <string name="error_order_take_already_cancelled">This order is already cancelled.</string>
     <string name="error_order_take_already_completed">This order is already completed.</string>
-    <string name="error_order_in_progress_cannot_cancel">This booking is in progress and can\'t be cancelled.</string>
+    <string name="error_order_in_progress_cannot_cancel">This cleaning is already in progress and can no longer be cancelled.</string>
     <string name="error_order_cancellation_window_closed">The cancellation window has closed.</string>
     <string name="error_order_empty">Your order is empty. Please add at least one service.</string>
     <string name="error_order_already_assigned">This order was just taken by another cleaner.</string>
@@ -642,8 +642,8 @@
     <string name="error_order_not_takeable">This job is no longer available.</string>
     <string name="error_order_weekly_limit_reached">You\'ve reached your weekly order limit.</string>
     <string name="error_order_time_conflict">This order conflicts with another you\'ve already taken.</string>
-    <string name="error_order_employee_already_assigned">You\'re already assigned to this order.</string>
-    <string name="error_order_employee_not_assigned">You\'re not assigned to this order.</string>
+    <string name="error_order_employee_already_assigned">The partner is already assigned to this order.</string>
+    <string name="error_order_employee_not_assigned">The partner is not assigned to this order.</string>
     <string name="error_order_max_employees_exceeded">This order already has the maximum number of cleaners.</string>
     <string name="error_order_preferred_employee_not_eligible">The selected cleaner isn\'t available for this order.</string>
     <string name="error_order_employee_already_has_order_in_progress">You already have another order in progress. Finish it before starting a new one.</string>
@@ -652,14 +652,14 @@
     <string name="error_contract_not_accepted">Please read and accept the contract for work before taking the job.</string>
     <string name="error_contract_text_mismatch">The contract was updated \u2014 please read it again.</string>
     <string name="error_contract_acceptance_required">Accept the contract for work for this job before you continue.</string>
-    <string name="error_legal_document_not_found">This job cannot be taken right now.</string>
-    <string name="error_employee_legal_documents_not_accepted">Accept the current version of your contract documents before taking jobs.</string>
+    <string name="error_legal_document_not_found">This legal text is not available yet.</string>
+    <string name="error_employee_legal_documents_not_accepted">The current version of the contract documents has not been accepted yet; jobs can be taken only once it is accepted.</string>
     <string name="error_legal_document_not_in_force">This document is no longer the version in force. Reload it and accept the current one.</string>
 
     <!-- Order — completion -->
     <string name="error_order_not_in_progress">This order isn\'t in progress.</string>
     <string name="error_order_not_confirmed">This order isn\'t confirmed yet.</string>
-    <string name="error_order_too_early_to_start">Too early to start — you can begin up to an hour before the booking.</string>
+    <string name="error_order_too_early_to_start">Too early to start — you can begin up to an hour before the start time.</string>
     <string name="error_order_not_completed">You can review an order only after it\'s completed.</string>
     <string name="error_order_actual_time_positive">Actual time must be greater than zero.</string>
     <string name="error_order_completion_notes_required">Completion notes are required.</string>
@@ -680,8 +680,8 @@
     <string name="error_order_card_payment_already_settled">This order was already paid by card. Don\'t collect cash — the payment status has been updated.</string>
     <string name="error_order_card_payment_in_progress">A card payment for this order is still processing. Wait a moment and try again.</string>
     <string name="error_order_card_payment_unverified">We couldn\'t check this order\'s card payment. Don\'t collect cash yet — try again in a moment.</string>
-    <string name="error_order_cash_not_allowed_on_card_order">This order is paid by card, so cash can\'t be recorded for it. Don\'t take cash — ask an office admin to settle it.</string>
-    <string name="error_order_payment_not_outstanding">This order has no payment left to collect — it is already settled or refunded. Don\'t take cash.</string>
+    <string name="error_order_cash_not_allowed_on_card_order">This order is paid by card, so cash can\'t be recorded for it. No cash is taken for it — the office settles it.</string>
+    <string name="error_order_payment_not_outstanding">This order has no payment left to collect — it is already settled or refunded. No cash is taken for it.</string>
     <string name="error_credit_cash_not_collectable_on_credit_order">Part of this order was already paid from the customer’s credit. Ask an office admin to settle it — do not collect the amount shown.</string>
 
     <!-- Order — notes / issues / review -->
@@ -723,19 +723,19 @@
     <string name="error_validation_invalid_age">Please enter a valid age.</string>
     <string name="error_validation_invalid_phone_number">Please enter a valid phone number.</string>
     <string name="error_validation_invalid_national_id">Please enter a valid national ID.</string>
-    <string name="error_validation_passport_id_invalid_length">Your passport / ID number must be 5 to 20 characters long.</string>
+    <string name="error_validation_passport_id_invalid_length">The passport / ID number must be 5 to 20 characters long.</string>
     <string name="error_validation_invalid_tax_id">Please enter a valid tax ID.</string>
     <string name="error_validation_invalid_iban">Please enter a valid IBAN.</string>
     <string name="error_validation_invalid_zip_code">Please enter a valid ZIP code.</string>
     <string name="error_validation_registration_number_invalid_format">Please enter a valid company registration number for the selected country.</string>
     <string name="error_validation_registration_number_not_registered">This company ID (IČO) is not in the business register (ARES). Check the number.</string>
     <string name="error_employee_business_ceased">The business register (ARES) shows that the business under this company ID (IČO) has ended. Enter the IČO of a business that is still trading.</string>
-    <string name="error_employee_trade_licence_inactive">The business register (ARES) shows no trade licence in force under this company ID (IČO). Check the number, or renew your trade licence first.</string>
-    <string name="error_employee_business_registry_unavailable">We could not reach the business register (ARES) to check your new company ID (IČO), so nothing was saved. Try again in a few minutes.</string>
+    <string name="error_employee_trade_licence_inactive">The business register (ARES) shows no trade licence in force under this company ID (IČO). Check the number; otherwise the trade licence has to be renewed first.</string>
+    <string name="error_employee_business_registry_unavailable">The business register (ARES) could not be reached to check this company ID (IČO), so nothing was saved. Try again in a few minutes.</string>
     <string name="error_validation_must_be_positive">Must be a positive number.</string>
 
     <!-- Payout / bank details -->
-    <string name="error_payout_not_found">You haven\'t added your bank details yet. Add them so we can pay you.</string>
+    <string name="error_payout_not_found">No bank details have been added yet; payouts can be sent only once they are added.</string>
     <string name="error_validation_payout_country_not_supported">We can\'t send payouts to a bank in this country yet. Check the bank country you picked, or contact support and we\'ll help.</string>
     <string name="error_validation_payout_scheme_not_supported">We can\'t pay out to this kind of account yet. Contact support and we\'ll help you sort it out.</string>
     <string name="error_validation_payout_looks_like_card">That looks like a payment card number. Enter your bank account number instead — you\'ll find it on your bank statement or in your banking app.</string>
@@ -853,8 +853,8 @@
     <string name="error_gdpr_consent_not_found">Consent not found.</string>
     <string name="error_gdpr_consent_not_editable">This consent can\'t be changed here.</string>
     <string name="error_gdpr_deletion_already_pending">Account deletion is already in progress.</string>
-    <string name="error_gdpr_deletion_blocked_by_invoice">Your account can\'t be deleted yet — there is an open invoice.</string>
-    <string name="error_gdpr_deletion_blocked_by_order">Your account can\'t be deleted yet — there is an active order.</string>
+    <string name="error_gdpr_deletion_blocked_by_invoice">This account can\'t be deleted yet — there is an open invoice.</string>
+    <string name="error_gdpr_deletion_blocked_by_order">This account can\'t be deleted yet — there is an active order.</string>
     <string name="error_language_not_found">Language not found</string>
     <string name="error_order_selected_package_invalid">One of the selected packages is no longer available.</string>
     <string name="error_order_selected_services_invalid">One of the selected services is no longer available.</string>
@@ -939,8 +939,8 @@
     <string name="delete_account_confirm_message">We\'ll contact you to end the cooperation formally. Nothing is deleted today.</string>
     <string name="delete_account_confirm_yes">Send request</string>
     <string name="delete_account_requested">Deletion request submitted.</string>
-    <string name="error_gdpr_deletion_blocked_by_assigned_order">Your account can\'t be deleted while you are still assigned to a job.</string>
-    <string name="error_gdpr_deletion_blocked_by_unsettled_pay">Your account can\'t be deleted while pay is still owed to you. Contact the office to settle it first.</string>
+    <string name="error_gdpr_deletion_blocked_by_assigned_order">This account can\'t be deleted yet — there is an assigned job.</string>
+    <string name="error_gdpr_deletion_blocked_by_unsettled_pay">This account can\'t be deleted until the pay still owed on it has been paid out.</string>
     <string name="splash_unreachable_title">We can\'t reach Cleansia</string>
     <string name="splash_unreachable_message">Check your connection and try again. Your account is fine — we just couldn\'t load it.</string>
     <string name="profile_group_legal">Legal</string>
@@ -978,7 +978,7 @@
     <string name="error_payroll_invoice_pdf_not_ready">The invoice PDF is not ready yet. Try again later.</string>
     <string name="error_payroll_invoice_pdf_unavailable">The invoice PDF is unavailable. Please contact support.</string>
     <string name="error_payroll_invoice_pdf_generation_failed">Failed to generate PDF</string>
-    <string name="error_order_cash_requires_saved_card">Cash requires a valid saved card in the booking currency.</string>
+    <string name="error_order_cash_requires_saved_card">Cash payment requires the customer to have a valid saved card in the order\'s currency.</string>
     <string name="auth_email_placeholder">partner@example.com</string>
     <plurals name="orders_job_count">
         <item quantity="one">%1$d job</item>

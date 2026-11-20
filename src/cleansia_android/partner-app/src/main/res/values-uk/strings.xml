@@ -607,7 +607,7 @@
     <string name="error_employee_not_found">Партнера не знайдено.</string>
     <string name="error_employee_not_existing_email">Партнера з цією е-поштою не знайдено.</string>
     <string name="error_employee_not_allowed_to_update">Ви не можете редагувати цього партнера.</string>
-    <string name="error_employee_profile_incomplete">Перед прийняттям замовлень заповніть свій профіль.</string>
+    <string name="error_employee_profile_incomplete">Профіль партнера неповний; брати замовлення можна лише після його заповнення.</string>
     <string name="error_employee_documents_missing">Відсутні обов\'язкові документи. Завантажте їх у профілі.</string>
     <string name="error_employee_already_approved">Цього партнера вже схвалено.</string>
     <string name="error_employee_already_rejected">Цього партнера вже відхилено.</string>
@@ -618,10 +618,10 @@
     <string name="error_employee_document_deletion_already_requested">Ви вже подали запит на видалення цього документа. Ми скоро на нього відповімо.</string>
     <string name="error_employee_document_duplicate_file">Ви вже завантажили саме цей файл. Виберіть інший файл або замініть наявний документ.</string>
 
-    <string name="error_order_not_found">Бронювання не знайдено.</string>
+    <string name="error_order_not_found">Ми не знайшли це замовлення.</string>
     <string name="error_order_take_already_cancelled">Це замовлення вже скасовано.</string>
     <string name="error_order_take_already_completed">Це замовлення вже виконано.</string>
-    <string name="error_order_in_progress_cannot_cancel">Це бронювання виконується і не може бути скасоване.</string>
+    <string name="error_order_in_progress_cannot_cancel">Це прибирання вже триває, і його не можна скасувати.</string>
     <string name="error_order_cancellation_window_closed">Термін скасування вичерпано.</string>
     <string name="error_order_empty">Ваше замовлення порожнє. Будь ласка, додайте принаймні одну послугу.</string>
     <string name="error_order_already_assigned">Це замовлення щойно взяв інший прибиральник.</string>
@@ -629,8 +629,8 @@
     <string name="error_order_not_takeable">Це замовлення більше не доступне.</string>
     <string name="error_order_weekly_limit_reached">Ви досягли тижневого ліміту замовлень.</string>
     <string name="error_order_time_conflict">Це замовлення перетинається з іншим, яке ви вже взяли.</string>
-    <string name="error_order_employee_already_assigned">Вас уже призначено на це замовлення.</string>
-    <string name="error_order_employee_not_assigned">Вас не призначено на це замовлення.</string>
+    <string name="error_order_employee_already_assigned">Партнера вже призначено на це замовлення.</string>
+    <string name="error_order_employee_not_assigned">Партнера не призначено на це замовлення.</string>
     <string name="error_order_max_employees_exceeded">На цьому замовленні вже максимальна кількість прибиральників.</string>
     <string name="error_order_preferred_employee_not_eligible">Вибраний клінер недоступний для цього замовлення.</string>
     <string name="error_order_employee_already_has_order_in_progress">У вас уже є інше замовлення в роботі. Завершіть його перед початком нового.</string>
@@ -639,8 +639,8 @@
     <string name="error_contract_not_accepted">Перш ніж взяти замовлення, прочитайте та прийміть договір підряду.</string>
     <string name="error_contract_text_mismatch">Договір оновлено \u2014 будь ласка, прочитайте його ще раз.</string>
     <string name="error_contract_acceptance_required">Перш ніж продовжити, прийміть договір підряду для цього замовлення.</string>
-    <string name="error_legal_document_not_found">Це замовлення зараз неможливо взяти.</string>
-    <string name="error_employee_legal_documents_not_accepted">Перш ніж брати замовлення, прийміть чинну версію своїх договірних документів.</string>
+    <string name="error_legal_document_not_found">Цей юридичний документ поки що недоступний.</string>
+    <string name="error_employee_legal_documents_not_accepted">Чинну версію договірних документів ще не прийнято; брати замовлення можна лише після її прийняття.</string>
     <string name="error_legal_document_not_in_force">Цей документ уже не є чинною версією. Завантажте його знову та прийміть чинну версію.</string>
 
     <string name="error_order_not_in_progress">Це замовлення не в роботі.</string>
@@ -666,8 +666,8 @@
     <string name="error_order_card_payment_already_settled">Це замовлення вже оплачено карткою. Не беріть готівку — статус оплати оновлено.</string>
     <string name="error_order_card_payment_in_progress">Оплата карткою за це замовлення ще обробляється. Зачекайте хвилинку та спробуйте ще раз.</string>
     <string name="error_order_card_payment_unverified">Не вдалося перевірити оплату карткою за це замовлення. Поки не беріть готівку — спробуйте ще раз за хвилину.</string>
-    <string name="error_order_cash_not_allowed_on_card_order">Це замовлення оплачується карткою, тому готівку за нього зафіксувати не можна. Не беріть готівку — зверніться до офісу.</string>
-    <string name="error_order_payment_not_outstanding">За цим замовленням уже нічого стягувати — його оплачено або кошти повернено. Не беріть готівку.</string>
+    <string name="error_order_cash_not_allowed_on_card_order">Це замовлення оплачується карткою, тому готівку за нього зафіксувати не можна. Готівку за нього не беруть — це врегульовує офіс.</string>
+    <string name="error_order_payment_not_outstanding">За цим замовленням уже нічого стягувати — його оплачено або кошти повернено. Готівку за нього не беруть.</string>
     <string name="error_credit_cash_not_collectable_on_credit_order">Частину цього замовлення вже оплачено кредитом клієнта. Зверніться до офісу — не беріть суму, вказану в додатку.</string>
 
     <string name="error_order_note_content_required">Текст нотатки обов\'язковий.</string>
@@ -711,12 +711,12 @@
     <string name="error_validation_registration_number_invalid_format">Введіть дійсний реєстраційний номер компанії для обраної країни.</string>
     <string name="error_validation_registration_number_not_registered">Цього ідентифікаційного номера (IČO) немає в реєстрі економічних суб\'єктів (ARES). Перевірте номер.</string>
     <string name="error_employee_business_ceased">За даними реєстру економічних суб\'єктів (ARES), підприємницьку діяльність під цим ідентифікаційним номером (IČO) припинено. Введіть IČO діяльності, яка ще триває.</string>
-    <string name="error_employee_trade_licence_inactive">За даними реєстру економічних суб\'єктів (ARES), під цим ідентифікаційним номером (IČO) немає чинного дозволу на підприємницьку діяльність. Перевірте номер або спершу поновіть дозвіл.</string>
-    <string name="error_employee_business_registry_unavailable">Не вдалося зв\'язатися з реєстром економічних суб\'єктів (ARES), щоб перевірити ваш новий ідентифікаційний номер (IČO), тому нічого не збережено. Спробуйте ще раз за кілька хвилин.</string>
+    <string name="error_employee_trade_licence_inactive">За даними реєстру економічних суб\'єктів (ARES), під цим ідентифікаційним номером (IČO) немає чинного дозволу на підприємницьку діяльність. Перевірте номер; інакше спершу потрібно поновити дозвіл.</string>
+    <string name="error_employee_business_registry_unavailable">Не вдалося зв\'язатися з реєстром економічних суб\'єктів (ARES), щоб перевірити цей ідентифікаційний номер (IČO), тому нічого не збережено. Спробуйте ще раз за кілька хвилин.</string>
     <string name="error_validation_must_be_positive">Має бути додатне число.</string>
 
     <!-- Payout / bank details -->
-    <string name="error_payout_not_found">Ви ще не додали свої банківські реквізити. Додайте їх, щоб ми могли надіслати вам виплату.</string>
+    <string name="error_payout_not_found">Банківські реквізити ще не додано; виплату можна надіслати лише після їх додавання.</string>
     <string name="error_validation_payout_country_not_supported">Ми поки не надсилаємо виплати в банки цієї країни. Перевірте обрану країну банку або зверніться до підтримки — ми допоможемо.</string>
     <string name="error_validation_payout_scheme_not_supported">Ми поки не надсилаємо виплати на такий тип рахунку. Зверніться до підтримки — ми допоможемо це вирішити.</string>
     <string name="error_validation_payout_looks_like_card">Це схоже на номер платіжної картки. Введіть натомість номер банківського рахунку — його вказано у виписці або в банківському застосунку.</string>
@@ -918,8 +918,8 @@
     <string name="delete_account_confirm_message">Ми зв\'яжемося з вами та офіційно завершимо співпрацю. Сьогодні нічого не видаляється.</string>
     <string name="delete_account_confirm_yes">Надіслати</string>
     <string name="delete_account_requested">Запит на видалення надіслано.</string>
-    <string name="error_gdpr_deletion_blocked_by_assigned_order">Ваш обліковий запис не можна видалити, поки ви призначені на роботу.</string>
-    <string name="error_gdpr_deletion_blocked_by_unsettled_pay">Ваш обліковий запис не можна видалити, поки вам не виплачено винагороду. Спочатку вирішіть це з офісом.</string>
+    <string name="error_gdpr_deletion_blocked_by_assigned_order">Обліковий запис поки не можна видалити — є призначене замовлення.</string>
+    <string name="error_gdpr_deletion_blocked_by_unsettled_pay">Обліковий запис не можна видалити, доки за ним не виплачено заборговану винагороду.</string>
     <string name="splash_unreachable_title">Не вдається зв\'язатися з Cleansia</string>
     <string name="splash_unreachable_message">Перевірте з\'єднання та спробуйте ще раз. З вашим акаунтом усе гаразд — ми просто не змогли його завантажити.</string>
     <string name="profile_group_legal">Правова інформація</string>
@@ -957,7 +957,7 @@
     <string name="error_payroll_invoice_pdf_not_ready">PDF рахунку ще не готовий. Спробуйте пізніше.</string>
     <string name="error_payroll_invoice_pdf_unavailable">PDF рахунку недоступний. Зверніться до підтримки.</string>
     <string name="error_payroll_invoice_pdf_generation_failed">Не вдалося створити PDF рахунку. Зверніться до підтримки.</string>
-    <string name="error_order_cash_requires_saved_card">Для оплати готівкою потрібна дійсна збережена картка у валюті замовлення.</string>
+    <string name="error_order_cash_requires_saved_card">Для оплати готівкою клієнт повинен мати дійсну збережену картку у валюті замовлення.</string>
     <string name="auth_email_placeholder">partner@example.com</string>
     <plurals name="orders_job_count">
         <item quantity="one">%1$d замовлення</item>

@@ -132,6 +132,7 @@ public static class FileExtensions
             ZipCode = employee.Address?.ZipCode,
             City = employee.Address?.City,
             Country = employee.Address?.Country?.Name,
+            CountryTranslations = employee.Address?.Country?.Translations ?? new Dictionary<string, Translation>(),
             RegistrationNumber = employee.RegistrationNumber,
             IsVatPayer = cleanersAreVatPayers,
             Email = employee.User?.Email,

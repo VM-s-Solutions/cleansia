@@ -214,6 +214,30 @@ public class PayoutInvoiceLayoutTests
     private static string Czk(decimal amount) =>
         $"{amount.ToString("N2", CultureInfo.GetCultureInfo("cs-CZ"))} Kč";
 
+    // The cleaner's own language is the set-off statement's, never the document's: a Czech invoice names
+    // the country in Czech whichever of the five languages the cleaner reads.
+    [Theory]
+    [InlineData("cs")]
+    [InlineData("sk")]
+    [InlineData("uk")]
+    [InlineData("ru")]
+    [InlineData("en")]
+    public void The_Supplier_Country_Is_Named_In_The_Documents_Language(string cleanersLanguage)
+    {
+        var data = CzechCleanersInvoice(cleanersLanguage);
+
+        Assert.Contains(Czech.Supplier(data), f => f.Label == "Země" && f.Value == "Česká republika");
+        Assert.Contains(Default.Supplier(data), f => f.Label == "Country" && f.Value == "Czech Republic");
+    }
+
+    [Fact]
+    public void A_Country_Without_A_Name_In_The_Documents_Language_Prints_Its_Catalogue_Name()
+    {
+        var data = CzechCleanersInvoice("cs", translations: new() { ["en"] = "Czech Republic" });
+
+        Assert.Contains(Czech.Supplier(data), f => f.Label == "Země" && f.Value == "Czechia");
+    }
+
     // ── end-to-end: the document actually renders ────────────────────
 
     [Fact]
@@ -328,6 +352,40 @@ public class PayoutInvoiceLayoutTests
         [new DefaultInvoiceLayoutBuilder(), new CzechInvoiceLayoutBuilder()]);
 
     private static QuestPdfService PdfService() => new(Factory(), NullLogger<QuestPdfService>.Instance);
+
+    private static readonly Dictionary<string, string> CzechRepublicInFiveLanguages = new()
+    {
+        ["en"] = "Czech Republic",
+        ["cs"] = "Česká republika",
+        ["sk"] = "Česko",
+        ["uk"] = "Чехія",
+        ["ru"] = "Чешская Республика"
+    };
+
+    private static InvoicePdfData CzechCleanersInvoice(string cleanersLanguage, Dictionary<string, string>? translations = null)
+    {
+        var country = Country.Create("Czechia", "CZE", "CZ");
+        typeof(Country)
+            .GetField("_translations", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+            .SetValue(country, (translations ?? CzechRepublicInFiveLanguages).ToDictionary(
+                t => t.Key, t => new Translation { Name = t.Value, Description = string.Empty }));
+
+        var address = Address.Create("Dlouhá 12", "Praha", "11000", "cz");
+        typeof(Address).GetProperty(nameof(Address.Country))!.SetValue(address, country);
+
+        var employee = Employee.CreateWithUser(User.CreateWithPassword("cleaner@cleansia.test", "12345678Test!", "Jan", "Novák"));
+        employee.UpdateAddress(address);
+
+        return PayrollMockFactory.Invoice(payPeriod: PayrollMockFactory.OpenPeriod()).CreatePdfData(
+            employee,
+            Currency.Create("CZK", "Kč", "Czech koruna"),
+            [],
+            countryContext: null,
+            companyInfo: CompanyInfo.Create(
+                "Cleansia s.r.o.", "Cleansia", "87654321", "Václavské náměstí 1", "Praha", "11000", "cz"),
+            payoutDetails: null,
+            statementLanguageCode: cleanersLanguage);
+    }
 
     private static InvoiceSupplierData Supplier() => new()
     {

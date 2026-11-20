@@ -131,7 +131,7 @@ public class DefaultInvoiceLayoutBuilder : IInvoiceLayoutBuilder
         {
             new(Labels.Name, supplier.Name),
             new(Labels.Address, FormatAddress(supplier)),
-            new(Labels.Country, supplier.Country),
+            new(Labels.Country, CountryName(supplier)),
             new(Labels.RegistrationNumber, supplier.RegistrationNumber)
         };
 
@@ -146,6 +146,12 @@ public class DefaultInvoiceLayoutBuilder : IInvoiceLayoutBuilder
 
         return fields;
     }
+
+    private string? CountryName(InvoiceSupplierData supplier) =>
+        supplier.CountryTranslations.TryGetValue(Labels.LanguageCode, out var translation) &&
+        !string.IsNullOrWhiteSpace(translation.Name)
+            ? translation.Name
+            : supplier.Country;
 
     protected virtual IReadOnlyList<InvoiceField> ContactFields(InvoicePdfData data) =>
     [

@@ -4,6 +4,8 @@ public record InvoiceField(string Label, string? Value);
 
 public record InvoiceLabels
 {
+    public string LanguageCode { get; init; } = "en";
+
     public string DocumentTitle { get; init; } = "Invoice";
     public string InvoiceNumber { get; init; } = "Invoice #";
     public string IssueDate { get; init; } = "Issue date";
@@ -71,6 +73,8 @@ public record InvoiceLabels
 
     public static InvoiceLabels Czech { get; } = new()
     {
+        LanguageCode = "cs",
+
         DocumentTitle = "Faktura",
         InvoiceNumber = "Faktura č.",
         IssueDate = "Datum vystavení",

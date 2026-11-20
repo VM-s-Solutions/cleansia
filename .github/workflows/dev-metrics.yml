@@ -1,0 +1,83 @@
+name: Read DEV metrics
+
+# Read-only. Reads Azure Monitor metrics at 1-minute grain, Resource Health, the Activity Log and App
+# Insights for the DEV footprint over the UTC windows given at dispatch; writes nothing to any resource.
+# Resource names come from deploy/bicep and weu.dev.bicepparam, and the script refuses any stage but dev.
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/dev-metrics.yml'
+      - '.github/scripts/dev_metrics.py'
+      - '.github/scripts/test_dev_metrics.py'
+  push:
+    branches: [master]
+    paths:
+      - '.github/workflows/dev-metrics.yml'
+      - '.github/scripts/dev_metrics.py'
+      - '.github/scripts/test_dev_metrics.py'
+  workflow_dispatch:
+    inputs:
+      windows:
+        description: 'UTC windows, start/end, separated by commas: 2026-11-14T09:10Z/2026-11-14T09:45Z,2026-11-15T15:55Z/2026-11-15T17:15Z (at most 12, each at most 6 hours, within 90 days)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  offline-controls:
+    if: github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - name: Test the metrics reader offline
+        run: python3 -m unittest discover -s .github/scripts -p 'test_dev_metrics.py' -v
+
+  read:
+    if: github.event_name == 'workflow_dispatch' && github.repository == 'VM-s-Solutions/cleansia' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
+    environment: dev-weu
+    env:
+      WINDOWS: ${{ inputs.windows }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            .github/scripts
+            deploy/bicep
+
+      - name: Validate the windows and resolve the DEV names before authentication
+        run: python3 .github/scripts/dev_metrics.py --windows "$WINDOWS" --validate-only
+
+      - name: Login to Azure
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Read the windows
+        env:
+          EXPECTED_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        run: python3 .github/scripts/dev_metrics.py --windows "$WINDOWS" --output "$RUNNER_TEMP/dev-metrics"
+
+      - name: Keep the raw JSON
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: dev-metrics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/dev-metrics/
+          retention-days: 14
+          if-no-files-found: warn

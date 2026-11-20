@@ -126,7 +126,7 @@ Ids are `E2E-XCUT-NNN`. DEV has one operating company (`cleansia-cz`) and one de
 - **Surfaces:** iOS · Android
 - **Rule:** → /architecture/push-notifications#language — the feed text is drawn on the device from the key and arguments in the language picked in the app
 - **Given** a feed with an `order.cleaner_assigned` row and the app set to English. **When** the customer switches the app language to Czech, then Russian. **Then** the same row is rewritten in each language with the same order number and no raw key or `push.` string visible.
-- **DEV:** a push banner cannot be checked on a simulator (see the last section); the feed can.
+- **DEV:** a DEV push reaches the iOS simulator when the customer app allows notifications, and its banner is posted there (F-114 in `e2e/runs/2026-11-20/findings.md`), but no banner's language has been read on a simulator yet (see the last section); the feed can be checked.
 
 ### E2E-XCUT-016 — The notification preferences round-trip
 - **Priority:** P2
@@ -364,7 +364,7 @@ Ids are `E2E-XCUT-NNN`. DEV has one operating company (`cleansia-cz`) and one de
 - **System jobs and their tenant shapes.** Row-driven, company-driven and company-named sweeps, the per-row scope, and the "a job that forgets its override reads nothing" rule are internal; they show only through effects that other cases check (stale-order cancel, retention, wind-down).
 - **The outbox, consumer idempotency and dead letters.** A drainer claim, a redelivered message and a poisoned message have no surface. Whether a dead-letter row exists, or that its alert carries an identity and never the body, cannot be read from outside (→ /flows/cross-cutting#dead-letters).
 - **E-mail.** Admin e-mails (one shared mailbox or each administrator in their language), customer and cleaner e-mails and their language cannot be read: `@example.com` never receives mail.
-- **Push delivery.** A push banner, the iOS Notification Service Extension and the Live Activity start alert need a device or a TestFlight build; `xcrun simctl push` never runs the extension (→ /architecture/push-notifications#language).
+- **Push delivery.** The Live Activity start alert needs a device or a TestFlight build. A real DEV push runs the iOS Notification Service Extension and posts a banner on the simulator when the customer app allows notifications (read from its device log, F-114 in `e2e/runs/2026-11-20/findings.md`), though no banner's text has been read there yet; `xcrun simctl push` never runs the extension (→ /architecture/push-notifications#language).
 - **Rate limits of the Stripe webhook and the forwarded-headers refusal to boot.** They are deployment settings, not behaviour a client can trigger.
 - **Real client-IP partitioning.** Behind the DEV front end the runner's address is the partition key; whether a wrong header collapses it into one bucket is not observable from one address.
 - **Device revocation latency (30 s) and the password-reset session cutoff.** They are AUTH cases; the bound is a security setting that changes only with a superseding ADR.

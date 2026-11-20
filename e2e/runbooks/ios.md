@@ -160,8 +160,9 @@ Partner app (cleaner).
   the app logged "No APNS token specified before fetching FCM Token" (harmless); the feed (`Notifications` bell) was
   the substitute. With `Allow`, a DEV push reaches the simulator: on 20 November 2026 (iOS 18.6, Xcode 26.3, Debug
   build) the customer app received `order.cleaner_assigned` 12 s after the take, read from
-  `xcrun simctl spawn $UDID log show` as `apsd` lines for the topic `cz.cleansia.customer` (F-114). A banner and the
-  Live Activity were not seen on a simulator.
+  `xcrun simctl spawn $UDID log show` as `apsd` lines for the topic `cz.cleansia.customer` (F-114). The same log shows
+  the Notification Service Extension delivering its content and the notification posted as a banner; neither banner
+  was screenshotted, and the Live Activity was not reached.
 
 ## 6. The phase-2 run on Wednesday 18 November
 

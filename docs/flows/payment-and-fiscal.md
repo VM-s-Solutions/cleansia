@@ -77,12 +77,23 @@ pass the same signature check and event-id stamp.
 
 | Event | What happens |
 |---|---|
-| `setup_intent.succeeded`, or `checkout.session.completed` of a setup-mode session | The saved card lands: brand, last four and expiry are read from Stripe onto the `SavedCards` row the capture started, and the customer's earlier card in that currency is retired. A second event for the same capture — a web capture raises both — changes nothing; one naming no saved card, or one already captured or removed, is ignored. The native customer apps' *Save a card* under Profile → Payments starts a setup capture. Cash requires an existing usable card from 2026-10-29, without capturing a new card in the cash flow or authorizing automatic charging. → [Business rules — the saved cards](/product/business-rules#saved-cards) |
+| `setup_intent.succeeded`, or `checkout.session.completed` of a setup-mode session | The saved card lands: brand, last four and expiry are read from Stripe onto the `SavedCards` row the capture started, and the customer's earlier card in that currency is retired. A second event for the same capture — a web capture raises both — changes nothing; one naming no saved card, or one already captured or removed, is ignored. The native customer apps' *Save a card* under Profile → Payments starts a setup capture, and only `setup_intent.succeeded` reports it, so the mobile endpoint must be subscribed to that event ([Stripe Dashboard setup](/api/webhooks#stripe-dashboard-setup)); unsubscribed, the card is attached at Stripe but its row stays pending and is never listed, as DEV showed on 2026-11-20. Cash requires an existing usable card from 2026-10-29, without capturing a new card in the cash flow or authorizing automatic charging. → [Business rules — the saved cards](/product/business-rules#saved-cards) |
 | `checkout.session.completed` of a booking's payment-mode session, or `payment_intent.succeeded`, carrying `SavedCardId` | The card the customer ticked to keep lands the same way, read from the PaymentIntent and only when it succeeded with `setup_future_usage=off_session`. **Which event then settles the order depends on the channel.** An app's intent carries the `OrderId` as well, so its `payment_intent.succeeded` goes on to the order and settles it like any card payment. A web payment raises both events, and the PaymentIntent behind the web's Checkout Session carries `SavedCardId` but no `OrderId`: whichever event arrives first lands the card and the second finds it already captured, but only `checkout.session.completed` settles the web order — the intent's event lands the card and stops there. → [Business rules — saving a card while paying](/product/business-rules#save-card) |
 | `checkout.session.completed` of a receivable's pay link | The receivable is paid, under its own company. The session names the receivable (`ReceivableId`) and **never an `OrderId`**, so the order path cannot mistake the fee for the booking's sale; the order's payment status, charge surface and refunds are untouched. |
 | `payment_intent.succeeded` of an off-session charge | The same, for a charge on the saved card. |
 | A payment for a receivable already paid by another PaymentIntent, or for a door price whose order an administrator recorded as paid in cash (since 2026-10-06) | Refunded in full on that PaymentIntent under `refund:receivable:{id}:{paymentIntent}`, so a redelivery replays the same refund. |
 | `payment_intent.payment_failed` of an off-session charge — a decline, or the bank's `authentication_required` | A pay link is opened, recorded on the receivable and e-mailed to the customer (five locales). None for a receivable no longer open, and none while card payments are switched off. |
+
+**A removed card comes off the Stripe Customer** (owner ruling 2026-11-20). `RemoveSavedCard` detaches
+the card's payment method from the customer's Stripe Customer for its currency before it deactivates
+the row, so no later sheet on that Customer offers it again. Two cases keep it attached. A card already
+off the Customer is left alone, so a retried removal changes nothing at Stripe. A card that a not-cancelled
+subscription renews on, or that the Customer's invoices default to, stays: that Customer also bills Cleansia
+Plus, and taking the card off would fail the next renewal. The row is still deactivated, so the platform
+never names it again. Nothing else needs the card. Cash bookings already made keep their agreed tender. A
+paid order's refunds go back to its charge, not to the payment method. The off-session charge is switched
+off. A Stripe that cannot be reached refuses the removal with `order.payment_gateway_unavailable` and
+leaves the card listed, so the customer can try again.
 
 **Only a ticked payment keeps a card.** With the box ticked, the booking's charge surface is opened on
 the customer's Stripe Customer for the booking's currency with `setup_future_usage=off_session` and the

@@ -1702,9 +1702,12 @@ booking needs one. The versioned consent sentence printed with the tick says the
 2026-10-05 ([The texts in force and the rulings](#legal-texts-lag)).
 
 - **Removing a card** (`DELETE api/SavedCard/Remove/{id}`, the customer's own; another's is
-  `saved_card.not_found`) deactivates the row and leaves the payment method on the Stripe Customer,
-  because a Plus subscription may renew on the same card; the platform charges only the card its own
-  active row names. It works the same whichever way the card was saved.
+  `saved_card.not_found`) takes the card off the customer's Stripe Customer and deactivates the row, so
+  no later payment sheet offers it (owner ruling 2026-11-20). A card a Plus subscription renews on, or that
+  the Customer's invoices default to, stays on the Stripe Customer, so the renewal does not fail; its row is
+  deactivated all the same. An unreachable Stripe refuses the removal (`order.payment_gateway_unavailable`).
+  It works the same whichever way the card was saved.
+  → [Payment and fiscal](/flows/payment-and-fiscal#saved-cards-and-receivables)
 - **Erasure deletes the saved cards** with the per-currency Stripe Customers they hang on.
 
 → [ADR-0070](/decisions/adr-0070), and its amendments of [2026-10-01](/decisions/adr-0070#amended-2026-10-01)

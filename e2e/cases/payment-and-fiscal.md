@@ -241,7 +241,7 @@ Webhooks have no user surface: a case that says "the webhook lands" is observed 
 - **Role:** Customer
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /product/business-rules#saved-cards — `DELETE api/SavedCard/Remove/{id}`; another's card is `saved_card.not_found`
-- **Given** customer A with a saved card and customer B signed in. **When** B calls Remove with A's card id, then A removes it from the UI. **Then** B's call answers `saved_card.not_found` and A's card is untouched; A's list showed the card before; A's removal drops it from the list and cash is again refused with `order.cash_requires_saved_card`, while A's earlier cash booking keeps its agreed tender.
+- **Given** customer A with a saved card and customer B signed in. **When** B calls Remove with A's card id, then A removes it from the UI. **Then** B's call answers `saved_card.not_found` and A's card is untouched; A's list showed the card before; A's removal drops it from the list and cash is again refused with `order.cash_requires_saved_card`, while A's earlier cash booking keeps its agreed tender; A's next card payment sheet no longer offers the removed card, because it was taken off A's Stripe Customer.
 - **DEV:** Needs two customers.
 
 ### E2E-PAY-030 — A recurring card occurrence offers the same tick

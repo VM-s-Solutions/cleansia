@@ -588,6 +588,43 @@ public class StripeClient : IStripeClient
         return new SavedCardDetails(paymentMethod.Id, card.Brand, card.Last4, (int)card.ExpMonth, (int)card.ExpYear);
     }
 
+    public async Task DetachSavedCardAsync(
+        string stripeCustomerId,
+        string paymentMethodId,
+        CancellationToken cancellationToken)
+    {
+        var paymentMethods = new PaymentMethodService(stripe);
+        var paymentMethod = await ClassifyAsync(
+            nameof(DetachSavedCardAsync),
+            () => paymentMethods.GetAsync(paymentMethodId, cancellationToken: cancellationToken));
+        if (paymentMethod.CustomerId != stripeCustomerId)
+        {
+            return;
+        }
+
+        var customer = await ClassifyAsync(
+            nameof(DetachSavedCardAsync),
+            () => new CustomerService(stripe).GetAsync(stripeCustomerId, cancellationToken: cancellationToken));
+        var paysPlus = customer.InvoiceSettings?.DefaultPaymentMethodId == paymentMethodId
+            || (await ClassifyAsync(
+                nameof(DetachSavedCardAsync),
+                () => new SubscriptionService(stripe).ListAsync(
+                    new SubscriptionListOptions { Customer = stripeCustomerId, Limit = 100 },
+                    cancellationToken: cancellationToken)))
+                .Data.Any(s => s.DefaultPaymentMethodId == paymentMethodId);
+        if (paysPlus)
+        {
+            logger.LogInformation(
+                "Removed saved card {PaymentMethodId} stays on Stripe Customer {StripeCustomerId}: its subscription or invoices pay with it",
+                paymentMethodId, stripeCustomerId);
+            return;
+        }
+
+        await ClassifyAsync(
+            nameof(DetachSavedCardAsync),
+            () => paymentMethods.DetachAsync(paymentMethodId, cancellationToken: cancellationToken));
+    }
+
     public async Task<string> ChargeReceivableOffSessionAsync(
         string receivableId,
         decimal amount,

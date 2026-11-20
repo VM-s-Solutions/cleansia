@@ -130,6 +130,9 @@ public struct CleansiaTextField: View {
                             .foregroundColor(CleansiaColors.onSurfaceVariant)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel(
+                        CoreL10n.localized(passwordVisible ? "text_field.hide_password" : "text_field.show_password")
+                    )
                 }
             }
             .padding(.top, floating && !labelAbove ? Spacing.s : 0)

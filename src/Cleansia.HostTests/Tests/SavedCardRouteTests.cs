@@ -15,7 +15,8 @@ namespace Cleansia.HostTests.Tests;
 /// The saved card on the Customer host, with a recording Stripe client (owner ruling 2026-09-28, decision
 /// 16): starting a web capture records the consent on a pending card and returns a setup-mode checkout on
 /// the customer's Stripe Customer; without the consent nothing starts; a customer reads only their own
-/// captured cards, removes their own, and cannot remove another customer's.
+/// captured cards, removes their own, which comes off their Stripe Customer, and cannot remove another
+/// customer's.
 /// </summary>
 public sealed class SavedCardRouteTests(HostTestPostgresFixture db) : AuthzHostTestBase(db)
 {
@@ -123,10 +124,11 @@ public sealed class SavedCardRouteTests(HostTestPostgresFixture db) : AuthzHostT
 
         await HttpAssert.RejectedAsync(response, BusinessErrorMessage.SavedCardNotFound);
         Assert.True(await QueryAsync(ctx => ctx.SavedCards.IgnoreQueryFilters().AnyAsync(c => c.Id == s.OutsiderCardId && c.IsActive)));
+        Assert.Empty(_stripe.DetachedSavedCards);
     }
 
     [Fact]
-    public async Task A_customer_removes_their_own_card()
+    public async Task A_customer_removes_their_own_card_and_it_comes_off_their_Stripe_Customer()
     {
         var s = await ArrangeAsync();
 
@@ -134,6 +136,7 @@ public sealed class SavedCardRouteTests(HostTestPostgresFixture db) : AuthzHostT
 
         HttpAssert.IsOk(response);
         Assert.False(await QueryAsync(ctx => ctx.SavedCards.IgnoreQueryFilters().AnyAsync(c => c.Id == s.OwnerCardId && c.IsActive)));
+        Assert.Equal(("cus_pm_owner", "pm_owner"), Assert.Single(_stripe.DetachedSavedCards));
     }
 
     [Fact]

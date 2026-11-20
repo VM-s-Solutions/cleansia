@@ -43,6 +43,23 @@ final class BirthDateFieldSheetTests: XCTestCase {
         }
     }
 
+    /// Every birth-date validator refuses today and anything over 120 years back, and the save that carries the day
+    /// shows its refusal elsewhere (under the phone on the first-sign-in step), so the wheels never offer those days.
+    func testTheWheelsOfferOnlyTheDaysTheServerAccepts() async throws {
+        let day = DayBox()
+        let canvas = HostedCanvas(size: CGSize(width: 390, height: 480)) {
+            WheelSheetHost(day: day)
+        }
+        defer { canvas.close() }
+        await canvas.settle(until: { !canvas.views(of: UIDatePicker.self).isEmpty })
+
+        let picker = try XCTUnwrap(canvas.views(of: UIDatePicker.self).first)
+        let today = CalendarDay.startOfDay(Date(), in: .current)
+        let calendar = CalendarDay.calendar
+        XCTAssertEqual(picker.maximumDate, calendar.date(byAdding: .day, value: -1, to: today))
+        XCTAssertEqual(picker.minimumDate, calendar.date(byAdding: .year, value: -120, to: today))
+    }
+
     func testAnUntouchedSheetStoresNothingAndAMovedWheelStoresItsDay() async throws {
         let day = DayBox()
         let canvas = HostedCanvas(size: CGSize(width: 390, height: 480)) {

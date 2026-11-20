@@ -1472,7 +1472,10 @@ What changed on iOS:
   looks never gets a birth date thirty years before today. That is the owner's answer of 2026-11-08,
   given for the customer onboarding. From the fix plan of 2026-10-25 until then the wheels spun a
   draft, **Done** stored the day on them, on an empty field the day shown untouched, and **Cancel**
-  left the field as it was. Future dates stay blocked, and the stored day keeps its time-zone handling.
+  left the field as it was. The iOS wheels end yesterday and start 120 years back on every birth-date
+  field (Core's `CalendarDay.birthDays`): today and anything older are refused by every birth-date
+  validator (`validation.date_must_be_in_past`, `validation.invalid_age`). The stored day keeps its
+  time-zone handling.
   The recurring schedule's *Starts on* is still the system's compact date picker. Since 2026-11-08
   (owner decision on concept D) Android's customer profile completion also opens day, month and year
   wheels in a half-height sheet, the system's spinner date picker: a wheel stores its day as it moves,

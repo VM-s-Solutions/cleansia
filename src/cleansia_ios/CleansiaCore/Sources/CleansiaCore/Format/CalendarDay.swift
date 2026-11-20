@@ -44,6 +44,15 @@ public enum CalendarDay {
         calendar.date(byAdding: .year, value: -30, to: now) ?? now
     }
 
+    /// The days every birth-date validator accepts: not today (`validation.date_must_be_in_past`) and not over 120
+    /// years back (`validation.invalid_age`).
+    static func birthDays(now: Date = Date()) -> ClosedRange<Date> {
+        let today = startOfDay(now, in: .current)
+        let first = calendar.date(byAdding: .year, value: -120, to: today) ?? today
+        let last = calendar.date(byAdding: .day, value: -1, to: today) ?? today
+        return first ... last
+    }
+
     public static func text(_ date: Date, locale: Locale) -> String {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium

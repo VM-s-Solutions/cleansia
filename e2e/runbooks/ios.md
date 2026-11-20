@@ -156,7 +156,7 @@ Partner app (cleaner).
   `orderId`, `photoType` 1 before or 2 after, `fileName`, `contentType`, `fileData` base64), then continues in the
   app; it was not made on 2026-11-15. Document photos at registration have a library path and are not affected.
 - **Sign in with Apple and Google**: system sheets; not driven.
-- **Push, Live Activity**: the runs before 20 November answered the notification prompt `Don’t Allow` (section 3), and
+- **Push, Live Activity**: the runs before 20 November answered the notification prompt `Don’t Allow` (section 2), and
   the app logged "No APNS token specified before fetching FCM Token" (harmless); the feed (`Notifications` bell) was
   the substitute. With `Allow`, a DEV push reaches the simulator: on 20 November 2026 (iOS 18.6, Xcode 26.3, Debug
   build) the customer app received `order.cleaner_assigned` 12 s after the take, read from

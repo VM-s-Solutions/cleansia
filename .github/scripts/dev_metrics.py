@@ -36,7 +36,9 @@ METRICS = {
     'flexibleServers': ('Microsoft.DBforPostgreSQL/flexibleServers',
                         ['cpu_credits_remaining', 'cpu_credits_consumed', 'cpu_percent', 'memory_percent',
                          'active_connections', 'connections_failed', 'disk_iops_consumed_percentage', 'is_db_alive']),
-    'sites': ('Microsoft.Web/sites', ['HttpResponseTime', 'Http5xx', 'PrivateBytes', 'Threads']),
+    # Valid on every DEV site kind (the .NET APIs, the Node SSR and the Functions app, all Linux):
+    # PrivateBytes and Threads are not offered on all of them, and Azure refuses the whole read.
+    'sites': ('Microsoft.Web/sites', ['HttpResponseTime', 'Http5xx', 'MemoryWorkingSet', 'Requests']),
 }
 
 QUERIES = {

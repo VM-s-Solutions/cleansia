@@ -103,9 +103,13 @@ card, and what else is kept differs:
 **Card is the only payment method, named in code** (owner ruling 2026-11-19). Every PaymentIntent,
 SetupIntent, Checkout Session and subscription the platform opens on Stripe sends
 `payment_method_types=[card]` and never asks for automatic payment methods, so no Stripe Dashboard
-setting can add a method to a sheet or checkout page. Stripe Link is off: no sheet or checkout page
-offers Link or its *Save my info for faster checkout with Link* box. Google Pay in the Android sheet is
-paid as a card, so it stays.
+setting can add a method to a sheet or checkout page. A card-only intent does not hide Stripe Link,
+though: the Stripe account runs Link in its card-brand (passthrough) mode, which offers Link as a card.
+So iOS turns Link off in every sheet (`StripePaymentController.configuration(for:)` sets Link's display
+to `.never`), and no iOS sheet offers *Pay with Link* or its *Save my info for faster checkout with Link*
+box. The Android sheets still offer both until stripe-android is upgraded to 21.8.0 or later, the first
+version that can turn Link off (F-109 is open on Android, waiting for Mike). Google Pay in the Android
+sheet is paid as a card, so it stays.
 
 **Until the 2026-10-01 ruling every card paid in the apps was kept.** Every PaymentIntent the apps
 opened, a booking's and a recurring occurrence's alike, asked Stripe for

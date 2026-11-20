@@ -62,3 +62,16 @@ DEV deployed with the wave; Apple Pay waits for Mike's merchant set-up if it has
 - 2026-11-19 — Filed after Mike's rulings, on `fix/t0939-wave3-harness-and-dev-proof`.
 - 2026-11-20 — F-088's completion added as item 7, after the fix-proof run showed Link still offered (F-109); started
   on `fix/t0940-wave4-follow-ups`.
+- 2026-11-20 — Review of the wave; recorded for Mike's ruling before merge. Item 1: the majority rule did not settle
+  150 of the 963 drifting pairs (ties the Android customer app is not part of); they were broken by a chain, iOS, then
+  the Android partner app, the admin web, the partner web and the customer web (98 went to the admin web, 52 to iOS;
+  every pair with its texts is in the wave's `texts/applied.json` under `unresolved`). One pair departs from the
+  majority: `credit.cash_not_collectable_on_credit_order` in English reads *order*, not *booking*, because only a
+  cleaner sees it. Four keys now read in the wrong context on a surface that shows them and wait for one wording
+  each: `legal.document_not_found` (the customer and admin webs say *This job cannot be taken right now.*),
+  `order.unpaid_receivable` (the customer web points to a *Payments* section it does not have, and the sentence names
+  only a new booking although a recurring confirm also sends it), `order.not_found` and
+  `order.in_progress_cannot_cancel` (customer vocabulary on the partner web and the Android partner app). The iOS
+  birth-date wheels' range (yesterday back to 120 years, every iOS birth-date field) was added with item 4, so a
+  refused birth date does not land under the phone field; it is outside the listed items, and Mike keeps it or takes
+  it out.

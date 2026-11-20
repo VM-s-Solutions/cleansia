@@ -2,9 +2,9 @@ name: Error text parity
 
 # A backend error key is one sentence the platform says, and six clients each hold their own copy of
 # it: the three webs' i18n JSON, the two Android apps' strings.xml and the iOS catalogue in
-# CleansiaCore that both iOS apps read. On 2026-11-19 237 of 412 keys read differently between them
-# (T-0938, F-095); T-0940 gave every key one wording per language (owner ruling: the wording most
-# clients use, a tie going to the Android customer app), and this gate keeps it that way.
+# CleansiaCore that both iOS apps read. On 2026-11-19 237 of 412 keys read differently between them;
+# every key now reads one way per language (owner ruling: the wording most clients use, a tie going to
+# the Android customer app), and this gate keeps it that way.
 #
 # A separate workflow for the reason booking-policy-parity.yml gives: path filters are workflow-level,
 # and no existing job reads the web JSON, the Android XML and the iOS catalogue together

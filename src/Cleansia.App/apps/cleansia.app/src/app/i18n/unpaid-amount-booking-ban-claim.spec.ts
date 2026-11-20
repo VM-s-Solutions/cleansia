@@ -23,7 +23,7 @@ const I18N_DIR = join(findSolutionDir(), 'Cleansia.App/apps/cleansia.app/src/ass
  * that card stayed open.
  *
  * `api.order.unpaid_receivable` is not listed: a backend error key reads the same on every client,
- * in the wording most clients use (T-0940, agents/tools/check-error-text-parity.mjs), and that
+ * in the wording most clients use (agents/tools/check-error-text-parity.mjs), and that
  * wording refuses "a new booking" without naming card or cash. The guard below that nothing on
  * these surfaces says card stays open still reads it.
  */

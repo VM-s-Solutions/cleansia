@@ -30,7 +30,7 @@
 // a pass.
 //
 // CI: .github/workflows/error-text-parity.yml runs the self-test, then this, on any change to a catalogue
-// it reads or to the tool (T-0940). A new difference fails the pull request.
+// it reads or to the tool. A new difference fails the pull request.
 //
 // Usage:
 //   node agents/tools/check-error-text-parity.mjs               # any difference -> exit 1

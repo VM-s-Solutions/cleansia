@@ -75,3 +75,20 @@ DEV deployed with the wave; Apple Pay waits for Mike's merchant set-up if it has
   birth-date wheels' range (yesterday back to 120 years, every iOS birth-date field) was added with item 4, so a
   refused birth date does not land under the phone field; it is outside the listed items, and Mike keeps it or takes
   it out.
+- 2026-11-20 — Built on `fix/t0940-wave4-follow-ups`, one review and its in-scope rows fixed. Error texts: each
+  differing key took the majority wording (a tie to the Android customer app, 150 ties by a chain the lane chose),
+  then, on Mike's ruling of 20 November, 27 keys that several kinds of reader see took one neutral wording right for
+  all of them; 412 keys now read one way per language on every client that declares them, and `error-text-parity.yml`
+  runs the check (advisory until a ruleset requires it). Receipts (items 2 and 3): every claim is born owed a stored
+  PDF, the retry job registers a receipt once and renders a missing or code-less file as a new numbered file
+  (ADR-0083) and sends its e-mail once, and a download before the repair answers `receipt.not_found`; ADR-0004
+  carries the amendment. iOS: the phone step loads a missing profile and shows a refusal under the field, the
+  birth-date wheels offer only the days the server accepts, and every payment sheet turns Link off (the account runs
+  Link as a card brand, so card-only intents did not hide it). Web: the shared checkbox's label names its box.
+  Android's Link-off needs a newer Stripe SDK: T-0941. Apple Pay waits for Mike's Merchant ID.
+- 2026-11-20 — Shipped in #392 (merge `8f564b942`), CI green on every check; DEV deploy dispatched after the merge
+  (run 44750285136). Reported, not fixed: the retry's fiscal registration bypasses the blocking-mode idempotency gate
+  (pre-existing); `Order.AppliedVatRate`'s doc names a percent where the value is a fraction; the partner app's
+  birth-date wheel offers days under 18 that the server refuses; the phone's yesterday can be the server's today in
+  the first hour after midnight in Prague; `dev-sql.sh`'s usage line does not say the script name goes without
+  `sql-scripts/`.

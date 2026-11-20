@@ -133,8 +133,9 @@ Stripe 21.2.0 drew a customer's saved cards in its horizontal layout through `La
 which Compose foundation 1.8 removed, so the app pinned every sheet to the vertical layout. 23.26.0 (owner ruling
 2026-11-20) is built against Compose 1.10, so the pin is gone: every sheet takes Stripe's default, `Automatic`, which
 draws a customer's saved cards as a horizontal row. The SDK puts Compose 1.10.6, androidx activity 1.12,
-core 1.17 and Dagger 2.58 on the customer app's classpath; those androidx libraries refuse a module that compiles
-against less than SDK 36, so the customer app does (its `targetSdk` stays 35), and Hilt 2.54's generated code runs
+core 1.17, navigation-compose 2.9.7, lifecycle 2.10, kotlin-stdlib 2.2.21 and Dagger 2.58 on the customer
+app's classpath, above the version catalog's navigation and lifecycle 2.8.7; those androidx libraries refuse a
+module that compiles against less than SDK 36, so the customer app does (its `targetSdk` stays 35), and Hilt 2.54's generated code runs
 on the newer Dagger runtime.
 
 Every sheet takes its configuration from `PaymentSheetParams.toConfiguration()`: a booking's and a recurring

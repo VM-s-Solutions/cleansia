@@ -4154,7 +4154,7 @@ company an open receivable of any kind (`…has_open_receivables`, since 2026-10
 the debt out of the booking ban and the charge sweep; it comes before the receipt because an open door
 debt also counts as an order awaiting its receipt, and paying or writing off the debt clears both), a
 paid or cash booking without its receipt (`…has_orders_awaiting_receipt`), a receipt still to be
-fiscally registered (`…has_receipts_awaiting_fiscal_registration`), a pending refund (`…has_pending_refunds`), a live Plus —
+fiscally registered or still owed its stored PDF (`…has_receipts_awaiting_fiscal_registration`), a pending refund (`…has_pending_refunds`), a live Plus —
 even one already ending at period end (`…has_active_memberships`), a credit balance
 (`…has_credit_balances`), an open pay period (`…has_open_pay_period`), an unpaid invoice
 (`…has_unpaid_invoices`), an uninvoiced pay row (`…has_uninvoiced_pay`), an open dispute

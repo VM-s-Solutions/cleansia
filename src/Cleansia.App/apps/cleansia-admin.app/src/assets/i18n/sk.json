@@ -3397,7 +3397,7 @@
       "has_orders_awaiting_pay": "Dokončená objednávka stále čaká na výpočet odmeny; archivácia naň čaká.",
       "has_open_receivables": "Zákazník stále dlhuje spoločnosti otvorenú pohľadávku; najprv musí byť zaplatená alebo odpísaná.",
       "has_orders_awaiting_receipt": "Zaplatená alebo hotovostná objednávka stále čaká na doklad; archivácia naň čaká.",
-      "has_receipts_awaiting_fiscal_registration": "Doklad stále čaká na fiškálnu registráciu; archivácia naň čaká.",
+      "has_receipts_awaiting_fiscal_registration": "Doklad stále čaká na fiškálnu registráciu alebo na svoje PDF; archivácia naň čaká.",
       "has_pending_refunds": "Vrátenie platby stále čaká na vybavenie; archivácia čaká, kým nebude vysporiadané.",
       "has_active_memberships": "Zákazník má stále aktívne Plus; archivácia čaká, kým sa neskončí posledné obdobie.",
       "has_credit_balances": "Zákazník má stále kreditný zostatok; archivácia čaká, kým nebudú všetky zostatky vysporiadané.",

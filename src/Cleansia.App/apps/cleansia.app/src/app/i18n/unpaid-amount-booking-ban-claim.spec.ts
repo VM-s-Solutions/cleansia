@@ -21,13 +21,9 @@ const I18N_DIR = join(findSolutionDir(), 'Cleansia.App/apps/cleansia.app/src/ass
  * While the customer owes any company an amount, no booking is made or confirmed, by card or in
  * cash (owner ruling 2026-10-06, → /product/business-rules#card-guarantee). The copy used to promise
  * that card stayed open.
- *
- * `api.order.unpaid_receivable` is not listed: a backend error key reads the same on every client,
- * in the wording most clients use (agents/tools/check-error-text-parity.mjs), and that
- * wording refuses "a new booking" without naming card or cash. The guard below that nothing on
- * these surfaces says card stays open still reads it.
  */
 const BAN_COPY = [
+  'api.order.unpaid_receivable',
   'pages.order.unpaid_owed',
   'pages.amount_due.intro',
   'recurring_booking.owed',

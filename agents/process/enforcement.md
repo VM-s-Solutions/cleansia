@@ -7,7 +7,7 @@ consistency survives even when an agent (or human) doesn't read carefully. The p
 
 > ## ⚠️ WHAT CAN ACTUALLY FAIL A BUILD — corrected 2026-08-13, re-checked against `.github/workflows/` 2026-10-05. Read this before trusting any `T1-CI` token below.
 >
-> **Four checkers gate a pull request. Six do not.**
+> **Five checkers gate a pull request. Five do not.**
 >
 > | Checker | Gates a PR? | Where |
 > |---|---|---|
@@ -15,12 +15,12 @@ consistency survives even when an agent (or human) doesn't read carefully. The p
 > | `check-catalog-claims.mjs` | **yes, blocking** | `docs-ci.yml` — with its own self-test blocking first |
 > | `check-ios-symbols.mjs` | **yes, blocking** | `ios-symbols-ci.yml` — with its own self-test blocking first |
 > | `check-booking-policy-parity.mjs` | **yes, blocking** | `booking-policy-parity.yml` — with its own self-test blocking first |
+> | `check-error-text-parity.mjs` | **yes, blocking** | `error-text-parity.yml` — with its own self-test blocking first (T-0940) |
 > | `check-consistency.mjs` | no | on demand only |
 > | `check-module-boundaries.mjs` | no | on demand only |
 > | `check-available-status-parity.mjs` | no | on demand only |
 > | `check-nx-project-registration.mjs` | no | on demand only |
 > | `check-backlog-consistency.mjs` | no | on demand only |
-> | `check-error-text-parity.mjs` | no | on demand only — not wired while the drift it measures waits on an owner ruling (T-0938, F-095) |
 >
 > One more runs in CI without gating a pull request: `deploy-pro.yml` runs `check-legal-drafts.mjs`, its
 > self-test first, before a production deploy. The other scripts under `agents/tools/` are measuring
@@ -36,7 +36,7 @@ consistency survives even when an agent (or human) doesn't read carefully. The p
 > about.
 >
 > **How to read a `T1-CI` token below.** If it names a checker in a `yes, blocking` row, it is accurate. If it
-> names one of the other six, or cites `catalog-claims.yml` / `module-boundaries.yml` /
+> names one of the other five, or cites `catalog-claims.yml` / `module-boundaries.yml` /
 > `offerability-parity.yml` / `nx-project-registration.yml` — **none of which exist** — treat the rule as
 > `T2-ADVISORY`: a convention a human upholds. `conventions.md` §*"The price of a law"* is explicit that a
 > tier naming a mechanism that cannot fail a build is not `T1-CI`. The 53 individual tokens are not
@@ -75,6 +75,7 @@ consistency survives even when an agent (or human) doesn't read carefully. The p
 | iOS (Swift) | `swiftformat --lint` + `swiftlint lint --strict` (pinned 0.60.1 / 0.65.0) + 3 XCTest schemes (CI: `ios-ci.yml`) | formatting, lint, and whatever the guard tests assert. **`check-consistency.mjs` covers NO Swift** — its walker globs `.cs`/`.ts`/`.kt` only | **live in CI — T1-CI** (lint + tests). **Project-specific rules exist**, declared under `custom_rules:` in `src/cleansia_ios/.swiftlint.yml` — each `severity: error` and therefore CI-blocking under `--strict`. **Read the file for the roster; it is not enumerated here.** This sentence said "two" for one afternoon: it was corrected from "none" at 17:05 and a third rule landed at 18:32, which is the decay class `conventions.md` §"A claim about the tree carries its own retirement condition" exists to stop — and its own shape rule, *never enumerate a count of tree instances*, is what this sentence now obeys. ⚠️ **A `custom_rule` only reaches what `included:` lints** (`:1-10`): `CleansiaCore/Sources`, `CleansiaCore/Tests`, `CleansiaPartner/Sources`, `CleansiaPartner/Tests`, `CleansiaPartner/NotificationService`, `CleansiaCustomer/Sources`, `CleansiaCustomer/Tests`, `CleansiaCustomer/LiveActivity`, `CleansiaCustomer/NotificationService` (the app tests and the three extension folders since F-I12, `6541b256b`, 2026-10-02) — a folder missing from that list is outside every rule |
 | iOS symbols, without a compiler | `agents/tools/check-ios-symbols.mjs` (CI: `ios-symbols-ci.yml`, on ubuntu) | what a text reader can decide about the iOS tree: a `switch` with no `default` over a locally declared enum that misses one of its cases, every `L10n.<path>` reference, every non-interpolated catalog key against the `Localizable.xcstrings` its call resolves against, and every `CleansiaColors.` / `Spacing.` / `CleansiaTypography.` member. It knows nothing about types or availability, so it complements `ios-ci.yml` and never replaces it | **`T1-CI`** — its self-test blocks first, and a reach failure (a missing module, or a count under its floors) fails rather than reporting clean |
 | Cross-stack booking-policy parity | `agents/tools/check-booking-policy-parity.mjs` (CI: `booking-policy-parity.yml`) | the numbers `BookingPolicy` enforces — the cancellation fee and its windows, the grace after booking, express, the dirtiness rates and the largest home a booking may be — against what the web's copy and shared constants, Android's strings and iOS's two catalogs state; money and referral figures in copy and the newest legal seed carrying the market's placeholder rather than a literal; and every platform cancellation reason mapped to a sentence in the three customer clients | **`T1-CI`** — its self-test blocks first; the workflow triggers on every tree the checker reads, because no other job sees C#, Kotlin, Swift and the web together |
+| One wording per backend error key | `agents/tools/check-error-text-parity.mjs` (CI: `error-text-parity.yml`) | each key under the webs' `api.*` against the same key in the other two webs, both Android apps' `strings.xml` and CleansiaCore's catalogue, per locale, after decoding Android's resource escapes; a key a client does not declare is not compared there, which is the parity specs' job | **`T1-CI`** — its self-test blocks first; a missing client file, unparsable JSON or a client that yields no error text fails rather than passing |
 
 ## The consistency checker — `agents/tools/check-consistency.mjs`
 

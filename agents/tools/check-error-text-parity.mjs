@@ -29,6 +29,9 @@
 // by regex, not parsed), and every client must yield at least one error text; otherwise a P0, never
 // a pass.
 //
+// CI: .github/workflows/error-text-parity.yml runs the self-test, then this, on any change to a catalogue
+// it reads or to the tool (T-0940). A new difference fails the pull request.
+//
 // Usage:
 //   node agents/tools/check-error-text-parity.mjs               # any difference -> exit 1
 //   node agents/tools/check-error-text-parity.mjs --markdown    # the same, as a Markdown table

@@ -452,7 +452,8 @@
 | T-0937 | Invoice and receipt PDFs keep every rendered version, API timestamps carry the stored precision, and the DEV publish script is tested against Postgres | M | `done` | — | Mike 2026-11-19: fix every phase-2 finding in waves, with fixes that pay off long term; a re-rendered PDF keeps every version |
 | T-0938 | The phase-2 app and web findings fixed: consent labels, the iOS order detail on push, the Android phone save, one cash notice, Stripe Link off, one Ukrainian wording | L | `done` | — | Mike 2026-11-19: wave 2; Stripe Link off in code; "Невірний пароль." on every client |
 | T-0939 | The E2E harness follow-ups from phase 2, and the phase-2 fixes proven on DEV | M | `done` | — | Mike 2026-11-19: wave 3; DEV deployed after each wave, and TAKE-025's publish on DEV is OK |
-| T-0940 | The follow-ups found while fixing the phase-2 findings: one error text per key across the clients, receipt PDFs that are repaired, the iOS phone step, the web checkbox's label, and Apple Pay on iOS | L | `in_progress` | — | Mike 2026-11-19: wave 4, after the DEV proof; the majority wording per key, a tie to the Android customer app |
+| T-0940 | The follow-ups found while fixing the phase-2 findings: one error text per key across the clients, receipt PDFs that are repaired, the iOS phone step, the web checkbox's label, and Apple Pay on iOS | L | `done` | — | Mike 2026-11-19: wave 4, after the DEV proof; the majority wording per key, a tie to the Android customer app |
+| T-0941 | The Android Stripe SDK upgraded with Link off, invoices that name the country in their language, the Android eye icon's label, the push docs, the DEV SQL job's firewall rule, and a read-only DEV metrics workflow | L | `in_progress` | — | Mike 2026-11-20: upgrade stripe-android to the latest; fix F-111, F-113 and F-117; the SQL job's firewall rule and a read-only metrics workflow for F-110 |
 
 > **T-0785–T-0799 filed 2026-09-20** — the UI-polish and dead-code batch, on the owner's ruling of
 > that day (*"I want to polish alignments in admin app a bit on all of the overview/detail pages.
@@ -497,7 +498,7 @@
 > reported not absorbed. Owed: the DEV drop at the next DEV deploy (MS-2 / A1, `20260920204705`);
 > the merge order is #255 then #260. Open rows: none.
 
-*Next id: **T-0941**.*
+*Next id: **T-0942**.*
 
 
 Current startup checkpoint — 2026-10-16 UTC: PR #344 merged C12 `70d9c8b1ea82` as M5 `a8d308126dc4`; C12 local8, PR5 workflows/7 checks and M5 4/5 passed, all attempt 1/no reruns, with guarded manual skips and prior application limits retained. First read-only observation `38947741183/a1` failed before its baseline with a generic validation error; one POST, GET-only discovery, final artifact saved once, no resize/restart/B3 trial. T-0636 remains `in_progress`; safe diagnostic correction and the temporary comparison remain pending. The ticket's dated PR #344 closure and `pr344-closure-preparation001/CLAIMS-AND-PINS001.json` carry the bounds.

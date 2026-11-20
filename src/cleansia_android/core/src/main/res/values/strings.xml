@@ -22,4 +22,6 @@
     <string name="core_error_unauthorized">Your session expired. Please sign in again.</string>
     <string name="core_error_unknown">Something went wrong. Please try again.</string>
     <string name="core_phone_country_code">Country code</string>
+    <string name="core_password_show">Show password</string>
+    <string name="core_password_hide">Hide password</string>
 </resources>

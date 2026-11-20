@@ -63,8 +63,6 @@ fun PaymentSheetParams.toConfiguration(includeGooglePay: Boolean = true): Paymen
             ) else null,
         )
         .allowsDelayedPaymentMethods(false)
-        // Never Horizontal: Stripe 21.2.0 draws saved cards there through a Compose member 1.8 removed, which
-        // throws NoSuchMethodError. Its default, Automatic, picks Vertical today; this keeps it so. Only the
-        // builder takes the layout, since the constructor that does is internal to Stripe.
-        .paymentMethodLayout(PaymentSheet.PaymentMethodLayout.Vertical)
+        // The Stripe account runs Link as a card brand, so a card-only intent still offers it unless turned off here.
+        .link(PaymentSheet.LinkConfiguration(display = PaymentSheet.LinkConfiguration.Display.Never))
         .build()

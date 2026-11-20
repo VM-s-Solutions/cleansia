@@ -126,6 +126,13 @@ the recovery path if rendering fails or a process stops between the financial co
 offered on `Pending`, `Approved` and `Disputed` invoices only, matching the server, which refuses a paid
 or cancelled one.
 
+**The document is in its jurisdiction's language, the country included.** The cleaner's country selects the
+layout (Czech for CZ, English otherwise), and the layout's language decides the invoice's labels (not the
+[set-off statement's](#cash-set-off)) and the name of the cleaner's country in the supplier block, taken from
+the country's catalogue translations: *Země Česká republika* on a Czech cleaner's invoice, and on the English
+layout the country's English name (*Country Slovakia* for a Slovak address), whatever language the cleaner reads. A country with no name in that language prints its base
+catalogue name.
+
 **After the render, the command e-mails the invoice.** Each rendered PDF goes in a period-closed e-mail
 under the night run's rules: an active cleaner whose account is active and has an address, in the cleaner's
 language, one e-mail per rendered invoice, and one without an attachment when none rendered. The e-mail

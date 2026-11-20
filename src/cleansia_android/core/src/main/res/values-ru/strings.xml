@@ -12,4 +12,6 @@
     <string name="core_error_unauthorized">Ваша сессия истекла. Войдите снова.</string>
     <string name="core_error_unknown">Что-то пошло не так. Попробуйте ещё раз.</string>
     <string name="core_phone_country_code">Код страны</string>
+    <string name="core_password_show">Показать пароль</string>
+    <string name="core_password_hide">Скрыть пароль</string>
 </resources>

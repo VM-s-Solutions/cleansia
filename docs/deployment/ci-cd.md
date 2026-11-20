@@ -24,6 +24,7 @@ scan — and the rest deploy or run operational jobs. **The required statuses ar
 
 - `deploy-dev.yml`, `deploy-pro.yml`, `deploy-azure.yml`, `deploy-docs.yml`
 - `execute-sql.yml` — the manual, environment-gated SQL runner
+- `dev-metrics.yml` — the manual, read-only reading of DEV's metrics over given windows
 :::
 
 ## What a pull request needs to merge {#required-checks}
@@ -126,7 +127,8 @@ failing, it does not make the secret safe.
 | `deploy-pro` | Manual (`workflow_dispatch`) | Deploy everything to PRO |
 | `deploy-azure` | Called by `deploy-dev` and `deploy-pro` (`workflow_call`) | The shared build, provision, migrate and deploy pipeline |
 | `deploy-docs` | Manual (`workflow_dispatch`) | Build the docs site and deploy it to DEV's Static Web App |
-| `execute-sql` | Manual | Run ad-hoc SQL scripts. On PRO it refuses a development fixture by resolved path (`insert_seed_data.sql`, anything under `seed/` or outside `sql-scripts/`), and every DEV-only script by file name, from one list in its step *Refuse DEV-only scripts against production*: `insert_local_dev_admin.sql`, `fix-company-contact-placeholders.sql`, `fix-plus-trial-14-days.sql` and `fix-deactivate-local-dev-admin.sql`. A relative path cannot walk around a name, each refusal says where production does the same thing instead, and a new DEV-only script is one more row of the list (one list since 2026-10-04; the last two were not refused before). The three fixes correct what a DEV database got from a development fixture, which production is never built from. DEV runs all of them, `insert_local_dev_admin.sql` included (owner ruling 2026-09-30, until an app registration gates the DEV apps). On DEV the `confirm` input may hold only letters, digits, `.`, `_` and `-` (anything else fails the run, since it is quoted into SQL), and it reaches the script as the session setting `cleansia.confirm`: `dev-e2e-publish-cleaner-document.sql` publishes only when the confirm names that file. It opens no network window, so it cannot reach the production database once that is private ([below](#production-window)) |
+| `execute-sql` | Manual | Run ad-hoc SQL scripts. On PRO it refuses a development fixture by resolved path (`insert_seed_data.sql`, anything under `seed/` or outside `sql-scripts/`), and every DEV-only script by file name, from one list in its step *Refuse DEV-only scripts against production*: `insert_local_dev_admin.sql`, `fix-company-contact-placeholders.sql`, `fix-plus-trial-14-days.sql` and `fix-deactivate-local-dev-admin.sql`. A relative path cannot walk around a name, each refusal says where production does the same thing instead, and a new DEV-only script is one more row of the list (one list since 2026-10-04; the last two were not refused before). The three fixes correct what a DEV database got from a development fixture, which production is never built from. DEV runs all of them, `insert_local_dev_admin.sql` included (owner ruling 2026-09-30, until an app registration gates the DEV apps). On DEV the `confirm` input may hold only letters, digits, `.`, `_` and `-` (anything else fails the run, since it is quoted into SQL), and it reaches the script as the session setting `cleansia.confirm`: `dev-e2e-publish-cleaner-document.sql` publishes only when the confirm names that file. The DEV job signs in with the `dev-weu` identity and opens a firewall rule for its own runner's IP, `ci-sql-<run id>-<attempt>` on `pg-cleansia-weu-dev`, for the length of the job: DEV Postgres admits Azure source IPs and the admin IP only, and some GitHub-hosted runners run outside Azure (AWS `us-west-2`), where `psql` used to wait about 134 s for a connection the server dropped unanswered. The step waits until the rule exists, `psql` gives up a connection after 15 s (`PGCONNECT_TIMEOUT`), and the rule is deleted even when the job fails or is cancelled once the open step has run (the delete is retried for a minute, and a warning names any rule it cannot remove), the same per-run rule as the migration's in `deploy-azure.yml`. The PRO job opens no network window, so it cannot reach the production database once that is private ([below](#production-window)) |
+| `dev-metrics` | PR to any branch, or push to `master`, that touches the workflow, `.github/scripts/dev_metrics.py` or its test (the offline test only); manual (`workflow_dispatch`, from `master`) | Read-only, DEV only. Given up to 12 UTC windows (`2026-11-14T09:10Z/2026-11-14T09:45Z`, comma-separated, each at most 6 hours and within 90 days), it reads at 1-minute grain the App Service plan's `CpuPercentage`, `MemoryPercentage`, `HttpQueueLength` and `DiskQueueLength`; Postgres's `cpu_credits_remaining`, `cpu_credits_consumed`, `cpu_percent`, `memory_percent`, `active_connections`, `connections_failed`, `disk_iops_consumed_percentage` and `is_db_alive`; and each API site's, the customer SSR's and the Functions app's `HttpResponseTime`, `Http5xx`, `PrivateBytes` and `Threads`. It adds those resources' Resource Health events, the resource group's Activity Log (without callers or claims), and from the Log Analytics workspace the requests over 20 s, their PostgreSQL dependencies and the Npgsql or timeout exceptions. Resource names are resolved from `deploy/bicep` and `weu.dev.bicepparam`, and the script refuses any parameter file whose stage is not `dev` and any Azure call that is not a read. The job summary holds the readable tables, and the raw JSON is a 14-day artifact; a read that fails is listed and the others still run |
 
 iOS CI also watches the exact Android inputs its tests read on pull requests and master pushes:
 
@@ -481,7 +483,7 @@ on DEV none of these steps runs.
   is provisioned when `POSTGRES_APP_PASSWORD` is missing or is not at least 24 letters and digits. DEV
   still migrates with the vault's connection string, as *3. Database Migration* above shows.
 
-`execute-sql.yml` opens no window, so an administrator's `psql` against production goes through the
+`execute-sql.yml`'s PRO job opens no window, so an administrator's `psql` against production goes through the
 same window by hand (`deploy/AZURE-PROD-POSTURE.md` §6), never while a `Deploy to PRO` run is in
 flight.
 
@@ -571,7 +573,7 @@ reader checks. All 32 `dev-weu` secret names and metadata remained unchanged; no
 | `AZURE_TENANT_ID` | Azure AD tenant ID |
 | `AZURE_SUBSCRIPTION_ID` | Azure subscription |
 | `ACR_NAME` | Azure Container Registry name |
-| `DB_CONNECTION_STRING_DEV` | DEV database connection string — read by `execute-sql.yml` |
+| `DB_CONNECTION_STRING_DEV` | DEV database connection string — read by `execute-sql.yml`, whose DEV job also signs in with the three `AZURE_*` values to open its runner's firewall rule |
 | `DB_CONNECTION_STRING_PRO` | PRO database connection string — read by `execute-sql.yml` only, which cannot reach the private production database |
 | `POSTGRES_ADMIN_PASSWORD` | the database administrator's password: the Bicep parameter, and on production the migration's sign-in |
 | `POSTGRES_APP_PASSWORD` | **production only** — the `cleansia_app` login's password, at least 24 letters and digits ([above](#production-window)) |

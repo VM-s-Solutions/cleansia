@@ -107,9 +107,10 @@ setting can add a method to a sheet or checkout page. A card-only intent does no
 though: the Stripe account runs Link in its card-brand (passthrough) mode, which offers Link as a card.
 So iOS turns Link off in every sheet (`StripePaymentController.configuration(for:)` sets Link's display
 to `.never`), and no iOS sheet offers *Pay with Link* or its *Save my info for faster checkout with Link*
-box. The Android sheets still offer both until stripe-android is upgraded to 21.8.0 or later, the first
-version that can turn Link off (F-109 is open on Android, waiting for Mike). Google Pay in the Android
-sheet is paid as a card, so it stays.
+box. Android does the same since stripe-android 23.26.0: `PaymentSheetParams.toConfiguration()` sets
+`LinkConfiguration` display `Never` on every sheet (a booking's and a recurring occurrence's payment, the
+saved-card setup and the Plus sign-up), so no sheet on either app offers *Pay with Link* or Link's save
+box. Google Pay in the Android sheet is paid as a card, so it stays.
 
 **Until the 2026-10-01 ruling every card paid in the apps was kept.** Every PaymentIntent the apps
 opened, a booking's and a recurring occurrence's alike, asked Stripe for

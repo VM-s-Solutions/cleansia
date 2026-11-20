@@ -1,3 +1,5 @@
+using Cleansia.Core.Domain.Internationalization;
+
 namespace Cleansia.Infra.Services.Pdf.Models;
 
 public record InvoicePdfData
@@ -54,6 +56,9 @@ public record InvoiceSupplierData
     public string? ZipCode { get; init; }
     public string? City { get; init; }
     public string? Country { get; init; }
+
+    /// <summary>The country's catalogue names by language; the layout prints the one in its own language.</summary>
+    public IReadOnlyDictionary<string, Translation> CountryTranslations { get; init; } = new Dictionary<string, Translation>();
 
     public string? RegistrationNumber { get; init; }
     public string? VatNumber { get; init; }

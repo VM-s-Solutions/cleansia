@@ -22,10 +22,12 @@ public class DownloadOrderReceipt
     public class Validator : AbstractValidator<Query>
     {
         private readonly IOrderAccessService _orderAccessService;
+        private readonly IReceiptService _receiptService;
 
-        public Validator(IOrderAccessService orderAccessService)
+        public Validator(IOrderAccessService orderAccessService, IReceiptService receiptService)
         {
             _orderAccessService = orderAccessService;
+            _receiptService = receiptService;
 
             RuleFor(x => x.OrderId)
                 .Cascade(CascadeMode.Stop)
@@ -71,11 +73,15 @@ public class DownloadOrderReceipt
 
         // The receipt is reached through the order the caller may read, never on its own: it carries
         // the order's operator, which for a booking made across the border is not the customer's company.
-        private Task<bool> OrderHasReceiptAsync(string orderId, CancellationToken cancellationToken)
+        // Its file can trail the row until the retry job stores it, and until then there is no receipt to give.
+        private async Task<bool> OrderHasReceiptAsync(string orderId, CancellationToken cancellationToken)
         {
-            return _orderAccessService
+            var receipt = await _orderAccessService
                 .OrdersForCaller()
-                .AnyAsync(o => o.Id == orderId && o.Receipts.Any(r => r.ReceivableId == null && r.BlobDeletedAt == null), cancellationToken);
+                .Where(o => o.Id == orderId)
+                .SelectMany(o => o.Receipts)
+                .FirstOrDefaultAsync(r => r.ReceivableId == null && r.BlobDeletedAt == null, cancellationToken);
+            return receipt is not null && await _receiptService.IsPdfStoredAsync(receipt, cancellationToken);
         }
     }
 

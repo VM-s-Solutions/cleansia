@@ -3,6 +3,7 @@ package cz.cleansia.customer.core.payments
 import cz.cleansia.core.network.mapWire
 import cz.cleansia.core.network.required
 import cz.cleansia.customer.api.client.SavedCardApi as GenSavedCardApi
+import cz.cleansia.customer.api.model.ConfirmSavedCardSetupCommand as GenConfirmSavedCardSetupCommand
 import cz.cleansia.customer.api.model.CreateSavedCardSetupIntentCommand as GenCreateSavedCardSetupIntentCommand
 import cz.cleansia.customer.api.model.CreateSavedCardSetupIntentResponse as GenCreateSavedCardSetupIntentResponse
 import cz.cleansia.customer.api.model.SavedCardDto as GenSavedCardDto
@@ -58,6 +59,11 @@ class SavedCardApi(
                 countryId = countryId,
             ),
         ).mapWire { it.toAppDto() }
+
+    suspend fun confirmSetup(setupIntentId: String): Response<SavedCard> =
+        savedCardApi.savedCardConfirmSetup(
+            confirmSavedCardSetupCommand = GenConfirmSavedCardSetupCommand(setupIntentId = setupIntentId),
+        ).mapWire { it.required("SavedCardDto").toAppDto() }
 
     suspend fun remove(savedCardId: String): Response<String> =
         savedCardApi.savedCardRemove(savedCardId).mapWire {

@@ -22,7 +22,12 @@ sealed interface SavedCardCapture {
     val attempt: Long
     data class Starting(override val attempt: Long) : SavedCardCapture
     data class Sheet(override val attempt: Long, val setup: SavedCardSetup) : SavedCardCapture
-    data class Pending(override val attempt: Long, val savedCardId: String, val verifying: Boolean = false) : SavedCardCapture
+    data class Pending(
+        override val attempt: Long,
+        val savedCardId: String,
+        val setupIntentId: String,
+        val verifying: Boolean = false,
+    ) : SavedCardCapture
 }
 
 /** [cards] is null until the first read answers; a capture Stripe has not confirmed yet is not in it. */
@@ -83,7 +88,8 @@ class SavedCardRepository @Inject constructor(
     fun sheetCompleted(market: CardCaptureMarket, attempt: Long): Boolean = synchronized(captureLock) {
         val current = _captures.value[market] as? SavedCardCapture.Sheet ?: return false
         if (current.attempt != attempt) return false
-        setCaptureLocked(market, SavedCardCapture.Pending(attempt, current.setup.savedCardId))
+        val setupIntentId = current.setup.setupIntentClientSecret.substringBefore("_secret_")
+        setCaptureLocked(market, SavedCardCapture.Pending(attempt, current.setup.savedCardId, setupIntentId))
         true
     }
 
@@ -108,7 +114,10 @@ class SavedCardRepository @Inject constructor(
         job?.cancel()
     }
 
-    /** A completed sheet is only pending until the webhook-backed list contains this exact identity. */
+    /**
+     * A completed sheet is confirmed with the server, which answers with the card it now holds. The
+     * webhook-backed list is polled for this exact identity only when the confirm could not be reached.
+     */
     suspend fun verifyCapture(market: CardCaptureMarket, reads: Int = 8, expectedSessionEpoch: Long = sessionEpoch): ApiResult<Boolean>? {
         val job = currentCoroutineContext().job
         val (pending, generation) = synchronized(captureLock) {
@@ -120,6 +129,21 @@ class SavedCardRepository @Inject constructor(
             pending to sessionGeneration
         }
         try {
+            val confirmed = safeApiCall(json) { api.confirmSetup(pending.setupIntentId) }
+            synchronized(captureLock) {
+                if (generation != sessionGeneration || _captures.value[market]?.attempt != pending.attempt) return null
+                when (confirmed) {
+                    is ApiResult.Success -> {
+                        val card = confirmed.data
+                        _cards.value = _cards.value?.let { held ->
+                            listOf(card) + held.filterNot { it.id == card.id || it.currencyCode.equals(card.currencyCode, true) }
+                        }
+                        setCaptureLocked(market, null)
+                        return ApiResult.Success(true)
+                    }
+                    is ApiResult.Error -> if (confirmed.error !is ApiError.Network) return confirmed
+                }
+            }
             repeat(reads) { index ->
                 if (index > 0) delay(1500)
                 val result = refresh(generation)

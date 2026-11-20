@@ -17,6 +17,8 @@ import kotlinx.coroutines.flow.first
 import org.junit.After
 import kotlinx.coroutines.test.*
 import kotlinx.serialization.json.Json
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
@@ -32,7 +34,7 @@ class PaymentsCardCaptureViewModelTest {
     private val context = mockk<Context>(relaxed = true)
     private val markets = mockk<MarketRepository>()
     private val marketState = MutableStateFlow<MarketState>(MarketState.Unavailable)
-    private val setup = SavedCardSetup("new-card", "seti_fixture_secret", "cus_fixture", "ek_fixture")
+    private val setup = SavedCardSetup("new-card", "seti_fixture_secret_fixture", "cus_fixture", "ek_fixture")
     private val stores = mutableListOf<ViewModelStore>()
     private val card = SavedCard("new-card", "visa", "4242", 12, 2035, "CZK")
 
@@ -41,6 +43,7 @@ class PaymentsCardCaptureViewModelTest {
         coEvery { receivables.getMine() } returns ApiResult.Success(emptyList())
         coEvery { api.createSetupIntent(true, any()) } returns Response.success(setup)
         coEvery { api.createSetupIntent(true, null) } returns Response.success(setup)
+        coEvery { api.confirmSetup(any()) } throws java.io.IOException("offline")
         return PaymentsViewModel(cards, receivables, snackbar, context, markets, StripeConfig(key)).also {
             stores += ViewModelStore().apply { put("payments", it) }
         }
@@ -106,6 +109,50 @@ class PaymentsCardCaptureViewModelTest {
     }
 
     @Test
+    fun `completed sheet shows the card the server confirmed without polling`() = runTest {
+        coEvery { api.getMine() } returns Response.success(emptyList())
+        val vm = vm()
+        coEvery { api.confirmSetup("seti_fixture") } returns Response.success(card)
+        awaitLoaded(vm)
+        vm.capturePresentation.test {
+            vm.setConsent(true)
+            vm.saveCard()
+            advanceUntilIdle()
+            vm.onCaptureResult(awaitItem(), completed = true)
+            advanceUntilIdle()
+        }
+        cards.captures.first { it.isEmpty() }
+        runCurrent()
+        assertNull(vm.capture.value)
+        assertEquals(listOf(card), (vm.state.value as PaymentsUiState.Loaded).cards)
+        assertFalse(vm.consent.value)
+        verify(exactly = 1) { snackbar.showSuccessKey(R.string.payments_card_saved) }
+        coVerify(exactly = 1) { api.getMine() }
+    }
+
+    @Test
+    fun `refused confirm shows the server message and keeps the capture pending`() = runTest {
+        coEvery { api.getMine() } returns Response.success(emptyList())
+        val vm = vm()
+        val refusal = """{"errors":{"SetupIntentId":["saved_card.not_found"]}}""".toResponseBody("application/json".toMediaType())
+        coEvery { api.confirmSetup("seti_fixture") } returns Response.error(400, refusal)
+        awaitLoaded(vm)
+        vm.capturePresentation.test {
+            vm.setConsent(true)
+            vm.saveCard()
+            advanceUntilIdle()
+            vm.onCaptureResult(awaitItem(), completed = true)
+            advanceUntilIdle()
+        }
+        cards.captures.first { (it[vm.captureMarket.value] as? SavedCardCapture.Pending)?.verifying == false }
+        runCurrent()
+        assertTrue(vm.capture.value is SavedCardCapture.Pending)
+        verify(exactly = 1) { snackbar.showError(any<String>()) }
+        verify(exactly = 0) { snackbar.showSuccessKey(R.string.payments_card_saved) }
+        coVerify(exactly = 1) { api.getMine() }
+    }
+
+    @Test
     fun `late confirmation persists through route reentry without second setup`() = runTest {
         coEvery { api.getMine() } returns Response.success(emptyList())
         val first = vm()
@@ -147,9 +194,11 @@ class PaymentsCardCaptureViewModelTest {
         val old = vm.captureMarket.value
         val eu = MarketListItem("svk", "SVK", "SK", "Slovakia", currencyId = "eur", currencyCode = "eur", currencySymbol = "€", isDefault = false)
         marketState.value = MarketState.Resolved(listOf(eu), eu)
+        cards.captures.first { (it[old] as? SavedCardCapture.Pending)?.verifying == false }
         runCurrent()
         assertNull(vm.capture.value)
-        assertFalse((cards.captures.value[old] as SavedCardCapture.Pending).verifying)
+        assertTrue(cards.captures.value[old] is SavedCardCapture.Pending)
+        coVerify(atMost = 2) { api.getMine() }
         assertEquals("EUR", vm.captureMarket.value.currencyCode)
         marketState.value = MarketState.Unavailable
         runCurrent()

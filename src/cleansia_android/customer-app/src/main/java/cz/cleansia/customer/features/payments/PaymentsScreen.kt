@@ -309,7 +309,7 @@ private fun PolishCardPendingPreview() {
     CleansiaTheme {
         PaymentsScreenContent(
             state = PaymentsUiState.Loaded(emptyList(), emptyList()), removingCardId = null, paying = false,
-            cardSavingAvailable = true, capture = SavedCardCapture.Pending(1, "synthetic-card", verifying = false),
+            cardSavingAvailable = true, capture = SavedCardCapture.Pending(1, "synthetic-card", "seti_synthetic", verifying = false),
         )
     }
 }

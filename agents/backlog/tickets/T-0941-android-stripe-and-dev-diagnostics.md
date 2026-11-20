@@ -54,3 +54,18 @@ deployed with the wave, and the metrics run's reading with Mike.
 ## Work record
 
 - 2026-11-20 — Filed after Mike's rulings; started on `fix/t0941-wave5`.
+- 2026-11-20 — Built on `fix/t0941-wave5`, one review and its in-scope rows fixed. stripe-android went from 21.2.0 to
+  23.26.0 (compileSdk 36, targetSdk still 35), and every Android PaymentSheet turns Link off (LinkConfiguration
+  display Never, pinned by `PaymentSheetParamsTest`); shown on DEV: bookings with the save tick on and off, the Plus
+  sheet and the add-card sheet, none offering Link; the layout workaround is gone. F-111: the payout invoice prints
+  the country in its language. F-113: the Android eye icon reads its label in the user's language. F-117: the push
+  docs say what holds. F-110: `execute-sql.yml`'s DEV job opens a per-run firewall rule for its runner, and
+  `dev-metrics.yml` reads DEV's metrics, read-only.
+- 2026-11-20 — Shipped in #393 (merge `b9c508ca4`) and #394 (merge `a142d0269`, the site metrics Azure offers), CI
+  green; DEV deploy dispatched after #393 (run 44778651539). Proven after the merge: an Execute on DEV job on an AWS
+  runner (us-east-1) opened its rule, ran its script and removed the rule (run 44782049010). The metrics runs
+  44778249469 and 44781532777 settled the stalls: the single B2 instance runs out of memory and CPU and its apps
+  restart, while Postgres never limits; Mike keeps B2, since DEV is only for testing. The recurring-occurrence sheet
+  was not shown on DEV (it uses the same builder the test pins). Mike picked the four bugs the wave found as T-0942.
+  Not picked, reported: Resource Health needs the `Microsoft.ResourceHealth` provider registered;
+  `docs/deployment/azure-setup.md` says DEV's Functions run on Consumption, but they share the B2 plan.

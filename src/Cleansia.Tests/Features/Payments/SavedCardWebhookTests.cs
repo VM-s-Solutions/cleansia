@@ -51,7 +51,7 @@ public class SavedCardWebhookTests
         _processedEvents.Setup(r => r.HasProcessedAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
         _stripeFactory.Setup(f => f.CreateClient()).Returns(_stripe.Object);
         _stripe.Setup(c => c.GetSetupIntentCardAsync("seti_card_1", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new SavedCardDetails("pm_new", "mastercard", "5454", 7, 2031));
+            .ReturnsAsync(new SetupIntentCard("cus_card", null, new SavedCardDetails("pm_new", "mastercard", "5454", 7, 2031)));
         _stripe.Setup(c => c.GetPaymentIntentCardAsync("pi_card_1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new SavedCardDetails("pm_paid", "visa", "4242", 3, 2030));
         _savedCards.Setup(r => r.GetCapturedForUserInCurrencyAsync(UserId, CurrencyId, It.IsAny<CancellationToken>()))

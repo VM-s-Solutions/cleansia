@@ -51,7 +51,10 @@ public sealed class RecordingStripeClient : IStripeClient
     public Task<SetupIntentResult> CreateCardSetupIntentAsync(string stripeCustomerId, string savedCardId, CancellationToken cancellationToken)
         => Task.FromResult(new SetupIntentResult($"seti_{savedCardId}", $"seti_secret_{savedCardId}"));
 
-    public Task<SavedCardDetails?> GetSetupIntentCardAsync(string setupIntentId, CancellationToken cancellationToken) => throw new NotSupportedException();
+    public Dictionary<string, SetupIntentCard> SetupIntentCards { get; } = [];
+
+    public Task<SetupIntentCard> GetSetupIntentCardAsync(string setupIntentId, CancellationToken cancellationToken)
+        => Task.FromResult(SetupIntentCards[setupIntentId]);
     public Task<SavedCardDetails?> GetPaymentIntentCardAsync(string paymentIntentId, CancellationToken cancellationToken) => throw new NotSupportedException();
 
     public List<(string StripeCustomerId, string PaymentMethodId)> DetachedSavedCards { get; } = [];

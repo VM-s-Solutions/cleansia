@@ -210,10 +210,10 @@ public interface IStripeClient
         CancellationToken cancellationToken);
 
     /// <summary>
-    /// The card a SetupIntent saved, or null when the intent has not succeeded or saved no card.
-    /// Read-only; an unreachable Stripe throws.
+    /// A SetupIntent's Customer, the saved-card row its <c>SavedCardId</c> metadata names, and the card it saved,
+    /// which is null when the intent has not succeeded or saved no card. Read-only; an unreachable Stripe throws.
     /// </summary>
-    Task<SavedCardDetails?> GetSetupIntentCardAsync(
+    Task<SetupIntentCard> GetSetupIntentCardAsync(
         string setupIntentId,
         CancellationToken cancellationToken);
 
@@ -394,6 +394,9 @@ public record SetupIntentResult(string Id, string ClientSecret);
 
 /// <summary>Result of <see cref="IStripeClient.GetSetupIntentCardAsync"/>: the saved card, as Stripe describes it.</summary>
 public record SavedCardDetails(string PaymentMethodId, string Brand, string Last4, int ExpMonth, int ExpYear);
+
+/// <summary>Result of <see cref="IStripeClient.GetSetupIntentCardAsync"/>.</summary>
+public record SetupIntentCard(string? CustomerId, string? SavedCardId, SavedCardDetails? Card);
 
 /// <summary>
 /// Snapshot of a freshly-created subscription. Period bounds are mirrored

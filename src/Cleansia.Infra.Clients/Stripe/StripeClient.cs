@@ -550,7 +550,7 @@ public class StripeClient : IStripeClient
         return session.Url;
     }
 
-    public async Task<SavedCardDetails?> GetSetupIntentCardAsync(
+    public async Task<SetupIntentCard> GetSetupIntentCardAsync(
         string setupIntentId,
         CancellationToken cancellationToken)
     {
@@ -560,12 +560,10 @@ public class StripeClient : IStripeClient
             nameof(GetSetupIntentCardAsync),
             () => service.GetAsync(setupIntentId, options, cancellationToken: cancellationToken));
 
-        if (intent.Status != "succeeded" || intent.PaymentMethod is not { Card: { } card } paymentMethod)
-        {
-            return null;
-        }
-
-        return new SavedCardDetails(paymentMethod.Id, card.Brand, card.Last4, (int)card.ExpMonth, (int)card.ExpYear);
+        var savedCard = intent.Status == "succeeded" && intent.PaymentMethod is { Card: { } card } paymentMethod
+            ? new SavedCardDetails(paymentMethod.Id, card.Brand, card.Last4, (int)card.ExpMonth, (int)card.ExpYear)
+            : null;
+        return new SetupIntentCard(intent.CustomerId, intent.Metadata?.GetValueOrDefault(SavedCardMetadataKey), savedCard);
     }
 
     public async Task<SavedCardDetails?> GetPaymentIntentCardAsync(

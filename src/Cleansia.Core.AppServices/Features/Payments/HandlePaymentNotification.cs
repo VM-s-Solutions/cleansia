@@ -526,9 +526,9 @@ public class HandlePaymentNotification
 
         private const string SavedCardMetadataKey = "SavedCardId";
 
-        private static Task<SavedCardDetails?> ReadSetupCard(
+        private static async Task<SavedCardDetails?> ReadSetupCard(
             IStripeClient stripeClient, string setupIntentId, CancellationToken cancellationToken) =>
-            stripeClient.GetSetupIntentCardAsync(setupIntentId, cancellationToken);
+            (await stripeClient.GetSetupIntentCardAsync(setupIntentId, cancellationToken)).Card;
 
         private static Task<SavedCardDetails?> ReadPaymentCard(
             IStripeClient stripeClient, string paymentIntentId, CancellationToken cancellationToken) =>

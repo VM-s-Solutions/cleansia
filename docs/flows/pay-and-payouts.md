@@ -129,8 +129,8 @@ or cancelled one.
 **The document is in its jurisdiction's language, the country included.** The cleaner's country selects the
 layout (Czech for CZ, English otherwise), and the layout's language decides the invoice's labels (not the
 [set-off statement's](#cash-set-off)) and the name of the cleaner's country in the supplier block, taken from
-the country's catalogue translations: *Země Česká republika* on a Czech invoice, *Country Czech Republic* on
-the English one, whatever language the cleaner reads. A country with no name in that language prints its base
+the country's catalogue translations: *Země Česká republika* on a Czech cleaner's invoice, and on the English
+layout the country's English name (*Country Slovakia* for a Slovak address), whatever language the cleaner reads. A country with no name in that language prints its base
 catalogue name.
 
 **After the render, the command e-mails the invoice.** Each rendered PDF goes in a period-closed e-mail

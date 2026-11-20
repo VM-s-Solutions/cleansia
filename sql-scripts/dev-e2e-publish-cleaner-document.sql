@@ -6,8 +6,9 @@
 --
 -- !! IT GATES EVERY CLEANER ON DEV: a cleaner's acceptance covers one document id (UserConsent.Covers), so from
 -- !! the moment this commits no DEV cleaner can take a job until they accept the new version again (TakeOrder,
--- !! ApproveEmployee). Run it ONLY as the last step of Day 2 of an E2E run, after every take of the run, the
--- !! mobile lanes' included (e2e/README.md, "Running"). Never on a scratch run.
+-- !! ApproveEmployee). Run it ONLY as the very last step of an E2E run, in the payroll invocation that sets
+-- !! E2E_TAKE025=1, after every take of the run, the mobile lanes' included (e2e/README.md, "DEV facts a case must
+-- !! respect"). Never on a scratch run.
 --
 -- It publishes only when the dispatch names it: Execute SQL Script with confirm set to this file's name, which the
 -- DEV job hands the script as the session setting cleansia.confirm (scripts/publish-cleaner-document.sh does both).

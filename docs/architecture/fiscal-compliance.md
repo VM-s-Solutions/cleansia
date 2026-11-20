@@ -117,7 +117,7 @@ After `MaxFiscalRetries = 10` attempts, `FiscalNextRetryAt` is cleared and the r
 
 - `ReserveAsync` sets it on every claim, 15 minutes ahead (`ScheduleRetryAfterClaim`), so the job never races an issue still in progress. The issue clears it once the PDF is stored and no registration is owed (`MarkDocumentComplete`).
 - `GetDueForRetryAsync` selects on the due instant alone, so a receipt stamped before its render failed is picked again.
-- `CompleteReceiptAsync` registers only when the mode requires it and the receipt has no code, so a stamped code is never registered twice, and renders a new numbered file when the current file is missing (`IsPdfStoredAsync`) or the receipt carries a code. A failure records an attempt on the schedule above.
+- `CompleteReceiptAsync` registers only when the mode requires it and the receipt has no code, so a stamped code is never registered twice, and renders a new numbered file when the current file is missing (`IsPdfStoredAsync`) or the receipt carries a code. A register that throws counts as a refusal, so the render of a missing file still runs. A failure records an attempt on the schedule above.
 - `FiscalRetryService` releases the held e-mail of a blocking market once the coded file is stored, and in any other market sends the e-mail only when its own pass stored the receipt's first file.
 - `DownloadOrderReceipt` answers `receipt.not_found` until the file is stored.
 

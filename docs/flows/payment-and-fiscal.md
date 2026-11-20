@@ -376,7 +376,8 @@ missing file.
   ([ADR-0083](/decisions/adr-0083)). A file the retention sweep deleted is not rendered again.
 - **A fault keeps it owed.** A failed registration or a failed upload records an attempt on the existing
   backoff (`MarkFiscalRetryAttempted`, ten attempts), and the next due pass starts again from what is
-  stored. A pass that stores a complete file clears the instant and the stale error.
+  stored. A registration that throws counts as a refusal, as it does at issue, so the same pass still
+  renders a missing file and the file never waits on the authority. A pass that stores a complete file clears the instant and the stale error.
 - **The e-mail goes once.** A market that holds the e-mail releases it when the pass leaves a stored file
   with its code. Elsewhere the e-mail went out with the first stored file, so the job sends it only when its
   own pass stored that first file. Either way the send is claimed first (`ClaimEmailSend`), and a fee

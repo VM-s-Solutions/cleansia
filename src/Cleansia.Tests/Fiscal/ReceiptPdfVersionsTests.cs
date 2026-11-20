@@ -102,6 +102,23 @@ public class ReceiptPdfVersionsTests
         _fiscal.Verify(f => f.RegisterReceiptAsync(It.IsAny<FiscalReceiptRequest>(), It.IsAny<CancellationToken>()), Times.Never());
     }
 
+    [Fact]
+    public async Task A_Register_That_Throws_Still_Lets_The_Pass_Render_A_Missing_File_In_A_Mode_That_Does_Not_Wait_For_The_Authority()
+    {
+        var order = Order();
+        var receipt = OrderReceipt.Create(order.Id, "RCP-1", "receipt_ORD-1_20261119.pdf", FirstName, "en");
+        var service = Service();
+        _fiscal.Setup(f => f.RegisterReceiptAsync(It.IsAny<FiscalReceiptRequest>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new HttpRequestException("authority down"));
+
+        Assert.True(await service.CompleteReceiptAsync(receipt, order, pdfStored: false, CancellationToken.None));
+
+        Assert.Equal("no code", Encoding.UTF8.GetString(_store.Blobs[FirstName]));
+        Assert.Null(receipt.FiscalCode);
+        Assert.Equal(1, receipt.FiscalRetryCount);
+        Assert.NotNull(receipt.FiscalNextRetryAt);
+    }
+
     [Theory]
     [InlineData(FiscalEnforcementMode.None)]
     [InlineData(FiscalEnforcementMode.AsyncBackground)]

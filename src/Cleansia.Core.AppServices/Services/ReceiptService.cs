@@ -471,24 +471,37 @@ public sealed class ReceiptService(
         var enforcementMode = await ResolveEnforcementModeAsync(countryId, cancellationToken);
         var fiscalCountryCode = ToFiscalCountryCode(countryCode);
         var fiscalService = fiscalServiceResolver.Resolve(fiscalCountryCode ?? string.Empty);
-        FiscalResult? refused = null;
+        (FiscalErrorKind Kind, string Error)? refused = null;
 
         try
         {
             if (RegistrationOwed(enforcementMode, receipt))
             {
-                var fiscalRequest = BuildFiscalRequest(order, receipt, companyInfo, FiscalCountryCodeOf(order, fiscalCountryCode));
-                var result = await fiscalService.RegisterReceiptAsync(fiscalRequest, cancellationToken);
-                if (result.IsRegistered && result.FiscalCode != null)
+                // A register that throws counts as a refusal, so a missing file never waits on the authority.
+                try
                 {
-                    receipt.SetFiscalData(
-                        fiscalService.ProviderKey,
-                        result.FiscalCode,
-                        DateTime.TryParse(result.RegisteredAt, out var parsedAt) ? parsedAt : DateTime.UtcNow);
+                    var fiscalRequest = BuildFiscalRequest(order, receipt, companyInfo, FiscalCountryCodeOf(order, fiscalCountryCode));
+                    var result = await fiscalService.RegisterReceiptAsync(fiscalRequest, cancellationToken);
+                    if (result.IsRegistered && result.FiscalCode != null)
+                    {
+                        receipt.SetFiscalData(
+                            fiscalService.ProviderKey,
+                            result.FiscalCode,
+                            DateTime.TryParse(result.RegisteredAt, out var parsedAt) ? parsedAt : DateTime.UtcNow);
+                    }
+                    else
+                    {
+                        refused = (
+                            result.ErrorKind == FiscalErrorKind.None ? FiscalErrorKind.Unknown : result.ErrorKind,
+                            $"{result.ErrorCode}: {result.ErrorMessage}");
+                    }
                 }
-                else
+                catch (Exception ex) when (ex is not OperationCanceledException)
                 {
-                    refused = result;
+                    refused = (FiscalErrorKind.Unknown, ex.Message);
+                    logger.LogError(ex,
+                        "Fiscal retry register threw for ReceiptNumber={ReceiptNumber} Provider={ProviderKey}",
+                        receipt.ReceiptNumber, fiscalService.ProviderKey);
                 }
             }
 
@@ -517,13 +530,12 @@ public sealed class ReceiptService(
             return false;
         }
 
-        if (refused is not null)
+        if (refused is { } failure)
         {
-            var errorKind = refused.ErrorKind == FiscalErrorKind.None ? FiscalErrorKind.Unknown : refused.ErrorKind;
-            receipt.MarkFiscalRetryAttempted(errorKind, $"{refused.ErrorCode}: {refused.ErrorMessage}");
+            receipt.MarkFiscalRetryAttempted(failure.Kind, failure.Error);
             logger.LogWarning(
-                "Fiscal retry failed for ReceiptNumber={ReceiptNumber} Provider={ProviderKey} Attempt={Attempt} ErrorKind={ErrorKind} ErrorCode={ErrorCode}",
-                receipt.ReceiptNumber, fiscalService.ProviderKey, receipt.FiscalRetryCount, errorKind, refused.ErrorCode);
+                "Fiscal retry failed for ReceiptNumber={ReceiptNumber} Provider={ProviderKey} Attempt={Attempt} ErrorKind={ErrorKind} Error={Error}",
+                receipt.ReceiptNumber, fiscalService.ProviderKey, receipt.FiscalRetryCount, failure.Kind, failure.Error);
             return pdfStored && !HoldsEmail(enforcementMode);
         }
 

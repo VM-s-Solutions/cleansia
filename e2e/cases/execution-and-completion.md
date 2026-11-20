@@ -10,7 +10,7 @@ From an assigned cleaner to a finished job, a receipt and a pay row, and the ord
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /flows/execution-and-completion#the-path — "on my way" moves the order to `OnTheWay` and the customer gets a push
 - **Given** Cleaner A is on a `Confirmed` job whose start is within 60 minutes. **When** Cleaner A taps On my way (`NotifyOnTheWay`; the partner web job page offers it beside Start, as the apps do). **Then** the order is `OnTheWay`; the Customer's order page and the customer apps show "on the way"; the customer gets `order.on_the_way` (iOS adds a Live Activity). On a job that is not `Confirmed` (a `New` or `Completed` one, or one already `OnTheWay`) the call answers `order.not_confirmed`.
-- **DEV:** the partner web shows On my way only on a `Confirmed` job from 60 minutes before the start. The push reaches a device, or the iOS simulator when the app allows notifications (read from its device log); the check elsewhere is the order status.
+- **DEV:** the partner web shows On my way only on a `Confirmed` job from 60 minutes before the start. The push reaches a device, or the iOS simulator when the customer app allows notifications (read from its device log, F-114 in `e2e/runs/2026-11-20/findings.md`); the check elsewhere is the order status.
 
 ### E2E-EXEC-002 — Start moves the order to InProgress
 - **Priority:** P1
@@ -468,7 +468,7 @@ From an assigned cleaner to a finished job, a receipt and a pay row, and the ord
 ## Not testable on DEV
 
 - **A start window below the clock.** The 60-minute window and the late start need real time: nothing here moves the DEV clock, so E2E-EXEC-003, E2E-EXEC-004 and E2E-EXEC-011 wait for it.
-- **Live Activity and push on a simulator or emulator.** A DEV push reaches a physical device, and the iOS simulator when the app allows notifications (read from its device log, F-114 in `e2e/runs/2026-11-20/findings.md`); it never reaches the emulator, and the iOS Live Activity was not seen on a simulator. The cases check the order status and the inbox instead.
+- **Live Activity and push on a simulator or emulator.** A DEV push reaches a physical device, and the iOS simulator when the app allows notifications (shown for the customer app, read from its device log, F-114 in `e2e/runs/2026-11-20/findings.md`; the partner app is not shown yet); it never reaches the emulator, and the iOS Live Activity was not seen on a simulator. The cases check the order status and the inbox instead.
 - **E-mail and receipts by mail.** `@example.com` never receives mail; receipts are read from the app download.
 - **The 24-hour rule on the same day.** E2E-EXEC-024 needs a day of waiting after the completion; it is a next-day check.
 - **A legacy guest cash order.** E2E-EXEC-031's second half needs a pre-existing row; the booking path no longer creates one.

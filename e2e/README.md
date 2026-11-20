@@ -307,7 +307,7 @@ settle stage's E2E-PAYOUT-016, 017, 032, 035, 036, 055 and 056 on DEV. They leav
 | E2E-PAY-042 | the fee receipt's PDF | no endpoint serves it and it is not e-mailed; its row is read by `sql-scripts/dev-e2e-read-fee-receipts.sql` |
 
 A DEV push reaches the iOS simulator when the app allows notifications (the customer app's `order.cleaner_assigned` on
-20 November 2026, F-114), so the push rows above can be read there from the device log; the emulator receives none
+20 November 2026, F-114), so the push rows above can be read there from the device log (the partner app's pushes are not shown there yet); the emulator receives none
 (`runbooks/android.md`, section 1).
 
 The Android PaymentSheet (E2E-PAY-012 and the Android halves of E2E-PAY-022 and E2E-PAY-023) is covered when the

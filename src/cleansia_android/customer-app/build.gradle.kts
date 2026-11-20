@@ -57,7 +57,8 @@ if (stripePublishableKey.isNotBlank() && !stripePublishableKey.startsWith("pk_")
 
 android {
     namespace = "cz.cleansia.customer"
-    compileSdk = 35
+    // Stripe's SDK ships androidx libraries that refuse to build against anything older.
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "cz.cleansia.customer"

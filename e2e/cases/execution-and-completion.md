@@ -90,7 +90,7 @@ From an assigned cleaner to a finished job, a receipt and a pay row, and the ord
 - **Surfaces:** iOS · Android
 - **Rule:** → /flows/execution-and-completion#start-grace-window — a cleaner is told two hours out and nudged half an hour out; the nudge is dropped once on the way or out on another job
 - **Given** two `Confirmed` jobs for Cleaner A, one A will set off for early and one A will not. **When** time passes. **Then** A gets a reminder about two hours out for both; at about half an hour out A gets the nudge for the job A did not set off for and none for the job already `OnTheWay`; none while A is out on another job.
-- **DEV:** needs a device; the booking lead time of 2 h means the first reminder may arrive at once.
+- **DEV:** the reminders reach a device; the iOS simulator received DEV pushes in the customer app (F-114 in `e2e/runs/2026-11-20/findings.md`), and the partner app's are not shown there yet. The booking lead time of 2 h means the first reminder may arrive at once.
 
 ### E2E-EXEC-012 — A job that never starts raises an administrator alert and nothing else
 - **Priority:** P2

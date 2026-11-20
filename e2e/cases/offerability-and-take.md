@@ -116,7 +116,7 @@ How a job reaches a cleaner's board and what happens when cleaners take, drop, c
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /domain/order-lifecycle#confirmed-means-one-thing-a-cleaner-took-the-job — a take writes `Confirmed`, and a cleaner-found notice goes to the customer
 - **Given** E2E-TAKE-013 just happened. **When** the Customer opens the order in My orders (web, iOS or Android) and the customer API. **Then** the order shows `Confirmed` in the progress; the customer has the `order.cleaner_assigned` ("Cleaner found!") inbox entry on iOS and Android; nothing names the cleaner's contact data beyond what the customer detail shows today.
-- **DEV:** the e-mail "Cleaner found" goes to `@example.com` and cannot be read; the push needs a device and is checked as an inbox entry only.
+- **DEV:** the e-mail "Cleaner found" goes to `@example.com` and cannot be read. The push reaches a device, or the iOS simulator when the customer app allows notifications (read from its device log, F-114 in `e2e/runs/2026-11-20/findings.md`); elsewhere it is checked as an inbox entry only.
 
 ### E2E-TAKE-015 — The administrator sees the seat and the accepted contract
 - **Priority:** P1

@@ -313,8 +313,9 @@ Three limits:
 
 - **The extension needs the updated app to have launched once.** Until it has written the language, a
   banner is in the system language — exactly the [ADR-0025](/decisions/adr-0025) behaviour it replaces.
-- **`xcrun simctl push` never runs a Notification Service Extension.** The simulator always shows the
-  system-language banner; the in-app one can only be seen on a device or a TestFlight build.
+- **`xcrun simctl push` never runs a Notification Service Extension**, so a push injected that way shows
+  the system-language banner. A real DEV push that carries `mutable-content` reaches the iOS simulator
+  when the customer app allows notifications, and the extension runs there as it does on a device.
 - **A language change reaches a Live Activity already on screen at its next update**, from the server
   or from the app.
 

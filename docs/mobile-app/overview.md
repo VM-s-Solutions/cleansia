@@ -541,8 +541,9 @@ the extension, and the widget uses it to draw the card in that language.
   registered by hand, and a simulator build needs none.
 - **Privacy manifests.** Writing an App Group is a `UserDefaults` access, so each app, the widget and
   each extension declares reason `1C8F.1`.
-- **The simulator cannot show the result.** `xcrun simctl push` never launches a Notification Service
-  Extension, so the simulator always shows the system-language banner.
+- **An injected push skips the extension.** `xcrun simctl push` never launches a Notification Service
+  Extension, so it shows the system-language banner. A real DEV push reaches the simulator when the
+  customer app allows notifications, and the extension runs.
 
 `src/cleansia_ios/README.md` has the same table with each target's entitlements file.
 

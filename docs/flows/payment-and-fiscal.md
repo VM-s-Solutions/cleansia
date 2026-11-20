@@ -93,7 +93,9 @@ answers `200` with the card as `GET api/SavedCard/GetMine` lists it. Whichever o
 comes second finds the card captured and changes nothing, and the confirm then answers the card as it is.
 Anything else — another customer's intent, one on another Customer, one naming no row (Plus's), one not yet
 succeeded, or a removed card — is `saved_card.not_found`, and an unreachable Stripe is
-`order.payment_gateway_unavailable`; the webhook still lands a card the confirm could not.
+`order.payment_gateway_unavailable`; the webhook still lands a card the confirm could not. Both apps show
+a refusal's message, keep the card pending and confirm again on the next check; only a confirm that never
+reached the server falls back to reading `GET api/SavedCard/GetMine`.
 
 **A replaced card comes off the Stripe Customer too** (owner ruling 2026-11-20). When a capture retires the
 customer's earlier card in the currency, it detaches that card through the removal's own call below, which

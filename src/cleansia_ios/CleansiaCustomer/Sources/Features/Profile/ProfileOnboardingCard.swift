@@ -13,6 +13,7 @@ struct OnboardingReadinessCard: View {
     @Binding var firstName: String
     @Binding var lastName: String
     @Binding var phone: String
+    let phoneError: String?
     let onBirthDate: () -> Void
 
     @Environment(\.locale) private var locale
@@ -118,6 +119,7 @@ struct OnboardingReadinessCard: View {
                 CleansiaPhoneInput(
                     value: $phone,
                     label: L10n.Onboarding.phoneLabel,
+                    errorText: phoneError,
                     countryRegion: "CZ",
                     autoFocus: openedByHand
                 )

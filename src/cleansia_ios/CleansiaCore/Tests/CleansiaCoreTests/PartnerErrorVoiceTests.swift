@@ -269,14 +269,14 @@ final class PartnerErrorVoiceTests: XCTestCase {
     private static let boundTakeRefusals = [
         "order.take.already_cancelled": "This order is already cancelled.",
         "order.take.already_completed": "This order is already completed.",
-        "order.no_available_spots": "Another cleaner has already taken this job.",
+        "order.no_available_spots": "All spots on this order are already taken.",
         "order.not_takeable": "This job is no longer available.",
         "order.weekly_limit_reached": "You've reached your weekly order limit.",
         "order.time_conflict": "This order conflicts with another you've already taken.",
         "contract.not_accepted": "Please read and accept the contract for work before taking the job.",
         "contract.text_mismatch": "The contract was updated — please read it again.",
         "contract.acceptance_required": "Accept the contract for work for this job before you continue.",
-        "legal.document_not_found": "This job cannot be taken right now."
+        "legal.document_not_found": "This legal text is not available yet."
     ]
 
     override func tearDown() {

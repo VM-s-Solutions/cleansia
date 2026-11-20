@@ -17,16 +17,7 @@ import Foundation
         func present(_ presentation: PaymentSheetPresentation) async -> PaymentSheetOutcome {
             guard !presentation.clientSecret.isEmpty else { return .failed }
             guard let presenter = Self.topViewController() else { return .failed }
-
-            var configuration = PaymentSheet.Configuration()
-            configuration.merchantDisplayName = presentation.merchantDisplayName
-            configuration.allowsDelayedPaymentMethods = false
-            if !presentation.stripeCustomerId.isEmpty, !presentation.ephemeralKey.isEmpty {
-                configuration.customer = .init(
-                    id: presentation.stripeCustomerId,
-                    ephemeralKeySecret: presentation.ephemeralKey
-                )
-            }
+            let configuration = Self.configuration(for: presentation)
 
             let sheet = switch presentation.intentKind {
             case .payment:
@@ -53,6 +44,21 @@ import Foundation
                     }
                 }
             }
+        }
+
+        static func configuration(for presentation: PaymentSheetPresentation) -> PaymentSheet.Configuration {
+            var configuration = PaymentSheet.Configuration()
+            configuration.merchantDisplayName = presentation.merchantDisplayName
+            configuration.allowsDelayedPaymentMethods = false
+            // A card-only intent does not hide Link: an account in Link's passthrough mode offers it as a card.
+            configuration.link = .init(display: .never)
+            if !presentation.stripeCustomerId.isEmpty, !presentation.ephemeralKey.isEmpty {
+                configuration.customer = .init(
+                    id: presentation.stripeCustomerId,
+                    ephemeralKeySecret: presentation.ephemeralKey
+                )
+            }
+            return configuration
         }
 
         private static func topViewController() -> UIViewController? {

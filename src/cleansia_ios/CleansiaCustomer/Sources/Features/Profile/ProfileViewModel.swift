@@ -16,6 +16,7 @@ final class ProfileViewModel: ViewModel {
     private let snackbar: SnackbarController
     private let localizer = ApiErrorLocalizer()
     private var avatarRetriedFor: String?
+    private var onboardingSentPhone: String?
 
     init(
         repository: UserProfileRepository,
@@ -161,17 +162,21 @@ final class ProfileViewModel: ViewModel {
         phoneNumber: String,
         birthDate: Date?
     ) async {
-        guard let user = repository.currentUser else { return }
         guard !saveState.isSubmitting else { return }
+        onboardingSentPhone = phoneNumber.trimmed
         guard !firstName.isBlank, !lastName.isBlank else {
-            let message = firstName.isBlank
-                ? L10n.Auth.errorFirstNameRequired
-                : L10n.Auth.errorLastNameRequired
-            snackbar.showError(message)
-            saveState = .error(message)
+            saveState = .error(firstName.isBlank ? L10n.Auth.errorFirstNameRequired : L10n.Auth.errorLastNameRequired)
             return
         }
         saveState = .submitting
+        if repository.currentUser == nil, case let .failure(error) = await repository.refresh() {
+            saveState = .error(localizer.message(for: error))
+            return
+        }
+        guard let user = repository.currentUser else {
+            saveState = .error(localizer.message(for: ApiError()))
+            return
+        }
         let update = ProfileUpdate(
             id: user.id,
             firstName: firstName.trimmed,
@@ -186,10 +191,14 @@ final class ProfileViewModel: ViewModel {
             settings.markOnboardingSeen(userId: user.id)
             saved.send()
         case let .failure(error):
-            let message = localizer.message(for: error)
-            snackbar.showError(message)
-            saveState = .error(message)
+            saveState = .error(localizer.message(for: error))
         }
+    }
+
+    /// A refused save shows under the phone field, and only while the field holds the number that was sent.
+    func onboardingPhoneError(phoneNumber: String) -> String? {
+        guard case let .error(message) = saveState, phoneNumber.trimmed == onboardingSentPhone else { return nil }
+        return message
     }
 
     func skipOnboarding() {

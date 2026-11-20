@@ -1,0 +1,77 @@
+name: Error text parity
+
+# A backend error key is one sentence the platform says, and six clients each hold their own copy of
+# it: the three webs' i18n JSON, the two Android apps' strings.xml and the iOS catalogue in
+# CleansiaCore that both iOS apps read. On 2026-11-19 237 of 412 keys read differently between them;
+# every key now reads one way per language (owner ruling: the wording most clients use, a tie going to
+# the Android customer app), and this gate keeps it that way.
+#
+# A separate workflow for the reason booking-policy-parity.yml gives: path filters are workflow-level,
+# and no existing job reads the web JSON, the Android XML and the iOS catalogue together
+# (frontend-ci runs `nx affected`, android-ci and ios-ci each see one tree). Dependency-free Node, in
+# seconds.
+on:
+  # '**' not '*': `*` stops at `/`, so a `fix/...` base branch would match nothing and the gate would
+  # silently never run.
+  pull_request:
+    branches:
+      - '**'
+    paths:
+      - 'src/Cleansia.App/apps/cleansia.app/src/assets/i18n/**'
+      - 'src/Cleansia.App/apps/cleansia-partner.app/src/assets/i18n/**'
+      - 'src/Cleansia.App/apps/cleansia-admin.app/src/assets/i18n/**'
+      - 'src/cleansia_android/customer-app/src/main/res/**'
+      - 'src/cleansia_android/partner-app/src/main/res/**'
+      - 'src/cleansia_ios/CleansiaCore/Sources/CleansiaCore/Resources/Localizable.xcstrings'
+      - 'agents/tools/check-error-text-parity.mjs'
+      - 'agents/tools/check-error-text-parity.test.mjs'
+      - '.github/workflows/error-text-parity.yml'
+  # A pull_request-only trigger never checks a direct-to-master commit.
+  push:
+    branches:
+      - master
+    paths:
+      - 'src/Cleansia.App/apps/cleansia.app/src/assets/i18n/**'
+      - 'src/Cleansia.App/apps/cleansia-partner.app/src/assets/i18n/**'
+      - 'src/Cleansia.App/apps/cleansia-admin.app/src/assets/i18n/**'
+      - 'src/cleansia_android/customer-app/src/main/res/**'
+      - 'src/cleansia_android/partner-app/src/main/res/**'
+      - 'src/cleansia_ios/CleansiaCore/Sources/CleansiaCore/Resources/Localizable.xcstrings'
+      - 'agents/tools/check-error-text-parity.mjs'
+      - 'agents/tools/check-error-text-parity.test.mjs'
+      - '.github/workflows/error-text-parity.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  parity:
+    runs-on: ubuntu-26.04
+
+    # A ceiling that only ever catches a hang; the job runs in seconds.
+    timeout-minutes: 15
+    name: Every client reads each error key the same way
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+
+      # No `cache: npm`: the checker is dependency-free Node, nothing to install.
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 22
+
+      # First and blocking: a checker whose body is broken reads exactly like a clean tree, and the
+      # self-test proves every rule still fires and an unreadable client fails rather than passes.
+      - name: Self-test the parity gate
+        run: node agents/tools/check-error-text-parity.test.mjs
+
+      - name: Every client reads each error key the same way
+        run: node agents/tools/check-error-text-parity.mjs

@@ -569,20 +569,20 @@
     <string name="error_common_required">Toto pole je povinné.</string>
     <string name="error_common_max_length">Príliš dlhé.</string>
     <string name="error_common_min_length">Príliš krátke.</string>
-    <string name="error_common_invalid_enum_value">Neplatný výber.</string>
+    <string name="error_common_invalid_enum_value">Neplatná voľba.</string>
 
     <string name="error_auth_google_type_error">Tento účet používa prihlásenie cez Google. Použite tlačidlo Google.</string>
     <string name="error_auth_apple_type_error">Tento účet používa prihlásenie cez Apple. Použite tlačidlo Apple.</string>
     <string name="error_auth_external_type_error">Tento účet používa iný spôsob prihlásenia.</string>
-    <string name="error_auth_internal_type_error">Pre tento účet použite e-mail a heslo.</string>
+    <string name="error_auth_internal_type_error">Pre tento účet sa prihláste e-mailom a heslom.</string>
     <string name="error_auth_invalid_confirmation_code">Tento kód je neplatný alebo vypršal.</string>
-    <string name="error_auth_invalid_google_token">Prihlásenie cez Google zlyhalo. Skúste to znova.</string>
-    <string name="error_auth_invalid_apple_token">Prihlásenie cez Apple zlyhalo. Skúste to znova.</string>
+    <string name="error_auth_invalid_google_token">Prihlásenie cez Google sa nepodarilo. Skúste to znova.</string>
+    <string name="error_auth_invalid_apple_token">Neplatný Apple token</string>
     <string name="error_auth_invalid_password_format">Heslo musí mať aspoň 8 znakov a obsahovať písmená a číslice.</string>
     <string name="error_auth_invalid_reset_token">Tento odkaz na obnovenie hesla je neplatný alebo vypršal.</string>
-    <string name="error_auth_same_reset_password">Zvoľte heslo odlišné od pôvodného.</string>
+    <string name="error_auth_same_reset_password">Zvoľte prosím heslo odlišné od pôvodného.</string>
     <string name="error_auth_insufficient_privileges">Nemáte oprávnenie na túto akciu.</string>
-    <string name="error_auth_invalid_refresh_token">Vaša relácia vypršala. Prihláste sa prosím znova.</string>
+    <string name="error_auth_invalid_refresh_token">Vaša relácia vypršala. Prihláste sa, prosím, znova.</string>
     <string name="error_auth_refresh_token_reused">Z bezpečnostných dôvodov ste boli odhlásení zo všetkých zariadení.</string>
     <string name="error_auth_current_password_invalid">Vaše súčasné heslo nie je správne.</string>
     <string name="error_auth_account_locked">Príliš veľa neúspešných pokusov o prihlásenie. Účet je dočasne uzamknutý — skúste to znova o niekoľko minút.</string>
@@ -590,16 +590,16 @@
 
     <string name="error_user_email_confirmed">Tento e-mail je už potvrdený.</string>
     <string name="error_user_existing_email">Účet s týmto e-mailom už existuje.</string>
-    <string name="error_user_not_existing_email">Účet s týmto e-mailom sa nenašiel.</string>
-    <string name="error_user_not_existing_id">Používateľ sa nenašiel.</string>
-    <string name="error_user_not_allowed_to_update">Tento profil nemôžete upravovať.</string>
-    <string name="error_user_existing_phone_number">Toto telefónne číslo sa už používa.</string>
-    <string name="error_user_not_found">Používateľ sa nenašiel.</string>
+    <string name="error_user_not_existing_email">Účet s týmto e-mailom neexistuje.</string>
+    <string name="error_user_not_existing_id">Používateľ nenájdený.</string>
+    <string name="error_user_not_allowed_to_update">Tento profil nie je možné upraviť.</string>
+    <string name="error_user_existing_phone_number">Toto telefónne číslo je už používané.</string>
+    <string name="error_user_not_found">Používateľ nenájdený.</string>
 
     <string name="error_employee_not_found">Partner sa nenašiel.</string>
     <string name="error_employee_not_existing_email">Partner s týmto e-mailom sa nenašiel.</string>
     <string name="error_employee_not_allowed_to_update">Tohto partnera nemôžete upravovať.</string>
-    <string name="error_employee_profile_incomplete">Pred prijímaním zákaziek si prosím dokončite profil.</string>
+    <string name="error_employee_profile_incomplete">Profil partnera nie je kompletný; zákazky je možné prijímať až po jeho dokončení.</string>
     <string name="error_employee_documents_missing">Chýbajú povinné dokumenty. Nahrajte ich vo svojom profile.</string>
     <string name="error_employee_already_approved">Tento partner je už schválený.</string>
     <string name="error_employee_already_rejected">Tento partner je už zamietnutý.</string>
@@ -610,40 +610,40 @@
     <string name="error_employee_document_deletion_already_requested">O odstránenie tohto dokumentu ste už požiadali. Čoskoro vašu žiadosť vybavíme.</string>
     <string name="error_employee_document_duplicate_file">Presne tento súbor ste už nahrali. Vyberte iný súbor alebo nahraďte existujúci dokument.</string>
 
-    <string name="error_order_not_found">Zákazka sa nenašla.</string>
+    <string name="error_order_not_found">Túto objednávku sme nenašli.</string>
     <string name="error_order_take_already_cancelled">Táto zákazka je už zrušená.</string>
     <string name="error_order_take_already_completed">Táto zákazka je už dokončená.</string>
-    <string name="error_order_in_progress_cannot_cancel">Táto zákazka prebieha a nedá sa zrušiť.</string>
+    <string name="error_order_in_progress_cannot_cancel">Toto upratovanie už prebieha a nedá sa zrušiť.</string>
     <string name="error_order_cancellation_window_closed">Lehota na zrušenie vypršala.</string>
-    <string name="error_order_empty">Zákazka je prázdna.</string>
+    <string name="error_order_empty">Objednávka je prázdna. Pridajte prosím aspoň jednu službu.</string>
     <string name="error_order_already_assigned">Túto zákazku práve prevzal iný upratovač.</string>
-    <string name="error_order_no_available_spots">Túto zákazku už prevzal iný upratovač.</string>
+    <string name="error_order_no_available_spots">Všetky miesta na tejto objednávke sú už obsadené.</string>
     <string name="error_order_not_takeable">Táto zákazka už nie je k dispozícii.</string>
     <string name="error_order_weekly_limit_reached">Dosiahli ste týždenný limit zákaziek.</string>
     <string name="error_order_time_conflict">Táto zákazka sa prekrýva s inou, ktorú ste už prijali.</string>
-    <string name="error_order_employee_already_assigned">Na túto zákazku ste už priradení.</string>
-    <string name="error_order_employee_not_assigned">Na túto zákazku nie ste priradení.</string>
+    <string name="error_order_employee_already_assigned">Partner je už priradený k tejto objednávke.</string>
+    <string name="error_order_employee_not_assigned">Partner nie je priradený k tejto objednávke.</string>
     <string name="error_order_max_employees_exceeded">Táto zákazka už má maximálny počet upratovačov.</string>
-    <string name="error_order_preferred_employee_not_eligible">Nie ste oprávnení prijať túto zákazku.</string>
+    <string name="error_order_preferred_employee_not_eligible">Vybraná upratovačka nie je pre túto objednávku k dispozícii.</string>
     <string name="error_order_employee_already_has_order_in_progress">Už máte inú zákazku v priebehu. Pred začatím novej ju prosím dokončite.</string>
 
     <!-- Contract for work: the take's echo, the seat's gate, the preview with no text in force -->
     <string name="error_contract_not_accepted">Pred prevzatím zákazky si prosím prečítajte a prijmite zmluvu o dielo.</string>
     <string name="error_contract_text_mismatch">Zmluva bola aktualizovaná \u2014 prečítajte si ju prosím znova.</string>
     <string name="error_contract_acceptance_required">Skôr než budete pokračovať, prijmite zmluvu o dielo k tejto zákazke.</string>
-    <string name="error_legal_document_not_found">Túto zákazku teraz nie je možné prevziať.</string>
-    <string name="error_employee_legal_documents_not_accepted">Skôr než začnete prijímať zákazky, prijmite aktuálnu verziu svojich zmluvných dokumentov.</string>
+    <string name="error_legal_document_not_found">Tento právny dokument zatiaľ nie je k dispozícii.</string>
+    <string name="error_employee_legal_documents_not_accepted">Aktuálna verzia zmluvných dokumentov zatiaľ nebola prijatá; zákazky je možné prijímať až po jej prijatí.</string>
     <string name="error_legal_document_not_in_force">Tento dokument už nie je platnou verziou. Načítajte ho znova a prijmite aktuálnu verziu.</string>
 
     <string name="error_order_not_in_progress">Táto zákazka nie je v priebehu.</string>
     <string name="error_order_not_confirmed">Táto zákazka ešte nie je potvrdená.</string>
     <string name="error_order_too_early_to_start">Na štart je príliš skoro — začať môžete až hodinu pred termínom.</string>
-    <string name="error_order_not_completed">Táto zákazka ešte nie je dokončená.</string>
+    <string name="error_order_not_completed">Objednávku možno hodnotiť až po dokončení.</string>
     <string name="error_order_actual_time_positive">Skutočný čas musí byť väčší ako nula.</string>
     <string name="error_order_completion_notes_required">Poznámky k dokončeniu sú povinné.</string>
     <string name="error_order_completion_notes_too_long">Poznámky k dokončeniu sú príliš dlhé.</string>
     <string name="error_order_after_photos_required">Pred dokončením zákazky odfoťte aspoň jednu fotografiu „po\".</string>
-    <string name="error_order_crew_not_done">Skôr ako sa dá zákazka dokončiť, musia svoju časť označiť ako hotovú všetci, ktorí na nej pracujú.</string>
+    <string name="error_order_crew_not_done">Zákazku možno dokončiť, až keď svoju časť označia ako hotovú všetci, ktorí na nej pracujú.</string>
     <string name="error_order_photo_window_closed">Túto fotografiu teraz nemožno pridať: fotografie pred upratovaním od prevzatia zákazky do jej dokončenia, fotografie po upratovaní počas práce.</string>
     <string name="error_order_photo_locked">Po dokončení alebo zrušení zákazky nemožno fotografie vymazať.</string>
     <string name="error_order_cash_not_collected">Pred dokončením zákazky vyberte hotovosť a označte ju ako prijatú.</string>
@@ -658,8 +658,8 @@
     <string name="error_order_card_payment_already_settled">Táto zákazka už bola zaplatená kartou. Nevyberajte hotovosť — stav platby bol aktualizovaný.</string>
     <string name="error_order_card_payment_in_progress">Platba kartou za túto zákazku sa stále spracúva. Chvíľu počkajte a skúste to znova.</string>
     <string name="error_order_card_payment_unverified">Nepodarilo sa overiť platbu kartou za túto zákazku. Zatiaľ nevyberajte hotovosť — skúste to o chvíľu znova.</string>
-    <string name="error_order_cash_not_allowed_on_card_order">Táto zákazka sa platí kartou, hotovosť pri nej preto nemožno zaznamenať. Hotovosť nevyberajte — požiadajte o vybavenie kanceláriu.</string>
-    <string name="error_order_payment_not_outstanding">Pri tejto zákazke už nie je čo vybrať — je uhradená alebo boli peniaze vrátené. Hotovosť nevyberajte.</string>
+    <string name="error_order_cash_not_allowed_on_card_order">Táto objednávka sa platí kartou, hotovosť sa za ňu preto nevyberá ani nezaznamenáva.</string>
+    <string name="error_order_payment_not_outstanding">Pri tejto zákazke už nie je čo vybrať — je uhradená alebo boli peniaze vrátené. Hotovosť sa za ňu nevyberá.</string>
     <string name="error_credit_cash_not_collectable_on_credit_order">Časť tejto objednávky už bola uhradená z kreditu zákazníka. Požiadajte o vybavenie kanceláriu — sumu uvedenú v aplikácii nevyberajte.</string>
 
     <string name="error_order_note_content_required">Text poznámky je povinný.</string>
@@ -667,21 +667,21 @@
     <string name="error_order_review_already_exists">Pre túto zákazku už existuje recenzia.</string>
     <string name="error_order_review_rating_invalid">Hodnotenie musí byť medzi 1 a 5.</string>
 
-    <string name="error_order_cleaning_date_future">Dátum upratovania musí byť v budúcnosti.</string>
-    <string name="error_order_cleaning_date_below_lead_time">Tento čas je príliš skoro. Zvoľte prosím neskorší termín.</string>
-    <string name="error_order_total_price_positive">Celková cena musí byť väčšia ako nula.</string>
-    <string name="error_order_total_price_not_match">Cena sa zmenila. Obnovte stránku a skúste to znova.</string>
+    <string name="error_order_cleaning_date_future">Dátum musí byť v budúcnosti.</string>
+    <string name="error_order_cleaning_date_below_lead_time">Tento čas je príliš blízko. Zvoľte neskorší termín.</string>
+    <string name="error_order_total_price_positive">Celková cena musí byť kladná</string>
+    <string name="error_order_total_price_not_match">Cena sa zmenila. Obnovte prosím a skúste znova.</string>
     <string name="error_order_payment_gateway_unavailable">Platobná služba je dočasne nedostupná.</string>
     <string name="error_order_creation_failed">Vytvorenie zákazky zlyhalo. Skúste to znova.</string>
 
-    <string name="error_address_not_owned_by_user">K tejto adrese nemáte prístup.</string>
+    <string name="error_address_not_owned_by_user">Môžete spravovať iba vlastné adresy.</string>
     <string name="error_address_label_required">Zadajte prosím názov tejto adresy.</string>
-    <string name="error_address_already_exists">Táto adresa je už uložená.</string>
-    <string name="error_address_invalid_length">Adresa je príliš krátka alebo dlhá.</string>
-    <string name="error_address_mapbox_coords_required">Zvoľte prosím adresu na mape.</string>
-    <string name="error_order_address_exactly_one_required">Zvoľte prosím adresu.</string>
+    <string name="error_address_already_exists">Túto adresu už máte uloženú.</string>
+    <string name="error_address_invalid_length">Adresa je príliš krátka alebo príliš dlhá.</string>
+    <string name="error_address_mapbox_coords_required">Vyberte prosím adresu z návrhov.</string>
+    <string name="error_order_address_exactly_one_required">Vyberte prosím uloženú adresu alebo zadajte novú.</string>
 
-    <string name="error_file_content_type_doesnt_match">Typ súboru nesúhlasí.</string>
+    <string name="error_file_content_type_doesnt_match">Typ súboru nesedí.</string>
     <string name="error_file_invalid_file_type">Nepodporovaný typ súboru.</string>
     <string name="error_file_size_exceeded">Súbor je príliš veľký.</string>
     <string name="error_file_size_exceeded_10mb">Súbor je príliš veľký (max 10 MB).</string>
@@ -703,12 +703,12 @@
     <string name="error_validation_registration_number_invalid_format">Zadajte prosím platné IČO pre vybranú krajinu.</string>
     <string name="error_validation_registration_number_not_registered">Toto IČO nie je v registri ekonomických subjektov (ARES). Skontrolujte číslo.</string>
     <string name="error_employee_business_ceased">Podľa registra ekonomických subjektov (ARES) podnikanie pod týmto IČO zaniklo. Zadajte IČO podnikania, ktoré stále trvá.</string>
-    <string name="error_employee_trade_licence_inactive">Podľa registra ekonomických subjektov (ARES) nie je pod týmto IČO platné živnostenské oprávnenie. Skontrolujte číslo, alebo si najprv obnovte živnostenské oprávnenie.</string>
-    <string name="error_employee_business_registry_unavailable">Register ekonomických subjektov (ARES) sa nepodarilo kontaktovať, takže nové IČO nebolo možné overiť a nič sa neuložilo. Skúste to znova o niekoľko minút.</string>
+    <string name="error_employee_trade_licence_inactive">Podľa registra ekonomických subjektov (ARES) nie je pod týmto IČO platné živnostenské oprávnenie. Skontrolujte číslo; inak je najprv potrebné živnostenské oprávnenie obnoviť.</string>
+    <string name="error_employee_business_registry_unavailable">Register ekonomických subjektov (ARES) sa nepodarilo kontaktovať, takže toto IČO nebolo možné overiť a nič sa neuložilo. Skúste to znova o niekoľko minút.</string>
     <string name="error_validation_must_be_positive">Musí byť kladné číslo.</string>
 
     <!-- Payout / bank details -->
-    <string name="error_payout_not_found">Zatiaľ ste nezadali svoje bankové údaje. Doplňte ich, aby sme vám mohli poslať výplatu.</string>
+    <string name="error_payout_not_found">Zatiaľ nie sú uložené žiadne bankové údaje; výplatu je možné poslať až po ich doplnení.</string>
     <string name="error_validation_payout_country_not_supported">Do banky v tejto krajine zatiaľ výplaty posielať nevieme. Skontrolujte zvolenú krajinu banky, alebo sa ozvite podpore a pomôžeme vám.</string>
     <string name="error_validation_payout_scheme_not_supported">Na tento typ účtu zatiaľ výplaty posielať nevieme. Ozvite sa podpore a pomôžeme vám to vyriešiť.</string>
     <string name="error_validation_payout_looks_like_card">Toto vyzerá ako číslo platobnej karty. Zadajte namiesto neho číslo bankového účtu — nájdete ho na výpise alebo v bankovej aplikácii.</string>
@@ -726,7 +726,7 @@
     <string name="error_email_invalid_format">Zadajte prosím platný e-mail.</string>
     <string name="error_email_invalid_email">Zadajte prosím platný e-mail.</string>
 
-    <string name="error_general_not_found">Nenájdené.</string>
+    <string name="error_general_not_found">Zdroj nebol nájdený</string>
 
     <string name="error_country_not_serviced">V tejto krajine zatiaľ nepôsobíme.</string>
     <string name="error_tenant_not_found">Tento trh zatiaľ neprevádzkuje žiadna spoločnosť Cleansia.</string>
@@ -734,7 +734,7 @@
     <string name="error_city_not_serviced">V tomto meste zatiaľ nepôsobíme.</string>
     <string name="error_language_not_supported">Tento jazyk nie je podporovaný.</string>
 
-    <string name="error_device_invalid_platform">Neplatná platforma zariadenia.</string>
+    <string name="error_device_invalid_platform">Nepodporovaná platforma zariadenia.</string>
 
     <!-- ── Push notifikácie (FCM) ── -->
     <string name="notifications_empty">Zatiaľ žiadne oznámenia. Aktualizácie zákaziek sa zobrazia tu.</string>
@@ -825,8 +825,8 @@
     <string name="error_gdpr_deletion_blocked_by_invoice">Účet zatiaľ nie je možné vymazať — existuje nevybavená faktúra.</string>
     <string name="error_gdpr_deletion_blocked_by_order">Účet zatiaľ nie je možné vymazať — existuje aktívna objednávka.</string>
     <string name="error_language_not_found">Jazyk nebol nájdený</string>
-    <string name="error_order_selected_package_invalid">Vybraný balík je neplatný</string>
-    <string name="error_order_selected_services_invalid">Vybrané služby sú neplatné</string>
+    <string name="error_order_selected_package_invalid">Jeden z vybraných balíkov už nie je dostupný.</string>
+    <string name="error_order_selected_services_invalid">Jedna z vybraných služieb už nie je dostupná.</string>
     <string name="error_payroll_invoice_not_found">Faktúra nebola nájdená</string>
     <string name="error_payroll_pay_period_not_found">Výplatné obdobie nebolo nájdené</string>
     <string name="error_receipt_not_found">Účtenka nebola nájdená</string>
@@ -909,8 +909,8 @@
     <string name="delete_account_confirm_message">Ozveme sa vám a spoluprácu formálne ukončíme. Dnes sa nič nemaže.</string>
     <string name="delete_account_confirm_yes">Odoslať žiadosť</string>
     <string name="delete_account_requested">Žiadosť o zmazanie bola odoslaná.</string>
-    <string name="error_gdpr_deletion_blocked_by_assigned_order">Stále ste priradení k nadchádzajúcej zákazke. Keď bude dokončená alebo preradená, môžete o zmazanie požiadať znova.</string>
-    <string name="error_gdpr_deletion_blocked_by_unsettled_pay">Stále máte nevyplatenú odmenu. Keď bude výplatné obdobie vyplatené, môžete o zmazanie požiadať znova.</string>
+    <string name="error_gdpr_deletion_blocked_by_assigned_order">Účet zatiaľ nie je možné vymazať — existuje priradená zákazka.</string>
+    <string name="error_gdpr_deletion_blocked_by_unsettled_pay">Účet nie je možné vymazať, kým nebude vyplatená celá dlžná odmena.</string>
     <string name="splash_unreachable_title">Nedarí sa nám spojiť s Cleansia</string>
     <string name="splash_unreachable_message">Skontrolujte pripojenie a skúste to znova. S vaším účtom je všetko v poriadku — len sa nám ho nepodarilo načítať.</string>
     <string name="profile_group_legal">Právne informácie</string>
@@ -945,9 +945,9 @@
     <string name="invoice_pdf_failed">PDF faktúry sa nepodarilo vytvoriť. Obnovte stránku a overte stav.</string>
     <string name="invoice_pdf_previous_available">Aktualizácia PDF sa nepodarila. Predchádzajúci dokument môžete stále otvoriť.</string>
     <string name="invoice_pdf_refresh">Obnoviť stav</string>
-    <string name="error_payroll_invoice_pdf_not_ready">PDF faktúry zatiaľ nie je pripravené. Obnovte stav.</string>
-    <string name="error_payroll_invoice_pdf_unavailable">PDF tejto faktúry nie je dostupné. Obnovte stav alebo kontaktujte podporu.</string>
-    <string name="error_payroll_invoice_pdf_generation_failed">PDF faktúry sa nepodarilo vytvoriť. Obnovte stav alebo kontaktujte podporu.</string>
+    <string name="error_payroll_invoice_pdf_not_ready">PDF faktúry ešte nie je pripravené. Skúste to neskôr.</string>
+    <string name="error_payroll_invoice_pdf_unavailable">PDF faktúry nie je dostupné. Kontaktujte podporu.</string>
+    <string name="error_payroll_invoice_pdf_generation_failed">Nepodarilo sa vygenerovať PDF</string>
     <string name="error_order_cash_requires_saved_card">Platba v hotovosti vyžaduje platnú uloženú kartu v mene objednávky.</string>
     <string name="auth_email_placeholder">partner@example.com</string>
     <plurals name="orders_job_count">

@@ -46,3 +46,17 @@ Merged with CI green; the DEV run is recorded under `e2e/runs/`, and Mike has th
 
 - 2026-11-19 — Filed with T-0937 and T-0938, after Mike's rulings.
 - 2026-11-19 — Started on `fix/t0939-wave3-harness-and-dev-proof`, after T-0938 merged as `d4bc9f045`.
+- 2026-11-19 — Part 1 shipped in #390 (merge `607d6b091`): F-087's confirm is proven by a sign-in, the runbook
+  recipes of F-090, F-102's set-off assertion, F-103's shared helpers, the F-081 and F-082 assertions, TAKE-025
+  behind `E2E_TAKE025=1`, and e2e/README.md's fix-proof run.
+- 2026-11-20 — Part 2, the fix-proof run on DEV (master `d4bc9f045` deployed; runs R3 202611200700, I 202611200640, D
+  202611200645; one Close now, at 09:03:18Z). Proven on DEV: F-075 (PAYOUT-057's six renders, each answered 200, the
+  set-off statement in each language), F-076 (TAKE-025 with the publish as the last step), F-087's confirm by
+  sign-in, F-089, F-092's push half, F-093, F-095 and F-102 (set-off 300 = min(360 held, 300 total), transfer 0).
+  F-081 and F-082 are proven by tests only. F-088 failed on DEV: both PaymentSheets still offer Stripe Link (F-109,
+  P2), so it moves to T-0940. The register is e2e/runs/2026-11-20/findings.md (F-109 to F-117).
+- 2026-11-20 — Shipped in #391 (merge `0975badeb`), CI green on every check. Open for Mike: F-111 (the Czech payout
+  invoice prints the country in English, P3), F-113 (the Android password eye icon reads English, P3), F-117 (two
+  docs sentences on simulator pushes, P3), F-110 (the runner's and the APIs' reach to the DEV database keeps
+  stalling), F-092's foreground half and F-087's confirmed-first half (not kept or not reached), and F-081 and F-082
+  on DEV (they need a phase-2 run).

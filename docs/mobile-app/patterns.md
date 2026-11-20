@@ -145,14 +145,17 @@ therefore still turns the card *Ready to book*; the booking's pre-flight is what
 was not saved, and opens *Edit profile* with nothing booked (`BookingSubmitOutcome.ProfileIncomplete` on
 Android).
 
-**A refused save shows on the step.** On Android, *Save and continue* reports any refusal under the
-phone field, the server's own text (*Please enter a valid phone number.*, a number another account
+**A refused save shows on the step.** On both platforms *Save and continue* reports any refusal under
+the phone field, the server's own text (*Please enter a valid phone number.*, a number another account
 holds, a lost connection), for as long as the field holds the number that was refused. The step
-itself raises no snackbar; a lost connection or a timeout also gets the app's connection toast
-(*Check your internet connection and try again.*) from the shared `NetworkErrorInterceptor`. A refusal used to reach only a 6-second snackbar over the button, after a spinner as long
-as the server took (19 s on DEV, 2026-11-19); a save that timed out reached nothing at all
-([above](#cancellation-noise)); and the E2E runs twice saw the step do nothing (F-041, F-089). A step
-opened before the profile has loaded loads it first, rather than ignoring the tap.
+itself raises no snackbar. On Android a lost connection or a timeout also gets the app's connection
+toast (*Check your internet connection and try again.*) from the shared `NetworkErrorInterceptor`. On
+iOS, whose step opens one row at a time, a refusal opens the phone row so the text is seen
+(`ProfileViewModel.onboardingPhoneError`). A refusal used to reach only a 6-second snackbar over the
+button, after a spinner as long as the server took (19 s on DEV, 2026-11-19); a save that timed out
+reached nothing at all ([above](#cancellation-noise)); and the E2E runs twice saw the step do nothing
+(F-041, F-089). A step opened before the profile has loaded loads it first, rather than ignoring the
+tap, and a profile that cannot load is a refusal like any other.
 
 **The customer sign-in fits one screen.** Without the mascot and the guest link the form fits every
 supported iPhone, the SE included, and ordinary Android phones; only the legacy 360×640dp size still
@@ -1469,7 +1472,11 @@ What changed on iOS:
   looks never gets a birth date thirty years before today. That is the owner's answer of 2026-11-08,
   given for the customer onboarding. From the fix plan of 2026-10-25 until then the wheels spun a
   draft, **Done** stored the day on them, on an empty field the day shown untouched, and **Cancel**
-  left the field as it was. Future dates stay blocked, and the stored day keeps its time-zone handling.
+  left the field as it was. The iOS wheels end yesterday and start 120 years back on every birth-date
+  field (Core's `CalendarDay.birthDays`), because every birth-date validator refuses today
+  (`validation.date_must_be_in_past`) and any day more than 120 years back (`validation.invalid_age`).
+  The partner's personal details also refuse anyone under 18 (`validation.invalid_age`), and their
+  wheels still offer those days. The stored day keeps its time-zone handling.
   The recurring schedule's *Starts on* is still the system's compact date picker. Since 2026-11-08
   (owner decision on concept D) Android's customer profile completion also opens day, month and year
   wheels in a half-height sheet, the system's spinner date picker: a wheel stores its day as it moves,

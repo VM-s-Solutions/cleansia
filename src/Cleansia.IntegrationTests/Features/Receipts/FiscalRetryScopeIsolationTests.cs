@@ -1,4 +1,5 @@
 using System.Data.Common;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
@@ -37,12 +38,14 @@ public sealed class FiscalRetryScopeIsolationTests(PostgresContainerFixture fixt
     private readonly Dictionary<string, FiscalResult> _authorityLedger = [];
     private readonly List<string> _sent = [];
     private readonly List<(string Token, string Tenant, string Company, string Country)> _registrations = [];
+    private readonly InMemoryBlobContainer _receipts = new("generated-receipts");
+    private string? _uploadRefusedFor;
 
     private CleansiaDbContext NewContext(ITenantProvider? tenant = null, params IInterceptor[] interceptors) => new(
         new DbContextOptionsBuilder<CleansiaDbContext>().UseNpgsql(Fixture.GetConnectionString()).AddInterceptors(interceptors).Options,
         new TestUserSessionProvider("system", "system@cleansia.test"), tenant ?? new ScopeTenantProvider());
 
-    private async Task SeedAsync(FiscalEnforcementMode mode = FiscalEnforcementMode.BlockingOnline, bool feeC = false)
+    private async Task SeedAsync(FiscalEnforcementMode mode = FiscalEnforcementMode.BlockingOnline, bool feeC = false, bool filesStored = true)
     {
         await using var connection = new NpgsqlConnection(Fixture.GetConnectionString());
         await connection.OpenAsync();
@@ -99,6 +102,7 @@ public sealed class FiscalRetryScopeIsolationTests(PostgresContainerFixture fixt
             else receipt = OrderReceipt.Create(order.Id, "R-FISCAL-" + letter, letter + ".pdf", letter + ".pdf", "lang-fiscal");
             receipt.Id = "receipt-fiscal-" + letter;
             receipt.ScheduleImmediateFiscalRetry();
+            if (filesStored) _receipts.Blobs[receipt.BlobName] = Encoding.UTF8.GetBytes("no code");
             ctx.OrderReceipts.Add(receipt);
             await ctx.CommitAsync(CancellationToken.None);
         }
@@ -148,7 +152,8 @@ public sealed class FiscalRetryScopeIsolationTests(PostgresContainerFixture fixt
         Assert.Equal(3, (await RunAsync()).Processed);
         await using var read = NewContext();
         var rows = await read.OrderReceipts.IgnoreQueryFilters().AsNoTracking().Include(r => r.Language).Include(r => r.Receivable).ToListAsync();
-        Assert.All(rows, r => Assert.NotNull(r.FiscalCode));
+        Assert.All(rows, r => Assert.Equal(mode != FiscalEnforcementMode.None, r.FiscalCode is not null));
+        Assert.All(rows, r => Assert.Null(r.FiscalNextRetryAt));
         Assert.All(rows, r => Assert.Equal("en", r.Language!.Code));
         var fee = Assert.Single(rows, r => r.IsFee);
         Assert.NotNull(fee.Receivable);
@@ -156,8 +161,58 @@ public sealed class FiscalRetryScopeIsolationTests(PostgresContainerFixture fixt
         Assert.Equal(releases ? 2 : 0, _sent.Count);
         Assert.DoesNotContain("order-fiscal-c", _sent);
         Assert.Equal(releases ? 2 : 0, await read.GuestOrderAccessTokens.IgnoreQueryFilters().CountAsync());
-        Assert.Equal(3, _authorityLedger.Count);
+        Assert.Equal(mode == FiscalEnforcementMode.None ? 0 : 3, _authorityLedger.Count);
         Assert.All(_registrations, r => Assert.Equal(r.Tenant + " legal", r.Company));
+    }
+
+    [Fact]
+    public async Task An_Upload_Fault_After_The_Stamp_Is_Rendered_With_The_Code_By_The_Next_Pass_And_Its_Held_Email_Released_Once()
+    {
+        await SeedAsync();
+        _uploadRefusedFor = "b";
+        Assert.Equal(3, (await RunAsync()).Processed);
+        await using (var read = NewContext())
+        {
+            var stamped = await read.OrderReceipts.IgnoreQueryFilters().AsNoTracking().SingleAsync(r => r.Id == ReceiptB);
+            Assert.Equal("SIG-R-FISCAL-b", stamped.FiscalCode);
+            Assert.NotNull(stamped.FiscalNextRetryAt);
+            Assert.False(stamped.EmailSent);
+        }
+        Assert.DoesNotContain("order-fiscal-b", _sent);
+
+        _uploadRefusedFor = null;
+        await using (var due = NewContext())
+            await due.OrderReceipts.IgnoreQueryFilters().Where(r => r.Id == ReceiptB)
+                .ExecuteUpdateAsync(s => s.SetProperty(r => r.FiscalNextRetryAt, DateTime.UtcNow.AddMinutes(-1)));
+        Assert.Equal(1, (await RunAsync()).Processed);
+        Assert.Equal(0, (await RunAsync()).Processed);
+
+        await using var after = NewContext();
+        var b = await after.OrderReceipts.IgnoreQueryFilters().AsNoTracking().SingleAsync(r => r.Id == ReceiptB);
+        Assert.Equal("b-2.pdf", b.BlobName);
+        Assert.Equal("SIG-R-FISCAL-b", Encoding.UTF8.GetString(_receipts.Blobs["b-2.pdf"]));
+        Assert.Equal("no code", Encoding.UTF8.GetString(_receipts.Blobs["b.pdf"]));
+        Assert.Null(b.FiscalNextRetryAt);
+        Assert.True(b.EmailSent);
+        Assert.Single(_registrations, r => r.Token == "R-FISCAL-b");
+        Assert.Single(_sent, id => id == "order-fiscal-b");
+    }
+
+    [Fact]
+    public async Task In_Mode_None_A_Receipt_Whose_First_Upload_Failed_Is_Rendered_And_Emailed_Once_Without_Registering()
+    {
+        await SeedAsync(FiscalEnforcementMode.None, filesStored: false);
+        Assert.Equal(3, (await RunAsync()).Processed);
+        Assert.Equal(0, (await RunAsync()).Processed);
+
+        await using var read = NewContext();
+        var rows = await read.OrderReceipts.IgnoreQueryFilters().AsNoTracking().ToListAsync();
+        Assert.All(rows, r => Assert.Equal("no code", Encoding.UTF8.GetString(_receipts.Blobs[r.BlobName])));
+        Assert.All(rows, r => Assert.Null(r.FiscalCode));
+        Assert.All(rows, r => Assert.Null(r.FiscalNextRetryAt));
+        Assert.All(rows, r => Assert.True(r.EmailSent));
+        Assert.Empty(_registrations);
+        Assert.Equal(new[] { "order-fiscal-a", "order-fiscal-b", "order-fiscal-c" }, _sent.Order());
     }
 
     [Fact]
@@ -267,13 +322,22 @@ public sealed class FiscalRetryScopeIsolationTests(PostgresContainerFixture fixt
         services.AddScoped<GuestOrderAccessTokenIssuer>();
         services.AddScoped<IReceiptService, ReceiptService>();
         var pdf = new Mock<IPdfService>();
-        pdf.Setup(p => p.GenerateReceiptPdf(It.IsAny<ReceiptPdfData>(), It.IsAny<string?>())).Returns([1, 2, 3]);
+        pdf.Setup(p => p.GenerateReceiptPdf(It.IsAny<ReceiptPdfData>(), It.IsAny<string?>()))
+            .Returns<ReceiptPdfData, string?>((data, _) => Encoding.UTF8.GetBytes(data.FiscalCode ?? "no code"));
         services.AddSingleton(pdf.Object);
-        var receipts = new InMemoryBlobContainer("generated-receipts");
+        var receipts = new Mock<IBlobContainerClient>();
+        receipts.Setup(c => c.ExistsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns<string, CancellationToken>(_receipts.ExistsAsync);
+        receipts.Setup(c => c.DownloadAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns<string, CancellationToken>(_receipts.DownloadAsync);
+        receipts.Setup(c => c.UploadIfAbsentAsync(It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+            .Returns<string, Stream, CancellationToken>((name, content, ct) => _uploadRefusedFor is { } refused && name.StartsWith(refused, StringComparison.Ordinal)
+                ? throw new IOException("503 ServerBusy")
+                : _receipts.UploadIfAbsentAsync(name, content, ct));
         services.AddScoped<IBlobContainerClientFactory>(_ =>
         {
             var factory = new Mock<IBlobContainerClientFactory>();
-            factory.Setup(f => f.GetBlobContainerClient(It.IsAny<string>())).Returns(receipts);
+            factory.Setup(f => f.GetBlobContainerClient(It.IsAny<string>())).Returns(receipts.Object);
             return factory.Object;
         });
         services.AddScoped<IFiscalServiceResolver>(sp =>

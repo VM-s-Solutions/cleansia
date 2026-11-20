@@ -27,7 +27,8 @@ namespace Cleansia.Tests.Fiscal;
 /// the email was already delivered up front, so the retry must NOT re-send it. A null/unknown country
 /// resolves to None (no release). A failed retry releases nothing for any mode.
 ///
-/// Read-only characterization net; no retry/fiscal production code is modified.
+/// An unheld e-mail goes out with the receipt's first stored file, so the sweep sends it only when its own
+/// pass stored that file (→ /flows/payment-and-fiscal#a-receipt-s-pdf-is-repaired).
 /// </summary>
 public sealed class FiscalRetryServiceModeReleaseMatrixTests
 {
@@ -46,6 +47,7 @@ public sealed class FiscalRetryServiceModeReleaseMatrixTests
         _receiptService
             .Setup(s => s.DownloadReceiptPdfAsync(It.IsAny<OrderReceipt>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([1, 2, 3]);
+        WirePdfStored(true);
         _emailService
             .Setup(s => s.SendOrderReceiptEmailAsync(
                 It.IsAny<string>(), It.IsAny<Order>(), It.IsAny<byte[]?>(),
@@ -114,10 +116,15 @@ public sealed class FiscalRetryServiceModeReleaseMatrixTests
                 .Create(CountryId, "EUR", LanguageCode, standardVatRate: 19m)
                 .UpdateFiscalEnforcementMode(mode));
 
+    private void WirePdfStored(bool stored) =>
+        _receiptService
+            .Setup(s => s.IsPdfStoredAsync(It.IsAny<OrderReceipt>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(stored);
+
     private void WireRetryResult(bool succeeded) =>
         _receiptService
-            .Setup(s => s.RetryFiscalRegistrationAsync(It.IsAny<OrderReceipt>(), It.IsAny<Order>(), It.IsAny<CancellationToken>()))
-            .Returns((OrderReceipt receipt, Order _, CancellationToken __) =>
+            .Setup(s => s.CompleteReceiptAsync(It.IsAny<OrderReceipt>(), It.IsAny<Order>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .Returns((OrderReceipt receipt, Order _, bool _, CancellationToken __) =>
             {
                 if (succeeded)
                 {
@@ -214,6 +221,44 @@ public sealed class FiscalRetryServiceModeReleaseMatrixTests
 
         VerifyEmailSent(Times.Never());
         Assert.False(receipt.EmailSent);
+    }
+
+    [Theory]
+    [InlineData(FiscalEnforcementMode.None)]
+    [InlineData(FiscalEnforcementMode.AsyncBackground)]
+    public async Task A_NonBlocking_Receipt_Whose_First_File_This_Pass_Stored_Is_Emailed_Once(FiscalEnforcementMode mode)
+    {
+        WireCountryConfig(mode);
+        WireRetryResult(succeeded: true);
+        WirePdfStored(false);
+        var receipt = BuildDueUnsentReceipt();
+        WireDueReceiptAndOrder(receipt, CountryId);
+
+        await CreateService().ProcessDueRetriesAsync(CancellationToken.None);
+        await CreateService().ProcessDueRetriesAsync(CancellationToken.None);
+
+        VerifyEmailSent(Times.Once());
+        Assert.True(receipt.EmailSent);
+    }
+
+    [Fact]
+    public async Task A_Receipt_Stamped_Before_Its_Render_Failed_Is_Completed_And_Its_Held_Email_Released_Once()
+    {
+        WireCountryConfig(FiscalEnforcementMode.BlockingOnline);
+        WireRetryResult(succeeded: true);
+        var receipt = BuildDueUnsentReceipt();
+        receipt.SetFiscalData("de-tse", "SIG-STAMPED", DateTime.UtcNow);
+        receipt.MarkFiscalRetryAttempted(FiscalErrorKind.Unknown, "503 ServerBusy");
+        receipt.ScheduleImmediateFiscalRetry();
+        WireDueReceiptAndOrder(receipt, CountryId);
+
+        await CreateService().ProcessDueRetriesAsync(CancellationToken.None);
+        await CreateService().ProcessDueRetriesAsync(CancellationToken.None);
+
+        _receiptService.Verify(s => s.CompleteReceiptAsync(
+            It.IsAny<OrderReceipt>(), It.IsAny<Order>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once());
+        VerifyEmailSent(Times.Once());
+        Assert.True(receipt.EmailSent);
     }
 
     // ── AC7 (negative) — a FAILED retry releases nothing, even in a blocking mode ──

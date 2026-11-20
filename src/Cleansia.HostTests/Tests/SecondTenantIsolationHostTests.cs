@@ -44,6 +44,7 @@ public sealed class SecondTenantIsolationHostTests(HostTestPostgresFixture db) :
     {
         _receiptBlob.Setup(b => b.DownloadAsync("receipts/r.pdf", It.IsAny<CancellationToken>()))
             .ReturnsAsync(() => new BlobFile(new MemoryStream(ReceiptBytes), "application/pdf"));
+        _receiptBlob.Setup(b => b.ExistsAsync("receipts/r.pdf", It.IsAny<CancellationToken>())).ReturnsAsync(true);
         var factory = new Mock<IBlobContainerClientFactory>(MockBehavior.Strict);
         factory.Setup(f => f.GetBlobContainerClient(Constants.BlobContainers.GeneratedReceipts)).Returns(_receiptBlob.Object);
         services.Replace(ServiceDescriptor.Singleton(factory.Object));

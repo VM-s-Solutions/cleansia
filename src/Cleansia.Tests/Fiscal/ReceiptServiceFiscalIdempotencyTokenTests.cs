@@ -20,7 +20,7 @@ namespace Cleansia.Tests.Fiscal;
 
 /// <summary>
 /// ADR-0004 — the registered-but-stamp-not-persisted residual. The recovery path
-/// (<see cref="ReceiptService.RetryFiscalRegistrationAsync"/>) re-calls the authority for the SAME
+/// (<see cref="ReceiptService.CompleteReceiptAsync"/>) re-calls the authority for the SAME
 /// receipt; it must present the SAME idempotency token the initial register
 /// (<see cref="ReceiptService.RealizeFiscalAndPdfAsync"/>) presented, so an idempotent provider
 /// collapses the re-register onto the prior entry instead of burning a second one.
@@ -149,7 +149,8 @@ public class ReceiptServiceFiscalIdempotencyTokenTests
         var service = CreateService();
 
         await service.RealizeFiscalAndPdfAsync(order, receipt, CancellationToken.None);
-        await service.RetryFiscalRegistrationAsync(receipt, order, CancellationToken.None);
+        // The stamp was never persisted, so the retry reads the row without it.
+        await service.CompleteReceiptAsync(BuildReceipt(), order, pdfStored: true, CancellationToken.None);
 
         Assert.Equal(2, _provider.SeenKeys.Count);
         Assert.Equal(_provider.SeenKeys[0], _provider.SeenKeys[1]);

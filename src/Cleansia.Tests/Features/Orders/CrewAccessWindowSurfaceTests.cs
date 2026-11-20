@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
@@ -28,6 +29,10 @@ public sealed class CrewAccessWindowSurfaceTests
     private const string CustomerUserId = "user-customer-window";
 
     private readonly Mock<IOrderAccessService> _orderAccess = new();
+    private readonly Mock<IReceiptService> _receipts = new();
+
+    public CrewAccessWindowSurfaceTests() =>
+        _receipts.Setup(r => r.IsPdfStoredAsync(It.IsAny<OrderReceipt>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
     // ── The receipt ──
 
@@ -74,6 +79,18 @@ public sealed class CrewAccessWindowSurfaceTests
         order.Receipt!.MarkBlobDeleted(DateTime.UtcNow.AddDays(-1));
         _orderAccess.Setup(a => a.IsCustomerCaller()).Returns(true);
         Orders(order);
+
+        var result = await ReceiptValidator().ValidateAsync(new DownloadOrderReceipt.Query(OrderId));
+
+        Assert.Equal(BusinessErrorMessage.ReceiptNotFound, Assert.Single(result.Errors).ErrorMessage);
+    }
+
+    [Fact]
+    public async Task A_Receipt_Whose_Pdf_Is_Not_Stored_Yet_Is_Not_Found()
+    {
+        _receipts.Setup(r => r.IsPdfStoredAsync(It.IsAny<OrderReceipt>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _orderAccess.Setup(a => a.IsCustomerCaller()).Returns(true);
+        Orders(Completed(-1));
 
         var result = await ReceiptValidator().ValidateAsync(new DownloadOrderReceipt.Query(OrderId));
 
@@ -144,7 +161,7 @@ public sealed class CrewAccessWindowSurfaceTests
             contentType: "image/jpeg",
             capturedByEmployeeId: capturedByEmployeeId);
 
-    private DownloadOrderReceipt.Validator ReceiptValidator() => new(_orderAccess.Object);
+    private DownloadOrderReceipt.Validator ReceiptValidator() => new(_orderAccess.Object, _receipts.Object);
 
     private void AsCrew(Order order)
     {

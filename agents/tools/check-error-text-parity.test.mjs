@@ -138,6 +138,23 @@ test("Android resource encoding is decoded: escapes, entities and a quoted value
     assert.equal(r.code, 0, r.out);
 });
 
+test("an Android \\uXXXX escape is the character it names, and a different character still differs", () => {
+    const same = run((f) => {
+        for (const app of WEBS) f[web(app, "en")].api.validation.invalid_password = "Updated — retry.";
+        iosValue(f, "error.validation.invalid_password", "en").value = "Updated — retry.";
+        for (const app of ANDROIDS)
+            f[droid(app, "en")] = [`<string name="error_validation_invalid_password">Updated \\u2014 retry.</string>`];
+    });
+    assert.equal(same.code, 0, same.out);
+    const other = run((f) => {
+        for (const app of WEBS) f[web(app, "en")].api.validation.invalid_password = "Updated — retry.";
+        iosValue(f, "error.validation.invalid_password", "en").value = "Updated — retry.";
+        f[droid("customer-app", "en")] = [`<string name="error_validation_invalid_password">Updated \\u2013 retry.</string>`];
+    });
+    assert.equal(other.code, 1, other.out);
+    assert.match(other.out, /android-customer\s+Updated – retry\./);
+});
+
 test("a key a client does not translate is not drift", () => {
     const r = run((f) => {
         f[droid("customer-app", "sk")] = [`<string name="error_other">x</string>`];

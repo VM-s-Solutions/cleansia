@@ -103,9 +103,13 @@ card, and what else is kept differs:
 **Card is the only payment method, named in code** (owner ruling 2026-11-19). Every PaymentIntent,
 SetupIntent, Checkout Session and subscription the platform opens on Stripe sends
 `payment_method_types=[card]` and never asks for automatic payment methods, so no Stripe Dashboard
-setting can add a method to a sheet or checkout page. Stripe Link is off: no sheet or checkout page
-offers Link or its *Save my info for faster checkout with Link* box. Google Pay in the Android sheet is
-paid as a card, so it stays.
+setting can add a method to a sheet or checkout page. A card-only intent does not hide Stripe Link,
+though: the Stripe account runs Link in its card-brand (passthrough) mode, which offers Link as a card.
+So iOS turns Link off in every sheet (`StripePaymentController.configuration(for:)` sets Link's display
+to `.never`), and no iOS sheet offers *Pay with Link* or its *Save my info for faster checkout with Link*
+box. The Android sheets still offer both until stripe-android is upgraded to 21.8.0 or later, the first
+version that can turn Link off (F-109 is open on Android, waiting for Mike). Google Pay in the Android
+sheet is paid as a card, so it stays.
 
 **Until the 2026-10-01 ruling every card paid in the apps was kept.** Every PaymentIntent the apps
 opened, a booking's and a recurring occurrence's alike, asked Stripe for
@@ -238,7 +242,7 @@ to the `DEFAULT` issuer scope (which does not reset annually), not to `cz-eet2`.
 **Both refusals land in the same place.** They throw inside `HandleFiscalAsync`'s try, which marks the
 receipt `FiscalRegistrationFailed` with `FiscalErrorKind.Unknown` and the exception message, and logs at
 error level. The customer flow is not aborted, the receipt PDF is still generated (with a bare number if
-the currency was the gap), and the retry job (`RetryFiscalRegistrationAsync`) sees the row like any
+the currency was the gap), and the retry job (`CompleteReceiptAsync`) sees the row like any
 other failed registration — and refuses again, identically, until the order is loaded with what it
 needs. The cleaner's invoice PDF applies the same rule on its side: no resolved
 `EmployeeInvoice.Currency`, no render, `PdfGenerationError` recorded.
@@ -249,9 +253,10 @@ The fiscal retry dispatcher selects detached candidates, then resolves the exist
 dependencies in a fresh scope per receipt. It re-reads eligibility and receipt/order ownership before
 the three existing durable boundaries: fiscal state, the email claim and guest link before sending,
 then provider metadata. A failed child is discarded before another receipt runs; active host
-cancellation propagates. The selector still requires a missing fiscal code and a due retry instant,
-so successful fiscal registration followed by an email-claim or metadata refusal does not promise a
-later email retry. Claim-before-send retains the existing crash-after-claim loss tradeoff.
+cancellation propagates. The selector requires only a due retry instant, and the pass that stores a
+receipt's complete file clears it in the same commit, so a completed receipt followed by an email-claim or
+metadata refusal does not promise a later email retry. Claim-before-send retains the existing
+crash-after-claim loss tradeoff.
 
 ## What the receipt says {#what-the-receipt-says}
 
@@ -346,6 +351,44 @@ issue**:
 
 The receipt row records the choice, and every later render — a fiscal retry — reuses it.
 → [The order records its language](/flows/booking-and-pricing#booking-language)
+
+### A receipt's PDF is repaired {#a-receipt-s-pdf-is-repaired}
+
+**A committed receipt owes a stored PDF, and the retry job renders one until it is stored** (since
+2026-11-20). Two faults used to leave a receipt that nothing would ever render again: an upload that failed
+after the fiscal retry had stamped the code left a PDF without it, which the job no longer picked because it
+picked only receipts without a code, and in a market with no fiscal system a first upload that failed was
+acknowledged by the redelivery and never retried, so the e-mail never went and the download reached a
+missing file.
+
+- **Every claim is born owed.** `ReserveAsync` sets `FiscalNextRetryAt` on the receipt it claims, in every
+  mode, 15 minutes ahead: the issue normally settles in seconds, and a job that picked a receipt mid-issue
+  would store a second file and send a second e-mail. The issue clears it in the commit that records the
+  stored PDF, unless a fiscal registration is still owed. `FiscalNextRetryAt` therefore means *this receipt
+  still owes its registration or its stored file*, whatever the mode; the column keeps its name, so no
+  schema change.
+- **The job picks every due receipt, code or no code.** `GetDueForRetryAsync` filters on the due instant
+  alone. For each receipt, `FiscalRetryService` asks whether its current file is stored
+  (`IsPdfStoredAsync`), and `ReceiptService.CompleteReceiptAsync` then registers it, only where the market
+  requires it and the receipt has no code yet, so a code is never registered twice. It renders a new file
+  when the current one is missing or the receipt carries a code, since a receipt due with a code is one
+  whose render after the stamp was never stored. A render is a new numbered file and never overwrites one
+  ([ADR-0083](/decisions/adr-0083)). A file the retention sweep deleted is not rendered again.
+- **A fault keeps it owed.** A failed registration or a failed upload records an attempt on the existing
+  backoff (`MarkFiscalRetryAttempted`, ten attempts), and the next due pass starts again from what is
+  stored. A registration that throws counts as a refusal, as it does at issue, so the same pass still
+  renders a missing file and the file never waits on the authority. A pass that stores a complete file clears the instant and the stale error.
+- **The e-mail goes once.** A market that holds the e-mail releases it when the pass leaves a stored file
+  with its code. Elsewhere the e-mail went out with the first stored file, so the job sends it only when its
+  own pass stored that first file. Either way the send is claimed first (`ClaimEmailSend`), and a fee
+  receipt is never e-mailed. One loss remains, as before: the issue crashing after storing the file but
+  before its commit, in a market that does not hold the e-mail, leaves a stored file whose e-mail is
+  never sent.
+- **A download before the repair is a missing receipt.** `DownloadOrderReceipt` answers
+  `receipt.not_found` while the sale receipt's file is not stored yet, as it does before the receipt
+  exists, instead of reaching a missing file.
+
+→ [Fiscal compliance](/architecture/fiscal-compliance#a-receipt-s-pdf-is-repaired)
 
 ### A paid fee gets a receipt of its own {#fee-receipt}
 

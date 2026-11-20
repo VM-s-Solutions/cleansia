@@ -1931,35 +1931,35 @@
       "internal_type_error": "Pro tento účet se přihlaste e-mailem a heslem.",
       "account_locked": "Příliš mnoho neúspěšných pokusů o přihlášení. Účet je dočasně uzamčen — zkuste to znovu za několik minut.",
       "too_many_attempts": "Příliš mnoho pokusů s tímto kódem. Vyžádejte si nový kód a zkuste to znovu.",
-      "invalid_confirmation_code": "Tento potvrzovací kód je neplatný nebo vypršel.",
+      "invalid_confirmation_code": "Tento kód je neplatný nebo vypršel.",
       "invalid_google_token": "Přihlášení přes Google se nezdařilo. Zkuste to znovu.",
-      "invalid_apple_token": "Přihlášení přes Apple se nezdařilo. Zkuste to znovu.",
+      "invalid_apple_token": "Neplatný Apple token",
       "social_account_not_found": "K tomuto přihlášení jsme nenašli žádný účet. Nejprve se zaregistrujte.",
-      "invalid_password_format": "Vaše heslo nesplňuje požadavky.",
+      "invalid_password_format": "Heslo musí mít alespoň 8 znaků a obsahovat písmena a číslice.",
       "admin_password_too_short": "Heslo administrátora musí mít alespoň 12 znaků.",
-      "invalid_reset_token": "Tento kód pro obnovení hesla je neplatný nebo vypršel.",
-      "same_reset_password": "Vaše nové heslo se musí lišit od stávajícího.",
+      "invalid_reset_token": "Tento odkaz pro obnovení hesla je neplatný nebo vypršel.",
+      "same_reset_password": "Zvolte prosím heslo odlišné od původního.",
       "current_password_invalid": "Vaše stávající heslo není správné.",
-      "insufficient_privileges": "K této akci nemáte oprávnění.",
+      "insufficient_privileges": "Nemáte oprávnění k této akci.",
       "invalid_refresh_token": "Vaše relace vypršela. Přihlaste se prosím znovu.",
-      "refresh_token_reused": "Vaše relace byla použita jinde. Přihlaste se prosím znovu."
+      "refresh_token_reused": "Z bezpečnostních důvodů jste byli odhlášeni ze všech zařízení."
     },
     "common": {
-      "unauthorized": "Nemáte oprávnění k této akci",
-      "error_occurred": "Došlo k chybě",
+      "unauthorized": "Nemáte oprávnění provést tuto akci",
+      "error_occurred": "Došlo k chybě. Zkuste to prosím znovu.",
       "required": "Toto pole je povinné.",
-      "max_length": "Tato hodnota je příliš dlouhá.",
-      "min_length": "Tato hodnota je příliš krátká.",
-      "invalid_enum_value": "Tato možnost není platná."
+      "max_length": "Příliš dlouhé.",
+      "min_length": "Příliš krátké.",
+      "invalid_enum_value": "Neplatná volba."
     },
     "user": {
-      "email_confirmed": "Tato e-mailová adresa je již potvrzena.",
-      "existing_email": "Účet s tímto e-mailem už existuje.",
-      "not_existing_email": "Účet s tímto e-mailem jsme nenašli.",
-      "not_existing_id": "Tento účet se nepodařilo načíst.",
-      "existing_phone_number": "Toto telefonní číslo se již používá.",
-      "not_found": "Tento účet jsme nenašli.",
-      "not_allowed_to_update": "Nemáte oprávnění měnit tento účet."
+      "email_confirmed": "Tento e-mail je již potvrzen.",
+      "existing_email": "Účet s tímto e-mailem již existuje.",
+      "not_existing_email": "Účet s tímto e-mailem neexistuje.",
+      "not_existing_id": "Uživatel nenalezen.",
+      "existing_phone_number": "Toto telefonní číslo je již používáno.",
+      "not_found": "Uživatel nenalezen.",
+      "not_allowed_to_update": "Tento profil nelze upravit."
     },
     "language": {
       "not_supported": "Tento jazyk není podporován."
@@ -1973,71 +1973,71 @@
     },
     "order": {
       "cleaning_date": {
-        "future": "Datum úklidu musí být v budoucnosti.",
-        "below_lead_time": "Vyberte datum s dostatečným předstihem pro naplánování úklidu.",
+        "future": "Datum musí být v budoucnosti.",
+        "below_lead_time": "Tento čas je příliš blízko. Zvolte pozdější termín.",
         "outside_booking_window": "Vyberte začátek mezi 8:00 a 19:45 místního času, po čtvrthodinách, nejvýše 60 dní dopředu."
       },
-      "already_cancelled": "Tato objednávka už byla zrušena.",
-      "already_completed": "Tato objednávka už byla dokončena.",
+      "already_cancelled": "Tato objednávka je již zrušena.",
+      "already_completed": "Tato objednávka je již dokončena.",
       "in_progress_cannot_cancel": "Tento úklid už probíhá a nelze jej zrušit.",
       "invalid_status_transition": "Tato akce není pro aktuální stav objednávky povolena.",
-      "address_exactly_one_required": "Zadejte k objednávce právě jednu adresu.",
-      "empty": "Přidejte do objednávky alespoň jednu službu nebo balíček.",
+      "address_exactly_one_required": "Vyberte prosím uloženou adresu nebo zadejte novou.",
+      "empty": "Objednávka je prázdná. Přidejte prosím alespoň jednu službu.",
       "size_exceeds_maximum": "Jedna objednávka může zahrnovat nejvýše 8 pokojů a 4 koupelny.",
       "span_exceeds_maximum": "Tato objednávka zahrnuje příliš mnoho práce na jednu návštěvu. Odeberte prosím některé služby nebo balíčky, případně je objednejte zvlášť.",
       "selected_package": {
-        "invalid": "Jeden z vybraných balíčků už není dostupný."
+        "invalid": "Jeden z vybraných balíčků již není dostupný."
       },
       "selected_services": {
-        "invalid": "Jedna z vybraných služeb už není dostupná."
+        "invalid": "Jedna z vybraných služeb již není dostupná."
       },
       "not_found": "Tuto objednávku jsme nenašli.",
-      "no_available_spots": "Pro vybraný čas nejsou volné termíny.",
-      "weekly_limit_reached": "Dosáhli jste limitu objednávek na tento týden.",
-      "time_conflict": "Na tento čas už máte naplánovaný úklid.",
+      "no_available_spots": "Všechna místa na této objednávce jsou už obsazená.",
+      "weekly_limit_reached": "Dosáhli jste týdenního limitu zakázek.",
+      "time_conflict": "Tato zakázka se překrývá s jinou, kterou jste již přijali.",
       "total_price": {
-        "positive": "Celková cena objednávky musí být vyšší než nula.",
-        "not_match": "Celková cena objednávky se změnila — zkontrolujte objednávku a zkuste to znovu."
+        "positive": "Celková cena musí být kladná",
+        "not_match": "Cena se změnila. Obnovte prosím a zkuste znovu."
       },
-      "payment_gateway_unavailable": "Platby jsou dočasně nedostupné. Zkuste to prosím za chvíli.",
+      "payment_gateway_unavailable": "Platební služba je dočasně nedostupná.",
       "cash_not_available": "Platba hotově je možná jen po přihlášení a u objednávky, kterou zvládne jeden uklízeč.",
-      "cash_open_bookings_limit_reached": "Už máte nejvyšší povolený počet rezervací v hotovosti, které ještě nejsou zaplacené — v praxi vaše nadcházející rezervace v hotovosti. Tuto zaplaťte kartou, nebo si v hotovosti objednejte znovu, až bude některá z nich zaplacena.",
+      "cash_open_bookings_limit_reached": "Už máte nejvyšší povolený počet nadcházejících objednávek v hotovosti. Hotovost se platí až po úklidu, takže se každá počítá, dokud není uklizeno a zaplaceno. Tuto objednávku zaplaťte kartou, nebo hotovost zvolte znovu, až bude některá z nich zaplacena.",
       "unpaid_receivable": "Dlužíte nám částku z dřívější rezervace, například storno poplatek nebo nezaplacený úklid. Dokud nebude uhrazena, nemůžete vytvořit ani potvrdit rezervaci, kartou ani v hotovosti.",
-      "country_operator_mismatch": "Tuto adresu obsluhuje jiná společnost Cleansia, proto ji zde nelze objednat.",
+      "country_operator_mismatch": "Tuto adresu obsluhuje jiná společnost Cleansia a z tohoto účtu ji nelze objednat.",
       "payment": {
         "already_paid": "Tato objednávka už byla zaplacena."
       },
-      "not_completed": "Tato akce je dostupná až po dokončení úklidu.",
+      "not_completed": "Objednávku lze hodnotit až po dokončení.",
       "review": {
         "duplicate_tag": "Stejný štítek byl vybrán dvakrát.",
-        "rating_invalid": "Zvolte hodnocení od 1 do 5.",
+        "rating_invalid": "Hodnocení musí být mezi 1 a 5.",
         "tag_rating_mismatch": "Tyto štítky neodpovídají hodnocení, které jste dali.",
         "too_many_tags": "Vyberte nejvýše čtyři štítky.",
         "unknown_tag": "Jeden z těchto štítků není rozpoznán."
       },
       "note": {
-        "content_required": "Před uložením zadejte poznámku."
+        "content_required": "Text poznámky je povinný."
       },
       "issue": {
-        "description_required": "Před odesláním popište problém."
+        "description_required": "Popis problému je povinný."
       },
       "preferred_employee": {
         "membership_required": "Výběr oblíbeného uklízeče je výhoda Cleansia Plus.",
-        "not_eligible": "Vybrat můžete pouze uklízeče, který u vás už dokončil úklid."
+        "not_eligible": "Vybraný uklízeč není pro tuto objednávku k dispozici."
       },
       "preferred_offer_closed": "Tuto zakázku už nelze nabídnout konkrétnímu uklízeči.",
       "start_passed_cannot_cancel": "Čas začátku už uplynul a uklízeč je přidělen, takže rezervaci už nelze zrušit. Pokud uklízeč nedorazil, dejte nám vědět.",
       "cleaner_already_started": "Uklízeč už s úklidem začal.",
       "start_time_not_reached": "Objednaný čas začátku ještě nenastal.",
       "recurring_already_confirmed": "Tento úklid už máte potvrzený. Uklízeči zaplatíte v hotovosti v den úklidu.",
-      "cash_requires_saved_card": "Platba hotově vyžaduje platnou uloženou kartu v měně objednávky."
+      "cash_requires_saved_card": "Platba v hotovosti vyžaduje platnou uloženou kartu v měně objednávky."
     },
     "address": {
       "already_exists": "Tuto adresu už máte uloženou.",
-      "mapbox_coords_required": "Vyberte adresu z nabídky.",
+      "mapbox_coords_required": "Vyberte prosím adresu z našeptávače.",
       "not_owned_by_user": "K této adrese nemáte přístup.",
-      "label_required": "Přidejte k této adrese označení.",
-      "invalid_length": "Adresa je příliš dlouhá. Zkraťte ji prosím."
+      "label_required": "Zadejte prosím název adresy.",
+      "invalid_length": "Adresa je příliš krátká nebo příliš dlouhá."
     },
     "service_area": {
       "country_not_serviced": "V této zemi zatím nepůsobíme.",
@@ -2046,8 +2046,8 @@
     },
     "country": {
       "not_serviced": "V této zemi zatím nepůsobíme.",
-      "required": "Vyberte zemi.",
-      "not_existing_id": "Tuto zemi jsme nenašli."
+      "required": "Zvolte prosím zemi.",
+      "not_existing_id": "Země nenalezena"
     },
     "tenant": {
       "not_found": "Tento trh zatím neprovozuje žádná společnost Cleansia.",
@@ -2057,65 +2057,65 @@
       "not_serviced": "V tomto městě zatím nepůsobíme."
     },
     "dispute": {
-      "not_found": "Reklamace nebyla nalezena.",
-      "not_owned_by_user": "K této reklamaci nemáte přístup.",
-      "already_exists": "K této objednávce už máte otevřenou reklamaci.",
-      "invalid_refund_amount": "Částka vrácení není pro tuto objednávku platná.",
-      "max_length_exceeded": "Vaše zpráva je příliš dlouhá. Zkraťte ji prosím.",
+      "not_found": "Spor nenalezen",
+      "not_owned_by_user": "Tento spor patří k jinému účtu.",
+      "already_exists": "Spor pro tuto objednávku již existuje",
+      "invalid_refund_amount": "Neplatná částka vrácení peněz",
+      "max_length_exceeded": "Překročena maximální délka",
       "cleaning_not_started": "Tento úklid se ještě neuskutečnil, takže není co nahlásit.",
       "line_not_on_order": "Tato položka na této objednávce není."
     },
     "file": {
-      "invalid_file_type": "Tento typ souboru není povolen.",
+      "invalid_file_type": "Nepodporovaný typ souboru.",
       "size_exceeded": "Soubor je příliš velký.",
       "required": "Soubor je povinný.",
-      "content_type_doesnt_match": "Typ souboru neodpovídá jeho obsahu.",
-      "count_exceeded": "Připojili jste příliš mnoho souborů.",
+      "content_type_doesnt_match": "Typ souboru nesedí.",
+      "count_exceeded": "Příliš mnoho souborů.",
       "type_not_allowed": "Tento typ souboru není povolen."
     },
     "receipt": {
-      "not_found": "K této objednávce jsme nenašli účtenku."
+      "not_found": "Potvrzení nenalezeno"
     },
     "gdpr": {
-      "deletion_already_pending": "Žádost o smazání účtu už probíhá.",
-      "deletion_blocked_by_order": "Váš účet nelze smazat, dokud máte aktivní objednávky.",
-      "deletion_blocked_by_invoice": "Váš účet nelze smazat, dokud máte nevyřízené faktury.",
-      "consent_not_found": "Toto nastavení souhlasu jsme nenašli.",
-      "consent_already_granted": "Tento souhlas jste už udělili.",
-      "deletion_blocked_by_assigned_order": "Váš účet nelze smazat, dokud jste přiřazeni k zakázce.",
-      "deletion_blocked_by_unsettled_pay": "Váš účet nelze smazat, dokud vám dlužíme odměnu. Nejprve to vyřešte s kanceláří.",
+      "deletion_already_pending": "Smazání účtu již probíhá.",
+      "deletion_blocked_by_order": "Účet zatím nelze smazat — existuje aktivní objednávka.",
+      "deletion_blocked_by_invoice": "Účet zatím nelze smazat — existuje nevyřízená faktura.",
+      "consent_not_found": "Souhlas nenalezen.",
+      "consent_already_granted": "Tento souhlas již byl udělen.",
+      "deletion_blocked_by_assigned_order": "Účet zatím nelze smazat — existuje přiřazená zakázka.",
+      "deletion_blocked_by_unsettled_pay": "Účet nelze smazat, dokud nebude vyplacena veškerá dlužná odměna.",
       "consent_not_editable": "Tento souhlas zde nelze změnit."
     },
     "promo": {
       "already_sent": "Na tuto e-mailovou adresu už byl promo kód odeslán. Zkontrolujte doručenou poštu i složku se spamem.",
-      "not_found": "Tento slevový kód neexistuje.",
-      "expired": "Platnost tohoto slevového kódu vypršela.",
-      "not_yet_valid": "Tento slevový kód ještě není aktivní.",
-      "inactive": "Tento slevový kód už není aktivní.",
-      "global_limit_reached": "Tento slevový kód dosáhl limitu použití.",
-      "per_user_limit_reached": "Tento slevový kód jste už použili.",
-      "below_minimum_order_amount": "Vaše objednávka nesplňuje minimální částku pro tento slevový kód.",
-      "currency_mismatch": "Tento slevový kód nelze použít v měně, ve které je tato objednávka naceněna.",
+      "not_found": "Kód nebyl nalezen",
+      "expired": "Tento kód vypršel",
+      "not_yet_valid": "Kód ještě není aktivní",
+      "inactive": "Kód už není dostupný",
+      "global_limit_reached": "Kód už není dostupný",
+      "per_user_limit_reached": "Tento kód jste už použili",
+      "below_minimum_order_amount": "Objednávka nesplňuje minimální částku pro tento kód",
+      "currency_mismatch": "Kód neplatí pro tuto měnu",
       "requires_account": "Pro použití slevového kódu se přihlaste."
     },
     "referral": {
-      "not_found": "Tento doporučovací kód neexistuje."
+      "not_found": "Kód doporučení nebyl nalezen"
     },
     "membership": {
       "plan": {
-        "not_priced_in_currency": "Plus se v tomto trhu zatím neprodává.",
-        "not_found": "Tento členský plán už neexistuje."
+        "not_priced_in_currency": "Tento plán zatím není na vašem trhu v prodeji.",
+        "not_found": "Plán členství nebyl nalezen."
       },
-      "already_active": "Aktivní členství už máte.",
-      "not_found": "Vaše členství jsme nenašli.",
+      "already_active": "Již máte aktivní členství.",
+      "not_found": "Členství nenalezeno.",
       "stripe_customer_currency_locked": "Vaše platby za Plus jsou už nastavené v jiné měně. Pro změnu kontaktujte podporu.",
-      "swap_same_plan": "Na tomto plánu už jste.",
+      "swap_same_plan": "Tento plán již máte.",
       "express_waiver": {
-        "no_longer_available": "Vaše bezplatné expresní vylepšení už pro tuto objednávku není k dispozici — expresní objednávky zahrnuté v tomto měsíci byly právě vyčerpány. Objednat můžete i za běžnou expresní cenu."
+        "no_longer_available": "Vaše expresní objednávky zahrnuté v členství jsou pro tento měsíc právě vyčerpané, takže se na tuto objednávku bezplatné expresní vyřízení už nevztahuje. Objednat ji můžete i tak, za standardní expresní cenu."
       }
     },
     "saved_card": {
-      "consent_not_accepted": "Před uložením karty prosím potvrďte svůj souhlas.",
+      "consent_not_accepted": "Před uložením karty prosím zaškrtněte souhlas s jejím uložením.",
       "not_found": "Tuto uloženou kartu jsme nenašli.",
       "requires_account": "Pro uložení karty k dalším objednávkám se přihlaste."
     },
@@ -2124,34 +2124,34 @@
       "not_open": "Tato částka už byla uhrazena nebo prominuta."
     },
     "recurring_booking": {
-      "not_found": "Tato opakovaná objednávka už neexistuje.",
-      "not_owned_by_user": "Tuto opakovanou objednávku nemůžete spravovat.",
-      "saved_address_not_found": "Vyberte pro tento plán uloženou adresu.",
+      "not_found": "Pravidelný úklid nenalezen.",
+      "not_owned_by_user": "Tento pravidelný úklid patří k jinému účtu.",
+      "saved_address_not_found": "Vybraná adresa již neexistuje.",
       "no_services_or_packages": "Vyberte alespoň jednu službu nebo balíček.",
       "starts_on_in_past": "Datum zahájení nemůže být v minulosti.",
       "ends_on_before_start": "Datum ukončení musí být po datu zahájení.",
       "membership_required": "Opakované úklidy jsou výhodou Cleansia Plus — pro jejich nastavení si předplatné aktivujte."
     },
     "device": {
-      "invalid_platform": "Tato platforma zařízení není podporována.",
-      "not_found": "Toto zařízení jsme nenašli."
+      "invalid_platform": "Nepodporovaná platforma zařízení.",
+      "not_found": "Toto zařízení už není registrované."
     },
     "currency": {
-      "invalid": "Tato měna není podporována."
+      "invalid": "Neplatná měna"
     },
     "email": {
-      "invalid_format": "Zadejte platnou e-mailovou adresu."
+      "invalid_format": "Zadejte prosím platný e-mail."
     },
     "general": {
-      "not_found": "Nenašli jsme, co hledáte."
+      "not_found": "Zdroj nenalezen"
     },
     "validation": {
       "date_must_be_in_past": "Datum musí být v minulosti.",
-      "invalid_age": "Zadejte platný věk.",
-      "invalid_date": "Zadejte platné datum.",
-      "invalid_password": "Toto heslo není platné.",
+      "invalid_age": "Zadejte prosím platný věk.",
+      "invalid_date": "Zadejte prosím platné datum.",
+      "invalid_password": "Nesprávné heslo.",
       "invalid_phone_number": "Zadejte prosím platné telefonní číslo.",
-      "must_be_positive": "Hodnota musí být větší než nula."
+      "must_be_positive": "Musí být kladné číslo."
     },
     "review": {
       "line_not_on_order": "Nelze hodnotit položku, která na této objednávce není."

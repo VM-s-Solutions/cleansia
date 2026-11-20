@@ -110,7 +110,7 @@ public struct BirthDateWheelSheet: View {
             DatePicker(
                 title,
                 selection: CalendarDay.pickerBinding($birthDate),
-                in: ...Date(),
+                in: CalendarDay.birthDays(),
                 displayedComponents: .date
             )
             // Wheels, not a month grid: an adult's birth date is decades back, a few spins on a wheel

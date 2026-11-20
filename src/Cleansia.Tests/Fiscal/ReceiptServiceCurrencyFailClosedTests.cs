@@ -179,7 +179,7 @@ public class ReceiptServiceCurrencyFailClosedTests
     {
         var receipt = BuildReceipt();
 
-        var succeeded = await CreateService().RetryFiscalRegistrationAsync(receipt, BuildOrder(Euro()), CancellationToken.None);
+        var succeeded = await CreateService().CompleteReceiptAsync(receipt, BuildOrder(Euro()), pdfStored: true, CancellationToken.None);
 
         Assert.True(succeeded);
         Assert.Equal("EUR", Assert.Single(_provider.Seen).CurrencyCode);
@@ -190,9 +190,10 @@ public class ReceiptServiceCurrencyFailClosedTests
     {
         var receipt = BuildReceipt();
 
-        var succeeded = await CreateService().RetryFiscalRegistrationAsync(receipt, BuildOrder(currency: null), CancellationToken.None);
+        var deliverable = await CreateService().CompleteReceiptAsync(receipt, BuildOrder(currency: null), pdfStored: true, CancellationToken.None);
 
-        Assert.False(succeeded);
+        // A refused request is a refusal: the stored file stays deliverable in a mode that does not hold the e-mail.
+        Assert.True(deliverable);
         Assert.Empty(_provider.Seen);
         Assert.Equal(1, receipt.FiscalRetryCount);
         Assert.Contains(OrderId, receipt.FiscalError);
@@ -228,9 +229,10 @@ public class ReceiptServiceCurrencyFailClosedTests
             .ReturnsAsync((Country?)null);
         var receipt = BuildReceipt();
 
-        var succeeded = await CreateService().RetryFiscalRegistrationAsync(receipt, BuildOrder(Euro()), CancellationToken.None);
+        var deliverable = await CreateService().CompleteReceiptAsync(receipt, BuildOrder(Euro()), pdfStored: true, CancellationToken.None);
 
-        Assert.False(succeeded);
+        // A refused request is a refusal: the stored file stays deliverable in a mode that does not hold the e-mail.
+        Assert.True(deliverable);
         Assert.Empty(_provider.Seen);
         Assert.Equal(1, receipt.FiscalRetryCount);
         Assert.Contains(OrderId, receipt.FiscalError);

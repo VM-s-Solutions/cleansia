@@ -672,7 +672,7 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vaše přihlášení vypršelo. Přihlaste se prosím znovu."
+            "value": "Vaše relace vypršela. Přihlaste se prosím znovu."
           }
         },
         "en": {
@@ -684,19 +684,19 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ваша сессия истекла. Войдите снова."
+            "value": "Срок действия сессии истёк. Войдите, пожалуйста, заново."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vaša relácia vypršala. Prihláste sa znova."
+            "value": "Vaša relácia vypršala. Prihláste sa, prosím, znova."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ваша сесія завершилася. Увійдіть знову."
+            "value": "Термін дії вашої сесії минув. Увійдіть, будь ласка, знову."
           }
         }
       }
@@ -766,7 +766,7 @@
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "З міркувань безпеки вас вийшли з усіх пристроїв."
+            "value": "Сесію використано в іншому місці. Увійдіть, будь ласка, знову."
           }
         }
       }
@@ -888,13 +888,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "We don't operate in this city yet."
+            "value": "We don't currently serve this city."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "В этом городе мы пока не работаем."
+            "value": "Мы пока не обслуживаем этот город."
           }
         },
         "sk": {
@@ -906,7 +906,7 @@
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "У цьому місті ми поки що не працюємо."
+            "value": "Ми наразі не обслуговуємо це місто."
           }
         }
       }
@@ -1897,31 +1897,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Registr ekonomických subjektů (ARES) se nepodařilo kontaktovat, takže nové IČO nešlo ověřit a nic se neuložilo. Zkuste to znovu za několik minut."
+            "value": "Registr ekonomických subjektů (ARES) se nepodařilo kontaktovat, takže toto IČO nešlo ověřit a nic se neuložilo. Zkuste to znovu za několik minut."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "We could not reach the business register (ARES) to check your new company ID (IČO), so nothing was saved. Try again in a few minutes."
+            "value": "The business register (ARES) could not be reached to check this company ID (IČO), so nothing was saved. Try again in a few minutes."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Не удалось связаться с реестром экономических субъектов (ARES), чтобы проверить ваш новый идентификационный номер (IČO), поэтому ничего не сохранено. Попробуйте ещё раз через несколько минут."
+            "value": "Не удалось связаться с реестром экономических субъектов (ARES), чтобы проверить этот идентификационный номер (IČO), поэтому ничего не сохранено. Попробуйте ещё раз через несколько минут."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Register ekonomických subjektov (ARES) sa nepodarilo kontaktovať, takže nové IČO nebolo možné overiť a nič sa neuložilo. Skúste to znova o niekoľko minút."
+            "value": "Register ekonomických subjektov (ARES) sa nepodarilo kontaktovať, takže toto IČO nebolo možné overiť a nič sa neuložilo. Skúste to znova o niekoľko minút."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Не вдалося зв'язатися з реєстром економічних суб'єктів (ARES), щоб перевірити ваш новий ідентифікаційний номер (IČO), тому нічого не збережено. Спробуйте ще раз за кілька хвилин."
+            "value": "Не вдалося зв'язатися з реєстром економічних суб'єктів (ARES), щоб перевірити цей ідентифікаційний номер (IČO), тому нічого не збережено. Спробуйте ще раз за кілька хвилин."
           }
         }
       }
@@ -2002,31 +2002,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Než začnete přijímat zakázky, přijměte aktuální verzi svých smluvních dokumentů."
+            "value": "Aktuální verze smluvních dokumentů zatím nebyla přijata; zakázky lze přijímat až po jejím přijetí."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Accept the current version of your contract documents before taking jobs."
+            "value": "The current version of the contract documents has not been accepted yet; jobs can be taken only once it is accepted."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Прежде чем брать заказы, примите действующую версию своих договорных документов."
+            "value": "Действующая версия договорных документов ещё не принята; брать заказы можно только после её принятия."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Skôr než začnete prijímať zákazky, prijmite aktuálnu verziu svojich zmluvných dokumentov."
+            "value": "Aktuálna verzia zmluvných dokumentov zatiaľ nebola prijatá; zákazky je možné prijímať až po jej prijatí."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Перш ніж брати замовлення, прийміть чинну версію своїх договірних документів."
+            "value": "Чинну версію договірних документів ще не прийнято; брати замовлення можна лише після її прийняття."
           }
         }
       }
@@ -2177,31 +2177,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Před přijímáním zakázek prosím dokončete svůj profil."
+            "value": "Profil partnera není kompletní; zakázky lze přijímat až po jeho dokončení."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Please complete your profile before taking jobs."
+            "value": "The partner profile is incomplete; jobs can be taken only once it is complete."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Перед приёмом заказов завершите ваш профиль."
+            "value": "Профиль партнёра не заполнен; брать заказы можно только после его заполнения."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pred prijímaním zákaziek si prosím dokončite profil."
+            "value": "Profil partnera nie je kompletný; zákazky je možné prijímať až po jeho dokončení."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Перед прийняттям замовлень заповніть свій профіль."
+            "value": "Профіль партнера неповний; брати замовлення можна лише після його заповнення."
           }
         }
       }
@@ -2212,31 +2212,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Podle registru ekonomických subjektů (ARES) není pod tímto IČO platné živnostenské oprávnění. Zkontrolujte číslo, nebo si nejprve obnovte živnostenské oprávnění."
+            "value": "Podle registru ekonomických subjektů (ARES) není pod tímto IČO platné živnostenské oprávnění. Zkontrolujte číslo; jinak je nejprve nutné živnostenské oprávnění obnovit."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The business register (ARES) shows no trade licence in force under this company ID (IČO). Check the number, or renew your trade licence first."
+            "value": "The business register (ARES) shows no trade licence in force under this company ID (IČO). Check the number; otherwise the trade licence has to be renewed first."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "По данным реестра экономических субъектов (ARES), под этим идентификационным номером (IČO) нет действующего разрешения на предпринимательскую деятельность. Проверьте номер или сначала возобновите разрешение."
+            "value": "По данным реестра экономических субъектов (ARES), под этим идентификационным номером (IČO) нет действующего разрешения на предпринимательскую деятельность. Проверьте номер; иначе сначала нужно возобновить разрешение."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Podľa registra ekonomických subjektov (ARES) nie je pod týmto IČO platné živnostenské oprávnenie. Skontrolujte číslo, alebo si najprv obnovte živnostenské oprávnenie."
+            "value": "Podľa registra ekonomických subjektov (ARES) nie je pod týmto IČO platné živnostenské oprávnenie. Skontrolujte číslo; inak je najprv potrebné živnostenské oprávnenie obnoviť."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "За даними реєстру економічних суб'єктів (ARES), під цим ідентифікаційним номером (IČO) немає чинного дозволу на підприємницьку діяльність. Перевірте номер або спершу поновіть дозвіл."
+            "value": "За даними реєстру економічних суб'єктів (ARES), під цим ідентифікаційним номером (IČO) немає чинного дозволу на підприємницьку діяльність. Перевірте номер; інакше спершу потрібно поновити дозвіл."
           }
         }
       }
@@ -2574,7 +2574,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Файл обязателен."
+            "value": "Файл обязателен"
           }
         },
         "sk": {
@@ -2586,7 +2586,7 @@
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Файл обов'язковий."
+            "value": "Файл є обов'язковим"
           }
         }
       }
@@ -2848,7 +2848,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your account can't be deleted yet — there is an open invoice."
+            "value": "This account can't be deleted yet — there is an open invoice."
           }
         },
         "ru": {
@@ -2883,7 +2883,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your account can't be deleted yet — there is an active order."
+            "value": "This account can't be deleted yet — there is an active order."
           }
         },
         "ru": {
@@ -2982,31 +2982,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nenalezeno."
+            "value": "Zdroj nenalezen"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Not found."
+            "value": "Resource not found"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Не найдено."
+            "value": "Ресурс не найден"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nenájdené."
+            "value": "Zdroj nebol nájdený"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Не знайдено."
+            "value": "Ресурс не знайдено"
           }
         }
       }
@@ -3122,31 +3122,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tuto zakázku nyní nelze převzít."
+            "value": "Tento právní dokument zatím není k dispozici."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This job cannot be taken right now."
+            "value": "This legal text is not available yet."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Этот заказ сейчас нельзя взять."
+            "value": "Этот юридический документ пока недоступен."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Túto zákazku teraz nie je možné prevziať."
+            "value": "Tento právny dokument zatiaľ nie je k dispozícii."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Це замовлення зараз неможливо взяти."
+            "value": "Цей юридичний документ поки що недоступний."
           }
         }
       }
@@ -3367,31 +3367,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tento plán není v měně vašeho trhu dostupný."
+            "value": "Tento plán zatím není na vašem trhu v prodeji."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This plan isn't available in your market's currency."
+            "value": "This plan is not on sale in your market yet."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Этот план недоступен в валюте вашего рынка."
+            "value": "Этот план пока не продаётся на вашем рынке."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tento plán nie je v mene vášho trhu dostupný."
+            "value": "Tento plán zatiaľ nie je na vašom trhu v predaji."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Цей план недоступний у валюті вашого ринку."
+            "value": "Цей план поки що не продається на вашому ринку."
           }
         }
       }
@@ -3402,7 +3402,7 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vaše fakturace Plus je už nastavená v jiné měně. Pro změnu kontaktujte podporu."
+            "value": "Vaše platby za Plus jsou už nastavené v jiné měně. Pro změnu kontaktujte podporu."
           }
         },
         "en": {
@@ -3420,13 +3420,13 @@
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vaša fakturácia Plus je už nastavená v inej mene. Pre zmenu kontaktujte podporu."
+            "value": "Vaše platby za Plus sú už nastavené v inej mene. Pre zmenu kontaktujte podporu."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Оплата Plus уже налаштована в іншій валюті. Щоб її змінити, зверніться до підтримки."
+            "value": "Оплата Plus уже налаштована в іншій валюті. Щоб змінити її, зверніться до підтримки."
           }
         }
       }
@@ -3682,31 +3682,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tato rezervace je již zrušena."
+            "value": "Tato objednávka je již zrušena."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This booking is already cancelled."
+            "value": "This order is already cancelled."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Это бронирование уже отменено."
+            "value": "Этот заказ уже отменён."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Táto rezervácia je už zrušená."
+            "value": "Táto objednávka je už zrušená."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Це бронювання вже скасоване."
+            "value": "Це замовлення вже скасовано."
           }
         }
       }
@@ -3717,31 +3717,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tato rezervace je již dokončena."
+            "value": "Tato objednávka je již dokončena."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This booking is already completed."
+            "value": "This order is already completed."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Это бронирование уже завершено."
+            "value": "Этот заказ уже выполнен."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Táto rezervácia je už dokončená."
+            "value": "Táto objednávka je už dokončená."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Це бронювання вже завершене."
+            "value": "Це замовлення вже виконано."
           }
         }
       }
@@ -3962,31 +3962,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tato zakázka se platí kartou, hotovost u ní proto nelze zaznamenat. Hotovost nevybírejte — požádejte o vyřízení kancelář."
+            "value": "Tato objednávka se platí kartou, hotovost se za ni proto nevybírá ani nezaznamenává."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This order is paid by card, so cash can't be recorded for it. Don't take cash — ask an office admin to settle it."
+            "value": "This order is paid by card, so no cash is taken or recorded for it."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Этот заказ оплачивается картой, поэтому наличные по нему записать нельзя. Не берите наличные — обратитесь в офис."
+            "value": "Этот заказ оплачивается картой, поэтому наличные по нему не берут и не записывают."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Táto zákazka sa platí kartou, hotovosť pri nej preto nemožno zaznamenať. Hotovosť nevyberajte — požiadajte o vybavenie kanceláriu."
+            "value": "Táto objednávka sa platí kartou, hotovosť sa za ňu preto nevyberá ani nezaznamenáva."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Це замовлення оплачується карткою, тому готівку за нього зафіксувати не можна. Не беріть готівку — зверніться до офісу."
+            "value": "Це замовлення оплачується карткою, тому готівку за нього не беруть і не фіксують."
           }
         }
       }
@@ -4242,31 +4242,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "U této zakázky už není co vybrat — je uhrazená, nebo byly peníze vráceny. Hotovost nevybírejte."
+            "value": "U této zakázky už není co vybrat — je uhrazená, nebo byly peníze vráceny. Hotovost se za ni nevybírá."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This order has no payment left to collect — it is already settled or refunded. Don't take cash."
+            "value": "This order has no payment left to collect — it is already settled or refunded. No cash is taken for it."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "По этому заказу уже нечего собирать — он оплачен или деньги возвращены. Не берите наличные."
+            "value": "По этому заказу уже нечего собирать — он оплачен или деньги возвращены. Наличные за него не берут."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pri tejto zákazke už nie je čo vybrať — je uhradená alebo boli peniaze vrátené. Hotovosť nevyberajte."
+            "value": "Pri tejto zákazke už nie je čo vybrať — je uhradená alebo boli peniaze vrátené. Hotovosť sa za ňu nevyberá."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "За цим замовленням уже нічого стягувати — його оплачено або кошти повернено. Не беріть готівку."
+            "value": "За цим замовленням уже нічого стягувати — його оплачено або кошти повернено. Готівку за нього не беруть."
           }
         }
       }
@@ -4347,31 +4347,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Máte u nás nezaplacenou částku, například nezaplacený úklid nebo storno poplatek. Dokud ji neuhradíte, nemůžete vytvořit novou objednávku; objednávky, které už máte, zůstávají. Uhradíte ji v profilu v sekci Platby."
+            "value": "Dlužíte nám částku z dřívější rezervace, například storno poplatek nebo nezaplacený úklid. Dokud nebude uhrazena, nemůžete vytvořit ani potvrdit rezervaci, kartou ani v hotovosti."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You have an unpaid amount with us, such as a cleaning you did not pay for or a cancellation fee. You can't make a new booking until it is paid; bookings you already have are kept. Pay it under Payments in your profile."
+            "value": "You owe us an amount from an earlier booking, such as a cancellation fee or a cleaning that was not paid for. Until it is paid, you cannot make or confirm a booking, by card or in cash."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "У вас есть неоплаченная сумма, например неоплаченная уборка или плата за отмену. Пока она не оплачена, новый заказ оформить нельзя; заказы, которые у вас уже есть, сохраняются. Оплатить её можно в профиле в разделе Платежи."
+            "value": "Вы должны нам сумму за предыдущее бронирование, например плату за отмену или неоплаченную уборку. Пока она не оплачена, вы не можете создать или подтвердить бронирование ни картой, ни наличными."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Máte u nás nezaplatenú sumu, napríklad nezaplatené upratovanie alebo stornovací poplatok. Kým ju neuhradíte, nemôžete vytvoriť novú objednávku; objednávky, ktoré už máte, zostávajú. Uhradíte ju v profile v sekcii Platby."
+            "value": "Dlhujete nám sumu z predchádzajúcej rezervácie, napríklad stornovací poplatok alebo nezaplatené upratovanie. Kým nebude uhradená, nemôžete vytvoriť ani potvrdiť rezerváciu, kartou ani v hotovosti."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "У вас є неоплачена сума, наприклад неоплачене прибирання або плата за скасування. Доки її не сплачено, нове замовлення оформити не можна; замовлення, які у вас уже є, зберігаються. Сплатити її можна в профілі в розділі Платежі."
+            "value": "Ви винні нам суму за попереднє бронювання, наприклад плату за скасування або неоплачене прибирання. Доки її не сплачено, ви не можете створити чи підтвердити бронювання ні карткою, ні готівкою."
           }
         }
       }
@@ -4697,31 +4697,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tuto adresu obsluhuje jiná společnost Cleansia, z tohoto účtu ji proto nelze objednat."
+            "value": "Tuto adresu obsluhuje jiná společnost Cleansia a z tohoto účtu ji nelze objednat."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This address is served by a different Cleansia company, so it can't be booked from this account."
+            "value": "This address is served by another Cleansia company and cannot be booked from this account."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Этот адрес обслуживает другая компания Cleansia, поэтому из этой учётной записи его нельзя забронировать."
+            "value": "Этот адрес обслуживает другая компания Cleansia, и с этого аккаунта его нельзя забронировать."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Túto adresu obsluhuje iná spoločnosť Cleansia, z tohto účtu ju preto nemožno objednať."
+            "value": "Túto adresu obsluhuje iná spoločnosť Cleansia a z tohto účtu ju nie je možné objednať."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Цю адресу обслуговує інша компанія Cleansia, тому з цього облікового запису її не можна забронювати."
+            "value": "Цю адресу обслуговує інша компанія Cleansia, і з цього облікового запису її не можна забронювати."
           }
         }
       }
@@ -4767,31 +4767,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Na tuto zakázku jste již přiřazeni."
+            "value": "Partner je již přiřazen k této objednávce."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You're already assigned to this order."
+            "value": "The partner is already assigned to this order."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Вы уже назначены на этот заказ."
+            "value": "Партнёр уже назначен на этот заказ."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Na túto zákazku ste už priradení."
+            "value": "Partner je už priradený k tejto objednávke."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Вас уже призначено на це замовлення."
+            "value": "Партнера вже призначено на це замовлення."
           }
         }
       }
@@ -4837,31 +4837,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Na tuto zakázku nejste přiřazeni."
+            "value": "Partner není přiřazen k této objednávce."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You're not assigned to this order."
+            "value": "The partner is not assigned to this order."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Вы не назначены на этот заказ."
+            "value": "Партнёр не назначен на этот заказ."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Na túto zákazku nie ste priradení."
+            "value": "Partner nie je priradený k tejto objednávke."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Вас не призначено на це замовлення."
+            "value": "Партнера не призначено на це замовлення."
           }
         }
       }
@@ -4907,31 +4907,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Rezervace probíhá a nelze ji zrušit."
+            "value": "Tento úklid už probíhá a nelze jej zrušit."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This booking is in progress and can't be cancelled."
+            "value": "This cleaning is already in progress and can no longer be cancelled."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Это бронирование выполняется и не может быть отменено."
+            "value": "Эта уборка уже выполняется, и её нельзя отменить."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Rezervácia prebieha a nie je možné ju zrušiť."
+            "value": "Toto upratovanie už prebieha a nedá sa zrušiť."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Це бронювання виконується і не може бути скасоване."
+            "value": "Це прибирання вже триває, і його не можна скасувати."
           }
         }
       }
@@ -5012,31 +5012,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tuto zakázku už převzal jiný uklízeč."
+            "value": "Všechna místa na této objednávce jsou už obsazená."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Another cleaner has already taken this job."
+            "value": "All spots on this order are already taken."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Этот заказ уже взял другой клинер."
+            "value": "Все места в этом заказе уже заняты."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Túto zákazku už prevzal iný upratovač."
+            "value": "Všetky miesta na tejto objednávke sú už obsadené."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Це замовлення вже взяв інший прибиральник."
+            "value": "Усі місця в цьому замовленні вже зайняті."
           }
         }
       }
@@ -5117,31 +5117,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Rezervace nenalezena."
+            "value": "Tuto objednávku jsme nenašli."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Booking not found."
+            "value": "We couldn't find that order."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Бронирование не найдено."
+            "value": "Мы не нашли этот заказ."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Rezervácia nenájdená."
+            "value": "Túto objednávku sme nenašli."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Бронювання не знайдено."
+            "value": "Ми не знайшли це замовлення."
           }
         }
       }
@@ -5222,7 +5222,7 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tato zakázka již není k dispozici."
+            "value": "Tato zakázka už není k dispozici."
           }
         },
         "en": {
@@ -5963,7 +5963,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Too early to start — you can begin up to an hour before the booking."
+            "value": "Too early to start — you can begin up to an hour before the start time."
           }
         },
         "ru": {
@@ -6027,31 +6027,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Celková cena musí být větší než nula."
+            "value": "Celková cena musí být kladná"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Total price must be greater than zero."
+            "value": "Total price must be positive"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Общая цена должна быть больше нуля."
+            "value": "Общая стоимость должна быть положительной"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Celková cena musí byť väčšia ako nula."
+            "value": "Celková cena musí byť kladná"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Загальна ціна має бути більшою за нуль."
+            "value": "Загальна вартість повинна бути додатною"
           }
         }
       }
@@ -6097,31 +6097,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zatím jste nezadali své bankovní údaje. Doplňte je, abychom vám mohli poslat výplatu."
+            "value": "Zatím nejsou uloženy žádné bankovní údaje; výplatu lze poslat až po jejich doplnění."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You haven't added your bank details yet. Add them so we can pay you."
+            "value": "No bank details have been added yet; payouts can be sent only once they are added."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Вы ещё не добавили свои банковские реквизиты. Добавьте их, чтобы мы могли отправить вам выплату."
+            "value": "Банковские реквизиты ещё не добавлены; выплату можно отправить только после их добавления."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zatiaľ ste nezadali svoje bankové údaje. Doplňte ich, aby sme vám mohli poslať výplatu."
+            "value": "Zatiaľ nie sú uložené žiadne bankové údaje; výplatu je možné poslať až po ich doplnení."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ви ще не додали свої банківські реквізити. Додайте їх, щоб ми могли надіслати вам виплату."
+            "value": "Банківські реквізити ще не додано; виплату можна надіслати лише після їх додавання."
           }
         }
       }
@@ -7147,31 +7147,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Na tomto trhu zatím žádná společnost Cleansia nepůsobí."
+            "value": "Tento trh zatím neprovozuje žádná společnost Cleansia."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This market isn't operated by any Cleansia company yet."
+            "value": "This market is not operated by any Cleansia company yet."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "На этом рынке пока не работает ни одна компания Cleansia."
+            "value": "Этот рынок пока не обслуживает ни одна компания Cleansia."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Na tomto trhu zatiaľ žiadna spoločnosť Cleansia nepôsobí."
+            "value": "Tento trh zatiaľ neprevádzkuje žiadna spoločnosť Cleansia."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "На цьому ринку ще не працює жодна компанія Cleansia."
+            "value": "Цей ринок поки не обслуговує жодна компанія Cleansia."
           }
         }
       }
@@ -7853,7 +7853,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your passport / ID number must be 5 to 20 characters long."
+            "value": "The passport / ID number must be 5 to 20 characters long."
           }
         },
         "ru": {
@@ -9387,19 +9387,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The invoice PDF could not be created. Please contact support."
+            "value": "Failed to generate PDF"
           }
         },
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "PDF faktury se nepodařilo vytvořit. Kontaktujte podporu."
+            "value": "Nepodařilo se vygenerovat PDF"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "PDF faktúry sa nepodarilo vytvoriť. Kontaktujte podporu."
+            "value": "Nepodarilo sa vygenerovať PDF"
           }
         },
         "uk": {
@@ -9422,31 +9422,31 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The invoice PDF is not ready yet."
+            "value": "The invoice PDF is not ready yet. Try again later."
           }
         },
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "PDF faktury zatím není připraveno."
+            "value": "PDF faktury zatím není připravené. Zkuste to později."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "PDF faktúry zatiaľ nie je pripravené."
+            "value": "PDF faktúry ešte nie je pripravené. Skúste to neskôr."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "PDF рахунку ще не готовий."
+            "value": "PDF рахунку ще не готовий. Спробуйте пізніше."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "PDF счёта ещё не готов."
+            "value": "PDF счёта ещё не готов. Попробуйте позже."
           }
         }
       }
@@ -9492,31 +9492,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Problém můžete nahlásit až po zahájení úklidu."
+            "value": "Tento úklid se ještě neuskutečnil, takže není co nahlásit."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You can only report a problem once the cleaning has started."
+            "value": "This clean hasn't happened yet, so there is nothing to report on it."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Сообщить о проблеме можно только после начала уборки."
+            "value": "Эта уборка ещё не состоялась, поэтому сообщать пока не о чем."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Problém môžete nahlásiť až po začatí upratovania."
+            "value": "Toto upratovanie sa ešte neuskutočnilo, takže nie je čo nahlásiť."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Повідомити про проблему можна лише після початку прибирання."
+            "value": "Це прибирання ще не відбулося, тож повідомляти поки нема про що."
           }
         }
       }
@@ -9527,7 +9527,7 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Jedna z vybraných služeb není v této rezervaci. Otevřete formulář znovu a zkuste to znovu."
+            "value": "Tato položka na této objednávce není."
           }
         },
         "en": {
@@ -9539,19 +9539,19 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Одна из выбранных услуг не входит в этот заказ. Откройте форму заново и повторите попытку."
+            "value": "Этой позиции нет в данном заказе."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Jedna z vybraných služieb nie je v tejto rezervácii. Otvorte formulár znova a skúste to znova."
+            "value": "Táto položka na tejto objednávke nie je."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Одна з вибраних послуг не входить до цього замовлення. Відкрийте форму знову та спробуйте ще раз."
+            "value": "Цієї позиції немає в цьому замовленні."
           }
         }
       }

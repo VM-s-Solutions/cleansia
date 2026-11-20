@@ -283,10 +283,11 @@ public interface IStripeClient
         CancellationToken cancellationToken);
 
     /// <summary>
-    /// Create a Stripe subscription against a price. Caller is expected to
-    /// have already attached a payment method via SetupIntent — first invoice
-    /// is charged immediately (or after the trial if <paramref name="trialPeriodDays"/>
-    /// > 0). Returns the subscription id + period bounds the caller persists
+    /// Create a Stripe subscription against a price, after the phone's Plus sheet confirmed the SetupIntent of
+    /// <see cref="CreateSetupIntentAsync"/>: the card of the newest such intent that succeeded on the Customer,
+    /// one with no <c>SavedCardId</c> metadata, is the subscription's default payment method, so the invoice
+    /// after the trial (<paramref name="trialPeriodDays"/> &gt; 0) and every renewal charge it. The Customer's
+    /// own invoice default is left alone. Returns the subscription id + period bounds the caller persists
     /// in <see cref="Cleansia.Core.Domain.Memberships.UserMembership"/>.
     /// </summary>
     Task<SubscriptionResult> CreateSubscriptionAsync(

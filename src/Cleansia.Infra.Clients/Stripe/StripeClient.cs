@@ -738,6 +738,17 @@ public class StripeClient : IStripeClient
         string idempotencyAttemptId,
         CancellationToken cancellationToken)
     {
+        // The phone's Plus sheet confirmed the platform's own SetupIntent, which carries no saved-card row, and
+        // the confirm sends no card: its card is the subscription's default, or no invoice would have one to charge.
+        var setupIntents = await ClassifyAsync(
+            nameof(CreateSubscriptionAsync),
+            () => new SetupIntentService(stripe).ListAsync(
+                new SetupIntentListOptions { Customer = stripeCustomerId, Limit = 100 },
+                cancellationToken: cancellationToken));
+        var plusCard = setupIntents.Data
+            .FirstOrDefault(i => i.Status == "succeeded" && !(i.Metadata?.ContainsKey(SavedCardMetadataKey) ?? false))
+            ?.PaymentMethodId;
+
         var service = new SubscriptionService(stripe);
         var options = new SubscriptionCreateOptions
         {
@@ -746,6 +757,7 @@ public class StripeClient : IStripeClient
             [
                 new SubscriptionItemOptions { Price = stripePriceId },
             ],
+            DefaultPaymentMethod = plusCard,
             PaymentBehavior = "default_incomplete",
             PaymentSettings = new SubscriptionPaymentSettingsOptions
             {

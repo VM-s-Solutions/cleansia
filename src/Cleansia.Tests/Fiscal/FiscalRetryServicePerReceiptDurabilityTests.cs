@@ -60,12 +60,15 @@ public sealed class FiscalRetryServicePerReceiptDurabilityTests
         _receiptService
             .Setup(s => s.DownloadReceiptPdfAsync(It.IsAny<OrderReceipt>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([1, 2, 3]);
+        _receiptService
+            .Setup(s => s.IsPdfStoredAsync(It.IsAny<OrderReceipt>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
 
         // Successful fiscal retry stamps the receipt and clears its retry-eligibility, mirroring the
-        // real ReceiptService.RetryFiscalRegistrationAsync success path.
+        // real ReceiptService.CompleteReceiptAsync success path.
         _receiptService
-            .Setup(s => s.RetryFiscalRegistrationAsync(It.IsAny<OrderReceipt>(), It.IsAny<Order>(), It.IsAny<CancellationToken>()))
-            .Returns((OrderReceipt receipt, Order _, CancellationToken __) =>
+            .Setup(s => s.CompleteReceiptAsync(It.IsAny<OrderReceipt>(), It.IsAny<Order>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .Returns((OrderReceipt receipt, Order _, bool _, CancellationToken __) =>
             {
                 receipt.SetFiscalData("de-tse-test", $"SIG-{receipt.ReceiptNumber}", DateTime.UtcNow);
                 return Task.FromResult(true);

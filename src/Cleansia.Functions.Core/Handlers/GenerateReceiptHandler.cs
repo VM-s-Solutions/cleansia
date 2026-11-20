@@ -115,8 +115,8 @@ public class GenerateReceiptHandler(
             var languageCode = DocumentLanguage(order, message.LanguageCode);
 
             // ── ADR-0004 D-F4.1 phase 1 — RESERVE + COMMIT THE CLAIM (before the irreversible effect) ──
-            // Allocate the sequence + stage the receipt row (born retry-eligible for any fiscal mode !=
-            // None), then COMMIT it NOW — before the authority register and before the PDF. This is the
+            // Allocate the sequence + stage the receipt row (born owed to the retry job, in every mode),
+            // then COMMIT it NOW — before the authority register and before the PDF. This is the
             // ordering inversion that makes the irreversible external effect at-most-once: after this
             // commit every redelivery short-circuits on `order.Receipt is not null` above, so the
             // sequence is never re-burned and the authority is never re-registered. A crash BEFORE this

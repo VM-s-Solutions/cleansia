@@ -179,7 +179,7 @@ public class ReceiptServiceCurrencyFailClosedTests
     {
         var receipt = BuildReceipt();
 
-        var succeeded = await CreateService().RetryFiscalRegistrationAsync(receipt, BuildOrder(Euro()), CancellationToken.None);
+        var succeeded = await CreateService().CompleteReceiptAsync(receipt, BuildOrder(Euro()), pdfStored: true, CancellationToken.None);
 
         Assert.True(succeeded);
         Assert.Equal("EUR", Assert.Single(_provider.Seen).CurrencyCode);
@@ -190,7 +190,7 @@ public class ReceiptServiceCurrencyFailClosedTests
     {
         var receipt = BuildReceipt();
 
-        var succeeded = await CreateService().RetryFiscalRegistrationAsync(receipt, BuildOrder(currency: null), CancellationToken.None);
+        var succeeded = await CreateService().CompleteReceiptAsync(receipt, BuildOrder(currency: null), pdfStored: true, CancellationToken.None);
 
         Assert.False(succeeded);
         Assert.Empty(_provider.Seen);
@@ -228,7 +228,7 @@ public class ReceiptServiceCurrencyFailClosedTests
             .ReturnsAsync((Country?)null);
         var receipt = BuildReceipt();
 
-        var succeeded = await CreateService().RetryFiscalRegistrationAsync(receipt, BuildOrder(Euro()), CancellationToken.None);
+        var succeeded = await CreateService().CompleteReceiptAsync(receipt, BuildOrder(Euro()), pdfStored: true, CancellationToken.None);
 
         Assert.False(succeeded);
         Assert.Empty(_provider.Seen);

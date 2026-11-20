@@ -9,7 +9,7 @@ public interface IOrderReceiptRepository : IRepository<OrderReceipt, string>
         CancellationToken cancellationToken);
 
     /// <summary>
-    /// Returns receipts whose fiscal registration previously failed and are due for a retry
+    /// Returns receipts that still owe their fiscal registration or a stored PDF and are due for a retry
     /// (i.e., <c>FiscalNextRetryAt</c> is in the past). Ordered by oldest-due first.
     /// </summary>
     Task<List<OrderReceipt>> GetDueForRetryAsync(

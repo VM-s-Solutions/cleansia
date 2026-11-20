@@ -62,7 +62,7 @@ public sealed class FiscalRetryService(
             .Include(r => r.Language)
             .Include(r => r.Receivable)
             .FirstOrDefaultAsync(r => r.Id == receiptId, cancellationToken);
-        if (receipt is null || receipt.FiscalCode is not null || receipt.FiscalNextRetryAt is null
+        if (receipt is null || receipt.FiscalNextRetryAt is null
             || receipt.FiscalNextRetryAt > dueAt || string.IsNullOrEmpty(receipt.TenantId)) return false;
 
         tenantProvider.ClearTenantOverride();
@@ -74,13 +74,16 @@ public sealed class FiscalRetryService(
             return false;
         }
 
-        var succeeded = await receiptService.RetryFiscalRegistrationAsync(receipt, order, cancellationToken);
+        var pdfStored = await receiptService.IsPdfStoredAsync(receipt, cancellationToken);
+        var deliverable = await receiptService.CompleteReceiptAsync(receipt, order, pdfStored, cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
         await unitOfWork.CommitAsync(cancellationToken);
-        if (succeeded && !receipt.EmailSent && !receipt.IsFee)
+        if (deliverable && !receipt.EmailSent && !receipt.IsFee)
         {
+            // An unheld e-mail went out with the first stored file, so it is owed only if this pass stored it.
             var enforcementMode = await ResolveEnforcementModeAsync(order, cancellationToken);
-            if (enforcementMode is FiscalEnforcementMode.BlockingOnline or FiscalEnforcementMode.BlockingWithOfflineCache)
+            if (!pdfStored
+                || enforcementMode is FiscalEnforcementMode.BlockingOnline or FiscalEnforcementMode.BlockingWithOfflineCache)
             {
                 var pdfBytes = await receiptService.DownloadReceiptPdfAsync(receipt, cancellationToken);
                 var languageCode = receipt.Language?.Code ?? Constants.Language.English;
@@ -99,7 +102,7 @@ public sealed class FiscalRetryService(
                 // The claim is already durable; provider metadata is best effort inside this child.
                 receipt.MarkEmailSent(messageId);
                 await unitOfWork.CommitAsync(cancellationToken);
-                logger.LogInformation("Held receipt email released for ReceiptNumber={ReceiptNumber} after successful fiscal retry", receipt.ReceiptNumber);
+                logger.LogInformation("Receipt email released for ReceiptNumber={ReceiptNumber} after the retry completed it", receipt.ReceiptNumber);
             }
         }
         return true;

@@ -30,7 +30,7 @@ public sealed class ReceiptService(
     : IReceiptService
 {
     // ADR-0004 D-F4.1 phase 1 — RESERVE. Allocate the sequence + Create + Add the row and
-    // mark it born-retry-eligible for any enforcement mode != None. Does NOT register with the
+    // mark it owed to the retry job. Does NOT register with the
     // authority, does NOT generate the PDF, and does NOT commit — the handler owns the claim commit,
     // which MUST land BEFORE the irreversible external effects in RealizeFiscalAndPdfAsync.
     public Task<OrderReceipt> ReserveReceiptAsync(Order order, string languageCode, CancellationToken cancellationToken = default) =>
@@ -97,14 +97,10 @@ public sealed class ReceiptService(
 
         var receipt = create(receiptNumber, currentYear, language.Id);
 
-        // C-A — the claim is BORN RETRY-ELIGIBLE for any fiscal mode != None. A crash between the claim
-        // commit and the register call leaves FiscalRegistrationFailed == false, FiscalCode == null;
-        // setting FiscalNextRetryAt now (and widening GetDueForRetryAsync) makes that committed-but-
-        // unregistered row sweepable by the retry job. SetFiscalData clears it on a later success.
-        if (enforcementMode != FiscalEnforcementMode.None)
-        {
-            receipt.ScheduleImmediateFiscalRetry();
-        }
+        // C-A — the claim is born owed, in every mode: a fault or crash between the claim commit and the
+        // stored PDF leaves a committed row whose registration or file nothing else would ever produce.
+        // The realize settles it; otherwise the retry job does (→ /flows/payment-and-fiscal#a-receipt-s-pdf-is-repaired).
+        receipt.ScheduleRetryAfterClaim();
 
         receiptRepository.Add(receipt);
         return receipt;
@@ -161,7 +157,14 @@ public sealed class ReceiptService(
         StampFiscalData(receiptData, receipt);
 
         await UploadAsync(receipt, pdfService.GenerateReceiptPdf(receiptData, countryCode), cancellationToken);
+        if (!RegistrationOwed(enforcementMode, receipt))
+        {
+            receipt.MarkDocumentComplete();
+        }
     }
+
+    private static bool RegistrationOwed(FiscalEnforcementMode enforcementMode, OrderReceipt receipt) =>
+        enforcementMode != FiscalEnforcementMode.None && receipt.FiscalCode == null;
 
     private async Task UploadAsync(OrderReceipt receipt, byte[] pdfBytes, CancellationToken cancellationToken)
     {
@@ -431,6 +434,10 @@ public sealed class ReceiptService(
         }
     }
 
+    public Task<bool> IsPdfStoredAsync(OrderReceipt receipt, CancellationToken cancellationToken = default) =>
+        blobClientFactory.GetBlobContainerClient(Constants.BlobContainers.GeneratedReceipts)
+            .ExistsAsync(receipt.BlobName, cancellationToken);
+
     public async Task<byte[]> DownloadReceiptPdfAsync(OrderReceipt receipt, CancellationToken cancellationToken = default)
     {
         var blobClient = blobClientFactory.GetBlobContainerClient(Constants.BlobContainers.GeneratedReceipts);
@@ -441,7 +448,8 @@ public sealed class ReceiptService(
         return memoryStream.ToArray();
     }
 
-    public async Task<bool> RetryFiscalRegistrationAsync(OrderReceipt receipt, Order order, CancellationToken cancellationToken = default)
+    public async Task<bool> CompleteReceiptAsync(
+        OrderReceipt receipt, Order order, bool pdfStored, CancellationToken cancellationToken = default)
     {
         var countryId = order.CustomerAddress?.CountryId;
         var companyInfo = countryId != null
@@ -460,21 +468,33 @@ public sealed class ReceiptService(
             countryCode = country?.IsoCode;
         }
 
+        var enforcementMode = await ResolveEnforcementModeAsync(countryId, cancellationToken);
         var fiscalCountryCode = ToFiscalCountryCode(countryCode);
         var fiscalService = fiscalServiceResolver.Resolve(fiscalCountryCode ?? string.Empty);
+        FiscalResult? refused = null;
 
         try
         {
-            var fiscalRequest = BuildFiscalRequest(order, receipt, companyInfo, FiscalCountryCodeOf(order, fiscalCountryCode));
-            var result = await fiscalService.RegisterReceiptAsync(fiscalRequest, cancellationToken);
-
-            if (result.IsRegistered && result.FiscalCode != null)
+            if (RegistrationOwed(enforcementMode, receipt))
             {
-                receipt.SetFiscalData(
-                    fiscalService.ProviderKey,
-                    result.FiscalCode,
-                    DateTime.TryParse(result.RegisteredAt, out var parsedAt) ? parsedAt : DateTime.UtcNow);
+                var fiscalRequest = BuildFiscalRequest(order, receipt, companyInfo, FiscalCountryCodeOf(order, fiscalCountryCode));
+                var result = await fiscalService.RegisterReceiptAsync(fiscalRequest, cancellationToken);
+                if (result.IsRegistered && result.FiscalCode != null)
+                {
+                    receipt.SetFiscalData(
+                        fiscalService.ProviderKey,
+                        result.FiscalCode,
+                        DateTime.TryParse(result.RegisteredAt, out var parsedAt) ? parsedAt : DateTime.UtcNow);
+                }
+                else
+                {
+                    refused = result;
+                }
+            }
 
+            // Due with a code means the render after its stamp was never stored. A deleted file stays deleted.
+            if (receipt.BlobDeletedAt == null && (!pdfStored || receipt.FiscalCode != null))
+            {
                 // A new render beside the one the customer was sent, which stays as issued.
                 var receiptData = CreateReceiptData(
                     order,
@@ -485,31 +505,37 @@ public sealed class ReceiptService(
                 StampFiscalData(receiptData, receipt);
 
                 await UploadAsync(receipt, pdfService.GenerateReceiptPdf(receiptData, countryCode), cancellationToken);
-
-                logger.LogInformation(
-                    "Fiscal retry succeeded for ReceiptNumber={ReceiptNumber} Provider={ProviderKey} Attempt={Attempt}",
-                    receipt.ReceiptNumber, fiscalService.ProviderKey, receipt.FiscalRetryCount + 1);
-                return true;
+                pdfStored = true;
             }
-
-            var errorKind = result.ErrorKind == FiscalErrorKind.None ? FiscalErrorKind.Unknown : result.ErrorKind;
-            receipt.MarkFiscalRetryAttempted(
-                errorKind,
-                $"{result.ErrorCode}: {result.ErrorMessage}");
-            logger.LogWarning(
-                "Fiscal retry failed for ReceiptNumber={ReceiptNumber} Provider={ProviderKey} Attempt={Attempt} ErrorKind={ErrorKind} ErrorCode={ErrorCode}",
-                receipt.ReceiptNumber, fiscalService.ProviderKey, receipt.FiscalRetryCount, errorKind, result.ErrorCode);
-            return false;
         }
         catch (Exception ex)
         {
             receipt.MarkFiscalRetryAttempted(FiscalErrorKind.Unknown, ex.Message);
             logger.LogError(ex,
-                "Fiscal retry threw for ReceiptNumber={ReceiptNumber} Provider={ProviderKey} Attempt={Attempt}",
+                "Receipt retry threw for ReceiptNumber={ReceiptNumber} Provider={ProviderKey} Attempt={Attempt}",
                 receipt.ReceiptNumber, fiscalService.ProviderKey, receipt.FiscalRetryCount);
             return false;
         }
+
+        if (refused is not null)
+        {
+            var errorKind = refused.ErrorKind == FiscalErrorKind.None ? FiscalErrorKind.Unknown : refused.ErrorKind;
+            receipt.MarkFiscalRetryAttempted(errorKind, $"{refused.ErrorCode}: {refused.ErrorMessage}");
+            logger.LogWarning(
+                "Fiscal retry failed for ReceiptNumber={ReceiptNumber} Provider={ProviderKey} Attempt={Attempt} ErrorKind={ErrorKind} ErrorCode={ErrorCode}",
+                receipt.ReceiptNumber, fiscalService.ProviderKey, receipt.FiscalRetryCount, errorKind, refused.ErrorCode);
+            return pdfStored && !HoldsEmail(enforcementMode);
+        }
+
+        receipt.MarkDocumentComplete();
+        logger.LogInformation(
+            "Receipt completed for ReceiptNumber={ReceiptNumber} Provider={ProviderKey} Attempt={Attempt}",
+            receipt.ReceiptNumber, fiscalService.ProviderKey, receipt.FiscalRetryCount + 1);
+        return pdfStored;
     }
+
+    private static bool HoldsEmail(FiscalEnforcementMode enforcementMode) =>
+        enforcementMode is FiscalEnforcementMode.BlockingOnline or FiscalEnforcementMode.BlockingWithOfflineCache;
 
     /// <summary>
     /// A catalogue entry's name in the document's language: its own translation, then the English one,

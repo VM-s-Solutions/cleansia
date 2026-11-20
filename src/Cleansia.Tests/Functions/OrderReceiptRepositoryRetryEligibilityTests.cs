@@ -154,6 +154,26 @@ public sealed class OrderReceiptRepositoryRetryEligibilityTests : IDisposable
         Assert.Empty(due);
     }
 
+    [Fact]
+    public async Task A_Stamped_Row_Whose_Render_Is_Still_Owed_Is_Returned()
+    {
+        await EnsureSchemaAndLanguageAsync();
+
+        await using (var seedCtx = NewContext())
+        {
+            var stamped = NewReceipt("01HZX9N6M7Q8R9S0T1V2W3X404", "2026-000004");
+            stamped.SetFiscalData("cz-eet2", "FIK-OK", DateTime.UtcNow);
+            stamped.MarkFiscalRetryAttempted(FiscalErrorKindForTransient(), "503 ServerBusy");
+            seedCtx.Add(stamped);
+            await seedCtx.CommitAsync(CancellationToken.None);
+        }
+
+        await using var ctx = NewContext();
+        var due = await new OrderReceiptRepository(ctx).GetDueForRetryAsync(DateTime.UtcNow.AddHours(1), take: 50, CancellationToken.None);
+
+        Assert.Equal("2026-000004", Assert.Single(due).ReceiptNumber);
+    }
+
     // The transient kind that MarkFiscalRegistrationFailed schedules a retry for.
     private static Cleansia.Core.Fiscal.Abstractions.FiscalErrorKind FiscalErrorKindForTransient()
         => Cleansia.Core.Fiscal.Abstractions.FiscalErrorKind.Transient;

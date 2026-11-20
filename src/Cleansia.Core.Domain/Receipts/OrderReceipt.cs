@@ -86,8 +86,9 @@ public class OrderReceipt : TenantAuditable
     public DateTime? FiscalLastRetryAt { get; private set; }
 
     /// <summary>
-    /// Timestamp when the retry job should next pick up this receipt.
-    /// Null = do not retry (permanent failure, already succeeded, or not required).
+    /// When the retry job next picks this receipt up: set while it still owes its fiscal registration or a
+    /// stored PDF carrying its code (→ /flows/payment-and-fiscal#a-receipt-s-pdf-is-repaired).
+    /// Null = nothing owed, or a failure the job no longer retries.
     /// </summary>
     public DateTime? FiscalNextRetryAt { get; private set; }
 
@@ -174,6 +175,24 @@ public class OrderReceipt : TenantAuditable
         FiscalNextRetryAt = DateTime.UtcNow;
     }
 
+    /// <summary>
+    /// A claim owes its PDF, and its registration where the market has one, from the moment it commits. The
+    /// issuing path settles it within seconds, so the job waits out that window: picked up mid-issue, it would
+    /// store a second file and send a second e-mail.
+    /// </summary>
+    public void ScheduleRetryAfterClaim()
+    {
+        FiscalNextRetryAt = DateTime.UtcNow.Add(ClaimSettleWindow);
+    }
+
+    /// <summary>The PDF is stored with every code the receipt carries, so nothing is owed.</summary>
+    public void MarkDocumentComplete()
+    {
+        FiscalNextRetryAt = null;
+        FiscalError = null;
+        FiscalErrorKind = null;
+    }
+
     public void SetFiscalData(string providerKey, string fiscalCode, DateTime registeredAt)
     {
         FiscalProviderKey = providerKey;
@@ -223,6 +242,8 @@ public class OrderReceipt : TenantAuditable
     }
 
     private const int MaxFiscalRetries = 10;
+
+    private static readonly TimeSpan ClaimSettleWindow = TimeSpan.FromMinutes(15);
 
     private static bool ShouldRetry(FiscalErrorKind errorKind) =>
         errorKind == Fiscal.Abstractions.FiscalErrorKind.Transient

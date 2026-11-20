@@ -205,7 +205,7 @@ final class ProfileViewModelTests: XCTestCase {
         XCTAssertEqual(client.updateCallCount, 0)
         XCTAssertFalse(completed)
         XCTAssertFalse(settings.hasSeenOnboarding(userId: "user-7"))
-        XCTAssertNotNil(snackbar.current)
+        XCTAssertNil(snackbar.current)
         guard case .error = vm.saveState else { return XCTFail("expected action error") }
     }
 
@@ -299,8 +299,59 @@ final class ProfileViewModelTests: XCTestCase {
 
         XCTAssertFalse(completed)
         XCTAssertFalse(settings.hasSeenOnboarding(userId: "user-7"))
-        XCTAssertNotNil(snackbar.current)
+        XCTAssertNil(snackbar.current)
         guard case .error = vm.saveState else { return XCTFail("expected action error") }
+    }
+
+    func testCompleteOnboardingLoadsAProfileThatHasNotLoadedThenSaves() async {
+        client.currentUserResult = .success(ProfileFixtures.user(id: "user-7", phoneNumber: nil))
+        client.updateResult = .success(())
+        let settings = UserDefaultsAppSettingsStore(defaults: scratchDefaults())
+        let vm = ProfileViewModel(repository: repository, settings: settings, snackbar: snackbar)
+
+        var completed = false
+        let token = vm.saved.sink { completed = true }
+        defer { token.cancel() }
+
+        await vm.completeOnboarding(firstName: "Jane", lastName: "Doe", phoneNumber: "+420777123456", birthDate: nil)
+
+        XCTAssertEqual(client.updateCallCount, 1)
+        XCTAssertEqual(client.lastUpdate?.id, "user-7")
+        XCTAssertTrue(completed)
+        XCTAssertTrue(settings.hasSeenOnboarding(userId: "user-7"))
+    }
+
+    func testCompleteOnboardingWhenTheProfileCannotLoadShowsTheRefusalOnTheStep() async {
+        client.currentUserResult = .failure(ApiError(httpStatus: 503))
+        let vm = makeVM()
+
+        await vm.completeOnboarding(firstName: "Jane", lastName: "Doe", phoneNumber: "+420777123456", birthDate: nil)
+
+        XCTAssertEqual(client.updateCallCount, 0)
+        XCTAssertNil(snackbar.current)
+        XCTAssertEqual(vm.saveState, .error(ApiErrorLocalizer().message(forStatus: 503)))
+        XCTAssertEqual(
+            vm.onboardingPhoneError(phoneNumber: "+420777123456"),
+            ApiErrorLocalizer().message(forStatus: 503)
+        )
+    }
+
+    /// The server's refusal stays under the phone field while the field holds the refused number, and never in a
+    /// snackbar.
+    func testAnOnboardingRefusalShowsUnderThePhoneUntilTheNumberIsEdited() async {
+        let refusal = ApiError(code: "validation.invalid_phone_number", httpStatus: 400)
+        client.currentUserResult = .success(ProfileFixtures.user(phoneNumber: nil))
+        client.updateResult = .failure(refusal)
+        let vm = makeVM()
+        await vm.refresh()
+
+        await vm.completeOnboarding(firstName: "Jane", lastName: "Doe", phoneNumber: " +420611180645 ", birthDate: nil)
+
+        let message = ApiErrorLocalizer().message(for: refusal)
+        XCTAssertNil(snackbar.current)
+        XCTAssertEqual(vm.onboardingPhoneError(phoneNumber: "+420611180645"), message)
+        XCTAssertNil(vm.onboardingPhoneError(phoneNumber: "+42061118064"))
+        XCTAssertEqual(vm.onboardingPhoneError(phoneNumber: "+420611180645 "), message)
     }
 
     func testSkipOnboardingMarksSeenForTheLoadedUser() async {

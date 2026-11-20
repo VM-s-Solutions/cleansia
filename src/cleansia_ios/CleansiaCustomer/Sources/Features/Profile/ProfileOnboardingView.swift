@@ -31,6 +31,7 @@ struct ProfileOnboardingView: View {
             lastName: $lastName,
             phone: $phone,
             birthDate: $birthDate,
+            phoneError: vm.onboardingPhoneError(phoneNumber: phone),
             saving: vm.saveState.isSubmitting,
             canSave: vm.canCompleteOnboarding(firstName: firstName, lastName: lastName, phoneNumber: phone),
             onSkip: {
@@ -50,6 +51,9 @@ struct ProfileOnboardingView: View {
         )
         .onReceive(vm.repository.$currentUser) { user in seed(user) }
         .onReceive(vm.saved) { onDone() }
+        .onReceive(vm.$saveState) { state in
+            if case .error = state { openStep = .phone }
+        }
     }
 
     /// The open step is picked once, here; typing never moves it.
@@ -76,6 +80,7 @@ private struct ProfileOnboardingContent: View {
     @Binding var lastName: String
     @Binding var phone: String
     @Binding var birthDate: Date?
+    let phoneError: String?
     let saving: Bool
     let canSave: Bool
     let onSkip: () -> Void
@@ -135,6 +140,7 @@ private struct ProfileOnboardingContent: View {
                     firstName: $firstName,
                     lastName: $lastName,
                     phone: $phone,
+                    phoneError: phoneError,
                     onBirthDate: { showsBirthSheet = true }
                 )
                 .padding(.top, Spacing.s)
@@ -225,6 +231,7 @@ private struct ProfileOnboardingContent: View {
                 lastName: $lastName,
                 phone: $phone,
                 birthDate: $birthDate,
+                phoneError: nil,
                 saving: false,
                 canSave: checklist.isReady,
                 onSkip: {},

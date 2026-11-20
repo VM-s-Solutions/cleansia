@@ -10,6 +10,11 @@ import XCTest
 final class CleansiaTextFieldInputTraitsTests: XCTestCase {
     private var window: UIWindow?
 
+    override static func setUp() {
+        super.setUp()
+        ApplicationAccessibility.enable()
+    }
+
     override func tearDown() {
         window?.isHidden = true
         window = nil
@@ -143,6 +148,28 @@ final class CleansiaTextFieldInputTraitsTests: XCTestCase {
 
         let labelled = try await hostedField(keyboardType: .default, labelAbove: true)
         XCTAssertEqual(labelled.accessibilityLabel, "Field")
+    }
+
+    /// VoiceOver reads the eye button by the action it takes, as Android's does, and the label flips with it.
+    func testThePasswordEyeIsLabelledByItsAction() async throws {
+        let canvas = HostedCanvas(size: CGSize(width: 390, height: 120)) {
+            CleansiaTextField(value: .constant("secret"), label: "Password", isPassword: true).padding(Spacing.m)
+        }
+        defer { canvas.close() }
+        let show = CoreL10n.localized("text_field.show_password")
+        let hide = CoreL10n.localized("text_field.hide_password")
+        func eye(_ label: String) -> NSObject? {
+            ApplicationAccessibility.elements(under: canvas.window).first { $0.accessibilityLabel == label }
+        }
+        await canvas.settle(until: { eye(show) != nil })
+
+        XCTAssertEqual(show, "Show password")
+        try XCTUnwrap(eye(show)).accessibilityActivate()
+        await canvas.settle(until: { eye(hide) != nil })
+
+        XCTAssertEqual(hide, "Hide password")
+        XCTAssertNotNil(eye(hide))
+        XCTAssertNil(eye(show))
     }
 
     func testEveryOtherFieldKeepsUIKitsDefaults() async throws {

@@ -18,7 +18,7 @@
 // WHAT IS NORMALISED, AND ONLY THIS — none of it is wording:
 //   - surrounding whitespace;
 //   - Android's resource encoding: XML entities, inline markup tags, a value wrapped in double quotes,
-//     and backslash escapes (`\'`, `\"`, `\n`, …). The webs' JSON and the xcstrings JSON need nothing.
+//     and backslash escapes (`\'`, `\"`, `\n`, `\u2014`, …). The webs' JSON and the xcstrings JSON need nothing.
 // A trailing full stop is NOT normalised. Measured on 2026-11-19 the platforms share no convention to
 // differ on: the customer web, both Android apps and iOS end 85-99 % of their error texts with one;
 // the partner and admin webs split about half and half within the same file, which is drift, not a
@@ -96,7 +96,9 @@ function decodeAndroid(raw) {
         )
         .trim();
     if (s.length > 1 && s.startsWith('"') && s.endsWith('"') && !s.endsWith('\\"')) s = s.slice(1, -1);
-    return s.replace(/\\(.)/g, (_, c) => ({ n: "\n", t: "\t" })[c] ?? c);
+    return s.replace(/\\(u[0-9a-fA-F]{4}|.)/g, (_, c) =>
+        c.length === 5 ? String.fromCharCode(parseInt(c.slice(1), 16)) : (({ n: "\n", t: "\t" })[c] ?? c),
+    );
 }
 
 function androidClient(name, app, names) {

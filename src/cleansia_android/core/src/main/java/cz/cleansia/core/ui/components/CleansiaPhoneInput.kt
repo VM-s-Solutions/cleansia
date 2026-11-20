@@ -239,15 +239,12 @@ private fun PrefixedPhoneField(
 }
 
 /**
- * Format-as-you-type for the visible text using libphonenumber's
- * [AsYouTypeFormatter]. The transformation has to keep cursor offset
- * mapping coherent — for an input of length N, [OffsetMapping] maps
- * each raw-text index to the corresponding index in the formatted
- * output (and back). We compute the mapping table once per format
- * call by replaying digits one at a time and recording where each
- * one lands in the formatted output.
+ * Format-as-you-type for the visible text using libphonenumber's [AsYouTypeFormatter]. The cursor mapping is built
+ * against the final formatted text, not the text after each keystroke: a later digit can regroup or ungroup the earlier
+ * ones (ten Czech digits come back ungrouped, shorter than nine), and a mapping past either text's end makes Compose
+ * throw.
  */
-private class PhoneVisualTransformation(
+internal class PhoneVisualTransformation(
     private val phoneUtil: PhoneNumberUtil,
     private val defaultRegion: String,
 ) : VisualTransformation {
@@ -256,46 +253,28 @@ private class PhoneVisualTransformation(
         if (raw.isEmpty()) {
             return TransformedText(AnnotatedString(""), OffsetMapping.Identity)
         }
-        // Choose region from a leading + prefix when present; otherwise
-        // fall back to caller-provided default. The formatter is
-        // single-use — we instantiate per filter call.
         val region = if (raw.startsWith("+")) "ZZ" else defaultRegion
         val formatter = phoneUtil.getAsYouTypeFormatter(region)
-        formatter.clear()
-
-        val formattedBuilder = StringBuilder()
-        // rawIndexToFormatted[i] = index in formattedBuilder.length right
-        // after consuming raw[i]. Used for offset mapping.
-        val rawIndexToFormatted = IntArray(raw.length + 1)
-        rawIndexToFormatted[0] = 0
-        for (i in raw.indices) {
-            val ch = raw[i]
-            if (ch == '+' || ch.isDigit()) {
-                val partial = formatter.inputDigit(ch)
-                formattedBuilder.clear()
-                formattedBuilder.append(partial)
-            } else {
-                // Non-input chars shouldn't appear (we sanitize at the
-                // text-field level), but if one slips through we just
-                // keep the previous formatted snapshot.
-            }
-            rawIndexToFormatted[i + 1] = formattedBuilder.length
+        var formatted = ""
+        for (ch in raw) {
+            if (ch == '+' || ch.isDigit()) formatted = formatter.inputDigit(ch)
         }
-        val formatted = formattedBuilder.toString()
+
+        // ends[i] is where the cursor after the first i raw characters sits in the formatted text.
+        val ends = IntArray(raw.length + 1)
+        var at = 0
+        raw.forEachIndexed { i, ch ->
+            val found = if (ch == '+' || ch.isDigit()) formatted.indexOf(ch, at) else -1
+            if (found >= 0) at = found + 1
+            ends[i + 1] = at
+        }
 
         val offsetMapping = object : OffsetMapping {
-            override fun originalToTransformed(offset: Int): Int {
-                val clamped = offset.coerceIn(0, raw.length)
-                return rawIndexToFormatted[clamped]
-            }
+            override fun originalToTransformed(offset: Int): Int = ends[offset.coerceIn(0, raw.length)]
 
             override fun transformedToOriginal(offset: Int): Int {
                 val clamped = offset.coerceIn(0, formatted.length)
-                // Find first raw index whose formatted-end >= clamped.
-                for (i in rawIndexToFormatted.indices) {
-                    if (rawIndexToFormatted[i] >= clamped) return i
-                }
-                return raw.length
+                return ends.indexOfLast { it <= clamped }
             }
         }
 

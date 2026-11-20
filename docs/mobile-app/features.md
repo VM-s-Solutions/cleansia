@@ -74,7 +74,11 @@ the order detail's *Read the contract*, and the customer wizards' confirm step l
   a bracket in front of its country code keeps the code; until then only a `+` that was the very first
   character survived. The Android customer app's two profile phone fields go through the same function
   since the same day: Edit profile's plain text field, and the onboarding's shared phone field, which
-  since 2026-11-08 shows the country's calling code before the national digits.
+  since 2026-11-08 shows the country's calling code before the national digits. On Android the grouped
+  text places the cursor by finding each typed digit in the final grouping (since 2026-11-20), as iOS
+  counts significant characters: a later digit can regroup the earlier ones (ten Czech digits come back
+  ungrouped, shorter than nine grouped), and the cursor recorded per keystroke pointed past the text's
+  end, which crashed the customer onboarding's phone step.
 
 → [Partner onboarding — e-mail confirmation](/partner-app/onboarding#step-2-email-confirmation),
 [what each step checks](/partner-app/onboarding#step-checks)

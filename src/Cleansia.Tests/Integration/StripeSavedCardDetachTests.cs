@@ -67,6 +67,17 @@ public class StripeSavedCardDetachTests
         Assert.Single(transport.Requests);
     }
 
+    [Fact]
+    public async Task A_Card_Stripe_No_Longer_Knows_Is_Left_Alone()
+    {
+        var transport = new RecordingHandler(
+            """{"error":{"type":"invalid_request_error","code":"resource_missing","message":"No such PaymentMethod: 'pm_card_1'","param":"payment_method"}}""");
+
+        await Client(transport).DetachSavedCardAsync(CustomerId, PaymentMethodId, CancellationToken.None);
+
+        Assert.Single(transport.Requests);
+    }
+
     private static string PaymentMethod(string? customer) =>
         $$"""{"id":"{{PaymentMethodId}}","object":"payment_method","type":"card","customer":{{(customer is null ? "null" : $"\"{customer}\"")}}}""";
 
@@ -85,9 +96,10 @@ public class StripeSavedCardDetachTests
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             Requests.Add((request.Method, request.RequestUri!.AbsolutePath, Uri.UnescapeDataString(request.RequestUri.Query)));
-            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            var body = responses[Requests.Count - 1];
+            return Task.FromResult(new HttpResponseMessage(body.StartsWith("""{"error":""") ? HttpStatusCode.NotFound : HttpStatusCode.OK)
             {
-                Content = new StringContent(responses[Requests.Count - 1], Encoding.UTF8, "application/json"),
+                Content = new StringContent(body, Encoding.UTF8, "application/json"),
             });
         }
     }

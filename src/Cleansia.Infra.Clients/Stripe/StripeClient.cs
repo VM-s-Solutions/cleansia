@@ -592,9 +592,19 @@ public class StripeClient : IStripeClient
         CancellationToken cancellationToken)
     {
         var paymentMethods = new PaymentMethodService(stripe);
-        var paymentMethod = await ClassifyAsync(
-            nameof(DetachSavedCardAsync),
-            () => paymentMethods.GetAsync(paymentMethodId, cancellationToken: cancellationToken));
+        PaymentMethod paymentMethod;
+        try
+        {
+            paymentMethod = await ClassifyAsync(
+                nameof(DetachSavedCardAsync),
+                () => paymentMethods.GetAsync(paymentMethodId, cancellationToken: cancellationToken));
+        }
+        catch (StripeException ex) when (ex.StripeError?.Code == "resource_missing")
+        {
+            // A card Stripe no longer knows is on no Customer, so it must not block the capture or removal retiring its row.
+            return;
+        }
+
         if (paymentMethod.CustomerId != stripeCustomerId)
         {
             return;

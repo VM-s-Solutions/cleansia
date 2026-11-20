@@ -103,7 +103,7 @@ Stripe that cannot be reached fails the delivery before any row changes, and Str
 **A removed card comes off the Stripe Customer** (owner ruling 2026-11-20). `RemoveSavedCard` detaches
 the card's payment method from the customer's Stripe Customer for its currency before it deactivates
 the row, so no later sheet on that Customer offers it again. Two cases keep it attached. A card already
-off the Customer is left alone, so a retried removal changes nothing at Stripe. A card that a not-cancelled
+off the Customer, or one Stripe no longer knows, is left alone, so a retried removal changes nothing at Stripe. A card that a not-cancelled
 subscription renews on, or that the Customer's invoices default to, stays: that Customer also bills Cleansia
 Plus, and taking the card off would fail the next renewal. The row is still deactivated, so the platform
 never names it again. Nothing else needs the card. Cash bookings already made keep their agreed tender. A

@@ -249,7 +249,9 @@ It touches only its own new order, never one of I's, D's or R3's booked orders, 
    (`xcrun simctl launch $UDID cz.cleansia.partner`), take that order (the order number from the customer app) with the
    contract: `Job taken`. Switch back (`xcrun simctl launch $UDID cz.cleansia.customer`) without touching the detail:
    within 10 seconds it reads `Confirmed`, Step 2 / 5, without being reopened (F-092: the detail refetches when the app
-   returns to the foreground; the push that also refetches it never reaches a simulator, so that half stays unshown).
+   returns to the foreground and when the order's push arrives; a DEV push reaches the simulator when the customer app
+   allows notifications, F-114). Keep the poll's timestamped log, not only its first and last dump: the push can land
+   seconds after the foreground, and only the log tells the two apart (F-115).
    Then, still inside 15 minutes of the booking, `Cancel order`: the sheet reads `Cancelling within 15 minutes of booking
    is free, even after a cleaner has accepted.` and `No cancellation fee.`; confirm.
 3. **F-095:** the Translated refusal row in `uk` only, on both apps (`Невірний пароль.`), with the keychain reset and
@@ -270,9 +272,9 @@ D's password; nothing of R3's or I's is touched. It finishes before TAKE-025:
 4. **F-093 (booking) and F-088:** book Bathroom, tomorrow, Normal; on step 4 tap `Card` and dump: the card-saving tick's
    content-desc is `Save this card for my next bookings`, the early-performance tick's `Ask for the cleaning to start
    within the withdrawal period`. Tick the early-performance box, `slide 2232`; the PaymentSheet's dump holds no *Link*
-   and no *Save my info for faster checkout with Link* (F-088); pay 4242, `Booking received`. Cancel the paid order
-   (untaken, free). `Profile`, `Payments`, the add-card form: its card-saving tick reads `Save this card for my next
-   bookings` too.
+   and no *Save your info for secure 1-click checkout with Link*, the Android SDK's wording (F-088); pay 4242,
+   `Booking received`. Cancel the paid order (untaken, free). `Profile`, `Payments`, the add-card form: its card-saving
+   tick reads `Save this card for my next bookings` too.
 5. **F-095:** the Translated refusal row in `uk` only (Settings > Languages), on both apps: `Невірний пароль.`; then the
    device back to English (United States) with the other languages removed.
 6. Report done to the suite runner, with the dumps and screenshots.
@@ -289,22 +291,24 @@ BOOK-035 web test, which needs the people stage's throwaway service). The run is
 A stage's report lists only the case ids its tests carry, so it never reads as full P1 coverage. Every P1 case has a
 test or a row in the P1 tables of `runbooks/`. The phase-2 run of 18 and 19 November 2026
 (`runs/2026-11-18/findings.md`, part (c)) passed 133, left 9 standing on phase 1's pass, failed E2E-PAYOUT-057 on a
-product defect (F-075), did not run E2E-TAKE-025 (F-076) and showed E2E-BOOK-037 and E2E-AUTH-049 in part. It left
-the following open:
+product defect (F-075), did not run E2E-TAKE-025 (F-076) and showed E2E-BOOK-037 and E2E-AUTH-049 in part. The
+fix-proof run of 20 November 2026 (`runs/2026-11-20/findings.md`) then passed E2E-TAKE-025, E2E-PAYOUT-057 and the
+settle stage's E2E-PAYOUT-016, 017, 032, 035, 036, 055 and 056 on DEV. They leave the following open:
 
 | Case | The part not covered | Why |
 |---|---|---|
-| E2E-TAKE-025 | the whole case | the publish script failed before it published (F-076, fixed in T-0937: `DevE2eScriptsTests` now runs every `dev-e2e-*.sql` against Postgres in CI); it gates every DEV cleaner, and Mike gave the OK for a re-run on 19 November: it runs last in the fix-proof run |
-| E2E-PAYOUT-057 | the set-off statement in five languages | a regenerate of an invoice whose PDF existed failed (F-075, fixed in T-0937: a re-render is a new numbered file beside the first), so no PDF was rendered after the language change; the re-run is T-0939 |
-| E2E-PAYOUT-016, E2E-PAYOUT-017, E2E-PAYOUT-032, E2E-PAYOUT-035, E2E-PAYOUT-036, E2E-PAYOUT-055, E2E-PAYOUT-056 | the settle stage's Close now, invoice and cash set-off | phase 2's settle runs with `E2E_NO_CLOSE_NOW=1`, so they stand on phase 1's pass; the payroll stage reads the night close and the SPA's Close now (F-012) but no set-off (F-102): payroll/10 reads A's set-off since T-0939, first on DEV in the fix-proof run |
 | E2E-XCUT-011 (Android), E2E-PAY-011 (iOS) | the whole case on that client | they stand on phase 1's pass: the phase-2 runbook rows (`runbooks/android.md:148`, `runbooks/ios.md:127`) were not repeated |
 | E2E-BOOK-037 | the web's refusal of a third unpaid cash booking | it never ran on the phase-2 run (F-078); the fix that orders it is unproven |
-| E2E-AUTH-049 | the iOS lock of the rejected cleaner, and the push | the iOS lane could not use the run password (F-091); a simulator and an emulator get no push from DEV |
-| E2E-TAKE-049 | the notice to the placed cleaner | no push reaches a simulator |
-| E2E-EXEC-029 | the customer's push and e-mail | no push reaches a simulator, and `@example.com` receives no mail |
-| E2E-EXEC-042 | the crew's push | no push reaches a simulator |
+| E2E-AUTH-049 | the iOS lock of the rejected cleaner, and the push | the iOS lane could not use the run password (F-091); no run has read the push |
+| E2E-TAKE-049 | the notice to the placed cleaner | no run has read the push |
+| E2E-EXEC-029 | the customer's push and e-mail | no run has read the push, and `@example.com` receives no mail |
+| E2E-EXEC-042 | the crew's push | no run has read the push |
 | E2E-EXEC-020 | the apps' half for a cleaner off the crew | the API and the partner web show it; the apps' runbooks show the crew's view only |
 | E2E-PAY-042 | the fee receipt's PDF | no endpoint serves it and it is not e-mailed; its row is read by `sql-scripts/dev-e2e-read-fee-receipts.sql` |
+
+A DEV push reaches the iOS simulator when the app allows notifications (the customer app's `order.cleaner_assigned` on
+20 November 2026, F-114), so the push rows above can be read there from the device log (the partner app's pushes are not shown there yet); the emulator receives none
+(`runbooks/android.md`, section 1).
 
 The Android PaymentSheet (E2E-PAY-012 and the Android halves of E2E-PAY-022 and E2E-PAY-023) is covered when the
 Android build carries the Stripe test publishable key, as the phase-2 build did; without it Card is hidden.

@@ -116,7 +116,7 @@ How a job reaches a cleaner's board and what happens when cleaners take, drop, c
 - **Surfaces:** API · Web · iOS · Android
 - **Rule:** → /domain/order-lifecycle#confirmed-means-one-thing-a-cleaner-took-the-job — a take writes `Confirmed`, and a cleaner-found notice goes to the customer
 - **Given** E2E-TAKE-013 just happened. **When** the Customer opens the order in My orders (web, iOS or Android) and the customer API. **Then** the order shows `Confirmed` in the progress; the customer has the `order.cleaner_assigned` ("Cleaner found!") inbox entry on iOS and Android; nothing names the cleaner's contact data beyond what the customer detail shows today.
-- **DEV:** the e-mail "Cleaner found" goes to `@example.com` and cannot be read; the push needs a device and is checked as an inbox entry only.
+- **DEV:** the e-mail "Cleaner found" goes to `@example.com` and cannot be read. The push reaches a device, or the iOS simulator when the customer app allows notifications (read from its device log, F-114 in `e2e/runs/2026-11-20/findings.md`); elsewhere it is checked as an inbox entry only.
 
 ### E2E-TAKE-015 — The administrator sees the seat and the accepted contract
 - **Priority:** P1
@@ -475,11 +475,11 @@ How a job reaches a cleaner's board and what happens when cleaners take, drop, c
 - **Surfaces:** iOS · Android
 - **Rule:** → /flows/offerability-and-take#new-jobs-digest — the sweep tells each cleaner about work that is fresh to them personally, at most one digest per interval, and the category can be turned off
 - **Given** Cleaner A with push enabled and a watermark behind a new open order. **When** the sweep runs. **Then** Cleaner A gets one digest push naming the order; a second sweep without new work sends none; with the category switched off in the notification settings the next fresh order sends none.
-- **DEV:** needs a device that receives DEV pushes (a simulator does not); the sweep interval is unsure from the docs.
+- **DEV:** needs a device that receives DEV pushes; the iOS simulator received them in the customer app (F-114 in `e2e/runs/2026-11-20/findings.md`), and the partner app's are not shown there yet (the emulator receives none); the sweep interval is unsure from the docs.
 
 ## Not testable on DEV
 
-- **Push delivery to a simulator or emulator.** DEV pushes reach a physical device only; on a simulator or the emulator the cases check the inbox entry or the feed, not the push.
+- **Push delivery to a simulator or emulator.** A DEV push reaches a physical device, and the iOS simulator when the app allows notifications (shown for the customer app, read from its device log, F-114 in `e2e/runs/2026-11-20/findings.md`; the partner app is not shown yet); it never reaches the emulator. Elsewhere the cases check the inbox entry or the feed, not the push.
 - **E-mail delivery.** `@example.com` never receives mail, so no case reads "Cleaner found", "A cleaner can no longer come" or any administrator e-mail.
 - **A second tenant or market.** E2E-TAKE-008 and the other-market half of E2E-TAKE-052 need a market with another currency, and the DEV registry holds one company (`cleansia-cz`); the cases run only if a second market exists.
 - **An order with no contract text.** E2E-TAKE-019 needs a fixture; the booking path always stamps a text.

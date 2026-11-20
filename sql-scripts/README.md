@@ -84,8 +84,8 @@ database seeded before the seed changed. Run these through **Execute SQL Script*
 - **`dev-e2e-publish-cleaner-document.sql`** — for an E2E run's TAKE-025 (owner ruling 2026-11-15): publishes a
   new version of each cleaner document a Czech cleaner must hold (framework contract, self-billing agreement, data
   processing agreement), a copy of the version in force with today's date as its effective date and version. **It
-  gates every DEV cleaner until they accept again**, so it runs only as the last step of Day 2 of a run
-  (`e2e/README.md`, "Running"); it refuses a dispatch whose `confirm` is not
+  gates every DEV cleaner until they accept again**, so it runs only as the very last step of an E2E run, in the payroll
+  invocation that sets `E2E_TAKE025=1` (`e2e/README.md`, "DEV facts a case must respect"); it refuses a dispatch whose `confirm` is not
   `dev-e2e-publish-cleaner-document.sql` (the E2E wrapper `scripts/publish-cleaner-document.sh` passes it) and a
   database without the published DEV administrator. One transaction, idempotent. The repository's legal texts are
   untouched, so nothing reaches PRO, and `execute-sql.yml` refuses it against PRO.

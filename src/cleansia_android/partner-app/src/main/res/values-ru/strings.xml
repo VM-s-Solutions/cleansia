@@ -577,28 +577,28 @@
     <string name="error_common_required">Это поле обязательно.</string>
     <string name="error_common_max_length">Слишком длинное.</string>
     <string name="error_common_min_length">Слишком короткое.</string>
-    <string name="error_common_invalid_enum_value">Недопустимый выбор.</string>
+    <string name="error_common_invalid_enum_value">Неверный выбор.</string>
 
-    <string name="error_auth_google_type_error">Этот аккаунт использует вход через Google. Используйте кнопку Google.</string>
-    <string name="error_auth_apple_type_error">Этот аккаунт использует вход через Apple. Используйте кнопку Apple.</string>
-    <string name="error_auth_external_type_error">Этот аккаунт использует другой способ входа.</string>
-    <string name="error_auth_internal_type_error">Для этого аккаунта войдите с помощью е-мейла и пароля.</string>
+    <string name="error_auth_google_type_error">Эта учётная запись использует вход через Google. Используйте кнопку Google.</string>
+    <string name="error_auth_apple_type_error">Эта учётная запись использует вход через Apple. Используйте кнопку Apple.</string>
+    <string name="error_auth_external_type_error">Эта учётная запись использует другой способ входа.</string>
+    <string name="error_auth_internal_type_error">Для этой учётной записи войдите по email и паролем.</string>
     <string name="error_auth_invalid_confirmation_code">Этот код недействителен или истёк.</string>
     <string name="error_auth_invalid_google_token">Не удалось войти через Google. Попробуйте снова.</string>
-    <string name="error_auth_invalid_apple_token">Не удалось войти через Apple. Попробуйте снова.</string>
-    <string name="error_auth_invalid_password_format">Пароль должен содержать не менее 8 символов, буквы и цифры.</string>
+    <string name="error_auth_invalid_apple_token">Недействительный токен Apple</string>
+    <string name="error_auth_invalid_password_format">Пароль должен содержать минимум 8 символов, буквы и цифры.</string>
     <string name="error_auth_invalid_reset_token">Эта ссылка для сброса пароля недействительна или истекла.</string>
-    <string name="error_auth_same_reset_password">Выберите пароль, отличный от предыдущего.</string>
-    <string name="error_auth_insufficient_privileges">У вас нет прав на это действие.</string>
-    <string name="error_auth_invalid_refresh_token">Ваша сессия истекла. Войдите снова, пожалуйста.</string>
+    <string name="error_auth_same_reset_password">Выберите пароль, отличный от старого.</string>
+    <string name="error_auth_insufficient_privileges">У вас нет разрешения на это действие.</string>
+    <string name="error_auth_invalid_refresh_token">Срок действия сессии истёк. Войдите, пожалуйста, заново.</string>
     <string name="error_auth_refresh_token_reused">В целях безопасности вы вышли со всех устройств.</string>
     <string name="error_auth_current_password_invalid">Ваш текущий пароль неверен.</string>
     <string name="error_auth_account_locked">Слишком много неудачных попыток входа. Аккаунт временно заблокирован — попробуйте снова через несколько минут.</string>
     <string name="error_auth_company_deactivated">Ваша компания деактивирована, поэтому партнёрское приложение вам больше не доступно. Вы по-прежнему можете экспортировать или удалить свои данные в приложении для клиентов.</string>
 
-    <string name="error_user_email_confirmed">Этот е-мейл уже подтверждён.</string>
-    <string name="error_user_existing_email">Аккаунт с этим е-мейлом уже существует.</string>
-    <string name="error_user_not_existing_email">Аккаунт с этим е-мейлом не найден.</string>
+    <string name="error_user_email_confirmed">Этот email уже подтверждён.</string>
+    <string name="error_user_existing_email">Учётная запись с этим email уже существует.</string>
+    <string name="error_user_not_existing_email">Учётная запись с этим email не найдена.</string>
     <string name="error_user_not_existing_id">Пользователь не найден.</string>
     <string name="error_user_not_allowed_to_update">Вы не можете редактировать этот профиль.</string>
     <string name="error_user_existing_phone_number">Этот номер телефона уже используется.</string>
@@ -618,12 +618,12 @@
     <string name="error_employee_document_deletion_already_requested">Вы уже отправили запрос на удаление этого документа. Мы скоро на него ответим.</string>
     <string name="error_employee_document_duplicate_file">Вы уже загрузили именно этот файл. Выберите другой файл или замените существующий документ.</string>
 
-    <string name="error_order_not_found">Заказ не найден.</string>
+    <string name="error_order_not_found">Бронирование не найдено.</string>
     <string name="error_order_take_already_cancelled">Этот заказ уже отменён.</string>
     <string name="error_order_take_already_completed">Этот заказ уже выполнен.</string>
-    <string name="error_order_in_progress_cannot_cancel">Заказ выполняется, его нельзя отменить.</string>
+    <string name="error_order_in_progress_cannot_cancel">Это бронирование выполняется и не может быть отменено.</string>
     <string name="error_order_cancellation_window_closed">Срок отмены истёк.</string>
-    <string name="error_order_empty">Заказ пуст.</string>
+    <string name="error_order_empty">Ваш заказ пуст. Пожалуйста, добавьте хотя бы одну услугу.</string>
     <string name="error_order_already_assigned">Этот заказ только что взял другой клинер.</string>
     <string name="error_order_no_available_spots">Этот заказ уже взял другой клинер.</string>
     <string name="error_order_not_takeable">Этот заказ больше не доступен.</string>
@@ -632,7 +632,7 @@
     <string name="error_order_employee_already_assigned">Вы уже назначены на этот заказ.</string>
     <string name="error_order_employee_not_assigned">Вы не назначены на этот заказ.</string>
     <string name="error_order_max_employees_exceeded">На этом заказе уже максимальное количество клинеров.</string>
-    <string name="error_order_preferred_employee_not_eligible">Вы не имеете права принять этот заказ.</string>
+    <string name="error_order_preferred_employee_not_eligible">Выбранный клинер недоступен для этого заказа.</string>
     <string name="error_order_employee_already_has_order_in_progress">У вас уже есть другой заказ в работе. Завершите его перед началом нового.</string>
 
     <!-- Contract for work: the take's echo, the seat's gate, the preview with no text in force -->
@@ -646,12 +646,12 @@
     <string name="error_order_not_in_progress">Этот заказ не в работе.</string>
     <string name="error_order_not_confirmed">Этот заказ ещё не подтверждён.</string>
     <string name="error_order_too_early_to_start">Ещё рано начинать — начать можно не раньше чем за час до начала.</string>
-    <string name="error_order_not_completed">Этот заказ ещё не завершён.</string>
+    <string name="error_order_not_completed">Оценить заказ можно только после завершения.</string>
     <string name="error_order_actual_time_positive">Фактическое время должно быть больше нуля.</string>
     <string name="error_order_completion_notes_required">Заметки о завершении обязательны.</string>
     <string name="error_order_completion_notes_too_long">Заметки о завершении слишком длинные.</string>
     <string name="error_order_after_photos_required">Перед завершением заказа сделайте хотя бы одно фото «после».</string>
-    <string name="error_order_crew_not_done">Прежде чем завершить заказ, каждый, кто на нём работает, должен отметить свою часть выполненной.</string>
+    <string name="error_order_crew_not_done">Заказ можно завершить, только когда все, кто на нём работает, отметят свою часть как выполненную.</string>
     <string name="error_order_photo_window_closed">Это фото сейчас нельзя добавить: фото до уборки — с момента, когда вы взяли заказ, до его завершения, фото после — во время работы.</string>
     <string name="error_order_photo_locked">После завершения или отмены заказа фото удалить нельзя.</string>
     <string name="error_order_cash_not_collected">Прежде чем завершить заказ, получите наличные и отметьте их как принятые.</string>
@@ -675,19 +675,19 @@
     <string name="error_order_review_already_exists">Для этого заказа уже есть отзыв.</string>
     <string name="error_order_review_rating_invalid">Оценка должна быть от 1 до 5.</string>
 
-    <string name="error_order_cleaning_date_future">Дата уборки должна быть в будущем.</string>
+    <string name="error_order_cleaning_date_future">Дата должна быть в будущем.</string>
     <string name="error_order_cleaning_date_below_lead_time">Это время слишком близко. Выберите более поздний слот.</string>
-    <string name="error_order_total_price_positive">Общая цена должна быть больше нуля.</string>
+    <string name="error_order_total_price_positive">Общая стоимость должна быть положительной</string>
     <string name="error_order_total_price_not_match">Цена изменилась. Обновите и попробуйте снова.</string>
     <string name="error_order_payment_gateway_unavailable">Платёжный сервис временно недоступен.</string>
     <string name="error_order_creation_failed">Не удалось создать заказ. Попробуйте снова.</string>
 
-    <string name="error_address_not_owned_by_user">У вас нет доступа к этому адресу.</string>
-    <string name="error_address_label_required">Укажите, пожалуйста, название этого адреса.</string>
+    <string name="error_address_not_owned_by_user">Вы можете управлять только своими адресами.</string>
+    <string name="error_address_label_required">Пожалуйста, введите название для этого адреса.</string>
     <string name="error_address_already_exists">Этот адрес уже сохранён.</string>
-    <string name="error_address_invalid_length">Адрес слишком короткий или длинный.</string>
-    <string name="error_address_mapbox_coords_required">Выберите, пожалуйста, адрес на карте.</string>
-    <string name="error_order_address_exactly_one_required">Выберите, пожалуйста, адрес.</string>
+    <string name="error_address_invalid_length">Адрес слишком короткий или слишком длинный.</string>
+    <string name="error_address_mapbox_coords_required">Пожалуйста, выберите адрес из подсказок.</string>
+    <string name="error_order_address_exactly_one_required">Пожалуйста, выберите сохранённый адрес или введите новый.</string>
 
     <string name="error_file_content_type_doesnt_match">Тип файла не совпадает.</string>
     <string name="error_file_invalid_file_type">Неподдерживаемый тип файла.</string>
@@ -696,13 +696,13 @@
     <string name="error_file_type_not_allowed">Этот тип файла не разрешён.</string>
     <string name="error_file_count_exceeded">Слишком много файлов.</string>
     <string name="error_file_count_too_few">Прикрепите, пожалуйста, хотя бы один файл.</string>
-    <string name="error_file_required">Файл обязателен.</string>
+    <string name="error_file_required">Файл обязателен</string>
 
     <string name="error_validation_invalid_password">Неверный пароль.</string>
-    <string name="error_validation_invalid_date">Введите, пожалуйста, корректную дату.</string>
+    <string name="error_validation_invalid_date">Пожалуйста, введите корректную дату.</string>
     <string name="error_validation_date_must_be_in_past">Дата должна быть в прошлом.</string>
-    <string name="error_validation_invalid_age">Введите, пожалуйста, корректный возраст.</string>
-    <string name="error_validation_invalid_phone_number">Введите, пожалуйста, корректный номер телефона.</string>
+    <string name="error_validation_invalid_age">Пожалуйста, введите корректный возраст.</string>
+    <string name="error_validation_invalid_phone_number">Пожалуйста, введите корректный номер телефона.</string>
     <string name="error_validation_invalid_national_id">Введите, пожалуйста, корректный национальный ID.</string>
     <string name="error_validation_passport_id_invalid_length">Номер паспорта / ID должен содержать от 5 до 20 символов.</string>
     <string name="error_validation_invalid_tax_id">Введите, пожалуйста, корректный налоговый ID.</string>
@@ -731,18 +731,18 @@
     <string name="error_validation_payout_invalid_swift">Этот SWIFT/BIC относится к другой стране, чем ваш банк. Сверьте его с выпиской.</string>
 
     <string name="error_email_sending_failed">Не удалось отправить е-мейл. Попробуйте позже.</string>
-    <string name="error_email_invalid_format">Введите, пожалуйста, корректный е-мейл.</string>
-    <string name="error_email_invalid_email">Введите, пожалуйста, корректный е-мейл.</string>
+    <string name="error_email_invalid_format">Пожалуйста, введите корректный email.</string>
+    <string name="error_email_invalid_email">Пожалуйста, введите корректный email.</string>
 
-    <string name="error_general_not_found">Не найдено.</string>
+    <string name="error_general_not_found">Ресурс не найден</string>
 
     <string name="error_country_not_serviced">В этой стране мы пока не работаем.</string>
     <string name="error_tenant_not_found">Этот рынок пока не обслуживает ни одна компания Cleansia.</string>
     <string name="error_country_required">Выберите, пожалуйста, страну.</string>
-    <string name="error_city_not_serviced">В этом городе мы пока не работаем.</string>
+    <string name="error_city_not_serviced">Мы пока не обслуживаем этот город.</string>
     <string name="error_language_not_supported">Этот язык не поддерживается.</string>
 
-    <string name="error_device_invalid_platform">Недействительная платформа устройства.</string>
+    <string name="error_device_invalid_platform">Неподдерживаемая платформа устройства.</string>
 
     <!-- ── Push-уведомления (FCM) ── -->
     <string name="notifications_empty">Пока нет уведомлений. Обновления заказов появятся здесь.</string>
@@ -833,8 +833,8 @@
     <string name="error_gdpr_deletion_blocked_by_invoice">Аккаунт пока нельзя удалить — есть незакрытый счёт.</string>
     <string name="error_gdpr_deletion_blocked_by_order">Аккаунт пока нельзя удалить — есть активный заказ.</string>
     <string name="error_language_not_found">Язык не найден</string>
-    <string name="error_order_selected_package_invalid">Выбранный пакет недействителен</string>
-    <string name="error_order_selected_services_invalid">Выбранные услуги недействительны</string>
+    <string name="error_order_selected_package_invalid">Один из выбранных пакетов больше не доступен.</string>
+    <string name="error_order_selected_services_invalid">Одна из выбранных услуг больше не доступна.</string>
     <string name="error_payroll_invoice_not_found">Счёт не найден</string>
     <string name="error_payroll_pay_period_not_found">Расчётный период не найден</string>
     <string name="error_receipt_not_found">Квитанция не найдена</string>
@@ -918,8 +918,8 @@
     <string name="delete_account_confirm_message">Мы свяжемся с вами и официально завершим сотрудничество. Сегодня ничего не удаляется.</string>
     <string name="delete_account_confirm_yes">Отправить</string>
     <string name="delete_account_requested">Запрос на удаление отправлен.</string>
-    <string name="error_gdpr_deletion_blocked_by_assigned_order">Вы всё ещё назначены на предстоящий заказ. Когда он будет выполнен или передан, вы сможете отправить запрос снова.</string>
-    <string name="error_gdpr_deletion_blocked_by_unsettled_pay">У вас есть неоплаченная работа. Когда расчётный период будет оплачен, вы сможете отправить запрос снова.</string>
+    <string name="error_gdpr_deletion_blocked_by_assigned_order">Ваш аккаунт нельзя удалить, пока вы назначены на работу.</string>
+    <string name="error_gdpr_deletion_blocked_by_unsettled_pay">Ваш аккаунт нельзя удалить, пока вам не выплачено вознаграждение. Сначала решите это с офисом.</string>
     <string name="splash_unreachable_title">Не удаётся связаться с Cleansia</string>
     <string name="splash_unreachable_message">Проверьте подключение и попробуйте снова. С вашим аккаунтом всё в порядке — мы просто не смогли его загрузить.</string>
     <string name="profile_group_legal">Правовая информация</string>
@@ -954,9 +954,9 @@
     <string name="invoice_pdf_failed">Не удалось создать PDF счёта. Обновите, чтобы проверить состояние.</string>
     <string name="invoice_pdf_previous_available">Не удалось обновить PDF. Предыдущий документ по-прежнему можно открыть.</string>
     <string name="invoice_pdf_refresh">Обновить состояние</string>
-    <string name="error_payroll_invoice_pdf_not_ready">PDF счёта ещё не готов. Обновите состояние.</string>
-    <string name="error_payroll_invoice_pdf_unavailable">PDF этого счёта недоступен. Обновите состояние или обратитесь в поддержку.</string>
-    <string name="error_payroll_invoice_pdf_generation_failed">Не удалось создать PDF счёта. Обновите состояние или обратитесь в поддержку.</string>
+    <string name="error_payroll_invoice_pdf_not_ready">PDF счёта ещё не готов. Попробуйте позже.</string>
+    <string name="error_payroll_invoice_pdf_unavailable">PDF счёта недоступен. Обратитесь в поддержку.</string>
+    <string name="error_payroll_invoice_pdf_generation_failed">Не удалось создать PDF счёта. Обратитесь в поддержку.</string>
     <string name="error_order_cash_requires_saved_card">Для оплаты наличными нужна действующая сохранённая карта в валюте заказа.</string>
     <string name="auth_email_placeholder">partner@example.com</string>
     <plurals name="orders_job_count">

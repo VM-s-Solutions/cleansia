@@ -594,7 +594,7 @@
     <string name="error_auth_internal_type_error">Use email and password to sign in for this account.</string>
     <string name="error_auth_invalid_confirmation_code">This code is invalid or has expired.</string>
     <string name="error_auth_invalid_google_token">Google sign-in failed. Please try again.</string>
-    <string name="error_auth_invalid_apple_token">Apple sign-in failed. Please try again.</string>
+    <string name="error_auth_invalid_apple_token">Invalid Apple token</string>
     <string name="error_auth_invalid_password_format">Password must be at least 8 characters with letters and numbers.</string>
     <string name="error_auth_invalid_reset_token">This password reset link is invalid or has expired.</string>
     <string name="error_auth_same_reset_password">Please choose a password different from your old one.</string>
@@ -631,12 +631,12 @@
     <string name="error_employee_document_duplicate_file">You have already uploaded this exact file. Choose a different file, or replace the existing document.</string>
 
     <!-- Order — lifecycle + assignment -->
-    <string name="error_order_not_found">Order not found.</string>
+    <string name="error_order_not_found">Booking not found.</string>
     <string name="error_order_take_already_cancelled">This order is already cancelled.</string>
     <string name="error_order_take_already_completed">This order is already completed.</string>
-    <string name="error_order_in_progress_cannot_cancel">This order is in progress and can\'t be cancelled.</string>
+    <string name="error_order_in_progress_cannot_cancel">This booking is in progress and can\'t be cancelled.</string>
     <string name="error_order_cancellation_window_closed">The cancellation window has closed.</string>
-    <string name="error_order_empty">Order is empty.</string>
+    <string name="error_order_empty">Your order is empty. Please add at least one service.</string>
     <string name="error_order_already_assigned">This order was just taken by another cleaner.</string>
     <string name="error_order_no_available_spots">Another cleaner has already taken this job.</string>
     <string name="error_order_not_takeable">This job is no longer available.</string>
@@ -645,7 +645,7 @@
     <string name="error_order_employee_already_assigned">You\'re already assigned to this order.</string>
     <string name="error_order_employee_not_assigned">You\'re not assigned to this order.</string>
     <string name="error_order_max_employees_exceeded">This order already has the maximum number of cleaners.</string>
-    <string name="error_order_preferred_employee_not_eligible">You\'re not eligible to take this order.</string>
+    <string name="error_order_preferred_employee_not_eligible">The selected cleaner isn\'t available for this order.</string>
     <string name="error_order_employee_already_has_order_in_progress">You already have another order in progress. Finish it before starting a new one.</string>
 
     <!-- Contract for work: the take's echo, the seat's gate, the preview with no text in force -->
@@ -660,7 +660,7 @@
     <string name="error_order_not_in_progress">This order isn\'t in progress.</string>
     <string name="error_order_not_confirmed">This order isn\'t confirmed yet.</string>
     <string name="error_order_too_early_to_start">Too early to start — you can begin up to an hour before the booking.</string>
-    <string name="error_order_not_completed">This order isn\'t completed yet.</string>
+    <string name="error_order_not_completed">You can review an order only after it\'s completed.</string>
     <string name="error_order_actual_time_positive">Actual time must be greater than zero.</string>
     <string name="error_order_completion_notes_required">Completion notes are required.</string>
     <string name="error_order_completion_notes_too_long">Completion notes are too long.</string>
@@ -682,7 +682,7 @@
     <string name="error_order_card_payment_unverified">We couldn\'t check this order\'s card payment. Don\'t collect cash yet — try again in a moment.</string>
     <string name="error_order_cash_not_allowed_on_card_order">This order is paid by card, so cash can\'t be recorded for it. Don\'t take cash — ask an office admin to settle it.</string>
     <string name="error_order_payment_not_outstanding">This order has no payment left to collect — it is already settled or refunded. Don\'t take cash.</string>
-    <string name="error_credit_cash_not_collectable_on_credit_order">Part of this booking was already paid from the customer’s credit. Ask an office admin to settle it — do not collect the amount shown.</string>
+    <string name="error_credit_cash_not_collectable_on_credit_order">Part of this order was already paid from the customer’s credit. Ask an office admin to settle it — do not collect the amount shown.</string>
 
     <!-- Order — notes / issues / review -->
     <string name="error_order_note_content_required">Note text is required.</string>
@@ -691,9 +691,9 @@
     <string name="error_order_review_rating_invalid">Rating must be between 1 and 5.</string>
 
     <!-- Order — dates / pricing -->
-    <string name="error_order_cleaning_date_future">Cleaning date must be in the future.</string>
+    <string name="error_order_cleaning_date_future">Date must be in the future.</string>
     <string name="error_order_cleaning_date_below_lead_time">This time is too close. Please choose a later slot.</string>
-    <string name="error_order_total_price_positive">Total price must be greater than zero.</string>
+    <string name="error_order_total_price_positive">Total price must be positive</string>
     <string name="error_order_total_price_not_match">Price changed. Please refresh and try again.</string>
     <string name="error_order_payment_gateway_unavailable">Payment service is temporarily unavailable.</string>
     <string name="error_order_creation_failed">Couldn\'t create the order. Please try again.</string>
@@ -701,10 +701,10 @@
     <!-- Address -->
     <string name="error_address_not_owned_by_user">You can\'t access this address.</string>
     <string name="error_address_label_required">Please provide a label for this address.</string>
-    <string name="error_address_already_exists">This address is already saved.</string>
+    <string name="error_address_already_exists">You already have this address saved.</string>
     <string name="error_address_invalid_length">Address is too short or too long.</string>
-    <string name="error_address_mapbox_coords_required">Please pick the address on the map.</string>
-    <string name="error_order_address_exactly_one_required">Please select an address.</string>
+    <string name="error_address_mapbox_coords_required">Please select an address from the suggestions.</string>
+    <string name="error_order_address_exactly_one_required">Please select a saved address or enter a new one.</string>
 
     <!-- File / upload -->
     <string name="error_file_content_type_doesnt_match">File type doesn\'t match.</string>
@@ -755,17 +755,17 @@
     <string name="error_email_invalid_email">Please enter a valid email.</string>
 
     <!-- General -->
-    <string name="error_general_not_found">Not found.</string>
+    <string name="error_general_not_found">Resource not found</string>
 
     <!-- Country / language scope -->
     <string name="error_country_not_serviced">We don\'t operate in this country yet.</string>
     <string name="error_tenant_not_found">This market is not operated by any Cleansia company yet.</string>
     <string name="error_country_required">Please select a country.</string>
-    <string name="error_city_not_serviced">We don\'t operate in this city yet.</string>
+    <string name="error_city_not_serviced">We don\'t currently serve this city.</string>
     <string name="error_language_not_supported">This language isn\'t supported.</string>
 
     <!-- Device -->
-    <string name="error_device_invalid_platform">Invalid device platform.</string>
+    <string name="error_device_invalid_platform">Unsupported device platform.</string>
 
     <!-- ── Push notifications (FCM) ── -->
     <string name="notifications_empty">No notifications yet. Job updates will show up here.</string>
@@ -856,8 +856,8 @@
     <string name="error_gdpr_deletion_blocked_by_invoice">Your account can\'t be deleted yet — there is an open invoice.</string>
     <string name="error_gdpr_deletion_blocked_by_order">Your account can\'t be deleted yet — there is an active order.</string>
     <string name="error_language_not_found">Language not found</string>
-    <string name="error_order_selected_package_invalid">Selected package is invalid</string>
-    <string name="error_order_selected_services_invalid">Selected services are invalid</string>
+    <string name="error_order_selected_package_invalid">One of the selected packages is no longer available.</string>
+    <string name="error_order_selected_services_invalid">One of the selected services is no longer available.</string>
     <string name="error_payroll_invoice_not_found">Invoice not found</string>
     <string name="error_payroll_pay_period_not_found">Pay period not found</string>
     <string name="error_receipt_not_found">Receipt not found</string>
@@ -939,8 +939,8 @@
     <string name="delete_account_confirm_message">We\'ll contact you to end the cooperation formally. Nothing is deleted today.</string>
     <string name="delete_account_confirm_yes">Send request</string>
     <string name="delete_account_requested">Deletion request submitted.</string>
-    <string name="error_gdpr_deletion_blocked_by_assigned_order">You\'re still assigned to an upcoming job. Once it\'s finished or reassigned you can request deletion again.</string>
-    <string name="error_gdpr_deletion_blocked_by_unsettled_pay">You still have pay that hasn\'t been settled. Once the pay period is paid out you can request deletion again.</string>
+    <string name="error_gdpr_deletion_blocked_by_assigned_order">Your account can\'t be deleted while you are still assigned to a job.</string>
+    <string name="error_gdpr_deletion_blocked_by_unsettled_pay">Your account can\'t be deleted while pay is still owed to you. Contact the office to settle it first.</string>
     <string name="splash_unreachable_title">We can\'t reach Cleansia</string>
     <string name="splash_unreachable_message">Check your connection and try again. Your account is fine — we just couldn\'t load it.</string>
     <string name="profile_group_legal">Legal</string>
@@ -975,9 +975,9 @@
     <string name="invoice_pdf_failed">The invoice PDF could not be generated. Refresh to check its status.</string>
     <string name="invoice_pdf_previous_available">The latest PDF update failed. You can still open the previous document.</string>
     <string name="invoice_pdf_refresh">Refresh status</string>
-    <string name="error_payroll_invoice_pdf_not_ready">The invoice PDF is not ready yet. Refresh its status.</string>
-    <string name="error_payroll_invoice_pdf_unavailable">This invoice PDF is unavailable. Refresh its status or contact support.</string>
-    <string name="error_payroll_invoice_pdf_generation_failed">The invoice PDF could not be generated. Refresh its status or contact support.</string>
+    <string name="error_payroll_invoice_pdf_not_ready">The invoice PDF is not ready yet. Try again later.</string>
+    <string name="error_payroll_invoice_pdf_unavailable">The invoice PDF is unavailable. Please contact support.</string>
+    <string name="error_payroll_invoice_pdf_generation_failed">Failed to generate PDF</string>
     <string name="error_order_cash_requires_saved_card">Cash requires a valid saved card in the booking currency.</string>
     <string name="auth_email_placeholder">partner@example.com</string>
     <plurals name="orders_job_count">

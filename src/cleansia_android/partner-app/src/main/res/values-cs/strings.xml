@@ -584,13 +584,13 @@
     <string name="error_auth_google_type_error">Tento účet používá přihlášení přes Google. Použijte tlačítko Google.</string>
     <string name="error_auth_apple_type_error">Tento účet používá přihlášení přes Apple. Použijte tlačítko Apple.</string>
     <string name="error_auth_external_type_error">Tento účet používá jiný způsob přihlášení.</string>
-    <string name="error_auth_internal_type_error">Pro tento účet použijte e-mail a heslo.</string>
+    <string name="error_auth_internal_type_error">Pro tento účet se přihlaste e-mailem a heslem.</string>
     <string name="error_auth_invalid_confirmation_code">Tento kód je neplatný nebo vypršel.</string>
-    <string name="error_auth_invalid_google_token">Přihlášení přes Google selhalo. Zkuste to znovu.</string>
-    <string name="error_auth_invalid_apple_token">Přihlášení přes Apple selhalo. Zkuste to znovu.</string>
+    <string name="error_auth_invalid_google_token">Přihlášení přes Google se nezdařilo. Zkuste to znovu.</string>
+    <string name="error_auth_invalid_apple_token">Neplatný Apple token</string>
     <string name="error_auth_invalid_password_format">Heslo musí mít alespoň 8 znaků a obsahovat písmena a číslice.</string>
-    <string name="error_auth_invalid_reset_token">Tento odkaz na obnovení hesla je neplatný nebo vypršel.</string>
-    <string name="error_auth_same_reset_password">Zvolte heslo odlišné od původního.</string>
+    <string name="error_auth_invalid_reset_token">Tento odkaz pro obnovení hesla je neplatný nebo vypršel.</string>
+    <string name="error_auth_same_reset_password">Zvolte prosím heslo odlišné od původního.</string>
     <string name="error_auth_insufficient_privileges">Nemáte oprávnění k této akci.</string>
     <string name="error_auth_invalid_refresh_token">Vaše relace vypršela. Přihlaste se prosím znovu.</string>
     <string name="error_auth_refresh_token_reused">Z bezpečnostních důvodů jste byli odhlášeni ze všech zařízení.</string>
@@ -600,9 +600,9 @@
 
     <string name="error_user_email_confirmed">Tento e-mail je již potvrzen.</string>
     <string name="error_user_existing_email">Účet s tímto e-mailem již existuje.</string>
-    <string name="error_user_not_existing_email">Účet s tímto e-mailem nebyl nalezen.</string>
+    <string name="error_user_not_existing_email">Účet s tímto e-mailem neexistuje.</string>
     <string name="error_user_not_existing_id">Uživatel nenalezen.</string>
-    <string name="error_user_not_allowed_to_update">Tento profil nemůžete upravovat.</string>
+    <string name="error_user_not_allowed_to_update">Tento profil nelze upravit.</string>
     <string name="error_user_existing_phone_number">Toto telefonní číslo je již používáno.</string>
     <string name="error_user_not_found">Uživatel nenalezen.</string>
 
@@ -618,14 +618,14 @@
     <string name="error_employee_document_unauthorized">K tomuto dokumentu nemáte přístup.</string>
     <string name="error_employee_document_not_owned">Tento dokument vám nepatří.</string>
     <string name="error_employee_document_deletion_already_requested">O odstranění tohoto dokumentu jste už požádali. Brzy vaši žádost vyřídíme.</string>
-    <string name="error_employee_document_duplicate_file">Přesně tento soubor jste už nahráli. Vyberte jiný soubor nebo nahraďte stávající dokument.</string>
+    <string name="error_employee_document_duplicate_file">Přesně tento soubor jste již nahráli. Vyberte jiný soubor, nebo nahraďte stávající dokument.</string>
 
-    <string name="error_order_not_found">Zakázka nenalezena.</string>
+    <string name="error_order_not_found">Rezervace nenalezena.</string>
     <string name="error_order_take_already_cancelled">Tato zakázka je již zrušena.</string>
     <string name="error_order_take_already_completed">Tato zakázka je již dokončena.</string>
-    <string name="error_order_in_progress_cannot_cancel">Tato zakázka probíhá a nelze ji zrušit.</string>
+    <string name="error_order_in_progress_cannot_cancel">Rezervace probíhá a nelze ji zrušit.</string>
     <string name="error_order_cancellation_window_closed">Lhůta pro zrušení vypršela.</string>
-    <string name="error_order_empty">Zakázka je prázdná.</string>
+    <string name="error_order_empty">Objednávka je prázdná. Přidejte prosím alespoň jednu službu.</string>
     <string name="error_order_already_assigned">Tuto zakázku právě převzal jiný uklízeč.</string>
     <string name="error_order_no_available_spots">Tuto zakázku už převzal jiný uklízeč.</string>
     <string name="error_order_not_takeable">Tato zakázka už není k dispozici.</string>
@@ -634,7 +634,7 @@
     <string name="error_order_employee_already_assigned">Na tuto zakázku jste již přiřazeni.</string>
     <string name="error_order_employee_not_assigned">Na tuto zakázku nejste přiřazeni.</string>
     <string name="error_order_max_employees_exceeded">Tato zakázka již má maximální počet uklízečů.</string>
-    <string name="error_order_preferred_employee_not_eligible">Nejste oprávněni přijmout tuto zakázku.</string>
+    <string name="error_order_preferred_employee_not_eligible">Vybraný uklízeč není pro tuto objednávku k dispozici.</string>
     <string name="error_order_employee_already_has_order_in_progress">Již máte jinou zakázku v průběhu. Před zahájením nové ji prosím dokončete.</string>
 
     <!-- Contract for work: the take's echo, the seat's gate, the preview with no text in force -->
@@ -648,12 +648,12 @@
     <string name="error_order_not_in_progress">Tato zakázka není v průběhu.</string>
     <string name="error_order_not_confirmed">Tato zakázka ještě není potvrzena.</string>
     <string name="error_order_too_early_to_start">Na start je příliš brzy — začít můžete až hodinu před termínem.</string>
-    <string name="error_order_not_completed">Tato zakázka ještě není dokončena.</string>
+    <string name="error_order_not_completed">Objednávku lze hodnotit až po dokončení.</string>
     <string name="error_order_actual_time_positive">Skutečný čas musí být větší než nula.</string>
     <string name="error_order_completion_notes_required">Poznámky k dokončení jsou povinné.</string>
     <string name="error_order_completion_notes_too_long">Poznámky k dokončení jsou příliš dlouhé.</string>
     <string name="error_order_after_photos_required">Před dokončením zakázky pořiďte alespoň jednu fotografii „po\".</string>
-    <string name="error_order_crew_not_done">Než půjde zakázku dokončit, musí svou část označit jako hotovou všichni, kdo na ní pracují.</string>
+    <string name="error_order_crew_not_done">Zakázku lze dokončit, až svou část označí jako hotovou všichni, kdo na ní pracují.</string>
     <string name="error_order_photo_window_closed">Tuto fotografii teď nelze přidat: fotografie před úklidem od převzetí zakázky do jejího dokončení, fotografie po úklidu během práce.</string>
     <string name="error_order_photo_locked">Po dokončení nebo zrušení zakázky nelze fotografie smazat.</string>
     <string name="error_order_cash_not_collected">Před dokončením zakázky vyberte hotovost a označte ji jako přijatou.</string>
@@ -677,21 +677,21 @@
     <string name="error_order_review_already_exists">Pro tuto zakázku již existuje recenze.</string>
     <string name="error_order_review_rating_invalid">Hodnocení musí být mezi 1 a 5.</string>
 
-    <string name="error_order_cleaning_date_future">Datum úklidu musí být v budoucnosti.</string>
-    <string name="error_order_cleaning_date_below_lead_time">Tento čas je příliš brzy. Zvolte prosím pozdější termín.</string>
-    <string name="error_order_total_price_positive">Celková cena musí být větší než nula.</string>
-    <string name="error_order_total_price_not_match">Cena se změnila. Obnovte stránku a zkuste to znovu.</string>
+    <string name="error_order_cleaning_date_future">Datum musí být v budoucnosti.</string>
+    <string name="error_order_cleaning_date_below_lead_time">Tento čas je příliš blízko. Zvolte pozdější termín.</string>
+    <string name="error_order_total_price_positive">Celková cena musí být kladná</string>
+    <string name="error_order_total_price_not_match">Cena se změnila. Obnovte prosím a zkuste znovu.</string>
     <string name="error_order_payment_gateway_unavailable">Platební služba je dočasně nedostupná.</string>
     <string name="error_order_creation_failed">Vytvoření zakázky se nezdařilo. Zkuste to znovu.</string>
 
     <string name="error_address_not_owned_by_user">K této adrese nemáte přístup.</string>
-    <string name="error_address_label_required">Zadejte prosím název této adresy.</string>
-    <string name="error_address_already_exists">Tato adresa je již uložena.</string>
-    <string name="error_address_invalid_length">Adresa je příliš krátká nebo dlouhá.</string>
-    <string name="error_address_mapbox_coords_required">Zvolte prosím adresu na mapě.</string>
-    <string name="error_order_address_exactly_one_required">Zvolte prosím adresu.</string>
+    <string name="error_address_label_required">Zadejte prosím název adresy.</string>
+    <string name="error_address_already_exists">Tuto adresu už máte uloženou.</string>
+    <string name="error_address_invalid_length">Adresa je příliš krátká nebo příliš dlouhá.</string>
+    <string name="error_address_mapbox_coords_required">Vyberte prosím adresu z našeptávače.</string>
+    <string name="error_order_address_exactly_one_required">Vyberte prosím uloženou adresu nebo zadejte novou.</string>
 
-    <string name="error_file_content_type_doesnt_match">Typ souboru neodpovídá.</string>
+    <string name="error_file_content_type_doesnt_match">Typ souboru nesedí.</string>
     <string name="error_file_invalid_file_type">Nepodporovaný typ souboru.</string>
     <string name="error_file_size_exceeded">Soubor je příliš velký.</string>
     <string name="error_file_size_exceeded_10mb">Soubor je příliš velký (max 10 MB).</string>
@@ -736,7 +736,7 @@
     <string name="error_email_invalid_format">Zadejte prosím platný e-mail.</string>
     <string name="error_email_invalid_email">Zadejte prosím platný e-mail.</string>
 
-    <string name="error_general_not_found">Nenalezeno.</string>
+    <string name="error_general_not_found">Zdroj nenalezen</string>
 
     <string name="error_country_not_serviced">V této zemi zatím nepůsobíme.</string>
     <string name="error_tenant_not_found">Tento trh zatím neprovozuje žádná společnost Cleansia.</string>
@@ -744,7 +744,7 @@
     <string name="error_city_not_serviced">V tomto městě zatím nepůsobíme.</string>
     <string name="error_language_not_supported">Tento jazyk není podporován.</string>
 
-    <string name="error_device_invalid_platform">Neplatná platforma zařízení.</string>
+    <string name="error_device_invalid_platform">Nepodporovaná platforma zařízení.</string>
 
     <!-- ── Push notifikace (FCM) ── -->
     <string name="notifications_empty">Zatím žádná oznámení. Aktualizace zakázek se zobrazí zde.</string>
@@ -835,8 +835,8 @@
     <string name="error_gdpr_deletion_blocked_by_invoice">Účet zatím nelze smazat — existuje nevyřízená faktura.</string>
     <string name="error_gdpr_deletion_blocked_by_order">Účet zatím nelze smazat — existuje aktivní objednávka.</string>
     <string name="error_language_not_found">Jazyk nenalezen</string>
-    <string name="error_order_selected_package_invalid">Vybraný balíček je neplatný</string>
-    <string name="error_order_selected_services_invalid">Vybrané služby jsou neplatné</string>
+    <string name="error_order_selected_package_invalid">Jeden z vybraných balíčků již není dostupný.</string>
+    <string name="error_order_selected_services_invalid">Jedna z vybraných služeb již není dostupná.</string>
     <string name="error_payroll_invoice_not_found">Faktura nenalezena</string>
     <string name="error_payroll_pay_period_not_found">Platební období nenalezeno</string>
     <string name="error_receipt_not_found">Potvrzení nenalezeno</string>
@@ -919,8 +919,8 @@
     <string name="delete_account_confirm_message">Ozveme se vám a spolupráci formálně ukončíme. Dnes se nic nemaže.</string>
     <string name="delete_account_confirm_yes">Odeslat žádost</string>
     <string name="delete_account_requested">Žádost o smazání byla odeslána.</string>
-    <string name="error_gdpr_deletion_blocked_by_assigned_order">Stále jste přiřazeni k nadcházející zakázce. Až bude dokončena nebo přeřazena, můžete o smazání požádat znovu.</string>
-    <string name="error_gdpr_deletion_blocked_by_unsettled_pay">Stále máte nevyplacenou odměnu. Až bude výplatní období vyplaceno, můžete o smazání požádat znovu.</string>
+    <string name="error_gdpr_deletion_blocked_by_assigned_order">Váš účet nelze smazat, dokud jste přiřazeni k zakázce.</string>
+    <string name="error_gdpr_deletion_blocked_by_unsettled_pay">Váš účet nelze smazat, dokud vám dlužíme odměnu. Nejprve to vyřešte s kanceláří.</string>
     <string name="splash_unreachable_title">Nedaří se nám spojit s Cleansia</string>
     <string name="splash_unreachable_message">Zkontrolujte připojení a zkuste to znovu. S vaším účtem je vše v pořádku — jen se nám ho nepodařilo načíst.</string>
     <string name="profile_group_legal">Právní informace</string>
@@ -955,9 +955,9 @@
     <string name="invoice_pdf_failed">PDF faktury se nepodařilo vytvořit. Obnovte stránku a ověřte stav.</string>
     <string name="invoice_pdf_previous_available">Aktualizace PDF se nezdařila. Předchozí dokument můžete stále otevřít.</string>
     <string name="invoice_pdf_refresh">Obnovit stav</string>
-    <string name="error_payroll_invoice_pdf_not_ready">PDF faktury zatím není připravené. Obnovte stav.</string>
-    <string name="error_payroll_invoice_pdf_unavailable">PDF této faktury není dostupné. Obnovte stav nebo kontaktujte podporu.</string>
-    <string name="error_payroll_invoice_pdf_generation_failed">PDF faktury se nepodařilo vytvořit. Obnovte stav nebo kontaktujte podporu.</string>
+    <string name="error_payroll_invoice_pdf_not_ready">PDF faktury zatím není připravené. Zkuste to později.</string>
+    <string name="error_payroll_invoice_pdf_unavailable">PDF faktury není dostupné. Kontaktujte podporu.</string>
+    <string name="error_payroll_invoice_pdf_generation_failed">Nepodařilo se vygenerovat PDF</string>
     <string name="error_order_cash_requires_saved_card">Platba hotově vyžaduje platnou uloženou kartu v měně objednávky.</string>
     <string name="auth_email_placeholder">partner@example.com</string>
     <plurals name="orders_job_count">

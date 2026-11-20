@@ -1026,9 +1026,9 @@
     <string name="error_order_selected_package_invalid">One of the selected packages is no longer available.</string>
     <string name="error_order_selected_services_invalid">One of the selected services is no longer available.</string>
     <string name="error_order_not_found">Booking not found.</string>
-    <string name="error_order_no_available_spots">No cleaners are available for that slot. Please pick another time.</string>
-    <string name="error_order_weekly_limit_reached">You\'ve reached the weekly booking limit.</string>
-    <string name="error_order_time_conflict">This time conflicts with another booking.</string>
+    <string name="error_order_no_available_spots">Another cleaner has already taken this job.</string>
+    <string name="error_order_weekly_limit_reached">You\'ve reached your weekly order limit.</string>
+    <string name="error_order_time_conflict">This order conflicts with another you\'ve already taken.</string>
     <string name="error_order_total_price_not_match">Price changed. Please refresh and try again.</string>
     <string name="error_order_payment_gateway_unavailable">Payment service is temporarily unavailable.</string>
     <string name="error_order_payment_already_paid">This order has already been paid.</string>
@@ -1060,7 +1060,7 @@
     <!-- GDPR -->
     <string name="error_gdpr_export_failed">Couldn\'t export your data. Please try again.</string>
     <string name="error_gdpr_deletion_failed">Couldn\'t delete your account. Please contact support.</string>
-    <string name="error_gdpr_deletion_already_pending">Your deletion request is already being processed.</string>
+    <string name="error_gdpr_deletion_already_pending">Account deletion is already in progress.</string>
 
     <!-- ── Disputes (Wave 2 Phase 6) ── -->
     <!-- Profile row -->
@@ -1323,7 +1323,7 @@
     <string name="error_dispute_max_length_exceeded">Maximum length exceeded</string>
     <string name="error_dispute_not_found">Dispute not found</string>
     <string name="error_dispute_not_owned_by_user">This dispute belongs to a different account.</string>
-    <string name="error_file_required">File is required</string>
+    <string name="error_file_required">A file is required.</string>
     <string name="error_gdpr_consent_already_granted">This consent has already been granted.</string>
     <string name="error_gdpr_consent_not_found">Consent not found.</string>
     <string name="error_gdpr_consent_not_editable">This consent can\'t be changed here.</string>
@@ -1471,5 +1471,5 @@
     <string name="dispute_status_resolved">Resolved</string>
     <string name="dispute_status_closed">Closed</string>
     <string name="dispute_status_escalated">Escalated</string>
-    <string name="error_dispute_cleaning_not_started">You can only dispute a booking once the cleaning has started.</string>
+    <string name="error_dispute_cleaning_not_started">This clean hasn\'t happened yet, so there is nothing to report on it.</string>
 </resources>

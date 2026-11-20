@@ -3336,7 +3336,7 @@
   },
   "api": {
     "address": {
-      "invalid_length": "Invalid address length"
+      "invalid_length": "Address is too short or too long."
     },
     "admin_user": {
       "cannot_change_own_role": "You cannot change your own role",
@@ -3359,26 +3359,26 @@
       "admin_password_too_short": "Administrator passwords must be at least 12 characters long.",
       "apple_type_error": "This account uses Sign in with Apple. Use the Apple button.",
       "change_password_failed": "Failed to change the password",
-      "current_password_invalid": "The current password is incorrect",
+      "current_password_invalid": "Your current password is incorrect.",
       "external_type_error": "This account uses a different sign-in method.",
       "google_type_error": "This account uses Google sign-in. Use the Google button.",
-      "insufficient_privileges": "You do not have permission to access the admin panel. Only administrators can log in.",
+      "insufficient_privileges": "You don't have permission to do that.",
       "internal_type_error": "Use email and password to sign in for this account.",
       "invalid_apple_token": "Invalid Apple token",
-      "invalid_confirmation_code": "Invalid confirmation code",
-      "invalid_google_token": "Invalid Google token",
-      "invalid_password_format": "Invalid password format. Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one number.",
-      "invalid_refresh_token": "Your session has expired. Please sign in again.",
-      "invalid_reset_token": "Invalid or expired password reset token",
-      "refresh_token_reused": "Your session was used elsewhere. Please sign in again.",
-      "same_reset_password": "New password must be different from the current password",
+      "invalid_confirmation_code": "This code is invalid or has expired.",
+      "invalid_google_token": "Google sign-in failed. Please try again.",
+      "invalid_password_format": "Password must be at least 8 characters with letters and numbers.",
+      "invalid_refresh_token": "Your session expired. Please sign in again.",
+      "invalid_reset_token": "This password reset link is invalid or has expired.",
+      "refresh_token_reused": "For your security, you've been signed out everywhere.",
+      "same_reset_password": "Please choose a password different from your old one.",
       "too_many_attempts": "Too many attempts with this code. Request a new code and try again."
     },
     "common": {
       "error_occurred": "An error occurred. Please try again.",
-      "invalid_enum_value": "Invalid value provided",
-      "max_length": "Maximum length exceeded",
-      "required": "This field is required",
+      "invalid_enum_value": "Invalid selection.",
+      "max_length": "Too long.",
+      "required": "This field is required.",
       "unauthorized": "You are not authorized to perform this action"
     },
     "company": {
@@ -3413,8 +3413,8 @@
       "iso_code_already_exists": "A country with this ISO code already exists",
       "not_existing_id": "Country not found",
       "not_found": "Country not found",
-      "not_serviced": "This country is not serviced.",
-      "required": "A country is required.",
+      "not_serviced": "We don't operate in this country yet.",
+      "required": "Please select a country.",
       "market_not_ready": "This country cannot be switched on yet: it needs a configuration whose default currency is active.",
       "default_market_changed_concurrently": "The default market was changed by someone else. Refresh and try again",
       "configuration_missing": "This country has no configuration yet, so its market content cannot be saved.",
@@ -3438,7 +3438,7 @@
       "loyalty_divisor_missing": "This currency has no loyalty earn rate yet. Set how much of it earns one point on the currency form before switching the market on; an open market must keep one"
     },
     "device": {
-      "invalid_platform": "Platform must be 'android' or 'ios'"
+      "invalid_platform": "Unsupported device platform."
     },
     "dispute": {
       "action_failed": "The dispute action could not be completed. Please try again.",
@@ -3449,54 +3449,54 @@
       "invalid_status_transition": "This status change is not allowed for the current dispute state.",
       "max_length_exceeded": "Maximum length exceeded",
       "not_found": "Dispute not found",
-      "not_owned_by_user": "This dispute belongs to a different user.",
+      "not_owned_by_user": "This dispute belongs to a different account.",
       "cleaning_not_started": "This clean hasn't happened yet, so there is nothing to report on it.",
-      "line_not_on_order": "That item isn't on this order.",
+      "line_not_on_order": "One of the services you picked is not on that booking. Reopen the form and try again.",
       "cleaner_charge_not_chargeable": "This cleaner's pay on the order cannot take this charge: there is none, it is already charged for a dispute, it is smaller than the charge, or it is invoiced and there is no open pay period to carry the charge to.",
       "cleaner_charge_not_whole_minor_units": "A charge to a cleaner must be in whole hundredths of the currency unit."
     },
     "email": {
-      "invalid_email": "Invalid email address",
-      "invalid_format": "Invalid email format"
+      "invalid_email": "Please enter a valid email.",
+      "invalid_format": "Please enter a valid email."
     },
     "employee": {
-      "already_approved": "Partner has already been approved",
-      "already_rejected": "Partner has already been rejected",
+      "already_approved": "This partner is already approved.",
+      "already_rejected": "This partner is already rejected.",
       "documents_not_approved": "This cleaner cannot be approved until every document their work country requires has been uploaded and approved.",
-      "not_allowed_to_update": "You are not allowed to update this partner",
-      "not_found": "Partner not found",
+      "not_allowed_to_update": "You can't edit this partner.",
+      "not_found": "Partner not found.",
       "pay_config_missing": "This cleaner has no pay configured for one or more active services or packages. Add the missing pay configuration before approving them.",
-      "profile_incomplete": "Partner profile is incomplete",
+      "profile_incomplete": "Please complete your profile before taking jobs.",
       "weekly_limit_invalid": "The weekly order limit must be at least 1, or empty for no limit",
       "work_country_operator_mismatch": "The work country belongs to another operating company.",
       "weekly_limit_reason_required": "Write why this cleaner is limited. They are shown the reason.",
-      "legal_documents_not_accepted": "This cleaner has not yet accepted the current version of every contract document in force for their work country.",
-      "business_ceased": "The business register (ARES) shows the business under this IČO has ended.",
-      "trade_licence_inactive": "The business register (ARES) shows no trade licence in force under this IČO.",
-      "business_registry_unavailable": "The business register (ARES) could not be reached to check this IČO. Try again in a few minutes."
+      "legal_documents_not_accepted": "Accept the current version of your contract documents before taking jobs.",
+      "business_ceased": "The business register (ARES) shows that the business under this company ID (IČO) has ended. Enter the IČO of a business that is still trading.",
+      "trade_licence_inactive": "The business register (ARES) shows no trade licence in force under this company ID (IČO). Check the number, or renew your trade licence first.",
+      "business_registry_unavailable": "We could not reach the business register (ARES) to check your new company ID (IČO), so nothing was saved. Try again in a few minutes."
     },
     "employee_document": {
       "deletion_already_resolved": "This deletion request has already been answered.",
-      "not_found": "Document not found",
-      "not_owned": "You can only access your own documents",
-      "unauthorized": "You are not authorized to access this document"
+      "not_found": "Document not found.",
+      "not_owned": "You don't own this document.",
+      "unauthorized": "You can't access this document."
     },
     "file": {
-      "content_type_doesnt_match": "File content type doesn't match",
-      "count_exceeded": "Too many files uploaded",
-      "invalid_file_type": "Invalid file type",
-      "required": "File is required",
-      "size_exceeded": "File size exceeded maximum allowed size",
-      "type_not_allowed": "File type is not allowed. Accepted: PDF, JPEG, PNG, DOC, DOCX"
+      "content_type_doesnt_match": "File type doesn't match.",
+      "count_exceeded": "Too many files.",
+      "invalid_file_type": "Unsupported file type.",
+      "required": "A file is required.",
+      "size_exceeded": "File is too large.",
+      "type_not_allowed": "This file type isn't allowed."
     },
     "gdpr": {
-      "deletion_already_pending": "A deletion request for this account is already in progress.",
-      "deletion_blocked_by_order": "This account has active orders and cannot be deleted yet.",
-      "deletion_blocked_by_invoice": "This account has outstanding invoices and cannot be deleted yet.",
-      "deletion_blocked_by_assigned_order": "This cleaner is still assigned to a job and cannot be deleted yet.",
-      "deletion_blocked_by_unsettled_pay": "This cleaner is still owed pay. Settle it before deleting the account.",
-      "consent_not_found": "We couldn't find that consent setting.",
-      "consent_already_granted": "That consent has already been granted.",
+      "deletion_already_pending": "Account deletion is already in progress.",
+      "deletion_blocked_by_order": "Your account can't be deleted yet — there is an active order.",
+      "deletion_blocked_by_invoice": "Your account can't be deleted yet — there is an open invoice.",
+      "deletion_blocked_by_assigned_order": "Your account can't be deleted while you are still assigned to a job.",
+      "deletion_blocked_by_unsettled_pay": "Your account can't be deleted while pay is still owed to you. Contact the office to settle it first.",
+      "consent_not_found": "Consent not found.",
+      "consent_already_granted": "This consent has already been granted.",
       "request_not_found": "We couldn't find that GDPR request.",
       "request_not_retryable": "Only a failed deletion request can be retried."
     },
@@ -3507,10 +3507,10 @@
       "code_already_exists": "A language with this code already exists",
       "in_use": "Cannot delete language because it is currently in use",
       "not_found": "Language not found",
-      "not_supported": "Language not supported"
+      "not_supported": "This language isn't supported."
     },
     "legal": {
-      "document_not_found": "This legal text is not available yet."
+      "document_not_found": "This job cannot be taken right now."
     },
     "loyalty": {
       "points_exceed_sanity_cap": "That number of points exceeds the limit allowed for a manual adjustment.",
@@ -3536,38 +3536,38 @@
         "not_reported": "The cleaner has not reported that they cannot get in, so there is no lockout to confirm."
       },
       "after_photos": {
-        "required": "After photos are required to complete the order"
+        "required": "Take at least one \"after\" photo before completing the order."
       },
-      "already_cancelled": "Order has already been cancelled",
-      "already_completed": "Order has already been completed",
+      "already_cancelled": "This booking is already cancelled.",
+      "already_completed": "This booking is already completed.",
       "cleaning_date": {
-        "future": "Cleaning date must be in the future"
+        "future": "Date must be in the future."
       },
       "completion_notes": {
-        "too_long": "Completion notes are too long"
+        "too_long": "Completion notes are too long."
       },
-      "employee_already_assigned": "Partner is already assigned to this order",
-      "employee_not_assigned": "Partner is not assigned to this order",
-      "empty": "Order is empty",
-      "in_progress_cannot_cancel": "An order that is in progress cannot be cancelled",
-      "invalid_status_transition": "This status change is not allowed for the current order state",
-      "no_available_spots": "No available spots for this order",
-      "not_confirmed": "Order is not confirmed",
-      "not_found": "Order not found",
-      "not_in_progress": "Order is not in progress",
-      "payment_gateway_unavailable": "Payment gateway is unavailable",
+      "employee_already_assigned": "You're already assigned to this order.",
+      "employee_not_assigned": "You're not assigned to this order.",
+      "empty": "Your order is empty. Please add at least one service.",
+      "in_progress_cannot_cancel": "This booking is in progress and can't be cancelled.",
+      "invalid_status_transition": "That action isn't allowed for the order's current status.",
+      "no_available_spots": "Another cleaner has already taken this job.",
+      "not_confirmed": "This order isn't confirmed yet.",
+      "not_found": "Booking not found.",
+      "not_in_progress": "This order isn't in progress.",
+      "payment_gateway_unavailable": "Payment service is temporarily unavailable.",
       "selected_package": {
-        "invalid": "Selected package is invalid"
+        "invalid": "One of the selected packages is no longer available."
       },
       "selected_services": {
-        "invalid": "Selected services are invalid"
+        "invalid": "One of the selected services is no longer available."
       },
       "status": {
         "confirmed_needs_crew": "Confirmed means a cleaner took the job. Assign a cleaner to the order instead.",
         "force_complete_reason_required": "This order has no after photo. Write why it is being completed without one; the reason is kept in the audit log."
       },
       "total_price": {
-        "not_match": "Total price doesn't match",
+        "not_match": "Price changed. Please refresh and try again.",
         "positive": "Total price must be positive"
       },
       "reassign": {
@@ -3576,11 +3576,11 @@
         "employee_busy": "This cleaner already has another job at this time.",
         "removal_reason_required": "Write why this cleaner is being taken off the order. They are shown the reason."
       },
-      "cleaner_already_started": "The cleaner has already started this job, so it cannot be cancelled as a no-show.",
-      "start_time_not_reached": "The booked start time has not come yet, so there is no no-show to confirm.",
-      "cash_already_collected": "The cash for this order has already been recorded",
-      "payment_not_outstanding": "Nothing is outstanding on this order: it is paid, refunded or disputed",
-      "cash_not_allowed_on_card_order": "This order was booked for card payment, so cash cannot be recorded on it here",
+      "cleaner_already_started": "The cleaner has already started this cleaning.",
+      "start_time_not_reached": "The booked start time has not come yet.",
+      "cash_already_collected": "Cash has already been collected for this order.",
+      "payment_not_outstanding": "This order has no payment left to collect — it is already settled or refunded. Don't take cash.",
+      "cash_not_allowed_on_card_order": "This order is paid by card, so cash can't be recorded for it. Don't take cash — ask an office admin to settle it.",
       "cash_amount_invalid": "Enter an amount above zero, to the cent",
       "cash_received_at_in_future": "The cash cannot have been received in the future",
       "cash_received_at_before_clean": "The cash cannot have been received before the clean could begin"
@@ -3626,7 +3626,7 @@
       "stripe_signature_required": "Stripe signature header is required"
     },
     "payout": {
-      "not_found": "This partner has no payout details on file"
+      "not_found": "You haven't added your bank details yet. Add them so we can pay you."
     },
     "payroll": {
       "employee_not_assigned": "Partner not assigned to this order",
@@ -3664,7 +3664,7 @@
       "amount_must_be_positive": "The discount amount must be greater than zero.",
       "code_already_exists": "A promo code with this code already exists.",
       "code_invalid_format": "The promo code format is not valid.",
-      "not_found": "Promo code not found.",
+      "not_found": "Code not found",
       "percent_out_of_range": "The discount percentage is outside the allowed range.",
       "validity_range_invalid": "The valid-from date must not be after the valid-until date."
     },
@@ -3672,8 +3672,8 @@
       "not_found": "Receipt not found"
     },
     "receivable": {
-      "not_found": "This receivable no longer exists.",
-      "not_open": "Only an open receivable can be written off."
+      "not_found": "We couldn't find that amount due.",
+      "not_open": "This amount has already been paid or waived."
     },
     "cash_held": {
       "amount_invalid": "Enter an amount above zero, to the cent",
@@ -3683,7 +3683,7 @@
       "action_failed": "The referral action failed. Try again.",
       "hold_changed": "This referral was held or released since the list was loaded. The list now shows its current state — review it again.",
       "not_accepted": "The referral is not in the accepted state.",
-      "not_found": "Referral not found.",
+      "not_found": "Referral code not found",
       "not_qualified": "The referral is not in the qualified state.",
       "reason_required": "A reason is required."
     },
@@ -3742,40 +3742,40 @@
       "unknown_key": "This setting is not in the catalogue and cannot be set."
     },
     "user": {
-      "email_confirmed": "Email is already confirmed",
-      "existing_email": "Email already exists",
-      "existing_phone_number": "Phone number already exists",
-      "not_allowed_to_update": "You are not allowed to update this user",
-      "not_existing_email": "No user found with this email",
-      "not_existing_id": "User not found",
-      "not_found": "User not found"
+      "email_confirmed": "This email is already confirmed.",
+      "existing_email": "An account with this email already exists.",
+      "existing_phone_number": "This phone number is already in use.",
+      "not_allowed_to_update": "You can't edit this profile.",
+      "not_existing_email": "No account found with this email.",
+      "not_existing_id": "User not found.",
+      "not_found": "User not found."
     },
     "validation": {
-      "date_must_be_in_past": "Date must be in the past",
-      "invalid_age": "Invalid age",
-      "invalid_date": "Invalid date",
-      "invalid_password": "Invalid password",
-      "must_be_positive": "Value must be positive",
+      "date_must_be_in_past": "Date must be in the past.",
+      "invalid_age": "Please enter a valid age.",
+      "invalid_date": "Please enter a valid date.",
+      "invalid_password": "Incorrect password.",
+      "must_be_positive": "Must be a positive number.",
       "page_size_exceeded": "Page size cannot exceed 100",
       "passport_id": {
-        "invalid_length": "The passport / ID number must be 5 to 20 characters long."
+        "invalid_length": "Your passport / ID number must be 5 to 20 characters long."
       },
       "payout": {
-        "account_number_required": "Enter the account number",
-        "country_not_supported": "Payouts to a bank in this country are not supported yet",
-        "iban_country_mismatch": "The IBAN is from a different country than the bank. Check the IBAN, or change the bank country so the two match.",
-        "iban_mismatch": "The IBAN does not match the account number and bank code. Check all three, or clear the IBAN and it will be derived from them.",
-        "invalid_account_number": "The account number could not be verified — almost always a mistyped digit. Check it against the partner's bank details.",
-        "invalid_account_prefix": "The account prefix could not be verified — it is the part before the dash in the account number. Check the digits, or clear the field if the account has none.",
-        "invalid_bank_code": "Enter a 4-digit bank code",
-        "invalid_iban": "This is not a valid IBAN",
-        "invalid_swift": "The SWIFT/BIC does not belong to the bank's country",
-        "looks_like_card": "That looks like a payment card number. Enter the bank account number instead.",
-        "scheme_not_supported": "Payouts to this kind of account are not supported yet",
-        "swift_required": "The bank is in a different country than the partner's work country, so the bank's SWIFT/BIC code is also required."
+        "account_number_required": "Enter your account number — for this bank we pay by account number and bank code, so an IBAN on its own isn't enough.",
+        "country_not_supported": "We can't send payouts to a bank in this country yet. Check the bank country you picked, or contact support and we'll help.",
+        "iban_country_mismatch": "This IBAN belongs to a different country than the bank country you picked. Change one so they match.",
+        "iban_mismatch": "This IBAN doesn't match the account number and bank code you entered. Fix whichever one is wrong, or clear the IBAN and we'll fill it in for you.",
+        "invalid_account_number": "We couldn't verify this account number — that's almost always a typo. Check the digits against your bank statement.",
+        "invalid_account_prefix": "We couldn't verify the prefix — it's the short number before the dash in your account number. Check the digits, or leave it empty if your account doesn't have one.",
+        "invalid_bank_code": "Enter the four-digit bank code — it's the number after the slash in your account number.",
+        "invalid_iban": "This IBAN isn't valid. Compare it with your bank statement — it's usually one wrong character.",
+        "invalid_swift": "This SWIFT/BIC belongs to a different country than your bank. Check it on your bank statement.",
+        "looks_like_card": "That looks like a payment card number. Enter your bank account number instead — you'll find it on your bank statement or in your banking app.",
+        "scheme_not_supported": "We can't pay out to this kind of account yet. Contact support and we'll help you sort it out.",
+        "swift_required": "Your bank is in a different country than where you work, so we need the SWIFT/BIC code too. You'll find it on your bank statement."
       },
       "registration_number": {
-        "invalid_format": "This company ID (IČO) does not match the format required in the cleaner's country, or is missing where that country requires one.",
+        "invalid_format": "Please enter a valid company registration number for the selected country.",
         "not_registered": "This company ID (IČO) is not in the business register (ARES). Check the number."
       }
     },

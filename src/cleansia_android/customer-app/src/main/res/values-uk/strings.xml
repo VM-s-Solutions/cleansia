@@ -961,8 +961,8 @@
     <string name="error_auth_invalid_reset_token">Це посилання для скидання пароля недійсне або застаріле.</string>
     <string name="error_auth_same_reset_password">Виберіть пароль, відмінний від попереднього.</string>
     <string name="error_auth_insufficient_privileges">У вас немає дозволу на цю дію.</string>
-    <string name="error_auth_invalid_refresh_token">Ваша сесія завершилася. Увійдіть знову.</string>
-    <string name="error_auth_refresh_token_reused">З міркувань безпеки вас вийшли з усіх пристроїв.</string>
+    <string name="error_auth_invalid_refresh_token">Термін дії вашої сесії минув. Увійдіть, будь ласка, знову.</string>
+    <string name="error_auth_refresh_token_reused">Сесію використано в іншому місці. Увійдіть, будь ласка, знову.</string>
     <string name="error_auth_current_password_invalid">Ваш поточний пароль неправильний.</string>
     <string name="error_auth_account_locked">Забагато невдалих спроб входу. Обліковий запис тимчасово заблоковано — спробуйте ще раз за кілька хвилин.</string>
 
@@ -1014,9 +1014,9 @@
     <string name="error_order_selected_package_invalid">Один із вибраних пакетів більше не доступний.</string>
     <string name="error_order_selected_services_invalid">Одна з вибраних послуг більше не доступна.</string>
     <string name="error_order_not_found">Бронювання не знайдено.</string>
-    <string name="error_order_no_available_spots">На цей слот немає доступних клінерів. Виберіть інший час.</string>
-    <string name="error_order_weekly_limit_reached">Ви досягли тижневого ліміту бронювань.</string>
-    <string name="error_order_time_conflict">Цей час конфліктує з іншим бронюванням.</string>
+    <string name="error_order_no_available_spots">Це замовлення вже взяв інший прибиральник.</string>
+    <string name="error_order_weekly_limit_reached">Ви досягли тижневого ліміту замовлень.</string>
+    <string name="error_order_time_conflict">Це замовлення перетинається з іншим, яке ви вже взяли.</string>
     <string name="error_order_total_price_not_match">Ціна змінилася. Оновіть і спробуйте знову.</string>
     <string name="error_order_payment_gateway_unavailable">Платіжна служба тимчасово недоступна.</string>
     <string name="error_order_payment_already_paid">Це замовлення вже оплачено.</string>
@@ -1048,7 +1048,7 @@
     <!-- GDPR -->
     <string name="error_gdpr_export_failed">Не вдалося експортувати дані. Спробуйте знову.</string>
     <string name="error_gdpr_deletion_failed">Не вдалося видалити обліковий запис. Зверніться в підтримку.</string>
-    <string name="error_gdpr_deletion_already_pending">Ваш запит на видалення вже обробляється.</string>
+    <string name="error_gdpr_deletion_already_pending">Видалення облікового запису вже триває.</string>
 
     <!-- Disputes -->
     <string name="profile_row_disputes">Спори</string>
@@ -1286,7 +1286,7 @@
     <string name="error_currency_invalid">Недійсна валюта</string>
     <string name="error_country_not_serviced">У цій країні ми поки що не працюємо.</string>
     <string name="error_city_not_serviced">Ми наразі не обслуговуємо це місто.</string>
-    <string name="error_tenant_not_found">Цей ринок поки що не обслуговує жодна компанія Cleansia.</string>
+    <string name="error_tenant_not_found">Цей ринок поки не обслуговує жодна компанія Cleansia.</string>
     <string name="error_tenant_archived">Записи цієї компанії опечатано для архівування; змінити в них уже нічого не можна.</string>
     <string name="error_order_country_operator_mismatch">Цю адресу обслуговує інша компанія Cleansia, і з цього облікового запису її не можна забронювати.</string>
     <string name="error_promo_not_found">Код не знайдено</string>
@@ -1297,7 +1297,7 @@
     <string name="error_promo_per_user_limit_reached">Ви вже використали цей код</string>
     <string name="error_promo_below_minimum_order_amount">Замовлення не відповідає мінімальній сумі для цього коду</string>
     <string name="error_promo_currency_mismatch">Код не діє для цієї валюти</string>
-    <string name="error_promo_requires_account">Увійдіть, щоб скористатися промокодом.</string>
+    <string name="error_promo_requires_account">Увійдіть до облікового запису, щоб скористатися промокодом.</string>
     <string name="error_device_invalid_platform">Непідтримувана платформа пристрою.</string>
     <string name="error_dispute_already_exists">Суперечка для цього замовлення вже існує</string>
     <string name="error_dispute_max_length_exceeded">Перевищено максимальну довжину</string>
@@ -1414,7 +1414,7 @@
     <string name="order_review_rate_items_hint">Необов’язково. Корисно, коли одна частина вийшла добре, а інша ні — це покаже нам, куди саме дивитися.</string>
     <string name="order_review_item_in_package">у пакеті %1$s</string>
     <string name="order_review_rate_item_star">Поставити %1$s %2$d зірок</string>
-    <string name="error_dispute_line_not_on_order">Однієї з обраних послуг немає в цьому замовленні. Відкрийте форму знову та спробуйте ще раз.</string>
+    <string name="error_dispute_line_not_on_order">Цієї позиції немає в цьому замовленні.</string>
     <string name="order_market_unknown">Ринок недоступний</string>
     <string name="order_market_label">%1$s · %2$s</string>
     <string name="notification_recurring_paused_title">Розклад регулярних прибирань призупинено</string>
@@ -1471,5 +1471,5 @@
     <string name="dispute_status_resolved">Вирішено</string>
     <string name="dispute_status_closed">Закрито</string>
     <string name="dispute_status_escalated">Передано далі</string>
-    <string name="error_dispute_cleaning_not_started">Оскаржити можна лише після початку прибирання.</string>
+    <string name="error_dispute_cleaning_not_started">Це прибирання ще не відбулося, тож повідомляти поки нема про що.</string>
 </resources>

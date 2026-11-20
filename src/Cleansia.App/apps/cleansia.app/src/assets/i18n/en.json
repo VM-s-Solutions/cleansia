@@ -1931,41 +1931,41 @@
       "internal_type_error": "Use email and password to sign in for this account.",
       "account_locked": "Too many failed login attempts. The account is temporarily locked — try again in a few minutes.",
       "too_many_attempts": "Too many attempts with this code. Request a new code and try again.",
-      "invalid_confirmation_code": "That confirmation code is invalid or has expired.",
+      "invalid_confirmation_code": "This code is invalid or has expired.",
       "invalid_google_token": "Google sign-in failed. Please try again.",
-      "invalid_apple_token": "Apple sign-in failed. Please try again.",
+      "invalid_apple_token": "Invalid Apple token",
       "social_account_not_found": "We couldn't find an account for that sign-in. Please sign up first.",
-      "invalid_password_format": "Your password doesn't meet the requirements.",
+      "invalid_password_format": "Password must be at least 8 characters with letters and numbers.",
       "admin_password_too_short": "Administrator passwords must be at least 12 characters long.",
-      "invalid_reset_token": "That reset code is invalid or has expired.",
-      "same_reset_password": "Your new password must be different from your current one.",
+      "invalid_reset_token": "This password reset link is invalid or has expired.",
+      "same_reset_password": "Please choose a password different from your old one.",
       "current_password_invalid": "Your current password is incorrect.",
       "insufficient_privileges": "You don't have permission to do that.",
-      "invalid_refresh_token": "Your session has expired. Please sign in again.",
-      "refresh_token_reused": "Your session was used elsewhere. Please sign in again."
+      "invalid_refresh_token": "Your session expired. Please sign in again.",
+      "refresh_token_reused": "For your security, you've been signed out everywhere."
     },
     "common": {
       "unauthorized": "You are not authorized to perform this action",
-      "error_occurred": "An error occurred",
+      "error_occurred": "An error occurred. Please try again.",
       "required": "This field is required.",
-      "max_length": "This value is too long.",
-      "min_length": "This value is too short.",
-      "invalid_enum_value": "That option isn't valid."
+      "max_length": "Too long.",
+      "min_length": "Too short.",
+      "invalid_enum_value": "Invalid selection."
     },
     "user": {
-      "email_confirmed": "This email address is already confirmed.",
+      "email_confirmed": "This email is already confirmed.",
       "existing_email": "An account with this email already exists.",
-      "not_existing_email": "We couldn't find an account with this email.",
-      "not_existing_id": "We couldn't load that account.",
+      "not_existing_email": "No account found with this email.",
+      "not_existing_id": "User not found.",
       "existing_phone_number": "This phone number is already in use.",
-      "not_found": "We couldn't find that account.",
-      "not_allowed_to_update": "You're not allowed to change this account."
+      "not_found": "User not found.",
+      "not_allowed_to_update": "You can't edit this profile."
     },
     "language": {
-      "not_supported": "That language isn't supported."
+      "not_supported": "This language isn't supported."
     },
     "legal": {
-      "document_not_found": "This legal text is not available yet."
+      "document_not_found": "This job cannot be taken right now."
     },
     "consent": {
       "terms_not_accepted": "Please accept the Terms of Service and Privacy Policy to continue.",
@@ -1973,16 +1973,16 @@
     },
     "order": {
       "cleaning_date": {
-        "future": "The cleaning date must be in the future.",
-        "below_lead_time": "Please pick a date that allows enough lead time to schedule a cleaner.",
+        "future": "Date must be in the future.",
+        "below_lead_time": "This time is too close. Please choose a later slot.",
         "outside_booking_window": "Pick a start between 08:00 and 19:45 local time, on the quarter-hour, no more than 60 days ahead."
       },
-      "already_cancelled": "This order has already been cancelled.",
-      "already_completed": "This order has already been completed.",
-      "in_progress_cannot_cancel": "This cleaning is already in progress and can no longer be cancelled.",
+      "already_cancelled": "This booking is already cancelled.",
+      "already_completed": "This booking is already completed.",
+      "in_progress_cannot_cancel": "This booking is in progress and can't be cancelled.",
       "invalid_status_transition": "That action isn't allowed for the order's current status.",
-      "address_exactly_one_required": "Please provide exactly one address for this order.",
-      "empty": "Add at least one service or package to your order.",
+      "address_exactly_one_required": "Please select a saved address or enter a new one.",
+      "empty": "Your order is empty. Please add at least one service.",
       "size_exceeds_maximum": "A booking can include up to 8 rooms and 4 bathrooms.",
       "span_exceeds_maximum": "This booking covers too much work for a single visit. Please remove some services or packages, or book them separately.",
       "selected_package": {
@@ -1991,39 +1991,39 @@
       "selected_services": {
         "invalid": "One of the selected services is no longer available."
       },
-      "not_found": "We couldn't find that order.",
-      "no_available_spots": "There are no available slots for the selected time.",
-      "weekly_limit_reached": "You've reached the booking limit for this week.",
-      "time_conflict": "You already have a cleaning booked at that time.",
+      "not_found": "Booking not found.",
+      "no_available_spots": "Another cleaner has already taken this job.",
+      "weekly_limit_reached": "You've reached your weekly order limit.",
+      "time_conflict": "This order conflicts with another you've already taken.",
       "total_price": {
-        "positive": "The order total must be greater than zero.",
-        "not_match": "The order total has changed — please review your order and try again."
+        "positive": "Total price must be positive",
+        "not_match": "Price changed. Please refresh and try again."
       },
-      "payment_gateway_unavailable": "Payments are temporarily unavailable. Please try again shortly.",
+      "payment_gateway_unavailable": "Payment service is temporarily unavailable.",
       "cash_not_available": "Cash is only available when you're signed in and the booking needs a single cleaner.",
-      "cash_open_bookings_limit_reached": "You already have as many cash bookings not yet paid as allowed — in practice, your upcoming cash bookings. Pay this one by card, or book with cash again once one of them has been paid.",
-      "unpaid_receivable": "You owe us an amount from an earlier booking, such as a cancellation fee or a cleaning that was not paid for. Until it is paid, you cannot make or confirm a booking, by card or in cash.",
-      "country_operator_mismatch": "This address is served by another Cleansia company, so it can't be booked here.",
+      "cash_open_bookings_limit_reached": "You already have as many upcoming cash bookings as allowed. Cash is paid after the cleaning, so each one counts until it has been cleaned and paid. Pay this booking by card, or choose cash again once one of them has been paid.",
+      "unpaid_receivable": "You have an unpaid amount with us, such as a cleaning you did not pay for or a cancellation fee. You can't make a new booking until it is paid; bookings you already have are kept. Pay it under Payments in your profile.",
+      "country_operator_mismatch": "This address is served by another Cleansia company and cannot be booked from this account.",
       "payment": {
         "already_paid": "This order has already been paid."
       },
-      "not_completed": "This action is only available once the cleaning is completed.",
+      "not_completed": "You can review an order only after it's completed.",
       "review": {
         "duplicate_tag": "The same tag was selected twice.",
-        "rating_invalid": "Please choose a rating between 1 and 5.",
+        "rating_invalid": "Rating must be between 1 and 5.",
         "tag_rating_mismatch": "Those tags do not match the rating you gave.",
         "too_many_tags": "Pick up to four tags.",
         "unknown_tag": "One of those tags is not recognised."
       },
       "note": {
-        "content_required": "Please enter a note before saving."
+        "content_required": "Note text is required."
       },
       "issue": {
-        "description_required": "Please describe the issue before submitting."
+        "description_required": "Issue description is required."
       },
       "preferred_employee": {
         "membership_required": "Choosing your favourite cleaner is a Cleansia Plus benefit.",
-        "not_eligible": "You can only choose a cleaner who has already completed a job for you."
+        "not_eligible": "The selected cleaner isn't available for this order."
       },
       "preferred_offer_closed": "This job can no longer be offered to a specific cleaner.",
       "start_passed_cannot_cancel": "The start time has passed and a cleaner is booked, so this booking can no longer be cancelled. If the cleaner did not arrive, let us know.",
@@ -2034,10 +2034,10 @@
     },
     "address": {
       "already_exists": "You already have this address saved.",
-      "mapbox_coords_required": "Please pick an address from the suggestions.",
-      "not_owned_by_user": "You don't have access to this address.",
-      "label_required": "Please add a label for this address.",
-      "invalid_length": "The address is too long. Please shorten it."
+      "mapbox_coords_required": "Please select an address from the suggestions.",
+      "not_owned_by_user": "You can't access this address.",
+      "label_required": "Please provide a label for this address.",
+      "invalid_length": "Address is too short or too long."
     },
     "service_area": {
       "country_not_serviced": "We don't currently operate in this country.",
@@ -2045,9 +2045,9 @@
       "city_not_serviced": "We don't currently serve this city."
     },
     "country": {
-      "not_serviced": "We don't currently operate in this country.",
+      "not_serviced": "We don't operate in this country yet.",
       "required": "Please select a country.",
-      "not_existing_id": "We couldn't find that country."
+      "not_existing_id": "Country not found"
     },
     "tenant": {
       "not_found": "This market is not operated by any Cleansia company yet.",
@@ -2057,65 +2057,65 @@
       "not_serviced": "We don't currently serve this city."
     },
     "dispute": {
-      "not_found": "Dispute not found.",
-      "not_owned_by_user": "You don't have access to this dispute.",
-      "already_exists": "You already have an open dispute on this order.",
-      "invalid_refund_amount": "The refund amount isn't valid for this order.",
-      "max_length_exceeded": "Your message is too long. Please shorten it.",
+      "not_found": "Dispute not found",
+      "not_owned_by_user": "This dispute belongs to a different account.",
+      "already_exists": "Dispute already exists for this order",
+      "invalid_refund_amount": "Invalid refund amount",
+      "max_length_exceeded": "Maximum length exceeded",
       "cleaning_not_started": "This clean hasn't happened yet, so there is nothing to report on it.",
-      "line_not_on_order": "That item isn't on this order."
+      "line_not_on_order": "One of the services you picked is not on that booking. Reopen the form and try again."
     },
     "file": {
-      "invalid_file_type": "This file type isn't allowed.",
-      "size_exceeded": "The file is too large.",
+      "invalid_file_type": "Unsupported file type.",
+      "size_exceeded": "File is too large.",
       "required": "A file is required.",
-      "content_type_doesnt_match": "The file type doesn't match its contents.",
-      "count_exceeded": "You've attached too many files.",
+      "content_type_doesnt_match": "File type doesn't match.",
+      "count_exceeded": "Too many files.",
       "type_not_allowed": "This file type isn't allowed."
     },
     "receipt": {
-      "not_found": "We couldn't find a receipt for this order."
+      "not_found": "Receipt not found"
     },
     "gdpr": {
-      "deletion_already_pending": "An account deletion request is already in progress.",
-      "deletion_blocked_by_order": "Your account can't be deleted while you have active orders.",
-      "deletion_blocked_by_invoice": "Your account can't be deleted while invoices are outstanding.",
-      "consent_not_found": "We couldn't find that consent setting.",
-      "consent_already_granted": "You've already granted this consent.",
+      "deletion_already_pending": "Account deletion is already in progress.",
+      "deletion_blocked_by_order": "Your account can't be deleted yet — there is an active order.",
+      "deletion_blocked_by_invoice": "Your account can't be deleted yet — there is an open invoice.",
+      "consent_not_found": "Consent not found.",
+      "consent_already_granted": "This consent has already been granted.",
       "deletion_blocked_by_assigned_order": "Your account can't be deleted while you are still assigned to a job.",
       "deletion_blocked_by_unsettled_pay": "Your account can't be deleted while pay is still owed to you. Contact the office to settle it first.",
       "consent_not_editable": "This consent can't be changed here."
     },
     "promo": {
       "already_sent": "A promo code has already been sent to this email address. Please check your inbox and spam folder.",
-      "not_found": "That promo code doesn't exist.",
-      "expired": "This promo code has expired.",
-      "not_yet_valid": "This promo code isn't active yet.",
-      "inactive": "This promo code is no longer active.",
-      "global_limit_reached": "This promo code has reached its usage limit.",
-      "per_user_limit_reached": "You've already used this promo code.",
-      "below_minimum_order_amount": "Your order doesn't meet the minimum amount for this promo code.",
-      "currency_mismatch": "This promo code can't be used in the currency this booking is priced in.",
+      "not_found": "Code not found",
+      "expired": "This code has expired",
+      "not_yet_valid": "Code is not yet active",
+      "inactive": "Code is no longer available",
+      "global_limit_reached": "Code is no longer available",
+      "per_user_limit_reached": "You've already used this code",
+      "below_minimum_order_amount": "Order doesn't meet the minimum for this code",
+      "currency_mismatch": "Code doesn't apply to this currency",
       "requires_account": "Sign in to use a promo code."
     },
     "referral": {
-      "not_found": "That referral code doesn't exist."
+      "not_found": "Referral code not found"
     },
     "membership": {
       "plan": {
-        "not_priced_in_currency": "Plus isn't on sale in this market yet.",
-        "not_found": "That membership plan no longer exists."
+        "not_priced_in_currency": "This plan is not on sale in your market yet.",
+        "not_found": "Membership plan not found."
       },
       "already_active": "You already have an active membership.",
-      "not_found": "We couldn't find your membership.",
+      "not_found": "Membership not found.",
       "stripe_customer_currency_locked": "Your Plus billing is already set up in another currency. Contact support to change it.",
       "swap_same_plan": "You're already on this plan.",
       "express_waiver": {
-        "no_longer_available": "Your free express upgrade is no longer available for this booking — this month's included express bookings have just been used up. You can still book at the standard express price."
+        "no_longer_available": "Your included express bookings for this month have just been used up, so this booking no longer gets the free express upgrade. You can still book it at the standard express price."
       }
     },
     "saved_card": {
-      "consent_not_accepted": "Please confirm your consent before saving your card.",
+      "consent_not_accepted": "Please tick the box agreeing to save your card before saving it.",
       "not_found": "We couldn't find that saved card.",
       "requires_account": "Sign in to save your card for your next bookings."
     },
@@ -2124,34 +2124,34 @@
       "not_open": "This amount has already been paid or waived."
     },
     "recurring_booking": {
-      "not_found": "That recurring booking no longer exists.",
-      "not_owned_by_user": "You can't manage this recurring booking.",
-      "saved_address_not_found": "Pick a saved address for this schedule.",
-      "no_services_or_packages": "Choose at least one service or package.",
+      "not_found": "Recurring cleaning not found.",
+      "not_owned_by_user": "This recurring cleaning belongs to a different account.",
+      "saved_address_not_found": "The selected address no longer exists.",
+      "no_services_or_packages": "Select at least one service or package.",
       "starts_on_in_past": "The start date can't be in the past.",
       "ends_on_before_start": "The end date must be after the start date.",
       "membership_required": "Recurring cleanings are a Cleansia Plus benefit — subscribe to set one up."
     },
     "device": {
-      "invalid_platform": "This device platform isn't supported.",
-      "not_found": "We couldn't find that device."
+      "invalid_platform": "Unsupported device platform.",
+      "not_found": "This device is no longer registered."
     },
     "currency": {
-      "invalid": "That currency isn't supported."
+      "invalid": "Invalid currency"
     },
     "email": {
-      "invalid_format": "Please enter a valid email address."
+      "invalid_format": "Please enter a valid email."
     },
     "general": {
-      "not_found": "We couldn't find what you were looking for."
+      "not_found": "Resource not found"
     },
     "validation": {
-      "date_must_be_in_past": "The date must be in the past.",
+      "date_must_be_in_past": "Date must be in the past.",
       "invalid_age": "Please enter a valid age.",
       "invalid_date": "Please enter a valid date.",
-      "invalid_password": "That password isn't valid.",
+      "invalid_password": "Incorrect password.",
       "invalid_phone_number": "Please enter a valid phone number.",
-      "must_be_positive": "The value must be greater than zero."
+      "must_be_positive": "Must be a positive number."
     },
     "review": {
       "line_not_on_order": "You can't rate an item that isn't on this order."

@@ -12,4 +12,6 @@
     <string name="core_error_unauthorized">Vaše přihlášení vypršelo. Přihlaste se prosím znovu.</string>
     <string name="core_error_unknown">Něco se pokazilo. Zkuste to prosím znovu.</string>
     <string name="core_phone_country_code">Předvolba země</string>
+    <string name="core_password_show">Zobrazit heslo</string>
+    <string name="core_password_hide">Skrýt heslo</string>
 </resources>

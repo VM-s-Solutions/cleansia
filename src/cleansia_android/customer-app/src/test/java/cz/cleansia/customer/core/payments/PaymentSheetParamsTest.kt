@@ -1,5 +1,6 @@
 package cz.cleansia.customer.core.payments
 
+import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -55,6 +56,49 @@ class PaymentSheetParamsTest {
         }
     }
 
+    @Test
+    fun `every sheet the app configures turns Stripe Link off`() {
+        val setup = SavedCardSetup("saved-id", "seti_fixture_secret", "cus_fixture", "ek_fixture")
+        listOf(
+            intent.toPaymentSheetParams(saveCard = false, currencyCode = "CZK").toConfiguration(),
+            intent.toPaymentSheetParams(saveCard = true, currencyCode = "CZK").toConfiguration(),
+            setup.toPaymentSheetParams("CZK").toConfiguration(),
+            setup.toPaymentSheetParams(null).toConfiguration(includeGooglePay = false),
+        ).forEach { configuration ->
+            assertTrue("$configuration", "link=LinkConfiguration(display=Never" in configuration.toString())
+        }
+    }
+
+    @Test
+    fun `every sheet the app presents is configured by toConfiguration`() {
+        val main = sequenceOf(File("."), File("customer-app"), File("src/cleansia_android/customer-app"))
+            .map { File(it, "src/main/java/cz/cleansia/customer") }.first { it.isDirectory }
+        val code = main.walkTopDown().filter { it.isFile && it.extension == "kt" }
+            .associate { it.name to it.readText().replace(COMMENTS, "") }
+        assertEquals(listOf("PaymentSheetParams.kt"), code.filterValues { "PaymentSheet.Configuration" in it }.keys.toList())
+        val presents = code.flatMap { (name, text) -> PRESENT.findAll(text).map { name to text.argumentsAt(it.range.last) }.toList() }
+        assertEquals(
+            listOf("BookingBottomSheet.kt", "OrderDetailScreen.kt", "PaymentSheetParams.kt", "SubscribePlusScreen.kt"),
+            presents.map { it.first }.sorted(),
+        )
+        presents.forEach { (name, arguments) -> assertTrue("$name: $arguments", ".toConfiguration(" in arguments) }
+    }
+
+    private fun String.argumentsAt(open: Int): String {
+        var depth = 0
+        for (i in open until length) {
+            when (this[i]) {
+                '(' -> depth++
+                ')' -> if (--depth == 0) return substring(open, i + 1)
+            }
+        }
+        error("unbalanced call at $open")
+    }
+
     private fun customer(id: String, ephemeralKey: String) = "CustomerConfiguration(id=$id, ephemeralKeySecret=$ephemeralKey"
 
+    private companion object {
+        val COMMENTS = Regex("""/\*[\s\S]*?\*/|(?<![:"])//[^\n]*""")
+        val PRESENT = Regex("""\bpresentWith(?:Payment|Setup)Intent\(""")
+    }
 }

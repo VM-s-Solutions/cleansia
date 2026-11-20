@@ -47,6 +47,7 @@ class MembershipCurrencyBindingTest {
     @Test
     fun `every plan price goes through the shared formatter with the payload's currency`() {
         val subscribe = source(File(membershipDir, "SubscribePlusScreen.kt")).replace(Regex("\\s+"), " ")
+        val sheet = source(File(moduleDir, "src/main/java/cz/cleansia/customer/core/payments/PaymentSheetParams.kt"))
         assertTrue(
             "the hero no longer labels with the selected plan's currency",
             subscribe.contains("val currencyCode = selectedPlan?.currencyCode"),
@@ -65,7 +66,7 @@ class MembershipCurrencyBindingTest {
         )
         assertTrue(
             "the Google Pay country is the merchant's, not the shopper's market",
-            subscribe.contains("countryCode = \"CZ\"") && !subscribe.contains("countryCode = market"),
+            sheet.contains("countryCode = \"CZ\"") && !subscribe.contains("countryCode = market"),
         )
         assertTrue(
             "the subscribe screen reads the catalogue default again",

@@ -30,7 +30,7 @@ class PaymentSheetLayoutTest {
             .map { it.name to it.readText().replace(COMMENTS, "") }
             .filter { (_, code) -> code.contains("PaymentSheet.Configuration") }
             .toList()
-        assertEquals(listOf("PaymentSheetParams.kt", "SubscribePlusScreen.kt"), sites.map { it.first }.sorted())
+        assertEquals(listOf("PaymentSheetParams.kt"), sites.map { it.first })
         sites.forEach { (name, code) ->
             assertFalse("$name constructs the configuration without the builder", CONSTRUCTOR.containsMatchIn(code))
             assertEquals("$name builds one configuration", 1, BUILDER.findAll(code).count())

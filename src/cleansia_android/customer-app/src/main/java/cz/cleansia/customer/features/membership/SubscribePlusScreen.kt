@@ -67,10 +67,10 @@ import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.core.market.selectedOrNull
 import cz.cleansia.customer.core.memberships.MembershipPlanDto
 import cz.cleansia.customer.core.memberships.trialDaysOn
-import com.stripe.android.paymentsheet.PaymentSheet
 import com.stripe.android.paymentsheet.PaymentSheetResult
 import com.stripe.android.paymentsheet.rememberPaymentSheet
-import cz.cleansia.customer.BuildConfig
+import cz.cleansia.customer.core.payments.PaymentSheetParams
+import cz.cleansia.customer.core.payments.toConfiguration
 import cz.cleansia.customer.R
 import cz.cleansia.customer.ui.theme.Sky400
 import cz.cleansia.customer.ui.theme.Sky950
@@ -267,35 +267,14 @@ fun SubscribePlusScreen(
                             is SubscribeOutcome.NeedsPaymentMethod -> {
                                 paymentSheet.presentWithSetupIntent(
                                     setupIntentClientSecret = outcome.setupIntentClientSecret,
-                                    configuration = PaymentSheet.Configuration.Builder(merchantDisplayName = "Cleansia")
-                                        .customer(
-                                            PaymentSheet.CustomerConfiguration(
-                                                id = outcome.customerId,
-                                                ephemeralKeySecret = outcome.ephemeralKey,
-                                            ),
-                                        )
-                                        .googlePay(
-                                            PaymentSheet.GooglePayConfiguration(
-                                                // Follows the Stripe key, not the build type. See
-                                                // build.gradle.kts where GOOGLE_PAY_PRODUCTION is derived.
-                                                environment = if (BuildConfig.GOOGLE_PAY_PRODUCTION) {
-                                                    PaymentSheet.GooglePayConfiguration.Environment.Production
-                                                } else {
-                                                    PaymentSheet.GooglePayConfiguration.Environment.Test
-                                                },
-                                                // The MERCHANT's country (Stripe's meaning of this field): Cleansia
-                                                // s.r.o. is Czech whichever market the customer shops in.
-                                                countryCode = "CZ",
-                                                // A SetupIntent carries no currency, so this is what the Google Pay
-                                                // sheet shows and what gates it: the currency the plan is sold in.
-                                                currencyCode = selectedPlan?.currencyCode,
-                                            ),
-                                        )
-                                        .allowsDelayedPaymentMethods(false)
-                                        // Never Horizontal, as in PaymentSheetParams.toConfiguration(): Stripe 21.2.0
-                                        // draws saved cards there through a Compose member 1.8 removed.
-                                        .paymentMethodLayout(PaymentSheet.PaymentMethodLayout.Vertical)
-                                        .build(),
+                                    configuration = PaymentSheetParams(
+                                        clientSecret = outcome.setupIntentClientSecret,
+                                        ephemeralKey = outcome.ephemeralKey,
+                                        customerId = outcome.customerId,
+                                        // A SetupIntent carries no currency, so this is what the Google Pay
+                                        // sheet shows and what gates it: the currency the plan is sold in.
+                                        currencyCode = selectedPlan?.currencyCode,
+                                    ).toConfiguration(),
                                 )
                             }
                             SubscribeOutcome.AlreadyActive -> {

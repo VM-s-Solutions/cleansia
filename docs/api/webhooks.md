@@ -68,7 +68,7 @@ refund Stripe accepted and then failed. Every host that runs the handler handles
 | `payment_intent.canceled` | `PaymentIntentCanceled` | Handled as an expired session — **except** an intent Stripe cancelled with the reason `duplicate`, which leaves the order as it is: `CreatePaymentIntent` cancels an order's old intent that way only when it has just handed the customer a new one to pay ([Payment and fiscal](/flows/payment-and-fiscal#saved-cards-and-receivables)) |
 | `payment_intent.payment_failed` | `PaymentIntentPaymentFailed` | Status left alone so the client can retry; the first decline on an order tells the administrators |
 | **Saved card** — found by the `SavedCardId` in the intent's metadata | | |
-| `setup_intent.succeeded` | `SetupIntentSucceeded` | A card saved on its own in the customer apps — a card-only SetupIntent confirmed in PaymentSheet under Profile → Payments — succeeded: the card lands on its `SavedCards` row and the customer's earlier card in that currency is retired. A usable saved card is required to choose cash from 2026-10-29; saving it authorizes no automatic charge. A SetupIntent with no `SavedCardId` (the Plus subscribe flow's) is ignored. A setup-mode Checkout Session raises it too, and whichever of the two arrives second changes nothing → [Payment and fiscal](/flows/payment-and-fiscal#saved-cards-and-receivables) |
+| `setup_intent.succeeded` | `SetupIntentSucceeded` | A card saved on its own in the customer apps — a card-only SetupIntent confirmed in PaymentSheet under Profile → Payments — succeeded: the card lands on its `SavedCards` row and the customer's earlier card in that currency is retired and taken off the Stripe Customer, unless Plus renews on it. The app's own `POST api/SavedCard/ConfirmSetup` lands it first through the same capture; this event is the backstop. A usable saved card is required to choose cash from 2026-10-29; saving it authorizes no automatic charge. A SetupIntent with no `SavedCardId` (the Plus subscribe flow's) is ignored. A setup-mode Checkout Session raises it too, and whichever of the two arrives second changes nothing → [Payment and fiscal](/flows/payment-and-fiscal#saved-cards-and-receivables) |
 | **Subscription** (Cleansia Plus) — found by the Stripe subscription id | | |
 | `customer.subscription.created` | `SubscriptionCreated` | Creates the local `UserMembership` — the only writer of that row for a web Plus checkout |
 | `customer.subscription.updated` | `SubscriptionUpdated` | Mirrors Stripe's status and the current period onto the membership; a renewal is recorded here |
@@ -185,10 +185,11 @@ its **own** `whsec_`, and a payload signed by one will never verify against the 
 
 **`setup_intent.succeeded` belongs on the mobile endpoint.** The customer apps' *Save a card* under Profile →
 Payments saves a card on its own through a SetupIntent confirmed in PaymentSheet
-(`POST api/SavedCard/CreateSetupIntent`, served by the customer-mobile host), and this event is the only
-report of it. Since the 2026-10-29 requirement, cash eligibility needs an already usable saved card;
-nothing automatically charges it. **Left off, a card saved that way is never captured:** its row is never listed, so the
-customer does not find the card they saved. The web endpoint does not need it — a setup-mode session is
+(`POST api/SavedCard/CreateSetupIntent`, served by the customer-mobile host). Since 2026-11-20 the app
+confirms it at once (`POST api/SavedCard/ConfirmSetup`), and this event is the backstop for an app that
+could not. Since the 2026-10-29 requirement, cash eligibility needs an already usable saved card;
+nothing automatically charges it. **Left off, a card whose confirm did not reach the server is never captured:** its row is
+never listed, so the customer does not find the card they saved. The web endpoint does not need it — a setup-mode session is
 reported by its own `checkout.session.completed` — and if both carry it, the second delivery is a
 no-op. Stripe sends an event to every endpoint subscribed to its type, whichever channel raised it, so
 the mobile endpoint also receives the `setup_intent.succeeded` behind a setup-mode session and the

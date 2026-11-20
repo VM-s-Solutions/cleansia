@@ -75,7 +75,7 @@ public class OrderReceipt : TenantAuditable
     public FiscalErrorKind? FiscalErrorKind { get; private set; }
 
     /// <summary>
-    /// How many times the retry job has attempted fiscal registration after the initial failure.
+    /// How many attempts the retry job has made to register or render the receipt.
     /// Starts at 0 (initial attempt during receipt generation).
     /// </summary>
     public int FiscalRetryCount { get; private set; }

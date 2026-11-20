@@ -706,7 +706,7 @@ const SHARED_KEYS_NOT_REACHABLE_HERE: ReadonlyArray<{
   {
     key: 'company.not_found',
     reason:
-      'Emitted by ReceiptService, but only from ReserveReceiptAsync, RealizeFiscalAndPdfAsync and RetryFiscalRegistrationAsync. This host\'s only ReceiptService caller is DownloadOrderReceipt, which calls DownloadReceiptPdfAsync and throws none of them; the other three run in the Functions receipt handler and the fiscal retry service, neither behind an HTTP controller.',
+      'Emitted by ReceiptService, but only from ReserveReceiptAsync, RealizeFiscalAndPdfAsync and CompleteReceiptAsync. This host\'s only ReceiptService caller is DownloadOrderReceipt, which calls DownloadReceiptPdfAsync and IsPdfStoredAsync, and neither throws the key; the other three run in the Functions receipt handler and the fiscal retry service, neither behind an HTTP controller.',
   },
   {
     key: 'currency.not_found',

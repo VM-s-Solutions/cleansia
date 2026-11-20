@@ -10,15 +10,11 @@ using Microsoft.EntityFrameworkCore;
 namespace Cleansia.Tests.Functions;
 
 /// <summary>
-/// ADR-0004 C-A — the born-retry-eligible claim must be SWEPT by the retry job.
-///
-/// <para>Under claim-before-register, a crash between the claim commit and the authority register
-/// leaves a committed row with <c>FiscalRegistrationFailed == false, FiscalCode == null,
-/// FiscalNextRetryAt != null</c>. The pre-widening <c>GetDueForRetryAsync</c> filtered on
-/// <c>FiscalRegistrationFailed == true</c>, so this row was INVISIBLE to the retry job (RED).
-/// ADR-0004 C-A mandates widening the query to ALSO return
-/// <c>FiscalCode == null &amp;&amp; FiscalNextRetryAt != null &amp;&amp; FiscalNextRetryAt &lt;= utcNow</c>
-/// regardless of the failed flag, so the claimed-but-unregistered row is recovered (GREEN).</para>
+/// Being due is the whole test: <c>GetDueForRetryAsync</c> returns every receipt whose
+/// <c>FiscalNextRetryAt</c> has come, code or no code, failed flag or not
+/// (→ /flows/payment-and-fiscal#a-receipt-s-pdf-is-repaired). So a claim that crashed before its
+/// register (ADR-0004 C-A) and a stamped receipt whose render is still owed are both swept, and a
+/// receipt with no due instant is not.
 ///
 /// <para>Spins a REAL <see cref="CleansiaDbContext"/> over SQLite in-memory (so the model + the
 /// partial filtered index <c>IX_OrderReceipts_FiscalNextRetryAt</c> actually materialize) — no

@@ -304,7 +304,7 @@ public sealed class ReceiptService(
     /// <para><b>Deliberately not <c>companyInfo.IsVatPayer</c>.</b> That is live company state, and a
     /// receipt is a statement about a sale that already happened. Reading it live failed in both
     /// directions: before registration a re-rendered order could claim VAT it never charged, and after
-    /// registration a pre-registration order re-rendered through <c>RetryFiscalRegistrationAsync</c> —
+    /// registration a pre-registration order re-rendered through <c>CompleteReceiptAsync</c> —
     /// which re-resolves company info and re-uploads the stored blob — produced a document with
     /// neither a VAT line (the layout needs <c>VatAmount &gt; 0</c>) nor the statutory non-payer notice
     /// (the layout needs <c>!IsVatPayer</c>). A tax document asserting neither posture.</para>
@@ -387,7 +387,7 @@ public sealed class ReceiptService(
 
         // Prices from the ORDER'S snapshot, names from the catalogue. These figures are declared to a
         // tax authority, and they used to be recomputed from the live catalogue every time the receipt
-        // was rendered — including by RetryFiscalRegistrationAsync, which re-renders an old receipt
+        // was rendered — including by CompleteReceiptAsync, which re-renders an old receipt
         // against today's prices. The name is a label and may drift; the number may not.
         foreach (var s in order.SelectedServices)
         {

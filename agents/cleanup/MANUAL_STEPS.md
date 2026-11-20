@@ -5,6 +5,29 @@ step, cleared when done.
 
 ## Open
 
+### MS-16 — Deliver `setup_intent.succeeded` to the mobile webhook endpoint — **owner**
+
+A card saved under Profile → Payments in either customer app is completed only by Stripe's
+`setup_intent.succeeded` (→ [Stripe Dashboard setup](/api/webhooks#stripe-dashboard-setup)). DEV
+processed none in the week to 2026-11-20 while five Payments captures stayed pending with no payment
+method. Whether the endpoint lacks the event or refuses its delivery is read in the Dashboard. The handler path is covered by tests; no repository change and no CI
+test can subscribe a Dashboard endpoint, so T-0942's item 1 waits on this step, and so does its DEV
+demo. An agent cannot take it: it has no Stripe Dashboard access and may not read Stripe keys.
+
+**Action** (Stripe test mode, the DEV account):
+
+1. **Developers → Webhooks →** the endpoint
+   `https://api-cleansia-customer-mobile-weu-dev.azurewebsites.net/api/Payment/webhook` → add the event
+   `setup_intent.succeeded`.
+2. If it is already listed, open that endpoint's failed deliveries of `setup_intent.succeeded` and read
+   the response code (a 400 is the signing secret: see *Debugging `400 InvalidSignature`* on the same
+   page).
+3. Optional: resend the latest pending `setup_intent.succeeded` per currency, so its row is completed.
+   Only the latest stays active, because each capture retires the one before.
+4. Before launch, the same for the `prod-weu` endpoint.
+
+**Done when:** a card added from Profile → Payments on DEV appears in the app's list.
+
 ### MS-13 — Send one of each migrated e-mail before the next deploy — **owner**
 
 T-0677 moved all six live e-mails off hosted SendGrid templates onto

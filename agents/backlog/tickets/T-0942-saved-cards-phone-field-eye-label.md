@@ -48,3 +48,9 @@ deploy.
 ## Work record
 
 - 2026-11-20 — Filed after Mike's rulings; started on `fix/t0942-wave6`.
+- 2026-11-20 — Item 1 is not fixed by a code change: its cause lies outside the repository. DEV processed
+  no `setup_intent.succeeded` in the week to 2026-11-20 while five Payments captures stayed pending, and
+  the handler path is already covered by `SavedCardWebhookTests`. The remedy is a Stripe Dashboard step on
+  the mobile webhook endpoint (`agents/cleanup/MANUAL_STEPS.md` MS-16). No CI test can pin a Dashboard
+  subscription, so no test was added for it, and item 1's DEV demo waits for that step. Items 2 to 4 are
+  fixed in code, each with a test that fails without it.

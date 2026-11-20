@@ -122,7 +122,8 @@ show it, or showed it failing.
 | F-076 | `fc8c236db` (T-0937) | proven on DEV | TAKE-025 passed (`take025.log:45`): the publish dispatch 44710255078 (ref master) succeeded with `INSERT 0 3` and `INSERT 0 15` (`:28-38`), A's take was refused with `employee.legal_documents_not_accepted`, A accepted, the take succeeded and T25 was cancelled |
 | F-081 | `0a48a9a22` (T-0937), `1291c2d3b` (T-0939) | proven by tests only | `ApiTimestampPrecisionTests`, `MicrosecondTimestampConverterTests`, `MarkMyPartDoneRouteTests`; the W test that reads two completion marks needs a phase-2 run's two-cleaner job (`e2e/README.md`, *Not proven by this run*) |
 | F-082 | `0fd27a5e1` (T-0938), `00e28c655` (T-0939) | proven by tests only | `order-wizard.facade.spec.ts`, `recurring-bookings.facade.spec.ts`; BOOK-035's web test needs the people stage's throwaway service (the same README paragraph) |
-| F-087 | `58a83d703` (T-0939) | proven on DEV | every confirmation of the run was proven by a sign-in: R3's API half (`book.log:46`), its web half after the 07:09 dispatch (`book-web.log:27`), I's and D's book stages, and the Android lane's `assist confirm` (`android-ev/assist-confirm.log:20-24`). When the 07:04 dispatch failed (F-110) the test failed (`book.log:57-95`) instead of passing on accounts left unconfirmed |
+| F-087, sign-in | `58a83d703` (T-0939) | proven on DEV | every confirmation of the run was proven by a sign-in: R3's API half (`book.log:46`), its web half after the 07:09 dispatch (`book-web.log:27`), I's and D's book stages, and the Android lane's `assist confirm` (`android-ev/assist-confirm.log:20-24`). When the 07:04 dispatch failed (F-110) the test failed (`book.log:57-95`), as the old harness would have |
+| F-087, confirmed first | `58a83d703` (T-0939) | **not proven: not reached** | the case the fix exists for, an account another dispatch confirmed first, did not happen: every dispatch confirmed only its own accounts and listed them (`suite/book-ios.log:41-44`, `book-android.log:41-44`, `book.log:41-44`, `android-ev/assist-confirm.log:20-22`), which the old log grep would also have passed. The Android lane's `assist confirm` ran at 06:49, before R3's book stage at 07:00 (`suite/journal.md:26`), not after it as `e2e/README.md` (*The fix-proof run*, Android step 2) expected |
 | F-088 | `31809cad0`, `9dd9f6e7a` (T-0938) | **not proven: fails on DEV** | both PaymentSheets still offer Stripe Link and its save box, on iOS and Android (F-109) |
 | F-089 | `7db792e3d`, `151687d7a` (T-0938) | proven on DEV | the Android phone step's refusal under the field, held 12 s, then a valid number saved (`android-ev/05-f089-refusal.xml`, `06-f089-refusal-12s.xml`, `08-f089-profile-phone.xml`). The timed-out request's toast (`151687d7a`) is proven by tests only (`NetworkErrorInterceptorTest`) |
 | F-092, push | `73bce6879` (T-0938) | proven on DEV | ORD-6A6660FC's open detail turned *Confirmed* 3 s after its push arrived, without a reopen (`ios-ev/take2.log:5-11`, `log-0654-0655.txt:71-90`) |
@@ -131,8 +132,8 @@ show it, or showed it failing.
 | F-095 | `9c4b67b9e`, `989d36849`, `f09cfa979` (T-0938) | proven on DEV | *Невірний пароль.* on the three webs (XCUT-019, `xcut-web.log:27`), both iOS apps (`ios-ev/ui/c-uk-refusal.txt:17`, `p-uk-refusal.txt:13`) and both Android apps (`android-ev/22-f095-customer-uk-dump.xml`, `23-f095-partner-uk-dump.xml`) |
 | F-102 | `e64705a54` (T-0939) | proven on DEV | PAYOUT-055 passed in settle (`settle.log:31`) and again in payroll/10 (`payroll10.log:29`) on A's invoice: total 300, cash held 360 (`state.json` `cashHeldAfterExecute`), set-off 300 = min(360, 300), transfer 0; the PDFs print 300,00 / -300,00 / 0,00 Kč |
 
-**Counts: 12 rows: 8 proven on DEV, 2 proven by tests only (F-081, F-082), 2 not proven (F-088, the foreground
-half of F-092).**
+**Counts: 13 rows: 8 proven on DEV, 2 proven by tests only (F-081, F-082), 3 not proven (F-088, the foreground
+half of F-092, F-087's account confirmed first).**
 
 ## (c) The register
 
@@ -176,8 +177,9 @@ says to use a coordinate where a label fails); the Android lane leaving build di
 
 Sources merged: F-109, F-110, F-114, F-116.
 
-The run proved on DEV the fixes of F-075, F-076, F-087, F-089, F-093, F-095, F-102 and the push half of F-092; F-081
-and F-082 stand on their tests. **F-088 is not fixed on DEV** (F-109, P2), and the foreground half of F-092 is not
-proven by the kept evidence (F-115). No P1 defect is open. E2E-TAKE-025, E2E-PAYOUT-057 and the settle stage's
+The run proved on DEV the fixes of F-075, F-076, F-089, F-093, F-095, F-102, the push half of F-092 and the sign-in
+half of F-087; F-081 and F-082 stand on their tests. **F-088 is not fixed on DEV** (F-109, P2), the foreground half
+of F-092 is not proven by the kept evidence (F-115), and F-087's account confirmed first by another dispatch was not
+reached. No P1 defect is open. E2E-TAKE-025, E2E-PAYOUT-057 and the settle stage's
 E2E-PAYOUT-016, 017, 032, 035, 036, 055 and 056 passed on DEV, which closes the phase-2 run's failed, not-run and
 phase-1-only rows for them.

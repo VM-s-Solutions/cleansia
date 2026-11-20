@@ -219,14 +219,23 @@ final class PaymentsViewModel: ViewModel {
         case let .observed(eventScope, cards) where eventScope == scope:
             updateCards(cards)
         case let .confirmed(eventScope, cards) where eventScope == scope:
-            updateCards(cards)
-            cardConsentAccepted = false
-            snackbar.showSuccess(L10n.Payments.cardAdded)
+            cardAdded(cards)
+        case let .added(eventScope, card) where eventScope == scope:
+            // The server retires every earlier card in the new card's currency.
+            cardAdded([card] + (state.loadedValue?.cards ?? []).filter {
+                $0.currencyCode.caseInsensitiveCompare(card.currencyCode) != .orderedSame
+            })
         case let .failure(eventScope, error) where eventScope == scope:
             snackbar.showApiError(error)
         default:
             break
         }
+    }
+
+    private func cardAdded(_ cards: [SavedCard]) {
+        updateCards(cards)
+        cardConsentAccepted = false
+        snackbar.showSuccess(L10n.Payments.cardAdded)
     }
 
     private func updateCards(_ cards: [SavedCard]) {

@@ -43,6 +43,7 @@ struct SavedCardCapture: Equatable {
 
     let attempt: SavedCardCaptureAttempt
     var stage: Stage
+    var setupIntentId: String?
 }
 
 struct SavedCardSheetRequest {
@@ -55,6 +56,7 @@ final class SavedCardCaptureStore: SessionScopedCache {
     enum Event {
         case observed(SavedCardCaptureScope, [SavedCard])
         case confirmed(SavedCardCaptureScope, [SavedCard])
+        case added(SavedCardCaptureScope, SavedCard)
         case failure(SavedCardCaptureScope, ApiError)
     }
 
@@ -125,6 +127,7 @@ final class SavedCardCaptureStore: SessionScopedCache {
         guard isCurrent(attempt, in: scope),
               case let .presentingSheet(setup) = captures[scope]?.stage else { return false }
         captures[scope]?.stage = .pending(setup.savedCardId)
+        captures[scope]?.setupIntentId = setup.setupIntentId
         changes.send()
         return true
     }
@@ -140,12 +143,14 @@ final class SavedCardCaptureStore: SessionScopedCache {
     func reconcile(_ cards: [SavedCard], in scope: SavedCardCaptureScope) -> Bool {
         guard activeScope == scope, let capture = captures[scope],
               let id = capture.stage.savedCardId,
-              cards.contains(where: { card in
-                  card.id == id && (scope.currencyCode == nil || card.currencyCode.uppercased() == scope.currencyCode)
-              }) else { return false }
+              cards.contains(where: { Self.lands($0, id: id, in: scope) }) else { return false }
         discard(in: scope, attempt: capture.attempt)
         events.send(.confirmed(scope, cards))
         return true
+    }
+
+    private static func lands(_ card: SavedCard, id: String, in scope: SavedCardCaptureScope) -> Bool {
+        card.id == id && (scope.currencyCode == nil || card.currencyCode.uppercased() == scope.currencyCode)
     }
 
     func verify(
@@ -163,30 +168,56 @@ final class SavedCardCaptureStore: SessionScopedCache {
         changes.send()
         let task = Task { [weak self] in
             guard let self else { return }
-            await runVerification(
-                in: scope, attempt: capture.attempt, jobId: jobId, client: client, pause: pause
-            )
+            defer { endVerification(in: scope, attempt: capture.attempt, jobId: jobId) }
+            if let setupIntentId = capture.setupIntentId,
+               await isSettled(confirming: setupIntentId, in: scope, attempt: capture.attempt, client: client)
+            {
+                return
+            }
+            await runVerification(in: scope, attempt: capture.attempt, client: client, pause: pause)
         }
         verificationJobs[scope] = (jobId, task)
         await task.value
     }
 
+    private func endVerification(in scope: SavedCardCaptureScope, attempt: SavedCardCaptureAttempt, jobId: UUID) {
+        guard verificationJobs[scope]?.id == jobId else { return }
+        verificationJobs.removeValue(forKey: scope)
+        if isCurrent(attempt, in: scope), let id = captures[scope]?.stage.savedCardId {
+            captures[scope]?.stage = .pending(id)
+            changes.send()
+        }
+    }
+
+    /// A confirm that never reached the server settles nothing, so the list is read instead.
+    private func isSettled(
+        confirming setupIntentId: String,
+        in scope: SavedCardCaptureScope,
+        attempt: SavedCardCaptureAttempt,
+        client: SavedCardClient
+    ) async -> Bool {
+        let confirmed = await client.confirm(setupIntentId: setupIntentId)
+        guard !Task.isCancelled, activeScope == scope, isCurrent(attempt, in: scope),
+              let id = captures[scope]?.stage.savedCardId else { return true }
+        switch confirmed {
+        case let .success(card) where Self.lands(card, id: id, in: scope):
+            discard(in: scope, attempt: attempt)
+            events.send(.added(scope, card))
+            return true
+        case let .failure(error) where (error.httpStatus ?? 0) > 0:
+            events.send(.failure(scope, error))
+            return true
+        case .success, .failure:
+            return false
+        }
+    }
+
     private func runVerification(
         in scope: SavedCardCaptureScope,
         attempt: SavedCardCaptureAttempt,
-        jobId: UUID,
         client: SavedCardClient,
         pause: @escaping () async -> Void
     ) async {
-        defer {
-            if verificationJobs[scope]?.id == jobId {
-                verificationJobs.removeValue(forKey: scope)
-                if isCurrent(attempt, in: scope), let id = captures[scope]?.stage.savedCardId {
-                    captures[scope]?.stage = .pending(id)
-                    changes.send()
-                }
-            }
-        }
         for read in 0 ..< Self.cardReads {
             if read > 0 { await pause() }
             guard !Task.isCancelled, activeScope == scope, isCurrent(attempt, in: scope) else { return }

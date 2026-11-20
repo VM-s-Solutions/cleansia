@@ -35,12 +35,19 @@ struct SavedCardSetup: Equatable {
     let setupIntentClientSecret: String
     let stripeCustomerId: String
     let ephemeralKey: String
+
+    /// Stripe's client secret is the intent id followed by `_secret_`.
+    var setupIntentId: String {
+        setupIntentClientSecret.range(of: "_secret_").map { String(setupIntentClientSecret[..<$0.lowerBound]) }
+            ?? setupIntentClientSecret
+    }
 }
 
 protocol SavedCardClient {
     func myCards() async -> ApiResult<[SavedCard]>
     func startCapture(consentAccepted: Bool, countryId: String?) async -> ApiResult<SavedCardSetup>
     func remove(savedCardId: String) async -> ApiResult<Void>
+    func confirm(setupIntentId: String) async -> ApiResult<SavedCard>
 }
 
 struct LiveSavedCardClient: SavedCardClient {
@@ -72,6 +79,14 @@ struct LiveSavedCardClient: SavedCardClient {
     func remove(savedCardId: String) async -> ApiResult<Void> {
         await apiResult(mapError: ApiError.fromGenerated) {
             _ = try await CustomerSavedCardAPI.savedCardRemove(id: savedCardId)
+        }
+    }
+
+    func confirm(setupIntentId: String) async -> ApiResult<SavedCard> {
+        await apiResult(mapError: ApiError.fromGenerated) {
+            try await SavedCard(CustomerSavedCardAPI.savedCardConfirmSetup(
+                confirmSavedCardSetupCommand: ConfirmSavedCardSetupCommand(setupIntentId: setupIntentId)
+            ))
         }
     }
 }

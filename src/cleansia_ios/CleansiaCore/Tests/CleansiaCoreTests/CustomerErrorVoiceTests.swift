@@ -232,7 +232,7 @@ final class CustomerErrorVoiceTests: XCTestCase {
         "refund.nothing_refundable": "RefundService",
         "refund.order_not_refundable": "RefundService",
         "saved_card.consent_not_accepted": "CreateSavedCardSetupIntent",
-        "saved_card.not_found": "RemoveSavedCard",
+        "saved_card.not_found": "ConfirmSavedCardSetup, RemoveSavedCard",
         "tenant.archived": "CleansiaDbContext.CommitAsync via RequestValidationExceptionFilterAttribute (409)",
         "tenant.not_found": "OperatorTenantScopeBehavior",
         "user.email_confirmed": "ResendConfirmationEmail",

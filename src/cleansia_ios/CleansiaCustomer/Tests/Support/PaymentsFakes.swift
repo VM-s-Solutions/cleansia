@@ -9,10 +9,13 @@ final class FakeSavedCardClient: SavedCardClient, @unchecked Sendable {
     var beforeRead: (() async -> Void)?
     var beforeCapture: (() async -> Void)?
     var removeResult: ApiResult<Void>
+    /// A transport failure by default, so a completed sheet falls back to reading the list.
+    var confirmResult: ApiResult<SavedCard> = .failure(ApiError(httpStatus: -1))
     private(set) var readCount = 0
     private(set) var captureConsents: [Bool] = []
     private(set) var captureCountryIds: [String?] = []
     private(set) var removedIds: [String] = []
+    private(set) var confirmedSetupIntentIds: [String] = []
 
     init(
         reads: [ApiResult<[SavedCard]>] = [.success([])],
@@ -41,6 +44,11 @@ final class FakeSavedCardClient: SavedCardClient, @unchecked Sendable {
     func remove(savedCardId: String) async -> ApiResult<Void> {
         removedIds.append(savedCardId)
         return removeResult
+    }
+
+    func confirm(setupIntentId: String) async -> ApiResult<SavedCard> {
+        confirmedSetupIntentIds.append(setupIntentId)
+        return confirmResult
     }
 }
 
@@ -83,7 +91,7 @@ enum PaymentsFixtures {
 
     static let setup = SavedCardSetup(
         savedCardId: "card-new",
-        setupIntentClientSecret: "seti_secret_123",
+        setupIntentClientSecret: "seti_123_secret_456",
         stripeCustomerId: "cus_789",
         ephemeralKey: "ek_secret_456"
     )

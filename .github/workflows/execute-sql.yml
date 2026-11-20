@@ -145,6 +145,7 @@ jobs:
       # outside Azure, where the server drops the connection unanswered. The same per-run rule as
       # deploy-azure.yml's migration. Creating a rule is asynchronous, so the step waits until it exists.
       - name: Open the DEV database firewall to this runner
+        id: open-firewall
         run: |
           RUNNER_IP="$(curl -s --max-time 10 https://api.ipify.org)"
           if ! [[ "$RUNNER_IP" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]]; then
@@ -212,9 +213,10 @@ jobs:
           echo "---"
           echo "Script executed successfully."
 
-      # Runs on failure and cancellation too. A delete refused while the server is busy is retried.
+      # Runs on failure and cancellation too, unless the open step never ran (no rule exists then).
+      # A delete refused while the server is busy is retried.
       - name: Remove the runner firewall rule
-        if: always()
+        if: always() && steps.open-firewall.outcome != 'skipped'
         run: |
           for attempt in 1 2 3 4 5 6; do
             if az rest --method delete --url "$FIREWALL_RULE_URL" --output none; then exit 0; fi

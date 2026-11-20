@@ -1081,6 +1081,7 @@ public sealed class CompanyWindDownSweepTests(PostgresContainerFixture fixture) 
         public Task<string> CreateCardSetupCheckoutSessionAsync(string stripeCustomerId, string savedCardId, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<SavedCardDetails?> GetSetupIntentCardAsync(string setupIntentId, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<SavedCardDetails?> GetPaymentIntentCardAsync(string paymentIntentId, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Task DetachSavedCardAsync(string stripeCustomerId, string paymentMethodId, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<CheckoutSessionResult> CreateCardSavingCheckoutSessionAsync(Order order, string stripeCustomerId, string savedCardId, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<CheckoutSessionResult> CreateCardSavingCheckoutSessionAsync(Order order, DateTime expiresAtUtc, string stripeCustomerId, string savedCardId, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<string> ChargeReceivableOffSessionAsync(string receivableId, decimal amount, string currency, string stripeCustomerId, string paymentMethodId, int attempt, CancellationToken cancellationToken) => throw new NotSupportedException();

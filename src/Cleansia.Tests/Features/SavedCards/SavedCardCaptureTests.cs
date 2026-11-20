@@ -17,7 +17,7 @@ namespace Cleansia.Tests.Features.SavedCards;
 /// Owner ruling 2026-09-28, decision 16: a customer saves a card as the guarantee for cash bookings. Both
 /// channels record the consent — the wording's version, the IP and the device — on a new row before the
 /// card exists, open the capture on the Stripe Customer for the market's currency, and charge nothing.
-/// Removing a card deactivates the caller's own row alone.
+/// Removing a card deactivates the caller's own row alone and takes the card off the Stripe Customer.
 /// </summary>
 public class SavedCardCaptureTests
 {
@@ -55,7 +55,8 @@ public class SavedCardCaptureTests
         _userRepository.Object, _savedCards.Object, MarketResolution.Resolving(_eur).Object, _customerResolver.Object,
         _session.Object, _requestMetadata.Object, _stripe.Object, NullLogger<CreateSavedCardSetupIntent.Handler>.Instance);
 
-    private RemoveSavedCard.Handler RemoveHandler() => new(_savedCards.Object, _session.Object);
+    private RemoveSavedCard.Handler RemoveHandler() => new(
+        _savedCards.Object, _session.Object, _stripe.Object, NullLogger<RemoveSavedCard.Handler>.Instance);
 
     private static void AssertConsentEvidence(SavedCard card)
     {
@@ -143,24 +144,29 @@ public class SavedCardCaptureTests
     }
 
     [Fact]
-    public async Task Removing_Ones_Own_Card_Deactivates_It()
+    public async Task Removing_Ones_Own_Card_Takes_It_Off_The_Stripe_Customer_And_Deactivates_It()
     {
         var card = CapturedCard(userId: UserId);
 
         var result = await RemoveHandler().Handle(new RemoveSavedCard.Command(card.Id), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
+        _stripe.Verify(c => c.DetachSavedCardAsync(EurCustomerId, "pm_card_1", It.IsAny<CancellationToken>()), Times.Once);
         _savedCards.Verify(r => r.Deactivate(card), Times.Once);
     }
 
     [Fact]
-    public void Removing_A_Card_Never_Reaches_Stripe_Whose_Customer_Also_Bills_Plus()
+    public async Task A_Stripe_Failure_While_Removing_Is_The_Gateway_Refusal_And_Keeps_The_Card()
     {
-        var dependencies = typeof(RemoveSavedCard.Handler).GetConstructors()
-            .SelectMany(c => c.GetParameters())
-            .Select(p => p.ParameterType);
+        var card = CapturedCard(userId: UserId);
+        _stripe.Setup(c => c.DetachSavedCardAsync(EurCustomerId, "pm_card_1", It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new StripeException("stripe down"));
 
-        Assert.DoesNotContain(dependencies, t => t.Namespace == typeof(IStripeClient).Namespace);
+        var result = await RemoveHandler().Handle(new RemoveSavedCard.Command(card.Id), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.PaymentGatewayUnavailable, result.Error!.Message);
+        _savedCards.Verify(r => r.Deactivate(It.IsAny<SavedCard>()), Times.Never);
     }
 
     private SavedCard CapturedCard(string userId)

@@ -72,6 +72,9 @@ public class CardPaymentsChargeSurfaceCoverageTests
             + "charges nothing. Cash keeps trading with the switch off, so its guarantee must too."),
         ("Features/SavedCards/CreateSavedCardSetupIntent.cs",
             "The mobile twin of the setup-mode checkout: a SetupIntent charges nothing."),
+        ("Features/SavedCards/RemoveSavedCard.cs",
+            "Takes a removed card off the customer's Stripe Customer. It charges nothing, and a customer must "
+            + "be able to remove a card with the switch off."),
     };
 
     private static readonly Regex StripeDependency =

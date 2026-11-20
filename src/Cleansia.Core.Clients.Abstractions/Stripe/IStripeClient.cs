@@ -226,6 +226,17 @@ public interface IStripeClient
         CancellationToken cancellationToken);
 
     /// <summary>
+    /// Takes a removed saved card off <paramref name="stripeCustomerId"/>, so no later sheet on that Customer
+    /// offers it. The Customer is the one per currency that Cleansia Plus also bills, so a card a subscription
+    /// not yet cancelled, or the Customer's invoices, pay with stays on it. A card already off the Customer is
+    /// left alone. An unreachable Stripe throws.
+    /// </summary>
+    Task DetachSavedCardAsync(
+        string stripeCustomerId,
+        string paymentMethodId,
+        CancellationToken cancellationToken);
+
+    /// <summary>
     /// Charge a customer's saved card, with the customer absent, for what they owe on a receivable: a
     /// PaymentIntent created with <c>off_session</c> and <c>confirm</c>, carrying <c>ReceivableId</c>
     /// metadata so the <c>payment_intent.*</c> webhooks find it. Returns the intent's id. A decline, or a

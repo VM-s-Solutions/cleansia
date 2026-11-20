@@ -620,6 +620,10 @@ need backfilling.
 
 ### Changed
 
+- **Customer Android — the card sheet no longer offers Stripe Link.** Paying for a booking or a
+  recurring visit, saving a card and signing up for Plus no longer offer *Pay with Link* or Link's
+  *save my info* box, as on iOS; you pay with a card or Google Pay. Saved cards are drawn as a row
+  instead of a list. → [Payment and fiscal](docs/flows/payment-and-fiscal.md)
 - **Customer web, Android and iOS — cash requires a saved card.** Cash is offered only for a signed-in
   customer's one-cleaner booking with a verified, unexpired saved card in the booking's currency.
   Recurring visits and card-to-cash fallback use the same rule. Choosing cash authorizes no automatic
@@ -1369,6 +1373,12 @@ need backfilling.
 
 ### Fixed
 
+- **Customer and cleaner Android — the screen reader names the password eye button in the app's
+  language.** TalkBack reads *Show password* or *Hide password* in the language chosen in the app,
+  not in the phone's.
+- **Cleaner — the payout invoice names your country in the invoice's language.** A Czech cleaner's
+  invoice prints *Země Česká republika*, not *Země Czech Republic*; the English invoice prints the
+  country's English name. → [Pay and payouts](docs/flows/pay-and-payouts.md)
 - **Customer iOS — registration AutoFill presentation.** The e-mail field identifies the account
   username while retaining its e-mail keyboard, and redraws preserve UIKit's active password colours
   and credential traits. Actual Keychain suggestions still require a physical-device check.

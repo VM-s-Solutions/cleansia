@@ -96,6 +96,11 @@ database seeded before the seed changed. Run these through **Execute SQL Script*
   days (captured or still waiting for Stripe), their card orders and the Stripe events DEV processed, to trace a
   ticked card payment that kept no card (PAY-022). It refuses to run on a database without the published DEV
   administrator, and `execute-sql.yml` refuses it against PRO.
+- **`dev-e2e-read-plus-subscriptions.sql`** — read-only: the Plus memberships of the last 60 days (plan, currency,
+  Stripe subscription, status, trial and period, and whether a phone's subscribe confirm started them) and the
+  `invoice.*` and `customer.subscription.*` events DEV processed in the last 14 days, to trace a failed Plus invoice
+  to its subscription. It prints no e-mail address, refuses to run on a database without the published DEV
+  administrator, and `execute-sql.yml` refuses it against PRO.
 
 Every `dev-e2e-*.sql` runs in backend CI, on a pull request that touches `sql-scripts/` or the backend and on
 `master`: `DevE2eScriptsTests`

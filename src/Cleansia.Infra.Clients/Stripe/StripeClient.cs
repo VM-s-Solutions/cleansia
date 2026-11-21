@@ -760,6 +760,7 @@ public class StripeClient : IStripeClient
             () => service.ListAsync(
                 new SubscriptionListOptions { Customer = stripeCustomerId, Limit = 100 },
                 cancellationToken: cancellationToken));
+        var unpaidEarlier = new List<string>();
         foreach (var mine in earlier.Data.Where(s =>
                      s.Metadata?.GetValueOrDefault("UserId") == userId && s.Status is ("active" or "trialing" or "incomplete")))
         {
@@ -768,6 +769,8 @@ public class StripeClient : IStripeClient
             {
                 return outcome;
             }
+
+            unpaidEarlier.Add(mine.Id);
         }
 
         // The phone's Plus sheet confirmed the platform's own SetupIntent, which carries no saved-card row, and
@@ -822,7 +825,23 @@ public class StripeClient : IStripeClient
                 () => service.GetAsync(subscription.Id, cancellationToken: cancellationToken));
         }
 
-        return await ReadFirstInvoiceOutcomeAsync(subscription, cancellationToken);
+        var result = await ReadFirstInvoiceOutcomeAsync(subscription, cancellationToken);
+
+        // An earlier attempt nobody can pay any more (its 3-D Secure step abandoned, its card refused) would
+        // otherwise wait out Stripe's 23-hour expiry; a failed cancel leaves exactly that.
+        foreach (var abandoned in unpaidEarlier.Where(id => id != result.SubscriptionId))
+        {
+            try
+            {
+                await CancelSubscriptionNowAsync(abandoned, cancellationToken);
+            }
+            catch (Exception ex) when (ex is StripeException or HttpRequestException or TimeoutException)
+            {
+                // Logged at the boundary; Stripe expires it unpaid, and this attempt's answer stands.
+            }
+        }
+
+        return result;
     }
 
     private async Task<SubscriptionResult> ReadFirstInvoiceOutcomeAsync(Subscription subscription, CancellationToken cancellationToken)

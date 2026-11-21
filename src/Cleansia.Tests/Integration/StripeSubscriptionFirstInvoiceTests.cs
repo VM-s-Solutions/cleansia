@@ -147,6 +147,41 @@ public class StripeSubscriptionFirstInvoiceTests
         Assert.Single(transport.Requests, r => r.Method == HttpMethod.Post && r.Path == "/v1/subscriptions");
     }
 
+    [Fact]
+    public async Task A_new_attempt_cancels_an_earlier_one_left_waiting_for_3ds()
+    {
+        var transport = new StripeFake
+        {
+            Created = Subscription("active"),
+            Listed = List(Earlier("sub_A", "incomplete", "user-1")),
+            InvoicePayments = Payments("""{"id":"pi_A","object":"payment_intent","status":"requires_action","client_secret":"pi_A_secret"}"""),
+        };
+
+        var result = await Client(transport).CreateSubscriptionAsync(
+            "cus_czk", "price_plus", "user-1", "PLUS_MONTHLY", 0, "tok-2", CancellationToken.None);
+
+        Assert.Equal(("sub_1", "active"), (result.SubscriptionId, result.Status));
+        Assert.Single(transport.Requests, r => r.Method == HttpMethod.Delete && r.Path == "/v1/subscriptions/sub_A");
+    }
+
+    [Fact]
+    public async Task The_follow_up_confirm_of_a_3ds_step_never_cancels_its_own_subscription()
+    {
+        var transport = new StripeFake
+        {
+            Created = Subscription("incomplete"),
+            Current = Subscription("incomplete"),
+            Listed = List(Earlier("sub_1", "incomplete", "user-1")),
+            InvoicePayments = Payments("""{"id":"pi_1","object":"payment_intent","status":"requires_action","client_secret":"pi_1_secret_2"}"""),
+        };
+
+        var result = await Client(transport).CreateSubscriptionAsync(
+            "cus_czk", "price_plus", "user-1", "PLUS_MONTHLY", 0, "tok-1", CancellationToken.None);
+
+        Assert.Equal(("incomplete", "pi_1_secret_2"), (result.Status, result.PaymentIntentClientSecret));
+        Assert.DoesNotContain(transport.Requests, r => r.Method == HttpMethod.Delete);
+    }
+
     private static string Subscription(string status) =>
         $$"""
         {"id":"sub_1","object":"subscription","status":"{{status}}","latest_invoice":"in_1",
@@ -196,6 +231,7 @@ public class StripeSubscriptionFirstInvoiceTests
                 "/v1/setup_intents" => """{"object":"list","data":[],"has_more":false,"url":"/v1/setup_intents"}""",
                 "/v1/subscriptions" when request.Method == HttpMethod.Get => Listed,
                 "/v1/subscriptions" => Created,
+                _ when request.Method == HttpMethod.Delete => """{"id":"sub_A","object":"subscription","status":"canceled","latest_invoice":"in_A"}""",
                 "/v1/invoice_payments" => InvoicePayments ?? throw new InvalidOperationException("invoice payments read"),
                 _ => Current ?? throw new InvalidOperationException($"unexpected {request.Method} {path}"),
             };

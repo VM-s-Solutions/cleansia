@@ -297,7 +297,8 @@ public interface IStripeClient
     /// same subscription and reads its state afresh, so the call after a 3-D Secure step finds it paid.</para>
     /// <para>Before creating, it reads the Customer's subscriptions that carry this <paramref name="userId"/>: one
     /// already paid or trialing is returned and nothing is created, so a new attempt after a paid one whose confirm
-    /// never landed charges nothing more.</para>
+    /// never landed charges nothing more; one still unpaid that this attempt does not replay is cancelled after the
+    /// create.</para>
     /// </summary>
     Task<SubscriptionResult> CreateSubscriptionAsync(
         string stripeCustomerId,

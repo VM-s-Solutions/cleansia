@@ -241,7 +241,10 @@ was granted at once. Now:
 4. **A new attempt asks Stripe first.** Before it creates anything, the confirm lists the Customer's
    subscriptions that carry this user's `UserId`. One that is `active` or `trialing`, or whose first invoice's
    PaymentIntent has succeeded, is the one the confirm grants, and nothing new is created or charged: an app
-   killed after a paid 3-D Secure step and opened again before the webhook lands does not pay twice.
+   killed after a paid 3-D Secure step and opened again before the webhook lands does not pay twice. One still
+   `incomplete` that the new attempt does not replay (its 3-D Secure step abandoned, its card refused) is
+   cancelled at Stripe once the new subscription is created; a cancel Stripe refuses leaves it to Stripe's
+   23-hour expiry, unpaid.
 5. **The backstop.** The subscription webhooks grant a subscription they do not know from its first
    `customer.subscription.created` or `customer.subscription.updated` that says `active` or `trialing`, so
    a phone killed right after the 3-D Secure step still ends with its one membership. An `incomplete`,

@@ -1319,6 +1319,9 @@
     <string name="error_membership_swap_same_plan">У вас уже є цей план.</string>
     <string name="error_membership_plan_not_priced_in_currency">Цей план поки що не продається на вашому ринку.</string>
     <string name="error_membership_stripe_customer_currency_locked">Оплата Plus уже налаштована в іншій валюті. Щоб змінити її, зверніться до підтримки.</string>
+    <string name="error_membership_card_declined">Вашу картку відхилено. Спробуйте іншу картку.</string>
+    <string name="error_membership_card_insufficient_funds">На вашій картці недостатньо коштів. Спробуйте іншу картку.</string>
+    <string name="error_membership_card_authentication_failed">Ваш банк не підтвердив платіж. Спробуйте ще раз або скористайтеся іншою карткою.</string>
     <string name="error_order_not_completed">Оцінити замовлення можна лише після завершення.</string>
     <string name="error_order_preferred_employee_not_eligible">Вибраний клінер недоступний для цього замовлення.</string>
     <string name="error_order_preferred_employee_membership_required">Вибір улюбленого прибиральника — перевага Cleansia Plus.</string>

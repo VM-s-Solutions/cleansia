@@ -86,6 +86,13 @@ class BackendKeyStringsTest {
         "country.not_serviced",
     )
 
+    /** A no-trial confirm charges the first invoice at once; a card that refuses it is answered with its reason. */
+    private val subscribeCardKeys = listOf(
+        "membership.card_declined",
+        "membership.card_insufficient_funds",
+        "membership.card_authentication_failed",
+    )
+
     /**
      * `OperatorTenantScopeBehavior` runs before validation on every anonymous request that names a
      * market — `Register`, `GoogleAuth`, `Referral/Validate`, `Order/Quote`, `Order/QuotePlusSavings`
@@ -265,6 +272,11 @@ class BackendKeyStringsTest {
     @Test
     fun `every market refusal Subscribe can answer resolves to a sentence in all five locales`() {
         assertAllResolve(subscribeMarketKeys)
+    }
+
+    @Test
+    fun `every card refusal Subscribe can answer resolves to a sentence in all five locales`() {
+        assertAllResolve(subscribeCardKeys)
     }
 
     @Test

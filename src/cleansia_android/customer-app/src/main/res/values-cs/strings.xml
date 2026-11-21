@@ -1321,6 +1321,9 @@
     <string name="error_membership_swap_same_plan">Tento plán již máte.</string>
     <string name="error_membership_plan_not_priced_in_currency">Tento plán zatím není na vašem trhu v prodeji.</string>
     <string name="error_membership_stripe_customer_currency_locked">Vaše platby za Plus jsou už nastavené v jiné měně. Pro změnu kontaktujte podporu.</string>
+    <string name="error_membership_card_declined">Vaše karta byla zamítnuta. Zkuste jinou kartu.</string>
+    <string name="error_membership_card_insufficient_funds">Na vaší kartě není dostatek prostředků. Zkuste jinou kartu.</string>
+    <string name="error_membership_card_authentication_failed">Vaše banka platbu nepotvrdila. Zkuste to znovu nebo použijte jinou kartu.</string>
     <string name="error_order_not_completed">Objednávku lze hodnotit až po dokončení.</string>
     <string name="error_order_preferred_employee_not_eligible">Vybraný uklízeč není pro tuto objednávku k dispozici.</string>
     <string name="error_order_preferred_employee_membership_required">Výběr oblíbeného uklízeče je výhoda Cleansia Plus.</string>

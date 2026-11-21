@@ -35,9 +35,9 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
 
 /**
- * Outcome of [MembershipViewModel.startSubscribe]. The screen maps these
- * to PaymentSheet launch (NeedsPaymentMethod), navigation (Subscribed),
- * or snackbar (Failed / AlreadyActive).
+ * Outcome of [MembershipViewModel.startSubscribe] and the confirms. The screen maps these
+ * to PaymentSheet launch (NeedsPaymentMethod), the 3-D Secure challenge (NeedsAuthentication),
+ * navigation (Subscribed), or snackbar (Failed / AlreadyActive).
  */
 sealed interface SubscribeOutcome {
     /**
@@ -51,8 +51,14 @@ sealed interface SubscribeOutcome {
         val customerId: String,
     ) : SubscribeOutcome
 
-    /** Phase 2 success — membership created, navigate back to profile / show success snackbar. */
-    data class Subscribed(val membershipId: String) : SubscribeOutcome
+    /**
+     * The first invoice's card needs 3-D Secure and no membership exists yet: complete the PaymentIntent,
+     * then call [MembershipViewModel.confirmAfterAuthentication].
+     */
+    data class NeedsAuthentication(val paymentIntentClientSecret: String) : SubscribeOutcome
+
+    /** The membership is granted (paid, or trialing) — navigate to the success screen. */
+    data object Subscribed : SubscribeOutcome
 
     /** Backend rejected — idempotency guard fired (user already had Active). */
     data object AlreadyActive : SubscribeOutcome
@@ -179,8 +185,9 @@ class MembershipViewModel @Inject constructor(
     }
 
     /**
-     * Phase 2 — called after PaymentSheet returns Completed. Creates the
-     * actual Stripe subscription + local UserMembership row.
+     * Phase 2 — called after PaymentSheet returns Completed. Creates the Stripe subscription; with no
+     * trial the server charges the first invoice and grants the membership only once it is paid.
+     * -> /flows/loyalty-and-memberships#plus-paid-before-granted
      */
     suspend fun confirmSubscribe(planCode: String): SubscribeOutcome {
         _submitState.value = ActionState.Submitting
@@ -194,14 +201,44 @@ class MembershipViewModel @Inject constructor(
                 ?: UUID.randomUUID().toString().also { subscribeIdempotencyToken = it }
             val resp = repository.subscribePhase2(planCode, token, marketRepository.state.value.countryId)
                 .showErrorUnlessNetwork().getOrNull()
-            if (resp == null || resp.membershipId.isEmpty()) {
-                // A null result already snackbarred via showErrorUnlessNetwork;
-                // a 2xx with an empty membershipId is a malformed success — keep
-                // the original generic message so the user still sees a failure.
-                if (resp != null) snackbar.showError(appContext.getString(R.string.error_generic_network))
-                return SubscribeOutcome.Failed
+                ?: return SubscribeOutcome.Failed
+            return when {
+                resp.membershipId.isNotEmpty() -> SubscribeOutcome.Subscribed
+                resp.paymentIntentClientSecret.isNotEmpty() ->
+                    SubscribeOutcome.NeedsAuthentication(resp.paymentIntentClientSecret)
+                else -> {
+                    snackbar.showError(appContext.getString(R.string.error_generic_network))
+                    SubscribeOutcome.Failed
+                }
             }
-            return SubscribeOutcome.Subscribed(resp.membershipId)
+        } finally {
+            _submitState.value = ActionState.Idle
+        }
+    }
+
+    /**
+     * The follow-up after the 3-D Secure challenge, whatever the SDK reported: the same request with the
+     * same token, so Stripe replays the one subscription and the server grants only if it is paid. A
+     * second challenge is never offered; the customer starts again from phase 1.
+     */
+    suspend fun confirmAfterAuthentication(planCode: String, challengeCancelled: Boolean): SubscribeOutcome {
+        _submitState.value = ActionState.Submitting
+        try {
+            // Without the attempt's token (the process died during the challenge) a confirm would start
+            // a second subscription; the subscription webhook grants a paid first one on its own.
+            val token = subscribeIdempotencyToken ?: run {
+                repository.refresh()
+                return if (repository.current.value?.hasMembership == true) SubscribeOutcome.Subscribed else SubscribeOutcome.Failed
+            }
+            val result = repository.subscribePhase2(planCode, token, marketRepository.state.value.countryId)
+            if ((result.errorOrNull() as? ApiError.BadRequest)?.errorKey == ALREADY_ACTIVE) {
+                repository.refresh()
+                return SubscribeOutcome.Subscribed
+            }
+            val resp = result.showErrorUnlessNetwork().getOrNull() ?: return SubscribeOutcome.Failed
+            if (resp.membershipId.isNotEmpty()) return SubscribeOutcome.Subscribed
+            snackbar.showErrorKey(if (challengeCancelled) R.string.error_payment_cancelled else R.string.error_payment_failed)
+            return SubscribeOutcome.Failed
         } finally {
             _submitState.value = ActionState.Idle
         }
@@ -267,5 +304,9 @@ class MembershipViewModel @Inject constructor(
 
     private fun <T> ApiResult<T>.showErrorUnlessNetwork(): ApiResult<T> = onError { error ->
         if (error !is ApiError.Network) snackbar.showError(error)
+    }
+
+    private companion object {
+        const val ALREADY_ACTIVE = "membership.already_active"
     }
 }

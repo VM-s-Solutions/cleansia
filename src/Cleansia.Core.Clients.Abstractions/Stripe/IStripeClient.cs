@@ -295,6 +295,9 @@ public interface IStripeClient
     /// <see cref="SubscriptionResult.PaymentIntentClientSecret"/> when the card needs 3-D Secure, or
     /// <see cref="SubscriptionResult.DeclineCode"/> when it was declined. A retry on the same attempt id replays the
     /// same subscription and reads its state afresh, so the call after a 3-D Secure step finds it paid.</para>
+    /// <para>Before creating, it reads the Customer's subscriptions that carry this <paramref name="userId"/>: one
+    /// already paid or trialing is returned and nothing is created, so a new attempt after a paid one whose confirm
+    /// never landed charges nothing more.</para>
     /// </summary>
     Task<SubscriptionResult> CreateSubscriptionAsync(
         string stripeCustomerId,

@@ -238,14 +238,19 @@ was granted at once. Now:
    `membership.card_authentication_failed`. **3-D Secure** answers `paymentIntentClientSecret` and grants
    nothing; the app completes it and sends the same confirm again, which replays the same subscription
    and grants only once the invoice is paid ([the contract](/api/markets-and-memberships)).
-4. **The backstop.** The subscription webhooks grant a subscription they do not know from its first
+4. **A new attempt asks Stripe first.** Before it creates anything, the confirm lists the Customer's
+   subscriptions that carry this user's `UserId`. One that is `active` or `trialing`, or whose first invoice's
+   PaymentIntent has succeeded, is the one the confirm grants, and nothing new is created or charged: an app
+   killed after a paid 3-D Secure step and opened again before the webhook lands does not pay twice.
+5. **The backstop.** The subscription webhooks grant a subscription they do not know from its first
    `customer.subscription.created` or `customer.subscription.updated` that says `active` or `trialing`, so
    a phone killed right after the 3-D Secure step still ends with its one membership. An `incomplete`,
    expired or cancelled subscription gets no row from either path, and a late `incomplete` event does not
    end a membership already granted. A web Checkout subscription is provisioned the same way: by its
    created event, or by the update that makes it `active` if it was created `incomplete`.
 
-Every path ends with one membership: the confirm and the webhook both look the subscription up first, and
+Every path ends with one membership: a new attempt resumes a paid one at Stripe instead of creating a second,
+the confirm and the webhook both look the subscription up first, and
 the unique indexes settle a race between them (the loser answers `membership.already_active`).
 
 ## Plus is priced per market, end to end

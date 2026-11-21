@@ -27,7 +27,7 @@ public class StripeSubscriptionStatusTests
 
         Assert.Equal(status, result.Status);
         Assert.Equal("sub_unit", result.SubscriptionId);
-        Assert.Equal(2, transport.Requests);
+        Assert.Equal(swap ? 2 : 3, transport.Requests);
     }
 
     private sealed class SubscriptionResponse(string status) : HttpMessageHandler
@@ -38,7 +38,8 @@ public class StripeSubscriptionStatusTests
         {
             Requests++;
             var body = request.RequestUri!.AbsolutePath == "/v1/setup_intents"
-                ? """{"object":"list","data":[],"has_more":false,"url":"/v1/setup_intents"}"""
+                    || (request.Method == HttpMethod.Get && request.RequestUri.AbsolutePath == "/v1/subscriptions")
+                ? """{"object":"list","data":[],"has_more":false,"url":"/v1/list"}"""
                 : JsonSerializer.Serialize(new
                 {
                     id = "sub_unit", @object = "subscription", status,

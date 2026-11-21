@@ -433,8 +433,8 @@ public class StripeCardSavingTests
                 SessionStatus = "expired";
             }
 
-            var json = path == "/v1/setup_intents"
-                ? """{"object":"list","data":[],"has_more":false,"url":"/v1/setup_intents"}"""
+            var json = path == "/v1/setup_intents" || (request.Method == HttpMethod.Get && path == "/v1/subscriptions")
+                ? """{"object":"list","data":[],"has_more":false,"url":"/v1/list"}"""
                 : path.Contains("/payment_intents")
                 ? request.Method == HttpMethod.Get && CurrentIntent is not null
                     ? CurrentIntent

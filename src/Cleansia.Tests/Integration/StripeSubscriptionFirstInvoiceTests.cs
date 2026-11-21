@@ -114,11 +114,53 @@ public class StripeSubscriptionFirstInvoiceTests
         Assert.Equal(("active", null, null), (result.Status, result.PaymentIntentClientSecret, result.DeclineCode));
     }
 
+    [Theory]
+    [InlineData("active", null)]
+    [InlineData("trialing", null)]
+    [InlineData("incomplete", "succeeded")]
+    public async Task A_new_attempt_after_an_earlier_one_was_paid_returns_that_subscription_and_charges_nothing_more(string status, string? intentStatus)
+    {
+        var transport = new StripeFake
+        {
+            Created = Subscription("active"),
+            Listed = List(Earlier("sub_A", status, "user-1")),
+            InvoicePayments = intentStatus is null ? null : Payments($$"""{"id":"pi_A","object":"payment_intent","status":"{{intentStatus}}"}"""),
+        };
+
+        var result = await Client(transport).CreateSubscriptionAsync(
+            "cus_czk", "price_plus", "user-1", "PLUS_MONTHLY", 0, "tok-2", CancellationToken.None);
+
+        Assert.Equal("sub_A", result.SubscriptionId);
+        Assert.Equal(status == "trialing" ? "trialing" : "active", result.Status);
+        Assert.DoesNotContain(transport.Requests, r => r.Method == HttpMethod.Post);
+    }
+
+    [Fact]
+    public async Task Another_users_subscription_on_the_customer_does_not_stop_a_new_one()
+    {
+        var transport = new StripeFake { Created = Subscription("active"), Listed = List(Earlier("sub_A", "active", "user-2")) };
+
+        var result = await Client(transport).CreateSubscriptionAsync(
+            "cus_czk", "price_plus", "user-1", "PLUS_MONTHLY", 0, "tok-2", CancellationToken.None);
+
+        Assert.Equal("sub_1", result.SubscriptionId);
+        Assert.Single(transport.Requests, r => r.Method == HttpMethod.Post && r.Path == "/v1/subscriptions");
+    }
+
     private static string Subscription(string status) =>
         $$"""
         {"id":"sub_1","object":"subscription","status":"{{status}}","latest_invoice":"in_1",
          "items":{"object":"list","data":[{"id":"si_1","object":"subscription_item","current_period_start":1789516800,"current_period_end":1792108800}]} }
         """;
+
+    private static string Earlier(string id, string status, string userId) =>
+        $$"""
+        {"id":"{{id}}","object":"subscription","status":"{{status}}","latest_invoice":"in_A","metadata":{"UserId":"{{userId}}","MembershipPlanCode":"PLUS_MONTHLY"},
+         "items":{"object":"list","data":[{"id":"si_A","object":"subscription_item","current_period_start":1789516800,"current_period_end":1792108800}]} }
+        """;
+
+    private static string List(params string[] subscriptions) =>
+        $$"""{"object":"list","has_more":false,"url":"/v1/subscriptions","data":[{{string.Join(",", subscriptions)}}]}""";
 
     private static string Payments(string paymentIntent) =>
         $$"""
@@ -140,6 +182,8 @@ public class StripeSubscriptionFirstInvoiceTests
 
         public string? InvoicePayments { get; init; }
 
+        public string Listed { get; init; } = List();
+
         public List<(HttpMethod Method, string Path, string Query, string Body)> Requests { get; } = [];
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
@@ -150,6 +194,7 @@ public class StripeSubscriptionFirstInvoiceTests
             var json = path switch
             {
                 "/v1/setup_intents" => """{"object":"list","data":[],"has_more":false,"url":"/v1/setup_intents"}""",
+                "/v1/subscriptions" when request.Method == HttpMethod.Get => Listed,
                 "/v1/subscriptions" => Created,
                 "/v1/invoice_payments" => InvoicePayments ?? throw new InvalidOperationException("invoice payments read"),
                 _ => Current ?? throw new InvalidOperationException($"unexpected {request.Method} {path}"),

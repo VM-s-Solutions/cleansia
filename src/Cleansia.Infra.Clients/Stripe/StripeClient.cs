@@ -750,6 +750,26 @@ public class StripeClient : IStripeClient
         string idempotencyAttemptId,
         CancellationToken cancellationToken)
     {
+        var service = new SubscriptionService(stripe);
+
+        // Only Stripe knows an earlier attempt was paid when its confirm never landed (app killed after 3-D Secure,
+        // network lost), so a new attempt resumes it instead of charging a second subscription.
+        // -> /flows/loyalty-and-memberships#plus-paid-before-granted
+        var earlier = await ClassifyAsync(
+            nameof(CreateSubscriptionAsync),
+            () => service.ListAsync(
+                new SubscriptionListOptions { Customer = stripeCustomerId, Limit = 100 },
+                cancellationToken: cancellationToken));
+        foreach (var mine in earlier.Data.Where(s =>
+                     s.Metadata?.GetValueOrDefault("UserId") == userId && s.Status is ("active" or "trialing" or "incomplete")))
+        {
+            var outcome = await ReadFirstInvoiceOutcomeAsync(mine, cancellationToken);
+            if (IsLive(outcome.Status))
+            {
+                return outcome;
+            }
+        }
+
         // The phone's Plus sheet confirmed the platform's own SetupIntent, which carries no saved-card row, and
         // the confirm sends no card: its card is the subscription's default, or no invoice would have one to charge.
         var setupIntents = await ClassifyAsync(
@@ -761,7 +781,6 @@ public class StripeClient : IStripeClient
             .FirstOrDefault(i => i.Status == "succeeded" && !(i.Metadata?.ContainsKey(SavedCardMetadataKey) ?? false))
             ?.PaymentMethodId;
 
-        var service = new SubscriptionService(stripe);
         var options = new SubscriptionCreateOptions
         {
             Customer = stripeCustomerId,
@@ -803,6 +822,11 @@ public class StripeClient : IStripeClient
                 () => service.GetAsync(subscription.Id, cancellationToken: cancellationToken));
         }
 
+        return await ReadFirstInvoiceOutcomeAsync(subscription, cancellationToken);
+    }
+
+    private async Task<SubscriptionResult> ReadFirstInvoiceOutcomeAsync(Subscription subscription, CancellationToken cancellationToken)
+    {
         var status = subscription.Status;
         string? clientSecret = null;
         string? declineCode = null;

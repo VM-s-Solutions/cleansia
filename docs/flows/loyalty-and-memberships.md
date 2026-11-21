@@ -217,6 +217,37 @@ effective end of now — while an `Active` member still cancels at period end. E
 lands after the cancel is ignored. Erasure and a company wind-down cancel a past-due membership at once
 too. A plan swap still requires `Active` (`membership.not_found` otherwise).
 
+## A phone subscribe with no trial is paid before it is granted {#plus-paid-before-granted}
+
+Owner ruling 2026-11-21. Until then `CreateSubscriptionAsync` created every phone subscription with `payment_behavior:
+default_incomplete`, which waits for the client to confirm the first invoice, and the phone never did: with
+no trial the subscription stayed `incomplete` until Stripe expired it 23 hours later, while the membership
+was granted at once. Now:
+
+1. **The charge.** With no trial the subscription is created with `allow_incomplete`, so Stripe charges the
+   first invoice in the same call to the card the Plus sheet confirmed (the subscription's default, step 4 of
+   the free trial above). A trial keeps `default_incomplete`, whose first invoice is free. Both carry the same `UserId`
+   and `MembershipPlanCode` metadata as a web Checkout subscription.
+2. **The outcome is read from Stripe's answer, never from a webhook.** A subscription that is not
+   `active` or `trialing` is read again (Stripe answers a retried create with its first response), and
+   its invoice's PaymentIntent (`GET /v1/invoice_payments`) says the rest: succeeded is paid; `requires_action`
+   returns its client secret; anything else is a decline with the card's `decline_code` (or error code).
+3. **Paid** creates the membership as before. **Declined** cancels the subscription at Stripe now (a
+   cancel Stripe refuses is logged, and Stripe expires it within 23 hours) and refuses with
+   `membership.card_declined`, `membership.card_insufficient_funds` or
+   `membership.card_authentication_failed`. **3-D Secure** answers `paymentIntentClientSecret` and grants
+   nothing; the app completes it and sends the same confirm again, which replays the same subscription
+   and grants only once the invoice is paid ([the contract](/api/markets-and-memberships)).
+4. **The backstop.** The subscription webhooks grant a subscription they do not know from its first
+   `customer.subscription.created` or `customer.subscription.updated` that says `active` or `trialing`, so
+   a phone killed right after the 3-D Secure step still ends with its one membership. An `incomplete`,
+   expired or cancelled subscription gets no row from either path, and a late `incomplete` event does not
+   end a membership already granted. A web Checkout subscription is provisioned the same way: by its
+   created event, or by the update that makes it `active` if it was created `incomplete`.
+
+Every path ends with one membership: the confirm and the webhook both look the subscription up first, and
+the unique indexes settle a race between them (the loser answers `membership.already_active`).
+
 ## Plus is priced per market, end to end
 
 ```mermaid

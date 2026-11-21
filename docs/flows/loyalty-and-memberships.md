@@ -254,7 +254,8 @@ was granted at once. Now:
 
 Every path ends with one membership: a new attempt resumes a paid one at Stripe instead of creating a second,
 the confirm and the webhook both look the subscription up first, and
-the unique indexes settle a race between them (the loser answers `membership.already_active`).
+the unique indexes settle a race between them (a confirm that loses answers `membership.already_active`; a webhook
+that loses resolves to the winning row).
 
 ## Plus is priced per market, end to end
 

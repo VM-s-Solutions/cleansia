@@ -183,7 +183,7 @@ of support. → [Loyalty and memberships](/flows/loyalty-and-memberships#plus-is
 | `country.not_serviced` | `countryId` names a country the platform does not service |
 | `membership.card_declined` | The confirm with no trial: the card refused the first invoice, for a reason not below. The subscription is cancelled at Stripe and no membership exists |
 | `membership.card_insufficient_funds` | The same, Stripe's `decline_code` is `insufficient_funds` |
-| `membership.card_authentication_failed` | The same, the bank did not confirm the 3-D Secure step (`payment_intent_authentication_failure`) |
+| `membership.card_authentication_failed` | The same, the bank did not confirm the 3-D Secure step (`payment_intent_authentication_failure`), or the card asks for one the charge could not offer (`authentication_required`) |
 
 **The confirm with no trial is paid before it is granted** (owner ruling 2026-11-21). With
 `paymentMethodConfirmed: true` and no trial, Stripe charges the first invoice at once to the card the Plus

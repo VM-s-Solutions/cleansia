@@ -455,7 +455,8 @@
 | T-0940 | The follow-ups found while fixing the phase-2 findings: one error text per key across the clients, receipt PDFs that are repaired, the iOS phone step, the web checkbox's label, and Apple Pay on iOS | L | `done` | — | Mike 2026-11-19: wave 4, after the DEV proof; the majority wording per key, a tie to the Android customer app |
 | T-0941 | The Android Stripe SDK upgraded with Link off, invoices that name the country in their language, the Android eye icon's label, the push docs, the DEV SQL job's firewall rule, and a read-only DEV metrics workflow | L | `done` | — | Mike 2026-11-20: upgrade stripe-android to the latest; fix F-111, F-113 and F-117; the SQL job's firewall rule and a read-only metrics workflow for F-110 |
 | T-0942 | Saved cards that work end to end (added from Payments, removed at Stripe), the Android phone field that never crashes, and the iOS eye icon's label | M | `done` | — | Mike 2026-11-20: fix the four bugs wave 5 found; keep DEV's B2 plan |
-| T-0943 | A card added from Payments is confirmed with the server at once, Plus renews on the card it was started with, and a replaced card is detached at Stripe | M | `in_progress` | — | Mike 2026-11-20: a confirm call besides the Dashboard event; fix Plus renewals and the replaced card |
+| T-0943 | A card added from Payments is confirmed with the server at once, Plus renews on the card it was started with, and a replaced card is detached at Stripe | M | `done` | — | Mike 2026-11-20: a confirm call besides the Dashboard event; fix Plus renewals and the replaced card |
+| T-0944 | A Plus subscription started on a phone without a trial is charged at once and granted only when its first invoice is paid | M | `in_progress` | — | Mike 2026-11-21: wave 8; a no-trial phone subscribe is paid before Plus is granted, and a paid one is never left without it |
 
 > **T-0785–T-0799 filed 2026-09-20** — the UI-polish and dead-code batch, on the owner's ruling of
 > that day (*"I want to polish alignments in admin app a bit on all of the overview/detail pages.
@@ -500,7 +501,7 @@
 > reported not absorbed. Owed: the DEV drop at the next DEV deploy (MS-2 / A1, `20260920204705`);
 > the merge order is #255 then #260. Open rows: none.
 
-*Next id: **T-0944**.*
+*Next id: **T-0945**.*
 
 
 Current startup checkpoint — 2026-10-16 UTC: PR #344 merged C12 `70d9c8b1ea82` as M5 `a8d308126dc4`; C12 local8, PR5 workflows/7 checks and M5 4/5 passed, all attempt 1/no reruns, with guarded manual skips and prior application limits retained. First read-only observation `38947741183/a1` failed before its baseline with a generic validation error; one POST, GET-only discovery, final artifact saved once, no resize/restart/B3 trial. T-0636 remains `in_progress`; safe diagnostic correction and the temporary comparison remain pending. The ticket's dated PR #344 closure and `pr344-closure-preparation001/CLAIMS-AND-PINS001.json` carry the bounds.

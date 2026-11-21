@@ -59,6 +59,47 @@ public class SubscriptionWebhookIntegrationTests(PostgresContainerFixture fixtur
             });
     }
 
+    // ── a phone subscription paid after a 3-D Secure step, with no confirm from the app, gets its one membership ──
+
+    [Fact]
+    public async Task SubscriptionCreatedIncomplete_ThenUpdatedActive_EndsWithExactlyOneActiveMembership()
+    {
+        await TestMethod(
+            arrange: ctx => SeedUserAndPlan(ctx, seedActiveMembership: false),
+            act: async provider =>
+            {
+                var mediator = provider.GetRequiredService<IMediator>();
+                await mediator.Send(SignedCreatedCommand("evt_sub_3ds_created", "sub_3ds", status: "incomplete"));
+                await mediator.Send(SignedCreatedCommand("evt_sub_3ds_paid", "sub_3ds", type: "customer.subscription.updated"));
+                return await mediator.Send(SignedCreatedCommand("evt_sub_3ds_paid_again", "sub_3ds", type: "customer.subscription.updated"));
+            },
+            assert: async (CleansiaDbContext context, BusinessResult result) =>
+            {
+                Assert.True(result.IsSuccess);
+                var membership = Assert.Single(await MembershipsForUserAsync(context));
+                Assert.Equal(("sub_3ds", MembershipStatus.Active), (membership.StripeSubscriptionId, membership.Status));
+            });
+    }
+
+    [Fact]
+    public async Task SubscriptionCreatedIncomplete_ThenExpired_ProvisionsNothing()
+    {
+        await TestMethod(
+            arrange: ctx => SeedUserAndPlan(ctx, seedActiveMembership: false),
+            act: async provider =>
+            {
+                var mediator = provider.GetRequiredService<IMediator>();
+                await mediator.Send(SignedCreatedCommand("evt_sub_unpaid_created", "sub_unpaid", status: "incomplete"));
+                return await mediator.Send(SignedCreatedCommand(
+                    "evt_sub_unpaid_expired", "sub_unpaid", status: "incomplete_expired", type: "customer.subscription.updated"));
+            },
+            assert: async (CleansiaDbContext context, BusinessResult result) =>
+            {
+                Assert.True(result.IsSuccess);
+                Assert.Empty(await MembershipsForUserAsync(context));
+            });
+    }
+
     // ── the charge currency names no platform currency: nothing is provisioned, the event is still consumed ──
 
     [Fact]
@@ -240,9 +281,11 @@ public class SubscriptionWebhookIntegrationTests(PostgresContainerFixture fixtur
             });
     }
 
-    private static HandlePaymentNotification.Command SignedCreatedCommand(string eventId, string subscriptionId, string currency = "czk")
+    private static HandlePaymentNotification.Command SignedCreatedCommand(
+        string eventId, string subscriptionId, string currency = "czk", string status = "active",
+        string type = "customer.subscription.created")
     {
-        var body = StripeWebhookTestPayloads.SubscriptionCreatedBody(eventId, subscriptionId, _userId, PlanCode, currency);
+        var body = StripeWebhookTestPayloads.SubscriptionCreatedBody(eventId, subscriptionId, _userId, PlanCode, currency, status, type);
         var signature = StripeWebhookTestPayloads.Sign(body, StripeWebhookTestPayloads.ConfiguredWebhookSecret);
         return new HandlePaymentNotification.Command(body, signature);
     }

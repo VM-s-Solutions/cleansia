@@ -56,6 +56,16 @@ public class StripeSubscriptionWebhookHandler(
             }
         }
 
+        // A subscription is incomplete only before its first payment, and a row exists only once Stripe said it was
+        // paid or trialing, so this is a late delivery of an older state and must not end the membership.
+        if (stripeStatus == "incomplete")
+        {
+            logger.LogInformation(
+                "Ignored late {EventType} (incomplete) for membership {MembershipId} (sub {SubscriptionId})",
+                stripeEvent.Type, membership.Id, subscriptionId);
+            return subscriptionId;
+        }
+
         // Stripe does not order its events and retries a failed delivery for days: a payment failure that
         // lands after the member cancelled must not make the enrolment live again, where it would block
         // every new subscription, nor tell them a card they no longer pay with failed.
@@ -137,11 +147,11 @@ public class StripeSubscriptionWebhookHandler(
         DateTime? trialEnd,
         CancellationToken cancellationToken)
     {
-        // Only customer.subscription.created provisions the row (web Checkout
-        // flow). Other event types arriving for an unknown subscription means
-        // it was created in the Stripe Dashboard and we never tracked it —
-        // safer to ignore than guess.
-        if (stripeEvent.Type != Constants.StripeEventType.SubscriptionCreated)
+        // A subscription the platform started (web Checkout or a phone, both carrying UserId and MembershipPlanCode
+        // metadata) gets its row from the first created or updated event that says it is paid or trialing: a
+        // phone's first invoice can be paid after a 3-D Secure step with no confirm from the app to follow. Any
+        // other event for an unknown subscription is ignored rather than guessed at.
+        if (stripeEvent.Type is not (Constants.StripeEventType.SubscriptionCreated or Constants.StripeEventType.SubscriptionUpdated))
         {
             logger.LogWarning(
                 "Subscription webhook {EventType} for sub {SubscriptionId} has no local UserMembership row; ignoring",
@@ -150,12 +160,19 @@ public class StripeSubscriptionWebhookHandler(
         }
 
         var stripeSub = stripeEvent.Data.Object as Subscription;
+        if (stripeSub?.Status is not ("active" or "trialing"))
+        {
+            logger.LogInformation(
+                "Subscription webhook {EventType} for unknown sub {SubscriptionId} is {Status}, not paid or trialing; no membership",
+                stripeEvent.Type, subscriptionId, stripeSub?.Status);
+            return null;
+        }
         var userId = stripeSub?.Metadata?.GetValueOrDefault("UserId");
         var planCode = stripeSub?.Metadata?.GetValueOrDefault("MembershipPlanCode");
         if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(planCode))
         {
             logger.LogWarning(
-                "subscription.created webhook for sub {SubscriptionId} missing UserId/MembershipPlanCode metadata; can't provision local row",
+                "subscription webhook for sub {SubscriptionId} missing UserId/MembershipPlanCode metadata; can't provision local row",
                 subscriptionId);
             return null;
         }
@@ -164,7 +181,7 @@ public class StripeSubscriptionWebhookHandler(
         if (owningUser == null)
         {
             logger.LogWarning(
-                "subscription.created webhook references unknown user {UserId}; can't provision local row",
+                "subscription webhook references unknown user {UserId}; can't provision local row",
                 userId);
             return null;
         }
@@ -177,7 +194,7 @@ public class StripeSubscriptionWebhookHandler(
         if (plan == null)
         {
             logger.LogWarning(
-                "subscription.created webhook references unknown plan code {PlanCode}; can't provision local row",
+                "subscription webhook references unknown plan code {PlanCode}; can't provision local row",
                 planCode);
             return null;
         }
@@ -192,7 +209,7 @@ public class StripeSubscriptionWebhookHandler(
         if (currency == null)
         {
             logger.LogError(
-                "subscription.created webhook for sub {SubscriptionId} carries currency {CurrencyCode}, which names no platform currency; can't provision local row",
+                "subscription webhook for sub {SubscriptionId} carries currency {CurrencyCode}, which names no platform currency; can't provision local row",
                 subscriptionId, currencyCode ?? "(none)");
             return null;
         }
@@ -211,7 +228,7 @@ public class StripeSubscriptionWebhookHandler(
         if (existingActive != null)
         {
             logger.LogWarning(
-                "subscription.created webhook for sub {SubscriptionId} but user {UserId} already has active membership {MembershipId}; skipping duplicate provision (reconcile no-op)",
+                "subscription webhook for sub {SubscriptionId} but user {UserId} already has active membership {MembershipId}; skipping duplicate provision (reconcile no-op)",
                 subscriptionId, userId, existingActive.Id);
             return existingActive;
         }
@@ -248,13 +265,13 @@ public class StripeSubscriptionWebhookHandler(
 
             var winner = await userMembershipRepository.GetLifecycleForUserAsync(userId, cancellationToken);
             logger.LogWarning(
-                "subscription.created webhook for sub {SubscriptionId}, user {UserId} lost the active-membership race (unique-violation); resolved to winning membership {MembershipId} (reconcile no-op)",
+                "subscription webhook for sub {SubscriptionId}, user {UserId} lost the active-membership race (unique-violation); resolved to winning membership {MembershipId} (reconcile no-op)",
                 subscriptionId, userId, winner?.Id);
             return winner;
         }
 
         logger.LogInformation(
-            "Provisioned UserMembership {MembershipId} for user {UserId} from subscription.created webhook (sub {SubscriptionId})",
+            "Provisioned UserMembership {MembershipId} for user {UserId} from subscription webhook (sub {SubscriptionId})",
             membership.Id, userId, subscriptionId);
 
         return membership;

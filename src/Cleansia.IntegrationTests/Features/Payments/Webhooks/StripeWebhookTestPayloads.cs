@@ -87,7 +87,8 @@ internal static class StripeWebhookTestPayloads
     }
 
     public static string SubscriptionCreatedBody(
-        string eventId, string subscriptionId, string userId, string planCode, string currency = "czk")
+        string eventId, string subscriptionId, string userId, string planCode, string currency = "czk",
+        string status = "active", string type = "customer.subscription.created")
     {
         var created = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         var periodStart = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -97,7 +98,7 @@ internal static class StripeWebhookTestPayloads
           "id": "{{eventId}}",
           "object": "event",
           "api_version": "2024-06-20",
-          "type": "customer.subscription.created",
+          "type": "{{type}}",
           "created": {{created}},
           "livemode": false,
           "pending_webhooks": 0,
@@ -106,7 +107,7 @@ internal static class StripeWebhookTestPayloads
             "object": {
               "id": "{{subscriptionId}}",
               "object": "subscription",
-              "status": "active",
+              "status": "{{status}}",
               "currency": "{{currency}}",
               "metadata": {
                 "UserId": "{{userId}}",

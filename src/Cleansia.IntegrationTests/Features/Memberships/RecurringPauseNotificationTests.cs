@@ -201,7 +201,8 @@ public class RecurringPauseNotificationTests(PostgresContainerFixture fixture) :
         await db.CommitAsync(CancellationToken.None);
     }
 
-    private static async Task<string> CreateEnrollment(IServiceProvider provider, string status, DateTime occurredAt)
+    private static async Task<string?> CreateEnrollment(
+        IServiceProvider provider, string status, DateTime occurredAt, string type = "customer.subscription.created")
     {
         using var scope = provider.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<CleansiaDbContext>();
@@ -209,7 +210,7 @@ public class RecurringPauseNotificationTests(PostgresContainerFixture fixture) :
         await scope.ServiceProvider.GetRequiredService<IStripeSubscriptionWebhookHandler>().HandleAsync(new Stripe.Event
         {
             Id = $"evt-{Guid.NewGuid():N}",
-            Type = "customer.subscription.created",
+            Type = type,
             Created = occurredAt,
             Data = new Stripe.EventData
             {
@@ -227,7 +228,7 @@ public class RecurringPauseNotificationTests(PostgresContainerFixture fixture) :
             },
         }, CancellationToken.None);
         await db.CommitAsync(CancellationToken.None);
-        return (await db.UserMemberships.SingleAsync(x => x.StripeSubscriptionId == subscriptionId)).Id;
+        return (await db.UserMemberships.SingleOrDefaultAsync(x => x.StripeSubscriptionId == subscriptionId))?.Id;
     }
 
     private static async Task Dispatch(IServiceProvider provider, string body)
@@ -375,23 +376,19 @@ public class RecurringPauseNotificationTests(PostgresContainerFixture fixture) :
             // A new subscription is refused while the past-due one is alive (owner ruling 2026-09-28), so
             // the lapsed enrolment ends before the customer re-enrols.
             await UpdateMembership(provider, "canceled");
-            var reenrollment = await CreateEnrollment(provider, failedStatus, DateTime.UtcNow);
+            Assert.Null(await CreateEnrollment(provider, failedStatus, DateTime.UtcNow));
             await Skip(provider, TemplateA2);
             await Skip(provider);
             using (var read = provider.CreateScope())
             {
                 read.ServiceProvider.GetRequiredService<ITenantProvider>().SetTenantOverride(TestTenants.Default);
                 var db = read.ServiceProvider.GetRequiredService<CleansiaDbContext>();
-                var failed = await db.UserMemberships.SingleAsync(x => x.Id == reenrollment);
-                Assert.Equal(MembershipStatus.Cancelled, failed.Status);
-                Assert.Null(failed.PaidPeriodConfirmedAt);
-                Assert.Equal(0, failed.RecurringPauseNotificationSequence);
                 Assert.Equal(MemberA, (await read.ServiceProvider.GetRequiredService<IUserMembershipRepository>()
                     .GetLatestPaidForUserAsync(UserA, CancellationToken.None))!.Id);
                 Assert.Single(await db.Set<UserNotification>().ToListAsync());
                 Assert.Single(await db.OutboxMessages.ToListAsync());
             }
-            await UpdateMembership(provider, "active", reenrollment);
+            var reenrollment = (await CreateEnrollment(provider, "active", DateTime.UtcNow, "customer.subscription.updated"))!;
             using (var read = provider.CreateScope())
             {
                 read.ServiceProvider.GetRequiredService<ITenantProvider>().SetTenantOverride(TestTenants.Default);

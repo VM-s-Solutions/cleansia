@@ -550,7 +550,7 @@ public class StripeClient : IStripeClient
         return session.Url;
     }
 
-    public async Task<SavedCardDetails?> GetSetupIntentCardAsync(
+    public async Task<SetupIntentCard> GetSetupIntentCardAsync(
         string setupIntentId,
         CancellationToken cancellationToken)
     {
@@ -560,12 +560,10 @@ public class StripeClient : IStripeClient
             nameof(GetSetupIntentCardAsync),
             () => service.GetAsync(setupIntentId, options, cancellationToken: cancellationToken));
 
-        if (intent.Status != "succeeded" || intent.PaymentMethod is not { Card: { } card } paymentMethod)
-        {
-            return null;
-        }
-
-        return new SavedCardDetails(paymentMethod.Id, card.Brand, card.Last4, (int)card.ExpMonth, (int)card.ExpYear);
+        var savedCard = intent.Status == "succeeded" && intent.PaymentMethod is { Card: { } card } paymentMethod
+            ? new SavedCardDetails(paymentMethod.Id, card.Brand, card.Last4, (int)card.ExpMonth, (int)card.ExpYear)
+            : null;
+        return new SetupIntentCard(intent.CustomerId, intent.Metadata?.GetValueOrDefault(SavedCardMetadataKey), savedCard);
     }
 
     public async Task<SavedCardDetails?> GetPaymentIntentCardAsync(
@@ -594,9 +592,19 @@ public class StripeClient : IStripeClient
         CancellationToken cancellationToken)
     {
         var paymentMethods = new PaymentMethodService(stripe);
-        var paymentMethod = await ClassifyAsync(
-            nameof(DetachSavedCardAsync),
-            () => paymentMethods.GetAsync(paymentMethodId, cancellationToken: cancellationToken));
+        PaymentMethod paymentMethod;
+        try
+        {
+            paymentMethod = await ClassifyAsync(
+                nameof(DetachSavedCardAsync),
+                () => paymentMethods.GetAsync(paymentMethodId, cancellationToken: cancellationToken));
+        }
+        catch (StripeException ex) when (ex.StripeError?.Code == "resource_missing")
+        {
+            // A card Stripe no longer knows is on no Customer, so it must not block the capture or removal retiring its row.
+            return;
+        }
+
         if (paymentMethod.CustomerId != stripeCustomerId)
         {
             return;
@@ -740,6 +748,17 @@ public class StripeClient : IStripeClient
         string idempotencyAttemptId,
         CancellationToken cancellationToken)
     {
+        // The phone's Plus sheet confirmed the platform's own SetupIntent, which carries no saved-card row, and
+        // the confirm sends no card: its card is the subscription's default, or no invoice would have one to charge.
+        var setupIntents = await ClassifyAsync(
+            nameof(CreateSubscriptionAsync),
+            () => new SetupIntentService(stripe).ListAsync(
+                new SetupIntentListOptions { Customer = stripeCustomerId, Limit = 100 },
+                cancellationToken: cancellationToken));
+        var plusCard = setupIntents.Data
+            .FirstOrDefault(i => i.Status == "succeeded" && !(i.Metadata?.ContainsKey(SavedCardMetadataKey) ?? false))
+            ?.PaymentMethodId;
+
         var service = new SubscriptionService(stripe);
         var options = new SubscriptionCreateOptions
         {
@@ -748,6 +767,7 @@ public class StripeClient : IStripeClient
             [
                 new SubscriptionItemOptions { Price = stripePriceId },
             ],
+            DefaultPaymentMethod = plusCard,
             PaymentBehavior = "default_incomplete",
             PaymentSettings = new SubscriptionPaymentSettingsOptions
             {

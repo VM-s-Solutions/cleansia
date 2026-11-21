@@ -210,10 +210,10 @@ public interface IStripeClient
         CancellationToken cancellationToken);
 
     /// <summary>
-    /// The card a SetupIntent saved, or null when the intent has not succeeded or saved no card.
-    /// Read-only; an unreachable Stripe throws.
+    /// A SetupIntent's Customer, the saved-card row its <c>SavedCardId</c> metadata names, and the card it saved,
+    /// which is null when the intent has not succeeded or saved no card. Read-only; an unreachable Stripe throws.
     /// </summary>
-    Task<SavedCardDetails?> GetSetupIntentCardAsync(
+    Task<SetupIntentCard> GetSetupIntentCardAsync(
         string setupIntentId,
         CancellationToken cancellationToken);
 
@@ -283,10 +283,11 @@ public interface IStripeClient
         CancellationToken cancellationToken);
 
     /// <summary>
-    /// Create a Stripe subscription against a price. Caller is expected to
-    /// have already attached a payment method via SetupIntent — first invoice
-    /// is charged immediately (or after the trial if <paramref name="trialPeriodDays"/>
-    /// > 0). Returns the subscription id + period bounds the caller persists
+    /// Create a Stripe subscription against a price, after the phone's Plus sheet confirmed the SetupIntent of
+    /// <see cref="CreateSetupIntentAsync"/>: the card of the newest such intent that succeeded on the Customer,
+    /// one with no <c>SavedCardId</c> metadata, is the subscription's default payment method, so the invoice
+    /// after the trial (<paramref name="trialPeriodDays"/> &gt; 0) and every renewal charge it. The Customer's
+    /// own invoice default is left alone. Returns the subscription id + period bounds the caller persists
     /// in <see cref="Cleansia.Core.Domain.Memberships.UserMembership"/>.
     /// </summary>
     Task<SubscriptionResult> CreateSubscriptionAsync(
@@ -394,6 +395,9 @@ public record SetupIntentResult(string Id, string ClientSecret);
 
 /// <summary>Result of <see cref="IStripeClient.GetSetupIntentCardAsync"/>: the saved card, as Stripe describes it.</summary>
 public record SavedCardDetails(string PaymentMethodId, string Brand, string Last4, int ExpMonth, int ExpYear);
+
+/// <summary>Result of <see cref="IStripeClient.GetSetupIntentCardAsync"/>.</summary>
+public record SetupIntentCard(string? CustomerId, string? SavedCardId, SavedCardDetails? Card);
 
 /// <summary>
 /// Snapshot of a freshly-created subscription. Period bounds are mirrored

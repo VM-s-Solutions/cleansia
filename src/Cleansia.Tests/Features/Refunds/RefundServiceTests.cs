@@ -2076,7 +2076,7 @@ public class RefundServiceTests
         public Task<string> CreateCardSetupCheckoutSessionAsync(string stripeCustomerId, string savedCardId, CancellationToken cancellationToken)
             => throw new NotSupportedException();
 
-        public Task<SavedCardDetails?> GetSetupIntentCardAsync(string setupIntentId, CancellationToken cancellationToken)
+        public Task<SetupIntentCard> GetSetupIntentCardAsync(string setupIntentId, CancellationToken cancellationToken)
             => throw new NotSupportedException();
 
         public Task<SavedCardDetails?> GetPaymentIntentCardAsync(string paymentIntentId, CancellationToken cancellationToken)

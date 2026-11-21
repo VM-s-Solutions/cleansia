@@ -26,6 +26,19 @@ public class SavedCardController(IMediator mediator) : CustomerMobileApiControll
         return HandleResult<CreateSavedCardSetupIntent.Response>(result);
     }
 
+    [HttpPost("ConfirmSetup")]
+    [Permission(Policy.CanManageSavedCard)]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(SavedCardDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ConfirmSetup(
+        [FromBody] ConfirmSavedCardSetup.Command command,
+        CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<SavedCardDto>(result);
+    }
+
     [HttpGet("GetMine")]
     [Permission(Policy.CanManageSavedCard)]
     [ProducesResponseType(typeof(IReadOnlyList<SavedCardDto>), StatusCodes.Status200OK)]

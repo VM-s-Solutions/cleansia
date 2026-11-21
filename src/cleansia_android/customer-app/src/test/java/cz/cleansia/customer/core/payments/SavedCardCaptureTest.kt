@@ -1,5 +1,6 @@
 package cz.cleansia.customer.core.payments
 
+import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -13,6 +14,8 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.*
 import org.junit.Test
 import retrofit2.Response
@@ -23,8 +26,12 @@ class SavedCardCaptureTest {
     private val repo = SavedCardRepository(api, Json { ignoreUnknownKeys = true })
     private val cz = CardCaptureMarket("cze", "CZK")
     private val eur = CardCaptureMarket("svk", "EUR")
-    private fun setup(id: String) = SavedCardSetup(id, "seti_fixture_secret", "cus_fixture", "ek_fixture")
+    private fun setup(id: String) = SavedCardSetup(id, "seti_${id}_secret_fixture", "cus_fixture", "ek_fixture")
     private fun card(id: String, currency: String = "CZK") = SavedCard(id, "visa", "4242", 12, 2035, currency)
+
+    init {
+        coEvery { api.confirmSetup(any()) } throws java.io.IOException("offline")
+    }
 
     @Test
     fun `idle capture preserves usable card currency and expiry policy including default market`() {
@@ -80,6 +87,38 @@ class SavedCardCaptureTest {
         coEvery { api.getMine() } returns Response.success(listOf(card("new")))
         assertEquals(ApiResult.Success(true), repo.verifyCapture(cz))
         assertNull(repo.captures.value[cz])
+    }
+
+    @Test
+    fun `confirmed setup lists the returned card at once in place of the card it retires`() = runTest {
+        coEvery { api.getMine() } returns Response.success(listOf(card("old"), card("held-eur", "EUR")))
+        repo.refresh()
+        pending()
+        coEvery { api.confirmSetup("seti_new") } returns Response.success(card("new"))
+        assertEquals(ApiResult.Success(true), repo.verifyCapture(cz))
+        assertNull(repo.captures.value[cz])
+        assertEquals(listOf(card("new"), card("held-eur", "EUR")), repo.cards.value)
+        coVerify(exactly = 1) { api.getMine() }
+    }
+
+    @Test
+    fun `refused confirm keeps the capture pending and does not poll`() = runTest {
+        pending()
+        val refusal = """{"errors":{"SetupIntentId":["saved_card.not_found"]}}""".toResponseBody("application/json".toMediaType())
+        coEvery { api.confirmSetup("seti_new") } returns Response.error(400, refusal)
+        val result = repo.verifyCapture(cz)
+        assertTrue(result is ApiResult.Error && result.error !is ApiError.Network)
+        assertTrue(repo.captures.value[cz] is SavedCardCapture.Pending)
+        coVerify(exactly = 0) { api.getMine() }
+    }
+
+    @Test
+    fun `unreachable confirm falls back to polling the list`() = runTest {
+        pending()
+        coEvery { api.getMine() } returns Response.success(listOf(card("new")))
+        assertEquals(ApiResult.Success(true), repo.verifyCapture(cz))
+        coVerify(exactly = 1) { api.confirmSetup("seti_new") }
+        coVerify(exactly = 1) { api.getMine() }
     }
 
     @Test

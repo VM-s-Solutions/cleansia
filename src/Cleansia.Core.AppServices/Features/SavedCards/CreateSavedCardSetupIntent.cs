@@ -16,7 +16,8 @@ namespace Cleansia.Core.AppServices.Features.SavedCards;
 /// The mobile card capture: the consent is recorded on a new saved-card row, and the app receives what
 /// PaymentSheet needs in setup mode — a card-only SetupIntent on the customer's Stripe Customer for the
 /// market's currency, and an ephemeral key for that Customer. Nothing is charged. The card lands on the
-/// row when the setup_intent.succeeded webhook arrives.
+/// row when the app confirms the setup (<see cref="ConfirmSavedCardSetup"/>) or the setup_intent.succeeded
+/// webhook arrives, whichever is first.
 /// </summary>
 public class CreateSavedCardSetupIntent
 {

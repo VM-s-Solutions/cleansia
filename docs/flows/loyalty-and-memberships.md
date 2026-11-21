@@ -187,7 +187,12 @@ seeded plans, set per plan by an administrator, `0` for none. It flows like this
    waiver quota, recurring schedules and the preferred cleaner all apply from day one. `PastDue`,
    `Paused`, `Cancelled` and an elapsed period stay refused. While `trialEndsAtUtc` is in the future
    the clients show *Free trial until* that date, the day of the first charge.
-4. **The end.** Stripe charges when the trial ends. A cancel inside it charges nothing and keeps the
+4. **The end.** Stripe charges when the trial ends, to the subscription's default card. A web Checkout
+   names the card it collected. On a phone the Plus sheet confirms the platform's own SetupIntent and the
+   confirm sends no card, so `CreateSubscriptionAsync` names the card of the newest succeeded SetupIntent
+   on the Customer that carries no `SavedCardId` — the sheet's own — as the subscription's default
+   (2026-11-20; until then a phone subscription named none, so its after-trial invoice had no card to
+   charge). The Customer's own invoice default is left alone on both. A cancel inside it charges nothing and keeps the
    benefits to the trial's end. A first charge that fails is `PastDue` or `Paused`, like a failed
    renewal. A trial that ends unpaid lapses like a paid period: `GetLatestPaidForUserAsync` reads an
    enrolment with paid proof **or** a trial end, so a recurring schedule the member set up during the

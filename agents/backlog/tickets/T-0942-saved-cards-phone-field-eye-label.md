@@ -54,3 +54,10 @@ deploy.
   the mobile webhook endpoint (`agents/cleanup/MANUAL_STEPS.md` MS-16). No CI test can pin a Dashboard
   subscription, so no test was added for it, and item 1's DEV demo waits for that step. Items 2 to 4 are
   fixed in code, each with a test that fails without it.
+- 2026-11-20 — Shipped in #395 (merge `ed4956682`), CI green on every check; DEV deploy dispatched after the merge
+  (run 44797256964). Items 2 to 4 are fixed: a removed card is detached at Stripe unless Plus renews on it, the
+  Android phone field's cursor mapping holds for every input, and the iOS eye button reads its action in the five
+  locales. Item 1 has no code fix in this ticket: DEV's webhook never received setup_intent.succeeded, so Mike adds
+  the event in the Stripe Dashboard (MS-16), and on his ruling the apps also confirm the card with the server
+  (T-0943). Mike picked the review's two pre-existing saved-card rows as T-0943 too: a mobile Plus subscription names
+  no default payment method, and a card replaced by a newer one stays attached at Stripe.

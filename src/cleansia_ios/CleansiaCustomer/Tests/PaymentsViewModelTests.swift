@@ -6,9 +6,9 @@ import XCTest
 /// What the customer owes, paid through a pay link, and the cards they saved.
 @MainActor
 final class PaymentsViewModelTests: XCTestCase {
-    private var cards: FakeSavedCardClient!
+    var cards: FakeSavedCardClient!
     private var receivables: FakeReceivableClient!
-    private var snackbar: SnackbarController!
+    var snackbar: SnackbarController!
     private var cancellables = Set<AnyCancellable>()
 
     override func setUp() {
@@ -18,7 +18,7 @@ final class PaymentsViewModelTests: XCTestCase {
         snackbar = SnackbarController()
     }
 
-    private func makeVM(
+    func makeVM(
         countryId: String? = nil,
         currencyCode: String? = nil,
         cardPaymentAvailable: Bool = true,

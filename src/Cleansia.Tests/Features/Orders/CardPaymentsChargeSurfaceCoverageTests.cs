@@ -75,6 +75,12 @@ public class CardPaymentsChargeSurfaceCoverageTests
         ("Features/SavedCards/RemoveSavedCard.cs",
             "Takes a removed card off the customer's Stripe Customer. It charges nothing, and a customer must "
             + "be able to remove a card with the switch off."),
+        ("Features/SavedCards/ConfirmSavedCardSetup.cs",
+            "Reads the SetupIntent the app's sheet confirmed and lands its card, as the webhook does. It "
+            + "charges nothing, and a card saved with the switch off must still be listed."),
+        ("Features/SavedCards/SavedCardCapture.cs",
+            "Lands a saved card and takes the card it replaces off the Stripe Customer, for the webhook and "
+            + "the confirm. It charges nothing."),
     };
 
     private static readonly Regex StripeDependency =

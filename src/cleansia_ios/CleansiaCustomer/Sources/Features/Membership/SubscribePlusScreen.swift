@@ -172,7 +172,7 @@ struct SubscribePlusScreen: View {
             case .alreadyActive:
                 snackbar.showSuccess(L10n.Membership.alreadyActive)
                 onBack()
-            case .subscribed, .failed:
+            case .subscribed, .needsAuthentication, .failed:
                 break
             }
         }
@@ -182,7 +182,14 @@ struct SubscribePlusScreen: View {
         let outcome = await paymentSheet.present(presentation)
         switch outcome {
         case .completed:
-            if case .subscribed = await vm.confirmSubscribe(planCode: selectedPlanCode), !navigatedAway {
+            var subscribe = await vm.confirmSubscribe(planCode: selectedPlanCode)
+            if case let .needsAuthentication(clientSecret) = subscribe {
+                subscribe = await vm.confirmAfterAuthentication(
+                    planCode: selectedPlanCode,
+                    authentication: paymentSheet.handleNextAction(paymentIntentClientSecret: clientSecret)
+                )
+            }
+            if case .subscribed = subscribe, !navigatedAway {
                 navigatedAway = true
                 onSubscribed()
             }

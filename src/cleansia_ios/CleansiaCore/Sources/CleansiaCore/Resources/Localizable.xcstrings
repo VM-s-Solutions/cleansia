@@ -3466,6 +3466,111 @@
         }
       }
     },
+    "error.membership.card_declined": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaše karta byla zamítnuta. Zkuste jinou kartu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your card was declined. Try another card."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваша карта отклонена. Попробуйте другую карту."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaša karta bola zamietnutá. Skúste inú kartu."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вашу картку відхилено. Спробуйте іншу картку."
+          }
+        }
+      }
+    },
+    "error.membership.card_insufficient_funds": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na vaší kartě není dostatek prostředků. Zkuste jinou kartu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your card has insufficient funds. Try another card."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На вашей карте недостаточно средств. Попробуйте другую карту."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na vašej karte nie je dostatok prostriedkov. Skúste inú kartu."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На вашій картці недостатньо коштів. Спробуйте іншу картку."
+          }
+        }
+      }
+    },
+    "error.membership.card_authentication_failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaše banka platbu nepotvrdila. Zkuste to znovu nebo použijte jinou kartu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your bank did not confirm the payment. Try again or use another card."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваш банк не подтвердил платёж. Попробуйте ещё раз или используйте другую карту."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaša banka platbu nepotvrdila. Skúste to znova alebo použite inú kartu."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваш банк не підтвердив платіж. Спробуйте ще раз або скористайтеся іншою карткою."
+          }
+        }
+      }
+    },
     "error.network.unreachable": {
       "extractionState": "stale",
       "localizations": {

@@ -133,15 +133,17 @@ extension GetMembershipPlansResponse {
     }
 }
 
-/// **One endpoint, two payloads — and the refusal has to know which one it is looking at.**
+/// **One endpoint, three payloads — and the refusal has to know which one it is looking at.**
 ///
-/// `POST /api/Membership/Subscribe` answers in two shapes, because it is called twice per
-/// subscription:
+/// `POST /api/Membership/Subscribe` answers in three shapes, because it is called twice per
+/// subscription and a confirm with no trial charges the first invoice:
 ///
 /// - **Setup** (`paymentMethodConfirmed: false`) mints a Stripe SetupIntent and returns the three
 ///   inputs the payment sheet needs. No membership exists yet, so `membershipId` is `""`.
 /// - **Confirm** (`paymentMethodConfirmed: true`) creates the membership and returns its id. The
 ///   Stripe inputs are spent, so the server returns them as `""`.
+/// - **3-D Secure** (a confirm whose first invoice needs the bank's challenge) returns the invoice's
+///   PaymentIntent client secret and no membership; the same confirm is sent again after the challenge.
 ///
 /// The guard used to demand all four in both, which meant it fired on the FIRST call of every
 /// subscription: `membershipId` is legitimately blank there, `requireNonBlank` read that as absence,
@@ -153,7 +155,7 @@ extension GetMembershipPlansResponse {
 /// payment, it hands Stripe an empty string and fails inside a third-party UI where the reason never
 /// reaches us. So the setup shape still demands all three, and the confirm shape demands the id.
 /// `stripeCustomerId` is required by both because both return it.
-private extension CreateMembershipSubscriptionResponse {
+extension CreateMembershipSubscriptionResponse {
     func toDomain() throws -> SubscriptionSetup {
         let customerId = try stripeCustomerId.requireNonBlank("stripeCustomerId")
 
@@ -163,7 +165,18 @@ private extension CreateMembershipSubscriptionResponse {
                 membershipId: id,
                 setupIntentClientSecret: "",
                 stripeCustomerId: customerId,
-                ephemeralKey: ""
+                ephemeralKey: "",
+                paymentIntentClientSecret: ""
+            )
+        }
+
+        if let secret = paymentIntentClientSecret, !secret.isBlank {
+            return SubscriptionSetup(
+                membershipId: "",
+                setupIntentClientSecret: "",
+                stripeCustomerId: customerId,
+                ephemeralKey: "",
+                paymentIntentClientSecret: secret
             )
         }
 
@@ -172,7 +185,8 @@ private extension CreateMembershipSubscriptionResponse {
             membershipId: "",
             setupIntentClientSecret: setupIntentClientSecret.requireNonBlank("setupIntentClientSecret"),
             stripeCustomerId: customerId,
-            ephemeralKey: ephemeralKey.requireNonBlank("ephemeralKey")
+            ephemeralKey: ephemeralKey.requireNonBlank("ephemeralKey"),
+            paymentIntentClientSecret: ""
         )
     }
 }

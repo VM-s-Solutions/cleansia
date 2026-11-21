@@ -46,6 +46,21 @@ import Foundation
             }
         }
 
+        func handleNextAction(paymentIntentClientSecret: String) async -> PaymentSheetOutcome {
+            guard let presenter = Self.topViewController() else { return .failed }
+            let (status, _, _) = await STPPaymentHandler.shared().handleNextAction(
+                paymentIntentClientSecret: paymentIntentClientSecret,
+                authenticationContext: AuthenticationContext(presenter: presenter),
+                returnURL: nil
+            )
+            return switch status {
+            case .succeeded: .completed
+            case .canceled: .canceled
+            case .failed: .failed
+            @unknown default: .failed
+            }
+        }
+
         static func configuration(for presentation: PaymentSheetPresentation) -> PaymentSheet.Configuration {
             var configuration = PaymentSheet.Configuration()
             configuration.merchantDisplayName = presentation.merchantDisplayName
@@ -73,6 +88,19 @@ import Foundation
         }
     }
 
+    @MainActor
+    private final class AuthenticationContext: NSObject, STPAuthenticationContext {
+        private let presenter: UIViewController
+
+        init(presenter: UIViewController) {
+            self.presenter = presenter
+        }
+
+        func authenticationPresentingViewController() -> UIViewController {
+            presenter
+        }
+    }
+
 #else
 
     enum StripeLaunch {
@@ -82,6 +110,10 @@ import Foundation
     @MainActor
     final class StripePaymentController: PaymentSheetPresenting {
         func present(_: PaymentSheetPresentation) async -> PaymentSheetOutcome {
+            .failed
+        }
+
+        func handleNextAction(paymentIntentClientSecret _: String) async -> PaymentSheetOutcome {
             .failed
         }
     }

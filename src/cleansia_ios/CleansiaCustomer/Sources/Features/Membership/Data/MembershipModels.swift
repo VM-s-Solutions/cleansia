@@ -119,4 +119,5 @@ struct SubscriptionSetup: Equatable {
     let setupIntentClientSecret: String
     let stripeCustomerId: String
     let ephemeralKey: String
+    let paymentIntentClientSecret: String
 }

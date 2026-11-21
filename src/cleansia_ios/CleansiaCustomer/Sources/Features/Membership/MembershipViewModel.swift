@@ -136,6 +136,16 @@ final class MembershipViewModel: ViewModel {
     /// single subscription. `.completed` is UX-only — on success we re-read
     /// `membershipGetMine` (the webhook is the sole active-state authority).
     func confirmSubscribe(planCode: String) async -> SubscribeOutcome {
+        await confirm(planCode: planCode, after: nil)
+    }
+
+    /// Sent whatever the challenge reported: the server re-reads Stripe and grants only a paid invoice.
+    /// It is never followed by another challenge; a payment still not done ends this attempt.
+    func confirmAfterAuthentication(planCode: String, authentication: PaymentSheetOutcome) async -> SubscribeOutcome {
+        await confirm(planCode: planCode, after: authentication)
+    }
+
+    private func confirm(planCode: String, after authentication: PaymentSheetOutcome?) async -> SubscribeOutcome {
         guard !submitState.isSubmitting else { return .failed }
         submitState = .submitting
         defer { submitState = .idle }
@@ -144,18 +154,30 @@ final class MembershipViewModel: ViewModel {
         subscribeIdempotencyToken = token
 
         switch await repository.subscribePhase2(planCode: planCode, idempotencyToken: token) {
-        case let .success(setup):
-            guard !setup.membershipId.isEmpty else {
-                snackbar.showError(L10n.localized("error_generic_network"))
-                return .failed
-            }
+        case let .success(setup) where !setup.membershipId.isEmpty:
             await repository.refresh()
             return .subscribed(membershipId: setup.membershipId)
+        case let .success(setup) where !setup.paymentIntentClientSecret.isEmpty && authentication == nil:
+            return .needsAuthentication(paymentIntentClientSecret: setup.paymentIntentClientSecret)
+        case .success:
+            let message = switch authentication {
+            case nil: "error_generic_network"
+            case .canceled: "error_payment_cancelled"
+            case .completed, .failed: "error_payment_failed"
+            }
+            snackbar.showError(L10n.localized(message))
+            return .failed
+        case let .failure(error) where authentication != nil && error.code == Self.alreadyActiveKey:
+            // The subscription webhook granted the paid membership before this follow-up arrived.
+            await repository.refresh()
+            return .subscribed(membershipId: "")
         case let .failure(error):
             report(error)
             return .failed
         }
     }
+
+    static let alreadyActiveKey = "membership.already_active"
 
     func cancel() async -> Date? {
         guard !submitState.isSubmitting else { return nil }

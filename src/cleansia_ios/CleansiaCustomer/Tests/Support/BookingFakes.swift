@@ -215,6 +215,10 @@ final class FakePaymentSheetPresenter: PaymentSheetPresenting, @unchecked Sendab
         await beforeReturning?()
         return outcome
     }
+
+    func handleNextAction(paymentIntentClientSecret _: String) async -> PaymentSheetOutcome {
+        outcome
+    }
 }
 
 final class FakeCountryResolver: CountryResolver, @unchecked Sendable {

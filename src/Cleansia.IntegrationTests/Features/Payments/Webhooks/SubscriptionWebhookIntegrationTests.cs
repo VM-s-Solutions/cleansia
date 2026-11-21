@@ -70,6 +70,7 @@ public class SubscriptionWebhookIntegrationTests(PostgresContainerFixture fixtur
             {
                 var mediator = provider.GetRequiredService<IMediator>();
                 await mediator.Send(SignedCreatedCommand("evt_sub_3ds_created", "sub_3ds", status: "incomplete"));
+                Assert.Empty(await MembershipsForUserAsync(provider.GetRequiredService<CleansiaDbContext>()));
                 await mediator.Send(SignedCreatedCommand("evt_sub_3ds_paid", "sub_3ds", type: "customer.subscription.updated"));
                 return await mediator.Send(SignedCreatedCommand("evt_sub_3ds_paid_again", "sub_3ds", type: "customer.subscription.updated"));
             },

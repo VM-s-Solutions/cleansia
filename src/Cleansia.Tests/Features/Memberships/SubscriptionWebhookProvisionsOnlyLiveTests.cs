@@ -116,9 +116,10 @@ public class SubscriptionWebhookProvisionsOnlyLiveTests
     }
 
     [Fact]
-    public async Task A_3ds_subscription_created_incomplete_and_then_paid_ends_with_exactly_one_membership_whatever_the_order()
+    public async Task A_3ds_subscription_created_incomplete_gets_no_row_until_it_is_paid_and_then_exactly_one()
     {
         await Deliver(AppConstants.StripeEventType.SubscriptionCreated, "incomplete");
+        Assert.Empty(_rows);
         await Deliver(AppConstants.StripeEventType.SubscriptionUpdated, "active");
         await Deliver(AppConstants.StripeEventType.SubscriptionUpdated, "active");
 

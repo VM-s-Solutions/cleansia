@@ -86,6 +86,8 @@ private fun GenCreateMembershipSubscriptionResponse?.toAppDto(): CreateMembershi
         setupIntentClientSecret = started.setupIntentClientSecret.required("setupIntentClientSecret"),
         stripeCustomerId = started.stripeCustomerId.required("stripeCustomerId"),
         ephemeralKey = started.ephemeralKey.required("ephemeralKey"),
+        // Absent reads as no 3-D Secure step: with an empty membershipId the confirm is still refused.
+        paymentIntentClientSecret = started.paymentIntentClientSecret.orEmpty(),
     )
 }
 

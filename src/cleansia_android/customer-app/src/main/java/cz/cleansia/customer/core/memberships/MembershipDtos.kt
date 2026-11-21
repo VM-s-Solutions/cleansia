@@ -48,6 +48,8 @@ data class CreateMembershipSubscriptionRequest(
  * two phases by [membershipId] being non-empty:
  *  - phase 1 (collect payment method): [setupIntentClientSecret] / [stripeCustomerId] / [ephemeralKey] populated
  *  - phase 2 (subscription created):    [membershipId] populated, secrets are empty
+ *  - phase 2 (first invoice needs 3-D Secure): [membershipId] empty, [paymentIntentClientSecret] populated
+ * -> /flows/loyalty-and-memberships#plus-paid-before-granted
  */
 @Serializable
 data class CreateMembershipSubscriptionResponse(
@@ -55,6 +57,7 @@ data class CreateMembershipSubscriptionResponse(
     val setupIntentClientSecret: String,
     val stripeCustomerId: String,
     val ephemeralKey: String,
+    val paymentIntentClientSecret: String = "",
 )
 
 @Serializable

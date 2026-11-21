@@ -354,6 +354,22 @@ class MembershipWireTest {
         assertEquals("ek_test_ABC", started.ephemeralKey)
     }
 
+    /** A first invoice whose card needs 3-D Secure answers no membership and the invoice's PaymentIntent secret. */
+    @Test
+    fun aThreeDSecureStepArrivesWithItsLiteralPaymentIntentSecret() = runTest {
+        val challenged = withKey(
+            withKey(CAPTURED_SUBSCRIBE, "membershipId", JsonPrimitive("")),
+            "paymentIntentClientSecret",
+            JsonPrimitive("pi_3ABC_secret_XYZ"),
+        )
+        val started = serving(challenged) {
+            it.subscribe(CreateMembershipSubscriptionRequest(planCode = "plus-annual", paymentMethodConfirmed = true))
+        }.body()!!
+
+        assertEquals("", started.membershipId)
+        assertEquals("pi_3ABC_secret_XYZ", started.paymentIntentClientSecret)
+    }
+
     /**
      * A blanked client secret is not a display bug: the PaymentSheet opens, fails, and leaves nothing
      * on screen or in a log to say which of the four credentials was missing. All four are
@@ -430,7 +446,8 @@ class MembershipWireTest {
               "membershipId": "mem-1",
               "setupIntentClientSecret": "seti_1ABC_secret_XYZ",
               "stripeCustomerId": "cus_ABC123",
-              "ephemeralKey": "ek_test_ABC"
+              "ephemeralKey": "ek_test_ABC",
+              "paymentIntentClientSecret": ""
             }
         """.trimIndent()
 

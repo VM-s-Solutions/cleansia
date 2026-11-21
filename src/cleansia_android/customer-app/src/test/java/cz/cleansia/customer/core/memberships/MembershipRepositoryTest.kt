@@ -246,6 +246,19 @@ class MembershipRepositoryTest {
         verify(exactly = 0) { snackbar.showError(any<String>()) }
     }
 
+    /** The follow-up confirm after 3-D Secure tells "the webhook granted it first" apart from a card refusal by the key. */
+    @Test
+    fun subscribePhase2_givenHttp400_carriesTheServersKey() = runTest {
+        val refusal = """{"errors":{"PaymentMethodConfirmed":"membership.already_active"}}"""
+        coEvery { api.subscribe(any()) } returns Response.error(400, refusal.toResponseBody("application/json".toMediaType()))
+
+        val result = newRepo().subscribePhase2("plus_monthly", "tok-1", countryId = null)
+
+        val error = (result as ApiResult.Error).error as ApiError.BadRequest
+        assertEquals("membership.already_active", error.errorKey)
+        coVerify(exactly = 0) { api.getMine() }
+    }
+
     // ── cancel (success invalidates the cache) ──
 
     @Test

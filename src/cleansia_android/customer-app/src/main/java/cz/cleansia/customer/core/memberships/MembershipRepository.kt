@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import okhttp3.ResponseBody.Companion.toResponseBody
 
 /**
  * Wraps [MembershipApi] with a small in-memory cache of the user's current
@@ -292,10 +293,11 @@ class MembershipRepository @Inject constructor(
         ApiResult.Error(ApiError.Network(appContext.getString(R.string.error_generic_network)))
 
     private fun <T> httpError(errorBody: okhttp3.ResponseBody?, httpCode: Int): ApiResult<T> {
-        val message = ApiErrorParser.parseToUserMessage(appContext, errorBody, httpCode)
+        val raw = runCatching { errorBody?.string() }.getOrNull()
+        val message = ApiErrorParser.parseToUserMessage(appContext, raw?.toResponseBody(), httpCode)
         val error = when (httpCode) {
             404 -> ApiError.NotFound(message)
-            400 -> ApiError.BadRequest(message)
+            400 -> ApiError.BadRequest(message, errorKey = ApiErrorParser.firstErrorKey(raw))
             in 500..599 -> ApiError.Server(statusCode = httpCode, message = message)
             else -> ApiError.Unknown(message)
         }

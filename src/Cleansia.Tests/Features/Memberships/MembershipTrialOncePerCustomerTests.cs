@@ -127,13 +127,14 @@ public class MembershipTrialOncePerCustomerTests
     private void SetupStripeSubscription(DateTime? trialEnd) =>
         _stripe
             .Setup(c => c.CreateSubscriptionAsync(
-                StripeCustomerId, StripePriceId, It.IsAny<int>(),
+                StripeCustomerId, StripePriceId, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(),
                 It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new SubscriptionResult(
                 SubscriptionId: "sub_1",
                 CurrentPeriodStart: DateTime.UtcNow,
                 CurrentPeriodEnd: DateTime.UtcNow.AddMonths(1),
-                TrialEnd: trialEnd));
+                TrialEnd: trialEnd,
+                Status: trialEnd is null ? "active" : "trialing"));
 
     // ── the resolver: the rule itself, in one place ──
 
@@ -210,7 +211,7 @@ public class MembershipTrialOncePerCustomerTests
 
         Assert.True(result.IsSuccess);
         _stripe.Verify(c => c.CreateSubscriptionAsync(
-            StripeCustomerId, StripePriceId, PlanTrialDays,
+            StripeCustomerId, StripePriceId, It.IsAny<string>(), It.IsAny<string>(), PlanTrialDays,
             It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -226,7 +227,7 @@ public class MembershipTrialOncePerCustomerTests
 
         Assert.True(result.IsSuccess);
         _stripe.Verify(c => c.CreateSubscriptionAsync(
-            StripeCustomerId, StripePriceId, 0,
+            StripeCustomerId, StripePriceId, It.IsAny<string>(), It.IsAny<string>(), 0,
             It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 

@@ -337,9 +337,7 @@ final class MembershipViewModelTests: XCTestCase {
 
     func testStartSubscribeWithExistingMembershipReturnsAlreadyActive() async {
         let client = FakeMembershipManagementClient()
-        client.phase1Result = .success(SubscriptionSetup(
-            membershipId: "mem-existing", setupIntentClientSecret: "x", stripeCustomerId: "c", ephemeralKey: "e"
-        ))
+        client.phase1Result = .success(MembershipFixtures.subscribed)
         let (vm, _, _) = makeVM(client: client)
 
         let outcome = await vm.startSubscribe(planCode: "plus_monthly")
@@ -448,7 +446,8 @@ final class MembershipViewModelTests: XCTestCase {
     func testConfirmSubscribeEmptyMembershipIdIsFailure() async {
         let client = FakeMembershipManagementClient()
         client.phase2Result = .success(SubscriptionSetup(
-            membershipId: "", setupIntentClientSecret: "", stripeCustomerId: "c", ephemeralKey: "e"
+            membershipId: "", setupIntentClientSecret: "", stripeCustomerId: "c", ephemeralKey: "e",
+            paymentIntentClientSecret: ""
         ))
         let (vm, _, _) = makeVM(client: client)
 

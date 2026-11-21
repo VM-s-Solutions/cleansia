@@ -45,6 +45,7 @@ public class StripeSetupIntentTests
     public async Task A_Phone_Subscription_Renews_On_The_Card_Its_Plus_Setup_Confirmed()
     {
         var transport = new RecordingHandler(
+            NoSubscriptions,
             SetupIntents(
                 ("seti_saved", "succeeded", "pm_saved", """{"SavedCardId":"card-row-1"}"""),
                 ("seti_plus_open", "requires_payment_method", null, "{}"),
@@ -52,11 +53,11 @@ public class StripeSetupIntentTests
                 ("seti_plus_old", "succeeded", "pm_plus_old", "{}")),
             Subscription);
 
-        await Client(transport).CreateSubscriptionAsync("cus_eur", "price_plus", 14, "tok-1", CancellationToken.None);
+        await Client(transport).CreateSubscriptionAsync("cus_eur", "price_plus", "user-1", "PLUS_MONTHLY", 14, "tok-1", CancellationToken.None);
 
-        Assert.Equal((HttpMethod.Get, "/v1/setup_intents"), (transport.Requests[0].Method, transport.Requests[0].Path));
-        Assert.Contains("customer=cus_eur", transport.Requests[0].Query);
-        var create = transport.Requests[1];
+        Assert.Equal((HttpMethod.Get, "/v1/setup_intents"), (transport.Requests[1].Method, transport.Requests[1].Path));
+        Assert.Contains("customer=cus_eur", transport.Requests[1].Query);
+        var create = transport.Requests[2];
         Assert.Equal((HttpMethod.Post, "/v1/subscriptions"), (create.Method, create.Path));
         Assert.Contains("&default_payment_method=pm_plus&", "&" + create.Body + "&");
     }
@@ -65,13 +66,16 @@ public class StripeSetupIntentTests
     public async Task A_Subscription_With_No_Succeeded_Plus_Setup_Names_No_Default()
     {
         var transport = new RecordingHandler(
+            NoSubscriptions,
             SetupIntents(("seti_saved", "succeeded", "pm_saved", """{"SavedCardId":"card-row-1"}""")),
             Subscription);
 
-        await Client(transport).CreateSubscriptionAsync("cus_eur", "price_plus", 14, "tok-1", CancellationToken.None);
+        await Client(transport).CreateSubscriptionAsync("cus_eur", "price_plus", "user-1", "PLUS_MONTHLY", 14, "tok-1", CancellationToken.None);
 
-        Assert.DoesNotContain("&default_payment_method=", "&" + transport.Requests[1].Body);
+        Assert.DoesNotContain("&default_payment_method=", "&" + transport.Requests[2].Body);
     }
+
+    private const string NoSubscriptions = """{"object":"list","data":[],"has_more":false,"url":"/v1/subscriptions"}""";
 
     private const string Subscription =
         """{"id":"sub_1","object":"subscription","status":"trialing","items":{"object":"list","data":[]}}""";

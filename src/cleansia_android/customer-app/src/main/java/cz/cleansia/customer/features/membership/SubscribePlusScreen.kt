@@ -67,6 +67,8 @@ import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.core.market.selectedOrNull
 import cz.cleansia.customer.core.memberships.MembershipPlanDto
 import cz.cleansia.customer.core.memberships.trialDaysOn
+import com.stripe.android.payments.paymentlauncher.PaymentResult
+import com.stripe.android.payments.paymentlauncher.rememberPaymentLauncher
 import com.stripe.android.paymentsheet.PaymentSheetResult
 import com.stripe.android.paymentsheet.rememberPaymentSheet
 import cz.cleansia.customer.core.payments.PaymentSheetParams
@@ -111,21 +113,30 @@ fun SubscribePlusScreen(
     // success screen as the auto-back effect re-fires.
     var navigatedAway by remember { mutableStateOf(false) }
 
+    // No snackbar on success — the dedicated success screen IS the affirmation.
+    fun leaveIfSubscribed(outcome: SubscribeOutcome) {
+        if (outcome is SubscribeOutcome.Subscribed && !navigatedAway) {
+            navigatedAway = true
+            onSubscribed()
+        }
+    }
+
+    val paymentLauncher = rememberPaymentLauncher { result ->
+        scope.launch {
+            leaveIfSubscribed(
+                viewModel.confirmAfterAuthentication(selectedPlanCode, challengeCancelled = result is PaymentResult.Canceled),
+            )
+        }
+    }
+
     val paymentSheet = rememberPaymentSheet { result ->
         when (result) {
             is PaymentSheetResult.Completed -> {
                 scope.launch {
-                    val outcome = viewModel.confirmSubscribe(selectedPlanCode)
-                    when (outcome) {
-                        is SubscribeOutcome.Subscribed -> {
-                            // No snackbar — the dedicated success screen IS
-                            // the affirmation; doubling up would feel noisy.
-                            if (!navigatedAway) {
-                                navigatedAway = true
-                                onSubscribed()
-                            }
-                        }
-                        else -> Unit // VM already snackbarred
+                    when (val outcome = viewModel.confirmSubscribe(selectedPlanCode)) {
+                        is SubscribeOutcome.NeedsAuthentication ->
+                            paymentLauncher.handleNextActionForPaymentIntent(outcome.paymentIntentClientSecret)
+                        else -> leaveIfSubscribed(outcome) // a failure is already snackbarred
                     }
                 }
             }
@@ -282,7 +293,8 @@ fun SubscribePlusScreen(
                                 onBack()
                             }
                             SubscribeOutcome.Failed -> Unit
-                            is SubscribeOutcome.Subscribed -> Unit
+                            SubscribeOutcome.Subscribed -> Unit
+                            is SubscribeOutcome.NeedsAuthentication -> Unit
                         }
                     }
                 },

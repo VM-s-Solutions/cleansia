@@ -11,7 +11,6 @@ public class StripeSubscriptionStatusTests
 {
     [Theory]
     [InlineData(false, "active")]
-    [InlineData(false, "incomplete")]
     [InlineData(false, "trialing")]
     [InlineData(true, "active")]
     [InlineData(true, "past_due")]
@@ -24,11 +23,11 @@ public class StripeSubscriptionStatusTests
 
         var result = swap
             ? await client.SwapSubscriptionPriceAsync("sub_unit", "price_yearly", "attempt", CancellationToken.None)
-            : await client.CreateSubscriptionAsync("cus_unit", "price_monthly", 0, "attempt", CancellationToken.None);
+            : await client.CreateSubscriptionAsync("cus_unit", "price_monthly", "user-1", "PLUS_MONTHLY", 0, "attempt", CancellationToken.None);
 
         Assert.Equal(status, result.Status);
         Assert.Equal("sub_unit", result.SubscriptionId);
-        Assert.Equal(2, transport.Requests);
+        Assert.Equal(swap ? 2 : 3, transport.Requests);
     }
 
     private sealed class SubscriptionResponse(string status) : HttpMessageHandler
@@ -39,7 +38,8 @@ public class StripeSubscriptionStatusTests
         {
             Requests++;
             var body = request.RequestUri!.AbsolutePath == "/v1/setup_intents"
-                ? """{"object":"list","data":[],"has_more":false,"url":"/v1/setup_intents"}"""
+                    || (request.Method == HttpMethod.Get && request.RequestUri.AbsolutePath == "/v1/subscriptions")
+                ? """{"object":"list","data":[],"has_more":false,"url":"/v1/list"}"""
                 : JsonSerializer.Serialize(new
                 {
                     id = "sub_unit", @object = "subscription", status,

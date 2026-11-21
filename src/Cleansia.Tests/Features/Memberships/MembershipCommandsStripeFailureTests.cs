@@ -173,7 +173,7 @@ public class MembershipCommandsStripeFailureTests
         _user.AssignStripeCustomerId(StripeCustomerId);
         _stripe
             .Setup(c => c.CreateSubscriptionAsync(
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(),
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(),
                 It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(CustomerCurrencyLockRefusal());
 
@@ -236,7 +236,7 @@ public class MembershipCommandsStripeFailureTests
         _user.AssignStripeCustomerId(StripeCustomerId);
         _stripe
             .Setup(c => c.CreateSubscriptionAsync(
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(),
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(),
                 It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(TransientStripeFault());
 

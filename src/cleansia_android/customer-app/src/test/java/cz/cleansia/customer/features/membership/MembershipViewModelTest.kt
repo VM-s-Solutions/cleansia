@@ -297,9 +297,144 @@ class MembershipViewModelTest {
         advanceUntilIdle()
         val outcome = vm.confirmSubscribe("plus_monthly")
 
-        assertTrue(outcome is SubscribeOutcome.Subscribed)
-        assertEquals("mem-99", (outcome as SubscribeOutcome.Subscribed).membershipId)
+        assertEquals(SubscribeOutcome.Subscribed, outcome)
         assertEquals(ActionState.Idle, vm.submitState.value)
+    }
+
+    // A no-trial confirm charges the first invoice at once; only a granted membership is Subscribed.
+
+    private fun confirmed(membershipId: String = "", paymentIntentClientSecret: String = "") =
+        CreateMembershipSubscriptionResponse(membershipId, "", "cus", "ek", paymentIntentClientSecret)
+
+    private val alreadyActive = ApiError.BadRequest("already", errorKey = "membership.already_active")
+
+    private suspend fun startedViewModel(): MembershipViewModel {
+        coEvery { repository.subscribePhase1("plus_monthly", null) } returns ApiResult.Success(
+            CreateMembershipSubscriptionResponse("", "seti", "cus", "ek"),
+        )
+        return viewModel().also { it.startSubscribe("plus_monthly") }
+    }
+
+    @Test
+    fun `a confirm whose card needs 3-D Secure grants nothing and hands over the invoice's PaymentIntent`() = runTest {
+        coEvery { repository.subscribePhase2("plus_monthly", any(), null) } returns
+            ApiResult.Success(confirmed(paymentIntentClientSecret = "pi_secret"))
+
+        val vm = startedViewModel()
+        advanceUntilIdle()
+        val outcome = vm.confirmSubscribe("plus_monthly")
+
+        assertEquals(SubscribeOutcome.NeedsAuthentication("pi_secret"), outcome)
+        verify(exactly = 0) { snackbar.showError(any<String>()) }
+        verify(exactly = 0) { snackbar.showError(any<ApiError>()) }
+        assertEquals(ActionState.Idle, vm.submitState.value)
+    }
+
+    @Test
+    fun `the confirm after 3-D Secure resends the same token and is Subscribed once the membership is granted`() = runTest {
+        val tokens = mutableListOf<String?>()
+        coEvery { repository.subscribePhase2("plus_monthly", captureNullable(tokens), null) } returnsMany listOf(
+            ApiResult.Success(confirmed(paymentIntentClientSecret = "pi_secret")),
+            ApiResult.Success(confirmed(membershipId = "mem-1")),
+        )
+
+        val vm = startedViewModel()
+        advanceUntilIdle()
+        vm.confirmSubscribe("plus_monthly")
+        val outcome = vm.confirmAfterAuthentication("plus_monthly", challengeCancelled = false)
+
+        assertEquals(SubscribeOutcome.Subscribed, outcome)
+        assertEquals(2, tokens.size)
+        assertTrue(tokens[0] != null && tokens[0] == tokens[1])
+        assertEquals(ActionState.Idle, vm.submitState.value)
+    }
+
+    @Test
+    fun `a confirm after 3-D Secure that is still unpaid stops with nothing granted and does not ask again`() = runTest {
+        coEvery { repository.subscribePhase2("plus_monthly", any(), null) } returns
+            ApiResult.Success(confirmed(paymentIntentClientSecret = "pi_secret"))
+
+        val vm = startedViewModel()
+        advanceUntilIdle()
+        vm.confirmSubscribe("plus_monthly")
+        val failed = vm.confirmAfterAuthentication("plus_monthly", challengeCancelled = false)
+        val cancelled = vm.confirmAfterAuthentication("plus_monthly", challengeCancelled = true)
+
+        assertEquals(SubscribeOutcome.Failed, failed)
+        assertEquals(SubscribeOutcome.Failed, cancelled)
+        verify(exactly = 1) { snackbar.showErrorKey(R.string.error_payment_failed) }
+        verify(exactly = 1) { snackbar.showErrorKey(R.string.error_payment_cancelled) }
+    }
+
+    @Test
+    fun `a card refusal after 3-D Secure shows the card's reason and grants nothing`() = runTest {
+        val refused = ApiError.BadRequest("Your bank did not confirm the payment.", errorKey = "membership.card_authentication_failed")
+        coEvery { repository.subscribePhase2("plus_monthly", any(), null) } returnsMany listOf(
+            ApiResult.Success(confirmed(paymentIntentClientSecret = "pi_secret")),
+            ApiResult.Error(refused),
+        )
+
+        val vm = startedViewModel()
+        advanceUntilIdle()
+        vm.confirmSubscribe("plus_monthly")
+        val outcome = vm.confirmAfterAuthentication("plus_monthly", challengeCancelled = false)
+
+        assertEquals(SubscribeOutcome.Failed, outcome)
+        verify(exactly = 1) { snackbar.showError(refused) }
+    }
+
+    @Test
+    fun `already active on the confirm after 3-D Secure is the backstop having granted it, so it is Subscribed`() = runTest {
+        coEvery { repository.subscribePhase2("plus_monthly", any(), null) } returnsMany listOf(
+            ApiResult.Success(confirmed(paymentIntentClientSecret = "pi_secret")),
+            ApiResult.Error(alreadyActive),
+        )
+
+        val vm = startedViewModel()
+        advanceUntilIdle()
+        vm.confirmSubscribe("plus_monthly")
+        val outcome = vm.confirmAfterAuthentication("plus_monthly", challengeCancelled = false)
+
+        assertEquals(SubscribeOutcome.Subscribed, outcome)
+        verify(exactly = 0) { snackbar.showError(any<ApiError>()) }
+        coVerify(atLeast = 2) { repository.refresh() }
+    }
+
+    @Test
+    fun `already active on a first confirm is still a refusal`() = runTest {
+        coEvery { repository.subscribePhase2("plus_monthly", any(), null) } returns ApiResult.Error(alreadyActive)
+
+        val vm = startedViewModel()
+        advanceUntilIdle()
+
+        assertEquals(SubscribeOutcome.Failed, vm.confirmSubscribe("plus_monthly"))
+        verify(exactly = 1) { snackbar.showError(alreadyActive) }
+    }
+
+    @Test
+    fun `a confirm after 3-D Secure with no attempt in hand sends nothing and is Subscribed only if the membership exists`() = runTest {
+        coEvery { repository.refresh() } answers {
+            current.value = GetMyMembershipResponse(hasMembership = true, cancelRequested = false)
+            ApiResult.Success(current.value!!)
+        }
+
+        val vm = viewModel()
+        advanceUntilIdle()
+        val outcome = vm.confirmAfterAuthentication("plus_monthly", challengeCancelled = false)
+
+        assertEquals(SubscribeOutcome.Subscribed, outcome)
+        coVerify(exactly = 0) { repository.subscribePhase2(any(), any(), any()) }
+    }
+
+    @Test
+    fun `a confirm answering neither a membership nor a 3-D Secure step is a failure`() = runTest {
+        coEvery { repository.subscribePhase2("plus_monthly", any(), null) } returns ApiResult.Success(confirmed())
+
+        val vm = startedViewModel()
+        advanceUntilIdle()
+
+        assertEquals(SubscribeOutcome.Failed, vm.confirmSubscribe("plus_monthly"))
+        verify(exactly = 1) { snackbar.showError("network error") }
     }
 
     @Test

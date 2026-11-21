@@ -5,7 +5,7 @@ step, cleared when done.
 
 ## Open
 
-### MS-16 — Deliver `setup_intent.succeeded` to the mobile webhook endpoint — **owner**
+### MS-16 — Subscribe the webhook endpoints to every handled event — **DEV taken 2026-11-21; PRO before launch**
 
 A card saved under Profile → Payments in either customer app is completed only by Stripe's
 `setup_intent.succeeded` (→ [Stripe Dashboard setup](/api/webhooks#stripe-dashboard-setup)). DEV
@@ -24,9 +24,16 @@ demo. An agent cannot take it: it has no Stripe Dashboard access and may not rea
    page).
 3. Optional: resend the latest pending `setup_intent.succeeded` per currency, so its row is completed.
    Only the latest stays active, because each capture retires the one before.
-4. Before launch, the same for the `prod-weu` endpoint.
+4. Before launch, the same for the `prod-weu` endpoints: each one with every event its row of the
+   [setup table](/api/webhooks#stripe-dashboard-setup) lists, the eight account-wide events included. An event
+   carried by both endpoints is harmless: the second delivery of the same event id changes nothing.
 
 **Done when:** a card added from Profile → Payments on DEV appears in the app's list.
+
+**2026-11-21, DEV:** the Dashboard step is taken on DEV. DEV then processed `setup_intent.succeeded` (first at
+10:18:26Z) and `customer.subscription.created` (10:54:39Z, for a Plus trial started on a phone at 10:52:11Z),
+neither of which it had received before. A card added from Payments appears on DEV (T-0943). The other events show
+only when something raises them. Step 4, PRO, is left.
 
 ### MS-13 — Send one of each migrated e-mail before the next deploy — **owner**
 

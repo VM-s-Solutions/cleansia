@@ -153,14 +153,16 @@ enum MembershipFixtures {
         membershipId: "",
         setupIntentClientSecret: "seti_secret_abc",
         stripeCustomerId: "cus_1",
-        ephemeralKey: "ek_1"
+        ephemeralKey: "ek_1",
+        paymentIntentClientSecret: ""
     )
 
     static let subscribed = SubscriptionSetup(
         membershipId: "mem-99",
         setupIntentClientSecret: "",
         stripeCustomerId: "cus_1",
-        ephemeralKey: "ek_1"
+        ephemeralKey: "ek_1",
+        paymentIntentClientSecret: ""
     )
 
     static let plans = [

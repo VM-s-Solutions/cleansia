@@ -62,4 +62,5 @@ enum PaymentSheetOutcome: Equatable {
 @MainActor
 protocol PaymentSheetPresenting: AnyObject {
     func present(_ presentation: PaymentSheetPresentation) async -> PaymentSheetOutcome
+    func handleNextAction(paymentIntentClientSecret: String) async -> PaymentSheetOutcome
 }

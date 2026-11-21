@@ -84,13 +84,14 @@ public class CreateMembershipSubscriptionIdempotencyTests
         // (Stripe replay), and a different attemptId yields a different subscription.
         _stripe
             .Setup(c => c.CreateSubscriptionAsync(
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(),
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(),
                 It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string _, string _, int _, string attemptId, CancellationToken _) =>
+            .ReturnsAsync((string _, string _, string _, string _, int _, string attemptId, CancellationToken _) =>
                 new SubscriptionResult(
                     SubscriptionId: $"sub_{attemptId}",
                     CurrentPeriodStart: DateTime.UtcNow,
-                    CurrentPeriodEnd: DateTime.UtcNow.AddMonths(1)));
+                    CurrentPeriodEnd: DateTime.UtcNow.AddMonths(1),
+                    Status: "active"));
     }
 
     private CreateMembershipSubscription.Handler CreateHandler() =>
@@ -118,13 +119,11 @@ public class CreateMembershipSubscriptionIdempotencyTests
     [Theory]
     [InlineData("active", true)]
     [InlineData("trialing", false)]
-    [InlineData("incomplete", false)]
-    [InlineData("incomplete_expired", false)]
     public async Task Confirmed_request_records_paid_proof_only_from_the_returned_Stripe_status(string status, bool paid)
     {
         var created = new List<UserMembership>();
         _membershipRepository.Setup(r => r.Add(It.IsAny<UserMembership>())).Callback<UserMembership>(created.Add);
-        _stripe.Setup(c => c.CreateSubscriptionAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(),
+        _stripe.Setup(c => c.CreateSubscriptionAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(),
                 It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new SubscriptionResult("sub-payment-proof", DateTime.UtcNow, DateTime.UtcNow.AddMonths(1), Status: status));
 
@@ -149,10 +148,10 @@ public class CreateMembershipSubscriptionIdempotencyTests
         var capturedAttemptIds = new List<string>();
         _stripe
             .Setup(c => c.CreateSubscriptionAsync(
-                StripeCustomerId, StripePriceId, It.IsAny<int>(),
+                StripeCustomerId, StripePriceId, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(),
                 Capture.In(capturedAttemptIds), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string _, string _, int _, string attemptId, CancellationToken _) =>
-                new SubscriptionResult($"sub_{attemptId}", DateTime.UtcNow, DateTime.UtcNow.AddMonths(1)));
+            .ReturnsAsync((string _, string _, string _, string _, int _, string attemptId, CancellationToken _) =>
+                new SubscriptionResult($"sub_{attemptId}", DateTime.UtcNow, DateTime.UtcNow.AddMonths(1), Status: "active"));
 
         await CreateHandler().Handle(ConfirmedCommand(ClientToken), CancellationToken.None);
         await CreateHandler().Handle(ConfirmedCommand(ClientToken), CancellationToken.None);
@@ -316,10 +315,10 @@ public class CreateMembershipSubscriptionIdempotencyTests
         var capturedAttemptIds = new List<string>();
         _stripe
             .Setup(c => c.CreateSubscriptionAsync(
-                StripeCustomerId, StripePriceId, It.IsAny<int>(),
+                StripeCustomerId, StripePriceId, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(),
                 Capture.In(capturedAttemptIds), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string _, string _, int _, string attemptId, CancellationToken _) =>
-                new SubscriptionResult($"sub_{attemptId}", DateTime.UtcNow, DateTime.UtcNow.AddMonths(1)));
+            .ReturnsAsync((string _, string _, string _, string _, int _, string attemptId, CancellationToken _) =>
+                new SubscriptionResult($"sub_{attemptId}", DateTime.UtcNow, DateTime.UtcNow.AddMonths(1), Status: "active"));
 
         await CreateHandler().Handle(ConfirmedCommand(token: null), CancellationToken.None);
         await CreateHandler().Handle(ConfirmedCommand(token: string.Empty), CancellationToken.None);
@@ -348,10 +347,10 @@ public class CreateMembershipSubscriptionIdempotencyTests
         var capturedAttemptIds = new List<string>();
         _stripe
             .Setup(c => c.CreateSubscriptionAsync(
-                StripeCustomerId, It.IsAny<string>(), It.IsAny<int>(),
+                StripeCustomerId, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(),
                 Capture.In(capturedAttemptIds), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string _, string _, int _, string attemptId, CancellationToken _) =>
-                new SubscriptionResult($"sub_{attemptId}", DateTime.UtcNow, DateTime.UtcNow.AddMonths(1)));
+            .ReturnsAsync((string _, string _, string _, string _, int _, string attemptId, CancellationToken _) =>
+                new SubscriptionResult($"sub_{attemptId}", DateTime.UtcNow, DateTime.UtcNow.AddMonths(1), Status: "active"));
 
         await CreateHandler().Handle(ConfirmedCommand(token: null), CancellationToken.None);
         await CreateHandler().Handle(
@@ -390,7 +389,7 @@ public class CreateMembershipSubscriptionIdempotencyTests
         Assert.Equal("ek_secret_1", result.Value.EphemeralKey);
         Assert.Equal(string.Empty, result.Value.MembershipId);
         _stripe.Verify(c => c.CreateSubscriptionAsync(
-            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(),
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(),
             It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         _membershipRepository.Verify(r => r.Add(It.IsAny<UserMembership>()), Times.Never);
     }

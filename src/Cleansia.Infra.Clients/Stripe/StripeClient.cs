@@ -744,10 +744,35 @@ public class StripeClient : IStripeClient
     public async Task<SubscriptionResult> CreateSubscriptionAsync(
         string stripeCustomerId,
         string stripePriceId,
+        string userId,
+        string membershipPlanCode,
         int trialPeriodDays,
         string idempotencyAttemptId,
         CancellationToken cancellationToken)
     {
+        var service = new SubscriptionService(stripe);
+
+        // Only Stripe knows an earlier attempt was paid when its confirm never landed (app killed after 3-D Secure,
+        // network lost), so a new attempt resumes it instead of charging a second subscription.
+        // -> /flows/loyalty-and-memberships#plus-paid-before-granted
+        var earlier = await ClassifyAsync(
+            nameof(CreateSubscriptionAsync),
+            () => service.ListAsync(
+                new SubscriptionListOptions { Customer = stripeCustomerId, Limit = 100 },
+                cancellationToken: cancellationToken));
+        var unpaidEarlier = new List<string>();
+        foreach (var mine in earlier.Data.Where(s =>
+                     s.Metadata?.GetValueOrDefault("UserId") == userId && s.Status is ("active" or "trialing" or "incomplete")))
+        {
+            var outcome = await ReadFirstInvoiceOutcomeAsync(mine, cancellationToken);
+            if (IsLive(outcome.Status))
+            {
+                return outcome;
+            }
+
+            unpaidEarlier.Add(mine.Id);
+        }
+
         // The phone's Plus sheet confirmed the platform's own SetupIntent, which carries no saved-card row, and
         // the confirm sends no card: its card is the subscription's default, or no invoice would have one to charge.
         var setupIntents = await ClassifyAsync(
@@ -759,7 +784,6 @@ public class StripeClient : IStripeClient
             .FirstOrDefault(i => i.Status == "succeeded" && !(i.Metadata?.ContainsKey(SavedCardMetadataKey) ?? false))
             ?.PaymentMethodId;
 
-        var service = new SubscriptionService(stripe);
         var options = new SubscriptionCreateOptions
         {
             Customer = stripeCustomerId,
@@ -768,13 +792,17 @@ public class StripeClient : IStripeClient
                 new SubscriptionItemOptions { Price = stripePriceId },
             ],
             DefaultPaymentMethod = plusCard,
-            PaymentBehavior = "default_incomplete",
+            PaymentBehavior = trialPeriodDays > 0 ? "default_incomplete" : "allow_incomplete",
             PaymentSettings = new SubscriptionPaymentSettingsOptions
             {
                 PaymentMethodTypes = ["card"],
                 SaveDefaultPaymentMethod = "on_subscription",
             },
-            Expand = ["latest_invoice.payment_intent"],
+            Metadata = new Dictionary<string, string>
+            {
+                { "UserId", userId },
+                { "MembershipPlanCode", membershipPlanCode },
+            },
         };
         if (trialPeriodDays > 0)
         {
@@ -787,6 +815,66 @@ public class StripeClient : IStripeClient
         var subscription = await ClassifyAsync(
             nameof(CreateSubscriptionAsync),
             () => service.CreateAsync(options, requestOptions, cancellationToken));
+
+        // Stripe answers a retried create with its first response, so the confirm after a 3-D Secure step
+        // reads the subscription afresh to see the payment.
+        if (!IsLive(subscription.Status))
+        {
+            subscription = await ClassifyAsync(
+                nameof(CreateSubscriptionAsync),
+                () => service.GetAsync(subscription.Id, cancellationToken: cancellationToken));
+        }
+
+        var result = await ReadFirstInvoiceOutcomeAsync(subscription, cancellationToken);
+
+        // An earlier attempt nobody can pay any more (its 3-D Secure step abandoned, its card refused) would
+        // otherwise wait out Stripe's 23-hour expiry; a failed cancel leaves exactly that.
+        foreach (var abandoned in unpaidEarlier.Where(id => id != result.SubscriptionId))
+        {
+            try
+            {
+                await CancelSubscriptionNowAsync(abandoned, cancellationToken);
+            }
+            catch (Exception ex) when (ex is StripeException or HttpRequestException or TimeoutException)
+            {
+                // Logged at the boundary; Stripe expires it unpaid, and this attempt's answer stands.
+            }
+        }
+
+        return result;
+    }
+
+    private async Task<SubscriptionResult> ReadFirstInvoiceOutcomeAsync(Subscription subscription, CancellationToken cancellationToken)
+    {
+        var status = subscription.Status;
+        string? clientSecret = null;
+        string? declineCode = null;
+        if (!IsLive(status) && !string.IsNullOrEmpty(subscription.LatestInvoiceId))
+        {
+            var payments = await ClassifyAsync(
+                nameof(CreateSubscriptionAsync),
+                () => new InvoicePaymentService(stripe).ListAsync(
+                    new InvoicePaymentListOptions { Invoice = subscription.LatestInvoiceId, Expand = ["data.payment.payment_intent"] },
+                    cancellationToken: cancellationToken));
+            var intent = payments.Data
+                .OrderByDescending(p => p.IsDefault)
+                .Select(p => p.Payment?.PaymentIntent)
+                .FirstOrDefault(i => i is not null);
+            switch (intent?.Status)
+            {
+                // Paid: Stripe marks the invoice paid, and the subscription active, a moment after the intent succeeds.
+                case "succeeded" when status == "incomplete":
+                    status = "active";
+                    break;
+                case "requires_action" or "requires_confirmation" or "processing":
+                    clientSecret = intent.ClientSecret;
+                    break;
+                default:
+                    declineCode = intent?.LastPaymentError?.DeclineCode ?? intent?.LastPaymentError?.Code;
+                    break;
+            }
+        }
+
         var firstItem = subscription.Items?.Data?.FirstOrDefault();
         var periodStart = firstItem?.CurrentPeriodStart ?? DateTime.UtcNow;
         var periodEnd = firstItem?.CurrentPeriodEnd ?? DateTime.UtcNow.AddMonths(1);
@@ -795,8 +883,12 @@ public class StripeClient : IStripeClient
             CurrentPeriodStart: periodStart,
             CurrentPeriodEnd: periodEnd,
             TrialEnd: subscription.TrialEnd,
-            Status: subscription.Status);
+            Status: status,
+            PaymentIntentClientSecret: clientSecret,
+            DeclineCode: declineCode);
     }
+
+    private static bool IsLive(string? subscriptionStatus) => subscriptionStatus is "active" or "trialing";
 
     public async Task<SubscriptionResult> SwapSubscriptionPriceAsync(
         string stripeSubscriptionId,

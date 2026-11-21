@@ -66,13 +66,14 @@ public class CreateMembershipSubscriptionReconcileOnRetryTests
 
         _stripe
             .Setup(c => c.CreateSubscriptionAsync(
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(),
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(),
                 It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string _, string _, int _, string attemptId, CancellationToken _) =>
+            .ReturnsAsync((string _, string _, string _, string _, int _, string attemptId, CancellationToken _) =>
                 new SubscriptionResult(
                     SubscriptionId: $"sub_{attemptId}",
                     CurrentPeriodStart: DateTime.UtcNow,
-                    CurrentPeriodEnd: DateTime.UtcNow.AddMonths(1)));
+                    CurrentPeriodEnd: DateTime.UtcNow.AddMonths(1),
+                    Status: "active"));
     }
 
     private CreateMembershipSubscription.Handler CreateHandler() =>

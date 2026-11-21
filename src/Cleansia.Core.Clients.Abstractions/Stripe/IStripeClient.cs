@@ -287,12 +287,24 @@ public interface IStripeClient
     /// <see cref="CreateSetupIntentAsync"/>: the card of the newest such intent that succeeded on the Customer,
     /// one with no <c>SavedCardId</c> metadata, is the subscription's default payment method, so the invoice
     /// after the trial (<paramref name="trialPeriodDays"/> &gt; 0) and every renewal charge it. The Customer's
-    /// own invoice default is left alone. Returns the subscription id + period bounds the caller persists
-    /// in <see cref="Cleansia.Core.Domain.Memberships.UserMembership"/>.
+    /// own invoice default is left alone. The subscription carries the same <c>UserId</c> and
+    /// <c>MembershipPlanCode</c> metadata as a web Checkout one, which is what the subscription webhooks
+    /// provision a membership from.
+    /// <para>With no trial Stripe charges the first invoice at once with that card, and the result says how it
+    /// went: <see cref="SubscriptionResult.Status"/> <c>active</c> when it is paid; otherwise
+    /// <see cref="SubscriptionResult.PaymentIntentClientSecret"/> when the card needs 3-D Secure, or
+    /// <see cref="SubscriptionResult.DeclineCode"/> when it was declined. A retry on the same attempt id replays the
+    /// same subscription and reads its state afresh, so the call after a 3-D Secure step finds it paid.</para>
+    /// <para>Before creating, it reads the Customer's subscriptions that carry this <paramref name="userId"/>: one
+    /// already paid or trialing is returned and nothing is created, so a new attempt after a paid one whose confirm
+    /// never landed charges nothing more; one still unpaid that this attempt does not replay is cancelled after the
+    /// create.</para>
     /// </summary>
     Task<SubscriptionResult> CreateSubscriptionAsync(
         string stripeCustomerId,
         string stripePriceId,
+        string userId,
+        string membershipPlanCode,
         int trialPeriodDays,
         string idempotencyAttemptId,
         CancellationToken cancellationToken);
@@ -333,10 +345,12 @@ public interface IStripeClient
     /// <summary>
     /// Create a Stripe Checkout Session in subscription mode for the web
     /// customer flow. The customer is redirected to Stripe-hosted Checkout,
-    /// completes payment, and returns to the membership welcome page. The
-    /// <c>customer.subscription.created</c> webhook is what creates the local
+    /// completes payment, and returns to the membership welcome page. The first
+    /// <c>customer.subscription.created</c> or <c>.updated</c> webhook that says
+    /// <c>active</c> or <c>trialing</c> is what creates the local
     /// <see cref="Cleansia.Core.Domain.Memberships.UserMembership"/> row —
     /// success-url polling is not required.
+    /// -> /flows/loyalty-and-memberships#plus-paid-before-granted
     /// <para>
     /// The return URLs are NOT parameters. They used to be, taken from the client and passed
     /// through unchecked, which let any authenticated caller choose where Stripe sent a browser
@@ -415,7 +429,11 @@ public record SubscriptionResult(
     /// on the NEXT subscribe, so it is the answer Stripe gave, never the number we asked for.
     /// </summary>
     DateTime? TrialEnd = null,
-    string? Status = null);
+    string? Status = null,
+    /// <summary>The client secret of the first invoice's PaymentIntent while the card needs 3-D Secure; null otherwise.</summary>
+    string? PaymentIntentClientSecret = null,
+    /// <summary>Stripe's reason the first invoice's card was refused (its <c>decline_code</c>, else its error <c>code</c>); null otherwise.</summary>
+    string? DeclineCode = null);
 
 /// <summary>
 /// Result of <see cref="IStripeClient.CreatePaymentIntentAsync"/>. The

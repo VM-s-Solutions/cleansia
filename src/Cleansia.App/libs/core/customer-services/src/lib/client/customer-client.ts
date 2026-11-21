@@ -9193,6 +9193,7 @@ export class CreateMembershipSubscriptionResponse implements ICreateMembershipSu
     setupIntentClientSecret!: string | undefined;
     stripeCustomerId!: string | undefined;
     ephemeralKey!: string | undefined;
+    paymentIntentClientSecret!: string | undefined;
 
     constructor(data?: ICreateMembershipSubscriptionResponse) {
         if (data) {
@@ -9209,6 +9210,7 @@ export class CreateMembershipSubscriptionResponse implements ICreateMembershipSu
             this.setupIntentClientSecret = Data["setupIntentClientSecret"];
             this.stripeCustomerId = Data["stripeCustomerId"];
             this.ephemeralKey = Data["ephemeralKey"];
+            this.paymentIntentClientSecret = Data["paymentIntentClientSecret"];
         }
     }
 
@@ -9225,6 +9227,7 @@ export class CreateMembershipSubscriptionResponse implements ICreateMembershipSu
         data["setupIntentClientSecret"] = this.setupIntentClientSecret;
         data["stripeCustomerId"] = this.stripeCustomerId;
         data["ephemeralKey"] = this.ephemeralKey;
+        data["paymentIntentClientSecret"] = this.paymentIntentClientSecret;
         return data;
     }
 }
@@ -9234,6 +9237,7 @@ export interface ICreateMembershipSubscriptionResponse {
     setupIntentClientSecret: string | undefined;
     stripeCustomerId: string | undefined;
     ephemeralKey: string | undefined;
+    paymentIntentClientSecret: string | undefined;
 }
 
 export class CreateOrderCommand implements ICreateOrderCommand {

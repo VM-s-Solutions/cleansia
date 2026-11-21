@@ -12,9 +12,12 @@ namespace Cleansia.Core.AppServices.Services.Interfaces;
 public interface IStripeSubscriptionWebhookHandler
 {
     /// <summary>
-    /// Apply the subscription event to the local <c>UserMembership</c>. Auto-
-    /// provisions the row on a <c>customer.subscription.created</c> for web's
-    /// Checkout flow (mobile creates the row inline before the webhook lands).
+    /// Apply the subscription event to the local <c>UserMembership</c>. A
+    /// subscription it does not know, web Checkout or phone, gets its row from
+    /// the first <c>customer.subscription.created</c> or <c>.updated</c> that
+    /// says <c>active</c> or <c>trialing</c>; the phone's confirm usually makes
+    /// it first, and this is its backstop.
+    /// -> /flows/loyalty-and-memberships#plus-paid-before-granted
     /// Returns the Stripe subscription id (or empty string when ignored).
     /// </summary>
     Task<string> HandleAsync(Event stripeEvent, CancellationToken cancellationToken);

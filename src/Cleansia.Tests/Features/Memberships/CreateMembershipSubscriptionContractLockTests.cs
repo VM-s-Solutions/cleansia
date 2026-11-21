@@ -64,12 +64,13 @@ public class CreateMembershipSubscriptionContractLockTests
     {
         _stripe
             .Setup(c => c.CreateSubscriptionAsync(
-                StripeCustomerId, stripePriceId, It.IsAny<int>(),
+                StripeCustomerId, stripePriceId, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(),
                 It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new SubscriptionResult(
                 SubscriptionId: subscriptionId,
                 CurrentPeriodStart: DateTime.UtcNow,
-                CurrentPeriodEnd: DateTime.UtcNow.AddMonths(1)));
+                CurrentPeriodEnd: DateTime.UtcNow.AddMonths(1),
+                Status: "active"));
     }
 
     private void SetupUserWithStripeCustomer()
@@ -185,9 +186,9 @@ public class CreateMembershipSubscriptionContractLockTests
         Assert.NotNull(added);
         Assert.Equal(MembershipPricingMockFactory.EurCurrencyId, added!.CurrencyId);
         _stripe.Verify(c => c.CreateSubscriptionAsync(
-            StripeCustomerId, "price_eur_1", It.IsAny<int>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+            StripeCustomerId, "price_eur_1", It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
         _stripe.Verify(c => c.CreateSubscriptionAsync(
-            It.IsAny<string>(), StripePriceId, It.IsAny<int>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+            It.IsAny<string>(), StripePriceId, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -205,7 +206,7 @@ public class CreateMembershipSubscriptionContractLockTests
         Assert.True(result.IsFailure);
         Assert.Equal(BusinessErrorMessage.MembershipPlanNotPricedInCurrency, result.Error!.Message);
         _stripe.Verify(c => c.CreateSubscriptionAsync(
-            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         _membershipRepository.Verify(r => r.Add(It.IsAny<UserMembership>()), Times.Never);
     }
 }

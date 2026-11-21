@@ -2107,6 +2107,9 @@
         "not_found": "Membership plan not found."
       },
       "already_active": "You already have an active membership.",
+      "card_declined": "Your card was declined. Try another card.",
+      "card_insufficient_funds": "Your card has insufficient funds. Try another card.",
+      "card_authentication_failed": "Your bank did not confirm the payment. Try again or use another card.",
       "not_found": "Membership not found.",
       "stripe_customer_currency_locked": "Your Plus billing is already set up in another currency. Contact support to change it.",
       "swap_same_plan": "You're already on this plan.",

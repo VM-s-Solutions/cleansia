@@ -97,8 +97,8 @@ public class MembershipSubscribeUsesPerCurrencyCustomerTests
     public async Task The_Mobile_Subscribe_Charges_The_Currencys_Customer_Not_The_Legacy_One()
     {
         _stripe
-            .Setup(c => c.CreateSubscriptionAsync(EurCustomerId, "price_eur_1", It.IsAny<int>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new SubscriptionResult("sub_eur_1", DateTime.UtcNow, DateTime.UtcNow.AddMonths(1)));
+            .Setup(c => c.CreateSubscriptionAsync(EurCustomerId, "price_eur_1", It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SubscriptionResult("sub_eur_1", DateTime.UtcNow, DateTime.UtcNow.AddMonths(1), Status: "active"));
 
         var result = await SubscribeHandler().Handle(
             new CreateMembershipSubscription.Command(PlanCode, PaymentMethodConfirmed: true, CountryId: "country-svk"),
@@ -106,7 +106,7 @@ public class MembershipSubscribeUsesPerCurrencyCustomerTests
 
         Assert.True(result.IsSuccess);
         Assert.Equal(EurCustomerId, result.Value.StripeCustomerId);
-        _stripe.Verify(c => c.CreateSubscriptionAsync(LegacyCustomerId, It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _stripe.Verify(c => c.CreateSubscriptionAsync(LegacyCustomerId, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -160,7 +160,7 @@ public class MembershipSubscribeUsesPerCurrencyCustomerTests
         Assert.Equal(BusinessErrorMessage.PaymentGatewayUnavailable, subscribe.Error!.Message);
         Assert.True(checkout.IsFailure);
         Assert.Equal(BusinessErrorMessage.PaymentGatewayUnavailable, checkout.Error!.Message);
-        _stripe.Verify(c => c.CreateSubscriptionAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _stripe.Verify(c => c.CreateSubscriptionAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         _stripe.Verify(c => c.CreateMembershipCheckoutSessionAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }

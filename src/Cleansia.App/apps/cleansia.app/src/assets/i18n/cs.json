@@ -2107,6 +2107,9 @@
         "not_found": "Plán členství nebyl nalezen."
       },
       "already_active": "Již máte aktivní členství.",
+      "card_declined": "Vaše karta byla zamítnuta. Zkuste jinou kartu.",
+      "card_insufficient_funds": "Na vaší kartě není dostatek prostředků. Zkuste jinou kartu.",
+      "card_authentication_failed": "Vaše banka platbu nepotvrdila. Zkuste to znovu nebo použijte jinou kartu.",
       "not_found": "Členství nenalezeno.",
       "stripe_customer_currency_locked": "Vaše platby za Plus jsou už nastavené v jiné měně. Pro změnu kontaktujte podporu.",
       "swap_same_plan": "Tento plán již máte.",

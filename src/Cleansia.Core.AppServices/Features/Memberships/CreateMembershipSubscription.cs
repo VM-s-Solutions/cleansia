@@ -48,11 +48,14 @@ public class CreateMembershipSubscription
         public string? IdempotencyToken { get; init; }
     }
 
+    /// <param name="PaymentIntentClientSecret">Set, with no membership yet, when the first invoice's card needs
+    /// 3-D Secure: the app completes that PaymentIntent and sends the same confirm again.</param>
     public record Response(
         string MembershipId,
         string SetupIntentClientSecret,
         string StripeCustomerId,
-        string EphemeralKey);
+        string EphemeralKey,
+        string PaymentIntentClientSecret = "");
 
     public class Validator : AbstractValidator<Command>
     {
@@ -155,7 +158,7 @@ public class CreateMembershipSubscription
                 try
                 {
                     subscription = await stripeClient.CreateSubscriptionAsync(
-                        stripeCustomerId, price.StripePriceId, trial.Days, attemptId, cancellationToken);
+                        stripeCustomerId, price.StripePriceId, user.Id, plan.Code, trial.Days, attemptId, cancellationToken);
                 }
                 catch (StripeException ex) when (StripeRefusals.IsCustomerCurrencyLocked(ex))
                 {
@@ -189,6 +192,31 @@ public class CreateMembershipSubscription
                         SetupIntentClientSecret: string.Empty,
                         StripeCustomerId: stripeCustomerId,
                         EphemeralKey: string.Empty));
+                }
+
+                if (subscription.Status is not ("active" or "trialing"))
+                {
+                    if (subscription.Status == "incomplete" && !string.IsNullOrEmpty(subscription.PaymentIntentClientSecret))
+                    {
+                        auditContext.RecordEvidence("UserMembership", null, Evidence());
+                        return BusinessResult.Success(new Response(
+                            MembershipId: string.Empty,
+                            SetupIntentClientSecret: string.Empty,
+                            StripeCustomerId: stripeCustomerId,
+                            EphemeralKey: string.Empty,
+                            PaymentIntentClientSecret: subscription.PaymentIntentClientSecret));
+                    }
+
+                    if (subscription.Status == "incomplete")
+                    {
+                        await CancelUnpaidAsync(subscription.SubscriptionId, cancellationToken);
+                    }
+
+                    logger.LogInformation(
+                        "Plus first invoice for user {UserId}, plan {PlanCode} not paid (Stripe sub {SubscriptionId}, status {Status}, reason {DeclineCode})",
+                        user.Id, plan.Code, subscription.SubscriptionId, subscription.Status, subscription.DeclineCode);
+                    return BusinessResult.Failure<Response>(new Error(
+                        nameof(command.PaymentMethodConfirmed), DeclineMessage(subscription.DeclineCode)));
                 }
 
                 // The pre-Stripe active-membership guard ran before this Stripe call, so re-check now:
@@ -272,6 +300,27 @@ public class CreateMembershipSubscription
                 StripeCustomerId: stripeCustomerId,
                 EphemeralKey: ephemeralKey));
         }
+
+        // Stripe expires an unpaid incomplete subscription after 23 hours by itself, so a cancel that fails
+        // leaves nothing billable behind and must not hide the card's refusal.
+        private async Task CancelUnpaidAsync(string subscriptionId, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await stripeClient.CancelSubscriptionNowAsync(subscriptionId, cancellationToken);
+            }
+            catch (StripeException ex)
+            {
+                logger.LogWarning(ex, "Could not cancel unpaid Plus subscription {SubscriptionId}; Stripe expires it", subscriptionId);
+            }
+        }
+
+        private static string DeclineMessage(string? declineCode) => declineCode switch
+        {
+            "insufficient_funds" => BusinessErrorMessage.MembershipCardInsufficientFunds,
+            "payment_intent_authentication_failure" or "authentication_required" => BusinessErrorMessage.MembershipCardAuthenticationFailed,
+            _ => BusinessErrorMessage.MembershipCardDeclined,
+        };
 
         /// <summary>
         /// Derive the Stripe idempotency attempt id for a confirmed subscribe. The client-supplied

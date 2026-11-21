@@ -70,9 +70,9 @@ public sealed class MembershipAuditEvidenceTests
             .ReturnsAsync("https://checkout.stripe.com/c/pay/cs_test");
         _stripe
             .Setup(c => c.CreateSubscriptionAsync(
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string _, string _, int _, string attemptId, CancellationToken _) =>
-                new SubscriptionResult($"sub_{attemptId}", DateTime.UtcNow, DateTime.UtcNow.AddMonths(1)));
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string _, string _, string _, string _, int _, string attemptId, CancellationToken _) =>
+                new SubscriptionResult($"sub_{attemptId}", DateTime.UtcNow, DateTime.UtcNow.AddMonths(1), Status: "active"));
         _stripe
             .Setup(c => c.CreateSetupIntentAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new SetupIntentResult("seti_1", "seti_secret"));

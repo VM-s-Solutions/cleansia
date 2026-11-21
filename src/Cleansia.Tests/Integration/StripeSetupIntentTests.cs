@@ -52,7 +52,7 @@ public class StripeSetupIntentTests
                 ("seti_plus_old", "succeeded", "pm_plus_old", "{}")),
             Subscription);
 
-        await Client(transport).CreateSubscriptionAsync("cus_eur", "price_plus", 14, "tok-1", CancellationToken.None);
+        await Client(transport).CreateSubscriptionAsync("cus_eur", "price_plus", "user-1", "PLUS_MONTHLY", 14, "tok-1", CancellationToken.None);
 
         Assert.Equal((HttpMethod.Get, "/v1/setup_intents"), (transport.Requests[0].Method, transport.Requests[0].Path));
         Assert.Contains("customer=cus_eur", transport.Requests[0].Query);
@@ -68,7 +68,7 @@ public class StripeSetupIntentTests
             SetupIntents(("seti_saved", "succeeded", "pm_saved", """{"SavedCardId":"card-row-1"}""")),
             Subscription);
 
-        await Client(transport).CreateSubscriptionAsync("cus_eur", "price_plus", 14, "tok-1", CancellationToken.None);
+        await Client(transport).CreateSubscriptionAsync("cus_eur", "price_plus", "user-1", "PLUS_MONTHLY", 14, "tok-1", CancellationToken.None);
 
         Assert.DoesNotContain("&default_payment_method=", "&" + transport.Requests[1].Body);
     }

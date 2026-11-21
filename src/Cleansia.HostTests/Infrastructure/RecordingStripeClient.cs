@@ -24,11 +24,23 @@ public sealed class RecordingStripeClient : IStripeClient
         return Task.FromResult(id);
     }
 
-    public Task<SubscriptionResult> CreateSubscriptionAsync(string stripeCustomerId, string stripePriceId, int trialPeriodDays, string idempotencyAttemptId, CancellationToken cancellationToken)
+    private readonly Dictionary<string, string> _subscriptionByAttempt = [];
+
+    /// <summary>What the first invoice does on each subscribe call, in order; paid once the queue is empty.</summary>
+    public Queue<(string Status, string? PaymentIntentClientSecret, string? DeclineCode)> FirstInvoiceOutcomes { get; } = new();
+
+    public List<string> CancelledNow { get; } = [];
+
+    public Task<SubscriptionResult> CreateSubscriptionAsync(string stripeCustomerId, string stripePriceId, string userId, string membershipPlanCode, int trialPeriodDays, string idempotencyAttemptId, CancellationToken cancellationToken)
     {
-        var id = $"sub_fake_{++_subscriptions}";
+        if (!_subscriptionByAttempt.TryGetValue(idempotencyAttemptId, out var id))
+        {
+            id = $"sub_fake_{++_subscriptions}";
+            _subscriptionByAttempt[idempotencyAttemptId] = id;
+        }
         CreatedSubscriptions.Add((stripeCustomerId, stripePriceId, id));
-        return Task.FromResult(new SubscriptionResult(id, DateTime.UtcNow, DateTime.UtcNow.AddMonths(1)));
+        var (status, secret, declineCode) = FirstInvoiceOutcomes.TryDequeue(out var outcome) ? outcome : ("active", null, null);
+        return Task.FromResult(new SubscriptionResult(id, DateTime.UtcNow, DateTime.UtcNow.AddMonths(1), null, status, secret, declineCode));
     }
 
     public Task<string> CreateMembershipCheckoutSessionAsync(string stripeCustomerId, string stripePriceId, string userId, string membershipPlanCode, int trialPeriodDays, string idempotencyAttemptId, CancellationToken cancellationToken)
@@ -90,5 +102,9 @@ public sealed class RecordingStripeClient : IStripeClient
     public Task<string?> FindCheckoutSessionOrderIdAsync(string paymentIntentId, CancellationToken cancellationToken) => throw new NotSupportedException();
     public Task<SubscriptionResult> SwapSubscriptionPriceAsync(string stripeSubscriptionId, string newStripePriceId, string idempotencyAttemptId, CancellationToken cancellationToken) => throw new NotSupportedException();
     public Task CancelSubscriptionAtPeriodEndAsync(string stripeSubscriptionId, CancellationToken cancellationToken) => throw new NotSupportedException();
-    public Task CancelSubscriptionNowAsync(string stripeSubscriptionId, CancellationToken cancellationToken) => throw new NotSupportedException();
+    public Task CancelSubscriptionNowAsync(string stripeSubscriptionId, CancellationToken cancellationToken)
+    {
+        CancelledNow.Add(stripeSubscriptionId);
+        return Task.CompletedTask;
+    }
 }

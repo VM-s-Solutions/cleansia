@@ -111,7 +111,7 @@ public class StripeCardSavingTests
             "payment-intent" => client.CreatePaymentIntentAsync(
                 1500m, "CZK", "cus_czk", "order-sheet", "CL-1", SavedCardId, currentPaymentIntentId: null, CancellationToken.None),
             "setup-intent" => client.CreateSetupIntentAsync("cus_czk", CancellationToken.None),
-            "subscription" => client.CreateSubscriptionAsync("cus_czk", "price_plus", 0, "attempt-1", CancellationToken.None),
+            "subscription" => client.CreateSubscriptionAsync("cus_czk", "price_plus", "user-1", "PLUS_MONTHLY", 0, "attempt-1", CancellationToken.None),
             _ => client.CreateMembershipCheckoutSessionAsync(
                 "cus_czk", "price_plus", "user-1", "plus", 0, "attempt-1", CancellationToken.None),
         };

@@ -211,6 +211,13 @@ public static class BusinessErrorMessage
     /// </summary>
     public const string MembershipStripeCustomerCurrencyLocked = "membership.stripe_customer_currency_locked";
 
+    /// <summary>The card refused the first Plus invoice; no membership is granted and the subscription is cancelled.</summary>
+    public const string MembershipCardDeclined = "membership.card_declined";
+    /// <summary>The card refused the first Plus invoice for lack of funds.</summary>
+    public const string MembershipCardInsufficientFunds = "membership.card_insufficient_funds";
+    /// <summary>The bank did not confirm the first Plus invoice's 3-D Secure step.</summary>
+    public const string MembershipCardAuthenticationFailed = "membership.card_authentication_failed";
+
     /// <summary>
     /// ADR-0035 AM-8 — the member's free express upgrade was still available when the price was quoted
     /// and is not available now. Distinct from <see cref="TotalPriceNotMatch"/> on purpose: every client

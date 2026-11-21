@@ -11,7 +11,6 @@ public class StripeSubscriptionStatusTests
 {
     [Theory]
     [InlineData(false, "active")]
-    [InlineData(false, "incomplete")]
     [InlineData(false, "trialing")]
     [InlineData(true, "active")]
     [InlineData(true, "past_due")]
@@ -24,7 +23,7 @@ public class StripeSubscriptionStatusTests
 
         var result = swap
             ? await client.SwapSubscriptionPriceAsync("sub_unit", "price_yearly", "attempt", CancellationToken.None)
-            : await client.CreateSubscriptionAsync("cus_unit", "price_monthly", 0, "attempt", CancellationToken.None);
+            : await client.CreateSubscriptionAsync("cus_unit", "price_monthly", "user-1", "PLUS_MONTHLY", 0, "attempt", CancellationToken.None);
 
         Assert.Equal(status, result.Status);
         Assert.Equal("sub_unit", result.SubscriptionId);

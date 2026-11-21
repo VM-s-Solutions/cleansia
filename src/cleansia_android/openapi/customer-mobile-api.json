@@ -8312,6 +8312,10 @@
           "ephemeralKey": {
             "type": "string",
             "nullable": true
+          },
+          "paymentIntentClientSecret": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

@@ -744,6 +744,8 @@ public class StripeClient : IStripeClient
     public async Task<SubscriptionResult> CreateSubscriptionAsync(
         string stripeCustomerId,
         string stripePriceId,
+        string userId,
+        string membershipPlanCode,
         int trialPeriodDays,
         string idempotencyAttemptId,
         CancellationToken cancellationToken)
@@ -768,13 +770,17 @@ public class StripeClient : IStripeClient
                 new SubscriptionItemOptions { Price = stripePriceId },
             ],
             DefaultPaymentMethod = plusCard,
-            PaymentBehavior = "default_incomplete",
+            PaymentBehavior = trialPeriodDays > 0 ? "default_incomplete" : "allow_incomplete",
             PaymentSettings = new SubscriptionPaymentSettingsOptions
             {
                 PaymentMethodTypes = ["card"],
                 SaveDefaultPaymentMethod = "on_subscription",
             },
-            Expand = ["latest_invoice.payment_intent"],
+            Metadata = new Dictionary<string, string>
+            {
+                { "UserId", userId },
+                { "MembershipPlanCode", membershipPlanCode },
+            },
         };
         if (trialPeriodDays > 0)
         {
@@ -787,6 +793,45 @@ public class StripeClient : IStripeClient
         var subscription = await ClassifyAsync(
             nameof(CreateSubscriptionAsync),
             () => service.CreateAsync(options, requestOptions, cancellationToken));
+
+        // Stripe answers a retried create with its first response, so the confirm after a 3-D Secure step
+        // reads the subscription afresh to see the payment.
+        if (!IsLive(subscription.Status))
+        {
+            subscription = await ClassifyAsync(
+                nameof(CreateSubscriptionAsync),
+                () => service.GetAsync(subscription.Id, cancellationToken: cancellationToken));
+        }
+
+        var status = subscription.Status;
+        string? clientSecret = null;
+        string? declineCode = null;
+        if (!IsLive(status) && !string.IsNullOrEmpty(subscription.LatestInvoiceId))
+        {
+            var payments = await ClassifyAsync(
+                nameof(CreateSubscriptionAsync),
+                () => new InvoicePaymentService(stripe).ListAsync(
+                    new InvoicePaymentListOptions { Invoice = subscription.LatestInvoiceId, Expand = ["data.payment.payment_intent"] },
+                    cancellationToken: cancellationToken));
+            var intent = payments.Data
+                .OrderByDescending(p => p.IsDefault)
+                .Select(p => p.Payment?.PaymentIntent)
+                .FirstOrDefault(i => i is not null);
+            switch (intent?.Status)
+            {
+                // Paid: Stripe marks the invoice paid, and the subscription active, a moment after the intent succeeds.
+                case "succeeded" when status == "incomplete":
+                    status = "active";
+                    break;
+                case "requires_action" or "requires_confirmation" or "processing":
+                    clientSecret = intent.ClientSecret;
+                    break;
+                default:
+                    declineCode = intent?.LastPaymentError?.DeclineCode ?? intent?.LastPaymentError?.Code;
+                    break;
+            }
+        }
+
         var firstItem = subscription.Items?.Data?.FirstOrDefault();
         var periodStart = firstItem?.CurrentPeriodStart ?? DateTime.UtcNow;
         var periodEnd = firstItem?.CurrentPeriodEnd ?? DateTime.UtcNow.AddMonths(1);
@@ -795,8 +840,12 @@ public class StripeClient : IStripeClient
             CurrentPeriodStart: periodStart,
             CurrentPeriodEnd: periodEnd,
             TrialEnd: subscription.TrialEnd,
-            Status: subscription.Status);
+            Status: status,
+            PaymentIntentClientSecret: clientSecret,
+            DeclineCode: declineCode);
     }
+
+    private static bool IsLive(string? subscriptionStatus) => subscriptionStatus is "active" or "trialing";
 
     public async Task<SubscriptionResult> SwapSubscriptionPriceAsync(
         string stripeSubscriptionId,
